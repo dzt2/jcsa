@@ -133,6 +133,13 @@ class StateInfectionEncode:
 
     def __get_assertions__(self, mutant: cmutant.Mutant):
         assertions = set()
+        if mutant.features.get_reachability() is not None:
+            for assertion in mutant.features.get_reachability():
+                word = str(assertion)
+                self.word2int.encode(word)
+                assertions.add(word)
+        else:
+            print('\t\t==> Empty location at Mutant#', mutant.id)
         for infection in mutant.features.get_infections():
             infection: cmutant.StateErrorFlow
             for constraint in infection.constraints:
@@ -173,6 +180,10 @@ class StateErrorSetEncode:
 
     def __get_assertions__(self, mutant: cmutant.Mutant):
         assertions = set()
+        for assertion in mutant.features.get_reachability():
+            word = str(assertion)
+            self.word2int.encode(word)
+            assertions.add(word)
         for infection in mutant.features.get_infections():
             infection: cmutant.StateErrorFlow
             for constraint in infection.constraints:

@@ -325,7 +325,9 @@ class StateErrorGraph:
                     error = StateError(self, id, location, assertions)
                     self.errors[id] = error
                 elif items[0].strip() == '[cover]':
-                    self.reachability = self.assertions.get_assertion(items[1].strip())
+                    self.reachability = list()
+                    for k in range(1, len(items)):
+                        self.reachability.append(self.assertions.get_assertion(items[k].strip()))
         return
 
     def __parse_flows__(self, lines: list):

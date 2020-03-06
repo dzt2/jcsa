@@ -683,5 +683,6 @@ def decision_tree_mine(encoding_class):
 
 if __name__ == '__main__':
     print('Testing start.')
-    composite_pattern_mine(encode.StateErrorSetEncode)
+    evaluate_feature_space(encode.StateInfectionEncode)
+    # composite_pattern_mine(encode.StateErrorSetEncode)
     print('Testing end for all.')
