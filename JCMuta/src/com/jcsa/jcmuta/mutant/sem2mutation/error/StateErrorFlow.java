@@ -43,11 +43,13 @@ public class StateErrorFlow {
 	}
 	
 	/* getters */
+	protected ConstraintSet constraint_set;
+	public ConstraintSet get_constraints() { return this.constraint_set; }
 	/**
 	 * get the constraint required to be hold
 	 * @return
 	 */
-	public Iterable<SemanticAssertion> get_constraints() { return this.constraints; }
+	public Iterable<SemanticAssertion> get_assertions() { return this.constraints; }
 	/**
 	 * get the source error that causes another in the propagation
 	 * @return

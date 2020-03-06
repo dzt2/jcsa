@@ -174,7 +174,30 @@ public class StateErrorProcesses {
 		for(StateInfection infection : graph.get_infections()) {
 			this.propagate(infection.get_state_error(), layer);
 		}
+		this.extend_constraints(graph);
 		return graph;
+	}
+	private void extend_constraints(StateErrorGraph graph) throws Exception {
+		graph.reach_constraints = ConstraintExtension.get_constraint(cir_tree, 
+				program_graph, influence_graph, graph.mutation.get_reachability());
+		
+		for(StateInfection infection : graph.infections) {
+			ConstraintSet constraints = ConstraintExtension.get_constraint(cir_tree, 
+					program_graph, influence_graph, infection.get_assertions());
+			infection.constraint_set = constraints;
+		}
+		
+		/** DO NOT extend the following constraint **/
+		for(StateError error_node : graph.get_errors()) {
+			for(StateErrorFlow flow : error_node.get_in_flows()) {
+				ConstraintSet constraints = new ConstraintSet(flow.get_assertions());
+				flow.constraint_set = constraints;
+			}
+			for(StateErrorFlow flow : error_node.get_ou_flows()) {
+				ConstraintSet constraints = new ConstraintSet(flow.get_assertions());
+				flow.constraint_set = constraints;
+			}
+		}
 	}
 	public void close() { this.influence_graph = null; }
 	

@@ -25,6 +25,7 @@ public class StateErrorGraph {
 	protected List<StateInfection> infections;
 	/** the state errors created in the graph **/
 	protected List<StateError> errors;
+	protected ConstraintSet reach_constraints;
 	/**
 	 * create the state error graph
 	 * @param assertions
@@ -90,6 +91,11 @@ public class StateErrorGraph {
 	 * @return
 	 */
 	public SemanticMutation get_mutation() { return this.mutation; }
+	/**
+	 * 
+	 * @return
+	 */
+	public ConstraintSet get_reach_constraints() { return this.reach_constraints; }
 	/**
 	 * get the instance to create semantic assertions
 	 * @return

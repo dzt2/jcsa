@@ -64,7 +64,7 @@ public class MutaFeatureWriters {
 	private static final String postfx = "results\\data\\";
 	private static final String main_function = "main";
 	private static final int max_layer = 5;
-	private static final double threshold = 1e-4;
+	private static final double threshold = 1e-3;
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
@@ -625,7 +625,7 @@ public class MutaFeatureWriters {
 		writer.write("\t" + flow.get_source().get_id());
 		writer.write("\t" + flow.get_target().get_id());
 		
-		for(SemanticAssertion constraint : flow.get_constraints()) {
+		for(SemanticAssertion constraint : flow.get_constraints().get_constraints()) {
 			writer.write("\t");
 			output_semantic_assertion(constraint, writer);
 		}
@@ -673,7 +673,7 @@ public class MutaFeatureWriters {
 	private static void output_infection(StateInfection infection, FileWriter writer) throws Exception {
 		writer.write("[infect]");
 		writer.write("\t" + infection.get_state_error().get_id());
-		for(SemanticAssertion constraint : infection.get_constraints()) {
+		for(SemanticAssertion constraint : infection.get_constraints().get_constraints()) {
 			writer.write("\t");
 			output_semantic_assertion(constraint, writer);
 		}
@@ -720,8 +720,11 @@ public class MutaFeatureWriters {
 		
 		if(mutation != null) {
 			StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, max_layer);
-			writer.write("[cover]\t");
-			output_semantic_assertion(mutation.get_reachability(), writer);
+			writer.write("[cover]");
+			for(SemanticAssertion assertion : graph.get_reach_constraints().get_constraints()) {
+				writer.write("\t");
+				output_semantic_assertion(assertion, writer);
+			}
 			writer.write("\n");
 			output_state_errors(graph, writer);
 		}

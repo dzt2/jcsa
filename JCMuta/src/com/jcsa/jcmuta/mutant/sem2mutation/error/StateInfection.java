@@ -8,6 +8,7 @@ import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticAssertion;
 public class StateInfection {
 	
 	/* constructor */
+	protected ConstraintSet constraint_set;
 	private List<SemanticAssertion> constraints;
 	private StateError state_error;
 	protected StateInfection(Iterable<SemanticAssertion> constraints, StateError state_error) throws Exception {
@@ -30,11 +31,12 @@ public class StateInfection {
 	 * get the constraint required to hold for infection the error
 	 * @return
 	 */
-	public Iterable<SemanticAssertion> get_constraints() { return this.constraints; }
+	public Iterable<SemanticAssertion> get_assertions() { return this.constraints; }
 	/**
 	 * the initial error caused by the software fault
 	 * @return
 	 */
 	public StateError get_state_error() { return this.state_error; }
+	public ConstraintSet get_constraints() { return this.constraint_set; }
 	
 }
