@@ -1,0 +1,22 @@
+# language standard
+lang_standard : gnu_c89
+
+# [1] paths of source files
+# [2] path of executionable file
+# [3] library configuration such as -lm
+compile_program : clang %s -o %s %s
+
+# [1] path of the jcmulib.h directory
+# [2] paths of source files (including jcmulib.c)
+# [3] path of executionable file
+# [4] library configuration such as -lm
+compile_mutant : clang -I %s %s -o %s %s
+
+# [1] seconds to wait
+# [2] path of executionable file
+# [3] test arguments being used
+# [4] path of the test output
+execute_testing : timeout %d %s %s > %s
+
+# compile configuration for external library
+library_config : -lm
