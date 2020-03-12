@@ -11,6 +11,8 @@ import sklearn.metrics as metrics
 import seaborn as sns
 import matplotlib.pyplot as plt
 import random as random
+import numpy as np
+import scipy.sparse as sparse
 
 
 class OptimalClassifyEvaluator:
@@ -25,7 +27,7 @@ class OptimalClassifyEvaluator:
     def fit(self, data_frame: encode.MutantDataFrame):
         for mutant in data_frame.program.mutant_space.get_mutants():
             mutant: cmutant.Mutant
-            key = str(mutant.feature_vec)
+            key = str(mutant.feature_vector)
             if key not in self.mapping:
                 self.mapping[key] = list()
             self.mapping[key].append(mutant)
@@ -190,7 +192,7 @@ class MutantPattern:
         self.trivial_size = 0
         for mutant in mutants:
             mutant: cmutant.Mutant
-            if MutantPattern.__match_with__(mutant.feature_vec, self.pattern_vector):
+            if MutantPattern.__match_with__(mutant.feature_vector, self.pattern_vector):
                 self.samples.append(mutant)
                 if mutant.label == 0:
                     self.equiv_size += 1
@@ -263,13 +265,13 @@ class CompositePatternMiner:
         get the features in mutant that will be used to compose in algorithm
         :return:
         """
-        if len(mutant.feature_vec) <= self.max_feature_size:
-            return mutant.feature_vec
+        if len(mutant.feature_vector) <= self.max_feature_size:
+            return mutant.feature_vector
         else:
             feature_set = set()
             while len(feature_set) < self.max_feature_size:
-                index = random.randint(0, len(mutant.feature_vec))
-                for feature in mutant.feature_vec:
+                index = random.randint(0, len(mutant.feature_vector))
+                for feature in mutant.feature_vector:
                     if index <= 0:
                         feature_set.add(feature)
                         break
@@ -325,6 +327,10 @@ class CompositePatternMiner:
     def is_subsume(parent: MutantPattern, child: MutantPattern):
         return parent.subsume(child)
 
+    @staticmethod
+    def invalid_better(parent: MutantPattern, child: MutantPattern):
+        return False
+
     def __remove_redundant__(self, is_better):
         """
         remove the redundant patterns based on parent-child elimination algorithm
@@ -378,26 +384,30 @@ class CompositePatternMiner:
         writer.write('length\tfeature_words\ttotal_size\t'
                      'equivalent\ttrivial\tprobability\tmutants\n')
         mutants_set = set()
+        predict_set = set()
         for key, pattern in self.solutions.items():
-            pattern: MutantPattern
-            feature_words = list()
-            for code in pattern.pattern_vector:
-                word = words[code]
-                feature_words.append(word)
-            writer.write(str(len(pattern)) + '\t')
-            writer.write(str(feature_words) + '\t')
-            writer.write(str(pattern.total_size) + '\t')
-            writer.write(str(pattern.equiv_size) + '\t')
-            writer.write(str(pattern.trivial_size) + '\t')
-            writer.write(str(pattern.probability) + '\t')
-            mutant_list = list()
-            for mutant in pattern.samples:
-                mutant_list.append(mutant.id)
-                if mutant.id not in mutants_set:
-                    mutants_set.add(mutant.id)
-            writer.write(str(mutant_list) + '\t')
-            writer.write('\n')
-        return mutants_set
+            if pattern is not None:
+                pattern: MutantPattern
+                feature_words = list()
+                for code in pattern.pattern_vector:
+                    word = words[code]
+                    feature_words.append(word)
+                writer.write(str(len(pattern)) + '\t')
+                writer.write(str(feature_words) + '\t')
+                writer.write(str(pattern.total_size) + '\t')
+                writer.write(str(pattern.equiv_size) + '\t')
+                writer.write(str(pattern.trivial_size) + '\t')
+                writer.write(str(pattern.probability) + '\t')
+                mutant_list = list()
+                for mutant in pattern.samples:
+                    if mutant.label == 0:
+                        mutant_list.append(mutant.id)
+                        if mutant.id not in mutants_set:
+                            mutants_set.add(mutant.id)
+                    predict_set.add(mutant.id)
+                writer.write(str(mutant_list) + '\t')
+                writer.write('\n')
+        return mutants_set, predict_set
 
     def mine(self, data_frame: encode.MutantDataFrame, file_path: str):
         """
@@ -424,16 +434,18 @@ class CompositePatternMiner:
                           len(self.solutions), 'patterns (', counter, '/', number, ')')
             # the algorithm here to eliminate redundant pattern
             self.__remove_redundant__(CompositePatternMiner.is_subsume)
-            covering_set = self.__output__(writer, data_frame.words)
+            covering_set, predict_set = self.__output__(writer, data_frame.words)
+            print('Reach here...')
             if equivalence > 0:
                 writer.write('Equivalence\t' + str(equivalence) + '\tPatterns\t' +
                              str(len(self.solutions)) + '\tCovering\t' + str(len(covering_set))
+                             + '\tPrecision\t' + str(int((100 * len(covering_set)) / len(predict_set))) + '%'
                              + '\tRecall\t' + str(int((100 * len(covering_set)) / equivalence)) + '%')
         self.solutions.clear()
         return
 
 
-def composite_pattern_mine(encoding_class):
+def composite_pattern_mine(encoding_class, prob_threshold):
     """
     Use composite pattern mining algorithm
     :return:
@@ -452,7 +464,7 @@ def composite_pattern_mine(encoding_class):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         pattern_file = os.path.join(output_dir, file_name + '.pls')
-        miner = CompositePatternMiner(0.70, 1, 4, 24)
+        miner = CompositePatternMiner(prob_threshold, 1, 3, 24)
         miner.mine(data_frame, pattern_file)
         print('Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
     return
@@ -478,18 +490,22 @@ class DecisionTreeMiner:
         self.classifier = tree.DecisionTreeClassifier()
         self.data_frame = data_frame
         self.identifiers = list()
-        self.feature_vectors = list()
-        self.labels = list()
-        length = len(data_frame.words)
+        rows, columns, data_list, labels = list(), list(), list(), list()
+        index, length = 0, len(data_frame.words)
         for mutant in data_frame.program.mutant_space.get_mutants():
             self.identifiers.append(mutant.id)
-            self.labels.append(mutant.label)
-            feature_vector = list()
-            for k in range(0, length):
-                feature_vector.append(0)
-            for word_code in mutant.feature_vec:
-                feature_vector[word_code] += 1
-            self.feature_vectors.append(feature_vector)
+            for code in mutant.feature_vector:
+                rows.append(index)
+                columns.append(code)
+                data_list.append(1)
+            labels.append(mutant.label)
+            index += 1
+        rows = np.array(rows)
+        columns = np.array(columns)
+        data_list = np.array(data_list)
+        self.feature_vectors = sparse.csr_matrix((data_list, (rows, columns)), shape=(
+            len(data_frame.program.mutant_space.mutants), len(data_frame.words)))
+        self.labels = np.array(labels)
         return
 
     def __mine__(self):
@@ -501,18 +517,21 @@ class DecisionTreeMiner:
         leave_id = self.classifier.apply(features)
         self.solutions.clear()
         equivalence = 0
-        for index in range(0, len(features)):
-            label = self.labels[index]
-            if label == 0:
-                equivalence += 1
-                p_label = self.classifier.predict([features[index]])[0]
+        for index in range(0, features.shape[0]):
+            if True:
+                label = self.labels[index]
+                if label == 0:
+                    equivalence += 1
+                feature_vector = (features[[index], :].todense())[0]
+                p_label = self.classifier.predict(feature_vector)[0]
                 if p_label == 0:
                     node_index = node_indicator.indices[node_indicator.indptr[index]: node_indicator.indptr[index + 1]]
                     decision_path = list()
+                    feature_vector = (features[[index], :].toarray())[0]
                     for tree_node_id in node_index:
                         if leave_id[index] == tree_node_id:  # when root is reached
                             continue
-                        elif features[index][tree_features[tree_node_id]] >= threshold[tree_node_id]:
+                        elif feature_vector[tree_features[tree_node_id]] >= threshold[tree_node_id]:
                             # when feature holds
                             decision_path.append(tree_features[tree_node_id])
                     decision_path.sort()
@@ -583,6 +602,7 @@ class DecisionTreeMiner:
         writer.write('length\tfeature_words\ttotal_size\t'
                      'equivalent\ttrivial\tprobability\tmutants\n')
         mutants_set = set()
+        predict_set = set()
         for key, pattern in self.solutions.items():
             pattern: MutantPattern
             feature_words = list()
@@ -597,12 +617,13 @@ class DecisionTreeMiner:
             writer.write(str(pattern.probability) + '\t')
             mutant_list = list()
             for mutant in pattern.samples:
-                mutant_list.append(mutant.id)
-                if mutant.id not in mutants_set:
+                if mutant.label == 0:
+                    mutant_list.append(mutant.id)
                     mutants_set.add(mutant.id)
+                predict_set.add(mutant.id)
             writer.write(str(mutant_list) + '\t')
             writer.write('\n')
-        return mutants_set
+        return mutants_set, predict_set
 
     def mine(self, data_frame: encode.MutantDataFrame, pattern_file: str):
         """
@@ -614,12 +635,13 @@ class DecisionTreeMiner:
         self.__extract_data_lines__(data_frame)
         self.classifier.fit(self.feature_vectors, self.labels)
         equivalence = self.__mine__()
-        self.__remove_redundant__(DecisionTreeMiner.is_subsume)
+        self.__remove_redundant__(CompositePatternMiner.invalid_better)
         with open(pattern_file, 'w') as writer:
-            covering_set = self.__output__(writer, data_frame.words)
+            covering_set, predict_set = self.__output__(writer, data_frame.words)
             if equivalence > 0:
                 writer.write('Equivalence\t' + str(equivalence) + '\tPatterns\t' +
                              str(len(self.solutions)) + '\tCovering\t' + str(len(covering_set))
+                             + '\tPrecision\t' + str(int((100 * len(covering_set)) / len(predict_set))) + '%'
                              + '\tRecall\t' + str(int((100 * len(covering_set)) / equivalence)) + '%')
         return
 
@@ -637,7 +659,7 @@ class DecisionTreeMiner:
         return new_words
 
     def evaluate(self):
-        p_labels = self.classifier.predict(self.feature_vectors, self.labels)
+        p_labels = self.classifier.predict(self.feature_vectors)
         print(metrics.classification_report(self.labels, p_labels))
         return
 
@@ -651,9 +673,10 @@ class DecisionTreeMiner:
         return
 
 
-def decision_tree_mine(encoding_class):
+def decision_tree_mine(encoding_class, prob_threshold):
     """
     Use decision tree to mine the equivalent mutant pattern
+    :param prob_threshold:
     :param encoding_class:
     :return:
     """
@@ -661,19 +684,17 @@ def decision_tree_mine(encoding_class):
     output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\decision_tree'
     if not os.path.exists(output_directory):
         os.mkdir(output_directory)
-    filters = ['md4']
     for file_name in os.listdir(data_directory):
-        if file_name in filters:
-            continue
         program_directory = os.path.join(data_directory, file_name)
         program = cprogram.Program(program_directory)
         data_frame = encode.MutantDataFrame(program, encoding_class())
-        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants from', file_name)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants from', file_name,
+              'with', len(data_frame.words), 'words')
         output_dir = os.path.join(output_directory, file_name)
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         pattern_file = os.path.join(output_dir, file_name + '.dtp')
-        miner = DecisionTreeMiner(0.70)
+        miner = DecisionTreeMiner(prob_threshold)
         miner.mine(data_frame, pattern_file)
         miner.evaluate()
         miner.write_decision_tree(os.path.join(output_dir, file_name + '.pdf'))
@@ -683,6 +704,7 @@ def decision_tree_mine(encoding_class):
 
 if __name__ == '__main__':
     print('Testing start.')
-    evaluate_feature_space(encode.StateInfectionEncode)
-    # composite_pattern_mine(encode.StateErrorSetEncode)
+    # evaluate_feature_space(encode.StateInfectionEncode)
+    # composite_pattern_mine(encode.StateInfectionEncode, 0.70)
+    decision_tree_mine(encode.StateInfectionEncode, 0.50)
     print('Testing end for all.')

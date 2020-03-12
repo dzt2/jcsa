@@ -161,10 +161,11 @@ class StateInfectionEncode:
         :return:
         """
         assertions = self.__get_assertions__(mutant)
-        feature_vec = self.word2int.encodes(assertions)
-        feature_vec.sort()
-        mutant.feature_vec = feature_vec
-        mutant.feature_words = normalize_words(mutant.space.program, assertions)
+        feature_vector = self.word2int.encodes(assertions)
+        feature_vector.sort()
+        feature_words = normalize_words(mutant.space.program, assertions)
+        mutant.feature_vector = feature_vector
+        mutant.feature_words = feature_words
         mutant.label = encode_mutant_label(mutant.label)
         return
 
@@ -211,10 +212,11 @@ class StateErrorSetEncode:
         :return:
         """
         assertions = self.__get_assertions__(mutant)
-        feature_vec = self.word2int.encodes(assertions)
-        feature_vec.sort()
-        mutant.feature_vec = feature_vec
-        mutant.feature_words = normalize_words(mutant.space.program, assertions)
+        feature_vector = self.word2int.encodes(assertions)
+        feature_vector.sort()
+        feature_words = normalize_words(mutant.space.program, assertions)
+        mutant.feature_vector = feature_vector
+        mutant.feature_words = feature_words
         mutant.label = encode_mutant_label(mutant.label)
         return
 

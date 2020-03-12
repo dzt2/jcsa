@@ -18,6 +18,7 @@ import src.cmodel.ccode as ccode
 import src.cmodel.ctoken as ctoken
 import src.cmodel.program as cprogram
 
+
 class Mutant:
     """
     [space, id, class, operator, location, parameter]
@@ -32,7 +33,7 @@ class Mutant:
         self.parameter = parameter
         self.features = None
         self.label = None
-        self.feature_vec = None
+        self.feature_vector = None
         self.feature_words = None
         return
 
