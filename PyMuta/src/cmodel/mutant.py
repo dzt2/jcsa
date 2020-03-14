@@ -19,6 +19,58 @@ import src.cmodel.ctoken as ctoken
 import src.cmodel.program as cprogram
 
 
+# from score string to label
+mutant_labels = dict()
+
+
+class MutantLabels:
+    """
+    score; cluster; label; kill_counter; probability;
+    """
+
+    def __init__(self, score: str, cluster: int):
+        self.score = score
+        self.cluster = cluster
+        self.kill_counter = 0
+        for k in range(0, len(score)):
+            if score[k] == '1':
+                self.kill_counter += 1
+        self.probability = self.kill_counter / (len(score) + 0.0)
+        if self.kill_counter == 0:
+            self.label = 0
+        else:
+            self.label = 1
+        return
+
+    def get_score_string(self):
+        return self.score
+
+    def number_of_tests(self):
+        return len(self.score)
+
+    def is_killed(self, test: int):
+        return self.score[test] == '1'
+
+    def get_cluster_id(self):
+        return self.cluster
+
+    def get_kill_counter(self):
+        return self.kill_counter
+
+    def get_kill_probability(self):
+        return self.probability
+
+    def get_killing_label(self):
+        return self.label
+
+    def set_killing_label_by_probability(self, prob_threshold: float):
+        if self.probability <= prob_threshold:
+            self.label = 0
+        else:
+            self.label = 1
+        return
+
+
 class Mutant:
     """
     [space, id, class, operator, location, parameter]
@@ -32,7 +84,7 @@ class Mutant:
         self.location = location
         self.parameter = parameter
         self.features = None
-        self.label = None
+        self.labels = None
         self.feature_vector = None
         self.feature_words = None
         return
@@ -61,8 +113,8 @@ class Mutant:
     def get_features(self):
         return self.features
 
-    def get_label(self):
-        return self.label
+    def get_labels(self):
+        return self.labels
 
 
 class MutantSpace:
@@ -97,6 +149,7 @@ class MutantSpace:
 
     def __parse_labels__(self, file_path: str):
         first = True
+        mutant_labels.clear()
         with open(file_path, 'r') as reader:
             for line in reader:
                 if first:
@@ -106,9 +159,13 @@ class MutantSpace:
                     if len(line) > 0:
                         items = line.split('\t')
                         id = int(items[0].strip())
-                        label = items[1].strip()
+                        score = items[1].strip()
+                        if score not in mutant_labels:
+                            cluster = len(mutant_labels)
+                            mutant_labels[score] = MutantLabels(score, cluster)
                         mutant = self.mutants[id]
-                        mutant.label = label
+                        mutant.labels = mutant_labels[score]
+        mutant_labels.clear()
         return
 
     def __init__(self, ast_tree: ccode.AstTree, cir_tree: ccode.CirTree, file_path: str,
@@ -129,7 +186,7 @@ class MutantSpace:
 
     def __parse_features__(self, file_path: str):
         with open(file_path, 'r') as reader:
-            lines, mutant = list(), None
+            lines, mutant = list(), self.mutants[0]
             for line in reader:
                 line = line.strip()
                 if line.startswith('[mutant]'):
@@ -384,7 +441,8 @@ def test_mutants():
                     writer.write(str(mutant.parameter) + '\t')
                 else:
                     writer.write('non_parameter\t')
-                writer.write(mutant.label + '\t')
+                writer.write(str(mutant.labels.cluster) + '\t')
+                writer.write(str(mutant.labels.label) + '\t')
                 writer.write('\n')
         print('Testing on', file_name)
     return

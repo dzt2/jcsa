@@ -64,7 +64,7 @@ public class MutaFeatureWriters {
 	private static final String postfx = "results\\data\\";
 	private static final String main_function = "main";
 	private static final int max_layer = 5;
-	private static final double threshold = 1e-3;
+	// private static final double threshold = 1e-3;
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
@@ -538,7 +538,7 @@ public class MutaFeatureWriters {
 		writer.close();
 	}
 	/**
-	 * id label probability
+	 * id score
 	 * @param project
 	 * @param mutant
 	 * @param writer
@@ -548,17 +548,9 @@ public class MutaFeatureWriters {
 		Map<MutationCodeType, MutaTestResult> results = 
 				project.get_results().read_test_results(mutant);
 		MutaTestResult result = results.get(MutationCodeType.Stronger);
-		
-		double kills = result.get_test_result().degree();
-		double total = result.get_test_result().length();
-		double probability = kills / total;
-		
 		writer.write(mutant.get_id() + "\t");
-		if(probability <= threshold) 
-			writer.write("E\t");
-		else 
-			writer.write("N\t");
-		writer.write(probability + "\n");
+		writer.write(result.get_test_result().toString());
+		writer.write("\n");
 	}
 	/**
 	 * id label probability
@@ -571,7 +563,7 @@ public class MutaFeatureWriters {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\tlabel\tprobability\n");
+		writer.write("id\tscore\n");
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			output_mutant_label(project, mutant, writer);
 		}
