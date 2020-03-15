@@ -8,7 +8,6 @@ import src.cmodel.ccode as ccode
 import src.cmodel.program as cprogram
 import src.cmodel.mutant as cmutant
 import scipy.sparse as sparse
-import numpy as np
 
 
 class Word2Integer:
@@ -330,72 +329,6 @@ class MutantDataFrame:
         for mutant in self.program.mutant_space.get_mutants():
             labels.append(mutant.labels.label)
         return labels
-
-
-class MutantCluster:
-    """
-    Set of mutation of which features match the pattern
-    pattern_vector, samples, main_label, distribution
-    """
-
-    @staticmethod
-    def __match__(pattern_vector, feature_vector):
-        for feature in pattern_vector:
-            if feature not in feature_vector:
-                return False
-        return True
-
-    def __init__(self, pattern_vector: list, mutants):
-        pattern_vector.sort()
-        self.pattern_vector = pattern_vector
-        self.samples = list()
-        for mutant in mutants:
-            mutant: cmutant.Mutant
-            if MutantCluster.__match__(self.pattern_vector, mutant.feature_vector):
-                self.samples.append(mutant)
-        self.__evaluate__()
-        return
-
-    def __evaluate__(self):
-        self.distribution = dict()
-        self.distribution[0] = 0
-        self.distribution[1] = 0
-        for mutant in self.samples:
-            mutant: cmutant.Mutant
-            label = mutant.labels.label
-            self.distribution[label] += 1
-        if self.distribution[0] >= self.distribution[1]:
-            self.main_label = 0
-        else:
-            self.main_label = 1
-        return
-
-    def get_support(self, label: int):
-        return self.distribution[label]
-
-    def get_confidence(self, label: int):
-        total_number = self.distribution[0] + self.distribution[1] + 0.0
-        number = self.distribution[label]
-        if number == 0:
-            return 0.0
-        else:
-            return number / total_number
-
-    def __len__(self):
-        return len(self.pattern_vector)
-
-    def __str__(self):
-        return str(self.pattern_vector)
-
-    def get_child(self, feature: int):
-        if feature in self.pattern_vector:
-            return self
-        else:
-            pattern_vector = list()
-            pattern_vector.append(feature)
-            for old_feature in self.pattern_vector:
-                pattern_vector.append(old_feature)
-            return MutantCluster(pattern_vector, self.samples)
 
 
 def test_data_frame():
