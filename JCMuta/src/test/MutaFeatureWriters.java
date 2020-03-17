@@ -52,11 +52,21 @@ import com.jcsa.jcparse.lang.irlang.expr.CirField;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CName;
+import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceEdge;
+import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceGraph;
+import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceNode;
+import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
+import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
+import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
 
 public class MutaFeatureWriters {
 	
@@ -87,6 +97,10 @@ public class MutaFeatureWriters {
 		output_mutant_labels(project, output_directory);
 		output_state_mutations(project, output_directory);
 		System.out.println("\t3. generate the feature info.");
+		
+		output_flow_graphs(project, output_directory);
+		output_influence_graph(project, output_directory);
+		System.out.println("\t4. generate flow graph info.");
 		
 		System.out.println();
 	}
@@ -438,6 +452,144 @@ public class MutaFeatureWriters {
 		writer.write("id\ttype\tast_source\tdata_type\tcontent\tchildren\n");
 		for(CirNode cir_node : cir_tree.get_nodes()) {
 			output_cir_node(cir_node, writer);
+		}
+		writer.close();
+	}
+	
+	/* program writers */
+	/**
+	 * (flow_type source_id target_id)
+	 * @param flow
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_execution_flow(CirExecutionFlow flow, FileWriter writer) throws Exception {
+		writer.write("( ");
+		writer.write(flow.get_type() + " ");
+		writer.write(flow.get_source().toString() + " ");
+		writer.write(flow.get_target().toString() + " ");
+		writer.write(")");
+	}
+	/**
+	 * \t id(string) cir_statement_id flow*
+	 * @param execution
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_execution(CirExecution execution, FileWriter writer) throws Exception {
+		writer.write("\t");
+		writer.write(execution.toString());
+		writer.write("\t");
+		writer.write(execution.get_statement().get_node_id() + "");
+		for(CirExecutionFlow flow : execution.get_ou_flows()) {
+			writer.write("\t");
+			output_execution_flow(flow, writer);
+		}
+		writer.write("\n");
+	}
+	/**
+	 * function name
+	 * 	[execution]+
+	 * end function
+	 * @param function
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_function(CirFunction function, FileWriter writer) throws Exception {
+		writer.write("function\t" + function.get_name() + "\n");
+		for(CirExecution execution : function.get_flow_graph().get_executions()) {
+			output_execution(execution, writer);
+		}
+		writer.write("end function\n");
+	}
+	/**
+	 * function name
+	 * 	exec_id statement_id [flow]*
+	 * end function
+	 * @param project
+	 * @param output_directory
+	 * @throws Exception
+	 */
+	private static void output_flow_graphs(MutaProject project, File output_directory) throws Exception {
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".flw");
+		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
+		
+		CirTree cir_tree = source_file.get_cir_tree();
+		FileWriter writer = new FileWriter(output);
+		writer.write("id\ttype\tast_source\tdata_type\tcontent\tchildren\n");
+		for(CirFunction function : cir_tree.get_function_call_graph().get_functions()) {
+			output_function(function, writer);
+		}
+		writer.close();
+	}
+	/**
+	 * contenxt::cir_source
+	 * @param node
+	 * @return
+	 * @throws Exception
+	 */
+	private static String influence_node_key(CInfluenceNode node) throws Exception {
+		String context = node.get_instance_context().hashCode() + "::";
+		String cir_source = node.get_cir_source().get_node_id() + "";
+		return context + cir_source;
+	}
+	/**
+	 * [ type source target ]
+	 * @param edge
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_influence_edge(CInfluenceEdge edge, FileWriter writer) throws Exception {
+		writer.write("[");
+		writer.write(" " + edge.get_type().toString());
+		writer.write(" " + influence_node_key(edge.get_source()));
+		writer.write(" " + influence_node_key(edge.get_target()));
+		writer.write(" ]");
+	}
+	/**
+	 * id type execution cir_source [type source target]*
+	 * @param node
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_influence_node(CInfluenceNode node, FileWriter writer) throws Exception {
+		String id = influence_node_key(node);
+		String type = node.get_node_type().toString();
+		String execution = node.get_execution().toString();
+		String cir_source = node.get_cir_source().get_node_id() + "";
+		
+		writer.write(id);
+		writer.write("\t" + type);
+		writer.write("\t" + execution);
+		writer.write("\t" + cir_source);
+		for(CInfluenceEdge edge : node.get_ou_edges()) {
+			writer.write("\t");
+			output_influence_edge(edge, writer);
+		}
+		writer.write("\n");
+	}
+	/**
+	 * id type execution cir_source [type source target]*
+	 * @param project
+	 * @param output_directory
+	 * @throws Exception
+	 */
+	private static void output_influence_graph(MutaProject project, File output_directory) throws Exception {
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".inf");
+		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
+		
+		CirTree cir_tree = source_file.get_cir_tree();
+		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
+		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1);
+		CInfluenceGraph influence_graph = CInfluenceGraph.graph(program_graph);
+		
+		FileWriter writer = new FileWriter(output);
+		writer.write("id\ttype\texecution\tcir_source\tedges\n");
+		for(CirInstanceNode instance : influence_graph.get_instances()) {
+			for(CInfluenceNode influence_node : influence_graph.get_nodes(instance)) {
+				output_influence_node(influence_node, writer);
+			}
 		}
 		writer.close();
 	}

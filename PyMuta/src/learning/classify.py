@@ -609,12 +609,12 @@ def composition_search_mining(get_assertions, assertion_encode, prob_threshold,
 
 if __name__ == '__main__':
     print('Testing start.')
-    # evaluate_classifier(encode.SemanticAssertionEncode.get_infection_assertions,
-    #                    encode.SemanticAssertionEncode.get_assertion_source_code, 0.002)
+    evaluate_classifier(encode.SemanticAssertionEncode.get_infection_assertions,
+                        encode.SemanticAssertionEncode.get_assertion_source_code, 0.005)
     # decision_tree_mine(encode.SemanticAssertionEncode.get_infection_assertions,
-    #                   encode.SemanticAssertionEncode.get_assertion_source_code, 0.002,
+    #                   encode.SemanticAssertionEncode.get_assertion_source_code, 0.005,
     #                   min_samples=1, min_confidence=0.60)
     composition_search_mining(encode.SemanticAssertionEncode.get_infection_assertions,
-                              encode.SemanticAssertionEncode.get_assertion_source_code, 0.002,
-                              4, 1, 0.60, 12)
+                              encode.SemanticAssertionEncode.get_assertion_source_code, 0.005,
+                              4, 1, 0.60, 16)
     print('Testing end.')
