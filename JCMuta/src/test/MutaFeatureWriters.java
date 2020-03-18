@@ -73,7 +73,7 @@ public class MutaFeatureWriters {
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
 	private static final String postfx = "results\\data\\";
 	private static final String main_function = "main";
-	private static final int max_layer = 5;
+	private static final int max_layer = 0;
 	// private static final double threshold = 1e-3;
 	
 	public static void main(String[] args) throws Exception {
@@ -863,7 +863,7 @@ public class MutaFeatureWriters {
 		}
 		
 		if(mutation != null) {
-			StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, max_layer);
+			StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, false, max_layer);
 			writer.write("[cover]");
 			for(SemanticAssertion assertion : graph.get_reach_constraints().get_constraints()) {
 				writer.write("\t");

@@ -66,7 +66,7 @@ public class StateErrorProcessTest {
 				}
 				
 				if(mutation != null) {
-					StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, 16);
+					StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, true, 16);
 					writer.write("Mutant#" + mutant.get_id() + "\t");
 					writer.write(mutant.get_mutation().get_mutation_class() + "\n");
 					for(StateInfection infection : graph.get_infections()) {

@@ -52,6 +52,7 @@ import com.jcsa.jcmuta.mutant.sem2mutation.error.process.SMT_RProcess;
 import com.jcsa.jcmuta.mutant.sem2mutation.error.process.SUB_LProcess;
 import com.jcsa.jcmuta.mutant.sem2mutation.error.process.SUB_RProcess;
 import com.jcsa.jcmuta.mutant.sem2mutation.error.process.WAT_FProcess;
+import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticAssertion;
 import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticMutation;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -169,33 +170,48 @@ public class StateErrorProcesses {
 			this.influence_graph = CInfluenceGraph.graph(program_graph);
 		}
 	}
-	public StateErrorGraph process(SemanticMutation mutation, int layer) throws Exception {
+	public StateErrorGraph process(SemanticMutation mutation, boolean extend, int layer) throws Exception {
 		StateErrorGraph graph = new StateErrorGraph(mutation);
 		for(StateInfection infection : graph.get_infections()) {
 			this.propagate(infection.get_state_error(), layer);
 		}
-		this.extend_constraints(graph);
+		this.extend_constraints(graph, extend);
 		return graph;
 	}
-	private void extend_constraints(StateErrorGraph graph) throws Exception {
-		graph.reach_constraints = ConstraintExtension.get_constraint(cir_tree, 
-				program_graph, influence_graph, graph.mutation.get_reachability());
-		
-		for(StateInfection infection : graph.infections) {
-			ConstraintSet constraints = ConstraintExtension.get_constraint(cir_tree, 
-					program_graph, influence_graph, infection.get_assertions());
-			infection.constraint_set = constraints;
-		}
-		
-		/** DO NOT extend the following constraint **/
-		for(StateError error_node : graph.get_errors()) {
-			for(StateErrorFlow flow : error_node.get_in_flows()) {
-				ConstraintSet constraints = new ConstraintSet(flow.get_assertions());
-				flow.constraint_set = constraints;
+	private void extend_constraints(StateErrorGraph graph, boolean extend) throws Exception {
+		if(extend) {
+			graph.reach_constraints = ConstraintExtension.get_constraint(cir_tree, 
+					program_graph, influence_graph, graph.mutation.get_reachability());
+			
+			for(StateInfection infection : graph.infections) {
+				ConstraintSet constraints = ConstraintExtension.get_constraint(cir_tree, 
+						program_graph, influence_graph, infection.get_assertions());
+				infection.constraint_set = constraints;
 			}
-			for(StateErrorFlow flow : error_node.get_ou_flows()) {
-				ConstraintSet constraints = new ConstraintSet(flow.get_assertions());
-				flow.constraint_set = constraints;
+			
+			for(StateError error_node : graph.get_errors()) {
+				for(StateErrorFlow flow : error_node.get_in_flows()) {
+					ConstraintSet constraints = ConstraintExtension.get_constraint(cir_tree, 
+							program_graph, influence_graph, flow.get_assertions());
+					flow.constraint_set = constraints;
+				}
+			}
+		}
+		else {
+			List<SemanticAssertion> reach_assertion = new ArrayList<SemanticAssertion>();
+			reach_assertion.add(graph.mutation.get_reachability());
+			graph.reach_constraints = new ConstraintSet(reach_assertion);
+			
+			for(StateInfection infection : graph.infections) {
+				ConstraintSet constraints = new ConstraintSet(infection.get_assertions());
+				infection.constraint_set = constraints;
+			}
+			
+			for(StateError error_node : graph.get_errors()) {
+				for(StateErrorFlow flow : error_node.get_in_flows()) {
+					ConstraintSet constraints = new ConstraintSet(flow.get_assertions());
+					flow.constraint_set = constraints;
+				}
 			}
 		}
 	}
