@@ -226,36 +226,33 @@ class SemanticAssertionEncodeFunctions:
     def get_infection_assertions(mutant: cmutant.Mutant):
         assertions = set()
         features = mutant.features
-        features: cmutant.StateErrorGraph
-        if len(features.infections) > 0:
-            for infection in features.infections:
-                infection: cmutant.StateErrorFlow
-                for constraint in infection.get_constraints():
-                    assertions.add(constraint)
-                for state_error in infection.get_target().assertions:
-                    assertions.add(state_error)
-        elif features.get_reachability() is not None:
-            for assertion in features.reachability:
-                assertions.add(assertion)
+        features: cmutant.SemanticErrorGraph
+        if len(features) > 0:
+            entry = features.get_node(0)
+            entry: cmutant.SemanticErrorNode
+            for edge in entry.get_ou_edges():
+                edge: cmutant.SemanticErrorEdge
+                for assertion in edge.assertions:
+                    assertions.add(assertion)
+                node = edge.get_target()
+                node: cmutant.SemanticErrorNode
+                for assertion in node.assertions:
+                    assertions.add(assertion)
         return assertions
 
     @staticmethod
     def get_all_error_assertions(mutant: cmutant.Mutant):
         assertions = set()
         features = mutant.features
-        features: cmutant.StateErrorGraph
-        if len(features.infections) > 0:
-            for state_error in features.get_errors():
-                state_error: cmutant.StateError
-                for assertion in state_error.get_assertions():
-                    assertions.add(assertion)
-                for flow in state_error.in_flows:
-                    flow: cmutant.StateErrorFlow
-                    for assertion in flow.get_constraints():
-                        assertions.add(assertion)
-        elif features.get_reachability() is not None:
-            for assertion in features.reachability:
+        features: cmutant.SemanticErrorGraph
+        for error_node in features.get_nodes():
+            error_node: cmutant.SemanticErrorNode
+            for assertion in error_node.assertions:
                 assertions.add(assertion)
+            for edge in error_node.get_ou_edges():
+                edge: cmutant.SemanticErrorEdge
+                for assertion in edge.assertions:
+                    assertions.add(assertion)
         return assertions
 
 
@@ -334,7 +331,7 @@ def test_data_frame():
     output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output'
     for file_name in os.listdir(data_directory):
         program_directory = os.path.join(data_directory, file_name)
-        encoder = MutantFeatureEncoder(SemanticAssertionEncodeFunctions.get_infection_assertions,
+        encoder = MutantFeatureEncoder(SemanticAssertionEncodeFunctions.get_all_error_assertions,
                                        SemanticAssertionEncodeFunctions.get_assertion_instance, 0.005)
         data_frame = MutantDataFrame(program_directory, encoder)
         encoder.word2int.save(os.path.join(output_directory, data_frame.get_name() + '.txt'))

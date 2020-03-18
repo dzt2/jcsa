@@ -195,7 +195,7 @@ class MutantSpace:
                     mutant = self.mutants[int(items[1].strip())]
                 lines.append(line)
                 if line.startswith('[end_mutant]'):
-                    feature = StateErrorGraph(self.assertions, lines)
+                    feature = SemanticErrorGraph(mutant, lines)
                     mutant: Mutant
                     mutant.features = feature
         return
@@ -285,12 +285,18 @@ class SemanticAssertions:
         return self.assertions.values()
 
 
-class StateErrorFlow:
-    def __init__(self, source, target, constraints):
+class SemanticErrorEdge:
+    """
+    [assertions, source, target]
+    """
+    def __init__(self, assertions, source, target):
+        self.assertions = assertions
         self.source = source
         self.target = target
-        self.constraints = constraints
         return
+
+    def get_assertions(self):
+        return self.assertions
 
     def get_source(self):
         return self.source
@@ -298,126 +304,105 @@ class StateErrorFlow:
     def get_target(self):
         return self.target
 
-    def get_constraints(self):
-        return self.constraints
 
-    def is_infection(self):
-        return self.source is None
-
-
-class StateError:
-    def __init__(self, graph, id: int, location: ccode.CirNode, assertions: list):
+class SemanticErrorNode:
+    """
+    [graph, id, assertions, in_edges, ou_edges]
+    """
+    def __init__(self, graph, id: int, location, assertions):
         self.graph = graph
-        self.id = id
         self.location = location
+        self.id = id
         self.assertions = assertions
-        self.in_flows = list()
-        self.ou_flows = list()
+        self.in_edges = list()
+        self.ou_edges = list()
         return
 
     def get_graph(self):
         return self.graph
 
-    def get_id(self):
-        return self.id
-
     def get_location(self):
         return self.location
 
-    def get_assertions(self):
-        return self.assertions
-
-    def is_empty(self):
-        return len(self.assertions) == 0
-
-    def link(self, constraints: list, target):
-        target: StateError
-        flow = StateErrorFlow(self, target, constraints)
-        self.ou_flows.append(flow)
-        target.in_flows.append(flow)
-        return flow
-
-
-class StateErrorGraph:
-    def __init__(self, assertions: SemanticAssertions, lines: list):
-        self.assertions = assertions
-        self.reachability = None
-        self.errors = dict()
-        self.infections = list()
-        self.__parse_nodes__(lines)
-        self.__parse_flows__(lines)
-        return
-
-    def get_reachability(self):
-        return self.reachability
+    def get_id(self):
+        return self.id
 
     def get_assertions(self):
         return self.assertions
 
-    def get_errors(self):
-        return self.errors.values()
+    def get_in_edges(self):
+        return self.in_edges
 
-    def get_infections(self):
-        return self.infections
+    def get_ou_edges(self):
+        return self.ou_edges
 
-    def __parse_nodes__(self, lines: list):
-        for line in lines:
-            line: str
-            line = line.strip()
-            if len(line) > 0:
-                items = line.split('\t')
-                if items[0].strip() == '[node]':
-                    id = int(items[1].strip())
-                    id_string = items[2].strip()
-                    location = None
-                    if len(id_string) > 0:
-                        index = id_string.index('#')
-                        id_string = id_string[index + 1:].strip()
-                        location = self.assertions.cir_tree.nodes[int(id_string)]
-                    assertions = list()
-                    for index in range(3, len(items)):
-                        ass_string = items[index].strip()
-                        if len(ass_string) > 0:
-                            assertion = self.assertions.get_assertion(ass_string)
-                            assertions.append(assertion)
-                    error = StateError(self, id, location, assertions)
-                    self.errors[id] = error
-                elif items[0].strip() == '[cover]':
-                    self.reachability = list()
-                    for k in range(1, len(items)):
-                        self.reachability.append(self.assertions.get_assertion(items[k].strip()))
+    def link_to(self, target, assertions):
+        target: SemanticErrorNode
+        edge = SemanticErrorEdge(assertions, self, target)
+        self.ou_edges.append(edge)
+        target.in_edges.append(edge)
+        return edge
+
+
+class SemanticErrorGraph:
+    """
+    [mutant, nodes]
+    """
+    def __init__(self, mutant: Mutant, error_lines: list):
+        self.mutant = mutant
+        self.nodes = dict()
+        self.__parse_nodes__(mutant.space.assertions, error_lines)
+        self.__parse_edges__(mutant.space.assertions, error_lines)
         return
 
-    def __parse_flows__(self, lines: list):
-        for line in lines:
-            line: str
-            line = line.strip()
-            if len(line) > 0:
+    def get_mutant(self):
+        return self.mutant
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def get_nodes(self):
+        return self.nodes.values()
+
+    def get_node(self, id: int):
+        return self.nodes[id]
+
+    def __parse_nodes__(self, assertions: SemanticAssertions, error_lines: list):
+        self.nodes.clear()
+        for error_line in error_lines:
+            error_line: str
+            line = error_line.strip()
+            if line.startswith("[node]"):
                 items = line.split('\t')
-                if items[0].strip() == '[flow]':
-                    source = self.errors[int(items[1].strip())]
-                    target = self.errors[int(items[2].strip())]
-                    assertions = list()
-                    for index in range(3, len(items)):
-                        ass_string = items[index].strip()
-                        if len(ass_string) > 0:
-                            assertion = self.assertions.get_assertion(ass_string)
-                            assertions.append(assertion)
-                    source: StateError
-                    source.link(assertions, target)
-                elif items[0].strip() == '[infect]':
-                    source = None
-                    target = self.errors[int(items[1].strip())]
-                    assertions = list()
-                    for index in range(2, len(items)):
-                        ass_string = items[index].strip()
-                        if len(ass_string) > 0:
-                            assertion = self.assertions.get_assertion(ass_string)
-                            assertions.append(assertion)
-                    flow = StateErrorFlow(source, target, assertions)
-                    target: StateError
-                    self.infections.append(flow)
-                    target.in_flows.append(flow)
+                id = int(items[1].strip())
+                cir_node = None
+                if len(items) > 2 and len(items[2].strip()) > 0:
+                    index = items[2].index('#')
+                    cir_id = int(items[2][index + 1:].strip())
+                    cir_node = assertions.cir_tree.nodes[cir_id]
+                assertion_list = list()
+                for k in range(3, len(items)):
+                    assertion = assertions.get_assertion(items[k].strip())
+                    assertion_list.append(assertion)
+                error_node = SemanticErrorNode(self, id, cir_node, assertion_list)
+                self.nodes[error_node.id] = error_node
+        return
+
+    def __parse_edges__(self, assertions: SemanticAssertions, error_lines: list):
+        for error_line in error_lines:
+            error_line: str
+            line = error_line.strip()
+            if line.startswith("[flow]"):
+                items = line.split('\t')
+                source = self.nodes[int(items[1].strip())]
+                target = self.nodes[int(items[2].strip())]
+                assertion_list = list()
+                for k in range(3, len(items)):
+                    assertion = assertions.get_assertion(items[k].strip())
+                    assertion_list.append(assertion)
+                source: SemanticErrorNode
+                target: SemanticErrorNode
+                source.link_to(target, assertion_list)
         return
 
 
