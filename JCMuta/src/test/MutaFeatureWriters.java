@@ -74,7 +74,7 @@ public class MutaFeatureWriters {
 	private static final String main_function = "main";
 	private static final int max_layer = 2;
 	private static final boolean extend_error = true;
-	private static final boolean extend_constraint = false;
+	private static final boolean extend_constraint = true;
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
