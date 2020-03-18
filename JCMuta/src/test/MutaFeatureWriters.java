@@ -12,13 +12,12 @@ import com.jcsa.jcmuta.MutaOperator;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.code2mutation.MutationCodeType;
 import com.jcsa.jcmuta.mutant.sem2mutation.SemanticMutationParsers;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateError;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateErrorFlow;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateErrorGraph;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateErrorProcesses;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateInfection;
 import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticAssertion;
 import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticMutation;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorBuilder;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorEdge;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorGraph;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorNode;
 import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.MutaTestResult;
@@ -73,8 +72,9 @@ public class MutaFeatureWriters {
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
 	private static final String postfx = "results\\data\\";
 	private static final String main_function = "main";
-	private static final int max_layer = 0;
-	// private static final double threshold = 1e-3;
+	private static final int max_layer = 2;
+	private static final boolean extend_error = true;
+	private static final boolean extend_constraint = false;
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
@@ -764,12 +764,12 @@ public class MutaFeatureWriters {
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_error_flow(StateErrorFlow flow, FileWriter writer) throws Exception {
+	private static void output_error_flow(SemanticErrorEdge flow, FileWriter writer) throws Exception {
 		writer.write("[flow]");
 		writer.write("\t" + flow.get_source().get_id());
 		writer.write("\t" + flow.get_target().get_id());
 		
-		for(SemanticAssertion constraint : flow.get_constraints().get_constraints()) {
+		for(SemanticAssertion constraint : flow.get_constraint().get_assertions()) {
 			writer.write("\t");
 			output_semantic_assertion(constraint, writer);
 		}
@@ -785,7 +785,7 @@ public class MutaFeatureWriters {
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_state_error(StateError error, FileWriter writer) throws Exception {
+	private static void output_state_error(SemanticErrorNode error, FileWriter writer) throws Exception {
 		writer.write("[error]\n");
 		
 		writer.write("\t[node]");
@@ -800,7 +800,7 @@ public class MutaFeatureWriters {
 		}
 		writer.write("\n");
 		
-		for(StateErrorFlow flow : error.get_ou_flows()) {
+		for(SemanticErrorEdge flow : error.get_ou_edges()) {
 			writer.write("\t");
 			output_error_flow(flow, writer);
 			writer.write("\n");
@@ -809,36 +809,16 @@ public class MutaFeatureWriters {
 		writer.write("[end_error]\n");
 	}
 	/**
-	 * [infect] error (assertion)*
-	 * @param infection
-	 * @param writer
-	 * @throws Exception
-	 */
-	private static void output_infection(StateInfection infection, FileWriter writer) throws Exception {
-		writer.write("[infect]");
-		writer.write("\t" + infection.get_state_error().get_id());
-		for(SemanticAssertion constraint : infection.get_constraints().get_constraints()) {
-			writer.write("\t");
-			output_semantic_assertion(constraint, writer);
-		}
-		writer.write("\n");
-	}
-	/**
-	 * [graph]
-	 * [infect] ...
-	 * [infect] ...
+	 * [graph] size
 	 * [error]......[end_error]*
 	 * [end_graph]
 	 * @param graph
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_state_errors(StateErrorGraph graph, FileWriter writer) throws Exception {
-		writer.write("[graph]\n");
-		for(StateInfection infection : graph.get_infections()) {
-			output_infection(infection, writer);
-		}
-		for(StateError error : graph.get_errors()) {
+	private static void output_state_errors(SemanticErrorGraph graph, FileWriter writer) throws Exception {
+		writer.write("[graph]\t" + graph.size() + "\n");
+		for(SemanticErrorNode error : graph.get_nodes()) {
 			output_state_error(error, writer);
 		}
 		writer.write("[end_graph]\n");
@@ -852,8 +832,6 @@ public class MutaFeatureWriters {
 	 * @throws Exception
 	 */
 	private static void output_state_mutation(Mutant mutant, FileWriter writer) throws Exception {
-		writer.write("[mutant]\t" + mutant.get_id() + "\n");
-		
 		SemanticMutation mutation = null; 
 		try {
 			mutation = SemanticMutationParsers.parse(mutant);
@@ -862,14 +840,10 @@ public class MutaFeatureWriters {
 			// System.out.println("\t\t==> Error at Mu#" + mutant.get_id());
 		}
 		
+		writer.write("[mutant]\t" + mutant.get_id() + "\n");
 		if(mutation != null) {
-			StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, false, max_layer);
-			writer.write("[cover]");
-			for(SemanticAssertion assertion : graph.get_reach_constraints().get_constraints()) {
-				writer.write("\t");
-				output_semantic_assertion(assertion, writer);
-			}
-			writer.write("\n");
+			SemanticErrorGraph graph = SemanticErrorBuilder.builder.
+					build(mutation, extend_error, max_layer, extend_constraint);
 			output_state_errors(graph, writer);
 		}
 		
@@ -880,11 +854,11 @@ public class MutaFeatureWriters {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
-		StateErrorProcesses.processes.open(source_file.get_cir_tree(), main_function);
+		SemanticErrorBuilder.builder.open(source_file.get_cir_tree(), main_function);
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			output_state_mutation(mutant, writer);
 		}
-		StateErrorProcesses.processes.close();
+		SemanticErrorBuilder.builder.close();
 		writer.close();
 	}
 	

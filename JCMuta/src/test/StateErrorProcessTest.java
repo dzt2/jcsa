@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmuta.mutant.sem2mutation.SemanticMutationParsers;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateError;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateErrorGraph;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateErrorProcesses;
-import com.jcsa.jcmuta.mutant.sem2mutation.error.StateInfection;
 import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticMutation;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorBuilder;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorEdge;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorGraph;
+import com.jcsa.jcmuta.mutant.sem2mutation.sem.SemanticErrorNode;
 import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.Mutant;
@@ -55,7 +55,7 @@ public class StateErrorProcessTest {
 		FileWriter writer = new FileWriter(output);
 		
 		for(MutaSourceFile source_file : project.get_source_files().get_source_files()) {
-			StateErrorProcesses.processes.open(source_file.get_cir_tree(), "main");
+			SemanticErrorBuilder.builder.open(source_file.get_cir_tree(), "main");
 			for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 				SemanticMutation mutation;
 				try {
@@ -66,12 +66,12 @@ public class StateErrorProcessTest {
 				}
 				
 				if(mutation != null) {
-					StateErrorGraph graph = StateErrorProcesses.processes.process(mutation, true, 16);
+					SemanticErrorGraph graph = SemanticErrorBuilder.builder.build(mutation, true, 12, false);
 					writer.write("Mutant#" + mutant.get_id() + "\t");
 					writer.write(mutant.get_mutation().get_mutation_class() + "\n");
-					for(StateInfection infection : graph.get_infections()) {
-						StateError state_error = infection.get_state_error();
-						if(state_error.number_of_assertions() > 0) {
+					for(SemanticErrorEdge infection : graph.get_infection_edges()) {
+						SemanticErrorNode state_error = infection.get_target();
+						if(!state_error.is_empty()) {
 							writer.write("\t");
 							writer.write(state_error.toString());
 							writer.write("\n");
@@ -80,7 +80,7 @@ public class StateErrorProcessTest {
 					writer.write("\n");
 				}
 			}
-			StateErrorProcesses.processes.close();
+			SemanticErrorBuilder.builder.close();
 		}
 		
 		writer.close();
