@@ -1,8 +1,8 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.relation;
 
 /**
- * The edge in relational graph of the C-like intermediate representation describes the relationship
- * between the program elements, which can be one of the following types:<br>
+ * The type of the edge in relational graph describes the relationship between program element in C-like
+ * intermediate representation, which can be one of the following categories:<br>
  * <br>
  * -----------------------------------------------------------------------------------------------------<br>
  * 	(1)	<code>condition</code>: the source node is a conditional statement (e.g. <code>CirIfStatement</code>
@@ -48,43 +48,30 @@ package com.jcsa.jcparse.lopt.analysis.flow;
  * @author yukimula
  *
  */
-public class CRelationEdge {
+public enum CRelationEdgeType {
 	
-	/* attributes */
-	/** the type of the edge in relational graph **/
-	private CRelationEdgeType type;
-	/** the source node from which the edge points to the target **/
-	private CRelationNode source;
-	/** the target node to which this edge points from the source **/
-	private CRelationNode target;
+	/* parent-child relation */
+	/** if_statement ==> if_statement.condition **/				condition,
+	/** assign_statement ==> assign_statement.lvalue **/		left_value,
+	/** assign_statement ==> assign_statement.rvalue **/		right_value,
+	/** expression ==(AST)==> reference **/						refer_include,
+	/** reference ==(AST)==> reference **/						value_include,
 	
-	/* constructor */
-	/**
-	 * create an edge from the source node to the target node in relational graph 
-	 * with respect to the specified type
-	 * @param type
-	 * @param source
-	 * @param target
-	 */
-	protected CRelationEdge(CRelationEdgeType type, CRelationNode source, CRelationNode target) {
-		this.type = type; this.source = source; this.target = target;
-	}
+	/* propagation flow */
+	/** if_statement.condition ==> statement **/				transit_true,
+	/** if_statement.condition ==> statement **/				transit_false,
+	/** assignment.lvalue ==> statement2.reference **/			define_use,
+	/** assignment.rvalue ==> assignment.lvalue **/				use_define,
+	/** call_statement.argument ==> init_assign.lvalue **/		pass_in,
+	/** retr_assign.lvalue ==> wait_assign.rvalue **/			pass_ou,
 	
-	/* getters */
-	/**
-	 * get the type of the edge
-	 * @return
-	 */
-	public CRelationEdgeType get_type() { return type; }
-	/**
-	 * get the source node from which the edge points to another
-	 * @return
-	 */
-	public CRelationNode get_source() { return source; }
-	/**
-	 * get the target node to which the edge points from source
-	 * @return
-	 */
-	public CRelationNode get_target() { return target; }
+	/* interprocedural flow */
+	/** call_statement ==> wait_statement **/					wait_point,
+	/** retr_statement ==> wait_statement **/					retr_point,
+	/** call_statement ==> init_assignment **/					pass_point,
+	/** wait_expression ==> wait_expression.operand 
+	 *  call_statement ==> call_statement.function **/			function,
+	/** wait_expression.operand ==> call_statement.argument
+	 *  call_statement.function ==> call_statement.argument **/	argument,
 	
 }

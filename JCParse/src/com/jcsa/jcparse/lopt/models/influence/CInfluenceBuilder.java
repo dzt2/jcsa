@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.influence;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -22,6 +22,9 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.relation.CRelationEdge;
+import com.jcsa.jcparse.lopt.models.relation.CRelationGraph;
+import com.jcsa.jcparse.lopt.models.relation.CRelationNode;
 
 /**
  * Used to build up the program influence graph.

@@ -12,14 +12,14 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.parse.CTranslate;
-import com.jcsa.jcparse.lopt.analysis.flow.CDominanceGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CDominanceNode;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceNode;
 
 public class CDominanceTest {
 	

@@ -59,13 +59,13 @@ import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CName;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceNode;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
 
 public class MutaInformationWriters {
 	

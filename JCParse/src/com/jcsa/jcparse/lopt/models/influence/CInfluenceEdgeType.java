@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.influence;
 
 /**
  * The type of the influence edge in influence graph can be one of the following type:<br>

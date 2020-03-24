@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.relation;
 
 /**
  * Each node in relational graph represents a program element in testing, including:<br>

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.relation;
 
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
@@ -26,6 +26,11 @@ import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.defuse.CDefineUseEdge;
+import com.jcsa.jcparse.lopt.models.defuse.CDefineUseGraph;
+import com.jcsa.jcparse.lopt.models.defuse.CDefineUseNode;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceNode;
 
 /**
  * To build up the relational graph based on dominance and use-define relationships

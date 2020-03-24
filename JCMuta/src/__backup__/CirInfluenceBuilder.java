@@ -8,11 +8,11 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.relation.CRelationEdge;
+import com.jcsa.jcparse.lopt.models.relation.CRelationGraph;
+import com.jcsa.jcparse.lopt.models.relation.CRelationNode;
 
 /**
  * Used to generate the influence graph of C-like intermediate representation.

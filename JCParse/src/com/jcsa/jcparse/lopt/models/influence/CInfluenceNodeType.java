@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.influence;
 
 /**
  * The type of influence node relies on the type of CirNode.

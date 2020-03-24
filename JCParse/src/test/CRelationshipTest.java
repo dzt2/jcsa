@@ -12,14 +12,14 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.parse.CTranslate;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CRelationNode;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.relation.CRelationEdge;
+import com.jcsa.jcparse.lopt.models.relation.CRelationGraph;
+import com.jcsa.jcparse.lopt.models.relation.CRelationNode;
 
 public class CRelationshipTest {
 	

@@ -15,11 +15,11 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
 
 /**
  * Used to extend the constraint set.

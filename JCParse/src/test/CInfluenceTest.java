@@ -9,14 +9,14 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.parse.CTranslate;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceNode;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
 
 /**
  * Used to test the parsing and structure of influence graph.

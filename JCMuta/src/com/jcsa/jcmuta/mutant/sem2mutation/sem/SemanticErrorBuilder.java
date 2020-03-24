@@ -79,13 +79,13 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceEdge;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceGraph;
-import com.jcsa.jcparse.lopt.analysis.flow.CInfluenceNode;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
+import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
 
 /**
  * To build up the semantic error graph

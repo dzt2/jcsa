@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.defuse;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;

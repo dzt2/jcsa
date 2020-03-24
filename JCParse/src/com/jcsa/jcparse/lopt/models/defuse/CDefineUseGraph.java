@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lopt.analysis.flow;
+package com.jcsa.jcparse.lopt.models.defuse;
 
 import java.util.Collection;
 import java.util.HashMap;
