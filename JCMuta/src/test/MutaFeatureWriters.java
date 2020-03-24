@@ -593,7 +593,7 @@ public class MutaFeatureWriters {
 		}
 		writer.close();
 	}
-	
+	 
 	/* mutant writers */
 	private static String get_mutant_parameter(AstMutation mutation) throws Exception {
 		switch(mutation.get_mutation_class()) {
