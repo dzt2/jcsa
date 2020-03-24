@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ClangStandard;
 public class ASTCodeTest {
 	
 	protected static final String prefix = "D:\\SourceCode\\MyData\\CODE2\\ifiles";
-	protected static final String postfx = "D:\\SourceCode\\MyData\\CODE2\\gfiles\\";
+	protected static final String postfx = "D:\\SourceCode\\MyData\\CODE2\\gfiles\\"; 
 
 	public static void main(String[] args) throws Exception {
 		File dir = new File(prefix);
