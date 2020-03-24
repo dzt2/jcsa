@@ -328,15 +328,18 @@ class MutantDataFrame:
 
 def test_data_frame():
     data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
-    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\mutation'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
     for file_name in os.listdir(data_directory):
         program_directory = os.path.join(data_directory, file_name)
         encoder = MutantFeatureEncoder(SemanticAssertionEncodeFunctions.get_all_error_assertions,
-                                       SemanticAssertionEncodeFunctions.get_assertion_instance, 0.005)
+                                       SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005)
         data_frame = MutantDataFrame(program_directory, encoder)
-        encoder.word2int.save(os.path.join(output_directory, data_frame.get_name() + '.txt'))
+        # encoder.word2int.save(os.path.join(output_directory, data_frame.get_name() + '.txt'))
         print('Load', len(data_frame.get_mutants()), 'mutants from', data_frame.get_name(),
               'with', len(data_frame.words), 'words')
+        data_frame.program.mutant_space.output(os.path.join(output_directory, file_name + ".mut"))
     return
 
 

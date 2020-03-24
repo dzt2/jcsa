@@ -290,8 +290,14 @@ class CInfluenceGraph:
     def get_node(self, id: str):
         return self.nodes[id]
 
+    def has_nodes_of(self, cir_source: ccode.CirNode):
+        return cir_source in self.cir_index
+
     def get_nodes_of(self, cir_source: ccode.CirNode):
-        return self.cir_index[cir_source]
+        if cir_source in self.cir_index:
+            return self.cir_index[cir_source]
+        else:
+            return list()
 
     def __parse_nodes__(self, file_path: str):
         self.nodes.clear()

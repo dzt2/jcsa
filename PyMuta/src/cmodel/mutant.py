@@ -200,6 +200,42 @@ class MutantSpace:
                     mutant.features = feature
         return
 
+    def output(self, file_path: str):
+        """
+        [id, class, operator, line, code_segment, parameter, feature_words, kills, probability]
+        :param file_path:
+        :return:
+        """
+        source_code = self.program.source_code
+        source_code: ccode.SourceCode
+        with open(file_path, 'w') as writer:
+            writer.write("id\tclass\toperator\tline\toriginal_code\tparameter\tfeatures\tkills\tprobability\n")
+            for key, mutant in self.mutants.items():
+                writer.write(str(mutant.id) + "\t")
+                writer.write(mutant.get_muta_class() + "\t")
+                writer.write(mutant.get_muta_operator() + "\t")
+                location = mutant.get_location()
+                location: ccode.AstNode
+                line = source_code.line_of(location.beg_index) + 1
+                writer.write(str(line) + "\t")
+                writer.write(location.get_code(True) + "\t")
+                if mutant.has_parameter():
+                    writer.write(str(mutant.parameter))
+                writer.write("\t")
+                if mutant.feature_words is not None:
+                    writer.write(str(mutant.feature_words))
+                writer.write("\t")
+                writer.write(str(mutant.labels.kill_counter) + "\t")
+                writer.write(str(mutant.labels.probability) + "\t")
+                writer.write("\n")
+        return
+
+
+__error_functions__ = {
+    "trapping", "active", "disactive", "mut_value", "not_value", "set_bool", "set_value",
+    "neg_value", "rsv_value", "dif_value", "inc_value", "dec_value", "mut_refer"
+}
+
 
 class SemanticAssertion:
     """
@@ -230,6 +266,12 @@ class SemanticAssertion:
                 text += '; '
         text += ')'
         return text
+
+    def is_state_error(self):
+        return self.function in __error_functions__
+
+    def is_constraint(self):
+        return self.function not in __error_functions__
 
 
 class SemanticAssertions:

@@ -3,6 +3,7 @@ import math
 import pydotplus
 from six import StringIO
 import src.cmodel.ccode as ccode
+import src.cmodel.cflow as cflow
 import src.cmodel.mutant as cmutant
 import src.mining.encode as encode
 import sklearn.metrics as metrics
@@ -389,7 +390,7 @@ class MutantPatterns:
                     distribution = MutantClassification.get_label_distribution(pattern.mutants)
                     writer.write(str(distribution[0]) + '\t')
                     writer.write(str(distribution[1]) + '\t')
-                    writer.write(str(MutantClassification.get_confidence(pattern.mutants, 0)) + '\t')
+                    writer.write(str(MutantClassification.get_confidence(pattern.mutants, target_label)) + '\t')
                     mutant_list = list()
                     for mutant in pattern.mutants:
                         if mutant.labels.label == target_label:
@@ -404,6 +405,182 @@ class MutantPatterns:
                              str(len(self.patterns)) + '\tCovering\t' + str(len(mutants_set))
                              + '\tPrecision\t' + str(int((100 * len(mutants_set)) / len(predict_set))) + '%'
                              + '\tRecall\t' + str(int((100 * len(mutants_set)) / equivalence)) + '%')
+        return
+
+    def copy(self):
+        new_patterns = MutantPatterns()
+        for key, pattern in self.patterns.items():
+            new_patterns.patterns[key] = pattern
+        return new_patterns
+
+
+class MutantPatternSlicer:
+    """
+    Used to get the code slice of the semantic assertion(s)
+    """
+
+    @staticmethod
+    def __get_statement__(location: ccode.CirNode):
+        while location is not None:
+            cir_type = location.get_cir_type()
+            if cir_type.endswith("Statement"):
+                return location
+            else:
+                location = location.get_parent()
+        return location
+
+    @staticmethod
+    def __deep_slice__(location: ccode.CirNode, statements: set, direction: bool, max_layer: int, visit_set: set):
+        if location not in visit_set and max_layer >= 0:
+            visit_set.add(location)
+            statement = MutantPatternSlicer.__get_statement__(location)
+            if statement is not None:
+                statements.add(statement)
+            influence_graph = location.tree.program.influence_graph
+            influence_graph: cflow.CInfluenceGraph
+            children = set()
+            for node in influence_graph.get_nodes_of(location):
+                node: cflow.CInfluenceNode
+                if direction:
+                    for edge in node.get_ou_edges():
+                        target = edge.target
+                        target: cflow.CInfluenceNode
+                        if target.get_cir_source() is not None:
+                            children.add(target.get_cir_source())
+                else:
+                    for edge in node.get_in_edges():
+                        source = edge.source
+                        source: cflow.CInfluenceNode
+                        if source.get_cir_source() is not None:
+                            children.add(source.get_cir_source())
+                for child in children:
+                    MutantPatternSlicer.__deep_slice__(child, statements, direction, max_layer - 1, visit_set)
+        return
+
+    @staticmethod
+    def __size_slice__(location: ccode.CirNode, statements: set, direction: bool, max_size: int, visit_set: set):
+        if location not in visit_set and len(statements) < max_size:
+            visit_set.add(location)
+            statement = MutantPatternSlicer.__get_statement__(location)
+            if statement is not None:
+                statements.add(statement)
+            influence_graph = location.tree.program.influence_graph
+            influence_graph: cflow.CInfluenceGraph
+            children = set()
+            for node in influence_graph.get_nodes_of(location):
+                node: cflow.CInfluenceNode
+                if direction:
+                    for edge in node.get_ou_edges():
+                        target = edge.target
+                        target: cflow.CInfluenceNode
+                        if target.get_cir_source() is not None:
+                            children.add(target.get_cir_source())
+                else:
+                    for edge in node.get_in_edges():
+                        source = edge.source
+                        source: cflow.CInfluenceNode
+                        if source.get_cir_source() is not None:
+                            children.add(source.get_cir_source())
+                for child in children:
+                    MutantPatternSlicer.__size_slice__(child, statements, direction, max_size, visit_set)
+        return
+
+    @staticmethod
+    def deep_slice(assertion: cmutant.SemanticAssertion, max_layer: int):
+        locations = set()
+        for operand in assertion.get_operands():
+            if isinstance(operand, ccode.CirNode):
+                statements = set()
+                MutantPatternSlicer.__deep_slice__(operand, statements, assertion.is_state_error(), max_layer, set())
+                for statement in statements:
+                    locations.add(statement)
+        return locations
+
+    @staticmethod
+    def size_slice(assertion: cmutant.SemanticAssertion, max_size: int):
+        locations = set()
+        for operand in assertion.get_operands():
+            if isinstance(operand, ccode.CirNode):
+                statements = set()
+                MutantPatternSlicer.__size_slice__(operand, statements, assertion.is_state_error(), max_size, set())
+                for statement in statements:
+                    locations.add(statement)
+        return locations
+
+    @staticmethod
+    def output_deep(patterns: MutantPatterns, file_path: str, data_frame: encode.MutantDataFrame,
+                    target_label: int, max_layer: int):
+        with open(file_path, 'w') as writer:
+            for key, pattern in patterns.patterns.items():
+                pattern: MutantPattern
+                feature_words = list()
+                for code in pattern.pattern_vector:
+                    word = data_frame.words[code]
+                    feature_words.append(word)
+                writer.write("#PATTERN\t" + str(key) + "\t")
+                distribution = MutantClassification.get_label_distribution(pattern.mutants)
+                writer.write(str(distribution[0]) + '\t')
+                writer.write(str(distribution[1]) + '\t')
+                writer.write(str(MutantClassification.get_confidence(pattern.mutants, target_label)) + '\n')
+                alive_mutants, killed_mutants = set(), set()
+                for mutant in pattern.get_mutants():
+                    if mutant.labels.label == 0:
+                        alive_mutants.add(mutant.id)
+                    else:
+                        killed_mutants.add(mutant.id)
+                if len(alive_mutants) > 0:
+                    writer.write("\tALIVE\t" + str(alive_mutants) + "\n")
+                if len(killed_mutants) > 0:
+                    writer.write("\tKILLS\t" + str(killed_mutants) + "\n")
+                writer.write("\t=======================================================================\n")
+                for assertion in feature_words:
+                    if isinstance(assertion, cmutant.SemanticAssertion):
+                        statements = MutantPatternSlicer.deep_slice(assertion, max_layer)
+                        writer.write("\tAssertion: " + encode.SemanticAssertionEncodeFunctions.
+                                     get_assertion_source_code(assertion) + "\n")
+                        for statement in statements:
+                            statement: ccode.CirNode
+                            writer.write("\t\t" + statement.get_code_string() + "\n")
+                writer.write("\t=======================================================================\n")
+                writer.write("\n")
+        return
+
+    @staticmethod
+    def output_size(patterns: MutantPatterns, file_path: str, data_frame: encode.MutantDataFrame,
+                    target_label: int, max_size: int):
+        with open(file_path, 'w') as writer:
+            for key, pattern in patterns.patterns.items():
+                pattern: MutantPattern
+                feature_words = list()
+                for code in pattern.pattern_vector:
+                    word = data_frame.words[code]
+                    feature_words.append(word)
+                writer.write("#PATTERN\t" + str(key) + "\t")
+                distribution = MutantClassification.get_label_distribution(pattern.mutants)
+                writer.write(str(distribution[0]) + '\t')
+                writer.write(str(distribution[1]) + '\t')
+                writer.write(str(MutantClassification.get_confidence(pattern.mutants, target_label)) + '\n')
+                alive_mutants, killed_mutants = set(), set()
+                for mutant in pattern.get_mutants():
+                    if mutant.labels.label == 0:
+                        alive_mutants.add(mutant.id)
+                    else:
+                        killed_mutants.add(mutant.id)
+                if len(alive_mutants) > 0:
+                    writer.write("\tALIVE\t" + str(alive_mutants) + "\n")
+                if len(killed_mutants) > 0:
+                    writer.write("\tKILLS\t" + str(killed_mutants) + "\n")
+                writer.write("\t=======================================================================\n")
+                for assertion in feature_words:
+                    if isinstance(assertion, cmutant.SemanticAssertion):
+                        statements = MutantPatternSlicer.size_slice(assertion, max_size)
+                        writer.write("\tAssertion: " + encode.SemanticAssertionEncodeFunctions.
+                                     get_assertion_source_code(assertion) + "\n")
+                        for statement in statements:
+                            statement: ccode.CirNode
+                            writer.write("\t\t" + statement.get_code_string() + "\n")
+                writer.write("\t=======================================================================\n")
+                writer.write("\n")
         return
 
 
@@ -479,8 +656,9 @@ class CompositeSearchMiner:
 
         # 3. output the solutions to the file
         self.patterns.output(file_path, data_frame, target_label=self.target_label)
+        new_patterns = self.patterns.copy()
         self.patterns.patterns.clear()
-        return
+        return new_patterns
 
 
 def composition_search_mining(get_assertions, assertion_encode, prob_threshold,
@@ -502,6 +680,60 @@ def composition_search_mining(get_assertions, assertion_encode, prob_threshold,
         miner = CompositeSearchMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
                                      min_confidence=min_confidence, max_feature_size=max_feature_size, target_label=0)
         miner.mine(data_frame, pattern_file)
+        print('Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
+    return
+
+
+def composition_search_deep_context_mining(get_assertions, prob_threshold, max_pattern_size,
+                                           min_samples, min_confidence, max_feature_size, max_layer):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\freq_pattern'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encode.MutantFeatureEncoder(get_assertions,
+                                              encode.SemanticAssertionEncodeFunctions.get_assertion_instance,
+                                              prob_threshold)
+        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        pattern_file = os.path.join(output_dir, file_name + '.pls')
+        miner = CompositeSearchMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
+                                     min_confidence=min_confidence, max_feature_size=max_feature_size, target_label=0)
+        patterns = miner.mine(data_frame, pattern_file)
+        MutantPatternSlicer.output_deep(patterns, os.path.join(output_dir, file_name + ".dep.ctx"), data_frame, 0,
+                                        max_layer)
+        print('Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
+    return
+
+
+def composition_search_size_context_mining(get_assertions, prob_threshold, max_pattern_size,
+                                           min_samples, min_confidence, max_feature_size, max_size):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\freq_pattern'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encode.MutantFeatureEncoder(get_assertions,
+                                              encode.SemanticAssertionEncodeFunctions.get_assertion_instance,
+                                              prob_threshold)
+        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        pattern_file = os.path.join(output_dir, file_name + '.pls')
+        miner = CompositeSearchMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
+                                     min_confidence=min_confidence, max_feature_size=max_feature_size, target_label=0)
+        patterns = miner.mine(data_frame, pattern_file)
+        MutantPatternSlicer.output_size(patterns, os.path.join(output_dir, file_name + ".siz.ctx"), data_frame, 0,
+                                        max_size)
         print('Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
     return
 
@@ -531,6 +763,7 @@ class DecisionTreePathMiner:
     def __normalize_graphviz_words__(words):
         new_words = list()
         for word in words:
+            word = str(word)
             new_word = ''
             for index in range(0, len(word)):
                 char = word[index]
@@ -595,8 +828,9 @@ class DecisionTreePathMiner:
         self.patterns.filter(self.target_label, self.min_samples, self.min_confidence)
         self.patterns.optimize(MutantPatterns.is_subsume_on)
         self.patterns.output(pattern_file, data_frame, self.target_label)
+        new_patterns = self.patterns.copy()
         self.__write_decision_tree__(data_frame, tree_file)
-        return
+        return new_patterns
 
 
 def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_samples, min_confidence):
@@ -620,12 +854,71 @@ def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_sam
     return
 
 
+def decision_tree_deep_context_mining(get_assertions, prob_threshold, min_samples, min_confidence, max_layer):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\decision_tree'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encode.MutantFeatureEncoder(get_assertions,
+                                              encode.SemanticAssertionEncodeFunctions.get_assertion_instance,
+                                              prob_threshold)
+        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        pattern_file = os.path.join(output_dir, file_name + '.pat')
+        decision_tree_file = os.path.join(output_dir, file_name + '.pdf')
+        miner = DecisionTreePathMiner(target_label=0, min_samples=min_samples, min_confidence=min_confidence)
+        patterns = miner.mine(data_frame, pattern_file, decision_tree_file)
+        MutantPatternSlicer.output_deep(patterns, os.path.join(output_dir, file_name + ".dep.ctx"), data_frame, 0,
+                                        max_layer)
+    return
+
+
+def decision_tree_size_context_mining(get_assertions, prob_threshold, min_samples, min_confidence, max_size):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\decision_tree'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encode.MutantFeatureEncoder(get_assertions,
+                                              encode.SemanticAssertionEncodeFunctions.get_assertion_instance,
+                                              prob_threshold)
+        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        pattern_file = os.path.join(output_dir, file_name + '.pat')
+        decision_tree_file = os.path.join(output_dir, file_name + '.pdf')
+        miner = DecisionTreePathMiner(target_label=0, min_samples=min_samples, min_confidence=min_confidence)
+        patterns = miner.mine(data_frame, pattern_file, decision_tree_file)
+        MutantPatternSlicer.output_size(patterns, os.path.join(output_dir, file_name + ".siz.ctx"), data_frame, 0,
+                                        max_size)
+    return
+
+
 if __name__ == "__main__":
+    print("Testing starts.")
     # evaluate_classifier(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
     #                    encode.SemanticAssertionEncodeFunctions.get_assertion_string, 0.002)
-    # composition_search_mining(encode.SemanticAssertionEncodeFunctions.get_infection_assertions,
-    #                          encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
-    #                          max_pattern_size=4, min_samples=1, min_confidence=0.70, max_feature_size=12)
-    decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-                       encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
-                       min_samples=1, min_confidence=0.70)
+    composition_search_mining(encode.SemanticAssertionEncodeFunctions.get_infection_assertions,
+                              encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
+                              max_pattern_size=4, min_samples=1, min_confidence=0.70, max_feature_size=12)
+    # composition_search_deep_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions, 0.002,
+    #                                       max_pattern_size=4, min_samples=1, min_confidence=0.60, max_feature_size=14,
+    #                                       max_layer=6)
+    # decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
+    #                   encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
+    #                   min_samples=1, min_confidence=0.70)
+    # decision_tree_deep_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
+    #                                  0.002, min_samples=1, min_confidence=0.60, max_layer=4)
+    # decision_tree_size_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions, 0.002,
+    #                                  min_samples=1, min_confidence=0.60, max_size=6)
+    print("Testing end.")

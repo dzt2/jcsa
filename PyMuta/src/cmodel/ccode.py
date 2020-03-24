@@ -165,6 +165,23 @@ class AstNode:
         source_code: SourceCode
         return source_code.get_code(self.beg_index, self.end_index, strip)
 
+    def get_code_string(self):
+        """
+        ast_type[line]: "code_segment"
+        :return:
+        """
+        word = self.ast_type
+        word += "["
+        line = self.tree.program.source_code.line_of(self.beg_index) + 1
+        word += str(line)
+        word += "]: \""
+        word += self.get_code(True)
+        word += "\""
+        return word
+
+    def __str__(self):
+        return self.get_code_string()
+
 
 class AstTree:
     def __init__(self, program, file_path: str):
@@ -305,6 +322,17 @@ class CirNode:
 
     def __str__(self):
         return self.tree.program.name + '#' + str(self.id)
+
+    def get_code_string(self):
+        word = self.cir_type
+        if self.ast_source is None:
+            word += "#" + str(self.id)
+        else:
+            code = self.ast_source.get_code_string()
+            index = code.index("[")
+            code = code[index - 1:].strip()
+            word += code
+        return word
 
 
 class CirTree:

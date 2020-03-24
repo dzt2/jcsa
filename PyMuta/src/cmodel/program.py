@@ -29,9 +29,13 @@ class Program:
 
 def test_all():
     data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\mutation'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
     for file_name in os.listdir(data_directory):
         file_directory = os.path.join(data_directory, file_name)
         program = Program(file_directory)
+        program.mutant_space.output(os.path.join(output_directory, file_name + ".mut"))
         print('Testing on', program.name)
     return
 
