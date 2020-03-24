@@ -101,7 +101,7 @@ public class CirFunctionCallGraph {
 	 */
 	public CirFunctionCall get_calling(CirExecutionFlow flow) throws IllegalArgumentException {
 		if(this.calls.containsKey(flow)) return this.calls.get(flow);
-		else throw new IllegalArgumentException("undefined " + flow);
+		else throw new IllegalArgumentException("undefined " + flow.get_type());
 	}
 	/**
 	 * get the calling relation with respect to the given call and return flow in program.
