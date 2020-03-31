@@ -59,10 +59,17 @@ import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CName;
+import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
+import com.jcsa.jcparse.lopt.models.depend.CDependEdge;
+import com.jcsa.jcparse.lopt.models.depend.CDependGraph;
+import com.jcsa.jcparse.lopt.models.depend.CDependNode;
+import com.jcsa.jcparse.lopt.models.depend.CDependPredicate;
+import com.jcsa.jcparse.lopt.models.depend.CDependReference;
 import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
 import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
 import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
@@ -99,7 +106,7 @@ public class MutaFeatureWriters {
 		System.out.println("\t3. generate the feature info.");
 		
 		output_flow_graphs(project, output_directory);
-		output_influence_graph(project, output_directory);
+		output_instance_information(project, output_directory);
 		System.out.println("\t4. generate flow graph info.");
 		
 		System.out.println();
@@ -523,6 +530,59 @@ public class MutaFeatureWriters {
 		writer.close();
 	}
 	/**
+	 * execution + "@" + hash_code
+	 * @param node
+	 * @return
+	 * @throws Exception
+	 */
+	private static String instance_node_id(CirInstanceNode node) throws Exception {
+		return node.get_execution().toString() + "@" + node.get_context().hashCode();
+	}
+	/**
+	 * [edge] type source target
+	 * @param node
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_instance_edge(CirInstanceEdge edge, FileWriter writer) throws Exception {
+		writer.write("[edge]");
+		writer.write("\t");
+		writer.write(edge.get_type().toString());
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_source()));
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_target()));
+		writer.write("\n");
+	}
+	/**
+	 * [node] id context execution
+	 * @param node
+	 */
+	private static void output_instance_node(CirInstanceNode node, FileWriter writer) throws Exception {
+		writer.write("[node]");
+		writer.write("\t");
+		writer.write(instance_node_id(node));
+		writer.write("\t");
+		writer.write(node.get_context().hashCode() + "\t");
+		writer.write(node.get_execution().toString());
+		writer.write("\n");
+		
+		for(CirInstanceEdge edge : node.get_ou_edges()) {
+			output_instance_edge(edge, writer);
+		}
+	}
+	private static void output_instance_graph(CirInstanceGraph graph, File output) throws Exception {
+		FileWriter writer = new FileWriter(output);
+		for(Object context : graph.get_contexts()) {
+			for(CirInstance instance : graph.get_instances(context)) {
+				if(instance instanceof CirInstanceNode) {
+					output_instance_node((CirInstanceNode) instance, writer);
+				}
+			}
+		}
+		writer.close();
+	}
+	/**
 	 * contenxt::cir_source
 	 * @param node
 	 * @return
@@ -547,7 +607,7 @@ public class MutaFeatureWriters {
 		writer.write(" ]");
 	}
 	/**
-	 * id type execution cir_source [type source target]*
+	 * id type instance cir_source [type source target]*
 	 * @param node
 	 * @param writer
 	 * @throws Exception
@@ -555,12 +615,12 @@ public class MutaFeatureWriters {
 	private static void output_influence_node(CInfluenceNode node, FileWriter writer) throws Exception {
 		String id = influence_node_key(node);
 		String type = node.get_node_type().toString();
-		String execution = node.get_execution().toString();
+		String instance = instance_node_id(node.get_instance());
 		String cir_source = node.get_cir_source().get_node_id() + "";
 		
 		writer.write(id);
 		writer.write("\t" + type);
-		writer.write("\t" + execution);
+		writer.write("\t" + instance);
 		writer.write("\t" + cir_source);
 		for(CInfluenceEdge edge : node.get_ou_edges()) {
 			writer.write("\t");
@@ -569,12 +629,13 @@ public class MutaFeatureWriters {
 		writer.write("\n");
 	}
 	/**
-	 * id type execution cir_source [type source target]*
+	 * id type instance cir_source [type source target]*
 	 * @param project
 	 * @param output_directory
 	 * @throws Exception
 	 */
-	private static void output_influence_graph(MutaProject project, File output_directory) throws Exception {
+	private static void output_influence_graph(CirInstanceGraph program_graph, File output) throws Exception {
+		/*
 		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".inf");
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
@@ -582,8 +643,8 @@ public class MutaFeatureWriters {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
 		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1);
+		*/
 		CInfluenceGraph influence_graph = CInfluenceGraph.graph(program_graph);
-		
 		FileWriter writer = new FileWriter(output);
 		writer.write("id\ttype\texecution\tcir_source\tedges\n");
 		for(CirInstanceNode instance : influence_graph.get_instances()) {
@@ -593,7 +654,95 @@ public class MutaFeatureWriters {
 		}
 		writer.close();
 	}
-	 
+	/**
+	 * (predicate expression true|false)
+	 * (reference define use)
+	 * @param element
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_element(Object element, FileWriter writer) throws Exception {
+		if(element instanceof CDependPredicate) {
+			CDependPredicate predicate = (CDependPredicate) element;
+			writer.write("( predicate ");
+			writer.write("cir#" + predicate.get_condition().get_node_id());
+			writer.write(" ");
+			writer.write(predicate.get_predicate_value() + "");
+			writer.write(" )");
+		}
+		else if(element instanceof CDependReference) {
+			CDependReference reference = (CDependReference) element;
+			writer.write("( reference ");
+			writer.write("cir#" + reference.get_def().get_node_id());
+			writer.write(" ");
+			writer.write("cir#" + reference.get_use().get_node_id());
+			writer.write(" )");
+		}
+	}
+	/**
+	 * [edge] source target dep_type {element}
+	 * @param edge
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_edge(CDependEdge edge, FileWriter writer) throws Exception {
+		writer.write("[edge]");
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_source().get_instance()));
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_target().get_instance()));
+		writer.write("\t");
+		writer.write(edge.get_type().toString());
+		writer.write("\t");
+		output_dependence_element(edge.get_element(), writer);
+		writer.write("\n");
+	}
+	/**
+	 * [node] instance
+	 * @param node
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_node(CDependNode node, FileWriter writer) throws Exception {
+		writer.write("[node]");
+		writer.write("\t");
+		writer.write(instance_node_id(node.get_instance()));
+		writer.write("\n");
+		
+		for(CDependEdge edge : node.get_ou_edges()) 
+			output_dependence_edge(edge, writer);
+	}
+	private static void output_dependence_graph(CirInstanceGraph program_graph, File output) throws Exception {
+		/*
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".dep");
+		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
+		CirTree cir_tree = source_file.get_cir_tree();
+		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
+		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1);
+		*/
+		CDependGraph graph = CDependGraph.graph(program_graph);
+		FileWriter writer = new FileWriter(output);
+		for(CDependNode node : graph.get_nodes()) 
+			output_dependence_node(node, writer);
+		writer.close();
+	}
+	private static void output_instance_information(MutaProject project, File output_directory) throws Exception {
+		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
+		CirTree cir_tree = source_file.get_cir_tree();
+		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
+		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1);
+		
+		File output0 = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".ins");
+		File output1 = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".dep");
+		File output2 = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".inf");
+		
+		output_instance_graph(program_graph, output0);
+		output_dependence_graph(program_graph, output1);
+		output_influence_graph(program_graph, output2);
+	}
+	
 	/* mutant writers */
 	private static String get_mutant_parameter(AstMutation mutation) throws Exception {
 		switch(mutation.get_mutation_class()) {
