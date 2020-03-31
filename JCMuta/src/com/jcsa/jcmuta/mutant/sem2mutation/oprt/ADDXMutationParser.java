@@ -70,19 +70,23 @@ public class ADDXMutationParser extends OXXNMutationParser {
 			this.arith_add_to_arith_sub_vc(expression, loperand, rvalue);
 		}
 		else {
-			SemanticAssertion constraint, error1, error2, error3;
+			SemanticAssertion constraint, state_error;
+			/*SemanticAssertion constraint, error1, error2, error3;
 			error1 = sem_mutation.get_assertions().mut_value(expression);
 			error2 = sem_mutation.get_assertions().inc_value(expression);
-			error3 = sem_mutation.get_assertions().dec_value(expression);
+			error3 = sem_mutation.get_assertions().dec_value(expression);*/
 			
 			constraint = sem_mutation.get_assertions().not_equals(roperand, 0);
-			this.infect(constraint, new SemanticAssertion[] { error1 });
+			state_error = sem_mutation.get_assertions().mut_value(expression);
+			this.infect(constraint, state_error);
 			
+			/*
 			constraint = sem_mutation.get_assertions().smaller_tn(roperand, 0);
 			this.infect(constraint, new SemanticAssertion[] { error2 });
 			
 			constraint = sem_mutation.get_assertions().greater_tn(roperand, 0);
 			this.infect(constraint, new SemanticAssertion[] { error3 });
+			*/
 		}
 	}
 	private void arith_add_to_arith_sub_vc(CirExpression expression, CirExpression loperand, Object rvalue) throws Exception {
@@ -125,17 +129,17 @@ public class ADDXMutationParser extends OXXNMutationParser {
 			this.arith_add_to_arith_mul_cv(expression, rvalue, loperand);
 		}
 		else {
-			SemanticAssertion constraint, error2, error3;
-			error2 = sem_mutation.get_assertions().set_value(expression, 0);
-			error3 = sem_mutation.get_assertions().inc_value(expression);
+			SemanticAssertion constraint, error1, error2;
+			error1 = sem_mutation.get_assertions().set_value(expression, 0);
+			error2 = sem_mutation.get_assertions().inc_value(expression);
 			
 			constraint = sem_mutation.get_assertions().equal_with(loperand, 0);
-			this.infect(constraint, new SemanticAssertion[] { error2 });
+			this.infect(constraint, new SemanticAssertion[] { error1 });
 			
 			constraint = sem_mutation.get_assertions().equal_with(roperand, 0);
-			this.infect(constraint, new SemanticAssertion[] { error2 });
+			this.infect(constraint, new SemanticAssertion[] { error1 });
 			
-			this.infect(new SemanticAssertion[] { error3 });
+			this.infect(new SemanticAssertion[] { error2 });
 		}
 	}
 	private void arith_add_to_arith_mul_cv(CirExpression expression, 
@@ -198,7 +202,6 @@ public class ADDXMutationParser extends OXXNMutationParser {
 		}
 		else {
 			SemanticAssertion constraint;
-			
 			constraint = sem_mutation.get_assertions().equal_with(roperand, 0);
 			this.infect(constraint, sem_mutation.get_assertions().trapping());
 			
@@ -290,7 +293,6 @@ public class ADDXMutationParser extends OXXNMutationParser {
 		}
 		else {
 			SemanticAssertion constraint;
-			
 			constraint = sem_mutation.get_assertions().equal_with(roperand, 0);
 			this.infect(constraint, sem_mutation.get_assertions().trapping());
 			
