@@ -158,6 +158,12 @@ class CirFunction:
             self.executions.append(execution)
         return
 
+    def get_entry(self):
+        return self.executions[1]
+
+    def get_exit(self):
+        return self.executions[0]
+
 
 class CirFunctionGraph:
     """

@@ -258,6 +258,38 @@ class AstTree:
         return
 
 
+__cir_statement_types__ = {
+    "BinAssignStatement", "IncreAssignStatement", "InitAssignStatement", "ReturnAssignStatement", "WaitAssignStatement",
+    "SaveAssignStatement", "CallStatement", "CaseStatement", "GotoStatement", "IfStatement",
+    "BegStatement", "EndStatement", "CaseEndStatement", "DefaultStatement", "LabelStatement", "IfEndStatement"
+}
+
+__cir_assign_statement_types__ = {
+    "BinAssignStatement", "IncreAssignStatement", "InitAssignStatement", "ReturnAssignStatement", "WaitAssignStatement"
+}
+
+__cir_tag_statement_types__ = {
+    "BegStatement", "EndStatement", "CaseEndStatement", "DefaultStatement", "LabelStatement", "IfEndStatement"
+}
+
+__cir_expression_types__ = {
+    "Declarator", "Identifier", "Implicator", "ReturnPoint", "DeferExpression", "FieldExpression",
+    "ConstExpression", "StringLiteral", "DefaultValue",
+    "AddressExpression", "CastExpression",  "InitializerBody", "WaitExpression",
+    "ArithExpression", "BitwsExpression", "LogicExpression", "RelationExpression"
+}
+
+__cir_refer_expression_types__ = {
+    "Declarator", "Identifier", "Implicator", "ReturnPoint", "DeferExpression", "FieldExpression"
+}
+
+__cir_value_expression_types__ = {
+    "ConstExpression", "StringLiteral", "DefaultValue",
+    "AddressExpression", "CastExpression",  "InitializerBody", "WaitExpression",
+    "ArithExpression", "BitwsExpression", "LogicExpression", "RelationExpression"
+}
+
+
 class CirNode:
     """
     [tree id cir_type ast_source data_type token parent children]
@@ -333,6 +365,24 @@ class CirNode:
             code = code[index - 1:].strip()
             word += code
         return word
+
+    def is_statement(self):
+        return self.cir_type in __cir_statement_types__
+
+    def is_tag_statement(self):
+        return self.cir_type in __cir_tag_statement_types__
+
+    def is_assign_statement(self):
+        return self.cir_type in __cir_assign_statement_types__
+
+    def is_expression(self):
+        return self.cir_type in __cir_expression_types__
+
+    def is_refer_expression(self):
+        return self.cir_type in __cir_refer_expression_types__
+
+    def is_value_expression(self):
+        return self.cir_type in __cir_value_expression_types__
 
 
 class CirTree:
