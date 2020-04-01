@@ -906,17 +906,17 @@ def decision_tree_size_context_mining(get_assertions, prob_threshold, min_sample
 
 if __name__ == "__main__":
     print("Testing starts.")
-    # evaluate_classifier(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-    #                    encode.SemanticAssertionEncodeFunctions.get_assertion_string, 0.002)
+    evaluate_classifier(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
+                        encode.SemanticAssertionEncodeFunctions.get_assertion_string, 0.002)
     # composition_search_mining(encode.SemanticAssertionEncodeFunctions.get_infection_assertions,
     #                          encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
     #                          max_pattern_size=4, min_samples=1, min_confidence=0.70, max_feature_size=12)
     # composition_search_deep_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions, 0.002,
     #                                       max_pattern_size=4, min_samples=1, min_confidence=0.60, max_feature_size=14,
     #                                       max_layer=6)
-    decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-                       encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
-                       min_samples=1, min_confidence=0.70)
+    # decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
+    #                   encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.002,
+    #                   min_samples=1, min_confidence=0.70)
     # decision_tree_deep_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
     #                                  0.002, min_samples=1, min_confidence=0.60, max_layer=4)
     # decision_tree_size_context_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions, 0.002,
