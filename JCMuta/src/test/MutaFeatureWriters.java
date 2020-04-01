@@ -75,7 +75,7 @@ import com.jcsa.jcparse.lopt.models.depend.CDependReference;
 public class MutaFeatureWriters {
 	
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
-	private static final String postfx = "results\\data\\";
+	private static final String postfx = "results\\data\\"; 
 	private static final String main_function = "main";
 	private static final int max_layer = 2;
 	private static final boolean extend_error = true;
