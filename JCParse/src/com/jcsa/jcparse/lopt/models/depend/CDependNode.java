@@ -22,6 +22,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -72,20 +73,25 @@ public class CDependNode {
 		
 		this.ou.add(edge); target.in.add(edge); 
 	}
-	protected void wait_call_depend(CDependNode target) throws Exception {
-		CirStatement source_stmt = this.get_statement();
-		CirStatement target_stmt = target.get_statement();
-		
-		CDependEdge edge;
-		if(target_stmt instanceof CirCallStatement
-			&& source_stmt instanceof CirWaitAssignStatement) {
-			edge = new CDependEdge(CDependType.wait_call_depend, this, target, null);
+	protected void stmt_call_depend(CDependNode target) throws Exception {
+		if(target.get_statement() instanceof CirCallStatement) {
+			CDependEdge edge = new CDependEdge(CDependType.
+					stmt_call_depend, this, target, null);
+			this.ou.add(edge); target.in.add(edge); 
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + target_stmt);
+			throw new IllegalArgumentException("Invalid target");
 		}
-		
-		this.ou.add(edge); target.in.add(edge); 
+	}
+	protected void stmt_exit_depend(CDependNode target) throws Exception {
+		if(target.get_statement() instanceof CirEndStatement) {
+			CDependEdge edge = new CDependEdge(CDependType.
+					stmt_exit_depend, this, target, null);
+			this.ou.add(edge); target.in.add(edge);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid target");
+		}
 	}
 	protected void use_define_depend(CDependNode target) throws Exception {
 		CirStatement source_stmt = this.get_statement();

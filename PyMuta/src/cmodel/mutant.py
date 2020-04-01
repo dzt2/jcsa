@@ -237,6 +237,12 @@ __error_functions__ = {
 }
 
 
+__constraint_functions__ = {
+    "cover", "cover_for", "equal_with", "not_equals", "smaller_tn", "in_range", "not_in_range", "bit_intersect",
+    "bit_excluding", "bit_subsuming", "not_subsuming", "is_negative", "is_multiply", "all_possible", "impossible"
+}
+
+
 class SemanticAssertion:
     """
     function, operands
@@ -271,7 +277,7 @@ class SemanticAssertion:
         return self.function in __error_functions__
 
     def is_constraint(self):
-        return self.function not in __error_functions__
+        return self.function in __constraint_functions__
 
 
 class SemanticAssertions:

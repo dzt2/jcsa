@@ -14,8 +14,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirInitAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
@@ -48,7 +46,8 @@ public class CDependGraph {
 	public Iterable<CDependNode> get_nodes() { return nodes.values(); }
 	public boolean has_node(CirInstanceNode instance) { return nodes.containsKey(instance); }
 	public CDependNode get_node(CirInstanceNode instance) throws Exception {
-		return this.nodes.get(instance);
+		if(this.nodes.containsKey(instance)) return this.nodes.get(instance);
+		else throw new IllegalArgumentException("Invalid instance: null");
 	}
 	
 	private void build_nodes() throws Exception {
@@ -57,9 +56,7 @@ public class CDependGraph {
 				if(instance instanceof CirInstanceNode) {
 					CirExecution execution = ((CirInstanceNode) instance).get_execution();
 					if(execution != null) {
-						if(!(execution.get_statement() instanceof CirTagStatement)) {
-							this.new_node((CirInstanceNode) instance);
-						}
+						this.new_node((CirInstanceNode) instance);
 					}
 				}
 			}
@@ -93,6 +90,14 @@ public class CDependGraph {
 							CDependNode target = this.get_node(edge.get_source());
 							source.predicate_depend(target, false); break;
 						}
+						else if(edge.get_type() == CirExecutionFlowType.retr_flow) {
+							CDependNode target = this.get_node(edge.get_source());
+							source.stmt_exit_depend(target); break;
+						}
+						else if(edge.get_type() == CirExecutionFlowType.call_flow) {
+							CDependNode target = this.get_node(edge.get_source());
+							source.stmt_call_depend(target); break;
+						}
 					}
 					dominance_node = next_node;
 				}
@@ -100,6 +105,7 @@ public class CDependGraph {
 			}
 		}
 	}
+	/*
 	private void build_cedge(CDependNode source) throws Exception {
 		if(source.get_statement() instanceof CirWaitAssignStatement) {
 			CirExecution wait_execution = source.get_execution();
@@ -121,11 +127,12 @@ public class CDependGraph {
 			source.wait_call_depend(target);
 		}
 	}
+	*/
 	private void build_pedges() throws Exception {
 		CDominanceGraph dominance_graph = CDominanceGraph.forward_dominance_graph(program_graph);
 		for(CDependNode source : this.nodes.values()) {
 			this.build_pedge(dominance_graph, source); 
-			this.build_cedge(source);
+			// this.build_cedge(source);
 		}
 	}
 	
