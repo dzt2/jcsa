@@ -166,10 +166,12 @@ class CirFunctionGraph:
     def __init__(self, program, file_path: str, call_path: str):
         self.program = program
         self.functions = dict()
+        self.exec_index = dict()
         self.callings = dict()
         self.__parse_nodes__(program.cir_tree, file_path)
         self.__parse_flows__(file_path)
         self.__parse_calls__(call_path)
+        self.__parse_index__()
         return
 
     def get_program(self):
@@ -190,6 +192,9 @@ class CirFunctionGraph:
     def get_execution_by_id(self, identifier: str):
         name, id = CirFunction.__get_function_and_id__(identifier)
         return self.functions[name].get_execution(id)
+
+    def get_execution_by_statement(self, statement: ccode.CirNode):
+        return self.exec_index[statement]
 
     def __parse_nodes__(self, cir_tree: ccode.CirTree, file_path: str):
         self.functions.clear()
@@ -260,6 +265,17 @@ class CirFunctionGraph:
                     callee.in_calls.append(call)
                     self.callings[call_flow] = call
                     self.callings[retr_flow] = call
+        return
+
+    def __parse_index__(self):
+        self.exec_index.clear()
+        for function in self.functions.values():
+            function: CirFunction
+            for execution in function.executions:
+                execution: CirExecution
+                statement = execution.statement
+                if statement is not None:
+                    self.exec_index[statement] = execution
         return
 
 
