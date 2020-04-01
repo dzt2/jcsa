@@ -231,6 +231,7 @@ class MutantPattern:
         for feature in pattern_vector:
             self.pattern_vector.append(feature)
         self.pattern_vector.sort()
+        self.pattern_words = list()
 
         ''' 2. collect the mutants being sampled '''
         self.mutants = list()
@@ -283,6 +284,19 @@ class MutantPattern:
 
     def __str__(self):
         return str(self.pattern_vector)
+
+    def interpret(self, data_frame: encode.MutantDataFrame):
+        """
+        get the assertions that the pattern represents in data frame (either word sequence
+        or the sequence of semantic assertion, relying on the encode method used)
+        :param data_frame:
+        :return:
+        """
+        assertions = list()
+        for feature in self.pattern_vector:
+            assertion = data_frame.words[feature]
+            assertions.append(assertion)
+        self.pattern_words = assertions
 
 
 class MutantPatterns:
@@ -428,6 +442,63 @@ class MutantPatterns:
         return
 
 
+class MutantFeatureTable:
+    """
+    mapping between assertion and mutant
+    """
+
+    def __init__(self):
+        self.mutant_patterns = dict()
+        self.patterns = dict()
+        return
+
+    def set(self, data_frame: encode.MutantDataFrame, patterns: MutantPatterns):
+        self.mutant_patterns.clear()
+        self.patterns.clear()
+        for pattern in patterns.patterns.values():
+            pattern: MutantPattern
+            pattern.interpret(data_frame)
+            self.patterns[str(pattern)] = pattern
+            for mutant in pattern.mutants:
+                if mutant not in self.mutant_patterns:
+                    self.mutant_patterns[mutant] = list()
+                self.mutant_patterns[mutant].append(str(pattern))
+        return
+
+    def output(self, file_path: str):
+        with open(file_path, 'w') as writer:
+            for mutant, patterns in self.mutant_patterns.items():
+                if mutant.labels.label == 0:
+                    writer.write(mutant.space.program.name + "\t")
+                    writer.write(str(mutant.id) + "\t")
+                    writer.write(mutant.get_muta_class() + "\t")
+                    writer.write(mutant.muta_operator + "\t")
+                    source_code = mutant.space.program.source_code
+                    source_code: ccode.SourceCode
+                    location = mutant.location
+                    location: ccode.AstNode
+                    line = source_code.line_of(location.beg_index) + 1
+                    ast_code = location.get_code(True)
+                    writer.write(str(line) + "\t")
+                    writer.write("\"" + ast_code + "\"\t")
+                    if mutant.has_parameter():
+                        writer.write(str(mutant.parameter) + "\t")
+                    else:
+                        writer.write("\t")
+                    writer.write("\n")
+                    for pattern_key in patterns:
+                        pattern = self.patterns[pattern_key]
+                        pattern: MutantPattern
+                        writer.write(str(pattern.get_total()) + "\t")
+                        writer.write(str(pattern.get_kills()) + "\t")
+                        writer.write(str(pattern.get_probability()) + "\t")
+                        writer.write("==>\t")
+                        for word in pattern.pattern_words:
+                            writer.write(str(word) + "\t")
+                        writer.write("\n")
+        return
+
+
 class FrequentPatternMiner:
     def __init__(self, max_pattern_size: int, min_samples: int, min_confidence: float,
                  max_feature_size: int):
@@ -495,13 +566,14 @@ class FrequentPatternMiner:
 
         # 2. get the optimal pattern set
         self.patterns.filter(self.min_samples, self.min_confidence)
-        self.patterns.optimize(MutantPatterns.is_subsume_on)
+        self.patterns.optimize(MutantPatterns.is_parent_of)
 
         # 3. output the solutions to the file
         self.patterns.output(file_path, data_frame)
-        new_patterns = self.patterns.copy()
+        feature_table = MutantFeatureTable()
+        feature_table.set(data_frame, self.patterns)
         self.patterns.patterns.clear()
-        return new_patterns
+        return feature_table
 
 
 def frequent_pattern_mining(get_assertions, assertion_encode, prob_threshold,
@@ -520,9 +592,12 @@ def frequent_pattern_mining(get_assertions, assertion_encode, prob_threshold,
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         pattern_file = os.path.join(output_dir, file_name + '.pls')
+        table_file = os.path.join(output_dir, file_name + ".tab")
         miner = FrequentPatternMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
                                      min_confidence=min_confidence, max_feature_size=max_feature_size)
-        miner.mine(data_frame, pattern_file)
+        feature_table = miner.mine(data_frame, pattern_file)
+        feature_table: MutantFeatureTable
+        feature_table.output(table_file)
         print('\t--> Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
     return
 
@@ -613,12 +688,14 @@ class DecisionTreePathMiner:
         """
         self.__fit__(data_frame)
         self.__mine__(data_frame)
-        self.patterns.filter(self.min_samples, self.min_confidence)
-        self.patterns.optimize(MutantPatterns.is_subsume_on)
-        self.patterns.output(pattern_file, data_frame)
-        new_patterns = self.patterns.copy()
         self.__write_decision_tree__(data_frame, tree_file)
-        return new_patterns
+        self.patterns.filter(self.min_samples, self.min_confidence)
+        self.patterns.optimize(MutantPatterns.is_parent_of)
+        self.patterns.output(pattern_file, data_frame)
+        feature_table = MutantFeatureTable()
+        feature_table.set(data_frame, self.patterns)
+        self.patterns.patterns.clear()
+        return feature_table
 
 
 def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_samples, min_confidence):
@@ -637,8 +714,11 @@ def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_sam
             os.mkdir(output_dir)
         pattern_file = os.path.join(output_dir, file_name + '.pat')
         decision_tree_file = os.path.join(output_dir, file_name + '.pdf')
+        table_file = os.path.join(output_dir, file_name + ".tab")
         miner = DecisionTreePathMiner(min_samples=min_samples, min_confidence=min_confidence)
-        miner.mine(data_frame, pattern_file, decision_tree_file)
+        feature_table = miner.mine(data_frame, pattern_file, decision_tree_file)
+        feature_table: MutantFeatureTable
+        feature_table.output(table_file)
     return
 
 
@@ -649,7 +729,7 @@ if __name__ == "__main__":
     frequent_pattern_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
                             encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005,
                             max_pattern_size=3, min_samples=1, min_confidence=0.40, max_feature_size=18)
-    decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-                       encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005,
-                       min_samples=1, min_confidence=0.40)
+    # decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
+    #                   encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005,
+    #                   min_samples=1, min_confidence=0.40)
     print("Testing end for all")
