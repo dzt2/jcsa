@@ -62,6 +62,20 @@ class CirExecution:
     def get_ou_flows(self):
         return self.ou_flows
 
+    def get_in_flow(self, edge_type: str):
+        for edge in self.in_flows:
+            edge: CirExecutionFlow
+            if edge.get_flow_type() == edge_type:
+                return edge
+        return None
+
+    def get_ou_flow(self, edge_type: str):
+        for edge in self.ou_flows:
+            edge: CirExecutionFlow
+            if edge.get_flow_type() == edge_type:
+                return edge
+        return None
+
     def __str__(self):
         return self.function.name + '[' + str(self.id) + ']'
 
@@ -199,8 +213,20 @@ class CirFunctionGraph:
         name, id = CirFunction.__get_function_and_id__(identifier)
         return self.functions[name].get_execution(id)
 
-    def get_execution_by_statement(self, statement: ccode.CirNode):
-        return self.exec_index[statement]
+    def get_execution_of_cir_node(self, node: ccode.CirNode):
+        statement = node.statement_of()
+        if statement in self.exec_index:
+            return self.exec_index[statement]
+        else:
+            return None
+
+    def get_function_of(self, node: ccode.CirNode):
+        execution = self.get_execution_of_cir_node(node)
+        execution: CirExecution
+        if execution is not None:
+            return execution.get_function()
+        else:
+            return None
 
     def __parse_nodes__(self, cir_tree: ccode.CirTree, file_path: str):
         self.functions.clear()
@@ -340,11 +366,29 @@ class CirInstanceNode:
     def get_ou_edges(self):
         return self.ou_edges
 
+    def get_in_edge(self, edge_type: str):
+        for edge in self.in_edges:
+            edge: CirInstanceEdge
+            if edge.get_edge_type() == edge_type:
+                return edge
+        return None
+
+    def get_ou_edge(self, edge_type: str):
+        for edge in self.ou_edges:
+            edge: CirInstanceEdge
+            if edge.get_edge_type() == edge_type:
+                return edge
+        return None
+
     def __link__(self, target, edge_type: str):
         edge = CirInstanceEdge(edge_type, self, target)
         self.ou_edges.append(edge)
         target.in_edges.append(edge)
         return edge
+
+    @staticmethod
+    def __key__(context: int, execution: CirExecution):
+        return str(execution) + "@" + str(context)
 
 
 class CirInstanceGraph:
@@ -361,6 +405,10 @@ class CirInstanceGraph:
                         id = items[1].strip()
                         node = CirInstanceNode(self, id, flow_graph)
                         self.nodes[id] = node
+                        execution = node.get_execution()
+                        if execution not in self.index:
+                            self.index[execution] = list()
+                        self.index[execution].append(node)
         return
 
     def __parse_edges__(self, file_path: str):
@@ -381,6 +429,7 @@ class CirInstanceGraph:
     def __init__(self, program, file_path: str):
         self.program = program
         self.nodes = dict()
+        self.index = dict()
         self.__parse_nodes__(file_path, self.program.function_graph)
         self.__parse_edges__(file_path)
         return
@@ -393,6 +442,29 @@ class CirInstanceGraph:
 
     def get_node(self, key: str):
         return self.nodes[key]
+
+    def get_nodes_of_execution(self, execution: CirExecution):
+        """
+        :param execution:
+        :return: get the nodes with respect to the execution
+        """
+        if execution in self.index:
+            return self.index[execution]
+        else:
+            return list()
+
+    def get_node_of(self, context: int, execution: CirExecution):
+        """
+        get the instance with respect to the context and execution as given
+        :param context:
+        :param execution:
+        :return:
+        """
+        key = CirInstanceNode.__key__(context, execution)
+        if key in self.nodes:
+            return self.nodes[key]
+        else:
+            return None
 
 
 class CPredicateElement:
@@ -427,6 +499,15 @@ class CReferenceElement:
         return self.use
 
 
+__control_depend_types__ = {
+    "predicate_depend", "stmt_exit_depend", "stmt_call_depend"
+}
+
+__data_depend_types__ = {
+    "use_defin_depend", "param_arg_depend", "wait_retr_depend"
+}
+
+
 class CDependenceEdge:
     """
     depend_type, source, target, element
@@ -452,6 +533,12 @@ class CDependenceEdge:
 
     def has_element(self):
         return self.element is not None
+
+    def is_control_depend(self):
+        return self.depend_type in __control_depend_types__
+
+    def is_data_depend(self):
+        return self.depend_type in __data_depend_types__
 
 
 class CDependenceNode:
@@ -564,3 +651,6 @@ class CDependenceGraph:
 
     def get_nodes(self):
         return self.nodes.values()
+
+    def get_node(self, instance: CirInstanceNode):
+        return self.nodes[instance]

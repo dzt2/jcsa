@@ -4,13 +4,16 @@ import pydotplus
 from six import StringIO
 import src.cmodel.ccode as ccode
 import src.cmodel.mutant as cmutant
-import src.mining.encode as encode
+import src.learning.encoding as encoding
 import sklearn.metrics as metrics
 import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn.tree as tree
 import random
+import src.learning.slicing as slicing
 
+
+# classification and evaluation
 
 class MutantClassification:
     """
@@ -110,7 +113,7 @@ class FeatureClassifierEvaluate:
         feature_vector.sort()
         return mutant.space.program.name + "#" + str(feature_vector)
 
-    def fit(self, data_frame: encode.MutantDataFrame):
+    def fit(self, data_frame: encoding.MutantDataFrame):
         for mutant in data_frame.program.mutant_space.get_mutants():
             mutant: cmutant.Mutant
             key = FeatureClassifierEvaluate.__key__(mutant)
@@ -200,14 +203,16 @@ def evaluate_classifier(get_assertions, assertion_encode, prob_threshold):
     evaluator = FeatureClassifierEvaluate()
     for file_name in os.listdir(data_directory):
         program_directory = os.path.join(data_directory, file_name)
-        encoder = encode.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
-        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        encoder = encoding.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
+        data_frame = encoding.MutantDataFrame(program_directory, encoder)
         print('Load', len(data_frame.program.mutant_space.mutants), 'mutants from', file_name)
         evaluator.fit(data_frame)
     print()
     evaluator.evaluate(os.path.join(output_directory, 'feature_evaluate.txt'))
     return
 
+
+# pattern definition model
 
 class MutantPattern:
     """
@@ -285,7 +290,7 @@ class MutantPattern:
     def __str__(self):
         return str(self.pattern_vector)
 
-    def interpret(self, data_frame: encode.MutantDataFrame):
+    def interpret(self, data_frame: encoding.MutantDataFrame):
         """
         get the assertions that the pattern represents in data frame (either word sequence
         or the sequence of semantic assertion, relying on the encode method used)
@@ -298,8 +303,17 @@ class MutantPattern:
             assertions.append(assertion)
         self.pattern_words = assertions
 
+    def normal_words(self):
+        words = list()
+        for word in self.pattern_words:
+            if isinstance(word, cmutant.SemanticAssertion):
+                word = encoding.SemanticFeatureEncodeFunctions.get_assertion_source_code(word)
+            else:
+                word = str(word)
+            words.append(word)
+        return words
 
-# output of this part
+
 class MutantPatterns:
     def __init__(self):
         self.patterns = dict()
@@ -330,7 +344,7 @@ class MutantPatterns:
     def get(self, pattern_vector: list):
         return self.patterns[self.__key__(pattern_vector)]
 
-    def set(self, data_frame: encode.MutantDataFrame, pattern_vector: list, mutants):
+    def set(self, data_frame: encoding.MutantDataFrame, pattern_vector: list, mutants):
         pattern = MutantPattern(pattern_vector, mutants)
         pattern.interpret(data_frame)
         self.patterns[str(pattern)] = pattern
@@ -415,7 +429,7 @@ class MutantPatterns:
             self.patterns[str(parent_pattern)] = parent_pattern
         return
 
-    def __write_patterns__(self, data_frame: encode.MutantDataFrame, pattern_file):
+    def __write_patterns__(self, data_frame: encoding.MutantDataFrame, pattern_file):
         with open(pattern_file, 'w') as writer:
             writer.write('length\tfeature_words\ttotal_size\t'
                          'equivalent\ttrivial\tconfidence\tmutants\n')
@@ -428,12 +442,8 @@ class MutantPatterns:
             for key, pattern in self.patterns.items():
                 if pattern is not None:
                     pattern: MutantPattern
-                    feature_words = list()
-                    for code in pattern.pattern_vector:
-                        word = data_frame.words[code]
-                        feature_words.append(word)
                     writer.write(str(len(pattern)) + '\t')
-                    writer.write(str(feature_words) + '\t')
+                    writer.write(str(pattern.normal_words()) + '\t')
                     writer.write(str(len(pattern.mutants)) + '\t')
                     distribution = MutantClassification.get_label_distribution(pattern.mutants)
                     writer.write(str(distribution[0]) + '\t')
@@ -459,7 +469,7 @@ class MutantPatterns:
                          + "\tMinimal-Select\t" + str(len(minimal_set)))
         return
 
-    def __write_mutations__(self, data_frame: encode.MutantDataFrame, mutant_file):
+    def __write_mutations__(self, mutant_file):
         with open(mutant_file, 'w') as writer:
             for mutant, patterns in self.index.items():
                 if mutant.labels.label == 0:
@@ -485,16 +495,15 @@ class MutantPatterns:
                         writer.write(str(pattern.get_total()) + "\t")
                         writer.write(str(pattern.get_kills()) + "\t")
                         writer.write(str(pattern.get_probability()) + "\t")
-                        writer.write("==>")
-                        for word in pattern.pattern_words:
-                            writer.write("\t" + str(word))
+                        writer.write("==> ")
+                        writer.write(str(pattern.normal_words()))
                         writer.write("\n")
                     writer.write("\n")
         return
 
-    def output(self, data_frame: encode.MutantDataFrame, pattern_file: str, mutant_file: str):
+    def output(self, data_frame: encoding.MutantDataFrame, pattern_file: str, mutant_file: str):
         self.__write_patterns__(data_frame, pattern_file)
-        self.__write_mutations__(data_frame, mutant_file)
+        self.__write_mutations__(mutant_file)
         return
 
     def select_minimal(self):
@@ -527,6 +536,8 @@ class MutantPatterns:
         return all_size, equivalent_size, minimal_patterns
 
 
+# mining algorithm models
+
 class FrequentPatternMiner:
     def __init__(self, max_pattern_size: int, min_samples: int, min_confidence: float,
                  max_feature_size: int):
@@ -554,7 +565,7 @@ class FrequentPatternMiner:
         else:
             return mutant.feature_vector[0: self.max_feature_size]
 
-    def __mine__(self, features, mutants, pattern_vector: list, data_frame: encode.MutantDataFrame):
+    def __mine__(self, features, mutants, pattern_vector: list, data_frame: encoding.MutantDataFrame):
         if not self.patterns.has(pattern_vector):
             '''1. create the pattern not solved before'''
             self.patterns.set(data_frame, pattern_vector, mutants)
@@ -578,7 +589,7 @@ class FrequentPatternMiner:
                         self.__mine__(features, pattern.mutants, child_vector, data_frame)
         return
 
-    def mine(self, data_frame: encode.MutantDataFrame, pattern_file: str, mutant_file: str):
+    def mine(self, data_frame: encoding.MutantDataFrame, pattern_file: str, mutant_file: str):
         # 1. mining all the possible valid pattern
         self.patterns.patterns.clear()
         for mutant in data_frame.program.mutant_space.get_mutants():
@@ -593,7 +604,7 @@ class FrequentPatternMiner:
 
         # 2. get the optimal pattern set
         self.patterns.filter(self.min_samples, self.min_confidence)
-        self.patterns.optimize(MutantPatterns.is_parent_of)
+        self.patterns.optimize(MutantPatterns.is_subsume_on)
 
         # 3. output the solutions to the file
         # self.patterns.output(data_frame, pattern_file, mutant_file)
@@ -601,30 +612,6 @@ class FrequentPatternMiner:
         self.patterns.patterns.clear()
         new_patterns.output(data_frame, pattern_file, mutant_file)
         return new_patterns
-
-
-def frequent_pattern_mining(get_assertions, assertion_encode, prob_threshold,
-                            max_pattern_size, min_samples, min_confidence, max_feature_size):
-    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
-    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\freq_pattern'
-    if not os.path.exists(output_directory):
-        os.mkdir(output_directory)
-    for file_name in os.listdir(data_directory):
-        program_directory = os.path.join(data_directory, file_name)
-        encoder = encode.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
-        data_frame = encode.MutantDataFrame(program_directory, encoder)
-        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
-              len(data_frame.words), 'words in', file_name)
-        output_dir = os.path.join(output_directory, file_name)
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
-        pattern_file = os.path.join(output_dir, file_name + '.pls')
-        table_file = os.path.join(output_dir, file_name + ".mut")
-        miner = FrequentPatternMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
-                                     min_confidence=min_confidence, max_feature_size=max_feature_size)
-        miner.mine(data_frame, pattern_file, table_file)
-        print('\t--> Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
-    return
 
 
 class DecisionTreePathMiner:
@@ -637,7 +624,7 @@ class DecisionTreePathMiner:
         self.min_confidence = min_confidence
         return
 
-    def __fit__(self, data_frame: encode.MutantDataFrame):
+    def __fit__(self, data_frame: encoding.MutantDataFrame):
         self.patterns.patterns.clear()
         self.classifier = tree.DecisionTreeClassifier()
         self.features = data_frame.get_features()
@@ -661,16 +648,23 @@ class DecisionTreePathMiner:
             new_words.append(new_word)
         return new_words
 
-    def __write_decision_tree__(self, data_frame: encode.MutantDataFrame, tree_file: str):
+    def __write_decision_tree__(self, data_frame: encoding.MutantDataFrame, tree_file: str):
         dot_data = StringIO()
         self.classifier: tree.DecisionTreeClassifier
+        new_words = list()
+        for word in data_frame.words:
+            if isinstance(word, cmutant.SemanticAssertion):
+                word = encoding.SemanticFeatureEncodeFunctions.get_assertion_source_code(word)
+            else:
+                word = str(word)
+            new_words.append(word)
         tree.export_graphviz(self.classifier, feature_names=DecisionTreePathMiner.__normalize_graphviz_words__(
-            data_frame.words), class_names=['Equiv', 'Non-Equiv'], filled=True, out_file=dot_data)
+            new_words), class_names=['Equiv', 'Non-Equiv'], filled=True, out_file=dot_data)
         graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
         graph.write_pdf(tree_file)
         return
 
-    def __mine__(self, data_frame: encode.MutantDataFrame):
+    def __mine__(self, data_frame: encoding.MutantDataFrame):
         self.classifier: tree.DecisionTreeClassifier
         threshold = self.classifier.tree_.threshold
         tree_features = self.classifier.tree_.feature
@@ -704,7 +698,7 @@ class DecisionTreePathMiner:
                                               data_frame.program.mutant_space.get_mutants())
         return
 
-    def mine(self, data_frame: encode.MutantDataFrame, pattern_file: str, mutant_file: str, tree_file: str):
+    def mine(self, data_frame: encoding.MutantDataFrame, pattern_file: str, mutant_file: str, tree_file: str):
         """
         mine the pattern of decision tree path
         :param mutant_file:
@@ -717,11 +711,37 @@ class DecisionTreePathMiner:
         self.__mine__(data_frame)
         self.__write_decision_tree__(data_frame, tree_file)
         self.patterns.filter(self.min_samples, self.min_confidence)
-        self.patterns.optimize(MutantPatterns.is_parent_of)
+        self.patterns.optimize(MutantPatterns.is_subsume_on)
         new_patterns = self.patterns.copy()
         self.patterns.patterns.clear()
         new_patterns.output(data_frame, pattern_file, mutant_file)
         return new_patterns
+
+
+def frequent_pattern_mining(get_assertions, assertion_encode, prob_threshold,
+                            max_pattern_size, min_samples, min_confidence, max_feature_size):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\freq_pattern'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encoding.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
+        data_frame = encoding.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        pattern_file = os.path.join(output_dir, file_name + '.pls')
+        table_file = os.path.join(output_dir, file_name + ".mut")
+        miner = FrequentPatternMiner(max_pattern_size=max_pattern_size, min_samples=min_samples,
+                                     min_confidence=min_confidence, max_feature_size=max_feature_size)
+        patterns = miner.mine(data_frame, pattern_file, table_file)
+        slice_file = os.path.join(output_dir, file_name + ".slc")
+        slicing.write_context_patterns(patterns, slice_file, 1)
+        print('\t--> Mining', len(data_frame.program.mutant_space.mutants), 'mutants in', file_name)
+    return
 
 
 def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_samples, min_confidence):
@@ -731,8 +751,8 @@ def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_sam
         os.mkdir(output_directory)
     for file_name in os.listdir(data_directory):
         program_directory = os.path.join(data_directory, file_name)
-        encoder = encode.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
-        data_frame = encode.MutantDataFrame(program_directory, encoder)
+        encoder = encoding.MutantFeatureEncoder(get_assertions, assertion_encode, prob_threshold)
+        data_frame = encoding.MutantDataFrame(program_directory, encoder)
         print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
               len(data_frame.words), 'words in', file_name)
         output_dir = os.path.join(output_directory, file_name)
@@ -742,18 +762,20 @@ def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_sam
         decision_tree_file = os.path.join(output_dir, file_name + '.pdf')
         table_file = os.path.join(output_dir, file_name + ".mut")
         miner = DecisionTreePathMiner(min_samples=min_samples, min_confidence=min_confidence)
-        miner.mine(data_frame, pattern_file, table_file, decision_tree_file)
+        patterns = miner.mine(data_frame, pattern_file, table_file, decision_tree_file)
+        slice_file = os.path.join(output_dir, file_name + ".slc")
+        slicing.write_context_patterns(patterns, slice_file, 1)
     return
 
 
+# main testing
 if __name__ == "__main__":
-    print("Testing start here.")
-    # evaluate_classifier(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-    #                    encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005)
-    frequent_pattern_mining(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-                            encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005,
-                            max_pattern_size=3, min_samples=1, min_confidence=0.40, max_feature_size=18)
-    # decision_tree_mine(encode.SemanticAssertionEncodeFunctions.get_all_error_assertions,
-    #                   encode.SemanticAssertionEncodeFunctions.get_assertion_source_code, 0.005,
-    #                   min_samples=1, min_confidence=0.40)
-    print("Testing end for all")
+    print("Testing started!")
+    # decision_tree_mine(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
+    #                   encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
+    #                   prob_threshold=0.005, min_samples=1, min_confidence=0.50)
+    frequent_pattern_mining(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
+                            encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
+                            prob_threshold=0.05, max_pattern_size=3, min_samples=1, min_confidence=0.50,
+                            max_feature_size=18)
+    print("Testing finished")

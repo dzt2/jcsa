@@ -9,6 +9,8 @@ ccode.py defines the data mining describing the source code element, including:
 
 
 import os
+from collections import deque
+
 import src.cmodel.ctoken as ctoken
 import src.cmodel.ctype as ctype
 
@@ -265,7 +267,12 @@ __cir_statement_types__ = {
 }
 
 __cir_assign_statement_types__ = {
-    "BinAssignStatement", "IncreAssignStatement", "InitAssignStatement", "ReturnAssignStatement", "WaitAssignStatement"
+    "BinAssignStatement", "IncreAssignStatement", "InitAssignStatement", "ReturnAssignStatement", "WaitAssignStatement",
+    "SaveAssignStatement"
+}
+
+__cir_condition_statement_types__ = {
+    "CaseStatement", "IfStatement"
 }
 
 __cir_tag_statement_types__ = {
@@ -375,6 +382,9 @@ class CirNode:
     def is_assign_statement(self):
         return self.cir_type in __cir_assign_statement_types__
 
+    def is_condition_statement(self):
+        return self.cir_type in __cir_condition_statement_types__
+
     def is_expression(self):
         return self.cir_type in __cir_expression_types__
 
@@ -383,6 +393,73 @@ class CirNode:
 
     def is_value_expression(self):
         return self.cir_type in __cir_value_expression_types__
+
+    def references_in(self):
+        """
+        collect all the reference expressions within the node (including)
+        :return:
+        """
+        queue = deque()
+        queue.append(self)
+        references = set()
+        while len(queue) > 0:
+            node = queue.popleft()
+            node: CirNode
+            if node.is_refer_expression():
+                references.add(node)
+            for child in node.children:
+                queue.append(child)
+        return references
+
+    def statement_of(self):
+        """
+        get the statement that the node belongs to
+        :return: None if the node is not in statement
+        """
+        node = self
+        while node is not None:
+            if node.is_statement():
+                return node
+            else:
+                node = node.parent
+        return None
+
+    def function_definition_of(self):
+        """
+        function definition where the node belongs to
+        :return: None if the node is not in definition
+        """
+        node = self
+        while node is not None:
+            if node.cir_type == "FunctionDefinition":
+                return node
+            else:
+                node = node.parent
+        return None
+
+    def top_expression_of(self):
+        child = self
+        parent = self.parent
+        while parent is not None:
+            parent: CirNode
+            if not parent.is_expression():
+                if child.is_expression():
+                    return child
+                else:
+                    return None
+            else:
+                child = parent
+                parent = parent.parent
+
+        return None
+
+    def execution_of(self):
+        program = self.tree.program
+        function_graph = program.function_graph
+        return function_graph.get_execution_of_cir_node(self)
+
+    def generate_code(self):
+        return cir_code_generate(self)
 
 
 class CirTree:
@@ -454,6 +531,98 @@ class CirTree:
 
     def size(self):
         return len(self.nodes)
+
+
+def cir_code_generate(node: CirNode):
+    if node.cir_type in { "Declarator", "Implicator", "Identifier", "ReturnPoint", "Field"}:
+        return str(node.get_token())
+    elif node.cir_type == "Label":
+        return str(node.token)
+    elif node.cir_type == "DeferExpression":
+        return "(defer " + cir_code_generate(node.children[0]) + ")"
+    elif node.cir_type == "FieldExpression":
+        return "(field " + cir_code_generate(node.children[0]) + ", " + cir_code_generate(node.children[1]) + ")"
+    elif node.cir_type == "AddressExpression":
+        return "(address " + cir_code_generate(node.children[0]) + ")"
+    elif node.cir_type == "CastExpression":
+        return "(cast " + str(node.get_data_type()) + ", " + cir_code_generate(node.children[1]) + ")"
+    elif node.cir_type == "ConstExpression":
+        return str(node.token)
+    elif node.cir_type == "StringLiteral":
+        return "\"" + node.ast_source.get_code(True) + "\""
+    elif node.cir_type == "DefaultValue":
+        return "?"
+    elif node.cir_type == "InitializerBody":
+        text = "{"
+        for child in node.children:
+            text += " "
+            text += cir_code_generate(child)
+        return text + "}"
+    elif node.cir_type == "WaitExpression":
+        return "(wait " + cir_code_generate(node.children[0]) + ")"
+    elif node.cir_type in { "ArithExpression", "BitwsExpression", "LogicExpression", "RelationExpression" }:
+        text = "(" + str(node.token)
+        for child in node.children:
+            text += " "
+            text += cir_code_generate(child)
+        return text + ")"
+    elif node.cir_type == "Type":
+        return str(node.get_data_type())
+    elif node.cir_type == "ArgumentList":
+        text = ""
+        for argument in node.children:
+            text += " " + cir_code_generate(argument)
+        return text
+    elif node.is_assign_statement():
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + cir_code_generate(node.children[0]) + \
+               " := " + cir_code_generate(node.children[1]) + ";"
+    elif node.cir_type == "CallStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "call " + cir_code_generate(node.children[0]) + \
+               " by " + cir_code_generate(node.children[1]) + ";"
+    elif node.cir_type == "IfStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "if " + cir_code_generate(node.children[0]) + " then " + \
+               cir_code_generate(node.children[1]) + " else " + cir_code_generate(node.children[2]) + ";"
+    elif node.cir_type == "CaseStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "case " + cir_code_generate(node.children[0]) + " then " + \
+               cir_code_generate(node.children[1]) + ";"
+    elif node.cir_type == "GotoStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "goto " + cir_code_generate(node.children[0]) + ";"
+    elif node.cir_type == "BegStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "begin:"
+    elif node.cir_type == "EndStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "end:"
+    elif node.cir_type == "CaseEndStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "end case"
+    elif node.cir_type == "IfEndStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "end if"
+    elif node.cir_type == "LabelStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "label#" + cir_code_generate(node.children[0]) + ":"
+    elif node.cir_type == "DefaultStatement":
+        execution = node.execution_of()
+        return "[" + str(execution.id) + "]\t" + "default:"
+    elif node.cir_type == "FunctionBody":
+        code = ""
+        for child in node.children:
+            code += "\t" + cir_code_generate(child) + "\n"
+        return code
+    elif node.cir_type == "FunctionDefinition":
+        code = cir_code_generate(node.children[0]) + "():\n"
+        code += cir_code_generate(node.children[1])
+        return code + "\n"
+    else:
+        print("Invalid cir_type: " + node.cir_type)
+        exit(1)
+    return
 
 
 # testing methods

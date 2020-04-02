@@ -17,6 +17,7 @@ import os
 import src.cmodel.ccode as ccode
 import src.cmodel.ctoken as ctoken
 import src.cmodel.program as cprogram
+import scipy.sparse as sparse
 
 
 # from score string to label
