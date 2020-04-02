@@ -389,10 +389,12 @@ class MutantPatterns:
         else:
             mutants = set()
             for sample in pattern1.mutants:
-                mutants.add(sample.id)
+                if sample.labels.label == 0:
+                    mutants.add(sample.id)
             for sample in pattern2.mutants:
-                if sample.id not in mutants:
-                    return False
+                if sample.labels.label == 0:
+                    if sample.id not in mutants:
+                        return False
             return True
 
     def optimize(self, is_better):
@@ -771,11 +773,11 @@ def decision_tree_mine(get_assertions, assertion_encode, prob_threshold, min_sam
 # main testing
 if __name__ == "__main__":
     print("Testing started!")
-    # decision_tree_mine(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
-    #                   encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
-    #                   prob_threshold=0.005, min_samples=1, min_confidence=0.50)
-    frequent_pattern_mining(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
-                            encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
-                            prob_threshold=0.05, max_pattern_size=3, min_samples=1, min_confidence=0.50,
-                            max_feature_size=18)
+    decision_tree_mine(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
+                       encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
+                       prob_threshold=0.005, min_samples=1, min_confidence=0.50)
+    # frequent_pattern_mining(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
+    #                        encoding.SemanticFeatureEncodeFunctions.get_assertion_instance,
+    #                        prob_threshold=0.05, max_pattern_size=3, min_samples=1, min_confidence=0.50,
+    #                        max_feature_size=18)
     print("Testing finished")
