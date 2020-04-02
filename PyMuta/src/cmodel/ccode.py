@@ -606,7 +606,10 @@ def cir_code_generate(node: CirNode):
         return "[" + str(execution.id) + "]\t" + "end if"
     elif node.cir_type == "LabelStatement":
         execution = node.execution_of()
-        return "[" + str(execution.id) + "]\t" + "label#" + cir_code_generate(node.children[0]) + ":"
+        if len(node.children) > 0:
+            return "[" + str(execution.id) + "]\t" + "label#" + cir_code_generate(node.children[0]) + ":"
+        else:
+            return "[" + str(execution.id) + "]:\n"
     elif node.cir_type == "DefaultStatement":
         execution = node.execution_of()
         return "[" + str(execution.id) + "]\t" + "default:"
