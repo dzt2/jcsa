@@ -327,50 +327,49 @@ class CDependenceBuilder:
         return instance_graphs
 
 
-def write_context_patterns(patterns: selection.MutantPatterns, file_path: str, length: int):
+def write_context_patterns(clusters: selection.SemanticFeatureClusters, file_path: str, length: int):
     """
     :param length:
-    :param patterns:
+    :param clusters:
     :param file_path:
     :return:
     """
     builder = CDependenceBuilder()
     with open(file_path, 'w') as writer:
-        for key, pattern in patterns.patterns.items():
-            pattern: selection.MutantPattern
-            writer.write("PATTERN#" + str(pattern.pattern_vector) + " with " + str(pattern.get_total()) +
-                         " mutants and " + str(pattern.get_kills()) + " equivalent ones by " +
-                         str(pattern.get_probability()) + " confidence.\n")
-            writer.write("WORDS: " + str(pattern.normal_words()) + "\n")
-            for assertion in pattern.pattern_words:
-                if isinstance(assertion, cmutant.SemanticAssertion):
-                    ''' 1. print the title of the pattern '''
-                    instance_graphs = builder.dependence_slice(assertion, length)
-                    writer.write("\t" + encoding.SemanticFeatureEncodeFunctions.
-                                 get_assertion_source_code(assertion) + "\n")
-                    ''' 2. select a random instance graph from the table '''
-                    index = random.randint(0, len(instance_graphs))
-                    instance_graph = None
-                    for instance, graph in instance_graphs.items():
-                        graph: CDependenceSubGraph
-                        instance_graph = graph.instance_graph()
-                        if index <= 0:
-                            break
-                        else:
-                            index = index - 1
-                    ''' 3. print the statements and flows in the graph '''
-                    if instance_graph is not None:
-                        for node in instance_graph.nodes:
-                            node: cflow.CirInstanceNode
-                            statement = node.get_execution().get_statement()
-                            statement: ccode.CirNode
-                            writer.write("\t" + statement.generate_code() + "\n")
-                        for edge in instance_graph.edges:
-                            edge: cflow.CirInstanceEdge
-                            writer.write("\t==> " + str(edge.get_source().get_execution()) +
-                                         ", " + str(edge.get_target().get_execution()) + "\n")
-                else:
-                    writer.write("\t" + str(assertion) + "\n")
+        for key, cluster in clusters.clusters.items():
+            cluster: selection.SemanticFeatureCluster
+            writer.write("PATTERN#" + str(cluster.feature_vector) + " with " + str(cluster.get_total()) +
+                         " mutants and " + str(cluster.get_alive()) + " equivalent ones by " +
+                         str(cluster.get_probability()) + " confidence.\n")
+            writer.write("WORDS: " + str(cluster.get_words(encoding.SemanticFeatureEncodeFunctions.
+                                                           get_assertion_source_code)) + "\n")
+            for assertion in cluster.assertions:
+                assertion: cmutant.SemanticAssertion
+                ''' 1. print the title of the pattern '''
+                instance_graphs = builder.dependence_slice(assertion, length)
+                writer.write("\t" + encoding.SemanticFeatureEncodeFunctions.
+                             get_assertion_source_code(assertion) + "\n")
+                ''' 2. select a random instance graph from the table '''
+                index = random.randint(0, len(instance_graphs))
+                instance_graph = None
+                for instance, graph in instance_graphs.items():
+                    graph: CDependenceSubGraph
+                    instance_graph = graph.instance_graph()
+                    if index <= 0:
+                        break
+                    else:
+                        index = index - 1
+                ''' 3. print the statements and flows in the graph '''
+                if instance_graph is not None:
+                    for node in instance_graph.nodes:
+                        node: cflow.CirInstanceNode
+                        statement = node.get_execution().get_statement()
+                        statement: ccode.CirNode
+                        writer.write("\t" + statement.generate_code() + "\n")
+                    for edge in instance_graph.edges:
+                        edge: cflow.CirInstanceEdge
+                        writer.write("\t==> " + str(edge.get_source().get_execution()) +
+                                     ", " + str(edge.get_target().get_execution()) + "\n")
             writer.write("\n")
     return
 

@@ -201,9 +201,10 @@ class MutantSpace:
                     mutant.features = feature
         return
 
-    def output(self, file_path: str):
+    def output(self, file_path: str, print_assertion):
         """
         [id, class, operator, line, code_segment, parameter, feature_words, kills, probability]
+        :param print_assertion: translate the semantic assertion into string
         :param file_path:
         :return:
         """
@@ -224,7 +225,12 @@ class MutantSpace:
                     writer.write(str(mutant.parameter))
                 writer.write("\t")
                 if mutant.feature_words is not None:
-                    writer.write(str(mutant.feature_words))
+                    writer.write("[ ")
+                    for assertion in mutant.feature_words:
+                        assertion: SemanticAssertion
+                        word = print_assertion(assertion)
+                        writer.write(word + "; ")
+                    writer.write("]")
                 writer.write("\t")
                 writer.write(str(mutant.labels.kill_counter) + "\t")
                 writer.write(str(mutant.labels.probability) + "\t")
@@ -306,6 +312,8 @@ class SemanticAssertions:
         if len(operands_str) > 0:
             operands_items = operands_str.split(';')
             for operand_item in operands_items:
+                if len(operand_item.strip()) == 0:
+                    continue
                 items = operand_item.strip().split('#')
                 itype = items[0].strip()
                 ivalue = items[1].strip()

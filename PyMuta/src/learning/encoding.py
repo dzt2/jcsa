@@ -127,15 +127,14 @@ class MutantFeatureEncoder:
     To encode the semantic assertions hold by each mutation as feature vector
     """
 
-    def __init__(self, get_assertions, assertion_encode, prob_threshold: float):
+    def __init__(self, get_assertions, prob_threshold: float):
         """
         :param get_assertions: to collect the semantic assertions being encoded
-        :param assertion_encode: encode the semantic assertions as words
         :param prob_threshold: the minimal probability to determine equivalence
         """
         self.word2int = Word2Integer()
         self.get_assertions = get_assertions
-        self.assertion_encode = assertion_encode
+        self.assertion_encode = SemanticFeatureEncodeFunctions.get_assertion_instance
         self.prob_threshold = prob_threshold
         return
 
@@ -157,6 +156,7 @@ class MutantDataFrame:
         for mutant in self.program.mutant_space.get_mutants():
             mutant: cmutant.Mutant
             encoder.encode(mutant)
+        self.word2int = encoder.word2int
         self.words = encoder.word2int.words
         return
 
@@ -204,13 +204,13 @@ def test_data_frame():
         os.mkdir(output_directory)
     for file_name in os.listdir(data_directory):
         program_directory = os.path.join(data_directory, file_name)
-        encoder = MutantFeatureEncoder(SemanticFeatureEncodeFunctions.get_all_assertions,
-                                       SemanticFeatureEncodeFunctions.get_assertion_source_code, 0.005)
+        encoder = MutantFeatureEncoder(SemanticFeatureEncodeFunctions.get_all_assertions, 0.005)
         data_frame = MutantDataFrame(program_directory, encoder)
         # encoder.word2int.save(os.path.join(output_directory, data_frame.get_name() + '.txt'))
         print('Load', len(data_frame.get_mutants()), 'mutants from', data_frame.get_name(),
               'with', len(data_frame.words), 'words')
-        data_frame.program.mutant_space.output(os.path.join(output_directory, file_name + ".mut"))
+        data_frame.program.mutant_space.output(os.path.join(output_directory, file_name + ".mut"),
+                                               SemanticFeatureEncodeFunctions.get_assertion_source_code)
     return
 
 
