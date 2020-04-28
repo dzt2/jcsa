@@ -239,7 +239,25 @@ class FrequentPatternMiner:
         if len(mutant.feature_vector) <= self.max_feature_size:
             return mutant.feature_vector
         else:
-            return mutant.feature_vector[0: self.max_feature_size]
+            queue1 = set()
+            queue2 = set()
+            for feature in mutant.feature_vector:
+                queue1.add(feature)
+            while len(queue2) < self.max_feature_size:
+                index = random.randint(0, len(queue1))
+                feature = None
+                for old_feature in queue1:
+                    feature = old_feature
+                    if index <= 0:
+                        break
+                    else:
+                        index = index - 1
+                if feature is None:
+                    break
+                else:
+                    queue1.remove(feature)
+                    queue2.add(feature)
+            return queue2
 
     def __mine__(self, features, mutants, pattern_vector: list, data_frame: encoding.MutantDataFrame):
         self.clusters: SemanticFeatureClusters
@@ -282,6 +300,7 @@ class FrequentPatternMiner:
         # 2. get the optimal pattern set
         self.clusters.filter(self.min_samples, self.min_confidence)
         self.clusters.optimize(SemanticFeatureClusters.is_subsume_on)
+        self.clusters.__update_index__()
         return self.clusters
 
 
@@ -380,6 +399,7 @@ class DecisionTreePathMiner:
         self.__write_decision_tree__(data_frame, tree_file)
         self.clusters.filter(self.min_samples, self.min_confidence)
         self.clusters.optimize(SemanticFeatureClusters.is_subsume_on)
+        self.clusters.__update_index__()
         return self.clusters
 
 
@@ -518,9 +538,13 @@ class SemanticFeatureClusters:
         return self.clusters[self.__key__(feature_vector)]
 
     def set(self, feature_vector: list, mutants):
-        cluster = SemanticFeatureCluster(feature_vector, mutants, self.data_frame.words)
-        self.clusters[self.__key__(feature_vector)] = cluster
-        return cluster
+        key = self.__key__(feature_vector)
+        if key not in self.clusters:
+            cluster = SemanticFeatureCluster(feature_vector, mutants, self.data_frame.words)
+            self.clusters[self.__key__(feature_vector)] = cluster
+            return cluster
+        else:
+            return self.clusters[key]
 
     def copy(self):
         new_clusters = SemanticFeatureClusters(self.data_frame)
@@ -784,6 +808,7 @@ class SemanticFeatureClusters:
                         cluster = SemanticFeatureCluster(feature_vector, list(), self.data_frame.words)
                         cluster.update(mutants_list)
                         self.clusters[str(cluster)] = cluster
+            self.__update_index__()
         return
 
 
@@ -865,13 +890,35 @@ def read_decision_tree_clusters(get_assertions, prob_threshold):
     return
 
 
+def read_frequent_mining_clusters(get_assertions, prob_threshold):
+    data_directory = 'C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data'
+    output_directory = 'C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\freq_pattern'
+    if not os.path.exists(output_directory):
+        os.mkdir(output_directory)
+    for file_name in os.listdir(data_directory):
+        program_directory = os.path.join(data_directory, file_name)
+        encoder = encoding.MutantFeatureEncoder(get_assertions, prob_threshold)
+        data_frame = encoding.MutantDataFrame(program_directory, encoder)
+        print('Load', len(data_frame.program.mutant_space.mutants), 'mutants with',
+              len(data_frame.words), 'words in', file_name)
+        output_dir = os.path.join(output_directory, file_name)
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        cluster_file = os.path.join(output_dir, file_name + ".cls")
+        clusters = SemanticFeatureClusters(data_frame)
+        clusters.load(cluster_file)
+        print("Load", len(clusters.clusters), "clusters from file")
+    return
+
+
 # main testing
 if __name__ == "__main__":
     print("Testing started!")
-    # read_decision_tree_clusters(encoding.SemanticFeatureEncodeFunctions.get_all_assertions, 0.005)
-    # decision_tree_mine(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
-    #                   prob_threshold=0.005, min_samples=1, min_confidence=0.50)
+    decision_tree_mine(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
+                       prob_threshold=0.005, min_samples=1, min_confidence=0.50)
+    read_decision_tree_clusters(encoding.SemanticFeatureEncodeFunctions.get_all_assertions, 0.005)
     # frequent_pattern_mining(encoding.SemanticFeatureEncodeFunctions.get_all_assertions,
-    #                        prob_threshold=0.05, max_pattern_size=3, min_samples=1, min_confidence=0.65,
+    #                        prob_threshold=0.005, max_pattern_size=3, min_samples=1, min_confidence=0.65,
     #                        max_feature_size=18)
+    # read_frequent_mining_clusters(encoding.SemanticFeatureEncodeFunctions.get_all_assertions, 0.005)
     print("Testing finished")
