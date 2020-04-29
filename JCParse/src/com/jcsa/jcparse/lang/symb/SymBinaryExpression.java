@@ -31,18 +31,11 @@ public class SymBinaryExpression extends SymExpression {
 			SymExpression loperand, SymExpression roperand) throws IllegalArgumentException {
 		super(data_type);
 		switch(operator) {
-		case arith_add:
 		case arith_sub:
-		case arith_mul:
 		case arith_div:
 		case arith_mod:
-		case bit_and:
-		case bit_or:
-		case bit_xor:
 		case left_shift:
 		case righ_shift:
-		case logic_and:
-		case logic_or:
 		case greater_tn:
 		case greater_eq:
 		case smaller_tn:

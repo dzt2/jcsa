@@ -124,6 +124,14 @@ public abstract class SymNode {
 					(SymExpression) node.get_loperand().copy(),
 					(SymExpression) node.get_roperand().copy());
 		}
+		else if(this instanceof SymMultiExpression) {
+			SymMultiExpression node = (SymMultiExpression) this;
+			SymMultiExpression copy = new SymMultiExpression(node.get_data_type(), node.get_operator());
+			for(int k = 0; k < node.number_of_operands(); k++) {
+				copy.add_operand((SymExpression) node.get_operand(k).copy());
+			}
+			return copy;
+		}
 		else if(this instanceof SymFieldExpression) {
 			SymFieldExpression node = (SymFieldExpression) this;
 			return new SymFieldExpression(

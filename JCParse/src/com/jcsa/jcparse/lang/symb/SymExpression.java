@@ -12,10 +12,9 @@ import com.jcsa.jcparse.lang.ctype.CType;
  * 	|--	UnaryExpression
  * 	|--	|--	{+, -, !, ~, &, *, cast<null>}
  * 	|--	BinaryExpression
- * 	|--	|--	{+, -, *, /, %}
- * 	|--	|--	{&, |, ^, <<, >>}
- * 	|--	|--	{&&, ||}
- * 	|--	|--	{<, <=, >, >=, !=, ==}
+ * 	|--	|--	{-, /, <<, >>, <, <=, >, >=, !=, ==}
+ * 	|--	MultiExpression
+ * 	|--	|--	{+, *, &, |, ^, &&, ||}
  * 	|--	FieldExpression
  * 	|--	SequenceExpression
  * 	|--	InvocateExpression
