@@ -27,6 +27,6 @@ public class CirImplicatorImpl extends CirExpressionImpl implements CirImplicato
 		else return name;
 	}
 	@Override
-	public String get_unique_name() { return this.name; }
+	public String get_unique_name() { return "#" + this.get_ast_source().hashCode(); }
 	
 }
