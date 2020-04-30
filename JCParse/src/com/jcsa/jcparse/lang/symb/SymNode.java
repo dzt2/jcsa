@@ -192,6 +192,16 @@ public abstract class SymNode {
 			this.children.set(k, child);
 		}
 	}
+	/**
+	 * remove all the children under the tree
+	 */
+	protected void clear_children() {
+		for(SymNode child : this.children) {
+			child.parent = null; 
+			child.index = -1;
+		}
+		this.children.clear();
+	}
 	
 	/* generate */
 	/**

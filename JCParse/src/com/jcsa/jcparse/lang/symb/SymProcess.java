@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symb;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -284,13 +286,13 @@ public class SymProcess {
 			case logic_and:
 			case logic_or:
 			{
-				SymMultiExpression result = new SymMultiExpression(
+				SymMultiExpression result = new_multiple_expression(
 						expression.get_data_type(), expression.get_operator());
 				for(int k = 0; k < expression.number_of_operand(); k++) {
 					SymExpression operand = parse(expression.get_operand(k));
 					result.add_operand(operand);
 				}
-				return result;
+				return result.compress();
 			}
 			case arith_sub:
 			case arith_div:
@@ -420,7 +422,35 @@ public class SymProcess {
 			default: throw new IllegalArgumentException("Invalid: " + expression);
 			}
 		}
-		/* TODO implement the expression categories */
+		else if(expression instanceof SymMultiExpression) {
+			switch(((SymMultiExpression) expression).get_operator()) {
+			case arith_add:		return evaluate_arith_add((SymMultiExpression) expression, context);
+			case arith_mul:		return evaluate_arith_mul((SymMultiExpression) expression, context);
+			case bit_and:		return evaluate_bitws_and((SymMultiExpression) expression, context);
+			case bit_or:		return evaluate_bitws_ior((SymMultiExpression) expression, context);
+			case bit_xor:		return evaluate_bitws_xor((SymMultiExpression) expression, context);
+			case logic_and:		return evaluate_logic_and((SymMultiExpression) expression, context);
+			case logic_or:		return evaluate_logic_ior((SymMultiExpression) expression, context);
+			default: throw new IllegalArgumentException("Invalid: " + expression);
+			}
+		}
+		else if(expression instanceof SymBinaryExpression) {
+			// TODO implement more methods......
+			switch(((SymBinaryExpression) expression).get_operator()) {
+			case arith_sub:	return evaluate_arith_sub((SymBinaryExpression) expression, context);
+			case arith_div:
+			case arith_mod:
+			case left_shift:
+			case righ_shift:
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			default: throw new IllegalArgumentException("Invalid: " + expression);
+			}
+		}
 		else throw new IllegalArgumentException("Unsupport: " + expression);
 	}
 	
@@ -482,6 +512,7 @@ public class SymProcess {
 	private static SymExpression evaluate_default_value(SymDefaultValue expression, Map<String, Object> context) throws Exception {
 		return (SymExpression) expression.copy();
 	}
+	
 	/* special expression evaluation */
 	/**
 	 * expr.field
@@ -569,10 +600,10 @@ public class SymProcess {
 		}
 		else {
 			SymConstant loperand = new_constant((long) -1);
-			SymMultiExpression result = new SymMultiExpression(
+			SymMultiExpression result = new_multiple_expression(
 					expression.get_data_type(), COperator.arith_mul);
 			result.add_operand(loperand); result.add_operand(operand); 
-			return result;
+			return result.compress();
 		}
 	}
 	/**
@@ -604,7 +635,7 @@ public class SymProcess {
 		}
 	}
 	/**
-	 * expr ==> ~expr
+	 * ~expr ==> (~0) ^ expr
 	 * @param expression
 	 * @param context
 	 * @return
@@ -627,11 +658,20 @@ public class SymProcess {
 		else if(operand instanceof SymUnaryExpression) {
 			if(((SymUnaryExpression) operand).get_operator() == COperator.bit_not)
 				return (SymExpression) ((SymUnaryExpression) operand).get_operand().copy();
-			else 
-				return new SymUnaryExpression(expression.get_data_type(), COperator.bit_not, operand);
+			else {
+				SymConstant loperand = new_constant(~0L);
+				SymMultiExpression result = new_multiple_expression(
+						expression.get_data_type(), COperator.bit_xor);
+				result.add_operand(loperand); result.add_operand(operand); 
+				return result.compress();
+			}
 		}
 		else {
-			return new SymUnaryExpression(expression.get_data_type(), COperator.bit_not, operand);
+			SymConstant loperand = new_constant(~0L);
+			SymMultiExpression result = new SymMultiExpression(
+					expression.get_data_type(), COperator.bit_xor);
+			result.add_operand(loperand); result.add_operand(operand); 
+			return result.compress();
 		}
 	}
 	/**
@@ -745,6 +785,296 @@ public class SymProcess {
 		}
 	}
 	
-	/* binary expression */ 
+	/* multiple combinator */
+	/**
+	 * (x + y) + z ==> x + y + z
+	 * @param expression
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymExpression evaluate_arith_add(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.arith_add) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_arith_mul(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.arith_mul) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_bitws_and(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.bit_and) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_bitws_ior(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.bit_or) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_bitws_xor(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.bit_xor) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_logic_and(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.logic_and) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	private static SymExpression evaluate_logic_ior(SymMultiExpression expression, Map<String, Object> context) throws Exception {
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		for(int i = 0; i < expression.number_of_operands(); i++) {
+			SymExpression operand = evaluate(expression.get_operand(i), context);
+			if(operand instanceof SymMultiExpression) {
+				SymMultiExpression moperand = (SymMultiExpression) operand;
+				if(moperand.get_operator() == COperator.logic_or) {
+					for(int j = 0; j < moperand.number_of_operands(); j++) {
+						operands.add((SymExpression) moperand.get_operand(j).copy());
+					}
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+			else {
+				operands.add(operand);
+			}
+		}
+		
+		if(operands.size() > 1) {
+			expression = new_multiple_expression(expression.get_data_type(), expression.get_operator());
+			for(SymExpression operand : operands) {
+				expression.add_operand(operand);
+			}
+			return expression.compress();
+		}
+		else {
+			return operands.get(0);
+		}
+	}
+	
+	/* binary expression */
+	private static SymExpression negative(SymExpression operand) throws Exception {
+		SymExpression loperand = new_constant(-1L);
+		SymMultiExpression result = new_multiple_expression(operand.get_data_type(), COperator.arith_mul);
+		result.add_operand(loperand); result.add_operand((SymExpression) operand.copy()); return result;
+	}
+	/**
+	 * x - y ==> x + (-1) * y
+	 * @param expression
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymExpression evaluate_arith_sub(SymBinaryExpression expression, Map<String, Object> context) throws Exception {
+		SymExpression loperand = evaluate(expression.get_loperand(), context);
+		SymExpression roperand = evaluate(expression.get_roperand(), context);
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		
+		/* 1. collect left-part */
+		if(loperand instanceof SymMultiExpression) {
+			SymMultiExpression expr = (SymMultiExpression) loperand;
+			if(expr.get_operator() == COperator.arith_add) {
+				for(int k = 0; k < expr.number_of_operands(); k++) {
+					operands.add((SymExpression) expr.get_operand(k).copy());
+				}
+			}
+			else {
+				operands.add(loperand);
+			}
+		}
+		else {
+			operands.add(loperand);
+		}
+		
+		/* 2. collect right-part */
+		if(roperand instanceof SymMultiExpression) {
+			SymMultiExpression expr = (SymMultiExpression) loperand;
+			if(expr.get_operator() == COperator.arith_add) {
+				for(int k = 0; k < expr.number_of_operands(); k++) {
+					operands.add(negative((SymExpression) expr.get_operand(k).copy()));
+				}
+			}
+			else {
+				operands.add(negative(roperand));
+			}
+		}
+		else {
+			operands.add(negative(roperand));
+		}
+		
+		/* create multiple-expression */
+		SymMultiExpression result = new_multiple_expression(
+				expression.get_data_type(), COperator.arith_add);
+		for(SymExpression operand : operands) result.add_operand(operand); 
+		return result.compress();
+	}
+	
+	
 	
 }
