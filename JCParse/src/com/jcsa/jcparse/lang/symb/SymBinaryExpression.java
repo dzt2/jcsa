@@ -87,18 +87,11 @@ public class SymBinaryExpression extends SymExpression {
 	
 	private String operator_name() {
 		switch(operator) {
-		case arith_add:		return "+";
 		case arith_sub:		return "-";
-		case arith_mul:		return "*";
 		case arith_div:		return "/";
 		case arith_mod:		return "%";
-		case bit_and:		return "&";
-		case bit_or:		return "|";
-		case bit_xor:		return "^";
 		case left_shift:	return "<<";
 		case righ_shift:	return ">>";
-		case logic_and:		return "&&";
-		case logic_or:		return "||";
 		case greater_tn:	return ">";
 		case greater_eq:	return ">=";
 		case smaller_tn:	return "<";

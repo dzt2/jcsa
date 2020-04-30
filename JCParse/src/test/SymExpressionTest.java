@@ -14,9 +14,9 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.parse.CTranslate;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymProcess;
+import com.jcsa.jcparse.lang.symb.SymFactory;
 
-public class SymExprTest {
+public class SymExpressionTest {
 	
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "result/sym/";
@@ -60,17 +60,17 @@ public class SymExprTest {
 				
 				/** 2. print expressions under statement **/
 				if(statement instanceof CirAssignStatement) {
-					SymExpression loperand = SymProcess.parse(((CirAssignStatement) statement).get_lvalue());
-					SymExpression roperand = SymProcess.parse(((CirAssignStatement) statement).get_rvalue());
+					SymExpression loperand = SymFactory.parse(((CirAssignStatement) statement).get_lvalue());
+					SymExpression roperand = SymFactory.parse(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t\t==> " + loperand.toString() + "\n");
 					writer.write("\t\t==> " + roperand.toString() + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
-					SymExpression condition = SymProcess.parse(((CirIfStatement) statement).get_condition());
+					SymExpression condition = SymFactory.parse(((CirIfStatement) statement).get_condition());
 					writer.write("\t\t==> " + condition.toString() + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
-					SymExpression condition = SymProcess.parse(((CirCaseStatement) statement).get_condition());
+					SymExpression condition = SymFactory.parse(((CirCaseStatement) statement).get_condition());
 					writer.write("\t\t==> " + condition.toString() + "\n");
 				}
 				/*
