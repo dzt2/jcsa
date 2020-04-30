@@ -80,8 +80,10 @@ public abstract class SymNode {
 	 * @throws IllegalArgumentException
 	 */
 	protected void add_child(SymNode child) throws IllegalArgumentException {
-		if(child == null || child.parent != null)
+		if(child == null)
 			throw new IllegalArgumentException("Unable to add: " + child);
+		else if(child.parent != null)
+			throw new IllegalArgumentException("Duplicated parent: " + child);
 		else { 
 			child.parent = this; 
 			child.index = this.children.size(); 

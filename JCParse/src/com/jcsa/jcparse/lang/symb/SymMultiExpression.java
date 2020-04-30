@@ -25,7 +25,7 @@ public class SymMultiExpression extends SymExpression {
 		case bit_or:
 		case bit_xor:
 		case logic_and:
-		case logic_not:	this.operator = operator; break;
+		case logic_or:	this.operator = operator; break;
 		default: throw new IllegalArgumentException("Invalid operator");
 		}
 	}

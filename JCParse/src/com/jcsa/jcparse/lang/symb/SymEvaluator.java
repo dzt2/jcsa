@@ -241,7 +241,13 @@ public abstract class SymEvaluator {
 	 * @throws Exception
 	 */
 	protected abstract SymExpression de_reference_expression(SymUnaryExpression expression) throws Exception;
-	
+	/**
+	 * 
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	protected abstract SymExpression cast_expression(SymUnaryExpression expression) throws Exception;
 	
 	/* main evaluation */
 	/***
@@ -290,6 +296,7 @@ public abstract class SymEvaluator {
 			case logic_not:		return this.logic_not_expression((SymUnaryExpression) expression);
 			case address_of:	return this.address_of_expression((SymUnaryExpression) expression);
 			case dereference:	return this.de_reference_expression((SymUnaryExpression) expression);
+			case assign:		return this.cast_expression((SymUnaryExpression) expression);
 			default: throw new IllegalArgumentException("Invalid operator");
 			}
 		}
