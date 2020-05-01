@@ -18,6 +18,8 @@ package com.jcsa.jcmuta.mutant.error2mutation;
  */
 public enum ErrorType {
 	
+	/** failure **/					failure,
+	
 	/** execute(stmt) **/			execute,
 	/** not_execute(stmt) **/		not_execute,
 	

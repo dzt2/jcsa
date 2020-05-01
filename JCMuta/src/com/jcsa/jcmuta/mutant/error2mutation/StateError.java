@@ -66,6 +66,7 @@ public class StateError {
 	 */
 	private int generate_level() throws IllegalArgumentException {
 		switch(this.type) {
+		case failure:		return 0;
 		case execute:		return 0;
 		case not_execute:	return 0;
 		case set_bool:		return 4;

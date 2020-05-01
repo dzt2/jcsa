@@ -273,6 +273,15 @@ public class StateErrors {
 		error.operands.add(expression); 
 		return this.preserve(error);
 	}
+	/**
+	 * failure();
+	 * @return
+	 * @throws Exception
+	 */
+	public StateError failure() throws Exception {
+		StateError error = new StateError(this, ErrorType.failure);
+		return this.preserve(error);
+	}
 	
 	/* basic method */
 	/** used to preserve set of state errors to be extended from seed **/
@@ -367,6 +376,7 @@ public class StateErrors {
 			case chg_addr:		this.extend_chg_addr(error); 	break;
 			case mut_expr:		this.extend_mut_expr(error); 	break;
 			case mut_refer:		this.extend_mut_refer(error);	break;
+			case failure:		this.extend_failure(error); 	break;
 			default: throw new IllegalArgumentException("Unsupport " + error);
 			}
 		}
@@ -990,6 +1000,9 @@ public class StateErrors {
 		if(statement instanceof CirAssignStatement) {
 			this.extend_at(this.mut_expr(((CirAssignStatement) statement).get_rvalue()));
 		}
+	}
+	private void extend_failure(StateError error) throws Exception {
+		this.extend_set.add(error);
 	}
 	
 }
