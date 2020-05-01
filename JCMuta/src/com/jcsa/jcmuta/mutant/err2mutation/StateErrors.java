@@ -34,14 +34,9 @@ public class StateErrors {
 	/** string ID to each state error in set **/
 	private Map<String, StateError> errors;
 	/** create the empty set of state errors **/
-	private StateErrors() {
+	protected StateErrors() {
 		this.errors = new HashMap<String, StateError>();
 	}
-	/**
-	 * create an empty set of state errors 
-	 * @return
-	 */
-	public static StateErrors new_set() { return new StateErrors(); }
 	
 	/* getters */
 	/**
@@ -336,7 +331,7 @@ public class StateErrors {
 	 * @return
 	 * @throws Exception
 	 */
-	public Iterable<StateError> extend(StateError error) throws Exception {
+	protected List<StateError> extend(StateError error) throws Exception {
 		this.extend_set.clear();
 		this.extend_at(error);
 		List<StateError> errors = new ArrayList<StateError>();
