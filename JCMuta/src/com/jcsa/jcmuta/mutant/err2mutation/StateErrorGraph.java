@@ -3,6 +3,13 @@ package com.jcsa.jcmuta.mutant.err2mutation;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * BEG --> {path condition} --> execute(stmt)
+ * execute(stmt) --> {infect condition} --> error+
+ * error --> {propagation conditions} --> error+
+ * error --> END
+ * @author yukimula
+ */
 public class StateErrorGraph {
 	
 	/* attributes */
@@ -18,10 +25,12 @@ public class StateErrorGraph {
 	/* constructor */
 	/**
 	 * create an empty set of graph of errors
+	 * @throws Exception 
 	 */
-	private StateErrorGraph() {
+	protected StateErrorGraph() throws Exception {
 		this.errors = new StateErrors();
 		this.nodes = new ArrayList<StateErrorNode>();
+		this.new_node(null); this.new_node(null); 
 	}
 	
 	/* getters */
@@ -40,6 +49,16 @@ public class StateErrorGraph {
 	 * @return
 	 */
 	public Iterable<StateErrorNode> get_nodes() { return this.nodes; }
+	/**
+	 * get the entry node
+	 * @return
+	 */
+	public StateErrorNode get_beg_node() { return this.nodes.get(BEG_INDEX); }
+	/**
+	 * get the exit node
+	 * @return
+	 */
+	public StateErrorNode get_end_node() { return this.nodes.get(END_INDEX); }
 	/**
 	 * get the node w.r.t. the identifier as given
 	 * @param identifier

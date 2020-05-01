@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
-
 public class StateErrorNode {
 	
 	/* attributes */
@@ -98,19 +95,14 @@ public class StateErrorNode {
 	 * @return
 	 * @throws Exception
 	 */
-	protected StateErrorEdge propagate(StateErrorNode target, Iterable<SymExpression> constraints) throws Exception {
+	protected StateErrorEdge propagate(StateErrorNode target, Iterable<StateConstraint> constraints) throws Exception {
 		StateErrorEdge edge = new StateErrorEdge(this, target);
 		if(constraints != null) {
-			for(SymExpression constraint : constraints) {
+			for(StateConstraint constraint : constraints) {
 				edge.add_constraint(constraint);
 			}
 		}
-		else {
-			edge.add_constraint(SymFactory.new_constant(true));
-		}
-		this.ou.add(edge);
-		target.in.add(edge);
-		return edge;
+		this.ou.add(edge); target.in.add(edge); return edge;
 	}
 	
 }

@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
  * Error propagation relationship
@@ -20,7 +19,7 @@ public class StateErrorEdge {
 	/** error that caused by another **/
 	private StateErrorNode target;
 	/** constraints required for causing propagation **/
-	private List<SymExpression> constraints;
+	private List<StateConstraint> constraints;
 	
 	/* constructor */
 	/**
@@ -36,7 +35,7 @@ public class StateErrorEdge {
 			throw new IllegalArgumentException("Invalid target: null");
 		else {
 			this.source = source; this.target = target;
-			this.constraints = new ArrayList<SymExpression>();
+			this.constraints = new ArrayList<StateConstraint>();
 		}
 	}
 	
@@ -55,7 +54,7 @@ public class StateErrorEdge {
 	 * get the constraints for causing error propagation
 	 * @return
 	 */
-	public Iterable<SymExpression> get_constraints() { return this.constraints; }
+	public Iterable<StateConstraint> get_constraints() { return this.constraints; }
 	
 	/* setters */
 	/**
@@ -64,8 +63,9 @@ public class StateErrorEdge {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	private boolean is_condition(SymExpression constraint) throws Exception {
-		CType data_type = CTypeAnalyzer.get_value_type(constraint.get_data_type());
+	private boolean is_condition(StateConstraint constraint) throws Exception {
+		CType data_type = CTypeAnalyzer.get_value_type(
+				constraint.get_sym_condition().get_data_type());
 		return CTypeAnalyzer.is_boolean(data_type);
 	}
 	/**
@@ -73,7 +73,7 @@ public class StateErrorEdge {
 	 * @param constraint
 	 * @throws Exception
 	 */
-	protected void add_constraint(SymExpression constraint) throws Exception {
+	protected void add_constraint(StateConstraint constraint) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else if(this.is_condition(constraint))
