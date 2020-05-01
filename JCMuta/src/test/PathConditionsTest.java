@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmuta.mutant.error2mutation.PathConditions;
-import com.jcsa.jcmuta.mutant.error2mutation.StateConstraint;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -12,6 +11,8 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.parse.CTranslate;
+import com.jcsa.jcparse.lang.symb.StateConstraint;
+import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
@@ -48,15 +49,12 @@ public class PathConditionsTest {
 			CirExecutionFlowGraph fgraph = function.get_flow_graph();
 			for(int k = 1; k <= fgraph.size(); k++) {
 				CirExecution execution = fgraph.get_execution(k % fgraph.size());
-				Iterable<StateConstraint> constraints = 
+				StateConstraints constraints = 
 						PathConditions.path_constraints(execution.get_statement(), dgraph);
 				writer.write("\t" + execution.toString() + "\t\"" + execution.get_statement().generate_trim_code() + "\"\n");
 				writer.write("\t{\n");
-				for(StateConstraint constraint : constraints) {
-					writer.write("\t\t" + constraint.get_execution_point() + " : \t");
-					writer.write(constraint.get_sym_condition().toString());
-					writer.write("\n");
-				}
+				for(StateConstraint constraint : constraints.get_constraints()) 
+					writer.write("\t\t" + constraint + "\n");
 				writer.write("\t}\n");
 			}
 			writer.write("END FUNCTION\n\n");

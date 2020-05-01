@@ -15,10 +15,9 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.symb.SymEvaluator;
+import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 import com.jcsa.jcparse.lang.symb.SymFactory;
-import com.jcsa.jcparse.lang.symb.impl.StandardSymEvaluator;
 import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
@@ -34,7 +33,7 @@ import com.jcsa.jcparse.lopt.models.dominate.CDominanceNode;
 public class PathConditions {
 	
 	private static final Random random = new Random();
-	private static final SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
+	//private static final SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
 	
 	/**
 	 * find the dominance node to which the statement refers to
@@ -133,7 +132,8 @@ public class PathConditions {
 				CBasicTypeImpl.bool_type, COperator.logic_not, condition);
 		}
 		
-		return evaluator.evaluate(condition);
+		// return evaluator.evaluate(condition);
+		return condition;
 	}
 	
 	/**
@@ -142,9 +142,9 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	private static Iterable<StateConstraint> generate_path_condition(
+	private static StateConstraints generate_path_condition(
 			Iterable<CirExecutionFlow> flows) throws Exception {
-		List<StateConstraint> conditions = new ArrayList<StateConstraint>();
+		StateConstraints conditions = new StateConstraints(true);
 		
 		for(CirExecutionFlow flow : flows) {
 			CirStatement statement = flow.get_source().get_statement();
@@ -161,7 +161,7 @@ public class PathConditions {
 			SymExpression condition = SymFactory.parse(expression);
 			condition = get_condition_of(condition, value);
 			
-			conditions.add(new StateConstraint(statement, condition));
+			conditions.add_constraint(statement, condition);
 		}
 		
 		return conditions;
@@ -174,7 +174,7 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Iterable<StateConstraint> path_constraints(
+	public static StateConstraints path_constraints(
 			CirStatement statement, CDominanceGraph dgraph) throws Exception {
 		if(statement == null)
 			throw new IllegalArgumentException("Invalid statement: null");
@@ -188,8 +188,8 @@ public class PathConditions {
 			}
 			else {
 				/** unreachable path condition **/
-				List<StateConstraint> constraints = new ArrayList<StateConstraint>();
-				constraints.add(new StateConstraint(statement, SymFactory.new_constant(false)));
+				StateConstraints constraints = new StateConstraints(true);
+				constraints.add_constraint(statement, SymFactory.new_constant(false));
 				return constraints;
 			}
 		}

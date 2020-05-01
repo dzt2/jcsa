@@ -1,10 +1,6 @@
 package com.jcsa.jcmuta.mutant.error2mutation;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.symb.StateConstraints;
 
 /**
  * Error propagation relationship
@@ -19,7 +15,7 @@ public class StateErrorEdge {
 	/** error that caused by another **/
 	private StateErrorNode target;
 	/** constraints required for causing propagation **/
-	private List<StateConstraint> constraints;
+	private StateConstraints constraints;
 	
 	/* constructor */
 	/**
@@ -28,14 +24,16 @@ public class StateErrorEdge {
 	 * @param target
 	 * @throws IllegalArgumentException
 	 */
-	protected StateErrorEdge(StateErrorNode source, StateErrorNode target) throws IllegalArgumentException {
+	protected StateErrorEdge(StateErrorNode source, StateErrorNode target, StateConstraints constraints) throws IllegalArgumentException {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(target == null)
 			throw new IllegalArgumentException("Invalid target: null");
+		else if(constraints == null)
+			throw new IllegalArgumentException("Invalid constraints");
 		else {
 			this.source = source; this.target = target;
-			this.constraints = new ArrayList<StateConstraint>();
+			this.constraints = constraints;
 		}
 	}
 	
@@ -54,31 +52,6 @@ public class StateErrorEdge {
 	 * get the constraints for causing error propagation
 	 * @return
 	 */
-	public Iterable<StateConstraint> get_constraints() { return this.constraints; }
-	
-	/* setters */
-	/**
-	 * whether the constraint is boolean condition
-	 * @param constraint
-	 * @return
-	 * @throws IllegalArgumentException
-	 */
-	private boolean is_condition(StateConstraint constraint) throws Exception {
-		CType data_type = CTypeAnalyzer.get_value_type(
-				constraint.get_sym_condition().get_data_type());
-		return CTypeAnalyzer.is_boolean(data_type);
-	}
-	/**
-	 * add a boolean constraint as condition in the error propagation
-	 * @param constraint
-	 * @throws Exception
-	 */
-	protected void add_constraint(StateConstraint constraint) throws Exception {
-		if(constraint == null)
-			throw new IllegalArgumentException("Invalid constraint: null");
-		else if(this.is_condition(constraint))
-			this.constraints.add(constraint);
-		else throw new IllegalArgumentException(constraint.toString());
-	}
+	public StateConstraints get_constraints() { return this.constraints; }
 	
 }

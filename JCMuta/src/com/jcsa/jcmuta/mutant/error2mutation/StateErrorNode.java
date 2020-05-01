@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.symb.StateConstraints;
+
 public class StateErrorNode {
 	
 	/* attributes */
@@ -95,13 +97,9 @@ public class StateErrorNode {
 	 * @return
 	 * @throws Exception
 	 */
-	protected StateErrorEdge propagate(StateErrorNode target, Iterable<StateConstraint> constraints) throws Exception {
-		StateErrorEdge edge = new StateErrorEdge(this, target);
-		if(constraints != null) {
-			for(StateConstraint constraint : constraints) {
-				edge.add_constraint(constraint);
-			}
-		}
+	protected StateErrorEdge propagate(StateErrorNode target, StateConstraints constraints) throws Exception {
+		if(constraints == null) constraints = new StateConstraints(true); 
+		StateErrorEdge edge = new StateErrorEdge(this, target, constraints);
 		this.ou.add(edge); target.in.add(edge); return edge;
 	}
 	
