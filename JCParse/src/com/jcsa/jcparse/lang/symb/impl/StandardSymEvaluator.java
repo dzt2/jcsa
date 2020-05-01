@@ -1171,7 +1171,7 @@ public class StandardSymEvaluator extends AbstractSymEvaluator {
 		}
 		else {
 			return SymFactory.new_unary_expression(
-					expression.get_data_type(), COperator.bit_not, operand);
+					expression.get_data_type(), COperator.logic_not, operand);
 		}
 	}
 

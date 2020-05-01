@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.err2mutation;
+package com.jcsa.jcmuta.mutant.error2mutation;
 
 import java.util.ArrayList;
 import java.util.HashMap;

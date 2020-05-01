@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.err2mutation;
+package com.jcsa.jcmuta.mutant.error2mutation;
 
 /**
  * Type of abstract state error.<br>
