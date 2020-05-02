@@ -31,6 +31,14 @@ public class BTRPInfection extends StateInfection {
 		}
 	}
 	
+	/**
+	 * p 
+	 * p != 0
+	 * p != null
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
 	private StateConstraints trap_on_true_constraints(CirExpression expression) throws Exception {
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		SymExpression condition = SymFactory.parse(expression);
@@ -57,6 +65,15 @@ public class BTRPInfection extends StateInfection {
 		constraints.add_constraint(expression.statement_of(), constraint);
 		return constraints;
 	}
+	
+	/**
+	 * !p
+	 * p == null
+	 * p == 0
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
 	private StateConstraints trap_on_false_constraints(CirExpression expression) throws Exception {
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		SymExpression condition = SymFactory.parse(expression);
@@ -68,12 +85,12 @@ public class BTRPInfection extends StateInfection {
 		}
 		else if(CTypeAnalyzer.is_number(type)) {
 			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.not_equals,
+					CBasicTypeImpl.bool_type, COperator.equal_with,
 					condition, SymFactory.new_constant(0L));
 		}
 		else if(CTypeAnalyzer.is_pointer(type)) {
 			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.not_equals, 
+					CBasicTypeImpl.bool_type, COperator.equal_with, 
 					condition, SymFactory.new_address(StateError.NullPointer, type));
 		}
 		else {

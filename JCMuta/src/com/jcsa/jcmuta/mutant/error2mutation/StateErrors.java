@@ -71,6 +71,19 @@ public class StateErrors {
 		error.operands.add(statement); return this.preserve(error);
 	}
 	/**
+	 * execute_for(stmt, time)
+	 * @param statement
+	 * @param loop_times
+	 * @return
+	 * @throws IllegalArgumentException
+	 */
+	public StateError execute_for(CirStatement statement, long loop_times) throws IllegalArgumentException {
+		StateError error = new StateError(this, ErrorType.not_execute);
+		error.operands.add(statement); 
+		error.operands.add(Long.valueOf(loop_times));
+		return this.preserve(error);
+	}
+	/**
 	 * set_bool(expr, value)
 	 * @param expression
 	 * @param value
@@ -361,6 +374,7 @@ public class StateErrors {
 			switch(error.get_type()) {
 			case execute:		this.extend_execute(error);		break;
 			case not_execute:	this.extend_not_execute(error); break;
+			case execute_for: 	this.extend_execute_for(error);	break;
 			case set_bool:		this.extend_set_bool(error); 	break;
 			case chg_bool:		this.extend_chg_bool(error); 	break;
 			case set_numb:		this.extend_set_numb(error); 	break;
@@ -1003,6 +1017,11 @@ public class StateErrors {
 	}
 	private void extend_failure(StateError error) throws Exception {
 		this.extend_set.add(error);
+	}
+	private void extend_execute_for(StateError error) throws Exception {
+		this.extend_set.add(error);
+		CirStatement statement = (CirStatement) error.get_operand(0);
+		this.extend_at(error.get_errors().execute(statement));
 	}
 	
 }

@@ -13,6 +13,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.parse.CTranslate;
+import com.jcsa.jcparse.lang.symb.SymCodeGenerator;
 import com.jcsa.jcparse.lang.symb.SymEvaluator;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 import com.jcsa.jcparse.lang.symb.SymFactory;
@@ -51,6 +52,8 @@ public class SymExpressionTest {
 		FileWriter writer = new FileWriter(output);
 		Iterable<CirFunction> functions = cir_tree.get_function_call_graph().get_functions();
 		SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
+		SymCodeGenerator.set_simple_print();
+		
 		for(CirFunction function : functions) {
 			CirExecutionFlowGraph flow_graph = function.get_flow_graph();
 			writer.write("Function " + function.get_name() + "\n");
@@ -65,24 +68,24 @@ public class SymExpressionTest {
 				if(statement instanceof CirAssignStatement) {
 					SymExpression loperand = SymFactory.parse(((CirAssignStatement) statement).get_lvalue());
 					SymExpression roperand = SymFactory.parse(((CirAssignStatement) statement).get_rvalue());
-					writer.write("\t\t==> " + loperand.toString() + "\n");
-					writer.write("\t\t==> " + roperand.toString() + "\n");
+					writer.write("\t\t==> " + SymCodeGenerator.generate(loperand) + "\n");
+					writer.write("\t\t==> " + SymCodeGenerator.generate(roperand) + "\n");
 					loperand = evaluator.evaluate(loperand);
 					roperand = evaluator.evaluate(roperand);
-					writer.write("\t\t~~> " + loperand.toString() + "\n");
-					writer.write("\t\t~~> " + roperand.toString() + "\n");
+					writer.write("\t\t~~> " + SymCodeGenerator.generate(loperand) + "\n");
+					writer.write("\t\t~~> " + SymCodeGenerator.generate(roperand) + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymExpression condition = SymFactory.parse(((CirIfStatement) statement).get_condition());
-					writer.write("\t\t==> " + condition.toString() + "\n");
+					writer.write("\t\t==> " + SymCodeGenerator.generate(condition) + "\n");
 					condition = evaluator.evaluate(condition);
-					writer.write("\t\t~~> " + condition.toString() + "\n");
+					writer.write("\t\t~~> " + SymCodeGenerator.generate(condition) + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymExpression condition = SymFactory.parse(((CirCaseStatement) statement).get_condition());
-					writer.write("\t\t==> " + condition.toString() + "\n");
+					writer.write("\t\t==> " + SymCodeGenerator.generate(condition) + "\n");
 					condition = evaluator.evaluate(condition);
-					writer.write("\t\t~~> " + condition.toString() + "\n");
+					writer.write("\t\t~~> " + SymCodeGenerator.generate(condition) + "\n");
 				}
 				/*
 				else if(statement instanceof CirCallStatement) {

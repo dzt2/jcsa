@@ -22,6 +22,7 @@ public enum ErrorType {
 	
 	/** execute(stmt) **/			execute,
 	/** not_execute(stmt) **/		not_execute,
+	/** execute_for(stmt, int) **/	execute_for,
 	
 	/** set_bool(expr) **/			set_bool,
 	/** chg_bool(expr) **/			chg_bool,
