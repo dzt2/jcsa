@@ -7,22 +7,17 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
-import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
 
 public class BTRPInfection extends StateInfection {
 	
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		CirExpression result = this.get_result_of(cir_tree, mutation.get_location());
+		CirExpression result = this.get_result_of(cir_tree, this.get_location(mutation));
 		if(result != null) {
 			return result.statement_of();
 		}
@@ -40,27 +35,7 @@ public class BTRPInfection extends StateInfection {
 	 * @throws Exception
 	 */
 	private StateConstraints trap_on_true_constraints(CirExpression expression) throws Exception {
-		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		SymExpression condition = SymFactory.parse(expression);
-		
-		SymExpression constraint;
-		if(CTypeAnalyzer.is_boolean(type)) {
-			constraint = condition;
-		}
-		else if(CTypeAnalyzer.is_number(type)) {
-			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.not_equals,
-					condition, SymFactory.new_constant(0L));
-		}
-		else if(CTypeAnalyzer.is_pointer(type)) {
-			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.not_equals, 
-					condition, SymFactory.new_address(StateError.NullPointer, type));
-		}
-		else {
-			throw new IllegalArgumentException("Invalid data type: " + type);
-		}
-		
+		SymExpression constraint = this.get_sym_condition(expression, true);
 		StateConstraints constraints = new StateConstraints(true);
 		constraints.add_constraint(expression.statement_of(), constraint);
 		return constraints;
@@ -75,28 +50,7 @@ public class BTRPInfection extends StateInfection {
 	 * @throws Exception
 	 */
 	private StateConstraints trap_on_false_constraints(CirExpression expression) throws Exception {
-		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		SymExpression condition = SymFactory.parse(expression);
-		
-		SymExpression constraint;
-		if(CTypeAnalyzer.is_boolean(type)) {
-			constraint = SymFactory.new_unary_expression(
-					CBasicTypeImpl.bool_type, COperator.logic_not, condition);
-		}
-		else if(CTypeAnalyzer.is_number(type)) {
-			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.equal_with,
-					condition, SymFactory.new_constant(0L));
-		}
-		else if(CTypeAnalyzer.is_pointer(type)) {
-			constraint = SymFactory.new_binary_expression(
-					CBasicTypeImpl.bool_type, COperator.equal_with, 
-					condition, SymFactory.new_address(StateError.NullPointer, type));
-		}
-		else {
-			throw new IllegalArgumentException("Invalid data type: " + type);
-		}
-		
+		SymExpression constraint = this.get_sym_condition(expression, false);
 		StateConstraints constraints = new StateConstraints(true);
 		constraints.add_constraint(expression.statement_of(), constraint);
 		return constraints;
@@ -105,7 +59,7 @@ public class BTRPInfection extends StateInfection {
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		AstExpression ast_location = (AstExpression) mutation.get_location();
+		AstExpression ast_location = (AstExpression) this.get_location(mutation);
 		CirExpression expression = this.get_result_of(cir_tree, ast_location);
 		
 		StateConstraints constraints;

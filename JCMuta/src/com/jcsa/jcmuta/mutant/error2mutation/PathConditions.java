@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.AstCirPair;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
@@ -35,6 +38,7 @@ public class PathConditions {
 	private static final Random random = new Random();
 	//private static final SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
 	
+	/* path condition finder */
 	/**
 	 * find the dominance node to which the statement refers to
 	 * @param statement
@@ -70,7 +74,6 @@ public class PathConditions {
 		
 		/* none of nodes matching with the statement */	return null;
 	}
-	
 	/**
 	 * get the flow path from entry to the 
 	 * @param statement
@@ -100,7 +103,6 @@ public class PathConditions {
 		}
 		return flows;
 	}
-	
 	/**
 	 * translate the source to boolean condition
 	 * @param source
@@ -135,7 +137,6 @@ public class PathConditions {
 		// return evaluator.evaluate(condition);
 		return condition;
 	}
-	
 	/**
 	 * generate the path conditions w.r.t. the path being selected
 	 * @param flows
@@ -166,7 +167,6 @@ public class PathConditions {
 		
 		return conditions;
 	}
-	
 	/**
 	 * get the constraints of the path to the statement
 	 * @param statement
@@ -193,6 +193,80 @@ public class PathConditions {
 				return constraints;
 			}
 		}
+	}
+	
+	/* statement locator for an AstNode in CirTree */
+	/**
+	 * try to find the CIR location to which the AST source node corresponds
+	 * @param cir_tree
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private static CirStatement try_to_find_location(CirTree cir_tree, AstNode source, boolean direction) throws Exception {
+		if(cir_tree.has_cir_range(source)) {
+			AstCirPair range = cir_tree.get_cir_range(source);
+			if(range.executional()) {
+				if(direction)
+					return range.get_beg_statement();
+				else
+					return range.get_end_statement();
+			}
+		}
+		return null;
+	}
+	/**
+	 * get the CIR location to which the AST source node corresponds
+	 * @param cir_tree
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	public static CirStatement find_cir_location(CirTree cir_tree, AstNode source) throws Exception {
+		/* 1. stop at current node */
+		CirStatement stmt = try_to_find_location(cir_tree, source, true);
+		if(stmt != null) return stmt;
+		
+		/* 2. find until the parent where location is accessble */
+		AstNode parent = source.get_parent();
+		while(parent != null) {
+			if(try_to_find_location(cir_tree, parent, true) != null)
+				break;
+			else {
+				source = parent; parent = parent.get_parent();
+			}
+		}
+		
+		if(parent == null) return null;	/* unable to access */
+		/* 3. find the location within the range of parent */
+		else {
+			/** get the index of source in parent **/
+			int index = 0;
+			while(index < parent.number_of_children()) {
+				if(parent.get_child(index) == source)
+					break;
+				else
+					index++;
+			}
+			
+			/** search within [0, index) **/
+			for(int k = index - 1; k >= 0; k--) {
+				AstNode child = parent.get_child(k);
+				stmt = try_to_find_location(cir_tree, child, false);
+				if(stmt != null) return stmt;
+			}
+			
+			/** search within (index, n) **/
+			for(int k = index + 1; k < parent.number_of_children(); k++) {
+				AstNode child = parent.get_child(k);
+				stmt = try_to_find_location(cir_tree, child, true);
+				if(stmt != null) return stmt;
+			}
+			
+			/** find the runtime error **/
+			throw new IllegalArgumentException("Unable to access: " + source);
+		}
+		
 	}
 	
 }

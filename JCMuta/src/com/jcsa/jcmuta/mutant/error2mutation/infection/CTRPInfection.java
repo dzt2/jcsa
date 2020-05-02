@@ -25,14 +25,15 @@ public class CTRPInfection extends StateInfection {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return this.get_beg_statement(cir_tree, mutation.get_location());
+		return this.get_beg_statement(cir_tree, this.get_location(mutation));
 	}
 
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		AstExpression condition = (AstExpression) mutation.get_location();
-		AstExpression case_value = (AstExpression) mutation.get_parameter(); 
+		AstExpression condition = (AstExpression) this.get_location(mutation);
+		AstExpression case_value = (AstExpression) 
+					this.get_location((AstMutation) mutation.get_parameter());
 		
 		CirStatement statement = this.get_beg_statement(cir_tree, condition);
 		CirExpression loperand = this.get_result_of(cir_tree, condition);
