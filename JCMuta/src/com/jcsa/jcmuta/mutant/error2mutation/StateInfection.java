@@ -1,5 +1,6 @@
 package com.jcsa.jcmuta.mutant.error2mutation;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmuta.mutant.AstMutation;
@@ -38,8 +39,8 @@ public abstract class StateInfection {
 	 * @return
 	 * @throws Exception
 	 */
-	protected abstract Map<StateError, StateConstraints> get_infections(
-			CirTree cir_tree, AstMutation mutation, StateErrorGraph graph) throws Exception;
+	protected abstract void get_infections(CirTree cir_tree, AstMutation mutation, 
+			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
 	
 	/**
 	 * generate the infection subgraph from specified mutation
@@ -68,7 +69,8 @@ public abstract class StateInfection {
 			graph.get_beg_node().propagate(reach_node, path_constraints);
 			
 			/* reach_node -- {constraints} --> infect_node+ */
-			Map<StateError, StateConstraints> infections = this.get_infections(cir_tree, mutation, graph);
+			Map<StateError, StateConstraints> infections = new HashMap<StateError, StateConstraints>();
+			this.get_infections(cir_tree, mutation, graph, infections);
 			for(StateError error : infections.keySet()) {
 				StateConstraints constraints = infections.get(error);
 				StateErrorNode target = graph.new_node(error);

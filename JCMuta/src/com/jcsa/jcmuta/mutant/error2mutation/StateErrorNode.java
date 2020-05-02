@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 
 public class StateErrorNode {
@@ -13,6 +14,8 @@ public class StateErrorNode {
 	private StateErrorGraph graph;
 	/** identifier of the node in the graph **/
 	private int identifier;
+	/** the location where the error occurs **/
+	private CirNode location;
 	/** get the errors definint this node **/
 	private List<StateError> errors;
 	/** errors propagation from this node **/
@@ -33,10 +36,15 @@ public class StateErrorNode {
 			throw new IllegalArgumentException("Invalid graph: null");
 		else {
 			this.graph = graph; this.identifier = identifier;
-			if(source == null)
+			if(source == null) {
+				this.location = null;
 				this.errors = new ArrayList<StateError>();
+			}
 			else {
+				this.location = null;
 				this.errors = source.get_errors().extend(source);
+				if(source.number_of_operands() > 0)
+					this.location = (CirNode) source.get_operand(0);
 			}
 			this.in = new LinkedList<StateErrorEdge>();
 			this.ou = new LinkedList<StateErrorEdge>();
@@ -54,6 +62,11 @@ public class StateErrorNode {
 	 * @return
 	 */
 	public int get_identifier() { return this.identifier; }
+	/**
+	 * get the location where the error occurs in program
+	 * @return
+	 */
+	public CirNode get_location() { return this.location; }
 	/**
 	 * get the errors in this node
 	 * @return
