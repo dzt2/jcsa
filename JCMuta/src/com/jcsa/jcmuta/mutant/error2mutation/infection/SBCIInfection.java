@@ -13,11 +13,11 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
@@ -30,126 +30,62 @@ public class SBCIInfection extends StateInfection {
 	}
 	
 	/**
-	 * get the IF-conditional statement with respect to the looping parent
-	 * @param cir_tree
+	 * get the looping structure in which the mutant is seeded
 	 * @param mutation
 	 * @return
 	 * @throws Exception
 	 */
-	private CirIfStatement find_conditional_statement(CirTree cir_tree, AstMutation mutation) throws Exception {
+	private AstStatement get_loop_statement(AstMutation mutation) throws Exception {
 		AstNode location = mutation.get_location();
 		while(location != null) {
-			CirIfStatement if_statement;
-			if(location instanceof AstWhileStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
-				return if_statement;
-			}
-			else if(location instanceof AstDoWhileStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
-				return if_statement;
-			}
-			else if(location instanceof AstForStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
-				return if_statement;
-			}
-			else {
-				location = location.get_parent();
-			}
+			if(location instanceof AstWhileStatement
+				|| location instanceof AstDoWhileStatement
+				|| location instanceof AstForStatement)
+				return (AstStatement) location;
+			else location = location.get_parent();
 		}
-		return null;	/* unable to find */
-	}
-	
-	/**
-	 * if-end statement
-	 * @param cir_tree
-	 * @param mutation
-	 * @return
-	 * @throws Exception
-	 */
-	private CirTagStatement find_end_statement(CirTree cir_tree, AstMutation mutation) throws Exception {
-		AstNode location = mutation.get_location();
-		while(location != null) {
-			if(location instanceof AstWhileStatement) {
-				return (CirTagStatement) cir_tree.get_cir_nodes(location, CirIfEndStatement.class);
-			}
-			else if(location instanceof AstDoWhileStatement) {
-				return (CirTagStatement) cir_tree.get_cir_nodes(location, CirIfEndStatement.class);
-			}
-			else if(location instanceof AstForStatement) {
-				return (CirTagStatement) cir_tree.get_cir_nodes(location, CirIfEndStatement.class);
-			}
-			else {
-				location = location.get_parent();
-			}
-		}
-		return null;	/* unable to find */
+		return null;
 	}
 	
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		/* 1. get the loop statement and seeded point */
-		CirStatement seed_statement = PathConditions.
-								find_cir_location(cir_tree, this.get_location(mutation));
-		CirIfStatement beg_statement = this.find_conditional_statement(cir_tree, mutation);
-		CirTagStatement end_statement = this.find_end_statement(cir_tree, mutation);
-		
-		/* 2. invalid insertion */
-		if(beg_statement == null) {
+		AstStatement loop_statement = this.get_loop_statement(mutation);
+		/* syntax error */
+		if(loop_statement == null) {
 			output.put(graph.get_error_set().syntax_error(), new StateConstraints(true));
 		}
-		/* 3. insert break to prevent all the statements in block being not executed */
-		else if(mutation.get_mutation_operator() == MutaOperator.ins_break) {
-			Set<CirExecutionFlow> prev_flows = PathConditions.must_be_path(
-					PathConditions.paths_of(beg_statement, seed_statement));
-			Set<CirExecutionFlow> post_flows = PathConditions.must_be_path(
-					PathConditions.paths_of(seed_statement, end_statement));
-			
-			Set<CirStatement> prev_statements = new HashSet<CirStatement>();
-			Set<CirStatement> post_statements = new HashSet<CirStatement>();
-			for(CirExecutionFlow flow : prev_flows) {
-				prev_statements.add(flow.get_source().get_statement());
-				prev_statements.add(flow.get_target().get_statement());
-			}
-			for(CirExecutionFlow flow : post_flows) {
-				post_statements.add(flow.get_source().get_statement());
-				post_statements.add(flow.get_target().get_statement());
-			}
-			post_statements.remove(seed_statement);
-			
-			/* condition == true --> prev_statements not executed */
-			StateConstraints cond_constraints = new StateConstraints(true);
-			cond_constraints.add_constraint(beg_statement, 
-					this.get_sym_condition(beg_statement.get_condition(), true));
-			for(CirStatement statement : prev_statements) {
-				if(!(statement instanceof CirTagStatement)) {
-					output.put(graph.get_error_set().not_execute(statement), cond_constraints);
-				}
-			}
-			
-			/* true --> post_statements not execute */
-			StateConstraints true_constraint = new StateConstraints(true);
-			for(CirStatement statement : post_statements) {
-				if(!(statement instanceof CirTagStatement)) {
-					output.put(graph.get_error_set().not_execute(statement), true_constraint);
-				}
-			}
-		}
-		/* 4. insert continue statement */
+		/* valid mutation */
 		else {
-			Set<CirExecutionFlow> post_flows = PathConditions.must_be_path(
-					PathConditions.paths_of(seed_statement, end_statement));
-			Set<CirStatement> post_statements = new HashSet<CirStatement>();
-			for(CirExecutionFlow flow : post_flows) {
-				post_statements.add(flow.get_source().get_statement());
-				post_statements.add(flow.get_target().get_statement());
-			}
+			/** 1. get the key point in the program for analysis **/
+			Set<CirStatement> statements_in_loop = this.collect_statements_in(cir_tree, loop_statement);
+			/*CirIfStatement beg_statement = 
+					(CirIfStatement) cir_tree.get_cir_nodes(loop_statement, CirIfStatement.class).get(0);*/
+			CirIfEndStatement end_statement = 
+					(CirIfEndStatement) cir_tree.get_cir_nodes(loop_statement, CirIfEndStatement.class).get(0);
+			CirStatement seed_statement = this.get_location(cir_tree, mutation);
 			
-			/* true --> post_statements not execute */
-			StateConstraints true_constraint = new StateConstraints(true);
-			for(CirStatement statement : post_statements) {
-				if(!(statement instanceof CirTagStatement)) {
-					output.put(graph.get_error_set().not_execute(statement), true_constraint);
+			/** 2. in case of inserting continue **/
+			if(mutation.get_mutation_operator() == MutaOperator.ins_continue) {
+				Set<CirExecutionFlow> seed_end_paths = PathConditions.might_be_path(
+						PathConditions.paths_of(seed_statement, end_statement));
+				Set<CirStatement> seed_end_statements = new HashSet<CirStatement>();
+				for(CirExecutionFlow flow : seed_end_paths) {
+					CirStatement source = flow.get_source().get_statement();
+					CirStatement target = flow.get_target().get_statement();
+					if(statements_in_loop.contains(source)) seed_end_statements.add(source);
+					if(statements_in_loop.contains(target)) seed_end_statements.add(target);
+				}
+				for(CirStatement statement : seed_end_statements) {
+					if(!(statement instanceof CirTagStatement))
+						output.put(graph.get_error_set().not_execute(statement), new StateConstraints(true));
+				}
+			}
+			/** 3. in case of break is inserted, remove all the statements in loop **/
+			else {
+				for(CirStatement statement : statements_in_loop) {
+					if(!(statement instanceof CirTagStatement))
+						output.put(graph.get_error_set().not_execute(statement), new StateConstraints(true));
 				}
 			}
 		}

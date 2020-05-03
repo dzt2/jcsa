@@ -279,7 +279,7 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	private static CirExecution get_execution_of(CirStatement statement) throws Exception {
+	public static CirExecution get_execution_of(CirStatement statement) throws Exception {
 		return statement.get_tree().get_function_call_graph().
 				get_function(statement).get_flow_graph().get_execution(statement);
 	}
@@ -292,10 +292,11 @@ public class PathConditions {
 	 * @throws Exception
 	 */
 	private static void deep_traversal_in(CirExecution target, CirExecutionFlow flow, 
-			Set<CirExecutionFlow> path, Collection<Set<CirExecutionFlow>> paths) throws Exception {
+			List<CirExecutionFlow> path, Set<CirExecutionFlow> visits, 
+			Collection<List<CirExecutionFlow>> paths) throws Exception {
 		/* 1. get to the target and record */
 		if(flow.get_target() == target) {
-			Set<CirExecutionFlow> flow_path = new HashSet<CirExecutionFlow>();
+			List<CirExecutionFlow> flow_path = new ArrayList<CirExecutionFlow>();
 			for(CirExecutionFlow new_flow : path) flow_path.add(new_flow); 
 			paths.add(flow_path);
 		}
@@ -314,10 +315,10 @@ public class PathConditions {
 				default: break;
 				}
 				
-				if(next_flow != null && !path.contains(next_flow)) { 
-					path.add(next_flow);
-					deep_traversal_in(target, next_flow, path, paths);
-					path.remove(next_flow);
+				if(next_flow != null && !visits.contains(next_flow)) { 
+					path.add(next_flow); visits.add(next_flow);
+					deep_traversal_in(target, next_flow, path, visits, paths);
+					path.remove(next_flow); visits.remove(next_flow);
 				}
 			}
 		}
@@ -329,13 +330,16 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Collection<Set<CirExecutionFlow>> paths_of(CirStatement source, CirStatement target) throws Exception {
-		List<Set<CirExecutionFlow>> paths = new ArrayList<Set<CirExecutionFlow>>();
+	public static Collection<List<CirExecutionFlow>> paths_of(CirStatement source, CirStatement target) throws Exception {
+		List<List<CirExecutionFlow>> paths = new ArrayList<List<CirExecutionFlow>>();
 		CirExecution source_node = get_execution_of(source);
 		CirExecution target_node = get_execution_of(target);
 		
+		List<CirExecutionFlow> path = new ArrayList<CirExecutionFlow>();
 		for(CirExecutionFlow ou_flow : source_node.get_ou_flows()) {
-			deep_traversal_in(target_node, ou_flow, new HashSet<CirExecutionFlow>(), paths);
+			path.add(ou_flow);
+			deep_traversal_in(target_node, ou_flow, path, new HashSet<CirExecutionFlow>(), paths);
+			path.clear();
 		}
 		
 		return paths;
@@ -346,26 +350,24 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Set<CirExecutionFlow> must_be_path(Collection<Set<CirExecutionFlow>> paths) throws Exception {
+	public static Set<CirExecutionFlow> must_be_path(Collection<List<CirExecutionFlow>> paths) throws Exception {
 		Set<CirExecutionFlow> common_path = new HashSet<CirExecutionFlow>();
 		Set<CirExecutionFlow> update_path = new HashSet<CirExecutionFlow>();
 		
 		boolean first = true;
-		for(Set<CirExecutionFlow> path : paths) {
+		for(List<CirExecutionFlow> path : paths) {
 			if(first) {
 				common_path.addAll(path);
 			}
 			else {
 				update_path.clear();
-				for(CirExecutionFlow flow : common_path) {
-					if(path.contains(flow)) {
+				for(CirExecutionFlow flow : path) {
+					if(common_path.contains(flow)) {
 						update_path.add(flow);
 					}
-					
 					common_path.clear();
 					common_path.addAll(update_path);
 				}
-				
 			}
 			first = false;
 		}
@@ -378,10 +380,13 @@ public class PathConditions {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Set<CirExecutionFlow> might_be_path(Collection<Set<CirExecutionFlow>> paths) throws Exception {
+	public static Set<CirExecutionFlow> might_be_path(Collection<List<CirExecutionFlow>> paths) throws Exception {
 		Set<CirExecutionFlow> all_path = new HashSet<CirExecutionFlow>();
-		for(Set<CirExecutionFlow> path : paths) { all_path.addAll(path); }
+		for(List<CirExecutionFlow> path : paths) { all_path.addAll(path); }
 		return all_path;
 	}
+	
+	/* usage definition analysis by path-sensitive approach */
+	
 	
 }

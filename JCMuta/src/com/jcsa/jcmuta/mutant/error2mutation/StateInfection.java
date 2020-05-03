@@ -1,7 +1,11 @@
 package com.jcsa.jcmuta.mutant.error2mutation;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -16,6 +20,7 @@ import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymEvaluator;
@@ -31,6 +36,9 @@ import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
  *
  */
 public abstract class StateInfection {
+	
+	/** to represent the value of any integer **/
+	protected static final String AnyInteger = "AnyInt";
 	
 	/* common tool-kit */
 	/** data type factory **/
@@ -266,6 +274,66 @@ public abstract class StateInfection {
 			return evaluator.evaluate(constraint);
 		else
 			return constraint; // get original constraint
+	}
+	/**
+	 * get all the statements within the code range of AST source node
+	 * @param cir_tree
+	 * @param node
+	 * @return
+	 * @throws Exception
+	 */
+	protected Set<CirStatement> collect_statements_in(CirTree cir_tree, AstNode node) throws Exception {
+		Queue<AstNode> queue = new LinkedList<AstNode>();
+		Set<CirStatement> statements = new HashSet<CirStatement>();
+		
+		queue.add(node);
+		while(!queue.isEmpty()) {
+			AstNode parent = queue.poll();
+			
+			CirStatement beg = this.get_beg_statement(cir_tree, parent);
+			CirStatement end = this.get_end_statement(cir_tree, parent);
+			if(beg != null) statements.add(beg);
+			if(end != null) statements.add(end);
+			
+			for(int k = 0; k < parent.number_of_children(); k++) 
+				queue.add(parent.get_child(k));
+		}
+		
+		return statements;
+	}
+	/**
+	 * bool | long | double
+	 * @param constant
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object get_constant_value(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:	return constant.get_bool();
+		case c_char:
+		case c_uchar:
+		{
+			return Long.valueOf(constant.get_char().charValue());
+		}
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:
+		{
+			return Long.valueOf(constant.get_integer().intValue());
+		}
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:	return constant.get_long();
+		case c_float:
+		{
+			return Double.valueOf(constant.get_float().doubleValue());
+		}
+		case c_double:
+		case c_ldouble:	return constant.get_double();
+		default: throw new IllegalArgumentException("Invalid: " + constant);
+		}
 	}
 	
 }
