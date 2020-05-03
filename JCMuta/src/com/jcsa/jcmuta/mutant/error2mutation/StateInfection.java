@@ -11,14 +11,17 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
+import com.jcsa.jcparse.lang.symb.SymEvaluator;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 import com.jcsa.jcparse.lang.symb.SymFactory;
+import com.jcsa.jcparse.lang.symb.impl.StandardSymEvaluator;
 import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
 
 /**
@@ -29,8 +32,33 @@ import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
  */
 public abstract class StateInfection {
 	
-	public StateInfection() { }
+	/* common tool-kit */
+	/** data type factory **/
+	protected static final CTypeFactory tfactory = new CTypeFactory();
+	/** used to evaluate and optimize symbolic constraint before added to constraints **/
+	private static final SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
 	
+	/* attributes */
+	/** whether to optimize constraint **/
+	private boolean opt_constraint;
+	
+	/* constructor */
+	/**
+	 * create a state infection machine without optimizing constraints
+	 */
+	public StateInfection() { this.opt_constraint = false; }
+	
+	/* parameter API method */
+	/**
+	 * open the optimization of symbolic constraint
+	 */
+	public void open_optimize_constraint() { this.opt_constraint = true; }
+	/**
+	 * close the optimization of symbolic constraint
+	 */
+	public void close_optimize_constraint() { this.opt_constraint = false; }
+	
+	/* parsing methods */
 	/**
 	 * get the statement where the fault is seeded
 	 * @param cir_tree
@@ -39,7 +67,6 @@ public abstract class StateInfection {
 	 * @throws Exception
 	 */
 	protected abstract CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception;
-	
 	/**
 	 * generate the infections of {state_error, constraints} directly caused by the mutation
 	 * @param cir_tree
@@ -50,7 +77,6 @@ public abstract class StateInfection {
 	 */
 	protected abstract void get_infections(CirTree cir_tree, AstMutation mutation, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
-	
 	/**
 	 * generate the infection subgraph from specified mutation
 	 * @param cir_tree
@@ -228,6 +254,18 @@ public abstract class StateInfection {
 				throw new IllegalArgumentException("Invalid: " + type);
 			}
 		}
+	}
+	/**
+	 * generate the optimized or standardized symbolic constrant
+	 * @param constraint
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymExpression derive_sym_constraint(SymExpression constraint) throws Exception {
+		if(this.opt_constraint)
+			return evaluator.evaluate(constraint);
+		else
+			return constraint; // get original constraint
 	}
 	
 }

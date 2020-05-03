@@ -295,6 +295,15 @@ public class StateErrors {
 		StateError error = new StateError(this, ErrorType.failure);
 		return this.preserve(error);
 	}
+	/**
+	 * syntax_error();
+	 * @return
+	 * @throws Exception
+	 */
+	public StateError syntax_error() throws Exception {
+		StateError error = new StateError(this, ErrorType.syntax_error);
+		return this.preserve(error);
+	}
 	
 	/* basic method */
 	/** used to preserve set of state errors to be extended from seed **/
@@ -391,6 +400,7 @@ public class StateErrors {
 			case mut_expr:		this.extend_mut_expr(error); 	break;
 			case mut_refer:		this.extend_mut_refer(error);	break;
 			case failure:		this.extend_failure(error); 	break;
+			case syntax_error:	this.extend_syntax_error(error);break;
 			default: throw new IllegalArgumentException("Unsupport " + error);
 			}
 		}
@@ -1016,6 +1026,9 @@ public class StateErrors {
 		}
 	}
 	private void extend_failure(StateError error) throws Exception {
+		this.extend_set.add(error);
+	}
+	private void extend_syntax_error(StateError error) throws Exception {
 		this.extend_set.add(error);
 	}
 	private void extend_execute_for(StateError error) throws Exception {

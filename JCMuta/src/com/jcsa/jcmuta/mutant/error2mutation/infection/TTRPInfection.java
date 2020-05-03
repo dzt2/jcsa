@@ -10,6 +10,7 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
+import com.jcsa.jcparse.lang.symb.SymExpression;
 
 public class TTRPInfection extends StateInfection {
 
@@ -27,7 +28,8 @@ public class TTRPInfection extends StateInfection {
 		
 		/* statement.condition == true --> execute_for(stmt, times) */
 		StateConstraints constraint = new StateConstraints(true);
-		constraint.add_constraint(statement, this.get_sym_condition(statement.get_condition(), true));
+		SymExpression condition = this.get_sym_condition(statement.get_condition(), true);
+		constraint.add_constraint(statement, this.derive_sym_constraint(condition));
 		StateError error = graph.get_error_set().execute_for(statement, loop_times);
 		
 		output.put(error, constraint);

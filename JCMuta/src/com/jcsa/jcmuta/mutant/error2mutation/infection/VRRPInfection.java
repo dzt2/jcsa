@@ -6,22 +6,17 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
-import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 import com.jcsa.jcparse.lang.symb.SymFactory;
 
-/**
- * trap_on_case(expression, val)
- * @author yukimula
- *
- */
-public class CTRPInfection extends StateInfection {
+public class VRRPInfection extends StateInfection {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
@@ -31,23 +26,22 @@ public class CTRPInfection extends StateInfection {
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		AstExpression condition = (AstExpression) this.get_location(mutation);
-		AstExpression case_value = (AstExpression) 
-					this.get_location((AstMutation) mutation.get_parameter());
+		CirExpression expression = this.get_result_of(
+				cir_tree, this.get_location(mutation));
+		CName parameter = (CName) mutation.get_parameter();
 		
-		CirStatement statement = this.get_beg_statement(cir_tree, condition);
-		CirExpression loperand = this.get_result_of(cir_tree, condition);
-		CirExpression roperand = this.get_result_of(cir_tree, case_value);
-		
-		SymExpression lop = SymFactory.parse(loperand);
-		SymExpression rop = SymFactory.parse(roperand);
+		SymExpression loperand = SymFactory.parse(expression);
+		SymExpression roperand = SymFactory.new_address(parameter.get_name(), 
+				tfactory.get_pointer_type(expression.get_data_type()));
+		roperand = SymFactory.new_unary_expression(expression.
+				get_data_type(), COperator.dereference, roperand);
 		SymExpression constraint = SymFactory.new_binary_expression(
-				CBasicTypeImpl.bool_type, COperator.equal_with, lop, rop);
-		constraint = this.derive_sym_constraint(constraint);
+				CBasicTypeImpl.bool_type, COperator.not_equals, loperand, roperand);
 		
 		StateConstraints constraints = new StateConstraints(true);
-		constraints.add_constraint(statement, constraint);
-		StateError error = graph.get_error_set().failure();
+		constraint = this.derive_sym_constraint(constraint);
+		constraints.add_constraint(expression.statement_of(), constraint);
+		StateError error = graph.get_error_set().chg_numb(expression);
 		
 		output.put(error, constraints);
 	}

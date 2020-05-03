@@ -1,8 +1,11 @@
 package com.jcsa.jcmuta.mutant.error2mutation;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -267,6 +270,118 @@ public class PathConditions {
 			throw new IllegalArgumentException("Unable to access: " + source);
 		}
 		
+	}
+	
+	/* path generator between any two statement points */
+	/**
+	 * get the execution point with respect to the statement
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	private static CirExecution get_execution_of(CirStatement statement) throws Exception {
+		return statement.get_tree().get_function_call_graph().
+				get_function(statement).get_flow_graph().get_execution(statement);
+	}
+	/**
+	 * collect the paths getting to the target
+	 * @param target
+	 * @param flow
+	 * @param path
+	 * @param paths
+	 * @throws Exception
+	 */
+	private static void deep_traversal_in(CirExecution target, CirExecutionFlow flow, 
+			Set<CirExecutionFlow> path, Collection<Set<CirExecutionFlow>> paths) throws Exception {
+		/* 1. get to the target and record */
+		if(flow.get_target() == target) {
+			Set<CirExecutionFlow> flow_path = new HashSet<CirExecutionFlow>();
+			for(CirExecutionFlow new_flow : path) flow_path.add(new_flow); 
+			paths.add(flow_path);
+		}
+		/* 2.  */
+		else {
+			CirExecution node = flow.get_target();
+			for(CirExecutionFlow next_flow : node.get_ou_flows()) {
+				switch(next_flow.get_type()) {
+				case call_flow:
+				{
+					next_flow = node.get_graph().get_function().
+							get_graph().get_calling(next_flow).get_retr_flow();
+				}
+				break;
+				case retr_flow: next_flow = null; break;
+				default: break;
+				}
+				
+				if(next_flow != null && !path.contains(next_flow)) { 
+					path.add(next_flow);
+					deep_traversal_in(target, next_flow, path, paths);
+					path.remove(next_flow);
+				}
+			}
+		}
+	}
+	/**
+	 * collect all the simple-paths from source to the target
+	 * @param source
+	 * @param target
+	 * @return
+	 * @throws Exception
+	 */
+	public static Collection<Set<CirExecutionFlow>> paths_of(CirStatement source, CirStatement target) throws Exception {
+		List<Set<CirExecutionFlow>> paths = new ArrayList<Set<CirExecutionFlow>>();
+		CirExecution source_node = get_execution_of(source);
+		CirExecution target_node = get_execution_of(target);
+		
+		for(CirExecutionFlow ou_flow : source_node.get_ou_flows()) {
+			deep_traversal_in(target_node, ou_flow, new HashSet<CirExecutionFlow>(), paths);
+		}
+		
+		return paths;
+	}
+	/**
+	 * get the flow that must be through in the path set
+	 * @param paths
+	 * @return
+	 * @throws Exception
+	 */
+	public static Set<CirExecutionFlow> must_be_path(Collection<Set<CirExecutionFlow>> paths) throws Exception {
+		Set<CirExecutionFlow> common_path = new HashSet<CirExecutionFlow>();
+		Set<CirExecutionFlow> update_path = new HashSet<CirExecutionFlow>();
+		
+		boolean first = true;
+		for(Set<CirExecutionFlow> path : paths) {
+			if(first) {
+				common_path.addAll(path);
+			}
+			else {
+				update_path.clear();
+				for(CirExecutionFlow flow : common_path) {
+					if(path.contains(flow)) {
+						update_path.add(flow);
+					}
+					
+					common_path.clear();
+					common_path.addAll(update_path);
+				}
+				
+			}
+			first = false;
+		}
+		
+		return common_path;
+	}
+	/**
+	 * get the flow that might be through in the path set
+	 * @param paths
+	 * @return
+	 * @throws Exception
+	 */
+	public static Set<CirExecutionFlow> might_be_path(Collection<Set<CirExecutionFlow>> paths) throws Exception {
+		Set<CirExecutionFlow> all_path = new HashSet<CirExecutionFlow>();
+		for(Set<CirExecutionFlow> path : paths) { all_path.addAll(path); }
+		return all_path;
 	}
 	
 }

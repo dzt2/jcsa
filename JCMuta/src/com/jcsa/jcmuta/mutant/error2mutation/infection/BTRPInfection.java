@@ -36,8 +36,11 @@ public class BTRPInfection extends StateInfection {
 	 */
 	private StateConstraints trap_on_true_constraints(CirExpression expression) throws Exception {
 		SymExpression constraint = this.get_sym_condition(expression, true);
+		constraint = this.derive_sym_constraint(constraint);
+		
 		StateConstraints constraints = new StateConstraints(true);
 		constraints.add_constraint(expression.statement_of(), constraint);
+		
 		return constraints;
 	}
 	
@@ -51,8 +54,11 @@ public class BTRPInfection extends StateInfection {
 	 */
 	private StateConstraints trap_on_false_constraints(CirExpression expression) throws Exception {
 		SymExpression constraint = this.get_sym_condition(expression, false);
+		constraint = this.derive_sym_constraint(constraint);
+		
 		StateConstraints constraints = new StateConstraints(true);
 		constraints.add_constraint(expression.statement_of(), constraint);
+		
 		return constraints;
 	}
 	
