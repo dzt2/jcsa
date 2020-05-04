@@ -8,6 +8,7 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.PathConditions;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -63,13 +64,11 @@ public class SGLRInfection extends StateInfection {
 			}
 		}
 		
-		StateConstraints constraints = new StateConstraints(true);
-		
 		for(CirStatement statement : execute_set) {
-			output.put(graph.get_error_set().execute(statement), constraints);
+			output.put(graph.get_error_set().execute(statement), StateEvaluation.get_conjunctions());
 		}
 		for(CirStatement statement : non_execute_set) {
-			output.put(graph.get_error_set().not_execute(statement), constraints);
+			output.put(graph.get_error_set().not_execute(statement), StateEvaluation.get_conjunctions());
 		}
 	}
 

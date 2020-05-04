@@ -5,6 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -26,13 +27,11 @@ public class TTRPInfection extends StateInfection {
 				get_cir_nodes(this.get_location(mutation), CirIfStatement.class);
 		long loop_times = ((Integer) mutation.get_parameter()).longValue();
 		
-		/* statement.condition == true --> execute_for(stmt, times) */
-		StateConstraints constraint = new StateConstraints(true);
-		SymExpression condition = this.get_sym_condition(statement.get_condition(), true);
-		constraint.add_constraint(statement, this.derive_sym_constraint(condition));
+		SymExpression constraint = StateEvaluation.new_condition(statement.get_condition(), true);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, statement, constraint);
 		StateError error = graph.get_error_set().execute_for(statement, loop_times);
-		
-		output.put(error, constraint);
+		output.put(error, constraints);
 	}
 
 }

@@ -13,6 +13,7 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.PathConditions;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -201,7 +202,7 @@ public class UIOIInfection extends StateInfection {
 		default: throw new IllegalArgumentException(mutation.get_mutation_operator().toString());
 		}
 		
-		StateConstraints constraints = new StateConstraints(true);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		for(CirExpression use_point : use_points) {
 			output.put(graph.get_error_set().dif_numb(use_point, difference), constraints);
 		}

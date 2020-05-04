@@ -5,6 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -20,7 +21,7 @@ public class ETRPInfection extends StateInfection {
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		StateConstraints constraints = new StateConstraints(true);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		StateError error = graph.get_error_set().failure();
 		output.put(error, constraints);
 	}

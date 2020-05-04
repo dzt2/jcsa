@@ -5,17 +5,15 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
 
 public class VTRPInfection extends StateInfection {
 	
@@ -26,93 +24,82 @@ public class VTRPInfection extends StateInfection {
 	
 	private StateConstraints trap_on_pos_constraints(CirExpression expression) throws Exception {
 		/* getters */
-		CirStatement statement = expression.statement_of();
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		SymExpression operand = SymFactory.parse(expression);
-		StateConstraints constraints = new StateConstraints(true);
+		SymExpression constraint; StateConstraints constraints;
 		
 		/* (1) operand == true */
 		if(CTypeAnalyzer.is_boolean(type)) {
+			constraint = StateEvaluation.new_condition(expression, true);
 		}
 		/* (2) operand > 0 */
 		else if(CTypeAnalyzer.is_number(type)) {
-			operand = SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-					COperator.greater_tn, operand, SymFactory.new_constant(0L));
+			constraint = StateEvaluation.greater_tn(expression, 0L);
 		}
 		/* (3) operand != null */
 		else if(CTypeAnalyzer.is_pointer(type)) {
-			operand = SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-					COperator.not_equals, operand, SymFactory.new_address(StateError.NullPointer, type));
+			constraint = StateEvaluation.not_equals(expression, StateEvaluation.NullPointer);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid " + type);
 		}
 		
 		/* construct symbolic constraints */
-		operand = this.derive_sym_constraint(operand);
-		constraints.add_constraint(statement, operand);
+		constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, expression.statement_of(), constraint);
 		return constraints;
 	}
 	
 	private StateConstraints trap_on_zro_constraints(CirExpression expression) throws Exception {
 		/* getters */
-		CirStatement statement = expression.statement_of();
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		SymExpression operand = SymFactory.parse(expression);
-		StateConstraints constraints = new StateConstraints(true);
+		SymExpression constraint; StateConstraints constraints;
 		
 		/* (1) operand == false */
 		if(CTypeAnalyzer.is_boolean(type)) {
-			operand = SymFactory.new_unary_expression(CBasicTypeImpl.bool_type, 
-					COperator.logic_not, operand);
+			constraint = StateEvaluation.new_condition(expression, false);
 		}
 		/* (2) operand == 0 */
 		else if(CTypeAnalyzer.is_number(type)) {
-			operand = SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-					COperator.equal_with, operand, SymFactory.new_constant(0L));
+			constraint = StateEvaluation.equal_with(expression, 0L);
 		}
 		/* (3) operand == null */
 		else if(CTypeAnalyzer.is_pointer(type)) {
-			operand = SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-					COperator.equal_with, operand, SymFactory.new_address(StateError.NullPointer, type));
+			constraint = StateEvaluation.equal_with(expression, StateEvaluation.NullPointer);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid " + type);
 		}
 		
 		/* construct symbolic constraints */
-		operand = this.derive_sym_constraint(operand);
-		constraints.add_constraint(statement, operand);
+		constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, expression.statement_of(), constraint);
 		return constraints;
 	}
 	
 	private StateConstraints trap_on_neg_constraints(CirExpression expression) throws Exception {
 		/* getters */
-		CirStatement statement = expression.statement_of();
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		SymExpression operand = SymFactory.parse(expression);
-		StateConstraints constraints = new StateConstraints(true);
+		SymExpression constraint; StateConstraints constraints;
 		
 		/* (1) impossible */
 		if(CTypeAnalyzer.is_boolean(type)) {
-			operand = SymFactory.new_constant(false);
+			constraint = StateEvaluation.new_constant(false);
 		}
 		/* (2) operand < 0 */
 		else if(CTypeAnalyzer.is_number(type)) {
-			operand = SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-					COperator.smaller_tn, operand, SymFactory.new_constant(0L));
+			constraint = StateEvaluation.smaller_tn(expression, 0L);
 		}
 		/* (3) impossible */
 		else if(CTypeAnalyzer.is_pointer(type)) {
-			operand = SymFactory.new_constant(false);
+			constraint = StateEvaluation.new_constant(false);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid " + type);
 		}
 		
 		/* construct symbolic constraints */
-		operand = this.derive_sym_constraint(operand);
-		constraints.add_constraint(statement, operand);
+		constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, expression.statement_of(), constraint);
 		return constraints;
 	}
 	

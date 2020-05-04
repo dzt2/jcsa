@@ -5,6 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -29,7 +30,7 @@ public class UIODInfection extends StateInfection {
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
 		CirExpression use_expression = this.get_result_of(cir_tree, expression);
 		CirExpression def_expression = inc_statement.get_rvalue();
-		StateConstraints constraints = new StateConstraints(true); 
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		
 		switch(mutation.get_mutation_operator()) {
 		/* (++x, x): use - 1, def - 1 */

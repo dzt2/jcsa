@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmuta.mutant.AstMutation;
@@ -12,21 +13,12 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
-import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
-import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.lexical.CConstant;
-import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
-import com.jcsa.jcparse.lang.symb.SymEvaluator;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
-import com.jcsa.jcparse.lang.symb.impl.StandardSymEvaluator;
 import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
 
 /**
@@ -37,24 +29,17 @@ import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
  */
 public abstract class StateInfection {
 	
-	/** to represent the value of any integer **/
-	protected static final String AnyInteger = "AnyInt";
-	
-	/* common tool-kit */
-	/** data type factory **/
-	protected static final CTypeFactory tfactory = new CTypeFactory();
-	/** used to evaluate and optimize symbolic constraint before added to constraints **/
-	private static final SymEvaluator evaluator = StandardSymEvaluator.new_evaluator();
-	
 	/* attributes */
 	/** whether to optimize constraint **/
 	private boolean opt_constraint;
+	/** to generate random integer **/
+	private Random random;
 	
 	/* constructor */
 	/**
 	 * create a state infection machine without optimizing constraints
 	 */
-	public StateInfection() { this.opt_constraint = false; }
+	public StateInfection() { this.opt_constraint = false; random = new Random(); }
 	
 	/* parameter API method */
 	/**
@@ -211,72 +196,17 @@ public abstract class StateInfection {
 		return null;
 	}
 	/**
-	 * return condition == value as boolean condition way
-	 * @param source
-	 * @param value
-	 * @return
-	 * @throws Exception
-	 */
-	protected SymExpression get_sym_condition(CirExpression source, boolean value) throws Exception {
-		SymExpression operand = SymFactory.parse(source);
-		CType type = CTypeAnalyzer.get_value_type(source.get_data_type());
-		
-		if(value) {
-			/* operand */
-			if(CTypeAnalyzer.is_boolean(type)) {
-				return operand;
-			}
-			/* operand != 0 */
-			else if(CTypeAnalyzer.is_number(type)) {
-				return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-						COperator.not_equals, operand, SymFactory.new_constant(0L));
-			}
-			/* operand != null */
-			else if(CTypeAnalyzer.is_pointer(type)) {
-				return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-						COperator.not_equals, operand, 
-						SymFactory.new_address(StateError.NullPointer, type));
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type);
-			}
-		}
-		else {
-			/* !operand */
-			if(CTypeAnalyzer.is_boolean(type)) {
-				return SymFactory.new_unary_expression(
-						CBasicTypeImpl.bool_type, COperator.logic_not, operand);
-			}
-			/* operand == 0 */
-			else if(CTypeAnalyzer.is_number(type)) {
-				return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-						COperator.equal_with, operand, SymFactory.new_constant(0L));
-			}
-			/* operand == null */
-			else if(CTypeAnalyzer.is_pointer(type)) {
-				return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, 
-						COperator.equal_with, operand, 
-						SymFactory.new_address(StateError.NullPointer, type));
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type);
-			}
-		}
-	}
-	/**
-	 * generate the optimized or standardized symbolic constrant
+	 * add the constraint to the tail of the constraints sequence
+	 * @param constraints
 	 * @param constraint
-	 * @return
 	 * @throws Exception
 	 */
-	protected SymExpression derive_sym_constraint(SymExpression constraint) throws Exception {
-		if(this.opt_constraint)
-			return evaluator.evaluate(constraint);
-		else
-			return constraint; // get original constraint
+	protected void add_constraint(StateConstraints constraints, 
+			CirStatement statement, SymExpression constraint) throws Exception {
+		StateEvaluation.add_constraint(constraints, statement, constraint, this.opt_constraint);
 	}
 	/**
-	 * get all the statements within the code range of AST source node
+	 * get all the statements within the AST node range
 	 * @param cir_tree
 	 * @param node
 	 * @return
@@ -289,51 +219,71 @@ public abstract class StateInfection {
 		queue.add(node);
 		while(!queue.isEmpty()) {
 			AstNode parent = queue.poll();
-			
-			CirStatement beg = this.get_beg_statement(cir_tree, parent);
-			CirStatement end = this.get_end_statement(cir_tree, parent);
-			if(beg != null) statements.add(beg);
-			if(end != null) statements.add(end);
-			
-			for(int k = 0; k < parent.number_of_children(); k++) 
+			for(int k = 0; k < parent.number_of_children(); k++)
 				queue.add(parent.get_child(k));
+			
+			if(cir_tree.has_cir_range(parent)) {
+				AstCirPair range = cir_tree.get_cir_range(parent);
+				if(range.executional()) {
+					statements.add(range.get_beg_statement());
+					statements.add(range.get_end_statement());
+				}
+			}
 		}
 		
 		return statements;
 	}
 	/**
-	 * bool | long | double
-	 * @param constant
+	 * perform complete evaluation --> set_numb | set_bool | set_addr
+	 * @param expression
+	 * @param replace
+	 * @param graph
+	 * @param output
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object get_constant_value(CConstant constant) throws Exception {
-		switch(constant.get_type().get_tag()) {
-		case c_bool:	return constant.get_bool();
-		case c_char:
-		case c_uchar:
-		{
-			return Long.valueOf(constant.get_char().charValue());
+	protected boolean complete_evaluate(CirExpression expression, SymExpression replace, 
+			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
+		Object orig_constant = StateEvaluation.get_constant_value(expression);
+		Object muta_constant = StateEvaluation.get_constant_value(replace);
+		
+		if(muta_constant.toString().equals(orig_constant.toString())) { 
+			/** equivalent mutant being detected **/ 	return true;
 		}
-		case c_short:
-		case c_ushort:
-		case c_int:
-		case c_uint:
-		{
-			return Long.valueOf(constant.get_integer().intValue());
+		else if(muta_constant instanceof Boolean) {
+			output.put(
+					graph.get_error_set().set_bool(expression, ((Boolean) muta_constant).booleanValue()), 
+					StateEvaluation.get_conjunctions());
+			return true;	/** set_bool for boolean constant **/
 		}
-		case c_long:
-		case c_ulong:
-		case c_llong:
-		case c_ullong:	return constant.get_long();
-		case c_float:
-		{
-			return Double.valueOf(constant.get_float().doubleValue());
+		else if(muta_constant instanceof Long) {
+			output.put(
+					graph.get_error_set().set_numb(expression, ((Long) muta_constant).longValue()), 
+					StateEvaluation.get_conjunctions());
+			return true; 	/** set_numb for numeric constant **/
 		}
-		case c_double:
-		case c_ldouble:	return constant.get_double();
-		default: throw new IllegalArgumentException("Invalid: " + constant);
+		else if(muta_constant instanceof Double) {
+			output.put(
+					graph.get_error_set().set_numb(expression, ((Double) muta_constant).doubleValue()), 
+					StateEvaluation.get_conjunctions());
+			return true; 	/** set_numb for numeric constant **/
 		}
+		else if(muta_constant instanceof String) {
+			output.put(
+					graph.get_error_set().set_addr(expression, muta_constant.toString()), 
+					StateEvaluation.get_conjunctions());
+			return true; 	/** set_addr for address constant **/
+		}
+		else {
+			/** undecidable for complete evaluation **/	return false;
+		}
+	}
+	/**
+	 * get the random value of address
+	 * @return
+	 */
+	protected long random_address() {
+		return 1 + Math.abs(this.random.nextLong()) % (1024 * 8);
 	}
 	
 }

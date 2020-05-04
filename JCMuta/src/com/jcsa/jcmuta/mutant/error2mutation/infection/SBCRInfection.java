@@ -5,6 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
@@ -68,22 +69,21 @@ public class SBCRInfection extends StateInfection {
 			switch(mutation.get_mutation_operator()) {
 			case break_to_continue:
 			{
-				constraint = this.get_sym_condition(condition, true);
+				constraint = StateEvaluation.new_condition(condition, true);
 				error = graph.get_error_set().set_bool(condition, true);
 			}
 			break;
 			case continue_to_break:
 			{
-				constraint = this.get_sym_condition(condition, true);
+				constraint = StateEvaluation.new_condition(condition, true);
 				error = graph.get_error_set().set_bool(condition, false);
 			}
 			break;
 			default: throw new IllegalArgumentException("Invalid: " + mutation.get_mutation_operator());
 			}
 			
-			StateConstraints constraints = new StateConstraints(true);
-			constraint = this.derive_sym_constraint(constraint);
-			constraints.add_constraint(condition.statement_of(), constraint);
+			StateConstraints constraints = StateEvaluation.get_conjunctions();
+			this.add_constraint(constraints, condition.statement_of(), constraint);
 			output.put(error, constraints);
 		}
 	}

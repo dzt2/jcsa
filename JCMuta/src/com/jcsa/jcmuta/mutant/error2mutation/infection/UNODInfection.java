@@ -5,6 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -26,7 +27,7 @@ public class UNODInfection extends StateInfection {
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = this.get_result_of(cir_tree, this.get_location(mutation));
-		StateConstraints constraints = new StateConstraints(true);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		
 		switch(mutation.get_mutation_operator()) {
 		case delete_arith_neg:

@@ -6,18 +6,16 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrors;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
-import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
 
 public class VCRPInfection extends StateInfection {
 
@@ -34,28 +32,25 @@ public class VCRPInfection extends StateInfection {
 	 * @throws Exception
 	 */
 	private StateConstraints get_constraints_for(CirExpression expression, CConstant value) throws Exception {
-		CirStatement statement = expression.statement_of();
-		StateConstraints constraints = new StateConstraints(true);
-		SymExpression loperand = SymFactory.parse(expression);
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		
 		/* expression != value */
-		SymExpression roperand;
+		SymExpression constraint;
 		if(CTypeAnalyzer.is_number(type)) {
 			switch(value.get_type().get_tag()) {
 			case c_bool:
 			{
 				if(value.get_bool().booleanValue())
-					roperand = SymFactory.new_constant(1L);
+					constraint = StateEvaluation.not_equals(expression, 1L);
 				else 
-					roperand = SymFactory.new_constant(0L);
+					constraint = StateEvaluation.not_equals(expression, 0L);
 			}
 			break;
 			case c_char:
 			case c_uchar:
 			{
 				long val = value.get_char().charValue();
-				roperand = SymFactory.new_constant(val);
+				constraint = StateEvaluation.not_equals(expression, val);
 			}
 			break;
 			case c_short:
@@ -64,7 +59,7 @@ public class VCRPInfection extends StateInfection {
 			case c_uint:
 			{
 				long val = value.get_integer().longValue();
-				roperand = SymFactory.new_constant(val);
+				constraint = StateEvaluation.not_equals(expression, val);
 			}
 			break;
 			case c_long:
@@ -72,18 +67,18 @@ public class VCRPInfection extends StateInfection {
 			case c_llong:
 			case c_ullong:
 			{
-				roperand = SymFactory.new_constant(value.get_long().longValue());
+				constraint = StateEvaluation.not_equals(expression, value.get_long().longValue());
 			}
 			break;
 			case c_float:
 			{
-				roperand = SymFactory.new_constant(value.get_float().doubleValue());
+				constraint = StateEvaluation.not_equals(expression, value.get_float().doubleValue());
 			}
 			break;
 			case c_double:
 			case c_ldouble:
 			{
-				roperand = SymFactory.new_constant(value.get_double().doubleValue());
+				constraint = StateEvaluation.not_equals(expression, value.get_double().doubleValue());
 			}
 			break;
 			default: throw new IllegalArgumentException("Invalid constant: " + value);
@@ -93,10 +88,8 @@ public class VCRPInfection extends StateInfection {
 			throw new IllegalArgumentException("Invalid: " + type);
 		}
 		
-		SymExpression constraint = SymFactory.new_binary_expression(
-				CBasicTypeImpl.bool_type, COperator.not_equals, loperand, roperand);
-		constraint = this.derive_sym_constraint(constraint);
-		constraints.add_constraint(statement, constraint);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, expression.statement_of(), constraint);
 		return constraints;
 	}
 	

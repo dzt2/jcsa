@@ -5,16 +5,14 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
-import com.jcsa.jcparse.lang.symb.SymFactory;
 
 /**
  * trap_on_case(expression, val)
@@ -39,14 +37,9 @@ public class CTRPInfection extends StateInfection {
 		CirExpression loperand = this.get_result_of(cir_tree, condition);
 		CirExpression roperand = this.get_result_of(cir_tree, case_value);
 		
-		SymExpression lop = SymFactory.parse(loperand);
-		SymExpression rop = SymFactory.parse(roperand);
-		SymExpression constraint = SymFactory.new_binary_expression(
-				CBasicTypeImpl.bool_type, COperator.equal_with, lop, rop);
-		constraint = this.derive_sym_constraint(constraint);
-		
-		StateConstraints constraints = new StateConstraints(true);
-		constraints.add_constraint(statement, constraint);
+		SymExpression constraint = StateEvaluation.equal_with(loperand, roperand);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, statement, constraint);
 		StateError error = graph.get_error_set().failure();
 		
 		output.put(error, constraints);

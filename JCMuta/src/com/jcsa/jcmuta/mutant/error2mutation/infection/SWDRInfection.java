@@ -6,6 +6,7 @@ import java.util.Set;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -26,9 +27,10 @@ public class SWDRInfection extends StateInfection {
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirIfStatement if_statement = (CirIfStatement) this.get_location(cir_tree, mutation);
 		
-		StateConstraints constraints = new StateConstraints(true);
-		SymExpression constraint = this.get_sym_condition(if_statement.get_condition(), false);
-		constraints.add_constraint(if_statement, this.derive_sym_constraint(constraint));
+		SymExpression constraint = StateEvaluation.
+				new_condition(if_statement.get_condition(), false);
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, if_statement, constraint);
 		
 		switch(mutation.get_mutation_operator()) {
 		case while_to_do:

@@ -7,6 +7,7 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.error2mutation.PathConditions;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
+import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -25,8 +26,8 @@ public class STDLInfection extends StateInfection {
 			Map<StateError, StateConstraints> output) throws Exception {
 		Set<CirStatement> statements = 
 				this.collect_statements_in(cir_tree, this.get_location(mutation));
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		
-		StateConstraints constraints = new StateConstraints(true);
 		for(CirStatement statement : statements) {
 			if(!(statement instanceof CirTagStatement)) {
 				output.put(graph.get_error_set().not_execute(statement), constraints);
