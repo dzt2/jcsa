@@ -148,7 +148,11 @@ public class ADDMODInfection extends OPRTInfection {
 		constraints.add_constraint(expression.statement_of(), constraint);
 		output.put(graph.get_error_set().set_numb(expression, 0L), constraints);
 		
-		/* otherwise --> chg_numb(x) */
+		/* x < -2 * y --> chg_numb(x) */
+		SymExpression y2 = StateEvaluation.multiply_expression(expression.get_data_type(), roperand, -2);
+		constraint = StateEvaluation.smaller_tn(StateEvaluation.get_symbol(loperand), y2);
+		constraints = StateEvaluation.get_conjunctions(); 
+		constraints.add_constraint(expression.statement_of(), constraint);
 		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
 		
 		return true;

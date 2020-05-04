@@ -371,6 +371,28 @@ public class StateEvaluation {
 	 * @return
 	 * @throws Exception
 	 */
+	public static SymExpression greater_tn(SymExpression loperand, SymExpression roperand) throws Exception {
+		return SymFactory.new_binary_expression(CBasicTypeImpl.
+				bool_type, COperator.greater_tn, loperand, roperand);
+	}
+	/**
+	 * loperand >= roperand
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression greater_eq(SymExpression loperand, SymExpression roperand) throws Exception {
+		return SymFactory.new_binary_expression(CBasicTypeImpl.
+				bool_type, COperator.greater_eq, loperand, roperand);
+	}
+	/**
+	 * loperand > roperand
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
 	public static SymExpression greater_tn(CirExpression loperand, long roperand) throws Exception {
 		return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, COperator.
 				greater_tn, SymFactory.parse(loperand), SymFactory.new_constant(roperand));
@@ -415,6 +437,17 @@ public class StateEvaluation {
 	 * @return
 	 * @throws Exception
 	 */
+	public static SymExpression smaller_tn(SymExpression loperand, SymExpression roperand) throws Exception {
+		return SymFactory.new_binary_expression(CBasicTypeImpl.
+				bool_type, COperator.smaller_tn, loperand, roperand);
+	}
+	/**
+	 * loperand < roperand
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
 	public static SymExpression smaller_tn(CirExpression loperand, double roperand) throws Exception {
 		return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, COperator.
 				smaller_tn, SymFactory.parse(loperand), SymFactory.new_constant(roperand));
@@ -429,6 +462,17 @@ public class StateEvaluation {
 	public static SymExpression smaller_tn(CirExpression loperand, CirExpression roperand) throws Exception {
 		return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, COperator.
 				smaller_tn, SymFactory.parse(loperand), SymFactory.parse(roperand));
+	}
+	/**
+	 * loperand <= roperand
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression smaller_eq(SymExpression loperand, SymExpression roperand) throws Exception {
+		return SymFactory.new_binary_expression(CBasicTypeImpl.
+				bool_type, COperator.smaller_eq, loperand, roperand);
 	}
 	/**
 	 * loperand >= roperand
