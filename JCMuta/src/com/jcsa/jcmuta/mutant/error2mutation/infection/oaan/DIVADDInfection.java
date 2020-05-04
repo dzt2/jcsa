@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.operator;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.oaan;
 
 import java.util.Map;
 
@@ -12,17 +12,17 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * roperand == 1 --> dif_numb(-1)
+ * roperand == 1 --> dif_numb(1)
  * otherwise     --> chg_numb(x)
  * @author yukimula
  *
  */
-public class DIVSUBInfection extends OPRTInfection {
+public class DIVADDInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
-		return StateEvaluation.binary_expression(expression.get_data_type(), COperator.arith_sub, loperand, roperand);
+		return StateEvaluation.binary_expression(expression.get_data_type(), COperator.arith_add, loperand, roperand);
 	}
 
 	@Override
@@ -31,18 +31,18 @@ public class DIVSUBInfection extends OPRTInfection {
 		Object rconstant = StateEvaluation.get_constant_value(roperand);
 		if(!(rconstant instanceof SymExpression)) {
 			if(rconstant instanceof Boolean) {
-				output.put(graph.get_error_set().dif_numb(expression, -1L), StateEvaluation.get_conjunctions());
+				output.put(graph.get_error_set().dif_numb(expression, 1L), StateEvaluation.get_conjunctions());
 				return true;
 			}
 			else if(rconstant instanceof Long) {
 				if(((Long) rconstant).longValue() == 1L) {
-					output.put(graph.get_error_set().dif_numb(expression, -1L), StateEvaluation.get_conjunctions());
+					output.put(graph.get_error_set().dif_numb(expression, 1L), StateEvaluation.get_conjunctions());
 					return true;
 				}
 			}
 			else if(rconstant instanceof Double) {
 				if(((Double) rconstant).doubleValue() == 1.0) {
-					output.put(graph.get_error_set().dif_numb(expression, -1L), StateEvaluation.get_conjunctions());
+					output.put(graph.get_error_set().dif_numb(expression, 1L), StateEvaluation.get_conjunctions());
 					return true;
 				}
 			}
@@ -59,7 +59,7 @@ public class DIVSUBInfection extends OPRTInfection {
 		constraint = StateEvaluation.equal_with(roperand, 1L);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, expression.statement_of(), constraint);
-		output.put(graph.get_error_set().dif_numb(expression, -1L), constraints);
+		output.put(graph.get_error_set().dif_numb(expression, 1L), constraints);
 		
 		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
 		

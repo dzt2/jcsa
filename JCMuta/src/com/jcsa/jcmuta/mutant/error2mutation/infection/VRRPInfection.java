@@ -45,7 +45,7 @@ public class VRRPInfection extends StateInfection {
 		}
 		else {
 			output.put(
-					graph.get_error_set().mut_expr(expression), 
+					graph.get_error_set().mut_refer(expression), 
 					StateEvaluation.get_conjunctions());
 		}
 	}

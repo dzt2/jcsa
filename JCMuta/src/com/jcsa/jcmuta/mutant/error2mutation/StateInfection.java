@@ -29,6 +29,11 @@ import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
  */
 public abstract class StateInfection {
 	
+	/** number of bit that cannot mask the others **/
+	protected static final int min_bitwise = 1;
+	/** number of bit that will mask all the others **/
+	protected static final int max_bitwise = 32;
+	
 	/* attributes */
 	/** whether to optimize constraint **/
 	private boolean opt_constraint;
@@ -284,6 +289,21 @@ public abstract class StateInfection {
 	 */
 	protected long random_address() {
 		return 1 + Math.abs(this.random.nextLong()) % (1024 * 8);
+	}
+	/**
+	 * get the number bit-1 in the bitwise sequence
+	 * @param value
+	 * @return
+	 */
+	protected int number_of_bit1(long value) {
+		int number = 0;
+		while(value != 0) {
+			if(value % 2 == 1) {
+				number = number + 1;
+			}
+			value = (value >> 1);
+		}
+		return number;
 	}
 	
 }

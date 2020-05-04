@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.operator;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.oaan;
 
 import java.util.Map;
 

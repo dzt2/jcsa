@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.operator;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.oaan;
 
 import java.util.Map;
 
@@ -11,36 +11,47 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
-/**
- * --> chg_numb(x)
- * @author yukimula
- *
- */
-public class MODADDInfection extends OPRTInfection {
+public class MODDIVInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
 		return StateEvaluation.binary_expression(expression.
-				get_data_type(), COperator.arith_add, loperand, roperand);
+				get_data_type(), COperator.arith_div, loperand, roperand);
 	}
 
 	@Override
 	protected boolean partial_evaluate(CirExpression expression, CirExpression loperand, CirExpression roperand,
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
+		Object lconstant = StateEvaluation.get_constant_value(loperand);
+		
+		if(!(lconstant instanceof SymExpression)) {
+			if(lconstant instanceof Boolean) {
+				if(!((Boolean) lconstant).booleanValue()) {
+					/** equivalent mutant **/	return true;
+				}
+			}
+			else if(lconstant instanceof Long) {
+				if(((Long) lconstant).longValue() == 0) {
+					/** equivalent mutant **/	return true;
+				}
+			}
+		}
+		
 		return false;
 	}
 
 	@Override
 	protected boolean symbolic_evaluate(CirExpression expression, CirExpression loperand, CirExpression roperand,
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
-		/* x < -2 * y --> chg_numb(x) */
 		SymExpression constraint; StateConstraints constraints;
-		SymExpression y2 = StateEvaluation.multiply_expression(expression.get_data_type(), roperand, -2);
-		constraint = StateEvaluation.smaller_tn(StateEvaluation.get_symbol(loperand), y2);
+		
+		/* x != 0 --> chg_numb */
+		constraint = StateEvaluation.not_equals(loperand, 0);
 		constraints = StateEvaluation.get_conjunctions(); 
 		constraints.add_constraint(expression.statement_of(), constraint);
-		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
+		output.put(graph.get_error_set().chg_numb(expression), constraints);
+		
 		return true;
 	}
 

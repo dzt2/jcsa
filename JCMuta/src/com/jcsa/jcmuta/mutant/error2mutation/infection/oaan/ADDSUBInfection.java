@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.operator;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.oaan;
 
 import java.util.Map;
 
@@ -12,17 +12,17 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * (-, +): roperand != 0
+ * roperand != 0
  * @author yukimula
  *
  */
-public class SUBADDInfection extends OPRTInfection {
+public class ADDSUBInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
 		return StateEvaluation.binary_expression(expression.
-				get_data_type(), COperator.arith_add, loperand, roperand);
+				get_data_type(), COperator.arith_sub, loperand, roperand);
 	}
 
 	@Override
@@ -33,21 +33,21 @@ public class SUBADDInfection extends OPRTInfection {
 		if(!(rconstant instanceof SymExpression)) {
 			if(rconstant instanceof Boolean) {
 				if(((Boolean) rconstant).booleanValue()) {
-					output.put(graph.get_error_set().dif_numb(expression, 2L), 
+					output.put(graph.get_error_set().dif_numb(expression, -2L), 
 							StateEvaluation.get_conjunctions());
 				}
 			}
 			else if(rconstant instanceof Long) {
 				long value = ((Long) rconstant).longValue();
 				if(value != 0) {
-					output.put(graph.get_error_set().dif_numb(expression, 2 * value), 
+					output.put(graph.get_error_set().dif_numb(expression, -2 * value), 
 							StateEvaluation.get_conjunctions());
 				}
 			}
 			else if(rconstant instanceof Double) {
 				double value = ((Double) rconstant).doubleValue();
 				if(value != 0) {
-					output.put(graph.get_error_set().dif_numb(expression, 2 * value), 
+					output.put(graph.get_error_set().dif_numb(expression, -2 * value), 
 							StateEvaluation.get_conjunctions());
 				}
 			}
@@ -58,7 +58,7 @@ public class SUBADDInfection extends OPRTInfection {
 				}
 				
 				if(value != 0) {
-					output.put(graph.get_error_set().dif_numb(expression, 2 * value), 
+					output.put(graph.get_error_set().dif_numb(expression, -2 * value), 
 							StateEvaluation.get_conjunctions());
 				}
 			}
