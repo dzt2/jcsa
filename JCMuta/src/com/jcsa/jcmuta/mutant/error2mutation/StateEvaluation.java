@@ -133,6 +133,24 @@ public class StateEvaluation {
 	public static Object get_constant_value(CirExpression expression) throws Exception {
 		return get_constant_value(SymFactory.parse(expression));
 	}
+	/**
+	 * get the boolean constant
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean get_condition_value(Object value) throws Exception {
+		if(value instanceof Boolean)
+			return ((Boolean) value).booleanValue();
+		else if(value instanceof Long) 
+			return ((Long) value).longValue() != 0L;
+		else if(value instanceof Double)
+			return ((Double) value).doubleValue() != 0.0;
+		else if(value instanceof String)
+			return !value.toString().equals(NullPointer);
+		else
+			throw new IllegalArgumentException("Unable to parse: " + value);
+	}
 	
 	/* symbolic matters */
 	/**
