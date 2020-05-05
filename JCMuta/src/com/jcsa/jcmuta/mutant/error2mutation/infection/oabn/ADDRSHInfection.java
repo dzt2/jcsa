@@ -17,13 +17,13 @@ import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
  * loperand == 0		--> set_numb(0)
- * roperand == 0		--> equivalent
+ * roperand == 0		--> equivalence
  * roperand > max_bit	--> set_numb(0)
  * roperand != 0		--> chg_numb(x)
  * @author yukimula
  *
  */
-public class ADDLSHInfection extends OPRTInfection {
+public class ADDRSHInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
@@ -31,7 +31,7 @@ public class ADDLSHInfection extends OPRTInfection {
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type) || CTypeAnalyzer.is_integer(type)) {
 			return StateEvaluation.binary_expression(expression.
-					get_data_type(), COperator.left_shift, loperand, roperand);
+					get_data_type(), COperator.righ_shift, loperand, roperand);
 		}
 		else { 	return null; 	/* invalid type returns null */ }
 	}
@@ -58,7 +58,7 @@ public class ADDLSHInfection extends OPRTInfection {
 			}
 		}
 		
-		/** roperand == 0 or roperand >= max_bitwise **/
+		/** rconstant == 0 || rconstant >= max_bitwise **/
 		if(!(rconstant instanceof SymExpression)) {
 			if(rconstant instanceof Boolean) {
 				if(!((Boolean) rconstant).booleanValue()) {
@@ -66,7 +66,7 @@ public class ADDLSHInfection extends OPRTInfection {
 				}
 			}
 			else if(rconstant instanceof Long) {
-				if(((Long) rconstant).longValue() == 0) {
+				if(((Long) rconstant).longValue() == 0L) {
 					return true;	/** equivalent mutants detected **/
 				}
 				else if(((Long) rconstant).longValue() >= StateInfection.max_bitwise) {
@@ -76,7 +76,7 @@ public class ADDLSHInfection extends OPRTInfection {
 			}
 		}
 		
-		return false;	/** unable to decide the mutation partially **/
+		return false;
 	}
 
 	@Override
@@ -93,19 +93,19 @@ public class ADDLSHInfection extends OPRTInfection {
 		this.add_constraint(constraints, statement, rcondition);
 		output.put(graph.get_error_set().set_numb(expression, 0), constraints);
 		
-		/** roperand != 0 --> chg_numb(x) **/
-		rcondition = StateEvaluation.not_equals(roperand, 0L);
-		constraints = StateEvaluation.get_conjunctions();
-		this.add_constraint(constraints, statement, rcondition);
-		output.put(graph.get_error_set().chg_numb(expression), constraints);
-		
 		/** loperand == 0 --> set_numb(0) **/
 		lcondition = StateEvaluation.equal_with(loperand, 0L);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, lcondition);
 		output.put(graph.get_error_set().set_numb(expression, 0L), constraints);
 		
-		return true;	
+		/** roperand != 0 --> chg_numb(x) **/
+		rcondition = StateEvaluation.not_equals(roperand, 0L);
+		constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, statement, rcondition);
+		output.put(graph.get_error_set().chg_numb(expression), constraints);
+		
+		return true;
 	}
 
 }
