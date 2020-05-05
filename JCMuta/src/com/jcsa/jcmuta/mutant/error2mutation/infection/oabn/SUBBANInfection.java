@@ -15,12 +15,14 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * loperand == 0 or roperand == 0		--> set_numb(0)
- * loperand != 0 and roperand !=0		--> chg_numb(x)
+ * loperand == 0 or roperand == 0	--> set_numb(0)
+ * loperand ==-1 					--> rsv_numb(x)
+ * roperand ==-1					--> dif_numb(-1)
+ * 
  * @author yukimula
  *
  */
-public class ADDBANInfection extends OPRTInfection {
+public class SUBBANInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
@@ -39,46 +41,47 @@ public class ADDBANInfection extends OPRTInfection {
 		Object lconstant = StateEvaluation.get_constant_value(loperand);
 		Object rconstant = StateEvaluation.get_constant_value(roperand);
 		
-		/* lconstant == 0 or lconstant == -1 */
+		/** lconstant == 0 or lconstant == -1 **/
 		if(!(lconstant instanceof SymExpression)) {
 			if(lconstant instanceof Boolean) {
 				if(!((Boolean) lconstant).booleanValue()) {
-					output.put(graph.get_error_set().set_numb(expression, 0L), 
+					output.put(graph.get_error_set().set_numb(expression, 0), 
 							StateEvaluation.get_conjunctions()); return true;
 				}
 			}
 			else if(lconstant instanceof Long) {
-				if(((Long) lconstant).longValue() == 0L) {
-					output.put(graph.get_error_set().set_numb(expression, 0L), 
+				if(((Long) lconstant).longValue() == 0) {
+					output.put(graph.get_error_set().set_numb(expression, 0), 
 							StateEvaluation.get_conjunctions()); return true;
 				}
-				else if(((Long) lconstant).longValue() == -1L) {
-					output.put(graph.get_error_set().dif_numb(expression, 1L), 
-							StateEvaluation.get_conjunctions()); return true;
-				}
-			}
-		}
-		/* rconstant == 0 || rconstant == -1 */
-		if(!(rconstant instanceof SymExpression)) {
-			if(rconstant instanceof Boolean) {
-				if(!((Boolean) rconstant).booleanValue()) {
-					output.put(graph.get_error_set().set_numb(expression, 0L), 
-							StateEvaluation.get_conjunctions()); return true;
-				}
-			}
-			else if(rconstant instanceof Long) {
-				if(((Long) rconstant).longValue() == 0L) {
-					output.put(graph.get_error_set().set_numb(expression, 0L), 
-							StateEvaluation.get_conjunctions()); return true;
-				}
-				else if(((Long) rconstant).longValue() == -1L) {
-					output.put(graph.get_error_set().dif_numb(expression, 1L), 
+				else if(((Long) lconstant).longValue() == -1) {
+					output.put(graph.get_error_set().rsv_numb(expression),
 							StateEvaluation.get_conjunctions()); return true;
 				}
 			}
 		}
 		
-		return false;	/** unable to decide mutation partially **/
+		/** rconstant == 0 or rconstant == -1 **/
+		if(!(rconstant instanceof SymExpression)) {
+			if(rconstant instanceof Boolean) {
+				if(!((Boolean) rconstant).booleanValue()) {
+					output.put(graph.get_error_set().set_numb(expression, 0), 
+							StateEvaluation.get_conjunctions()); return true;
+				}
+			}
+			else if(rconstant instanceof Long) {
+				if(((Long) rconstant).longValue() == 0) {
+					output.put(graph.get_error_set().set_numb(expression, 0), 
+							StateEvaluation.get_conjunctions()); return true;
+				}
+				else if(((Long) rconstant).longValue() == -1) {
+					output.put(graph.get_error_set().dif_numb(expression, -1), 
+							StateEvaluation.get_conjunctions()); return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 
 	@Override
