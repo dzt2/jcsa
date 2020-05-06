@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.olan;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.olbn;
 
 import java.util.Map;
 
@@ -13,18 +13,19 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * [y == 0] 		--> failure()
- * [x == 1, y == 1] --> set_false
+ * [true, false]
+ * [false, ture]	--> set_true
+ * [true, true]		--> set_false
  * @author yukimula
  *
  */
-public class LORMODInfection extends OPRTInfection {
+public class LANBXRInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
 		return StateEvaluation.binary_expression(expression.get_data_type(), 
-				COperator.arith_mod, loperand, roperand);
+				COperator.bit_xor, loperand, roperand);
 	}
 
 	@Override
@@ -41,25 +42,38 @@ public class LORMODInfection extends OPRTInfection {
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				constraint = StateEvaluation.new_condition(roperand, false);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			}
-			
-			constraint = StateEvaluation.new_condition(roperand, false);
-			constraints = StateEvaluation.get_conjunctions();
-			this.add_constraint(constraints, statement, constraint);
-			output.put(graph.get_error_set().failure(), constraints);
-			
+			else {
+				constraint = StateEvaluation.new_condition(roperand, true);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
+			}
 			return true;
 		}
 		
 		if(!(rconstant instanceof SymExpression)) {
 			if(StateEvaluation.get_condition_value(rconstant)) {
-				constraint = StateEvaluation.new_condition(roperand, true);
+				constraint = StateEvaluation.new_condition(loperand, true);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				constraint = StateEvaluation.new_condition(loperand, false);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			}
 			else {
-				output.put(graph.get_error_set().failure(), StateEvaluation.get_conjunctions());
+				constraint = StateEvaluation.new_condition(loperand, true);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			}
 			return true;
 		}
@@ -73,10 +87,16 @@ public class LORMODInfection extends OPRTInfection {
 		SymExpression lcondition, rcondition; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		lcondition = StateEvaluation.new_condition(roperand, false);
-		constraints = StateEvaluation.get_conjunctions();
+		lcondition = StateEvaluation.logic_and(
+				StateEvaluation.new_condition(loperand, true), 
+				StateEvaluation.new_condition(roperand, false));
+		rcondition = StateEvaluation.logic_and(
+				StateEvaluation.new_condition(loperand, false),
+				StateEvaluation.new_condition(roperand, true));
+		constraints = StateEvaluation.get_disjunctions();
 		this.add_constraint(constraints, statement, lcondition);
-		output.put(graph.get_error_set().failure(), constraints);
+		this.add_constraint(constraints, statement, rcondition);
+		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
 		lcondition = StateEvaluation.new_condition(loperand, true);
 		rcondition = StateEvaluation.new_condition(roperand, true);
