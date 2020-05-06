@@ -151,6 +151,60 @@ public class StateEvaluation {
 		else
 			throw new IllegalArgumentException("Unable to parse: " + value);
 	}
+	/**
+	 * whether the value is positive (> 0)
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean is_positive_number(Object value) throws Exception {
+		if(value instanceof Boolean)
+			return ((Boolean) value).booleanValue();
+		else if(value instanceof Long) 
+			return ((Long) value).longValue() > 0L;
+		else if(value instanceof Double)
+			return ((Double) value).doubleValue() > 0.0;
+		else if(value instanceof String)
+			return !value.toString().equals(NullPointer);
+		else
+			throw new IllegalArgumentException("Unable to parse: " + value);
+	}
+	/**
+	 * whether the value is negative (< 0)
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean is_negative_number(Object value) throws Exception {
+		if(value instanceof Boolean)
+			return false;
+		else if(value instanceof Long) 
+			return ((Long) value).longValue() < 0L;
+		else if(value instanceof Double)
+			return ((Double) value).doubleValue() < 0.0;
+		else if(value instanceof String)
+			return false;
+		else
+			throw new IllegalArgumentException("Unable to parse: " + value);
+	}
+	/**
+	 * whether the value is zero (==0)
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean is_zero_number(Object value) throws Exception {
+		if(value instanceof Boolean)
+			return !((Boolean) value).booleanValue();
+		else if(value instanceof Long) 
+			return ((Long) value).longValue() == 0L;
+		else if(value instanceof Double)
+			return ((Double) value).doubleValue() == 0.0;
+		else if(value instanceof String)
+			return value.toString().equals(NullPointer);
+		else
+			throw new IllegalArgumentException("Unable to parse: " + value);
+	}
 	
 	/* symbolic matters */
 	/**

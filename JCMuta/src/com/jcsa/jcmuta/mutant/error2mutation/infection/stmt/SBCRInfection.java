@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.stmt;
 
 import java.util.Map;
 

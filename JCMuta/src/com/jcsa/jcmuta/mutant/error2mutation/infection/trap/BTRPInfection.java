@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.trap;
 
 import java.util.Map;
 
@@ -14,35 +14,37 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
-/**
- * trap_on_case(expression, val)
- * @author yukimula
- *
- */
-public class CTRPInfection extends StateInfection {
-
+public class BTRPInfection extends StateInfection {
+	
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return this.get_beg_statement(cir_tree, this.get_location(mutation));
+		CirExpression result = this.get_result_of(cir_tree, this.get_location(mutation));
+		if(result != null) {
+			return result.statement_of();
+		}
+		else {
+			return null;
+		}
 	}
-
+	
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		AstExpression condition = (AstExpression) this.get_location(mutation);
-		AstExpression case_value = (AstExpression) 
-					this.get_location((AstMutation) mutation.get_parameter());
+		AstExpression ast_location = (AstExpression) this.get_location(mutation);
+		CirExpression expression = this.get_result_of(cir_tree, ast_location);
 		
-		CirStatement statement = this.get_beg_statement(cir_tree, condition);
-		CirExpression loperand = this.get_result_of(cir_tree, condition);
-		CirExpression roperand = this.get_result_of(cir_tree, case_value);
+		SymExpression constraint;
+		switch(mutation.get_mutation_operator()) {
+		case trap_on_true:	constraint = StateEvaluation.new_condition(expression, true);	break;
+		case trap_on_false:	constraint = StateEvaluation.new_condition(expression, false);	break;
+		default: throw new IllegalArgumentException("Invalid: " + mutation.get_mutation_operator());
+		}
 		
-		SymExpression constraint = StateEvaluation.equal_with(loperand, roperand);
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
-		this.add_constraint(constraints, statement, constraint);
+		this.add_constraint(constraints, expression.statement_of(), constraint);
 		StateError error = graph.get_error_set().failure();
 		
 		output.put(error, constraints);
 	}
-
+	
 }

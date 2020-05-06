@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.vars;
 
 import java.util.Map;
 

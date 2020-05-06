@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.incr;
 
 import java.util.Map;
 
@@ -16,7 +16,7 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 import com.jcsa.jcparse.lang.symb.SymFactory;
 
-public class UNOIInfection extends StateInfection {
+public class UNODInfection extends StateInfection {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
@@ -30,7 +30,7 @@ public class UNOIInfection extends StateInfection {
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		
 		switch(mutation.get_mutation_operator()) {
-		case insert_arith_neg:
+		case delete_arith_neg:
 		{
 			SymExpression loperand = SymFactory.parse(expression);
 			SymExpression roperand = SymFactory.new_constant(0L);
@@ -41,12 +41,12 @@ public class UNOIInfection extends StateInfection {
 			output.put(graph.get_error_set().neg_numb(expression), constraints);
 		}
 		break;
-		case insert_bitws_rsv:
+		case delete_bitws_rsv:
 		{
 			output.put(graph.get_error_set().rsv_numb(expression), constraints);
 		}
 		break;
-		case insert_logic_not:
+		case delete_logic_not:
 		{
 			output.put(graph.get_error_set().chg_bool(expression), constraints);
 		}
