@@ -11,25 +11,25 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
-public class ADDGRTInfection extends OPRTInfection {
+public class ADDSMEInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
-		return StateEvaluation.greater_tn(loperand, roperand);
+		return StateEvaluation.smaller_eq(loperand, roperand);
 	}
-	
+
 	private void build(CirExpression expression, CirExpression loperand, long roperand, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
 		SymExpression constraint; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.greater_tn(loperand, roperand);
+		constraint = StateEvaluation.smaller_eq(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
-		constraint = StateEvaluation.smaller_eq(loperand, roperand);
+		constraint = StateEvaluation.greater_tn(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
@@ -40,12 +40,12 @@ public class ADDGRTInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.greater_tn(loperand, roperand);
+		constraint = StateEvaluation.smaller_eq(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
-		constraint = StateEvaluation.smaller_eq(loperand, roperand);
+		constraint = StateEvaluation.greater_tn(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
@@ -56,12 +56,12 @@ public class ADDGRTInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.smaller_tn(roperand, loperand);
+		constraint = StateEvaluation.greater_eq(roperand, loperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
-		constraint = StateEvaluation.greater_eq(roperand, loperand);
+		constraint = StateEvaluation.smaller_tn(roperand, loperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
@@ -72,12 +72,12 @@ public class ADDGRTInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.smaller_tn(roperand, loperand);
+		constraint = StateEvaluation.greater_eq(roperand, loperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
-		constraint = StateEvaluation.greater_eq(roperand, loperand);
+		constraint = StateEvaluation.smaller_tn(roperand, loperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
@@ -135,12 +135,12 @@ public class ADDGRTInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.greater_tn(loperand, roperand);
+		constraint = StateEvaluation.smaller_eq(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
-		constraint = StateEvaluation.smaller_eq(loperand, roperand);
+		constraint = StateEvaluation.greater_tn(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
