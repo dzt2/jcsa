@@ -12,7 +12,8 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * loperand != 0 and loperand != roperand
+ * loperand == 0							--> equivalence
+ * loperand != 0 and loperand != roperand	--> set_true
  * @author yukimula
  *
  */
@@ -33,14 +34,11 @@ public class DIVLANInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		
 		if(!(lconstant instanceof SymExpression)) {
-			if(StateEvaluation.get_condition_value(lconstant)) {
+			if(!StateEvaluation.is_zero_number(lconstant)) {
 				constraint = StateEvaluation.not_equals(loperand, roperand);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, true), constraints);
-			}
-			else {
-				/** equivalent mutant detected **/
 			}
 			return true;
 		}
@@ -50,7 +48,6 @@ public class DIVLANInfection extends OPRTInfection {
 			constraints = StateEvaluation.get_conjunctions();
 			this.add_constraint(constraints, statement, constraint);
 			output.put(graph.get_error_set().set_bool(expression, true), constraints);
-			return true;
 		}
 		
 		return false;
@@ -62,7 +59,8 @@ public class DIVLANInfection extends OPRTInfection {
 		SymExpression lcondition, rcondition; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		lcondition = StateEvaluation.new_condition(loperand, true);
+		/** loperand != 0 and loperand != roperand --> set_true **/
+		lcondition = StateEvaluation.not_equals(loperand, 0L);
 		rcondition = StateEvaluation.not_equals(loperand, roperand);
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, lcondition);

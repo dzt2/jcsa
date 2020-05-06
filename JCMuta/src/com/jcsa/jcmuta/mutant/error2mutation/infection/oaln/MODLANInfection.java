@@ -8,11 +8,13 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.infection.OPRTInfection;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * loperand != 0 and loperand == k * roperand --> set_true
+ * 	loperand == 0					--> equivalence
+ * 	loperand != k * roperand + 1	--> set_true
  * 
  * @author yukimula
  *
@@ -24,7 +26,20 @@ public class MODLANInfection extends OPRTInfection {
 			throws Exception {
 		return StateEvaluation.logic_and(loperand, roperand);
 	}
-
+	
+	/**
+	 * k * operand + 1
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	private SymExpression k_operand_1(CirExpression roperand) throws Exception {
+		SymExpression expression = StateEvaluation.
+				multiply_expression(roperand.get_data_type(), roperand);
+		return StateEvaluation.binary_expression(expression.get_data_type(), 
+				COperator.arith_add, expression, StateEvaluation.new_constant(1L));
+	}
+	
 	@Override
 	protected boolean partial_evaluate(CirExpression expression, CirExpression loperand, CirExpression roperand,
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
@@ -34,9 +49,9 @@ public class MODLANInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		
 		if(!(lconstant instanceof SymExpression)) {
-			if(StateEvaluation.get_condition_value(lconstant)) {
-				constraint = StateEvaluation.equal_with(StateEvaluation.get_symbol(loperand), 
-						StateEvaluation.multiply_expression(expression.get_data_type(), roperand));
+			if(StateEvaluation.is_zero_number(lconstant)) {
+				constraint = StateEvaluation.not_equals(StateEvaluation.
+						get_symbol(loperand), this.k_operand_1(roperand));
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, true), constraints);
@@ -45,10 +60,9 @@ public class MODLANInfection extends OPRTInfection {
 		}
 		
 		if(!(rconstant instanceof SymExpression)) {
-			constraint = StateEvaluation.equal_with(StateEvaluation.get_symbol(loperand), 
-					StateEvaluation.multiply_expression(expression.get_data_type(), roperand));
+			constraint = StateEvaluation.not_equals(StateEvaluation.
+					get_symbol(loperand), this.k_operand_1(roperand));
 			constraints = StateEvaluation.get_conjunctions();
-			this.add_constraint(constraints, statement, StateEvaluation.not_equals(loperand, 0L));
 			this.add_constraint(constraints, statement, constraint);
 			output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			return true;
@@ -64,8 +78,8 @@ public class MODLANInfection extends OPRTInfection {
 		CirStatement statement = expression.statement_of();
 		
 		lcondition = StateEvaluation.not_equals(loperand, 0L);
-		rcondition = StateEvaluation.equal_with(StateEvaluation.get_symbol(loperand), 
-				StateEvaluation.multiply_expression(expression.get_data_type(), roperand));
+		rcondition = StateEvaluation.not_equals(StateEvaluation.
+				get_symbol(loperand), this.k_operand_1(roperand));
 		constraints = StateEvaluation.get_conjunctions();
 		this.add_constraint(constraints, statement, lcondition);
 		this.add_constraint(constraints, statement, rcondition);

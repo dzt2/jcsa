@@ -11,6 +11,14 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
+/**
+ * loperand == 0 and roperand != 0	--> set_false
+ * loperand != 0 and roperand == 0	--> set_false
+ * loperand != roperand				--> set_true
+ * 
+ * @author yukimula
+ *
+ */
 public class SUBLANInfection extends OPRTInfection {
 
 	@Override
@@ -28,39 +36,49 @@ public class SUBLANInfection extends OPRTInfection {
 		SymExpression constraint; StateConstraints constraints;
 		
 		if(!(lconstant instanceof SymExpression)) {
-			if(StateEvaluation.get_condition_value(lconstant)) {
-				constraint = StateEvaluation.new_condition(roperand, true);
-				constraints = StateEvaluation.get_conjunctions();
-				this.add_constraint(constraints, statement, constraint);
-				output.put(graph.get_error_set().set_bool(expression, true), constraints);
-				
-				constraint = StateEvaluation.new_condition(roperand, false);
+			if(StateEvaluation.is_zero_number(lconstant)) {
+				/** (0, 4) --> set_false **/
+				constraint = StateEvaluation.not_equals(roperand, 0L);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
 			}
 			else {
-				output.put(graph.get_error_set().set_bool(expression, false), 
-						StateEvaluation.get_conjunctions());
+				/** (4, 0) --> set_false **/
+				constraint = StateEvaluation.equal_with(roperand, 0L);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				/** (4, 4) --> set_true **/
+				constraint = StateEvaluation.not_equals(roperand, 0L);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			}
 			return true;
 		}
 		
 		if(!(rconstant instanceof SymExpression)) {
-			if(StateEvaluation.get_condition_value(lconstant)) {
-				constraint = StateEvaluation.new_condition(loperand, true);
-				constraints = StateEvaluation.get_conjunctions();
-				this.add_constraint(constraints, statement, constraint);
-				output.put(graph.get_error_set().set_bool(expression, true), constraints);
-				
-				constraint = StateEvaluation.new_condition(loperand, false);
+			if(StateEvaluation.is_zero_number(rconstant)) {
+				/** (4, 0) --> set_false **/
+				constraint = StateEvaluation.not_equals(loperand, 0L);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
 			}
 			else {
-				output.put(graph.get_error_set().set_bool(expression, false), 
-						StateEvaluation.get_conjunctions());
+				/** (0, 4) --> set_false **/
+				constraint = StateEvaluation.equal_with(loperand, 0L);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				/** (4, 4) --> set_true **/
+				constraint = StateEvaluation.not_equals(loperand, 0L);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
 			}
 			return true;
 		}
@@ -74,19 +92,21 @@ public class SUBLANInfection extends OPRTInfection {
 		SymExpression lcondition, rcondition; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		lcondition = StateEvaluation.new_condition(loperand, true);
-		rcondition = StateEvaluation.new_condition(roperand, true);
-		constraints = StateEvaluation.get_conjunctions();
-		this.add_constraint(constraints, statement, lcondition);
-		this.add_constraint(constraints, statement, rcondition);
-		output.put(graph.get_error_set().set_bool(expression, true), constraints);
-		
-		lcondition = StateEvaluation.new_condition(loperand, false);
-		rcondition = StateEvaluation.new_condition(roperand, false);
+		lcondition = StateEvaluation.logic_and(StateEvaluation.equal_with
+				(loperand, 0L), StateEvaluation.not_equals(roperand, 0L));
+		rcondition = StateEvaluation.logic_and(StateEvaluation.not_equals
+				(loperand, 0L), StateEvaluation.equal_with(roperand, 0L));
 		constraints = StateEvaluation.get_disjunctions();
 		this.add_constraint(constraints, statement, lcondition);
 		this.add_constraint(constraints, statement, rcondition);
 		output.put(graph.get_error_set().set_bool(expression, false), constraints);
+		
+		lcondition = StateEvaluation.not_equals(loperand, 0L);
+		rcondition = StateEvaluation.not_equals(roperand, 0L);
+		constraints = StateEvaluation.get_conjunctions();
+		this.add_constraint(constraints, statement, lcondition);
+		this.add_constraint(constraints, statement, rcondition);
+		output.put(graph.get_error_set().set_bool(expression, true), constraints);
 		
 		return true;
 	}
