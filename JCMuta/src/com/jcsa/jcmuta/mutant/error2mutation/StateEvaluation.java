@@ -635,6 +635,51 @@ public class StateEvaluation {
 		return SymFactory.new_unary_expression(data_type, operator, operand);
 	}
 	/**
+	 * create logic and expression
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression logic_and(SymExpression loperand, SymExpression roperand) throws Exception {
+		SymMultiExpression expr = SymFactory.new_multiple_expression(CBasicTypeImpl.bool_type, COperator.logic_and);
+		expr.add_operand(loperand); expr.add_operand(roperand); return expr;
+	}
+	/**
+	 * create logic or expression
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression logic_or(CirExpression loperand, CirExpression roperand) throws Exception {
+		SymMultiExpression expr = SymFactory.new_multiple_expression(CBasicTypeImpl.bool_type, COperator.logic_or);
+		expr.add_operand(SymFactory.parse(loperand)); expr.add_operand(SymFactory.parse(roperand)); return expr;
+	}
+	/**
+	 * create logic and expression
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression logic_or(SymExpression loperand, SymExpression roperand) throws Exception {
+		SymMultiExpression expr = SymFactory.new_multiple_expression(CBasicTypeImpl.bool_type, COperator.logic_or);
+		expr.add_operand(loperand); expr.add_operand(roperand); return expr;
+	}
+	/**
+	 * create logic and expression
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymExpression logic_and(CirExpression loperand, CirExpression roperand) throws Exception {
+		SymMultiExpression expr = SymFactory.new_multiple_expression(CBasicTypeImpl.bool_type, COperator.logic_and);
+		expr.add_operand(SymFactory.parse(loperand)); expr.add_operand(SymFactory.parse(roperand)); return expr;
+	}
+	
+	/**
 	 * 
 	 * @param data_type
 	 * @param operator
