@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.olln;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.olrn;
 
 import java.util.Map;
 
@@ -14,88 +14,105 @@ import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
 /**
- * 	x	y	x&&y	x||y
- * 	0	0	0		0
+ * 	x	y	x&&y	x != y	
+ * 	0	0	0		0		
  * 	0	1	0		1
  * 	1	0	0		1
- * 	1	1	1		1
- * 	@author yukimula
+ * 	1	1	1		0
+ * 	
+ * 	{false, true}	--> true
+ * 	{true, false}	--> true
+ * 	{true, true}	--> false
+ * 
+ * @author yukimula
  *
  */
-public class LORLANInfection extends OPRTInfection {
+public class LANNEQInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
 		return StateEvaluation.binary_expression(CBasicTypeImpl.
-				bool_type, COperator.logic_and, loperand, roperand);
+				bool_type, COperator.not_equals, loperand, roperand);
 	}
 
 	@Override
 	protected boolean partial_evaluate(CirExpression expression, CirExpression loperand, CirExpression roperand,
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
-		/** declarations **/
 		Object lconstant = StateEvaluation.get_constant_value(loperand);
 		Object rconstant = StateEvaluation.get_constant_value(roperand);
 		CirStatement statement = expression.statement_of();
 		SymExpression constraint; StateConstraints constraints;
 		
-		/** (true, [false]), (false, [true]) --> set_true **/
 		if(!(lconstant instanceof SymExpression)) {
-			/** (true, [false]) --> set_true **/
 			if(StateEvaluation.get_condition_value(lconstant)) {
+				/** (true, [false]) --> true **/
 				constraint = StateEvaluation.new_condition(roperand, false);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
-				output.put(graph.get_error_set().set_bool(expression, false), constraints);
-				return true;
-			}
-			/** (false, [true]) --> set_true **/
-			else {
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
+				
+				/** (true, [true]) --> false **/
 				constraint = StateEvaluation.new_condition(roperand, true);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				return true;
+			}
+			else {
+				/** (false, true) --> true **/
+				constraint = StateEvaluation.new_condition(roperand, true);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
+				
 				return true;
 			}
 		}
 		
-		/** ([false], true), ([true], false) --> set_true **/
 		if(!(rconstant instanceof SymExpression)) {
-			/** ([false], true) --> set_true **/
 			if(StateEvaluation.get_condition_value(rconstant)) {
+				/** ([false], true) --> set_true **/
 				constraint = StateEvaluation.new_condition(loperand, false);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
-				output.put(graph.get_error_set().set_bool(expression, false), constraints);
-				return true;
-			}
-			/** ([true], false) --> set_true **/
-			else {
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
+				
+				/** ([true], true) --> set_false **/
 				constraint = StateEvaluation.new_condition(loperand, true);
 				constraints = StateEvaluation.get_conjunctions();
 				this.add_constraint(constraints, statement, constraint);
 				output.put(graph.get_error_set().set_bool(expression, false), constraints);
+				
+				return true;
+			}
+			else {
+				/** (true, false) --> set_true **/
+				constraint = StateEvaluation.new_condition(loperand, true);
+				constraints = StateEvaluation.get_conjunctions();
+				this.add_constraint(constraints, statement, constraint);
+				output.put(graph.get_error_set().set_bool(expression, true), constraints);
+				
 				return true;
 			}
 		}
 		
-		
-		return false;	/** unable to decide it **/
+		return false;
 	}
 
 	@Override
 	protected boolean symbolic_evaluate(CirExpression expression, CirExpression loperand, CirExpression roperand,
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception {
-		SymExpression constraint; StateConstraints constraints;
+		SymExpression lcondition, rcondition; StateConstraints constraints;
 		CirStatement statement = expression.statement_of();
 		
-		constraint = StateEvaluation.not_equals(
-				StateEvaluation.new_condition(loperand, true), 
-				StateEvaluation.new_condition(roperand, true));
-		constraints = StateEvaluation.get_conjunctions();
-		this.add_constraint(constraints, statement, constraint);
-		output.put(graph.get_error_set().set_bool(expression, false), constraints);
+		lcondition = StateEvaluation.new_condition(loperand, true);
+		rcondition = StateEvaluation.new_condition(roperand, true);
+		constraints = StateEvaluation.get_disjunctions();
+		this.add_constraint(constraints, statement, lcondition);
+		this.add_constraint(constraints, statement, rcondition);
+		output.put(graph.get_error_set().chg_bool(expression), constraints);
 		
 		return true;
 	}
