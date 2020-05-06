@@ -1,4 +1,4 @@
-package com.jcsa.jcmuta.mutant.error2mutation.infection.olln;
+package com.jcsa.jcmuta.mutant.error2mutation.infection.olan;
 
 import java.util.Map;
 
@@ -6,29 +6,19 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.infection.OPRTInfection;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
-/**
- * 	x	y	x&&y	x||y
- * 	0	0	0		0
- * 	0	1	0		1
- * 	1	0	0		1
- * 	1	1	1		1
- * 	@author yukimula
- *
- */
-public class LORLANInfection extends OPRTInfection {
+public class LORMULInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {
-		return StateEvaluation.binary_expression(CBasicTypeImpl.
-				bool_type, COperator.logic_and, loperand, roperand);
+		return StateEvaluation.binary_expression(expression.get_data_type(), 
+				COperator.arith_sub, loperand, roperand);
 	}
 
 	@Override
