@@ -267,7 +267,7 @@ public class PathConditions {
 			}
 			
 			/** find the runtime error **/
-			throw new IllegalArgumentException("Unable to access: " + source);
+			return try_to_find_location(cir_tree, parent, true);
 		}
 		
 	}

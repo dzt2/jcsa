@@ -73,7 +73,7 @@ public class DIVBXRInfection extends OPRTInfection {
 		
 		/** --> chg_numb(x) **/
 		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
-		return false;
+		return true;
 	}
 
 }

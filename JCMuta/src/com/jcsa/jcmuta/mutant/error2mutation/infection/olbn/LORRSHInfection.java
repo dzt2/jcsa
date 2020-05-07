@@ -17,7 +17,7 @@ import com.jcsa.jcparse.lang.symb.SymExpression;
  * @author yukimula
  *
  */
-public class BORRSHInfection extends OPRTInfection {
+public class LORRSHInfection extends OPRTInfection {
 
 	@Override
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)

@@ -8,6 +8,7 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateInfection;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -73,8 +74,10 @@ public abstract class OPRTInfection extends StateInfection {
 			Map<StateError, StateConstraints> output) throws Exception {
 		AstBinaryExpression location = (AstBinaryExpression) this.get_location(mutation);
 		CirExpression expression = this.get_result_of(cir_tree, location);
-		CirExpression loperand = this.get_result_of(cir_tree, location.get_loperand());
-		CirExpression roperand = this.get_result_of(cir_tree, location.get_roperand());
+		CirExpression loperand = this.get_result_of(cir_tree, 
+				CTypeAnalyzer.get_expression_of(location.get_loperand()));
+		CirExpression roperand = this.get_result_of(cir_tree, 
+				CTypeAnalyzer.get_expression_of(location.get_roperand()));
 		SymExpression muta_expression = this.muta_expression(expression, loperand, roperand);
 		
 		/** CASE-1. data type matching failed **/

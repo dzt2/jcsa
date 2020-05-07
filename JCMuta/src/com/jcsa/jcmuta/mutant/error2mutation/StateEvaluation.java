@@ -488,8 +488,10 @@ public class StateEvaluation {
 	 * @throws Exception
 	 */
 	public static SymExpression greater_tn(CirExpression loperand, CirExpression roperand) throws Exception {
-		return SymFactory.new_binary_expression(CBasicTypeImpl.bool_type, COperator.
-				greater_tn, SymFactory.parse(loperand), SymFactory.parse(roperand));
+		return SymFactory.new_binary_expression(
+				CBasicTypeImpl.bool_type, COperator.greater_tn, 
+				SymFactory.parse(loperand), 
+				SymFactory.parse(roperand));
 	}
 	/**
 	 * loperand < roperand

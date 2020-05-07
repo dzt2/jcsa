@@ -37,15 +37,15 @@ public class SBCRInfection extends StateInfection {
 		while(location != null) {
 			CirIfStatement if_statement;
 			if(location instanceof AstWhileStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
+				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class).get(0);
 				return if_statement.get_condition();
 			}
 			else if(location instanceof AstDoWhileStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
+				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class).get(0);
 				return if_statement.get_condition();
 			}
 			else if(location instanceof AstForStatement) {
-				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class);
+				if_statement = (CirIfStatement) cir_tree.get_cir_nodes(location, CirIfStatement.class).get(0);
 				return if_statement.get_condition();
 			}
 			else {

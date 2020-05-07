@@ -51,6 +51,20 @@ public class UNOIInfection extends StateInfection {
 			output.put(graph.get_error_set().chg_bool(expression), constraints);
 		}
 		break;
+		case insert_abs:
+		{
+			this.add_constraint(constraints, expression.statement_of(), 
+					StateEvaluation.smaller_tn(expression, 0L));
+			output.put(graph.get_error_set().neg_numb(expression), constraints);
+		}
+		break;
+		case insert_neg_abs:
+		{
+			this.add_constraint(constraints, expression.statement_of(), 
+					StateEvaluation.greater_tn(expression, 0L));
+			output.put(graph.get_error_set().neg_numb(expression), constraints);
+		}
+		break;
 		default: throw new IllegalArgumentException(mutation.get_mutation_operator().toString());
 		}
 		

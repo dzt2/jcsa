@@ -237,7 +237,7 @@ public class StateErrors {
 	public StateError dif_addr(CirExpression expression, long value) throws IllegalArgumentException {
 		StateError error = new StateError(this, ErrorType.dif_addr);
 		error.operands.add(expression); 
-		error.operands.add(Double.valueOf(value));
+		error.operands.add(Long.valueOf(value));
 		return this.preserve(error);
 	}
 	/**
@@ -874,7 +874,7 @@ public class StateErrors {
 		}
 		/* 3. dif_addr ==> dif_numb */
 		else if(CTypeAnalyzer.is_number(data_type)) {
-			this.extend_at(this.dif_addr(expression, difference));
+			this.extend_at(this.dif_numb(expression, difference));
 		}
 		else {
 			throw new IllegalArgumentException("Invalid data type");
@@ -976,6 +976,7 @@ public class StateErrors {
 		this.extend_set.add(error);
 		
 		CirExpression expression = (CirExpression) error.get_operand(0);
+		if(expression.get_data_type() == null) return;	/* initializer */
 		CType data_type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		
 		/* 2. chg_addr ==> chg_bool */

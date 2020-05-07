@@ -84,7 +84,7 @@ public class DIVLSHInfection extends OPRTInfection {
 		this.add_constraint(constraints, statement, constraint);
 		output.put(graph.get_error_set().chg_numb(expression), constraints);
 		
-		return false;
+		return true;
 	}
 
 }

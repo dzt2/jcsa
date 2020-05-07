@@ -52,7 +52,7 @@ public class MULSMEInfection extends OPRTInfection {
 		}
 		
 		if(!(rconstant instanceof SymExpression)) {
-			if(StateEvaluation.is_zero_number(lconstant)) {
+			if(StateEvaluation.is_zero_number(rconstant)) {
 				/** loperand == 0 and loperand <= roperand **/
 				constraint = StateEvaluation.smaller_eq(loperand, roperand);
 				constraints = StateEvaluation.get_conjunctions();

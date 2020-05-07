@@ -28,7 +28,7 @@ public class VINCInfection extends StateInfection {
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		
 		if(mutation.get_mutation_operator() == MutaOperator.inc_value) {
-			long parameter = ((Long) mutation.get_parameter()).longValue();
+			long parameter = ((Integer) mutation.get_parameter()).longValue();
 			if(parameter != 0) {
 				output.put(graph.get_error_set().dif_addr(expression, parameter), constraints);
 			}

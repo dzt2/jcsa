@@ -17,14 +17,14 @@ public class TTRPInfection extends StateInfection {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return (CirStatement) cir_tree.get_cir_nodes(this.get_location(mutation), CirIfStatement.class);
+		return (CirStatement) cir_tree.get_cir_nodes(this.get_location(mutation), CirIfStatement.class).get(0);
 	}
 
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirIfStatement statement = (CirIfStatement) cir_tree.
-				get_cir_nodes(this.get_location(mutation), CirIfStatement.class);
+				get_cir_nodes(this.get_location(mutation), CirIfStatement.class).get(0);
 		long loop_times = ((Integer) mutation.get_parameter()).longValue();
 		
 		SymExpression constraint = StateEvaluation.new_condition(statement.get_condition(), true);

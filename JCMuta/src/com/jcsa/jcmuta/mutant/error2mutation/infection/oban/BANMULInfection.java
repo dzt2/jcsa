@@ -86,7 +86,7 @@ public class BANMULInfection extends OPRTInfection {
 		this.add_constraint(constraints, statement, rcondition);
 		output.put(graph.get_error_set().chg_numb(expression), constraints);
 		
-		return false;
+		return true;
 	}
 
 }
