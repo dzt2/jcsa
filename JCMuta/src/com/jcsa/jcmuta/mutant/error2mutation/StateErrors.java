@@ -11,7 +11,6 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -1009,10 +1008,12 @@ public class StateErrors {
 	 */
 	private void extend_execute(StateError error) throws Exception {
 		this.extend_set.add(error);
+		/*
 		CirStatement statement = (CirStatement) error.get_operand(0);
 		if(statement instanceof CirAssignStatement) {
 			this.extend_at(this.mut_expr(((CirAssignStatement) statement).get_rvalue()));
 		}
+		*/
 	}
 	/**
 	 * 
@@ -1021,10 +1022,12 @@ public class StateErrors {
 	 */
 	private void extend_not_execute(StateError error) throws Exception {
 		this.extend_set.add(error);
+		/*
 		CirStatement statement = (CirStatement) error.get_operand(0);
 		if(statement instanceof CirAssignStatement) {
 			this.extend_at(this.mut_expr(((CirAssignStatement) statement).get_rvalue()));
 		}
+		*/
 	}
 	private void extend_failure(StateError error) throws Exception {
 		this.extend_set.add(error);

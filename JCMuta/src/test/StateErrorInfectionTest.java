@@ -14,6 +14,7 @@ import com.jcsa.jcmuta.project.Mutant;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.symb.StateConstraint;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
@@ -121,9 +122,14 @@ public class StateErrorInfectionTest {
 				}
 				writer.write("\n");
 				
-				writer.write("\t\t==>");
 				for(StateErrorEdge edge : error_node.get_ou_edges()) {
-					writer.write("#ERROR[" + edge.get_target().get_identifier() + "]; ");
+					writer.write("\t\t==>");
+					writer.write("#ERROR[" + edge.get_target().get_identifier() + "] for \t");
+					writer.write(edge.get_constraints().is_conjunct() + "{ ");
+					for(StateConstraint constraint : edge.get_constraints().get_constraints()) {
+						writer.write(constraint.toString() + "; ");
+					}
+					writer.write("}\n");
 				}
 				writer.write("\n");
 			}
