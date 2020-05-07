@@ -180,6 +180,54 @@ public class UIOIInfection extends StateInfection {
 		return use_points;
 	}
 	
+	private StateConstraints get_path_conditions(CirStatement source, CirStatement target) throws Exception {
+		Collection<List<CirExecutionFlow>> flows = PathConditions.paths_of(source, target);
+		Set<CirExecutionFlow> must_flows = PathConditions.must_be_path(flows);
+		
+		StateConstraints constraints = StateEvaluation.get_conjunctions();
+		for(CirExecutionFlow flow : must_flows) {
+			switch(flow.get_type()) {
+			case true_flow:
+			{
+				if(!must_flows.contains(flow.get_source().get_ou_flow(1))) {
+					CirStatement src = flow.get_source().get_statement();
+					
+					CirExpression condition;
+					if(src instanceof CirIfStatement) {
+						condition = ((CirIfStatement) src).get_condition();
+					}
+					else {
+						condition = ((CirCaseStatement) src).get_condition();
+					}
+					
+					this.add_constraint(constraints, src, StateEvaluation.new_condition(condition, true));
+				}
+			}
+			break;
+			case fals_flow:
+			{
+				if(!must_flows.contains(flow.get_source().get_ou_flow(0))) {
+					CirStatement src = flow.get_source().get_statement();
+					
+					CirExpression condition;
+					if(src instanceof CirIfStatement) {
+						condition = ((CirIfStatement) src).get_condition();
+					}
+					else {
+						condition = ((CirCaseStatement) src).get_condition();
+					}
+					
+					this.add_constraint(constraints, src, StateEvaluation.new_condition(condition, false));
+				}
+			}
+			break;
+			default: break;
+			}
+		}
+		
+		return constraints;
+	}
+	
 	@Override
 	protected void get_infections(CirTree cir_tree, AstMutation mutation, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
@@ -202,9 +250,9 @@ public class UIOIInfection extends StateInfection {
 		default: throw new IllegalArgumentException(mutation.get_mutation_operator().toString());
 		}
 		
-		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		for(CirExpression use_point : use_points) {
-			output.put(graph.get_error_set().dif_numb(use_point, difference), constraints);
+			output.put(graph.get_error_set().dif_numb(use_point, difference), 
+					this.get_path_conditions(source, use_point.statement_of()));
 		}
 	}
 
