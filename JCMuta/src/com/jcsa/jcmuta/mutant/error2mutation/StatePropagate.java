@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -20,9 +21,14 @@ public abstract class StatePropagate {
 	
 	/** whether to optimize the constraint on propagation edge **/
 	private boolean opt_constraint;
+	/** random machine to generate random number for address **/
+	private Random random_machine;
 	
 	/** constructor **/
-	public StatePropagate() { this.opt_constraint = false; }
+	public StatePropagate() { 
+		this.opt_constraint = false; 
+		this.random_machine = new Random(System.currentTimeMillis()); 
+	}
 	
 	/* public APIs */
 	/**
@@ -65,7 +71,7 @@ public abstract class StatePropagate {
 	
 	/* toolkit methods */
 	/**
-	 * 
+	 * get the representative set of errors in the node
 	 * @param errors
 	 * @return
 	 * @throws Exception
@@ -130,41 +136,662 @@ public abstract class StatePropagate {
 	}
 	
 	/* implementation method */
+	/**
+	 * execute(stmt)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_execute(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * not_execute(stmt)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_not_execute(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * execute_for(stmt, loop_times)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_execute_for(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * set_bool(expression, boolean)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_set_bool(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * chg_bool(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_chg_bool(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * set_numb(expression, int|double)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_set_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * neg_numb(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_neg_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * xor_numb(expression, int);
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_xor_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * rsv_numb(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_rsv_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * dif_numb(expression, int|double)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_dif_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * inc_numb(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_inc_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * dec_numb(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_dec_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * chg_numb(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_chg_numb(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * dif_addr(expression, long)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_dif_addr(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * set_addr(expression, String)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_set_addr(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * chg_addr(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_chg_addr(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * mut_expr(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_mut_expr(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	/**
+	 * mut_refer(expression)
+	 * @param error
+	 * @param cir_target
+	 * @param graph
+	 * @param output
+	 * @throws Exception
+	 */
 	protected abstract void propagate_mut_refer(StateError error, CirNode cir_target, 
 			StateErrorGraph graph, Map<StateError, StateConstraints> output) throws Exception;
+	
+	/* computation methods */
+	/**
+	 * 	boolean 	--> long
+	 * 	long		--> long
+	 * 	double		--> double
+	 * 	string		--> long
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object get_number(Object operand) throws Exception {
+		if(operand instanceof Boolean) {
+			if(((Boolean) operand).booleanValue()) 
+				return Long.valueOf(1L);
+			else
+				return Long.valueOf(0L);
+		}
+		else if(operand instanceof Long) {
+			return operand;
+		}
+		else if(operand instanceof Double) {
+			return operand;
+		}
+		else if(operand instanceof String) {
+			if(operand.equals(StateError.NullPointer)) {
+				return Long.valueOf(0L);
+			}
+			else {
+				return Long.valueOf(Math.abs(this.random_machine.nextLong()) % (1024 * 16) + 1);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unknown type: " + operand);
+		}
+	}
+	protected Object arith_add(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x + y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x + y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x + y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x + y;
+			}
+		}
+	}
+	protected Object arith_sub(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x - y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x - y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x - y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x - y;
+			}
+		}
+	}
+	protected Object arith_mul(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x * y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x * y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x * y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x * y;
+			}
+		}
+	}
+	protected Object arith_div(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x / y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x / y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x / y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x / y;
+			}
+		}
+	}
+	protected Object arith_mod(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x % y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x % y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x % y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x % y;
+			}
+		}
+	}
+	protected Object bitws_and(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x & y;
+			}
+			else {
+				throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+		}
+	}
+	protected Object bitws_ior(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x | y;
+			}
+			else {
+				throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+		}
+	}
+	protected Object bitws_xor(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x ^ y;
+			}
+			else {
+				throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+		}
+	}
+	protected Object bitws_lsh(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x << y;
+			}
+			else {
+				throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+		}
+	}
+	protected Object bitws_rsh(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x >> y;
+			}
+			else {
+				throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + lvalue + " and " + rvalue);
+		}
+	}
+	protected Object logic_and(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return (x != 0) && (y != 0);
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return (x != 0) && (y != 0);
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return (x != 0) && (y != 0);
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return (x != 0) && (y != 0);
+			}
+		}
+	}
+	protected Object logic_ior(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return (x != 0) || (y != 0);
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return (x != 0) || (y != 0);
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return (x != 0) || (y != 0);
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return (x != 0) || (y != 0);
+			}
+		}
+	}
+	protected Object greater_tn(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x > y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x > y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x > y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x > y;
+			}
+		}
+	}
+	protected Object greater_eq(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x >= y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x >= y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x >= y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x >= y;
+			}
+		}
+	}
+	protected Object smaller_tn(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x < y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x < y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x < y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x < y;
+			}
+		}
+	}
+	protected Object smaller_eq(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x <= y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x <= y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x <= y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x <= y;
+			}
+		}
+	}
+	protected Object equal_with(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x == y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x == y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x == y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x == y;
+			}
+		}
+	}
+	protected Object not_equals(Object loperand, Object roperand) throws Exception {
+		Object lvalue = this.get_number(loperand);
+		Object rvalue = this.get_number(roperand);
+		
+		if(lvalue instanceof Long) {
+			long x = ((Long) lvalue).longValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x != y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x != y;
+			}
+		}
+		else {
+			double x = ((Double) lvalue).doubleValue();
+			if(rvalue instanceof Long) {
+				long y = ((Long) rvalue).longValue();
+				return x != y;
+			}
+			else {
+				double y = ((Double) rvalue).doubleValue();
+				return x != y;
+			}
+		}
+	}
 	
 }

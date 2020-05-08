@@ -10,6 +10,7 @@ import java.util.Set;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -998,7 +999,8 @@ public class StateErrors {
 	 */
 	private void extend_mut_refer(StateError error) throws Exception {
 		CirExpression expression = (CirExpression) error.get_operand(0);
-		this.extend_set.add(error);
+		if(expression instanceof CirDeferExpression)
+			this.extend_set.add(error);
 		this.extend_at(this.mut_expr(expression));
 	}
 	/**

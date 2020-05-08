@@ -77,14 +77,14 @@ public class StateError {
 		case neg_numb:		return 3;
 		case xor_numb:		return 4;
 		case rsv_numb:		return 3;
-		case dif_numb:		return 4;
+		case dif_numb:		return 5;
 		case inc_numb:		return 3;
 		case dec_numb:		return 3;
 		case chg_numb:		return 2;
-		case dif_addr:		return 4;
+		case dif_addr:		return 5;
 		case set_addr:		return 4;
 		case chg_addr:		return 2;
-		case mut_expr:		return 1;
+		case mut_expr:		return 0;
 		case mut_refer:		return 1;
 		default: throw new IllegalArgumentException("Unsupport " + this.type);
 		}
