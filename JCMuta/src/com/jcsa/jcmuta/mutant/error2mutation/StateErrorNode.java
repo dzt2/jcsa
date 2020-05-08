@@ -50,6 +50,28 @@ public class StateErrorNode {
 			this.ou = new LinkedList<StateErrorEdge>();
 		}
 	}
+	protected StateErrorNode(StateErrorGraph graph, int identifier, Iterable<StateError> source) throws Exception {
+		if(graph == null)
+			throw new IllegalArgumentException("Invalid graph: null");
+		else {
+			this.graph = graph; this.identifier = identifier;
+			if(source == null) {
+				this.location = null;
+				this.errors = new ArrayList<StateError>();
+			}
+			else {
+				this.location = null;
+				this.errors = new ArrayList<StateError>();
+				for(StateError error : source) {
+					this.errors.addAll(error.get_errors().extend(error));
+					if(error.number_of_operands() > 0)
+						this.location = (CirNode) error.get_operand(0);
+				}
+			}
+			this.in = new LinkedList<StateErrorEdge>();
+			this.ou = new LinkedList<StateErrorEdge>();
+		}
+	}
 	
 	/* getters */
 	/**
