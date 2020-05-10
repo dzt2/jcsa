@@ -31,9 +31,9 @@ public abstract class StateInfection {
 	
 	/* parameters */
 	/** number of bit that cannot mask the others **/
-	protected static final int min_bitwise = 1;
+	public static final int min_bitwise = 1;
 	/** number of bit that will mask all the others **/
-	protected static final int max_bitwise = 32;
+	public static final int max_bitwise = 32;
 	
 	/* attributes */
 	/** whether to optimize constraint **/
