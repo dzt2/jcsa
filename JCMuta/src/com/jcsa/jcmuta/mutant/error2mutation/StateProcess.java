@@ -41,23 +41,29 @@ public abstract class StateProcess {
 	/* process methods */
 	/**
 	 * generate the propagation from the source node to the errors in the target
-	 * @param source
-	 * @param cir_target
-	 * @return
+	 * @param source			the source error node
+	 * @param cir_target		the location to which the error propagates
+	 * @param representative	whether only using the representative sets of the errors in the program.
+	 * @return	the set of edges from the source to the next targets in the graph for further analysis
 	 * @throws Exception
 	 */
-	public Collection<StateErrorEdge> process(StateErrorNode source, CirNode cir_target) throws Exception {
+	public Collection<StateErrorEdge> process(StateErrorNode source, 
+			CirNode cir_target, boolean representative) throws Exception {
 		List<StateErrorEdge> propagation_edges = new ArrayList<StateErrorEdge>();
 		
 		if(source != null && source.get_location() != null) {
 			/* get the representative set of state errors within the source node */
-			Map<StateError, StateConstraints> output = new HashMap<StateError, StateConstraints>();
-			Collection<StateError> errors = this.get_representative_errors(source.get_errors());
+			Collection<StateError> errors;
+			if(representative) errors = this.get_representative_errors(source.get_errors());
+			else { 
+				errors = new ArrayList<StateError>();
+				for(StateError error : source.get_errors()) { errors.add(error); }
+			}
 			
 			/* generate the new state errors in the target node with constraints */
-			for(StateError error : errors) {
+			Map<StateError, StateConstraints> output = new HashMap<StateError, StateConstraints>();
+			for(StateError error : errors) 
 				this.propagate_state_error(error, cir_target, source.get_graph(), output);
-			}
 			
 			/* create new state error nodes w.r.t. the error created in a graph */
 			for(StateError new_error : output.keySet()) {
