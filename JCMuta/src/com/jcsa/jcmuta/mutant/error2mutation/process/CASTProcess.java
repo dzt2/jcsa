@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
-public class CASTPropagate extends StateProcess {
+public class CASTProcess extends StateProcess {
 
 	@Override
 	protected void propagate_execute(StateError error, CirNode cir_target, StateErrorGraph graph,
