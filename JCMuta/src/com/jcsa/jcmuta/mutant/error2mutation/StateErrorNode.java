@@ -1,6 +1,7 @@
 package com.jcsa.jcmuta.mutant.error2mutation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -136,6 +137,22 @@ public class StateErrorNode {
 		if(constraints == null) constraints = new StateConstraints(true); 
 		StateErrorEdge edge = new StateErrorEdge(this, target, constraints);
 		this.ou.add(edge); target.in.add(edge); return edge;
+	}
+	
+	@Override
+	public String toString() {
+		List<String> words = new ArrayList<String>();
+		for(StateError error : this.errors) 
+			words.add(error.toString());
+		Collections.sort(words);
+		
+		StringBuilder buffer = new StringBuilder();
+		buffer.append("[ ");
+		for(String word : words) {
+			buffer.append(word).append("; ");
+		}
+		buffer.append("]");
+		return buffer.toString();
 	}
 	
 }
