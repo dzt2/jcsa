@@ -89,8 +89,8 @@ public class StateErrorInfectionTest {
 		CirInstanceGraph program_graph = translate(source_file.get_cir_tree());
 		CDominanceGraph dgraph = generate(program_graph);
 		CDependGraph rgraph = generate2(program_graph);
+		// StateErrorBuilder.set_constraint_optimization(true);
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
-			// System.out.println("\t--> Output " + mutant.get_mutation());
 			output_ast_mutation(source_file, mutant, dgraph, rgraph, writer);
 		}
 		writer.close();

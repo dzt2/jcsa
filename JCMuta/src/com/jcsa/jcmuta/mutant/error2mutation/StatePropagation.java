@@ -493,7 +493,7 @@ public class StatePropagation {
 				if(dedge.get_type() == CDependType.predicate_depend) {
 					CDependPredicate element = (CDependPredicate) dedge.get_element();
 					if(element.get_predicate_value() == predicate) {
-						CirStatement statement = dedge.get_target().get_statement();
+						CirStatement statement = dedge.get_source().get_statement();
 						if(!(statement instanceof CirTagStatement)) {
 							statements.add(statement);
 						}
