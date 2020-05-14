@@ -742,7 +742,7 @@ public class StateInfections {
 	/**
 	 * open the optimization on symbolic constraints
 	 */
-	public static void open_optimize_constraint() {
+	protected static void open_optimize_constraint() {
 		for(StateInfection infection : infections.values()) {
 			infection.open_optimize_constraint();
 		}
@@ -751,7 +751,7 @@ public class StateInfections {
 	/**
 	 * close the optimization on symbolic constraints
 	 */
-	public static void close_optimize_constraint() {
+	protected static void close_optimize_constraint() {
 		for(StateInfection infection : infections.values()) {
 			infection.close_optimize_constraint();
 		}
@@ -765,7 +765,7 @@ public class StateInfections {
 	 * @return
 	 * @throws Exception
 	 */
-	public static StateErrorGraph parse(CirTree cir_tree, AstMutation mutation, CDominanceGraph dgraph) throws Exception {
+	protected static StateErrorGraph parse(CirTree cir_tree, AstMutation mutation, CDominanceGraph dgraph) throws Exception {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("C-intermediate tree is not provided");
 		else if(mutation == null)

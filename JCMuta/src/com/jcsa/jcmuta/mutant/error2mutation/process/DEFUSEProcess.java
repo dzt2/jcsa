@@ -84,8 +84,10 @@ public class DEFUSEProcess extends StateProcess {
 			default: break;
 			}
 			
-			SymExpression constraint = StateEvaluation.new_condition(condition, parameter);
-			this.add_constraint(constraints, source, constraint);
+			if(condition != null) {
+				SymExpression constraint = StateEvaluation.new_condition(condition, parameter);
+				this.add_constraint(constraints, source, constraint);
+			}
 		}
 		
 		return constraints;

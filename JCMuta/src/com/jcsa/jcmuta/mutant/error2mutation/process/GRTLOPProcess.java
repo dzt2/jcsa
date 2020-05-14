@@ -101,11 +101,11 @@ public class GRTLOPProcess extends StateProcess {
 	@Override
 	protected void propagate_dif_numb(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		Long difference = (Long) this.get_number(error.get_operand(1));
-		if(difference > 0) {
+		Object difference = this.get_number(error.get_operand(1));
+		if(StateEvaluation.is_positive_number(difference)) {
 			this.propagate_inc_numb(error, cir_target, graph, output);
 		}
-		else if(difference < 0) {
+		else if(StateEvaluation.is_negative_number(difference)) {
 			this.propagate_dec_numb(error, cir_target, graph, output);
 		}
 	}

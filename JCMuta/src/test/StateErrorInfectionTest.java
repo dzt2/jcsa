@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
+import com.jcsa.jcmuta.mutant.error2mutation.StateErrorBuilder;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorEdge;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorNode;
-import com.jcsa.jcmuta.mutant.error2mutation.StateInfections;
 import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.Mutant;
@@ -18,6 +18,7 @@ import com.jcsa.jcparse.lang.symb.StateConstraint;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
+import com.jcsa.jcparse.lopt.models.depend.CDependGraph;
 import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
 
 public class StateErrorInfectionTest {
@@ -25,6 +26,7 @@ public class StateErrorInfectionTest {
 	private static int error_counter;
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
 	private static final String postfx = "results\\test\\";
+	private static final int max_distance = 1;
 	// private static final double threshold = 0.01;
 	
 	public static void main(String[] args) throws Exception {
@@ -69,6 +71,9 @@ public class StateErrorInfectionTest {
 	private static CDominanceGraph generate(CirInstanceGraph graph) throws Exception {
 		return CDominanceGraph.forward_dominance_graph(graph);
 	}
+	private static CDependGraph generate2(CirInstanceGraph graph) throws Exception {
+		return CDependGraph.graph(graph);
+	}
 	
 	/**
 	 * 
@@ -81,10 +86,12 @@ public class StateErrorInfectionTest {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output); error_counter = 0;
-		CDominanceGraph dgraph = generate(translate(source_file.get_cir_tree()));
+		CirInstanceGraph program_graph = translate(source_file.get_cir_tree());
+		CDominanceGraph dgraph = generate(program_graph);
+		CDependGraph rgraph = generate2(program_graph);
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			// System.out.println("\t--> Output " + mutant.get_mutation());
-			output_ast_mutation(source_file, mutant, dgraph, writer);
+			output_ast_mutation(source_file, mutant, dgraph, rgraph, writer);
 		}
 		writer.close();
 		System.out.println("\tOutput " + source_file.get_mutant_space().size() + 
@@ -98,17 +105,12 @@ public class StateErrorInfectionTest {
 	 * @throws Exception
 	 */
 	private static void output_ast_mutation(MutaSourceFile source_file, 
-			Mutant mutant, CDominanceGraph dgraph, FileWriter writer) throws Exception {
+			Mutant mutant, CDominanceGraph dgraph, CDependGraph rgraph, FileWriter writer) throws Exception {
 		writer.write("#MUTANT[" + mutant.get_id() + "]:\t" + mutant.get_mutation() + "\n");
 		
 		StateErrorGraph state_error_graph = null;
-		try {
-			state_error_graph = StateInfections.parse(
-					source_file.get_cir_tree(), mutant.get_mutation(), dgraph);
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		state_error_graph = StateErrorBuilder.build(mutant.get_mutation(), 
+				source_file.get_cir_tree(), dgraph, rgraph, max_distance);
 		
 		if(state_error_graph == null) {
 			error_counter++;

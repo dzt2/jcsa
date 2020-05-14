@@ -59,7 +59,7 @@ public class ADDROPProcess extends StateProcess {
 		
 		Object roperand = error.get_operand(1);
 		Object loperand = StateEvaluation.get_constant_value(expression.get_operand(0));
-		if(!(roperand instanceof SymExpression)) {
+		if(!(loperand instanceof SymExpression) && !(roperand instanceof SymExpression)) {
 			Object result = this.arith_add(loperand, roperand);
 			if(result instanceof Long) {
 				output.put(graph.get_error_set().set_numb(expression, ((Long) result).longValue()), constraints);
@@ -79,7 +79,7 @@ public class ADDROPProcess extends StateProcess {
 		CirComputeExpression expression = (CirComputeExpression) cir_target;
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		Object loperand = StateEvaluation.get_constant_value(expression.get_operand(0));
-		if(!(loperand instanceof SymExpression)) {
+		if(!(loperand instanceof SymExpression) && !(loperand instanceof SymExpression)) {
 			if(StateEvaluation.is_zero_number(loperand)) {
 				output.put(graph.get_error_set().neg_numb(expression), constraints);
 			}
@@ -106,7 +106,7 @@ public class ADDROPProcess extends StateProcess {
 		CirComputeExpression expression = (CirComputeExpression) cir_target;
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
 		Object loperand = StateEvaluation.get_constant_value(expression.get_operand(0));
-		if(!(loperand instanceof SymExpression)) {
+		if(!(loperand instanceof SymExpression) && !(loperand instanceof SymExpression)) {
 			if(StateEvaluation.is_zero_number(loperand)) {
 				output.put(graph.get_error_set().rsv_numb(expression), constraints);
 			}

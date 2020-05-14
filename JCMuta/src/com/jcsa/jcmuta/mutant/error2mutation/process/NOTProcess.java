@@ -90,7 +90,7 @@ public class NOTProcess extends StateProcess {
 	protected void propagate_rsv_numb(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = (CirExpression) cir_target;
-		CirExpression operand = (CirExpression) error.get_operand(1);
+		CirExpression operand = (CirExpression) error.get_operand(0);
 		StateConstraints constraints; SymExpression constraint;
 		
 		constraint = StateEvaluation.equal_with(operand, -1L);
@@ -109,7 +109,7 @@ public class NOTProcess extends StateProcess {
 	protected void propagate_dif_numb(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = (CirExpression) cir_target;
-		CirExpression operand = (CirExpression) error.get_operand(1);
+		CirExpression operand = (CirExpression) error.get_operand(0);
 		Object difference = this.get_number(error.get_operand(1)); 
 		StateConstraints constraints; SymExpression constraint;
 		
@@ -153,7 +153,7 @@ public class NOTProcess extends StateProcess {
 	protected void propagate_chg_numb(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = (CirExpression) cir_target;
-		CirExpression operand = (CirExpression) error.get_operand(1);
+		CirExpression operand = (CirExpression) error.get_operand(0);
 		StateConstraints constraints; SymExpression constraint;
 		
 		constraint = StateEvaluation.equal_with(operand, 0L);

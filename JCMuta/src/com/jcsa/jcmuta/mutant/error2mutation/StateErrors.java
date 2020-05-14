@@ -848,7 +848,8 @@ public class StateErrors {
 		}
 		/* 6. invalid case */
 		else {
-			throw new IllegalArgumentException("Invalid data type: " + data_type);
+			this.extend_at(this.mut_expr(expression));
+			//throw new IllegalArgumentException("Invalid data type: " + data_type);
 		}
 	}
 	/**

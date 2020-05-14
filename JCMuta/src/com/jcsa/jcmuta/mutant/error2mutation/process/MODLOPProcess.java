@@ -8,6 +8,7 @@ import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
 import com.jcsa.jcmuta.mutant.error2mutation.StateProcess;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
 import com.jcsa.jcparse.lang.symb.SymExpression;
 
@@ -144,10 +145,10 @@ public class MODLOPProcess extends StateProcess {
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirComputeExpression expression = (CirComputeExpression) cir_target;
 		StateConstraints constraints = StateEvaluation.get_conjunctions();
-		Object loperand = error.get_operand(0);
+		Object loperand = StateEvaluation.get_constant_value((CirExpression) error.get_operand(0));
 		Object roperand = StateEvaluation.get_constant_value(expression.get_operand(1));
 		
-		if(!(roperand instanceof SymExpression)) {
+		if(!(loperand instanceof SymExpression) && !(roperand instanceof SymExpression)) {
 			long difference = (Long) this.arith_mod(loperand, roperand);
 			if(difference == 0) { return; /** equivalent mutant detect **/ }
 			else {
