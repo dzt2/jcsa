@@ -95,7 +95,7 @@ public class MutaFeaturesWriting {
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
 	private static final String postfx = "results\\data2\\"; 
 	private static final String main_function = "main";
-	private static final int max_propagation_degree = 3;
+	private static final int max_propagation_degree = 2;
 	private static final boolean constraint_optimize = false;
 	
 	/* main testing methods */
