@@ -259,19 +259,21 @@ public class StatePropagation {
 	 * @return
 	 * @throws Exception
 	 */
-	protected static Iterable<StateErrorNode> propgate(StateErrorNode source, CDependGraph dgraph) throws Exception {
+	protected static char propgate(StateErrorNode source, CDependGraph dgraph, Collection<StateErrorNode> next_nodes) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source as null");
 		else if(dgraph == null)
 			throw new IllegalArgumentException("Invalid dependence graph");
+		else if(next_nodes == null)
+			throw new IllegalArgumentException("Invalid next_nodes: null");
 		else {
 			CirNode location = source.get_location();
 			Collection<StateErrorEdge> edges = null;
-			List<StateErrorNode> next_nodes = new ArrayList<StateErrorNode>();
+			next_nodes.clear(); char end_tag;
 			
 			if(location != null) {
 				CirNode parent = location.get_parent();
-				if(location instanceof CirStatement) { /** do nothing on error statement **/ }
+				if(location instanceof CirStatement) { end_tag = 'E'; }
 				else if(parent instanceof CirExpression) {
 					if(parent instanceof CirDeferExpression) {
 						edges = StatePropagation.dereference_process.process(source, parent, true);
@@ -427,11 +429,13 @@ public class StatePropagation {
 						default: break;
 						}
 					}
+					end_tag = 'I';
 				}
 				else if(parent instanceof CirAssignStatement) {
 					if(((CirAssignStatement) parent).get_rvalue() == location) {
 						edges = StatePropagation.rvalue_lvalue_process.process(
 								source, ((CirAssignStatement) parent).get_lvalue(), true);
+						end_tag = 'I';
 					}
 					else {
 						Collection<CDependNode> dnodes = StatePropagation.get_depend_nodes(dgraph, parent);
@@ -441,6 +445,8 @@ public class StatePropagation {
 						for(CirExpression use_point : use_points) {
 							edges.addAll(StatePropagation.define_usage_process.process(source, use_point, true));
 						}
+						
+						end_tag = 'C';
 					}
 				}
 				else if(parent instanceof CirIfStatement || parent instanceof CirCaseStatement) {
@@ -454,6 +460,8 @@ public class StatePropagation {
 					for(CirStatement statement : f_branch) {
 						edges.addAll(StatePropagation.condition_false_process.process(source, statement, true));
 					}
+					
+					end_tag = 'C';
 				}
 				else if(parent instanceof CirArgumentList) {
 					CirCallStatement call_stmt = (CirCallStatement) parent.get_parent();
@@ -465,14 +473,21 @@ public class StatePropagation {
 					CirWaitAssignStatement wait_statement = 
 								(CirWaitAssignStatement) wait_execution.get_statement();
 					edges = StatePropagation.call_return_process.process(source, wait_statement.get_lvalue(), true);
+					end_tag = 'C';
+				}
+				else {
+					end_tag = 'E';
 				}
 			}
-			
+			else {
+				end_tag = 'E';
+			}
 			
 			if(edges != null) {
 				for(StateErrorEdge edge : edges) { next_nodes.add(edge.get_target()); }
 			}
-			return next_nodes;
+			
+			return end_tag;
 		}
 	}
 	
@@ -535,8 +550,17 @@ public class StatePropagation {
 	 */
 	protected static void propagate_for(StateErrorNode root, CDependGraph dgraph, int distance) throws Exception {
 		if(distance > 0) {
-			Iterable<StateErrorNode> children = StatePropagation.propgate(root, dgraph);
-			for(StateErrorNode child : children) propagate_for(child, dgraph, distance - 1);
+			List<StateErrorNode> children = new ArrayList<StateErrorNode>();
+			char end_tag = StatePropagation.propgate(root, dgraph, children);
+			
+			switch(end_tag) {
+			case 'C': distance = distance - 1; break;
+			case 'I': break;
+			case 'E': return;
+			default: throw new IllegalArgumentException("Unknown end tag: " + end_tag);
+			}
+			
+			for(StateErrorNode child : children) propagate_for(child, dgraph, distance);
 		}
 	}
 	

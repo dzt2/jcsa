@@ -91,7 +91,7 @@ public class DEFERProcess extends StateProcess {
 	protected void propagate_dif_addr(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = (CirExpression) cir_target;
-		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
+		output.put(graph.get_error_set().mut_refer(expression), StateEvaluation.get_conjunctions());
 	}
 
 	@Override
@@ -104,7 +104,7 @@ public class DEFERProcess extends StateProcess {
 	protected void propagate_chg_addr(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
 		CirExpression expression = (CirExpression) cir_target;
-		output.put(graph.get_error_set().chg_numb(expression), StateEvaluation.get_conjunctions());
+		output.put(graph.get_error_set().mut_refer(expression), StateEvaluation.get_conjunctions());
 		output.put(graph.get_error_set().failure(), StateEvaluation.get_conjunctions());
 	}
 

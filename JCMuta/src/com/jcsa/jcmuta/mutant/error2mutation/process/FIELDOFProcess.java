@@ -114,7 +114,7 @@ public class FIELDOFProcess extends StateProcess {
 	@Override
 	protected void propagate_mut_expr(StateError error, CirNode cir_target, StateErrorGraph graph,
 			Map<StateError, StateConstraints> output) throws Exception {
-		output.put(graph.get_error_set().mut_expr((CirExpression) cir_target), StateEvaluation.get_conjunctions());
+		output.put(graph.get_error_set().mut_refer((CirExpression) cir_target), StateEvaluation.get_conjunctions());
 	}
 
 	@Override

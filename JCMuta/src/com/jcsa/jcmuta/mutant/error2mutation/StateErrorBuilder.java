@@ -53,6 +53,11 @@ public class StateErrorBuilder {
 			for(StateErrorEdge infection_edge : reach_node.get_ou_edges()) {
 				StatePropagation.propagate_for(infection_edge.get_target(), dependence_graph, max_distance);
 			}
+			for(StateErrorNode node : graph.get_nodes()) {
+				if(node.get_ou_degree() == 0 && node != graph.get_end_node()) {
+					node.propagate(graph.get_end_node());
+				}
+			}
 			return graph;
 		}
 	}

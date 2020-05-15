@@ -14,9 +14,9 @@ public class StateErrorGraph {
 	
 	/* attributes */
 	/** index to the entry **/
-	public static final int BEG_INDEX = 0;
+	public static final int BEG_INDEX = 1;
 	/** index to the final exit **/
-	public static final int END_INDEX = 1;
+	public static final int END_INDEX = 0;
 	/** errors set to create error **/
 	private StateErrors errors;
 	/** nodes defined in graph **/
