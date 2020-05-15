@@ -343,6 +343,7 @@ import com.jcsa.jcmuta.mutant.error2mutation.infection.trap.VTRPInfection;
 import com.jcsa.jcmuta.mutant.error2mutation.infection.vars.VBRPInfection;
 import com.jcsa.jcmuta.mutant.error2mutation.infection.vars.VCRPInfection;
 import com.jcsa.jcmuta.mutant.error2mutation.infection.vars.VRRPInfection;
+import com.jcsa.jcmuta.project.Mutant;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
 
@@ -758,6 +759,17 @@ public class StateInfections {
 	}
 	
 	/**
+	 * whether to optimize the constraints being described
+	 * @param optimize
+	 */
+	public static void set_optimize(boolean optimize) {
+		if(optimize)
+			open_optimize_constraint();
+		else 
+			close_optimize_constraint();
+	}
+	
+	/**
 	 * parse the syntactic mutation to its semantic description based on state error graph
 	 * @param cir_tree
 	 * @param mutation
@@ -779,6 +791,30 @@ public class StateInfections {
 			return infections.get(mutation.get_mutation_operator()).parse(cir_tree, mutation, dgraph);
 		}
 		else throw new IllegalArgumentException("Not support for: " + mutation);
+	}
+	
+	/**
+	 * generate the infection module for the source code mutation
+	 * @param cir_tree
+	 * @param mutant
+	 * @return
+	 * @throws Exception
+	 */
+	public static MutantInfection infect(CirTree cir_tree, Mutant mutant) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("C-intermediate tree is not provided");
+		else if(mutant == null)
+			throw new IllegalArgumentException("Invalid syntactic mutation as null");
+		else {
+			AstMutation mutation = mutant.get_mutation();
+			if(infections.containsKey(mutation.get_mutation_class())) {
+				return infections.get(mutation.get_mutation_class()).infect(cir_tree, mutant);
+			}
+			else if(infections.containsKey(mutation.get_mutation_operator())) {
+				return infections.get(mutation.get_mutation_operator()).infect(cir_tree, mutant);
+			}
+			else throw new IllegalArgumentException("Not support for: " + mutation);
+		}
 	}
 	
 }

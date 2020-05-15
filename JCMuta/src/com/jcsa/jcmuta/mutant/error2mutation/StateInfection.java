@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmuta.mutant.AstMutation;
+import com.jcsa.jcmuta.project.Mutant;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
@@ -112,6 +113,39 @@ public abstract class StateInfection {
 			}
 			
 			/* return the state error graph */	return graph;
+		}
+	}
+	/**
+	 * 
+	 * @param cir_tree
+	 * @param mutant
+	 * @param dgraph
+	 * @return
+	 * @throws Exception
+	 */
+	public MutantInfection infect(CirTree cir_tree, Mutant mutant) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		else if(mutant == null)
+			throw new IllegalArgumentException("Invalid mutant: null");
+		else {
+			/** create the mutation for infection description **/
+			MutantInfection mutant_infection = new MutantInfection(mutant);
+			
+			/** get the reachability location and path condition **/
+			CirStatement statement = this.get_location(cir_tree, mutant.get_mutation());
+			if(statement == null) return null;
+			StateConstraints path_condition = StateEvaluation.get_conjunctions();
+			mutant_infection.set_reachability(statement, path_condition);
+			
+			/** construct the mapping from the initial state error to the constraints **/
+			Map<StateError, StateConstraints> infections = new HashMap<StateError, StateConstraints>();
+			for(StateError error : infections.keySet()) {
+				StateConstraints constraints = infections.get(error);
+				mutant_infection.add_infection(error, constraints);
+			}
+			
+			/** return the infection mutation **/	return mutant_infection;
 		}
 	}
 	
