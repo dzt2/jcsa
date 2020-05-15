@@ -136,6 +136,54 @@ public class MutaFeaturesWritings {
 		if(!dir.exists()) dir.mkdir();
 		return dir;
 	}
+	/**
+	 * ast@identifier
+	 * bool@value
+	 * int@value
+	 * double@value
+	 * string@value
+	 * cir@identifier
+	 * @param mutation
+	 * @return
+	 * @throws Exception
+	 */
+	private static String get_parameter_content(Object parameter) throws Exception {
+		if(parameter instanceof Integer || parameter instanceof Long) {
+			return "int@" + parameter.toString();
+		}
+		else if(parameter instanceof Character) {
+			int value = ((Character) parameter).charValue();
+			return "int@" + value;
+		}
+		else if(parameter instanceof Boolean) {
+			return "bool@" + parameter.toString();
+		}
+		else if(parameter instanceof Float || parameter instanceof Double) {
+			return "double@" + parameter.toString();
+		}
+		else if(parameter instanceof String) {
+			String content = parameter.toString();
+			StringBuilder buffer = new StringBuilder();
+			
+			buffer.append("string@");
+			for(int k = 0; k < content.length(); k++) {
+				char ch = content.charAt(k);
+				if(!Character.isSpaceChar(ch)) {
+					buffer.append(ch);
+				}
+			}
+			return buffer.toString();
+		}
+		else if(parameter instanceof AstNode) {
+			return "ast@" + ((AstNode) parameter).get_key();
+		}
+		else if(parameter instanceof CirNode) {
+			return "cir@" + ((CirNode) parameter).get_node_id();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid parameter: " + parameter.getClass().getSimpleName());
+		}
+	}
 	
 	/* static information writers */
 	/**
@@ -297,43 +345,43 @@ public class MutaFeaturesWritings {
 	 */
 	private static String get_ast_content(AstNode ast_node) throws Exception {
 		if(ast_node instanceof AstIdentifier) {
-			return ((AstIdentifier) ast_node).get_name();
+			return get_parameter_content(((AstIdentifier) ast_node).get_name());
 		}
 		else if(ast_node instanceof AstKeyword) {
-			return ((AstKeyword) ast_node).get_keyword().toString();
+			return get_parameter_content(((AstKeyword) ast_node).get_keyword().toString());
 		}
 		else if(ast_node instanceof AstConstant) {
 			CConstant constant = ((AstConstant) ast_node).get_constant();
 			switch(constant.get_type().get_tag()) {
 			case c_bool:		
-				return constant.get_bool().toString();
+				return get_parameter_content(constant.get_bool().toString());
 			case c_char:
 			case c_uchar:		
 				int value = constant.get_char().charValue();
-				return "" + value;
+				return get_parameter_content(value);
 			case c_short:
 			case c_ushort:
 			case c_int:
 			case c_uint:
-				return constant.get_integer().toString();
+				return get_parameter_content(constant.get_integer());
 			case c_long:
 			case c_ulong:
 			case c_llong:
 			case c_ullong:
-				return constant.get_long().toString();
+				return get_parameter_content(constant.get_long());
 			case c_float:
-				return constant.get_float().toString();
+				return get_parameter_content(constant.get_float());
 			case c_double:
 			case c_ldouble:
-				return constant.get_double().toString();
+				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
 		else if(ast_node instanceof AstOperator) {
-			return ((AstOperator) ast_node).get_operator().name();
+			return get_parameter_content(((AstOperator) ast_node).get_operator().name());
 		}
 		else if(ast_node instanceof AstPunctuator) {
-			return ((AstPunctuator) ast_node).get_punctuator().toString();
+			return get_parameter_content(((AstPunctuator) ast_node).get_punctuator().toString());
 		}
 		else {
 			return "";
@@ -398,55 +446,55 @@ public class MutaFeaturesWritings {
 	 */
 	private static String get_cir_content(CirNode cir_node) throws Exception {
 		if(cir_node instanceof CirNameExpression) {
-			return ((CirNameExpression) cir_node).get_unique_name();
+			return get_parameter_content(((CirNameExpression) cir_node).get_unique_name());
 		}
 		else if(cir_node instanceof CirDeferExpression) {
-			return COperator.dereference.toString();
+			return get_parameter_content(COperator.dereference.toString());
 		}
 		else if(cir_node instanceof CirFieldExpression) {
-			return CPunctuator.dot.toString();
+			return get_parameter_content(CPunctuator.dot.toString());
 		}
 		else if(cir_node instanceof CirAddressExpression) {
-			return COperator.address_of.toString();
+			return get_parameter_content(COperator.address_of.toString());
 		}
 		else if(cir_node instanceof CirCastExpression) {
 			return "";
 		}
 		else if(cir_node instanceof CirComputeExpression) {
-			return ((CirComputeExpression) cir_node).get_operator().toString();
+			return get_parameter_content(((CirComputeExpression) cir_node).get_operator().toString());
 		}
 		else if(cir_node instanceof CirConstExpression) {
 			CConstant constant = ((CirConstExpression) cir_node).get_constant();
 			switch(constant.get_type().get_tag()) {
 			case c_bool:		
-				return constant.get_bool().toString();
+				return get_parameter_content(constant.get_bool());
 			case c_char:
 			case c_uchar:		
 				int value = constant.get_char().charValue();
-				return "" + value;
+				return get_parameter_content(value);
 			case c_short:
 			case c_ushort:
 			case c_int:
 			case c_uint:
-				return constant.get_integer().toString();
+				return get_parameter_content(constant.get_integer());
 			case c_long:
 			case c_ulong:
 			case c_llong:
 			case c_ullong:
-				return constant.get_long().toString();
+				return get_parameter_content(constant.get_long());
 			case c_float:
-				return constant.get_float().toString();
+				return get_parameter_content(constant.get_float());
 			case c_double:
 			case c_ldouble:
-				return constant.get_double().toString();
+				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
 		else if(cir_node instanceof CirField) {
-			return ((CirField) cir_node).get_name();
+			return get_parameter_content(((CirField) cir_node).get_name());
 		}
 		else if(cir_node instanceof CirLabel) {
-			return ((CirLabel) cir_node).get_target_node_id() + "";
+			return get_parameter_content(((CirLabel) cir_node).get_target_node_id());
 		}
 		else {
 			return "";
@@ -730,54 +778,6 @@ public class MutaFeaturesWritings {
 	}
 	
 	/* mutation information writers */
-	/**
-	 * ast@identifier
-	 * bool@value
-	 * int@value
-	 * double@value
-	 * string@value
-	 * cir@identifier
-	 * @param mutation
-	 * @return
-	 * @throws Exception
-	 */
-	private static String get_parameter_content(Object parameter) throws Exception {
-		if(parameter instanceof Integer || parameter instanceof Long) {
-			return "int@" + parameter.toString();
-		}
-		else if(parameter instanceof Character) {
-			int value = ((Character) parameter).charValue();
-			return "int@" + value;
-		}
-		else if(parameter instanceof Boolean) {
-			return "bool@" + parameter.toString();
-		}
-		else if(parameter instanceof Float || parameter instanceof Double) {
-			return "double@" + parameter.toString();
-		}
-		else if(parameter instanceof String) {
-			String content = parameter.toString();
-			StringBuilder buffer = new StringBuilder();
-			
-			buffer.append("string@");
-			for(int k = 0; k < content.length(); k++) {
-				char ch = content.charAt(k);
-				if(!Character.isSpaceChar(ch)) {
-					buffer.append(ch);
-				}
-			}
-			return buffer.toString();
-		}
-		else if(parameter instanceof AstNode) {
-			return "ast@" + ((AstNode) parameter).get_key();
-		}
-		else if(parameter instanceof CirNode) {
-			return "cir@" + ((CirNode) parameter).get_node_id();
-		}
-		else {
-			throw new IllegalArgumentException("Invalid parameter: " + parameter.getClass().getSimpleName());
-		}
-	}
 	private static String get_mutant_parameter(AstMutation mutation) throws Exception {
 		switch(mutation.get_mutation_class()) {
 		case TTRP:
