@@ -1,4 +1,4 @@
-package test;
+package __backup__;
 
 import java.io.File;
 import java.sql.PreparedStatement;
@@ -8,15 +8,6 @@ import java.util.Collection;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.base.BitSequence;
-
-import __backup__.CodeMutationType;
-import __backup__.DBInterface;
-import __backup__.JCMT_Builder;
-import __backup__.JCMT_Project;
-import __backup__.MutScore;
-import __backup__.Mutant;
-import __backup__.MutantSpace;
-import __backup__.TestOracleManager;
 
 /**
  * Translate the old mutation score and save it

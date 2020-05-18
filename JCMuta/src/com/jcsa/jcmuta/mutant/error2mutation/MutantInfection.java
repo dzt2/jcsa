@@ -82,6 +82,11 @@ public class MutantInfection {
 	 * @return
 	 */
 	public Map<StateError, StateConstraints> get_infections() { return this.infections; }
+	/**
+	 * get the number of initial errors being infected.
+	 * @return
+	 */
+	public int number_of_init_errors() { return this.infections.size(); }
 	
 	/* setters */
 	/**

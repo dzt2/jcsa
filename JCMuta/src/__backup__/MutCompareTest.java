@@ -1,14 +1,6 @@
-package test;
+package __backup__;
 
 import java.io.File;
-
-import __backup__.CodeMutationType;
-import __backup__.JCMT_Builder;
-import __backup__.JCMT_Project;
-import __backup__.MutDifference;
-import __backup__.Mutant;
-import __backup__.MutantSpace;
-import __backup__.TestOracleManager;
 
 public class MutCompareTest {
 	

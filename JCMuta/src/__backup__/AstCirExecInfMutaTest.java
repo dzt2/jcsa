@@ -1,4 +1,4 @@
-package test;
+package __backup__;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,27 +46,6 @@ import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
-
-import __backup__.CWord;
-import __backup__.CirInfluenceEdge;
-import __backup__.CirInfluenceGraph;
-import __backup__.CirInfluenceNode;
-import __backup__.CirSemanticLink;
-import __backup__.CirSemanticMutation;
-import __backup__.CirSemanticNode;
-import __backup__.CodeMutationType;
-import __backup__.CompileRecord;
-import __backup__.JCMT_Builder;
-import __backup__.JCMT_Project;
-import __backup__.MutScore;
-import __backup__.MutScoreClusters;
-import __backup__.MutTestDomains;
-import __backup__.Mutant;
-import __backup__.MutantSpace;
-import __backup__.Mutation2CirSemantic;
-import __backup__.MutationMode;
-import __backup__.TestOracleManager;
-import __backup__.TextMutation;
 
 /**
  * Used to generate the following files:

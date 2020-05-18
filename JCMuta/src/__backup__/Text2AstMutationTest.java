@@ -1,4 +1,4 @@
-package test;
+package __backup__;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,20 +18,6 @@ import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.MutaTestResult;
 import com.jcsa.jcparse.lang.astree.AstNode;
-
-import __backup__.CodeMutationType;
-import __backup__.CompileRecord;
-import __backup__.JCMT_Builder;
-import __backup__.JCMT_Project;
-import __backup__.MutOperator;
-import __backup__.MutScore;
-import __backup__.MutScoreClusters;
-import __backup__.MutTestDomains;
-import __backup__.Mutant;
-import __backup__.MutantSpace;
-import __backup__.TestCase;
-import __backup__.TestOracleManager;
-import __backup__.TestSpace;
 
 public class Text2AstMutationTest {
 	

@@ -1,4 +1,4 @@
-package test;
+package __backup__;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,11 +11,9 @@ import java.util.Queue;
 import com.jcsa.jcmuta.MutaOperator;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.code2mutation.MutationCodeType;
-import com.jcsa.jcmuta.mutant.sem2mutation.SemanticMutationParsers;
-import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticAssertion;
-import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticInference;
-import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticMutation;
-import com.jcsa.jcmuta.mutant.sem2mutation.muta.SemanticMutationParser;
+import com.jcsa.jcmuta.mutant.error2mutation.MutantInfection;
+import com.jcsa.jcmuta.mutant.error2mutation.StateError;
+import com.jcsa.jcmuta.mutant.error2mutation.StateInfections;
 import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.MutaTestResult;
@@ -51,34 +49,74 @@ import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CName;
+import com.jcsa.jcparse.lang.symb.StateConstraint;
+import com.jcsa.jcparse.lang.symb.StateConstraints;
+import com.jcsa.jcparse.lang.symb.SymCodeGenerator;
+import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
 import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
-import com.jcsa.jcparse.lopt.models.influence.CInfluenceEdge;
-import com.jcsa.jcparse.lopt.models.influence.CInfluenceGraph;
-import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
+import com.jcsa.jcparse.lopt.models.depend.CDependEdge;
+import com.jcsa.jcparse.lopt.models.depend.CDependGraph;
+import com.jcsa.jcparse.lopt.models.depend.CDependNode;
+import com.jcsa.jcparse.lopt.models.depend.CDependPredicate;
+import com.jcsa.jcparse.lopt.models.depend.CDependReference;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
+import com.jcsa.jcparse.lopt.models.dominate.CDominanceNode;
 
-public class MutaInformationWriters {
+public class MutaFeaturesWritings {
 	
+	/* parameters */
 	private static final String prefix = "D:\\SourceCode\\MyData\\CODE3\\projects\\";
-	private static final String postfx = "results\\data\\";
-	private static final double threshold = 0.01;
+	private static final String postfx = "results\\data\\"; 
+	private static final String main_function = "main";
+	private static final boolean extend_constraint = true;
+	private static final String space_replacement = "\\s";
 	
+	/* main testing method */
 	public static void main(String[] args) throws Exception {
+		StateInfections.set_optimize(extend_constraint);
 		for(File file : new File(prefix).listFiles()) {
 			testing(file.getName());
 		}
 	}
+	private static void testing(String name) throws Exception {
+		System.out.println("Testing on " + name);
+		
+		MutaProject project = open_project(name);
+		File output_directory = get_output_directory(name);
+		System.out.println("\t1. open mutation test project.");
+		
+		output_code(project, output_directory);
+		output_ast(project, output_directory);
+		output_cir(project, output_directory);
+		output_flow_graphs(project, output_directory);
+		System.out.println("\t2. generate the code and AST.");
+		
+		output_ast_mutations(project, output_directory);
+		output_mutant_labels(project, output_directory);
+		output_mutant_infections(project, output_directory);
+		System.out.println("\t3. generate the feature info.");
+		
+		CirInstanceGraph program_graph = get_instance_flow_graph(project);
+		output_instance_graph(project, program_graph, output_directory);
+		output_dominance_graph(project, program_graph, output_directory);
+		output_dependence_graph(project, program_graph, output_directory);
+		System.out.println("\t4. generate flow graph info.");
+		
+		System.out.println();
+	}
 	
+	/* project getters */
 	/**
 	 * open the mutation project in specified directory of name
 	 * @param name
@@ -99,8 +137,65 @@ public class MutaInformationWriters {
 		if(!dir.exists()) dir.mkdir();
 		return dir;
 	}
+	/**
+	 * ast@identifier
+	 * bool@value
+	 * int@value
+	 * double@value
+	 * string@value
+	 * cir@identifier
+	 * @param mutation
+	 * @return
+	 * @throws Exception
+	 */
+	private static String get_parameter_content(Object parameter) throws Exception {
+		if(parameter instanceof Integer || parameter instanceof Long) {
+			return "int@" + parameter.toString();
+		}
+		else if(parameter instanceof Character) {
+			int value = ((Character) parameter).charValue();
+			return "int@" + value;
+		}
+		else if(parameter instanceof Boolean) {
+			return "bool@" + parameter.toString();
+		}
+		else if(parameter instanceof Float || parameter instanceof Double) {
+			return "double@" + parameter.toString();
+		}
+		else if(parameter instanceof String) {
+			String content = parameter.toString();
+			StringBuilder buffer = new StringBuilder();
+			
+			buffer.append("string@");
+			for(int k = 0; k < content.length(); k++) {
+				char ch = content.charAt(k);
+				if(!Character.isSpaceChar(ch)) {
+					buffer.append(ch);
+				}
+				else {
+					buffer.append(space_replacement);
+				}
+			}
+			return buffer.toString();
+		}
+		else if(parameter instanceof AstNode) {
+			return "ast@" + ((AstNode) parameter).get_key();
+		}
+		else if(parameter instanceof CirNode) {
+			return "cir@" + ((CirNode) parameter).get_node_id();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid parameter: " + parameter.getClass().getSimpleName());
+		}
+	}
 	
-	/* code writers */
+	/* static information writers */
+	/**
+	 * output the source code text
+	 * @param project
+	 * @param output_directory
+	 * @throws Exception
+	 */
 	private static void output_code(MutaProject project, File output_directory) throws Exception {
 		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".c");
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
@@ -215,7 +310,8 @@ public class MutaInformationWriters {
 			}
 		}
 		else if(data_type instanceof CArrayType) {
-			return "(array " + data_type_code(((CArrayType) data_type).get_element_type()) + ")";
+			return "(array " + ((CArrayType) data_type).length() + " " + 
+					data_type_code(((CArrayType) data_type).get_element_type()) + ")";
 		}
 		else if(data_type instanceof CPointerType) {
 			return "(pointer " + data_type_code(((CPointerType) data_type).get_pointed_type()) + ")";
@@ -227,13 +323,13 @@ public class MutaInformationWriters {
 			String name = ((CStructType) data_type).get_name();
 			if(name != null && !name.isBlank())
 				return "(" + name + ")";
-			else return "(struct @" + data_type.hashCode() + ")";
+			else return "(struct)";
 		}
 		else if(data_type instanceof CUnionType) {
 			String name = ((CUnionType) data_type).get_name();
 			if(name != null && !name.isBlank())
 				return "(" + name + ")";
-			else return "(union @" + data_type.hashCode() + ")";
+			else return "(union)";
 		}
 		else if(data_type instanceof CEnumType) {
 			return "int";
@@ -253,43 +349,43 @@ public class MutaInformationWriters {
 	 */
 	private static String get_ast_content(AstNode ast_node) throws Exception {
 		if(ast_node instanceof AstIdentifier) {
-			return ((AstIdentifier) ast_node).get_name();
+			return get_parameter_content(((AstIdentifier) ast_node).get_name());
 		}
 		else if(ast_node instanceof AstKeyword) {
-			return ((AstKeyword) ast_node).get_keyword().toString();
+			return get_parameter_content(((AstKeyword) ast_node).get_keyword().toString());
 		}
 		else if(ast_node instanceof AstConstant) {
 			CConstant constant = ((AstConstant) ast_node).get_constant();
 			switch(constant.get_type().get_tag()) {
 			case c_bool:		
-				return constant.get_bool().toString();
+				return get_parameter_content(constant.get_bool().toString());
 			case c_char:
 			case c_uchar:		
 				int value = constant.get_char().charValue();
-				return "" + value;
+				return get_parameter_content(value);
 			case c_short:
 			case c_ushort:
 			case c_int:
 			case c_uint:
-				return constant.get_integer().toString();
+				return get_parameter_content(constant.get_integer());
 			case c_long:
 			case c_ulong:
 			case c_llong:
 			case c_ullong:
-				return constant.get_long().toString();
+				return get_parameter_content(constant.get_long());
 			case c_float:
-				return constant.get_float().toString();
+				return get_parameter_content(constant.get_float());
 			case c_double:
 			case c_ldouble:
-				return constant.get_double().toString();
+				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
 		else if(ast_node instanceof AstOperator) {
-			return ((AstOperator) ast_node).get_operator().name();
+			return get_parameter_content(((AstOperator) ast_node).get_operator().name());
 		}
 		else if(ast_node instanceof AstPunctuator) {
-			return ((AstPunctuator) ast_node).get_punctuator().toString();
+			return get_parameter_content(((AstPunctuator) ast_node).get_punctuator().toString());
 		}
 		else {
 			return "";
@@ -354,55 +450,55 @@ public class MutaInformationWriters {
 	 */
 	private static String get_cir_content(CirNode cir_node) throws Exception {
 		if(cir_node instanceof CirNameExpression) {
-			return ((CirNameExpression) cir_node).get_name();
+			return get_parameter_content(((CirNameExpression) cir_node).get_unique_name());
 		}
 		else if(cir_node instanceof CirDeferExpression) {
-			return COperator.dereference.toString();
+			return get_parameter_content(COperator.dereference.toString());
 		}
 		else if(cir_node instanceof CirFieldExpression) {
-			return CPunctuator.dot.toString();
+			return get_parameter_content(CPunctuator.dot.toString());
 		}
 		else if(cir_node instanceof CirAddressExpression) {
-			return COperator.address_of.toString();
+			return get_parameter_content(COperator.address_of.toString());
 		}
 		else if(cir_node instanceof CirCastExpression) {
 			return "";
 		}
 		else if(cir_node instanceof CirComputeExpression) {
-			return ((CirComputeExpression) cir_node).get_operator().toString();
+			return get_parameter_content(((CirComputeExpression) cir_node).get_operator().toString());
 		}
 		else if(cir_node instanceof CirConstExpression) {
 			CConstant constant = ((CirConstExpression) cir_node).get_constant();
 			switch(constant.get_type().get_tag()) {
 			case c_bool:		
-				return constant.get_bool().toString();
+				return get_parameter_content(constant.get_bool());
 			case c_char:
 			case c_uchar:		
 				int value = constant.get_char().charValue();
-				return "" + value;
+				return get_parameter_content(value);
 			case c_short:
 			case c_ushort:
 			case c_int:
 			case c_uint:
-				return constant.get_integer().toString();
+				return get_parameter_content(constant.get_integer());
 			case c_long:
 			case c_ulong:
 			case c_llong:
 			case c_ullong:
-				return constant.get_long().toString();
+				return get_parameter_content(constant.get_long());
 			case c_float:
-				return constant.get_float().toString();
+				return get_parameter_content(constant.get_float());
 			case c_double:
 			case c_ldouble:
-				return constant.get_double().toString();
+				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
 		else if(cir_node instanceof CirField) {
-			return ((CirField) cir_node).get_name();
+			return get_parameter_content(((CirField) cir_node).get_name());
 		}
 		else if(cir_node instanceof CirLabel) {
-			return ((CirLabel) cir_node).get_target_node_id() + "";
+			return get_parameter_content(((CirLabel) cir_node).get_target_node_id());
 		}
 		else {
 			return "";
@@ -426,36 +522,31 @@ public class MutaInformationWriters {
 			output_cir_node(cir_node, writer);
 		}
 		writer.close();
-		
 	}
-	
-	/* graph writers */
 	/**
-	 * [type source target]
+	 * (flow_type source_id target_id)
 	 * @param flow
 	 * @param writer
 	 * @throws Exception
 	 */
 	private static void output_execution_flow(CirExecutionFlow flow, FileWriter writer) throws Exception {
-		writer.write("[");
-		writer.write(" " + flow.get_type());
-		writer.write(" " + flow.get_source().toString());
-		writer.write(" " + flow.get_target().toString());
-		writer.write(" ]");
+		writer.write("( ");
+		writer.write(flow.get_type() + " ");
+		writer.write(flow.get_source().toString() + " ");
+		writer.write(flow.get_target().toString() + " ");
+		writer.write(")");
 	}
 	/**
-	 * id cir_source (execution_flow)*
+	 * \t id(string) cir_statement_id flow*
 	 * @param execution
 	 * @param writer
 	 * @throws Exception
 	 */
 	private static void output_execution(CirExecution execution, FileWriter writer) throws Exception {
+		writer.write("\t");
 		writer.write(execution.toString());
-		String cir_source = "";
-		if(execution.get_statement() != null)
-			cir_source = execution.get_statement().get_node_id() + "";
-		writer.write("\t" + cir_source);
-		
+		writer.write("\t");
+		writer.write(execution.get_statement().get_node_id() + "");
 		for(CirExecutionFlow flow : execution.get_ou_flows()) {
 			writer.write("\t");
 			output_execution_flow(flow, writer);
@@ -463,122 +554,257 @@ public class MutaInformationWriters {
 		writer.write("\n");
 	}
 	/**
-	 * id cir_source (execution_flow)*
+	 * function name
+	 * 	[execution]+
+	 * end function
+	 * @param function
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_function(CirFunction function, FileWriter writer) throws Exception {
+		writer.write("function\t" + function.get_name() + "\n");
+		for(CirExecution execution : function.get_flow_graph().get_executions()) {
+			output_execution(execution, writer);
+		}
+		writer.write("end function\n");
+	}
+	/**
+	 * function name
+	 * 	exec_id statement_id [flow]*
+	 * end function
 	 * @param project
 	 * @param output_directory
 	 * @throws Exception
 	 */
-	private static void output_execution_graphs(MutaProject project, File output_directory) throws Exception {
+	private static void output_flow_graphs(MutaProject project, File output_directory) throws Exception {
 		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".flw");
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
-		CirFunctionCallGraph fun_call_graph = source_file.get_cir_tree().get_function_call_graph();
 		
+		CirTree cir_tree = source_file.get_cir_tree();
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\tcir_source\tflows\n");
-		for(CirFunction function : fun_call_graph.get_functions()) {
-			CirExecutionFlowGraph flow_graph = function.get_flow_graph();
-			for(CirExecution execution : flow_graph.get_executions()) {
-				output_execution(execution, writer);
-			}
+		writer.write("id\ttype\tast_source\tdata_type\tcontent\tchildren\n");
+		for(CirFunction function : cir_tree.get_function_call_graph().get_functions()) {
+			output_function(function, writer);
 		}
-		writer.close();
+		writer.close(); 
+	}
+	
+	/* dynamic information writers */
+	/**
+	 * generate the instance flow graph for context-sensitive analysis
+	 * @param project
+	 * @return
+	 * @throws Exception
+	 */
+	private static CirInstanceGraph get_instance_flow_graph(MutaProject project) throws Exception {
+		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
+		CirTree cir_tree = source_file.get_cir_tree();
+		CirFunction root_function = cir_tree.get_function_call_graph().get_function(main_function);
+		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1);
+		return program_graph;
 	}
 	/**
-	 * contenxt::cir_source
+	 * execution + "@" + hash_code
 	 * @param node
 	 * @return
 	 * @throws Exception
 	 */
-	private static String influence_node_key(CInfluenceNode node) throws Exception {
-		String context = node.get_instance_context().hashCode() + "::";
-		String cir_source = node.get_cir_source().get_node_id() + "";
-		return context + cir_source;
+	private static String instance_node_id(CirInstanceNode node) throws Exception {
+		return node.get_execution().toString() + "@" + node.get_context().hashCode();
 	}
 	/**
-	 * [ type source target ]
-	 * @param edge
-	 * @param writer
-	 * @throws Exception
-	 */
-	private static void output_influence_edge(CInfluenceEdge edge, FileWriter writer) throws Exception {
-		writer.write("[");
-		writer.write(" " + edge.get_type().toString());
-		writer.write(" " + influence_node_key(edge.get_source()));
-		writer.write(" " + influence_node_key(edge.get_target()));
-		writer.write(" ]");
-	}
-	/**
-	 * id type execution cir_source [type source target]*
+	 * [edge] type source target
 	 * @param node
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_influence_node(CInfluenceNode node, FileWriter writer) throws Exception {
-		String id = influence_node_key(node);
-		String type = node.get_node_type().toString();
-		String execution = node.get_execution().toString();
-		String cir_source = node.get_cir_source().get_node_id() + "";
-		
-		writer.write(id);
-		writer.write("\t" + type);
-		writer.write("\t" + execution);
-		writer.write("\t" + cir_source);
-		for(CInfluenceEdge edge : node.get_ou_edges()) {
-			writer.write("\t");
-			output_influence_edge(edge, writer);
-		}
+	private static void output_instance_edge(CirInstanceEdge edge, FileWriter writer) throws Exception {
+		writer.write("[edge]");
+		writer.write("\t");
+		writer.write(edge.get_type().toString());
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_source()));
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_target()));
 		writer.write("\n");
 	}
 	/**
-	 * id type execution cir_source [type source target]*
+	 * [node] id context execution
+	 * @param node
+	 */
+	private static void output_instance_node(CirInstanceNode node, FileWriter writer) throws Exception {
+		writer.write("[node]");
+		writer.write("\t");
+		writer.write(instance_node_id(node));
+		writer.write("\t");
+		writer.write(node.get_context().hashCode() + "\t");
+		writer.write(node.get_execution().toString());
+		writer.write("\n");
+		
+		for(CirInstanceEdge edge : node.get_ou_edges()) {
+			output_instance_edge(edge, writer);
+		}
+	}
+	/**
+	 * project.ins
 	 * @param project
+	 * @param graph
 	 * @param output_directory
 	 * @throws Exception
 	 */
-	private static void output_influence_graph(MutaProject project, File output_directory) throws Exception {
-		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".inf");
-		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
-		
-		CirTree cir_tree = source_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph program_graph =  CirCallContextInstanceGraph.graph(root_function, 
-				CirFunctionCallPathType.unique_path, -1);
-		CInfluenceGraph influence_graph = CInfluenceGraph.graph(program_graph);
-		
+	private static void output_instance_graph(MutaProject project, CirInstanceGraph graph, File output_directory) throws Exception {
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".ins");
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\ttype\texecution\tcir_source\tedges\n");
-		for(CirInstanceNode instance : influence_graph.get_instances()) {
-			for(CInfluenceNode influence_node : influence_graph.get_nodes(instance)) {
-				output_influence_node(influence_node, writer);
+		for(Object context : graph.get_contexts()) {
+			for(CirInstance instance : graph.get_instances(context)) {
+				if(instance instanceof CirInstanceNode) {
+					output_instance_node((CirInstanceNode) instance, writer);
+				}
 			}
 		}
 		writer.close();
 	}
+	/**
+	 * [node] or <type source target>
+	 * @param instance
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_instance_content(CirInstance instance, FileWriter writer) throws Exception {
+		if(instance instanceof CirInstanceNode) {
+			writer.write("[" + instance_node_id((CirInstanceNode) instance) + "]");
+		}
+		else if(instance instanceof CirInstanceEdge) {
+			CirInstanceEdge edge = (CirInstanceEdge) instance;
+			writer.write("<");
+			writer.write(edge.get_type().toString());
+			writer.write(" " + instance_node_id(edge.get_source()));
+			writer.write(" " + instance_node_id(edge.get_target()));
+			writer.write(">");
+		}
+	}
+	/**
+	 * source ou_node1 ou_node2 ... ou_nodeN
+	 * @param edge
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dominance_node(CDominanceNode node, FileWriter writer) throws Exception {
+		output_instance_content(node.get_instance(), writer);
+		for(CDominanceNode next_node : node.get_ou_nodes()) {
+			writer.write("\t");
+			output_instance_content(next_node.get_instance(), writer);
+		}
+		writer.write("\n");
+	}
+	/**
+	 * source ou_node ou_node ... ou_node +
+	 * @param project
+	 * @param graph
+	 * @param output_directory
+	 * @throws Exception
+	 */
+	private static void output_dominance_graph(MutaProject project, CirInstanceGraph graph, File output_directory) throws Exception {
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".dom");
+		FileWriter writer = new FileWriter(output);
+		CDominanceGraph dominance_graph = CDominanceGraph.forward_dominance_graph(graph);
+		for(CDominanceNode dominance_node : dominance_graph.get_nodes()) {
+			output_dominance_node(dominance_node, writer);
+		}
+		writer.close();
+	}
+	/**
+	 * (predicate expression true|false)
+	 * (reference define use)
+	 * @param element
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_element(Object element, FileWriter writer) throws Exception {
+		if(element instanceof CDependPredicate) {
+			CDependPredicate predicate = (CDependPredicate) element;
+			writer.write("( predicate ");
+			writer.write("cir#" + predicate.get_condition().get_node_id());
+			writer.write(" ");
+			writer.write(predicate.get_predicate_value() + "");
+			writer.write(" )");
+		}
+		else if(element instanceof CDependReference) {
+			CDependReference reference = (CDependReference) element;
+			writer.write("( reference ");
+			writer.write("cir#" + reference.get_def().get_node_id());
+			writer.write(" ");
+			writer.write("cir#" + reference.get_use().get_node_id());
+			writer.write(" )");
+		}
+	}
+	/**
+	 * [edge] source target dep_type {element}
+	 * @param edge
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_edge(CDependEdge edge, FileWriter writer) throws Exception {
+		writer.write("[edge]");
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_source().get_instance()));
+		writer.write("\t");
+		writer.write(instance_node_id(edge.get_target().get_instance()));
+		writer.write("\t");
+		writer.write(edge.get_type().toString());
+		writer.write("\t");
+		output_dependence_element(edge.get_element(), writer);
+		writer.write("\n");
+	}
+	/**
+	 * [node] instance
+	 * @param node
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void output_dependence_node(CDependNode node, FileWriter writer) throws Exception {
+		writer.write("[node]");
+		writer.write("\t");
+		writer.write(instance_node_id(node.get_instance()));
+		writer.write("\n");
+		
+		for(CDependEdge edge : node.get_ou_edges()) 
+			output_dependence_edge(edge, writer);
+	}
+	private static void output_dependence_graph(MutaProject project, CirInstanceGraph program_graph, File output_directory) throws Exception {
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".dep");
+		CDependGraph graph = CDependGraph.graph(program_graph);
+		FileWriter writer = new FileWriter(output);
+		for(CDependNode node : graph.get_nodes()) 
+			output_dependence_node(node, writer);
+		writer.close();
+	}
 	
-	/* mutant writers */
+	/* mutation information writers */
 	private static String get_mutant_parameter(AstMutation mutation) throws Exception {
 		switch(mutation.get_mutation_class()) {
 		case TTRP:
 		{
 			int value = (int) mutation.get_parameter();
-			return value + "";
+			return get_parameter_content(value);
 		}
 		case CTRP:
 		case SGLR:
 		case SRTR:
 		{
-			AstNode parameter = (AstNode) mutation.get_parameter();
-			return parameter.get_key() + "";
+			AstNode value = (AstNode) mutation.get_parameter();
+			return get_parameter_content(value);
 		}
 		case VINC:
 		{
 			if(mutation.get_mutation_operator() == MutaOperator.inc_value) {
 				int value = (int) mutation.get_parameter();
-				return value + "";
+				return get_parameter_content(value);
 			}
 			else {
 				double value = (double) mutation.get_parameter();
-				return value + "";
+				return get_parameter_content(value);
 			}
 		}
 		case VCRP:
@@ -586,33 +812,33 @@ public class MutaInformationWriters {
 			CConstant constant = (CConstant) mutation.get_parameter();
 			switch(constant.get_type().get_tag()) {
 			case c_bool:		
-				return constant.get_bool().toString();
+				return get_parameter_content(constant.get_bool());
 			case c_char:
 			case c_uchar:		
-				int value = constant.get_char().charValue();
-				return "" + value;
+				return get_parameter_content(constant.get_char());
 			case c_short:
 			case c_ushort:
 			case c_int:
 			case c_uint:
-				return constant.get_integer().toString();
+				return get_parameter_content(constant.get_integer());
 			case c_long:
 			case c_ulong:
 			case c_llong:
 			case c_ullong:
-				return constant.get_long().toString();
+				return get_parameter_content(constant.get_long());
 			case c_float:
-				return constant.get_float().toString();
+				return get_parameter_content(constant.get_float());
 			case c_double:
 			case c_ldouble:
-				return constant.get_double().toString();
+				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
 		case VRRP:
 		{
 			CName name = (CName) mutation.get_parameter();
-			return name.get_name();
+			if(name == null) return get_parameter_content("?");
+			else return get_parameter_content(name.get_name());
 		}
 		default: return "";
 		}
@@ -650,7 +876,7 @@ public class MutaInformationWriters {
 		writer.close();
 	}
 	/**
-	 * id label probability
+	 * id score
 	 * @param project
 	 * @param mutant
 	 * @param writer
@@ -660,19 +886,9 @@ public class MutaInformationWriters {
 		Map<MutationCodeType, MutaTestResult> results = 
 				project.get_results().read_test_results(mutant);
 		MutaTestResult result = results.get(MutationCodeType.Stronger);
-		
-		double kills = result.get_test_result().degree();
-		double total = result.get_test_result().length();
-		double probability = kills / total;
-		
 		writer.write(mutant.get_id() + "\t");
-		if(probability < threshold) {
-			writer.write("E\t");
-		}
-		else {
-			writer.write("N\t");
-		}
-		writer.write(probability + "\n");
+		writer.write(result.get_test_result().toString());
+		writer.write("\n");
 	}
 	/**
 	 * id label probability
@@ -685,143 +901,105 @@ public class MutaInformationWriters {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\tlabel\tprobability\n");
+		writer.write("id\tscore\n");
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			output_mutant_label(project, mutant, writer);
 		}
 		writer.close();
 	}
-	
-	/* semantic mutation */
-	private static String get_argument_string(Object argument) throws Exception {
-		if(argument instanceof Boolean) {
-			return "b#" + argument.toString();
-		}
-		else if(argument instanceof Character) {
-			int value = ((Character) argument).charValue();
-			return "i#" + value;
-		}
-		else if(argument instanceof Integer) {
-			int value = ((Integer) argument).intValue();
-			return "i#" + value;
-		}
-		else if(argument instanceof Long) {
-			long value = ((Long) argument).longValue();
-			return "i#" + value;
-		}
-		else if(argument instanceof Double) {
-			double value = ((Double) argument).doubleValue();
-			return "f#" + value;
-		}
-		else if(argument instanceof String) {
-			if(argument.toString().equals(SemanticMutationParser.Nullptr))
-				return "p#Nullptr";
-			else return "s#" + argument.toString();
-		}
-		else if(argument instanceof CirNode) {
-			int key = ((CirNode) argument).get_node_id();
-			return "cir#" + key;
-		}
-		else throw new IllegalArgumentException(
-				"Invalid data type: " + argument.getClass().getSimpleName());
-	}
 	/**
-	 * [state_error function argument argument...]
-	 * @param assertion
+	 * [error] 
+	 * 		[type] type operand ...
+	 * 		[constraints]
+	 * 			[type] conjunct | disjunct
+	 * 			[constraint] 
+	 * 				[execution]	id
+	 * 				[sym]	xxxxxx
+	 * 				[sym]	xxxxxx
+	 * 				......
+	 * 				[sym]	xxxxxx
+	 * 			[end_constraint]
+	 * 		[end_constraints]
+	 * [end_error]
+	 * @param error
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_semantic_assertion(
-			SemanticAssertion assertion, FileWriter writer) throws Exception {
-		writer.write("[ ");
+	private static void output_state_error(StateError error, StateConstraints constraints, FileWriter writer) throws Exception {
+		writer.write("\t[error]\n");
+		writer.write("\t\t[type]");
+		writer.write("\t" + error.get_type().toString());
+		for(Object operand : error.get_operands()) 
+			writer.write("\t" + get_parameter_content(operand));
+		writer.write("\n");
 		
-		if(assertion.is_constraint())
-			writer.write("constraint ");
-		else writer.write("state_error ");
-		writer.write(assertion.get_function().toString());
-		writer.write(" ");
-		
-		for(Object argument : assertion.get_operands()) {
-			writer.write(get_argument_string(argument));
-			writer.write(" ");
+		writer.write("\t\t[constraints]\n");
+		if(constraints.is_conjunct())
+			writer.write("\t\t\t[type]\tconjunct\n");
+		else writer.write("\t\t\t[type]\tdisjunct\n");
+		for(StateConstraint constraint : constraints.get_constraints()) {
+			writer.write("\t\t\t[constraint]");
+			writer.write("\t" + constraint.get_execution());
+			writer.write("\t" + SymCodeGenerator.generate(constraint.get_condition()));
+			writer.write("\n");
 		}
-		writer.write("]");
+		writer.write("\t\t[end_constraints]\n");
+		
+		writer.write("\t[end_error]\n");
 	}
 	/**
-	 * #inference [...] [...] [...]
-	 * @param inference
+	 * [coverage] cir#identifier {as statement}
+	 * @param statement
+	 * @param constraints
+	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_semantic_inference(SemanticInference inference, FileWriter writer) throws Exception {
-		writer.write("#inference");
-		for(SemanticAssertion assertion : inference.get_prev_conditions()) {
-			writer.write("\t");
-			output_semantic_assertion(assertion, writer);
-		}
-		for(SemanticAssertion assertion : inference.get_post_conditions()) {
-			writer.write("\t");
-			output_semantic_assertion(assertion, writer);
-		}
+	private static void output_reachability(CirStatement statement, StateConstraints constraints, FileWriter writer) throws Exception {
+		writer.write("\t[coverage]");
+		writer.write("\t" + get_parameter_content(statement));
 		writer.write("\n");
 	}
 	/**
-	 * #mutant id
-	 * #inference [...]*
-	 * #end_mutant
+	 * create the infection information
+	 * 	[mutant]
+	 * 		[id] identifier
+	 * 		[coverage] location
+	 * 		[error] ... [end_error]
+	 * 	[end_mutant]
 	 * @param mutant
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_semantic_mutation(Mutant mutant, FileWriter writer) throws Exception {
-		writer.write("#mutant\t" + mutant.get_id() + "\n");
-		
-		SemanticMutation mutation;
-		try {
-			mutation = SemanticMutationParsers.parse(mutant);
+	private static void output_mutant_infection(CirTree cir_tree, Mutant mutant, FileWriter writer) throws Exception {
+		MutantInfection infection = StateInfections.infect(cir_tree, mutant);
+		if(infection != null) {
+			writer.write("[mutant]\n");
+			writer.write("\t[id]\t" + mutant.get_id() + "\n");
+			
+			output_reachability(infection.get_faulty_statement(), infection.get_path_condition(), writer);
+			for(StateError error : infection.get_initial_errors()) {
+				StateConstraints constraints = infection.get_infection_constraint(error);
+				output_state_error(error, constraints, writer);
+			}
+			
+			writer.write("[end_mutant]\n");
 		}
-		catch(Exception ex) {
-			return;
-		}
-		
-		for(SemanticInference inference : mutation.get_infections()) {
-			output_semantic_inference(inference, writer);
-		}
-		
-		writer.write("#end_mutant\n");
 	}
-	private static void output_semantic_mutations(MutaProject project, File output_directory) throws Exception {
+	/**
+	 * xxx.sem
+	 * @param project
+	 * @param output_directory
+	 * @throws Exception
+	 */
+	private static void output_mutant_infections(MutaProject project, File output_directory) throws Exception {
 		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".sem");
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
-			output_semantic_mutation(mutant, writer);
+			output_mutant_infection(source_file.get_cir_tree(), mutant, writer);
 		}
 		writer.close();
-	}
-	
-	protected static void testing(String name) throws Exception {
-		System.out.println("Testing on " + name);
-		
-		MutaProject project = open_project(name);
-		File output_directory = get_output_directory(name);
-		System.out.println("\t1. open mutation test project.");
-		
-		output_code(project, output_directory);
-		output_ast(project, output_directory);
-		output_cir(project, output_directory);
-		System.out.println("\t2. generate the code and AST.");
-		
-		output_execution_graphs(project, output_directory);
-		output_influence_graph(project, output_directory);
-		System.out.println("\t3. generate the flow graphs.");
-		
-		output_ast_mutations(project, output_directory);
-		output_mutant_labels(project, output_directory);
-		output_semantic_mutations(project, output_directory);
-		System.out.println("\t4. generate the mutation part.");
-		
-		System.out.println();
 	}
 	
 }

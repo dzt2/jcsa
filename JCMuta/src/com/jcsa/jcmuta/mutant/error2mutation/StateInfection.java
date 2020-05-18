@@ -140,6 +140,7 @@ public abstract class StateInfection {
 			
 			/** construct the mapping from the initial state error to the constraints **/
 			Map<StateError, StateConstraints> infections = new HashMap<StateError, StateConstraints>();
+			this.get_infections(cir_tree, mutant.get_mutation(), new StateErrorGraph(), infections);
 			for(StateError error : infections.keySet()) {
 				StateConstraints constraints = infections.get(error);
 				mutant_infection.add_infection(error, constraints);
