@@ -23,8 +23,10 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
 import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
+import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
+import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstOperator;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
@@ -46,6 +48,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirField;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
@@ -58,8 +61,16 @@ import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.symb.StateConstraint;
 import com.jcsa.jcparse.lang.symb.StateConstraints;
+import com.jcsa.jcparse.lang.symb.SymAddress;
+import com.jcsa.jcparse.lang.symb.SymBinaryExpression;
+import com.jcsa.jcparse.lang.symb.SymConstant;
+import com.jcsa.jcparse.lang.symb.SymDefaultValue;
 import com.jcsa.jcparse.lang.symb.SymExpression;
+import com.jcsa.jcparse.lang.symb.SymField;
+import com.jcsa.jcparse.lang.symb.SymLiteral;
+import com.jcsa.jcparse.lang.symb.SymMultiExpression;
 import com.jcsa.jcparse.lang.symb.SymNode;
+import com.jcsa.jcparse.lang.symb.SymUnaryExpression;
 import com.jcsa.jcparse.lopt.CirInstance;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
@@ -254,13 +265,13 @@ public class MutaFeatureWriting {
 			String name = ((CStructType) data_type).get_name();
 			if(name != null && !name.isBlank())
 				return "(" + name + ")";
-			else return "(struct)";
+			else return "(struct #" + data_type.hashCode() + ")";
 		}
 		else if(data_type instanceof CUnionType) {
 			String name = ((CUnionType) data_type).get_name();
 			if(name != null && !name.isBlank())
 				return "(" + name + ")";
-			else return "(union)";
+			else return "(union #" + data_type.hashCode() + ")";
 		}
 		else if(data_type instanceof CEnumType) {
 			return "int";
@@ -273,7 +284,67 @@ public class MutaFeatureWriting {
 		}
 	}
 	/**
-	 * [sym]	hashcode	sym_type	data_type{or empty}	children
+	 * address | constant | default_value{?} | literal {string} | bin_expr{oprt} | 
+	 * field {name} | multi_expr{operator} | unary_expr{operator}
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private static String get_symbolic_content(SymNode source) throws Exception {
+		if(source instanceof SymAddress) {
+			return get_parameter_content(((SymAddress) source).get_address());
+		}
+		else if(source instanceof SymConstant) {
+			CConstant constant = ((SymConstant) source).get_constant();
+			switch(constant.get_type().get_tag()) {
+			case c_bool:		
+				return get_parameter_content(constant.get_bool().toString());
+			case c_char:
+			case c_uchar:		
+				int value = constant.get_char().charValue();
+				return get_parameter_content(value);
+			case c_short:
+			case c_ushort:
+			case c_int:
+			case c_uint:
+				return get_parameter_content(constant.get_integer());
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:
+				return get_parameter_content(constant.get_long());
+			case c_float:
+				return get_parameter_content(constant.get_float());
+			case c_double:
+			case c_ldouble:
+				return get_parameter_content(constant.get_double());
+			default: throw new IllegalArgumentException("Invalid data type");
+			}
+		}
+		else if(source instanceof SymDefaultValue) {
+			return get_parameter_content("?");
+		}
+		else if(source instanceof SymLiteral) {
+			return get_parameter_content(((SymLiteral) source).get_literal());
+		}
+		else if(source instanceof SymField) {
+			return get_parameter_content(((SymField) source).get_name());
+		}
+		else if(source instanceof SymUnaryExpression) {
+			return get_parameter_content(((SymUnaryExpression) source).get_operator().toString());
+		}
+		else if(source instanceof SymBinaryExpression) {
+			return get_parameter_content(((SymBinaryExpression) source).get_operator().toString());
+		}
+		else if(source instanceof SymMultiExpression) {
+			return get_parameter_content(((SymMultiExpression) source).get_operator().toString());
+		}
+		else {
+			return "";
+		}
+	}
+	/**
+	 * [sym]	hashcode	sym_type	data_type{or empty}	content	children
 	 * @param source
 	 * @return
 	 * @throws Exception
@@ -290,6 +361,8 @@ public class MutaFeatureWriting {
 		else {
 			writer.write("");
 		}
+		writer.write("\t");
+		writer.write(get_symbolic_content(source));
 		for(SymNode child : source.get_children()) {
 			writer.write("\t" + child.hashCode());
 		}
@@ -358,6 +431,9 @@ public class MutaFeatureWriting {
 			default: throw new IllegalArgumentException("Invalid data type");
 			}
 		}
+		else if(ast_node instanceof AstLiteral) {
+			return get_parameter_content(((AstLiteral) ast_node).get_literal());
+		}
 		else if(ast_node instanceof AstOperator) {
 			return get_parameter_content(((AstOperator) ast_node).get_operator().name());
 		}
@@ -380,11 +456,13 @@ public class MutaFeatureWriting {
 		type = type.substring(3, type.length() - 4).strip();
 		int beg = ast_node.get_location().get_bias();
 		int end = beg + ast_node.get_location().get_length();
-		String data_type = "";
-		if(ast_node instanceof AstExpression) {
-			CType dtype = ((AstExpression) ast_node).get_value_type();
-			if(dtype != null) data_type = data_type_code(dtype);
-		}
+		String data_type;
+		if(ast_node instanceof AstExpression) 
+			data_type = data_type_code(((AstExpression) ast_node).get_value_type());
+		else if(ast_node instanceof AstTypeName) 
+			data_type = data_type_code(((AstTypeName) ast_node).get_type());
+		else
+			data_type = "";
 		String content = get_ast_content(ast_node);
 		
 		writer.write(id + "\t");
@@ -484,6 +562,9 @@ public class MutaFeatureWriting {
 		}
 		else if(cir_node instanceof CirLabel) {
 			return get_parameter_content(((CirLabel) cir_node).get_target_node_id());
+		}
+		else if(cir_node instanceof CirStringLiteral) {
+			return get_parameter_content(((CirStringLiteral) cir_node).get_literal());
 		}
 		else {
 			return "";
@@ -909,7 +990,7 @@ public class MutaFeatureWriting {
 	private static void output_symbolic_node(SymNode node, FileWriter writer, int tabs) throws Exception {
 		symbolic_node_code(node, writer, tabs);
 		for(SymNode child : node.get_children()) {
-			symbolic_node_code(child, writer, tabs);
+			output_symbolic_node(child, writer, tabs);
 		}
 	}
 	/**
