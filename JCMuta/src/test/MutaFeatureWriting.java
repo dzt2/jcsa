@@ -556,7 +556,7 @@ public class MutaFeatureWriting {
 			case c_ldouble:
 				return get_parameter_content(constant.get_double());
 			default: throw new IllegalArgumentException("Invalid data type");
-			}
+			} 
 		}
 		else if(cir_node instanceof CirField) {
 			return get_parameter_content(((CirField) cir_node).get_name());
