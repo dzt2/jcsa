@@ -139,6 +139,12 @@ class CirExecutionFlowGraph:
     def number_of_executions(self):
         return len(self.executions)
 
+    def get_entry(self):
+        return self.executions[1]
+
+    def get_exit(self):
+        return self.executions[0]
+
     def get_execution_of(self, statement: cirtree.CirNode):
         execution = self.cir_index[statement]
         execution: CirExecution

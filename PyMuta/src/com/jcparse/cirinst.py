@@ -330,6 +330,14 @@ class CirInstanceGraph:
         """
         return self.edges[id]
 
+    def get_node_or_edge(self, id: int):
+        if id in self.nodes:
+            return self.nodes[id]
+        elif id in self.edges:
+            return self.edges[id]
+        else:
+            return None
+
     def get_contexts_of(self, execution: cirflow.CirExecution):
         """
         :param execution:
