@@ -54,6 +54,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
+import com.jcsa.jcparse.lang.irlang.stmt.CirLabelStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -188,7 +189,7 @@ public class MutaFeatureWriting {
 			buffer.append("string@");
 			for(int k = 0; k < content.length(); k++) {
 				char ch = content.charAt(k);
-				if(!Character.isSpaceChar(ch)) {
+				if(!Character.isSpaceChar(ch) && ch != '\n' && ch != '\r' && ch != '\t') {
 					buffer.append(ch);
 				}
 				else {
@@ -525,7 +526,7 @@ public class MutaFeatureWriting {
 			return get_parameter_content(COperator.address_of.toString());
 		}
 		else if(cir_node instanceof CirCastExpression) {
-			return get_parameter_content("?");
+			return get_parameter_content(COperator.assign.toString());
 		}
 		else if(cir_node instanceof CirComputeExpression) {
 			return get_parameter_content(((CirComputeExpression) cir_node).get_operator().toString());
@@ -562,6 +563,9 @@ public class MutaFeatureWriting {
 		}
 		else if(cir_node instanceof CirLabel) {
 			return get_parameter_content(((CirLabel) cir_node).get_target_node_id());
+		}
+		else if(cir_node instanceof CirLabelStatement) {
+			return "";
 		}
 		else if(cir_node instanceof CirStringLiteral) {
 			return get_parameter_content(((CirStringLiteral) cir_node).get_literal());
@@ -649,12 +653,13 @@ public class MutaFeatureWriting {
 		writer.write(")");
 	}
 	/**
-	 * \t id(string) cir_statement_id flow*
+	 * \t [execution] id(string) cir_statement_id flow*
 	 * @param execution
 	 * @param writer
 	 * @throws Exception
 	 */
 	private static void output_execution(CirExecution execution, FileWriter writer) throws Exception {
+		writer.write("[execution]");
 		writer.write("\t" + execution.toString());
 		writer.write("\t" + execution.get_statement().get_node_id());
 		for(CirExecutionFlow flow : execution.get_ou_flows()) {

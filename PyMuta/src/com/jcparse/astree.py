@@ -5,7 +5,7 @@ astree.py defines syntactic model of source program under test.
 
 from enum import Enum
 import os
-import src.com.jcmuta.base as base
+import src.com.jcparse.base as base
 
 
 class SourceCode:
@@ -499,6 +499,24 @@ class AstNode:
         :return: data type of the value hold at this node {expression or type_name} or none
         """
         return self.data_type
+
+    def get_constant_token(self):
+        if isinstance(self.content, int) or isinstance(self.content, float) or isinstance(self.content, bool):
+            return self.content
+        else:
+            return None
+
+    def get_name(self):
+        if self.is_identifier():
+            return self.content
+        else:
+            return None
+
+    def get_literal(self):
+        if self.ast_type == AstType.literal:
+            return self.content
+        else:
+            return None
 
     def get_keyword_token(self):
         """
