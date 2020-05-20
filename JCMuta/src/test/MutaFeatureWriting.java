@@ -775,13 +775,21 @@ public class MutaFeatureWriting {
 	 * @throws Exception
 	 */
 	private static void output_dominance_graph(MutaProject project, CirInstanceGraph graph, File output_directory) throws Exception {
-		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".dom");
+		File output = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".pre");
 		FileWriter writer = new FileWriter(output);
 		CDominanceGraph dominance_graph = CDominanceGraph.forward_dominance_graph(graph);
 		for(CDominanceNode dominance_node : dominance_graph.get_nodes()) {
 			output_dominance_node(dominance_node, writer);
 		}
 		writer.close();
+		
+		File output2 = new File(output_directory.getAbsolutePath() + "/" + project.get_name() + ".pos");
+		FileWriter writer2 = new FileWriter(output2);
+		CDominanceGraph dominance_graph2 = CDominanceGraph.backward_dominance_graph(graph);
+		for(CDominanceNode dominance_node : dominance_graph2.get_nodes()) {
+			output_dominance_node(dominance_node, writer2);
+		}
+		writer2.close();
 	}
 	/**
 	 * (predicate expression true|false)
