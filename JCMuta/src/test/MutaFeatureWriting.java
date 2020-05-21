@@ -956,7 +956,6 @@ public class MutaFeatureWriting {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\tclass\toperator\tlocation\tparameter\n");
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			output_ast_mutation(mutant, writer);
 		}
@@ -988,7 +987,6 @@ public class MutaFeatureWriting {
 		MutaSourceFile source_file = project.get_source_files().get_source_files().iterator().next();
 		
 		FileWriter writer = new FileWriter(output);
-		writer.write("id\tscore\n");
 		for(Mutant mutant : source_file.get_mutant_space().get_mutants()) {
 			output_mutant_label(project, mutant, writer);
 		}
@@ -1008,7 +1006,7 @@ public class MutaFeatureWriting {
 	}
 	/**
 	 * [error] 
-	 * 		[type] type operand ...
+	 * 		[define] type operand ...
 	 * 		[constraints]
 	 * 			[type] conjunct | disjunct
 	 * 			[constraint] 
@@ -1026,7 +1024,7 @@ public class MutaFeatureWriting {
 	 */
 	private static void output_state_error(StateError error, StateConstraints constraints, FileWriter writer) throws Exception {
 		writer.write("\t[error]\n");
-		writer.write("\t\t[type]");
+		writer.write("\t\t[define]");
 		writer.write("\t" + error.get_type().toString());
 		for(Object operand : error.get_operands()) 
 			writer.write("\t" + get_parameter_content(operand));
@@ -1035,7 +1033,8 @@ public class MutaFeatureWriting {
 		writer.write("\t\t[constraints]\n");
 		if(constraints.is_conjunct())
 			writer.write("\t\t\t[type]\tconjunct\n");
-		else writer.write("\t\t\t[type]\tdisjunct\n");
+		else 
+			writer.write("\t\t\t[type]\tdisjunct\n");
 		for(StateConstraint constraint : constraints.get_constraints()) {
 			writer.write("\t\t\t[constraint]\n");
 			writer.write("\t\t\t\t[execution]\t" + constraint.get_execution() + "\n");
@@ -1047,7 +1046,7 @@ public class MutaFeatureWriting {
 		writer.write("\t[end_error]\n");
 	}
 	/**
-	 * [coverage] cir#identifier {as statement}
+	 * [coverage] execution
 	 * @param statement
 	 * @param constraints
 	 * @param writer
@@ -1055,7 +1054,9 @@ public class MutaFeatureWriting {
 	 */
 	private static void output_reachability(CirStatement statement, StateConstraints constraints, FileWriter writer) throws Exception {
 		writer.write("\t[coverage]");
-		writer.write("\t" + get_parameter_content(statement));
+		CirExecution execution = statement.get_tree().get_function_call_graph().
+				get_function(statement).get_flow_graph().get_execution(statement);
+		writer.write("\t" + execution.toString());
 		writer.write("\n");
 	}
 	/**
