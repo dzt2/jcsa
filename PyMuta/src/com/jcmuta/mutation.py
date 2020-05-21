@@ -2,6 +2,7 @@ import os
 from enum import Enum
 import src.com.jcparse.base as base
 import src.com.jcparse.astree as astree
+import src.com.jcparse.cirtree as cirtree
 import src.com.jcparse.cirflow as cirflow
 import src.com.jcparse.cprogram as cpro
 import src.com.jcmuta.operator as mop
@@ -207,22 +208,35 @@ class StateError:
     """
     (error_type, operand*)
     """
-    def __init__(self, error_line: str, program: cpro.CProgram):
-        items = error_line.strip().split('\t')
-        self.error_type = ErrorType.parse(items[1].strip())
-        self.operands = list()
-        for k in range(2, len(items)):
-            operand = base.get_content_of(items[k].strip())
-            if items[k].startswith("cir@"):
-                operand = program.get_cir_tree().get_node(operand)
-            self.operands.append(operand)
+    def __init__(self, errors, error_line: str, program: cpro.CProgram):
+        errors: StateErrors
+        self.errors = errors
+        if len(error_line) > 0:
+            items = error_line.strip().split('\t')
+            self.error_type = ErrorType.parse(items[1].strip())
+            self.operands = list()
+            for k in range(2, len(items)):
+                operand = base.get_content_of(items[k].strip())
+                if items[k].startswith("cir@"):
+                    operand = program.get_cir_tree().get_node(operand)
+                self.operands.append(operand)
+        else:
+            self.error_type = None
+            self.operands = list()
         return
+
+    def get_error_set(self):
+        self.errors: StateErrors
+        return self.errors
 
     def get_error_type(self):
         return self.error_type
 
     def get_operands(self):
         return self.operands
+
+    def get_operand(self, k: int):
+        return self.operands[k]
 
     def __str__(self):
         buffer = str(self.error_type) + "("
@@ -242,11 +256,144 @@ class StateErrors:
 
     def get_state_error(self, error_line: str, program: cpro.CProgram):
         error_line = error_line.strip()
-        if error_line not in self.state_errors:
-            self.state_errors[error_line] = StateError(error_line, program)
-        state_error = self.state_errors[error_line]
-        state_error: StateError
-        return state_error
+        state_error = StateError(self, error_line, program)
+        return self.__record__(state_error)
+
+    def __record__(self, state_error: StateError):
+        if str(state_error) not in self.state_errors:
+            self.state_errors[str(state_error)] = state_error
+        return self.state_errors[str(state_error)]
+
+    def failure(self):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.failure
+        return self.__record__(state_error)
+
+    def syntax_error(self):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.syntax_error
+        return self.__record__(state_error)
+
+    def execute(self, statement: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.execute
+        state_error.operands.append(statement)
+        return self.__record__(state_error)
+
+    def not_execute(self, statement: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.not_execute
+        state_error.operands.append(statement)
+        return self.__record__(state_error)
+
+    def execute_for(self, statement: cirtree.CirNode, loop_times: int):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.execute_for
+        state_error.operands.append(statement)
+        state_error.operands.append(loop_times)
+        return self.__record__(state_error)
+
+    def set_bool(self, expression: cirtree.CirNode, value: bool):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.set_bool
+        state_error.operands.append(expression)
+        state_error.operands.append(value)
+        return self.__record__(state_error)
+
+    def chg_bool(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.chg_bool
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def set_numb(self, expression: cirtree.CirNode, value):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.set_numb
+        state_error.operands.append(expression)
+        state_error.operands.append(value)
+        return self.__record__(state_error)
+
+    def neg_numb(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.neg_numb
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def xor_numb(self, expression: cirtree.CirNode, value: int):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.xor_numb
+        state_error.operands.append(expression)
+        state_error.operands.append(value)
+        return self.__record__(state_error)
+
+    def rsv_numb(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.rsv_numb
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def dif_numb(self, expression: cirtree.CirNode, value):
+        if value != 0:
+            state_error = StateError(self, "", None)
+            state_error.error_type = ErrorType.dif_numb
+            state_error.operands.append(expression)
+            state_error.operands.append(value)
+            return self.__record__(state_error)
+        else:
+            return None
+
+    def inc_numb(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.inc_numb
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def dec_numb(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.dec_numb
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def chg_numb(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.chg_numb
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def dif_addr(self, expression: cirtree.CirNode, value: int):
+        if value != 0:
+            state_error = StateError(self, "", None)
+            state_error.error_type = ErrorType.dif_addr
+            state_error.operands.append(expression)
+            state_error.operands.append(value)
+            return self.__record__(state_error)
+        else:
+            return None
+
+    def set_addr(self, expression: cirtree.CirNode, value):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.set_addr
+        state_error.operands.append(expression)
+        state_error.operands.append(value)
+        return self.__record__(state_error)
+
+    def chg_addr(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.chg_addr
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def mut_expr(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.mut_expr
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
+
+    def mut_refer(self, expression: cirtree.CirNode):
+        state_error = StateError(self, "", None)
+        state_error.error_type = ErrorType.mut_refer
+        state_error.operands.append(expression)
+        return self.__record__(state_error)
 
 
 class StateConstraint:
