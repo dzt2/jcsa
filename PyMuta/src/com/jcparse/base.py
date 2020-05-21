@@ -643,6 +643,55 @@ class CSymbolNode:
                 parent.children.append(child)
         return root
 
+    def generate_code(self, simplified=False):
+        if self.sym_type == CSymbolType.Address:
+            name = str(self.content)
+            if simplified and '#' in name:
+                index = name.index('#')
+                if index > 0:
+                    name = name[0:index].strip()
+            return name
+        elif self.sym_type == CSymbolType.Constant:
+            return str(self.content)
+        elif self.sym_type == CSymbolType.Literal:
+            buffer = "\""
+            text = str(self.content)
+            for k in range(0, len(text)):
+                char = text[k]
+                if char.isspace():
+                    buffer += "\\s"
+                else:
+                    buffer += char
+            buffer += "\""
+            return buffer
+        elif self.sym_type == CSymbolType.DefaultValue:
+            return "[?]"
+        elif self.sym_type == CSymbolType.Field:
+            return str(self.content)
+        elif self.sym_type == CSymbolType.BinaryExpression or self.sym_type == CSymbolType.MultiExpression:
+            return "(" + self.children[0].generate_code(simplified) + ") " + str(self.content) + \
+                   " (" + self.children[1].generate_code(simplified) + ")"
+        elif self.sym_type == CSymbolType.UnaryExpression:
+            return str(self.content) + "(" + self.children[0].generate_code(simplified) + ")"
+        elif self.sym_type == CSymbolType.FieldExpression:
+            return "(" + self.children[0].generate_code(simplified) + ")." + self.children[1].generate_code(simplified)
+        elif self.sym_type == CSymbolType.CallExpression:
+            return self.children[0].generate_code(simplified) + self.children[1].generate_code(simplified)
+        elif self.sym_type == CSymbolType.ArgumentList:
+            buffer = "("
+            for child in self.children:
+                buffer += " " + child.generate_code(simplified)
+            buffer += " )"
+            return buffer
+        elif self.sym_type == CSymbolType.SequenceExpression:
+            buffer = "["
+            for child in self.children:
+                buffer += " " + child.generate_code(simplified)
+            buffer += " ]"
+            return buffer
+        else:
+            return None
+
 
 class CKeyword(Enum):
     auto = 0
