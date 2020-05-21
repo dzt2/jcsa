@@ -61,114 +61,7 @@ class MutaClass(Enum):
 
     @staticmethod
     def parse(text: str):
-        if text == "BTRP":
-            return MutaClass.BTRP
-        elif text == "CTRP":
-            return MutaClass.CTRP
-        elif text == "ETRP":
-            return MutaClass.ETRP
-        elif text == "STRP":
-            return MutaClass.STRP
-        elif text == "TTRP":
-            return MutaClass.TTRP
-        elif text == "VTRP":
-            return MutaClass.VTRP
-        elif text == "SBCR":
-            return MutaClass.SBCR
-        elif text == "SBCI":
-            return MutaClass.SBCI
-        elif text == "SWDR":
-            return MutaClass.SWDR
-        elif text == "SGLR":
-            return MutaClass.SGLR
-        elif text == "STDL":
-            return MutaClass.STDL
-        elif text == "UIOR":
-            return MutaClass.UIOR
-        elif text == "UIOI":
-            return MutaClass.UIOI
-        elif text == "UIOD":
-            return MutaClass.UIOD
-        elif text == "VINC":
-            return MutaClass.VINC
-        elif text == "UNOI":
-            return MutaClass.UNOI
-        elif text == "UNOD":
-            return MutaClass.UNOD
-        elif text == "OAAN":
-            return MutaClass.OAAN
-        elif text == "OABN":
-            return MutaClass.OABN
-        elif text == "OALN":
-            return MutaClass.OALN
-        elif text == "OARN":
-            return MutaClass.OARN
-        elif text == "OBAN":
-            return MutaClass.OBAN
-        elif text == "OBBN":
-            return MutaClass.OBBN
-        elif text == "OBLN":
-            return MutaClass.OBLN
-        elif text == "OBRN":
-            return MutaClass.OBRN
-        elif text == "OLAN":
-            return MutaClass.OLAN
-        elif text == "OLBN":
-            return MutaClass.OLBN
-        elif text == "OLLN":
-            return MutaClass.OLLN
-        elif text == "OLRN":
-            return MutaClass.OLRN
-        elif text == "ORAN":
-            return MutaClass.ORAN
-        elif text == "ORBN":
-            return MutaClass.ORBN
-        elif text == "ORLN":
-            return MutaClass.ORLN
-        elif text == "ORRN":
-            return MutaClass.ORRN
-        elif text == "OEAA":
-            return MutaClass.OEAA
-        elif text == "OEBA":
-            return MutaClass.OEBA
-        elif text == "OAAA":
-            return MutaClass.OAAA
-        elif text == "OABA":
-            return MutaClass.OABA
-        elif text == "OAEA":
-            return MutaClass.OAEA
-        elif text == "OBAA":
-            return MutaClass.OBAA
-        elif text == "OBBA":
-            return MutaClass.OBBA
-        elif text == "OBEA":
-            return MutaClass.OBEA
-        elif text == "OPDL":
-            return MutaClass.OPDL
-        elif text == "VBRP":
-            return MutaClass.VBRP
-        elif text == "VCRP":
-            return MutaClass.VCRP
-        elif text == "VRRP":
-            return MutaClass.VRRP
-        elif text == "SRTR":
-            return MutaClass.SRTR
-        elif text == "EQAR":
-            return MutaClass.EQAR
-        elif text == "OSBI":
-            return MutaClass.OSBI
-        elif text == "OIFI":
-            return MutaClass.OIFI
-        elif text == "OIFR":
-            return MutaClass.OIFR
-        elif text == "ODFI":
-            return MutaClass.ODFI
-        elif text == "ODFR":
-            return MutaClass.ODFR
-        elif text == "OFLT":
-            return MutaClass.OFLT
-        else:
-            return None
+        return MutaClass.__members__[text]
 
 
 class MutaOperator(Enum):
@@ -273,440 +166,440 @@ class MutaOperator(Enum):
     arith_sub_to_equal_with = 96
     arith_sub_to_not_equals = 97
 
-    arith_mul_to_arith_add = 80
-    arith_mul_to_arith_sub = 81
-    arith_mul_to_arith_mul = 82
-    arith_mul_to_arith_div = 83
-    arith_mul_to_arith_mod = 84
-    arith_mul_to_bitws_and = 85
-    arith_mul_to_bitws_ior = 86
-    arith_mul_to_bitws_xor = 87
-    arith_mul_to_bitws_lsh = 88
-    arith_mul_to_bitws_rsh = 89
-    arith_mul_to_logic_and = 90
-    arith_mul_to_logic_ior = 91
-    arith_mul_to_greater_tn = 92
-    arith_mul_to_greater_eq = 93
-    arith_mul_to_smaller_tn = 94
-    arith_mul_to_smaller_eq = 95
-    arith_mul_to_equal_with = 96
-    arith_mul_to_not_equals = 97
+    arith_mul_to_arith_add = 98
+    arith_mul_to_arith_sub = 99
+    arith_mul_to_arith_mul = 100
+    arith_mul_to_arith_div = 101
+    arith_mul_to_arith_mod = 102
+    arith_mul_to_bitws_and = 103
+    arith_mul_to_bitws_ior = 104
+    arith_mul_to_bitws_xor = 105
+    arith_mul_to_bitws_lsh = 106
+    arith_mul_to_bitws_rsh = 107
+    arith_mul_to_logic_and = 108
+    arith_mul_to_logic_ior = 109
+    arith_mul_to_greater_tn = 110
+    arith_mul_to_greater_eq = 111
+    arith_mul_to_smaller_tn = 112
+    arith_mul_to_smaller_eq = 113
+    arith_mul_to_equal_with = 114
+    arith_mul_to_not_equals = 115
 
-    arith_div_to_arith_add = 80
-    arith_div_to_arith_sub = 81
-    arith_div_to_arith_mul = 82
-    arith_div_to_arith_div = 83
-    arith_div_to_arith_mod = 84
-    arith_div_to_bitws_and = 85
-    arith_div_to_bitws_ior = 86
-    arith_div_to_bitws_xor = 87
-    arith_div_to_bitws_lsh = 88
-    arith_div_to_bitws_rsh = 89
-    arith_div_to_logic_and = 90
-    arith_div_to_logic_ior = 91
-    arith_div_to_greater_tn = 92
-    arith_div_to_greater_eq = 93
-    arith_div_to_smaller_tn = 94
-    arith_div_to_smaller_eq = 95
-    arith_div_to_equal_with = 96
-    arith_div_to_not_equals = 97
+    arith_div_to_arith_add = 116
+    arith_div_to_arith_sub = 117
+    arith_div_to_arith_mul = 118
+    arith_div_to_arith_div = 119
+    arith_div_to_arith_mod = 120
+    arith_div_to_bitws_and = 121
+    arith_div_to_bitws_ior = 122
+    arith_div_to_bitws_xor = 123
+    arith_div_to_bitws_lsh = 124
+    arith_div_to_bitws_rsh = 125
+    arith_div_to_logic_and = 126
+    arith_div_to_logic_ior = 127
+    arith_div_to_greater_tn = 128
+    arith_div_to_greater_eq = 129
+    arith_div_to_smaller_tn = 130
+    arith_div_to_smaller_eq = 131
+    arith_div_to_equal_with = 132
+    arith_div_to_not_equals = 133
 
-    arith_mod_to_arith_add = 80
-    arith_mod_to_arith_sub = 81
-    arith_mod_to_arith_mul = 82
-    arith_mod_to_arith_div = 83
-    arith_mod_to_arith_mod = 84
-    arith_mod_to_bitws_and = 85
-    arith_mod_to_bitws_ior = 86
-    arith_mod_to_bitws_xor = 87
-    arith_mod_to_bitws_lsh = 88
-    arith_mod_to_bitws_rsh = 89
-    arith_mod_to_logic_and = 90
-    arith_mod_to_logic_ior = 91
-    arith_mod_to_greater_tn = 92
-    arith_mod_to_greater_eq = 93
-    arith_mod_to_smaller_tn = 94
-    arith_mod_to_smaller_eq = 95
-    arith_mod_to_equal_with = 96
-    arith_mod_to_not_equals = 97
+    arith_mod_to_arith_add = 134
+    arith_mod_to_arith_sub = 135
+    arith_mod_to_arith_mul = 136
+    arith_mod_to_arith_div = 137
+    arith_mod_to_arith_mod = 138
+    arith_mod_to_bitws_and = 139
+    arith_mod_to_bitws_ior = 140
+    arith_mod_to_bitws_xor = 141
+    arith_mod_to_bitws_lsh = 142
+    arith_mod_to_bitws_rsh = 143
+    arith_mod_to_logic_and = 144
+    arith_mod_to_logic_ior = 145
+    arith_mod_to_greater_tn = 146
+    arith_mod_to_greater_eq = 147
+    arith_mod_to_smaller_tn = 148
+    arith_mod_to_smaller_eq = 149
+    arith_mod_to_equal_with = 150
+    arith_mod_to_not_equals = 151
 
-    bitws_and_to_arith_add = 80
-    bitws_and_to_arith_sub = 81
-    bitws_and_to_arith_mul = 82
-    bitws_and_to_arith_div = 83
-    bitws_and_to_arith_mod = 84
-    bitws_and_to_bitws_and = 85
-    bitws_and_to_bitws_ior = 86
-    bitws_and_to_bitws_xor = 87
-    bitws_and_to_bitws_lsh = 88
-    bitws_and_to_bitws_rsh = 89
-    bitws_and_to_logic_and = 90
-    bitws_and_to_logic_ior = 91
-    bitws_and_to_greater_tn = 92
-    bitws_and_to_greater_eq = 93
-    bitws_and_to_smaller_tn = 94
-    bitws_and_to_smaller_eq = 95
-    bitws_and_to_equal_with = 96
-    bitws_and_to_not_equals = 97
+    bitws_and_to_arith_add = 152
+    bitws_and_to_arith_sub = 153
+    bitws_and_to_arith_mul = 154
+    bitws_and_to_arith_div = 155
+    bitws_and_to_arith_mod = 156
+    bitws_and_to_bitws_and = 157
+    bitws_and_to_bitws_ior = 158
+    bitws_and_to_bitws_xor = 159
+    bitws_and_to_bitws_lsh = 160
+    bitws_and_to_bitws_rsh = 161
+    bitws_and_to_logic_and = 162
+    bitws_and_to_logic_ior = 163
+    bitws_and_to_greater_tn = 164
+    bitws_and_to_greater_eq = 165
+    bitws_and_to_smaller_tn = 166
+    bitws_and_to_smaller_eq = 167
+    bitws_and_to_equal_with = 168
+    bitws_and_to_not_equals = 169
 
-    bitws_ior_to_arith_add = 80
-    bitws_ior_to_arith_sub = 81
-    bitws_ior_to_arith_mul = 82
-    bitws_ior_to_arith_div = 83
-    bitws_ior_to_arith_mod = 84
-    bitws_ior_to_bitws_and = 85
-    bitws_ior_to_bitws_ior = 86
-    bitws_ior_to_bitws_xor = 87
-    bitws_ior_to_bitws_lsh = 88
-    bitws_ior_to_bitws_rsh = 89
-    bitws_ior_to_logic_and = 90
-    bitws_ior_to_logic_ior = 91
-    bitws_ior_to_greater_tn = 92
-    bitws_ior_to_greater_eq = 93
-    bitws_ior_to_smaller_tn = 94
-    bitws_ior_to_smaller_eq = 95
-    bitws_ior_to_equal_with = 96
-    bitws_ior_to_not_equals = 97
+    bitws_ior_to_arith_add = 170
+    bitws_ior_to_arith_sub = 171
+    bitws_ior_to_arith_mul = 172
+    bitws_ior_to_arith_div = 173
+    bitws_ior_to_arith_mod = 174
+    bitws_ior_to_bitws_and = 175
+    bitws_ior_to_bitws_ior = 176
+    bitws_ior_to_bitws_xor = 177
+    bitws_ior_to_bitws_lsh = 178
+    bitws_ior_to_bitws_rsh = 179
+    bitws_ior_to_logic_and = 180
+    bitws_ior_to_logic_ior = 180
+    bitws_ior_to_greater_tn = 181
+    bitws_ior_to_greater_eq = 182
+    bitws_ior_to_smaller_tn = 183
+    bitws_ior_to_smaller_eq = 184
+    bitws_ior_to_equal_with = 185
+    bitws_ior_to_not_equals = 186
 
-    bitws_xor_to_arith_add = 80
-    bitws_xor_to_arith_sub = 81
-    bitws_xor_to_arith_mul = 82
-    bitws_xor_to_arith_div = 83
-    bitws_xor_to_arith_mod = 84
-    bitws_xor_to_bitws_and = 85
-    bitws_xor_to_bitws_ior = 86
-    bitws_xor_to_bitws_xor = 87
-    bitws_xor_to_bitws_lsh = 88
-    bitws_xor_to_bitws_rsh = 89
-    bitws_xor_to_logic_and = 90
-    bitws_xor_to_logic_ior = 91
-    bitws_xor_to_greater_tn = 92
-    bitws_xor_to_greater_eq = 93
-    bitws_xor_to_smaller_tn = 94
-    bitws_xor_to_smaller_eq = 95
-    bitws_xor_to_equal_with = 96
-    bitws_xor_to_not_equals = 97
+    bitws_xor_to_arith_add = 187
+    bitws_xor_to_arith_sub = 188
+    bitws_xor_to_arith_mul = 189
+    bitws_xor_to_arith_div = 190
+    bitws_xor_to_arith_mod = 191
+    bitws_xor_to_bitws_and = 192
+    bitws_xor_to_bitws_ior = 193
+    bitws_xor_to_bitws_xor = 194
+    bitws_xor_to_bitws_lsh = 195
+    bitws_xor_to_bitws_rsh = 196
+    bitws_xor_to_logic_and = 197
+    bitws_xor_to_logic_ior = 198
+    bitws_xor_to_greater_tn = 199
+    bitws_xor_to_greater_eq = 200
+    bitws_xor_to_smaller_tn = 201
+    bitws_xor_to_smaller_eq = 202
+    bitws_xor_to_equal_with = 203
+    bitws_xor_to_not_equals = 204
 
-    bitws_lsh_to_arith_add = 80
-    bitws_lsh_to_arith_sub = 81
-    bitws_lsh_to_arith_mul = 82
-    bitws_lsh_to_arith_div = 83
-    bitws_lsh_to_arith_mod = 84
-    bitws_lsh_to_bitws_and = 85
-    bitws_lsh_to_bitws_ior = 86
-    bitws_lsh_to_bitws_xor = 87
-    bitws_lsh_to_bitws_lsh = 88
-    bitws_lsh_to_bitws_rsh = 89
-    bitws_lsh_to_logic_and = 90
-    bitws_lsh_to_logic_ior = 91
-    bitws_lsh_to_greater_tn = 92
-    bitws_lsh_to_greater_eq = 93
-    bitws_lsh_to_smaller_tn = 94
-    bitws_lsh_to_smaller_eq = 95
-    bitws_lsh_to_equal_with = 96
-    bitws_lsh_to_not_equals = 97
+    bitws_lsh_to_arith_add = 205
+    bitws_lsh_to_arith_sub = 206
+    bitws_lsh_to_arith_mul = 207
+    bitws_lsh_to_arith_div = 208
+    bitws_lsh_to_arith_mod = 209
+    bitws_lsh_to_bitws_and = 210
+    bitws_lsh_to_bitws_ior = 211
+    bitws_lsh_to_bitws_xor = 212
+    bitws_lsh_to_bitws_lsh = 213
+    bitws_lsh_to_bitws_rsh = 214
+    bitws_lsh_to_logic_and = 215
+    bitws_lsh_to_logic_ior = 216
+    bitws_lsh_to_greater_tn = 217
+    bitws_lsh_to_greater_eq = 218
+    bitws_lsh_to_smaller_tn = 219
+    bitws_lsh_to_smaller_eq = 220
+    bitws_lsh_to_equal_with = 221
+    bitws_lsh_to_not_equals = 222
 
-    bitws_rsh_to_arith_add = 80
-    bitws_rsh_to_arith_sub = 81
-    bitws_rsh_to_arith_mul = 82
-    bitws_rsh_to_arith_div = 83
-    bitws_rsh_to_arith_mod = 84
-    bitws_rsh_to_bitws_and = 85
-    bitws_rsh_to_bitws_ior = 86
-    bitws_rsh_to_bitws_xor = 87
-    bitws_rsh_to_bitws_lsh = 88
-    bitws_rsh_to_bitws_rsh = 89
-    bitws_rsh_to_logic_and = 90
-    bitws_rsh_to_logic_ior = 91
-    bitws_rsh_to_greater_tn = 92
-    bitws_rsh_to_greater_eq = 93
-    bitws_rsh_to_smaller_tn = 94
-    bitws_rsh_to_smaller_eq = 95
-    bitws_rsh_to_equal_with = 96
-    bitws_rsh_to_not_equals = 97
+    bitws_rsh_to_arith_add = 223
+    bitws_rsh_to_arith_sub = 224
+    bitws_rsh_to_arith_mul = 225
+    bitws_rsh_to_arith_div = 226
+    bitws_rsh_to_arith_mod = 227
+    bitws_rsh_to_bitws_and = 228
+    bitws_rsh_to_bitws_ior = 229
+    bitws_rsh_to_bitws_xor = 230
+    bitws_rsh_to_bitws_lsh = 231
+    bitws_rsh_to_bitws_rsh = 232
+    bitws_rsh_to_logic_and = 233
+    bitws_rsh_to_logic_ior = 234
+    bitws_rsh_to_greater_tn = 235
+    bitws_rsh_to_greater_eq = 236
+    bitws_rsh_to_smaller_tn = 237
+    bitws_rsh_to_smaller_eq = 238
+    bitws_rsh_to_equal_with = 239
+    bitws_rsh_to_not_equals = 240
 
-    logic_and_to_arith_add = 80
-    logic_and_to_arith_sub = 81
-    logic_and_to_arith_mul = 82
-    logic_and_to_arith_div = 83
-    logic_and_to_arith_mod = 84
-    logic_and_to_bitws_and = 85
-    logic_and_to_bitws_ior = 86
-    logic_and_to_bitws_xor = 87
-    logic_and_to_bitws_lsh = 88
-    logic_and_to_bitws_rsh = 89
-    logic_and_to_logic_and = 90
-    logic_and_to_logic_ior = 91
-    logic_and_to_greater_tn = 92
-    logic_and_to_greater_eq = 93
-    logic_and_to_smaller_tn = 94
-    logic_and_to_smaller_eq = 95
-    logic_and_to_equal_with = 96
-    logic_and_to_not_equals = 97
+    logic_and_to_arith_add = 241
+    logic_and_to_arith_sub = 242
+    logic_and_to_arith_mul = 243
+    logic_and_to_arith_div = 244
+    logic_and_to_arith_mod = 245
+    logic_and_to_bitws_and = 246
+    logic_and_to_bitws_ior = 247
+    logic_and_to_bitws_xor = 248
+    logic_and_to_bitws_lsh = 249
+    logic_and_to_bitws_rsh = 250
+    logic_and_to_logic_and = 251
+    logic_and_to_logic_ior = 252
+    logic_and_to_greater_tn = 253
+    logic_and_to_greater_eq = 254
+    logic_and_to_smaller_tn = 255
+    logic_and_to_smaller_eq = 256
+    logic_and_to_equal_with = 257
+    logic_and_to_not_equals = 258
 
-    logic_ior_to_arith_add = 80
-    logic_ior_to_arith_sub = 81
-    logic_ior_to_arith_mul = 82
-    logic_ior_to_arith_div = 83
-    logic_ior_to_arith_mod = 84
-    logic_ior_to_bitws_and = 85
-    logic_ior_to_bitws_ior = 86
-    logic_ior_to_bitws_xor = 87
-    logic_ior_to_bitws_lsh = 88
-    logic_ior_to_bitws_rsh = 89
-    logic_ior_to_logic_and = 90
-    logic_ior_to_logic_ior = 91
-    logic_ior_to_greater_tn = 92
-    logic_ior_to_greater_eq = 93
-    logic_ior_to_smaller_tn = 94
-    logic_ior_to_smaller_eq = 95
-    logic_ior_to_equal_with = 96
-    logic_ior_to_not_equals = 97
+    logic_ior_to_arith_add = 259
+    logic_ior_to_arith_sub = 260
+    logic_ior_to_arith_mul = 261
+    logic_ior_to_arith_div = 262
+    logic_ior_to_arith_mod = 263
+    logic_ior_to_bitws_and = 264
+    logic_ior_to_bitws_ior = 265
+    logic_ior_to_bitws_xor = 266
+    logic_ior_to_bitws_lsh = 267
+    logic_ior_to_bitws_rsh = 268
+    logic_ior_to_logic_and = 269
+    logic_ior_to_logic_ior = 270
+    logic_ior_to_greater_tn = 271
+    logic_ior_to_greater_eq = 272
+    logic_ior_to_smaller_tn = 273
+    logic_ior_to_smaller_eq = 274
+    logic_ior_to_equal_with = 275
+    logic_ior_to_not_equals = 276
 
-    greater_tn_to_arith_add = 80
-    greater_tn_to_arith_sub = 81
-    greater_tn_to_arith_mul = 82
-    greater_tn_to_arith_div = 83
-    greater_tn_to_arith_mod = 84
-    greater_tn_to_bitws_and = 85
-    greater_tn_to_bitws_ior = 86
-    greater_tn_to_bitws_xor = 87
-    greater_tn_to_bitws_lsh = 88
-    greater_tn_to_bitws_rsh = 89
-    greater_tn_to_logic_and = 90
-    greater_tn_to_logic_ior = 91
-    greater_tn_to_greater_tn = 92
-    greater_tn_to_greater_eq = 93
-    greater_tn_to_smaller_tn = 94
-    greater_tn_to_smaller_eq = 95
-    greater_tn_to_equal_with = 96
-    greater_tn_to_not_equals = 97
+    greater_tn_to_arith_add = 277
+    greater_tn_to_arith_sub = 278
+    greater_tn_to_arith_mul = 279
+    greater_tn_to_arith_div = 280
+    greater_tn_to_arith_mod = 281
+    greater_tn_to_bitws_and = 282
+    greater_tn_to_bitws_ior = 283
+    greater_tn_to_bitws_xor = 284
+    greater_tn_to_bitws_lsh = 285
+    greater_tn_to_bitws_rsh = 286
+    greater_tn_to_logic_and = 287
+    greater_tn_to_logic_ior = 288
+    greater_tn_to_greater_tn = 289
+    greater_tn_to_greater_eq = 290
+    greater_tn_to_smaller_tn = 291
+    greater_tn_to_smaller_eq = 292
+    greater_tn_to_equal_with = 293
+    greater_tn_to_not_equals = 294
 
-    greater_eq_to_arith_add = 80
-    greater_eq_to_arith_sub = 81
-    greater_eq_to_arith_mul = 82
-    greater_eq_to_arith_div = 83
-    greater_eq_to_arith_mod = 84
-    greater_eq_to_bitws_and = 85
-    greater_eq_to_bitws_ior = 86
-    greater_eq_to_bitws_xor = 87
-    greater_eq_to_bitws_lsh = 88
-    greater_eq_to_bitws_rsh = 89
-    greater_eq_to_logic_and = 90
-    greater_eq_to_logic_ior = 91
-    greater_eq_to_greater_tn = 92
-    greater_eq_to_greater_eq = 93
-    greater_eq_to_smaller_tn = 94
-    greater_eq_to_smaller_eq = 95
-    greater_eq_to_equal_with = 96
-    greater_eq_to_not_equals = 97
+    greater_eq_to_arith_add = 295
+    greater_eq_to_arith_sub = 296
+    greater_eq_to_arith_mul = 297
+    greater_eq_to_arith_div = 298
+    greater_eq_to_arith_mod = 299
+    greater_eq_to_bitws_and = 300
+    greater_eq_to_bitws_ior = 301
+    greater_eq_to_bitws_xor = 302
+    greater_eq_to_bitws_lsh = 303
+    greater_eq_to_bitws_rsh = 304
+    greater_eq_to_logic_and = 305
+    greater_eq_to_logic_ior = 306
+    greater_eq_to_greater_tn = 307
+    greater_eq_to_greater_eq = 308
+    greater_eq_to_smaller_tn = 309
+    greater_eq_to_smaller_eq = 310
+    greater_eq_to_equal_with = 311
+    greater_eq_to_not_equals = 312
 
-    smaller_tn_to_arith_add = 80
-    smaller_tn_to_arith_sub = 81
-    smaller_tn_to_arith_mul = 82
-    smaller_tn_to_arith_div = 83
-    smaller_tn_to_arith_mod = 84
-    smaller_tn_to_bitws_and = 85
-    smaller_tn_to_bitws_ior = 86
-    smaller_tn_to_bitws_xor = 87
-    smaller_tn_to_bitws_lsh = 88
-    smaller_tn_to_bitws_rsh = 89
-    smaller_tn_to_logic_and = 90
-    smaller_tn_to_logic_ior = 91
-    smaller_tn_to_greater_tn = 92
-    smaller_tn_to_greater_eq = 93
-    smaller_tn_to_smaller_tn = 94
-    smaller_tn_to_smaller_eq = 95
-    smaller_tn_to_equal_with = 96
-    smaller_tn_to_not_equals = 97
+    smaller_tn_to_arith_add = 313
+    smaller_tn_to_arith_sub = 314
+    smaller_tn_to_arith_mul = 315
+    smaller_tn_to_arith_div = 316
+    smaller_tn_to_arith_mod = 317
+    smaller_tn_to_bitws_and = 318
+    smaller_tn_to_bitws_ior = 319
+    smaller_tn_to_bitws_xor = 320
+    smaller_tn_to_bitws_lsh = 321
+    smaller_tn_to_bitws_rsh = 322
+    smaller_tn_to_logic_and = 323
+    smaller_tn_to_logic_ior = 324
+    smaller_tn_to_greater_tn = 325
+    smaller_tn_to_greater_eq = 326
+    smaller_tn_to_smaller_tn = 327
+    smaller_tn_to_smaller_eq = 328
+    smaller_tn_to_equal_with = 329
+    smaller_tn_to_not_equals = 330
 
-    smaller_eq_to_arith_add = 80
-    smaller_eq_to_arith_sub = 81
-    smaller_eq_to_arith_mul = 82
-    smaller_eq_to_arith_div = 83
-    smaller_eq_to_arith_mod = 84
-    smaller_eq_to_bitws_and = 85
-    smaller_eq_to_bitws_ior = 86
-    smaller_eq_to_bitws_xor = 87
-    smaller_eq_to_bitws_lsh = 88
-    smaller_eq_to_bitws_rsh = 89
-    smaller_eq_to_logic_and = 90
-    smaller_eq_to_logic_ior = 91
-    smaller_eq_to_greater_tn = 92
-    smaller_eq_to_greater_eq = 93
-    smaller_eq_to_smaller_tn = 94
-    smaller_eq_to_smaller_eq = 95
-    smaller_eq_to_equal_with = 96
-    smaller_eq_to_not_equals = 97
+    smaller_eq_to_arith_add = 331
+    smaller_eq_to_arith_sub = 332
+    smaller_eq_to_arith_mul = 333
+    smaller_eq_to_arith_div = 334
+    smaller_eq_to_arith_mod = 335
+    smaller_eq_to_bitws_and = 336
+    smaller_eq_to_bitws_ior = 337
+    smaller_eq_to_bitws_xor = 338
+    smaller_eq_to_bitws_lsh = 339
+    smaller_eq_to_bitws_rsh = 340
+    smaller_eq_to_logic_and = 341
+    smaller_eq_to_logic_ior = 342
+    smaller_eq_to_greater_tn = 343
+    smaller_eq_to_greater_eq = 344
+    smaller_eq_to_smaller_tn = 345
+    smaller_eq_to_smaller_eq = 346
+    smaller_eq_to_equal_with = 347
+    smaller_eq_to_not_equals = 348
 
-    equal_with_to_arith_add = 80
-    equal_with_to_arith_sub = 81
-    equal_with_to_arith_mul = 82
-    equal_with_to_arith_div = 83
-    equal_with_to_arith_mod = 84
-    equal_with_to_bitws_and = 85
-    equal_with_to_bitws_ior = 86
-    equal_with_to_bitws_xor = 87
-    equal_with_to_bitws_lsh = 88
-    equal_with_to_bitws_rsh = 89
-    equal_with_to_logic_and = 90
-    equal_with_to_logic_ior = 91
-    equal_with_to_greater_tn = 92
-    equal_with_to_greater_eq = 93
-    equal_with_to_smaller_tn = 94
-    equal_with_to_smaller_eq = 95
-    equal_with_to_equal_with = 96
-    equal_with_to_not_equals = 97
+    equal_with_to_arith_add = 349
+    equal_with_to_arith_sub = 350
+    equal_with_to_arith_mul = 351
+    equal_with_to_arith_div = 352
+    equal_with_to_arith_mod = 353
+    equal_with_to_bitws_and = 354
+    equal_with_to_bitws_ior = 355
+    equal_with_to_bitws_xor = 356
+    equal_with_to_bitws_lsh = 357
+    equal_with_to_bitws_rsh = 358
+    equal_with_to_logic_and = 359
+    equal_with_to_logic_ior = 360
+    equal_with_to_greater_tn = 361
+    equal_with_to_greater_eq = 362
+    equal_with_to_smaller_tn = 363
+    equal_with_to_smaller_eq = 364
+    equal_with_to_equal_with = 365
+    equal_with_to_not_equals = 366
 
-    not_equals_to_arith_add = 80
-    not_equals_to_arith_sub = 81
-    not_equals_to_arith_mul = 82
-    not_equals_to_arith_div = 83
-    not_equals_to_arith_mod = 84
-    not_equals_to_bitws_and = 85
-    not_equals_to_bitws_ior = 86
-    not_equals_to_bitws_xor = 87
-    not_equals_to_bitws_lsh = 88
-    not_equals_to_bitws_rsh = 89
-    not_equals_to_logic_and = 90
-    not_equals_to_logic_ior = 91
-    not_equals_to_greater_tn = 92
-    not_equals_to_greater_eq = 93
-    not_equals_to_smaller_tn = 94
-    not_equals_to_smaller_eq = 95
-    not_equals_to_equal_with = 96
-    not_equals_to_not_equals = 97
+    not_equals_to_arith_add = 367
+    not_equals_to_arith_sub = 368
+    not_equals_to_arith_mul = 369
+    not_equals_to_arith_div = 370
+    not_equals_to_arith_mod = 371
+    not_equals_to_bitws_and = 372
+    not_equals_to_bitws_ior = 373
+    not_equals_to_bitws_xor = 374
+    not_equals_to_bitws_lsh = 375
+    not_equals_to_bitws_rsh = 376
+    not_equals_to_logic_and = 377
+    not_equals_to_logic_ior = 378
+    not_equals_to_greater_tn = 379
+    not_equals_to_greater_eq = 380
+    not_equals_to_smaller_tn = 381
+    not_equals_to_smaller_eq = 382
+    not_equals_to_equal_with = 383
+    not_equals_to_not_equals = 384
 
-    arith_add_assign_to_assign = 98
-    arith_add_assign_to_arith_add_assign = 99
-    arith_add_assign_to_arith_sub_assign = 100
-    arith_add_assign_to_arith_mul_assign = 101
-    arith_add_assign_to_arith_div_assign = 102
-    arith_add_assign_to_arith_mod_assign = 103
-    arith_add_assign_to_bitws_and_assign = 104
-    arith_add_assign_to_bitws_ior_assign = 105
-    arith_add_assign_to_bitws_xor_assign = 106
-    arith_add_assign_to_bitws_lsh_assign = 107
-    arith_add_assign_to_bitws_rsh_assign = 108
+    arith_add_assign_to_assign = 385
+    arith_add_assign_to_arith_add_assign = 386
+    arith_add_assign_to_arith_sub_assign = 387
+    arith_add_assign_to_arith_mul_assign = 388
+    arith_add_assign_to_arith_div_assign = 389
+    arith_add_assign_to_arith_mod_assign = 390
+    arith_add_assign_to_bitws_and_assign = 391
+    arith_add_assign_to_bitws_ior_assign = 392
+    arith_add_assign_to_bitws_xor_assign = 393
+    arith_add_assign_to_bitws_lsh_assign = 394
+    arith_add_assign_to_bitws_rsh_assign = 395
 
-    arith_sub_assign_to_assign = 98
-    arith_sub_assign_to_arith_add_assign = 99
-    arith_sub_assign_to_arith_sub_assign = 100
-    arith_sub_assign_to_arith_mul_assign = 101
-    arith_sub_assign_to_arith_div_assign = 102
-    arith_sub_assign_to_arith_mod_assign = 103
-    arith_sub_assign_to_bitws_and_assign = 104
-    arith_sub_assign_to_bitws_ior_assign = 105
-    arith_sub_assign_to_bitws_xor_assign = 106
-    arith_sub_assign_to_bitws_lsh_assign = 107
-    arith_sub_assign_to_bitws_rsh_assign = 108
+    arith_sub_assign_to_assign = 396
+    arith_sub_assign_to_arith_add_assign = 397
+    arith_sub_assign_to_arith_sub_assign = 398
+    arith_sub_assign_to_arith_mul_assign = 399
+    arith_sub_assign_to_arith_div_assign = 400
+    arith_sub_assign_to_arith_mod_assign = 401
+    arith_sub_assign_to_bitws_and_assign = 402
+    arith_sub_assign_to_bitws_ior_assign = 403
+    arith_sub_assign_to_bitws_xor_assign = 404
+    arith_sub_assign_to_bitws_lsh_assign = 405
+    arith_sub_assign_to_bitws_rsh_assign = 406
 
-    arith_mul_assign_to_assign = 98
-    arith_mul_assign_to_arith_add_assign = 99
-    arith_mul_assign_to_arith_sub_assign = 100
-    arith_mul_assign_to_arith_mul_assign = 101
-    arith_mul_assign_to_arith_div_assign = 102
-    arith_mul_assign_to_arith_mod_assign = 103
-    arith_mul_assign_to_bitws_and_assign = 104
-    arith_mul_assign_to_bitws_ior_assign = 105
-    arith_mul_assign_to_bitws_xor_assign = 106
-    arith_mul_assign_to_bitws_lsh_assign = 107
-    arith_mul_assign_to_bitws_rsh_assign = 108
+    arith_mul_assign_to_assign = 407
+    arith_mul_assign_to_arith_add_assign = 408
+    arith_mul_assign_to_arith_sub_assign = 409
+    arith_mul_assign_to_arith_mul_assign = 410
+    arith_mul_assign_to_arith_div_assign = 411
+    arith_mul_assign_to_arith_mod_assign = 412
+    arith_mul_assign_to_bitws_and_assign = 413
+    arith_mul_assign_to_bitws_ior_assign = 414
+    arith_mul_assign_to_bitws_xor_assign = 415
+    arith_mul_assign_to_bitws_lsh_assign = 416
+    arith_mul_assign_to_bitws_rsh_assign = 417
 
-    arith_div_assign_to_assign = 98
-    arith_div_assign_to_arith_add_assign = 99
-    arith_div_assign_to_arith_sub_assign = 100
-    arith_div_assign_to_arith_mul_assign = 101
-    arith_div_assign_to_arith_div_assign = 102
-    arith_div_assign_to_arith_mod_assign = 103
-    arith_div_assign_to_bitws_and_assign = 104
-    arith_div_assign_to_bitws_ior_assign = 105
-    arith_div_assign_to_bitws_xor_assign = 106
-    arith_div_assign_to_bitws_lsh_assign = 107
-    arith_div_assign_to_bitws_rsh_assign = 108
+    arith_div_assign_to_assign = 418
+    arith_div_assign_to_arith_add_assign = 419
+    arith_div_assign_to_arith_sub_assign = 420
+    arith_div_assign_to_arith_mul_assign = 421
+    arith_div_assign_to_arith_div_assign = 422
+    arith_div_assign_to_arith_mod_assign = 423
+    arith_div_assign_to_bitws_and_assign = 424
+    arith_div_assign_to_bitws_ior_assign = 425
+    arith_div_assign_to_bitws_xor_assign = 426
+    arith_div_assign_to_bitws_lsh_assign = 427
+    arith_div_assign_to_bitws_rsh_assign = 428
 
-    arith_mod_assign_to_assign = 98
-    arith_mod_assign_to_arith_add_assign = 99
-    arith_mod_assign_to_arith_sub_assign = 100
-    arith_mod_assign_to_arith_mul_assign = 101
-    arith_mod_assign_to_arith_div_assign = 102
-    arith_mod_assign_to_arith_mod_assign = 103
-    arith_mod_assign_to_bitws_and_assign = 104
-    arith_mod_assign_to_bitws_ior_assign = 105
-    arith_mod_assign_to_bitws_xor_assign = 106
-    arith_mod_assign_to_bitws_lsh_assign = 107
-    arith_mod_assign_to_bitws_rsh_assign = 108
+    arith_mod_assign_to_assign = 429
+    arith_mod_assign_to_arith_add_assign = 430
+    arith_mod_assign_to_arith_sub_assign = 431
+    arith_mod_assign_to_arith_mul_assign = 432
+    arith_mod_assign_to_arith_div_assign = 433
+    arith_mod_assign_to_arith_mod_assign = 434
+    arith_mod_assign_to_bitws_and_assign = 435
+    arith_mod_assign_to_bitws_ior_assign = 436
+    arith_mod_assign_to_bitws_xor_assign = 437
+    arith_mod_assign_to_bitws_lsh_assign = 438
+    arith_mod_assign_to_bitws_rsh_assign = 439
 
-    bitws_and_assign_to_assign = 109
-    bitws_and_assign_to_arith_add_assign = 110
-    bitws_and_assign_to_arith_sub_assign = 111
-    bitws_and_assign_to_arith_mul_assign = 112
-    bitws_and_assign_to_arith_div_assign = 113
-    bitws_and_assign_to_arith_mod_assign = 114
-    bitws_and_assign_to_bitws_and_assign = 115
-    bitws_and_assign_to_bitws_ior_assign = 116
-    bitws_and_assign_to_bitws_xor_assign = 117
-    bitws_and_assign_to_bitws_lsh_assign = 118
-    bitws_and_assign_to_bitws_rsh_assign = 119
+    bitws_and_assign_to_assign = 440
+    bitws_and_assign_to_arith_add_assign = 441
+    bitws_and_assign_to_arith_sub_assign = 442
+    bitws_and_assign_to_arith_mul_assign = 443
+    bitws_and_assign_to_arith_div_assign = 444
+    bitws_and_assign_to_arith_mod_assign = 445
+    bitws_and_assign_to_bitws_and_assign = 446
+    bitws_and_assign_to_bitws_ior_assign = 447
+    bitws_and_assign_to_bitws_xor_assign = 448
+    bitws_and_assign_to_bitws_lsh_assign = 449
+    bitws_and_assign_to_bitws_rsh_assign = 450
 
-    bitws_ior_assign_to_assign = 109
-    bitws_ior_assign_to_arith_add_assign = 110
-    bitws_ior_assign_to_arith_sub_assign = 111
-    bitws_ior_assign_to_arith_mul_assign = 112
-    bitws_ior_assign_to_arith_div_assign = 113
-    bitws_ior_assign_to_arith_mod_assign = 114
-    bitws_ior_assign_to_bitws_and_assign = 115
-    bitws_ior_assign_to_bitws_ior_assign = 116
-    bitws_ior_assign_to_bitws_xor_assign = 117
-    bitws_ior_assign_to_bitws_lsh_assign = 118
-    bitws_ior_assign_to_bitws_rsh_assign = 119
+    bitws_ior_assign_to_assign = 451
+    bitws_ior_assign_to_arith_add_assign = 452
+    bitws_ior_assign_to_arith_sub_assign = 453
+    bitws_ior_assign_to_arith_mul_assign = 454
+    bitws_ior_assign_to_arith_div_assign = 455
+    bitws_ior_assign_to_arith_mod_assign = 456
+    bitws_ior_assign_to_bitws_and_assign = 457
+    bitws_ior_assign_to_bitws_ior_assign = 458
+    bitws_ior_assign_to_bitws_xor_assign = 459
+    bitws_ior_assign_to_bitws_lsh_assign = 460
+    bitws_ior_assign_to_bitws_rsh_assign = 461
 
-    bitws_xor_assign_to_assign = 109
-    bitws_xor_assign_to_arith_add_assign = 110
-    bitws_xor_assign_to_arith_sub_assign = 111
-    bitws_xor_assign_to_arith_mul_assign = 112
-    bitws_xor_assign_to_arith_div_assign = 113
-    bitws_xor_assign_to_arith_mod_assign = 114
-    bitws_xor_assign_to_bitws_and_assign = 115
-    bitws_xor_assign_to_bitws_ior_assign = 116
-    bitws_xor_assign_to_bitws_xor_assign = 117
-    bitws_xor_assign_to_bitws_lsh_assign = 118
-    bitws_xor_assign_to_bitws_rsh_assign = 119
+    bitws_xor_assign_to_assign = 462
+    bitws_xor_assign_to_arith_add_assign = 463
+    bitws_xor_assign_to_arith_sub_assign = 464
+    bitws_xor_assign_to_arith_mul_assign = 465
+    bitws_xor_assign_to_arith_div_assign = 466
+    bitws_xor_assign_to_arith_mod_assign = 467
+    bitws_xor_assign_to_bitws_and_assign = 468
+    bitws_xor_assign_to_bitws_ior_assign = 469
+    bitws_xor_assign_to_bitws_xor_assign = 470
+    bitws_xor_assign_to_bitws_lsh_assign = 471
+    bitws_xor_assign_to_bitws_rsh_assign = 472
 
-    bitws_lsh_assign_to_assign = 109
-    bitws_lsh_assign_to_arith_add_assign = 110
-    bitws_lsh_assign_to_arith_sub_assign = 111
-    bitws_lsh_assign_to_arith_mul_assign = 112
-    bitws_lsh_assign_to_arith_div_assign = 113
-    bitws_lsh_assign_to_arith_mod_assign = 114
-    bitws_lsh_assign_to_bitws_and_assign = 115
-    bitws_lsh_assign_to_bitws_ior_assign = 116
-    bitws_lsh_assign_to_bitws_xor_assign = 117
-    bitws_lsh_assign_to_bitws_lsh_assign = 118
-    bitws_lsh_assign_to_bitws_rsh_assign = 119
+    bitws_lsh_assign_to_assign = 473
+    bitws_lsh_assign_to_arith_add_assign = 474
+    bitws_lsh_assign_to_arith_sub_assign = 475
+    bitws_lsh_assign_to_arith_mul_assign = 476
+    bitws_lsh_assign_to_arith_div_assign = 477
+    bitws_lsh_assign_to_arith_mod_assign = 478
+    bitws_lsh_assign_to_bitws_and_assign = 479
+    bitws_lsh_assign_to_bitws_ior_assign = 480
+    bitws_lsh_assign_to_bitws_xor_assign = 481
+    bitws_lsh_assign_to_bitws_lsh_assign = 482
+    bitws_lsh_assign_to_bitws_rsh_assign = 483
 
-    bitws_rsh_assign_to_assign = 109
-    bitws_rsh_assign_to_arith_add_assign = 110
-    bitws_rsh_assign_to_arith_sub_assign = 111
-    bitws_rsh_assign_to_arith_mul_assign = 112
-    bitws_rsh_assign_to_arith_div_assign = 113
-    bitws_rsh_assign_to_arith_mod_assign = 114
-    bitws_rsh_assign_to_bitws_and_assign = 115
-    bitws_rsh_assign_to_bitws_ior_assign = 116
-    bitws_rsh_assign_to_bitws_xor_assign = 117
-    bitws_rsh_assign_to_bitws_lsh_assign = 118
-    bitws_rsh_assign_to_bitws_rsh_assign = 119
+    bitws_rsh_assign_to_assign = 484
+    bitws_rsh_assign_to_arith_add_assign = 485
+    bitws_rsh_assign_to_arith_sub_assign = 486
+    bitws_rsh_assign_to_arith_mul_assign = 487
+    bitws_rsh_assign_to_arith_div_assign = 488
+    bitws_rsh_assign_to_arith_mod_assign = 489
+    bitws_rsh_assign_to_bitws_and_assign = 490
+    bitws_rsh_assign_to_bitws_ior_assign = 491
+    bitws_rsh_assign_to_bitws_xor_assign = 492
+    bitws_rsh_assign_to_bitws_lsh_assign = 493
+    bitws_rsh_assign_to_bitws_rsh_assign = 494
 
-    assign_to_arith_add_assign = 120
-    assign_to_arith_sub_assign = 121
-    assign_to_arith_mul_assign = 122
-    assign_to_arith_div_assign = 123
-    assign_to_arith_mod_assign = 124
-    assign_to_bitws_and_assign = 125
-    assign_to_bitws_ior_assign = 126
-    assign_to_bitws_xor_assign = 127
-    assign_to_bitws_lsh_assign = 128
-    assign_to_bitws_rsh_assign = 129
+    assign_to_arith_add_assign = 495
+    assign_to_arith_sub_assign = 496
+    assign_to_arith_mul_assign = 497
+    assign_to_arith_div_assign = 498
+    assign_to_arith_mod_assign = 499
+    assign_to_bitws_and_assign = 500
+    assign_to_bitws_ior_assign = 501
+    assign_to_bitws_xor_assign = 502
+    assign_to_bitws_lsh_assign = 503
+    assign_to_bitws_rsh_assign = 504
 
     def __str__(self):
         return self.name

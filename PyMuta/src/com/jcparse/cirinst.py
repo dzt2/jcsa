@@ -206,6 +206,17 @@ class CirInstanceNode(CirInstance):
         """
         return self.cir_instances
 
+    def get_cir_instance_of(self, cir_node: cirtree.CirNode):
+        """
+        :param cir_node:
+        :return: the instance of CIR node within the execution of the statement or None
+        """
+        for cir_instance in self.cir_instances:
+            cir_instance: CirInstanceCode
+            if cir_instance.get_cir_source_node() == cir_node:
+                return cir_instance
+        return None
+
     def link_to(self, flow_type: cirflow.CirExecutionFlowType, target):
         """
         :param flow_type:
@@ -291,6 +302,7 @@ class CirInstanceGraph:
         edges {id ==> instance_edge}
     """
     def __init__(self, function_call_graph: cirflow.CirFunctionCallGraph, instance_file: str):
+        self.program = None
         self.function_call_graph = function_call_graph
         self.instances = CirInstances()
         self.nodes = dict()

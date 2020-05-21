@@ -14,6 +14,7 @@ class SourceCode:
     """
 
     def __init__(self, file_path: str):
+        self.program = None
         self.text = ""
         self.index = list()
         self.file_path = file_path
@@ -642,6 +643,7 @@ class AstTree:
         :param source_file: xxx.c
         :param ast_tree_file: xxx.ast
         """
+        self.program = None
         self.source_code = SourceCode(source_file)
         self.tree_nodes = list()
         self.__parse__(ast_tree_file)

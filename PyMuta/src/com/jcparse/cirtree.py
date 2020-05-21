@@ -498,6 +498,7 @@ class CirTree:
     """
 
     def __init__(self, ast_tree: astree.AstTree, cir_file: str):
+        self.program = None
         self.ast_tree = ast_tree
         self.tree_nodes = list()
         self.ast_cir_index = dict()

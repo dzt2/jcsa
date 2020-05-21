@@ -235,6 +235,7 @@ class CirFunctionCallGraph:
     """
 
     def __init__(self, cir_tree: cirtree.CirTree, flow_file: str):
+        self.program = None
         self.cir_tree = cir_tree
         self.functions = dict()
         self.call_relations = dict()
