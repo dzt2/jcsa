@@ -115,7 +115,7 @@ public class MutaFeatureWriting {
 	/** the name of the main function to create instance graph **/
 	private static final String main_function = "main";
 	/** whether to optimize the symbolic constraint in state infection step **/
-	private static final boolean extend_constraint = true;
+	private static final boolean extend_constraint = false;
 	/** used to replace the space character in String instance encoding **/
 	private static final String space_replacement = "\\s";
 	

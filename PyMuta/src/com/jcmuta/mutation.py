@@ -211,7 +211,7 @@ class StateError:
         items = error_line.strip().split('\t')
         self.error_type = ErrorType.parse(items[1].strip())
         self.operands = list()
-        for k in range(1, len(items)):
+        for k in range(2, len(items)):
             operand = base.get_content_of(items[k].strip())
             if items[k].startswith("cir@"):
                 operand = program.get_cir_tree().get_node(operand)
@@ -281,6 +281,9 @@ class StateConstraint:
         self.condition: base.CSymbolNode
         return self.condition
 
+    def __str__(self):
+        return str(self.execution) + "::{ " + self.condition.generate_code(True) + " }"
+
 
 class StateConstraints:
     """
@@ -314,6 +317,20 @@ class StateConstraints:
 
     def get_constraints(self):
         return self.constraints
+
+    def __str__(self):
+        buffer = ""
+        if self.conjunct:
+            buffer += "["
+        else:
+            buffer += "<"
+        for constraint in self.constraints:
+            buffer += " " + str(constraint) + ";"
+        if self.conjunct:
+            buffer += " ]"
+        else:
+            buffer += " >"
+        return buffer
 
 
 class StateInfection:
@@ -508,5 +525,11 @@ if __name__ == "__main__":
                 labels = mutant.labels
                 labels: MutantLabels
                 writer.write(str(labels.get_category()) + "\t")
+                writer.write("\n")
+                state_infection = mutant.get_features()
+                state_infection: StateInfection
+                writer.write("\tcoverage at:\t" + str(state_infection.get_faulty_execution()) + "\n")
+                for state_error, constraints in state_infection.error_infections.items():
+                    writer.write("\tError of " + str(state_error) + "\tfor\t" + str(constraints) + "\n")
                 writer.write("\n")
     print("Testing end for all...")
