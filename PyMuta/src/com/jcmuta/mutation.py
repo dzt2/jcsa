@@ -1,6 +1,7 @@
 import os
 from enum import Enum
 import src.com.jcparse.base as base
+import src.com.jcmuta.symbol as sym
 import src.com.jcparse.astree as astree
 import src.com.jcparse.cirtree as cirtree
 import src.com.jcparse.cirflow as cirflow
@@ -411,7 +412,7 @@ class StateConstraint:
                 self.execution = program.get_function_call_graph().get_execution(items[1].strip())
             elif line.startswith("[sym]"):
                 condition_lines.append(line)
-        self.condition = base.CSymbolNode.parse(condition_lines)
+        self.condition = sym.parse_from_text_lines(condition_lines)
         return
 
     def get_execution(self):
@@ -425,7 +426,7 @@ class StateConstraint:
         """
         :return: the symbolic condition being evaluated
         """
-        self.condition: base.CSymbolNode
+        self.condition: sym.CSymbolNode
         return self.condition
 
     def __str__(self):
