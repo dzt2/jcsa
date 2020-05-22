@@ -1,4 +1,5 @@
 from enum import Enum
+import random
 import src.com.jcparse.base as base
 import src.com.jcparse.cirtree as cirtree
 
@@ -240,6 +241,18 @@ class CSymbolNode:
         self.children.append(child)
         return
 
+    def get_data_type(self):
+        return self.data_type
+
+    def clone(self):
+        """
+        :return: get the clone of the symbolic description
+        """
+        copy = CSymbolNode(self.sym_type, self.data_type, self.content)
+        for child in self.children:
+            copy.add_child(child.clone())
+        return copy
+
 
 def parse_from_text_lines(lines: list):
     """
@@ -285,9 +298,8 @@ def parse_from_cir_node(source: cirtree.CirNode):
     :param source:
     :return: symbolic representation of cir source node or none
     """
-    target = None
     if source.cir_type == cirtree.CirType.argument_list:
-        target = CSymbolNode(CSymbolType.ArgumentList, None, None)
+        target = CSymbolNode(CSymbolType.ArgumentList, base.CType(base.CMetaType.VoidType), None)
         for child in source.get_children():
             child: cirtree.CirNode
             target_child = parse_from_cir_node(child)
@@ -318,8 +330,134 @@ def parse_from_cir_node(source: cirtree.CirNode):
         target = CSymbolNode(CSymbolType.Constant, source.get_data_type(), source.content)
     elif source.cir_type == cirtree.CirType.default_value:
         target = CSymbolNode(CSymbolType.DefaultValue, source.get_data_type(), None)
-    elif source.cir_type == cirtree.CirType.
+    elif source.cir_type == cirtree.CirType.literal:
+        target = CSymbolNode(CSymbolType.Literal, source.get_data_type(), source.content)
+    elif source.cir_type == cirtree.CirType.initializer_body:
+        target = CSymbolNode(CSymbolType.SequenceExpression, source.get_data_type(), None)
+        for child in source.get_children():
+            target.add_child(parse_from_cir_node(child))
+    elif source.cir_type == cirtree.CirType.wait_expression:
+        target = CSymbolNode(CSymbolType.CallExpression, source.get_data_type(), None)
+        target.add_child(parse_from_cir_node(source.get_child(0)))
+    elif source.cir_type == cirtree.CirType.arith_expression:
+        operator = source.get_operator()
+        if operator == base.COperator.negative:
+            target = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), operator)
+            target.add_child(parse_from_cir_node(source.get_child(0)))
+        elif operator == base.COperator.positive:
+            target = parse_from_cir_node(source.get_child(0))
+        elif operator == base.COperator.arith_add or operator == base.COperator.arith_mul:
+            target = CSymbolNode(CSymbolType.MultiExpression, source.get_data_type(), operator)
+            for child in source.get_children():
+                target.add_child(parse_from_cir_node(child))
+        else:
+            target = CSymbolNode(CSymbolType.BinaryExpression, source.get_data_type(), operator)
+            target.add_child(parse_from_cir_node(source.get_child(0)))
+            target.add_child(parse_from_cir_node(source.get_child(1)))
+    elif source.cir_type == cirtree.CirType.bitws_expression:
+        operator = source.get_operator()
+        if operator == base.COperator.bitws_rsv:
+            target = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), operator)
+            target.add_child(parse_from_cir_node(source.get_child(0)))
+        elif operator == base.COperator.bitws_and or operator == base.COperator.bitws_ior or \
+                operator == base.COperator.bitws_xor:
+            target = CSymbolNode(CSymbolType.MultiExpression, source.get_data_type(), operator)
+            for child in source.get_children():
+                target.add_child(parse_from_cir_node(child))
+        else:
+            target = CSymbolNode(CSymbolType.BinaryExpression, source.get_data_type(), operator)
+            target.add_child(parse_from_cir_node(source.get_child(0)))
+            target.add_child(parse_from_cir_node(source.get_child(1)))
+    elif source.cir_type == cirtree.CirType.logic_expression:
+        operator = source.get_operator()
+        if operator == base.COperator.logic_not:
+            target = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), operator)
+            target.add_child(parse_from_cir_node(source.get_child(0)))
+        else:
+            target = CSymbolNode(CSymbolType.MultiExpression, source.get_data_type(), operator)
+            for child in source.get_children():
+                target.add_child(parse_from_cir_node(child))
+    elif source.cir_type == cirtree.CirType.relational_expression:
+        operator = source.get_operator()
+        target = CSymbolNode(CSymbolType.BinaryExpression, source.get_data_type(), operator)
+        target.add_child(parse_from_cir_node(source.get_child(0)))
+        target.add_child(parse_from_cir_node(source.get_child(1)))
+    elif source.cir_type == cirtree.CirType.call_statement:
+        target = CSymbolNode(CSymbolType.CallExpression, base.CType(base.CMetaType.VoidType), None)
+        target.add_child(parse_from_cir_node(source.get_child(0)))
+        target.add_child(parse_from_cir_node(source.get_child(1)))
+    else:
+        target = None
     return target
+
+
+class CSymbolEvaluator:
+    """Used to evaluate the symbolic expression"""
+
+    def __init__(self):
+        self.address_int = dict()
+        self.int_address = dict()
+        self.state_map = dict()
+        self.restart()
+        return
+
+    @staticmethod
+    def __divide_address__(address: str):
+        if '@' in address:
+            index = address.index('@')
+            base_address = address[0:index].strip()
+            bias_address = int(address[index+1:].strip())
+            return base_address, bias_address
+        else:
+            return address, 0
+
+    def __encode_address__(self, address: str):
+        """
+        :param address: base@bias
+        :return: integer encoded address or -1 for invalid address
+        """
+        base_address, bias = CSymbolEvaluator.__divide_address__(address)
+        if base_address == "#null":
+            return 0 + bias
+        elif base_address == "#invalid":
+            return -1
+        else:
+            if base_address not in self.address_int:
+                value = random.randint(1024 * 1024, 1024 * 1024 * 1024)
+                self.address_int[base_address] = value
+                self.int_address[value] = base_address
+            return self.address_int[base_address] + bias
+
+    def __decode_address__(self, address_value: int):
+        """
+        :param address_value:
+        :return: base@bias for minimal bias in the address map or #invalid if difference is too large
+        """
+        if address_value == 0:
+            return "#null"
+        else:
+            min_difference, good_address = 1024 * 8, None
+            for address, value in self.address_int.items():
+                difference = address_value - value
+                if difference < min_difference:
+                    good_address = address + "@" + str(difference)
+            if good_address is None:
+                return "#invalid"
+            else:
+                return good_address
+
+    def restart(self):
+        """
+        :return: clear the old memory in the evaluator
+        """
+        self.address_int.clear()
+        self.int_address.clear()
+        self.state_map.clear()
+        self.address_int["#null"] = 0
+        self.int_address[0] = "#null"
+        return
+
+    def
 
 
 
