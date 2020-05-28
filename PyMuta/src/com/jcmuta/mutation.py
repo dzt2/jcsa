@@ -166,9 +166,6 @@ class Mutant:
         self.labels: MutantLabels
         return self.labels
 
-    def get_features(self):
-        return self.features
-
     def set_labels(self, score_vector: ScoreVector):
         self.labels = MutantLabels(score_vector)
         return
@@ -483,12 +480,13 @@ class StateConstraints:
 
 class StateInfection:
     """
-    {mutant, faulty_statement, {state_error, constraints}}
+    {mutant, faulty_statement, {state_error, constraints}, {state_error, extension_set}}
     """
     def __init__(self):
         self.mutant = None
         self.faulty_execution = None
         self.error_infections = dict()
+        self.extension_set = dict()
         return
 
     def set_mutant(self, line: str, space):
@@ -521,11 +519,14 @@ class StateInfection:
         state_error_line = None
         constraints_lines = list()
         in_constraint = False
+        extension_lines = list()
         for line in lines:
             line: str
             line = line.strip()
             if line.startswith("[define]"):
                 state_error_line = line.strip()
+            elif line.startswith("[extend]"):
+                extension_lines.append(line.strip())
             elif line.startswith("[constraints]"):
                 in_constraint = True
             elif line.startswith("[end_constraints]"):
@@ -533,8 +534,13 @@ class StateInfection:
             elif in_constraint:
                 constraints_lines.append(line.strip())
         state_error = state_errors.get_state_error(state_error_line, program)
-        constraints = StateConstraints(constraints_lines, program)
-        self.error_infections[state_error] = constraints
+        extension_errors = set()
+        for extension_line in extension_lines:
+            extension_error = state_errors.get_state_error(extension_line, program)
+            extension_errors.add(extension_error)
+        state_constraints = StateConstraints(constraints_lines, program)
+        self.error_infections[state_error] = state_constraints
+        self.extension_set[state_error] = extension_errors
         return
 
     def get_mutant(self):
@@ -555,6 +561,13 @@ class StateInfection:
         constraints = self.error_infections[state_error]
         constraints: StateConstraints
         return constraints
+
+    def get_extension_set(self, state_error: StateError):
+        """
+        :param state_error:
+        :return: set of errors extended from the source
+        """
+        return self.extension_set[state_error]
 
 
 class MutantSpace:
@@ -679,5 +692,10 @@ if __name__ == "__main__":
                 writer.write("\tcoverage at:\t" + str(state_infection.get_faulty_execution()) + "\n")
                 for state_error, constraints in state_infection.error_infections.items():
                     writer.write("\tError of " + str(state_error) + "\tfor\t" + str(constraints) + "\n")
+                    extension_errors = state_infection.get_extension_set(state_error)
+                    writer.write("\t\t==>\t")
+                    for extension_error in extension_errors:
+                        writer.write(str(extension_error) + "; ")
+                    writer.write("\n")
                 writer.write("\n")
     print("Testing end for all...")
