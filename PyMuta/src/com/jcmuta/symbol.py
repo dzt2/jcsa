@@ -20,17 +20,21 @@ class CSymbolType(Enum):
     |-- sequence_expression
     field + argument_list
     """
+    # basic node
     Address = 0
     Constant = 1
     DefaultValue = 2
     Literal = 3
+    Field = 10
+    # compositional expression
     BinaryExpression = 4
     MultiExpression = 5
     UnaryExpression = 6
+    # special expressions
     FieldExpression = 7
-    CallExpression = 8
     SequenceExpression = 9
-    Field = 10
+    # calling expression
+    CallExpression = 8
     ArgumentList = 11
 
     @staticmethod
@@ -111,7 +115,9 @@ class CSymbolNode:
         :param k:
         :return: the kth child under the node
         """
-        return self.children[k]
+        child = self.children[k]
+        child: CSymbolNode
+        return child
 
     def get_value(self):
         """
@@ -391,74 +397,364 @@ def parse_from_cir_node(source: cirtree.CirNode):
     return target
 
 
-class CSymbolEvaluator:
-    """Used to evaluate the symbolic expression"""
+class CSymbolMemoryBlock:
+    """
+    The block in memory space of symbolic execution contains a finite number of bytes with a symbol being referred,
+    a base-address (integer) referring to the first byte in the block, the number of valid and entire block as well.
+    """
 
-    def __init__(self):
-        self.address_int = dict()
-        self.int_address = dict()
-        self.state_map = dict()
+    def __init__(self, memory, symbol: str, base_address: int, access_range: int, block_size: int):
+        self.memory = memory
+        self.symbol = symbol
+        self.base_address = base_address
+        self.access_range = access_range
+        self.block_size = block_size
+        self.block_state_table = dict()
+        return
+
+    def get_memory(self):
+        self.memory: CSymbolMemory
+        return self.memory
+
+    def get_symbol(self):
+        return self.symbol
+
+    def get_base_address(self):
+        return self.base_address
+
+    def get_access_range(self):
+        return self.access_range
+
+    def get_block_size(self):
+        return self.block_size
+
+    def __str__(self):
+        return self.symbol + "::[" + str(self.base_address) + ", " + \
+               str(self.base_address + self.access_range) + ", " + \
+               str(self.base_address + self.block_size) + "]"
+
+    def save_value(self, bias: int, value):
+        """
+        :param bias:
+        :param value: value to be saved in state table or None to remove the state item
+        :return: True if the bias {relative address} is accessible.
+        """
+        if bias < self.access_range:
+            self.block_state_table[bias] = value
+            if value is None:
+                self.block_state_table.pop(bias)
+            return True
+        else:
+            return False
+
+    def load_value(self, bias: int):
+        """
+        :param bias:
+        :return: None if no value is recorded or it is invalid address
+        """
+        if bias < self.access_range:
+            if bias in self.block_state_table:
+                return self.block_state_table[bias]
+            else:
+                return None
+        else:
+            return None
+
+
+class CSymbolMemory:
+    def __init__(self, access_range=1024, block_size=1024 * 16):
+        self.symbol_blocks = dict()
+        self.__pointer__ = -block_size
+        self.__access_range__ = access_range
+        self.__block_size__ = block_size
         self.restart()
         return
 
-    @staticmethod
-    def __divide_address__(address: str):
-        if '@' in address:
-            index = address.index('@')
-            base_address = address[0:index].strip()
-            bias_address = int(address[index+1:].strip())
-            return base_address, bias_address
-        else:
-            return address, 0
-
-    def __encode_address__(self, address: str):
+    def __allocate__(self, symbol: str):
         """
-        :param address: base@bias
-        :return: integer encoded address or -1 for invalid address
+        :param symbol:
+        :return: allocate the address space for the given symbol
         """
-        base_address, bias = CSymbolEvaluator.__divide_address__(address)
-        if base_address == "#null":
-            return 0 + bias
-        elif base_address == "#invalid":
-            return -1
-        else:
-            if base_address not in self.address_int:
-                value = random.randint(1024 * 1024, 1024 * 1024 * 1024)
-                self.address_int[base_address] = value
-                self.int_address[value] = base_address
-            return self.address_int[base_address] + bias
-
-    def __decode_address__(self, address_value: int):
-        """
-        :param address_value:
-        :return: base@bias for minimal bias in the address map or #invalid if difference is too large
-        """
-        if address_value == 0:
-            return "#null"
-        else:
-            min_difference, good_address = 1024 * 8, None
-            for address, value in self.address_int.items():
-                difference = address_value - value
-                if difference < min_difference:
-                    good_address = address + "@" + str(difference)
-            if good_address is None:
-                return "#invalid"
-            else:
-                return good_address
+        if symbol not in self.symbol_blocks:
+            block = CSymbolMemoryBlock(self, symbol, self.__pointer__, self.__access_range__, self.__block_size__)
+            self.symbol_blocks[symbol] = block
+            self.__pointer__ = self.__pointer__ + self.__block_size__
+        return self.symbol_blocks[symbol]
 
     def restart(self):
-        """
-        :return: clear the old memory in the evaluator
-        """
-        self.address_int.clear()
-        self.int_address.clear()
-        self.state_map.clear()
-        self.address_int["#null"] = 0
-        self.int_address[0] = "#null"
+        self.symbol_blocks.clear()
+        self.__allocate__("#invalid")
+        self.__allocate__("#null")
         return
 
-    def
+    def encode(self, symbol: str):
+        """
+        :param symbol: symbol_base{@integer_bias}
+        :return: integer address w.r.t. symbolic address
+        """
+        if '@' in symbol:
+            index = symbol.index('@')
+            bias = int(symbol[index+1].strip())
+            symbol = symbol[0:index].strip()
+        else:
+            bias = 0
+        block = self.__allocate__(symbol)
+        block: CSymbolMemoryBlock
+        return block.base_address + bias
 
+    def __locate_in__(self, address: int):
+        """
+        :param address:
+        :return: block, bias {relative address}
+        """
+        for symbol, block in self.symbol_blocks.items():
+            block: CSymbolMemoryBlock
+            if (address >= block.base_address) and (address < block.base_address + block.block_size):
+                return block, address - block.base_address
+        return None, -1
+
+    def decode(self, address: int):
+        """
+        :param address:
+        :return: symbol_address@{bias}
+        """
+        block, bias = self.__locate_in__(address)
+        if block is None:
+            return "#invalid"
+        elif bias == 0:
+            return block.symbol
+        else:
+            return block.symbol + "@" + str(bias)
+
+    def save_value(self, address: int, value: CSymbolNode):
+        block, bias = self.__locate_in__(address)
+        if block is None:
+            return False
+        else:
+            block: CSymbolMemoryBlock
+            return block.save_value(bias, value)
+
+    def load_value(self, address: int):
+        block, bias = self.__locate_in__(address)
+        if block is None:
+            return None
+        else:
+            block: CSymbolMemoryBlock
+            return block.load_value(bias)
+
+
+class CSymbolEvaluator:
+    def __init__(self):
+        self.__memory__ = CSymbolMemory()
+        return
+
+    # basic methods
+
+    @staticmethod
+    def __number_of__(constant):
+        if isinstance(constant, bool):
+            if constant:
+                return 1
+            else:
+                return 0
+        elif isinstance(constant, int):
+            return constant
+        elif isinstance(constant, float):
+            return constant
+        else:
+            return None
+
+    @staticmethod
+    def __boolean_of__(constant):
+        if isinstance(constant, bool):
+            return constant
+        elif isinstance(constant, int):
+            return constant != 0
+        elif isinstance(constant, float):
+            return constant != 0.0
+        else:
+            return None
+
+    @staticmethod
+    def __integer_of__(constant):
+        if isinstance(constant, bool):
+            if constant:
+                return 1
+            else:
+                return 0
+        elif isinstance(constant, int):
+            return constant
+        elif isinstance(constant, float):
+            return int(constant)
+        else:
+            return None
+
+    def __self_done__(self):
+        return self.__memory__
+
+    # evaluation methods
+
+    def __eval__(self, source: CSymbolNode):
+        # TODO implement this method...
+        if source.sym_type == CSymbolType.Address:
+            return self.__eval_address_expression__(source)
+        elif source.sym_type == CSymbolType.Constant:
+            return self.__eval_constant_expression(source)
+        elif source.sym_type == CSymbolType.Literal:
+            return self.__eval_string_literal__(source)
+        elif source.sym_type == CSymbolType.DefaultValue:
+            return self.__eval_default_value__(source)
+        elif source.sym_type == CSymbolType.Field:
+            return self.__eval_field__(source)
+        elif source.sym_type == CSymbolType.UnaryExpression:
+            operator = source.get_operator()
+            if operator == base.COperator.positive:
+                return self.__eval_positive_expression__(source)
+            elif operator == base.COperator.negative:
+                return self.__eval_negative_expression__(source)
+            else:
+                return None     # Invalid case being evaluated
+        else:
+            return None         # invalid case
+
+    # basic expression node
+
+    def __eval_address_expression__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: address ==> constant {integer}
+        """
+        sym_address = str(source.content)
+        address = self.__memory__.encode(sym_address)
+        return CSymbolNode(CSymbolType.Constant, source.get_data_type(), address)
+
+    def __eval_constant_expression(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: source.clone()
+        """
+        self.__self_done__()
+        return source.clone()
+
+    def __eval_string_literal__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: source.clone()
+        """
+        self.__self_done__()
+        return source.clone()
+
+    def __eval_default_value__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: source.clone()
+        """
+        self.__self_done__()
+        return source.clone()
+
+    def __eval_field__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: source.clone()
+        """
+        self.__self_done__()
+        return source.clone()
+
+    # unary expression
+
+    def __eval_positive_expression__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: __eval__(source.get_child(0))
+        """
+        self.__self_done__()
+        return self.__eval__(source.get_child(0))
+
+    def __eval_negative_expression__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return: down-stream evaluation.
+            (0) constant    ==> -constant
+                -{-expr}    ==> expr
+            (1) x - y       ==> y - x
+            (2) x * y * z   ==> -1 * x * y * z
+            (3) x / y       ==> -x / y
+            (5) {expr}      ==> -expr
+        """
+        operand = self.__eval__(source.get_child(0))
+        operand: CSymbolNode
+        if operand.sym_type == CSymbolType.Constant:
+            return CSymbolNode(CSymbolType.Constant, source.get_data_type(),
+                               -CSymbolEvaluator.__number_of__(source.content))
+        elif operand.sym_type == CSymbolType.UnaryExpression:
+            if operand.get_operator() == base.COperator.negative:
+                return operand.get_child(0).clone()
+            else:
+                expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.negative)
+                expression.add_child(operand)
+                return expression
+        elif operand.sym_type == CSymbolType.BinaryExpression:
+            if operand.get_operator() == base.COperator.arith_sub:
+                l_operand = operand.get_child(0)
+                r_operand = operand.get_child(1)
+                expression = CSymbolNode(CSymbolType.BinaryExpression, source.get_data_type(), base.COperator.arith_sub)
+                expression.add_child(r_operand.clone())
+                expression.add_child(l_operand.clone())
+                return expression
+            elif operand.get_operator() == base.COperator.arith_div:
+                l_operand = operand.get_child(0)
+                r_operand = operand.get_child(1)
+                ln_operand = CSymbolNode(CSymbolType.UnaryExpression, l_operand.get_data_type(), base.COperator.negative)
+                ln_operand.add_child(l_operand.clone())
+                ln_operand = self.__eval__(ln_operand)
+                rn_operand = r_operand.clone()
+                expression = CSymbolNode(CSymbolType.BinaryExpression, source.get_data_type(), base.COperator.arith_div)
+                expression.add_child(ln_operand)
+                expression.add_child(rn_operand)
+                return expression
+            else:
+                expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.negative)
+                expression.add_child(operand)
+                return expression
+        elif operand.sym_type == CSymbolType.MultiExpression:
+            if operand.get_operator() == base.COperator.arith_mul:
+                operand.add_child(CSymbolNode(CSymbolType.Constant, operand.get_data_type(), -1))
+                return self.__eval__(operand)
+            else:
+                expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.negative)
+                expression.add_child(operand)
+                return expression
+        else:
+            expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.negative)
+            expression.add_child(operand)
+            return expression
+
+    def __eval_bitws_rsv_expression__(self, source: CSymbolNode):
+        """
+        :param source:
+        :return:
+            (1) constant    ==> ~constant
+                ~operand    ==> operand
+            (2) ~expression
+        """
+        operand = self.__eval__(source.get_child(0))
+        operand: CSymbolNode
+        if operand.sym_type == CSymbolType.Constant:
+            return CSymbolNode(CSymbolType.Constant, source.get_data_type(),
+                               ~CSymbolEvaluator.__number_of__(source.content))
+        elif operand.sym_type == CSymbolType.UnaryExpression:
+            if operand.get_operator() == base.COperator.bitws_rsv:
+                return operand.get_child(0).clone()
+            else:
+                expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.bitws_rsv)
+                expression.add_child(operand)
+                return expression
+        else:
+            expression = CSymbolNode(CSymbolType.UnaryExpression, source.get_data_type(), base.COperator.bitws_rsv)
+            expression.add_child(operand)
+            return expression
+
+    # TODO ...
 
 
 if __name__ == "__main__":

@@ -362,7 +362,7 @@ public class StateErrors {
 	 * @return
 	 * @throws Exception
 	 */
-	protected List<StateError> extend(StateError error) throws Exception {
+	public List<StateError> extend(StateError error) throws Exception {
 		this.extend_set.clear();
 		this.extend_at(error);
 		List<StateError> errors = new ArrayList<StateError>();

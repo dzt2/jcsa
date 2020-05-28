@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
@@ -1007,6 +1008,7 @@ public class MutaFeatureWriting {
 	/**
 	 * [error] 
 	 * 		[define] type operand ...
+	 * 		[extend] type operand ...
 	 * 		[constraints]
 	 * 			[type] conjunct | disjunct
 	 * 			[constraint] 
@@ -1029,6 +1031,15 @@ public class MutaFeatureWriting {
 		for(Object operand : error.get_operands()) 
 			writer.write("\t" + get_parameter_content(operand));
 		writer.write("\n");
+		
+		/* add the extension set of state error */
+		List<StateError> all_errors = error.get_errors().extend(error);
+		for(StateError new_error : all_errors) {
+			writer.write("\t\t[extend]\t" + new_error.get_type().toString());
+			for(Object operand : new_error.get_operands()) 
+				writer.write("\t" + get_parameter_content(operand));
+			writer.write("\n");
+		}
 		
 		writer.write("\t\t[constraints]\n");
 		if(constraints.is_conjunct())
