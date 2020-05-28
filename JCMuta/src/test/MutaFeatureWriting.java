@@ -1158,6 +1158,6 @@ public class MutaFeatureWriting {
 		for(File file : new File(prefix).listFiles()) {
 			testing(file.getName());
 		}
-	}
+	} 
 	
 }
