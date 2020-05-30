@@ -201,6 +201,9 @@ class ErrorType(Enum):
     def parse(text: str):
         return ErrorType.__members__[text]
 
+    def __str__(self):
+        return self.name
+
 
 class StateError:
     """

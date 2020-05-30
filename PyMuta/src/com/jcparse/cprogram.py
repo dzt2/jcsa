@@ -127,7 +127,7 @@ class CDependenceType(Enum):
     use_define_depend = 4
     parameter_argument_depend = 5
     wait_return_depend = 6
-    child_parent_depend = 7
+    parent_child_depend = 7
 
     def __str__(self):
         return self.name
@@ -179,6 +179,20 @@ class CDependenceEdge:
 
     def __str__(self):
         return str(self.dependence_type) + "::(" + str(self.source) + ", " + str(self.target) + ")"
+
+    def is_control_dependence(self):
+        return self.dependence_type == CDependenceType.true_depend or \
+               self.dependence_type == CDependenceType.false_depend or \
+               self.dependence_type == CDependenceType.call_depend or \
+               self.dependence_type == CDependenceType.exit_depend
+
+    def is_data_dependence(self):
+        return self.dependence_type == CDependenceType.use_define_depend or \
+               self.dependence_type == CDependenceType.parameter_argument_depend or \
+               self.dependence_type == CDependenceType.wait_return_depend
+
+    def is_operand_dependence(self):
+        return self.dependence_type == CDependenceType.parent_child_depend
 
 
 class CDependenceNodeType(Enum):
@@ -313,7 +327,7 @@ class CDependenceGraph:
                            cir_node: cirtree.CirNode):
         child = self.__new_node__(instance_node.get_cir_instance_of(cir_node))
         child: CDependenceNode
-        child.depend_on(parent, CDependenceType.child_parent_depend)
+        parent.depend_on(child, CDependenceType.parent_child_depend)
         for cir_child in cir_node.get_children():
             self.__build_nodes_in__(child, instance_node, cir_child)
         return
