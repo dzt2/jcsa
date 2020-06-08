@@ -130,12 +130,15 @@ class CirInstance:
 class CirInstanceCode(CirInstance):
     """
     It represents the instance of a code element as CirNode in instance graph.
+    {instance_node; context, cir_source_object; parent, children}
     """
 
     def __init__(self, instance_node, context: int, source_object: cirtree.CirNode):
         instance_node: CirInstanceNode
         super().__init__(instance_node.get_instances(), context, source_object)
         self.instance_node = instance_node
+        self.parent = None
+        self.children = list()
         return
 
     def get_instance_node(self):
@@ -148,13 +151,28 @@ class CirInstanceCode(CirInstance):
         self.source_object: cirtree.CirNode
         return self.source_object
 
+    def get_parent(self):
+        return self.parent
+
+    def get_children(self):
+        return self.children
+
+    def get_child(self, k: int):
+        return self.children[k]
+
+    def add_child(self, child):
+        child: CirInstanceCode
+        child.parent = self
+        self.children.append(child)
+        return
+
 
 class CirInstanceNode(CirInstance):
     """
     The node in instance graph describes an execution instance of statement in the program analysis as:
         --- graph, id, in_edges, ou_edges
         --- context, execution{statement}
-        --- cir_instances{CirInstanceCode+}
+        --- code_instances{CirInstanceCode+} and root_instance
     """
 
     def __new_instance_code__(self, node: cirtree.CirNode):
@@ -164,20 +182,21 @@ class CirInstanceNode(CirInstance):
         :return:
         """
         instance = CirInstanceCode(self, self.context, node)
-        self.cir_instances.append(instance)
+        self.code_instances.append(instance)
         for child in node.children:
-            self.__new_instance_code__(child)
-        return
+            child_instance = self.__new_instance_code__(child)
+            instance.add_child(child_instance)
+        return instance
 
     def __init__(self, graph, context: int, execution: cirflow.CirExecution):
         super().__init__(graph.get_instances(), context, execution)
         self.graph = graph
         self.in_edges = list()
         self.ou_edges = list()
-        self.cir_instances = list()
+        self.code_instances = list()
         self.id = None
         statement = execution.get_statement()
-        self.__new_instance_code__(statement)
+        self.root_code_instance = self.__new_instance_code__(statement)
         return
 
     def get_graph(self):
@@ -200,21 +219,27 @@ class CirInstanceNode(CirInstance):
         self.source_object: cirflow.CirExecution
         return self.source_object.get_statement()
 
-    def get_cir_instances_in(self):
+    def get_root_code_instance(self):
+        """
+        :return: root of the code instance in the execution of statement in instance graph
+        """
+        return self.root_code_instance
+
+    def get_code_instances(self):
         """
         :return: set of instances of code elements in the execution of the statement under the same context.
         """
-        return self.cir_instances
+        return self.code_instances
 
-    def get_cir_instance_of(self, cir_node: cirtree.CirNode):
+    def get_code_instance(self, cir_node: cirtree.CirNode):
         """
         :param cir_node:
         :return: the instance of CIR node within the execution of the statement or None
         """
-        for cir_instance in self.cir_instances:
-            cir_instance: CirInstanceCode
-            if cir_instance.get_cir_source_node() == cir_node:
-                return cir_instance
+        for code_instance in self.code_instances:
+            code_instance: CirInstanceCode
+            if code_instance.get_cir_source_node() == cir_node:
+                return code_instance
         return None
 
     def link_to(self, flow_type: cirflow.CirExecutionFlowType, target):
@@ -427,7 +452,7 @@ if __name__ == "__main__":
         cir_tree = cirtree.CirTree(ast_tree, cir_tree_file)
         function_call_graph = cirflow.CirFunctionCallGraph(cir_tree, exe_flow_file)
         instance_graph = CirInstanceGraph(function_call_graph=function_call_graph, instance_file=instance_file)
-        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output", filename + ".ast")
+        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\instance_output", filename + ".ins")
         print("Open the abstract syntax tree and CIR-tree for", filename)
         with open(output_file, 'w') as writer:
             for function in function_call_graph.get_functions():
@@ -451,5 +476,9 @@ if __name__ == "__main__":
                                 writer.write(str(instance_edge.get_flow_type()) + "\t")
                                 writer.write(str(instance_edge.get_source()) + "\t")
                                 writer.write(str(instance_edge.get_target()) + "\n")
+                            for code_instance in instance_node.get_code_instances():
+                                code_instance: CirInstanceCode
+                                writer.write("\t~~>\t" + code_instance.get_cir_source_node().generate_code(True) + "\n")
+                            writer.write("\n")
                     writer.write("End Function\n\n")
     print("Testing end for all...")
