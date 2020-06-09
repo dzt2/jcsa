@@ -91,7 +91,7 @@ public class CDependGraph {
 							source.predicate_depend(target, false); break;
 						}
 						else if(edge.get_type() == CirExecutionFlowType.retr_flow) {
-							CDependNode target = this.get_node(edge.get_source());
+							CDependNode target = this.get_node(edge.get_target());
 							source.stmt_exit_depend(target); break;
 						}
 						else if(edge.get_type() == CirExecutionFlowType.call_flow) {

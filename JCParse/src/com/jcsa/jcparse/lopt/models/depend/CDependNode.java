@@ -22,7 +22,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -84,7 +83,7 @@ public class CDependNode {
 		}
 	}
 	protected void stmt_exit_depend(CDependNode target) throws Exception {
-		if(target.get_statement() instanceof CirEndStatement) {
+		if(target.get_statement() instanceof CirWaitAssignStatement) {
 			CDependEdge edge = new CDependEdge(CDependType.
 					stmt_exit_depend, this, target, null);
 			this.ou.add(edge); target.in.add(edge);
