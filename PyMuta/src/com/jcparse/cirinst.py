@@ -61,6 +61,13 @@ class CirInstances:
             self.object_instances[source_object] = list()
         return self.object_instances[source_object]
 
+    def get_instance(self, context: int, source_object):
+        instances = self.get_instances_of_object(source_object)
+        for instance in instances:
+            if instance.get_context() == context:
+                return instance
+        return None
+
     def add(self, instance):
         """
         add an instance to the space
@@ -152,19 +159,47 @@ class CirInstanceCode(CirInstance):
         return self.source_object
 
     def get_parent(self):
+        self.parent: CirInstanceCode
         return self.parent
 
     def get_children(self):
         return self.children
 
     def get_child(self, k: int):
-        return self.children[k]
+        child = self.children[k]
+        child: CirInstanceCode
+        return child
 
     def add_child(self, child):
         child: CirInstanceCode
         child.parent = self
         self.children.append(child)
         return
+
+    def get_root(self):
+        """
+        :return: instance of the cir-statement of the execution
+        """
+        instance = self
+        while instance.parent is not None:
+            instance = instance.parent
+        return instance
+
+    def get_leafs(self):
+        """
+        :return: leafs in the node of code instance
+        """
+        if len(self.children) == 0:
+            return [self]
+        else:
+            leafs = list()
+            for child in self.children:
+                child: CirInstanceCode
+                child_leafs = child.get_leafs()
+                for child_leaf in child_leafs:
+                    child_leaf: CirInstanceCode
+                    leafs.append(child_leaf)
+            return leafs
 
 
 class CirInstanceNode(CirInstance):

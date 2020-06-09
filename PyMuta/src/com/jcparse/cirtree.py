@@ -193,7 +193,9 @@ class CirNode:
         return self.children
 
     def get_child(self, k: int):
-        return self.children[k]
+        child = self.children[k]
+        child: CirNode
+        return child
 
     def number_of_children(self):
         return len(self.children)
@@ -491,6 +493,28 @@ class CirNode:
     def __str__(self):
         return "cir#" + str(self.id)
 
+    def get_root(self):
+        node = self
+        while node.parent is not None:
+            node = node.parent
+        return node
+
+    def get_leafs(self):
+        """
+        :return: leafs under the node
+        """
+        if len(self.children) == 0:
+            return [self]
+        else:
+            leafs = list()
+            for child in self.children:
+                child: CirNode
+                child_leafs = child.get_leafs()
+                for child_leaf in child_leafs:
+                    child_leaf: CirNode
+                    leafs.append(child_leaf)
+            return leafs
+
 
 class CirTree:
     """
@@ -566,7 +590,9 @@ class CirTree:
         return self.tree_nodes
 
     def get_node(self, id: int):
-        return self.tree_nodes[id]
+        tree_node = self.tree_nodes[id]
+        tree_node: CirNode
+        return tree_node
 
     def get_nodes_of(self, ast_source: astree.AstNode):
         """

@@ -304,7 +304,9 @@ class CirFunctionCallGraph:
         :return: the function in which the CIR-node is created
         """
         definition = cir_node.function_body_of().parent
-        return self.cir_index[definition]
+        function = self.cir_index[definition]
+        function: CirFunction
+        return function
 
     def __parse_functions__(self, flow_file: str):
         self.functions.clear()
