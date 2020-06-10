@@ -209,7 +209,7 @@ class StateError:
     """
     (error_type, operand*)
     """
-    def __init__(self, errors, error_line: str, program: cpro.CProgram):
+    def __init__(self, errors, error_line: str, program):
         errors: StateErrors
         self.errors = errors
         if len(error_line) > 0:
@@ -255,7 +255,7 @@ class StateErrors:
         self.state_errors = dict()
         return
 
-    def get_state_error(self, error_line: str, program: cpro.CProgram):
+    def get_state_error(self, error_line: str, program):
         error_line = error_line.strip()
         state_error = StateError(self, error_line, program)
         return self.__record__(state_error)
@@ -412,7 +412,7 @@ class StateConstraint:
                 self.execution = program.get_function_call_graph().get_execution(items[1].strip())
             elif line.startswith("[sym]"):
                 condition_lines.append(line)
-        self.condition = sym.parse_from_text_lines(condition_lines)
+        self.condition = sym.sym_parser.parse_by_text_lines(condition_lines)
         return
 
     def get_execution(self):
@@ -671,7 +671,7 @@ if __name__ == "__main__":
         program = cpro.CProgram(directory)
         mutant_space = MutantSpace(program)
         print("Get mutation information for", program.get_file_name())
-        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output", filename + ".mut")
+        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\mutation", filename + ".mut")
         with open(output_file, 'w') as writer:
             for mutant in mutant_space.get_mutants():
                 writer.write(str(mutant.get_id()) + "\t")
