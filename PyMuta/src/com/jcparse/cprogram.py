@@ -2,13 +2,10 @@
 It defines the top-level model of C program, including source_code, astree, cirtree, function_call_graph
 instance_graph, prev_dominance_graph, post_dominance_graph, and dependence_graph.
 """
-
-
+from collections import deque
 from enum import Enum
 import os
-
 from typing.io import IO, TextIO
-
 import src.com.jcparse.base as base
 import src.com.jcparse.astree as astree
 import src.com.jcparse.cirtree as cirtree
@@ -257,6 +254,9 @@ class CInformationGraph:
 
     def get_instances(self):
         return self.nodes.keys()
+
+    def has_node(self, instance):
+        return instance in self.nodes
 
     def get_program(self):
         self.program: CProgram
@@ -594,6 +594,9 @@ class CDependenceGraph:
         node: CDependenceNode
         return node
 
+    def has_node(self, instance):
+        return instance in self.nodes
+
     def __build__(self):
         self.nodes.clear()
         for information_node in self.program.get_information_graph().get_nodes():
@@ -769,6 +772,359 @@ def __output_dependence_node__(graph: CDependenceGraph, instance: cirinst.CirIns
                          "\tat\t" + str(instance.get_instance_node().get_source_execution()) +
                          "\tin\t" + str(instance.get_context()) + "\n")
     return
+
+
+class CInformationPath:
+    """
+    [source; edges; target]
+    """
+    def __init__(self, source: CInformationNode):
+        """
+        :param source: empty path starting from source
+        """
+        self.source = source
+        self.target = source
+        self.edges = list()
+        return
+
+    def get_source(self):
+        """
+        :return: beginning of the path
+        """
+        return self.source
+
+    def get_target(self):
+        """
+        :return: final point of the path
+        """
+        return self.target
+
+    def get_edges(self):
+        """
+        :return: information flow edges in the path
+        """
+        return self.edges
+
+    def get_edge(self, k: int):
+        """
+        :param k:
+        :return: the kth edge in the information path
+        """
+        edge = self.edges[k]
+        edge: CInformationEdge
+        return edge
+
+    def add_edge(self, edge: CInformationEdge):
+        if edge.get_source() == self.target:
+            self.edges.append(edge)
+            self.target = edge.get_target()
+        return
+
+
+class CInformationTreeNode:
+    """
+    [tree; parent, children; information_node, information_edge]
+    """
+    def __init__(self, tree, information_node: CInformationNode, information_edge=None):
+        self.tree = tree
+        self.information_node = information_node
+        self.information_edge = information_edge
+        self.parent = None
+        self.children = list()
+        return
+
+    def is_leaf(self):
+        return len(self.children) == 0
+
+    def is_root(self):
+        return self.parent is None
+
+    def get_tree(self):
+        self.tree: CInformationTree
+        return self.tree
+
+    def get_information_node(self):
+        return self.information_node
+
+    def get_information_edge(self):
+        self.information_edge: CInformationEdge
+        return self.information_edge
+
+    def get_parent(self):
+        self.parent: CInformationTreeNode
+        return self.parent
+
+    def get_children(self):
+        return self.children
+
+    def get_child(self, k: int):
+        child = self.children[k]
+        child: CInformationTreeNode
+        return child
+
+    def add_child(self, information_edge: CInformationEdge):
+        """
+        :param information_edge:
+        :return: None if the information edge's source does not match the parent
+        """
+        if information_edge.get_source() == self.information_node:
+            for child in self.children:
+                child: CInformationTreeNode
+                if child.information_edge == information_edge:
+                    return child
+            child = CInformationTreeNode(self.tree, information_edge.get_target(), information_edge)
+            child.parent = self
+            self.children.append(child)
+            return child
+        else:
+            return None
+
+    def get_path(self):
+        """
+        :return: path from root to this node in the tree
+        """
+        path = list()
+        tree_node = self
+        while not tree_node.is_root():
+            path.append(tree_node.get_information_edge())
+            tree_node = tree_node.get_parent()
+        path.reverse()
+        information_path = CInformationPath(tree_node.get_information_node())
+        for information_edge in path:
+            information_path.add_edge(information_edge)
+        return information_path
+
+    def get_path_edges(self):
+        """
+        :return: edges from the node to its root
+        """
+        tree_node = self
+        edges = list()
+        while not tree_node.is_root():
+            edges.append(tree_node.get_information_edge())
+            tree_node = tree_node.get_parent()
+        return edges
+
+
+class CInformationTree:
+    """
+    [root]
+    """
+    def __init__(self, information_root: CInformationNode, max_depth: int):
+        self.root = CInformationTreeNode(self, information_root)
+        self.__extend__(self.root, max_depth)
+        return
+
+    def __extend__(self, tree_node: CInformationTreeNode, max_depth: int):
+        if max_depth > 0:
+            edges = tree_node.get_path_edges()
+            for information_edge in tree_node.get_information_node().get_ou_edges():
+                information_edge: CInformationEdge
+                if information_edge not in edges:       # to avoid duplicated edge
+                    child = tree_node.add_child(information_edge)
+                    self.__extend__(child, max_depth - 1)
+        return
+
+    def get_root(self):
+        return self.root
+
+    def get_leafs(self):
+        leafs = set()
+        queue = deque()
+        queue.append(self.root)
+        while len(queue) > 0:
+            node = queue.popleft()
+            node: CInformationTreeNode
+            if node.is_leaf():
+                leafs.add(node)
+            else:
+                for child in node.get_children():
+                    child: CInformationTreeNode
+                    queue.append(child)
+        return leafs
+
+
+def get_information_paths(root: CInformationNode, max_depth: int):
+    """
+    :param root:
+    :param max_depth:
+    :return: the set of information flow from the root w.r.t. maximal distance in information flow graph.
+    """
+    tree = CInformationTree(root, max_depth)
+    leafs = tree.get_leafs()
+    paths = set()
+    for leaf in leafs:
+        path = leaf.get_path()
+        paths.add(path)
+    return paths
+
+
+class CDependencePath:
+    """
+    [source; edges; target]
+    """
+    def __init__(self, source: CDependenceNode):
+        self.source = source
+        self.target = source
+        self.edges = list()
+        return
+
+    def get_source(self):
+        return self.source
+
+    def get_target(self):
+        return self.target
+
+    def get_edges(self):
+        return self.edges
+
+    def get_edge(self, k: int):
+        edge = self.edges[k]
+        edge: CDependenceEdge
+        return edge
+
+    def add_edge(self, edge: CDependenceEdge):
+        if edge.get_source() == self.target:
+            self.edges.append(edge)
+            self.target = edge.get_target()
+        return
+
+
+class CDependenceTreeNode:
+    """
+    [tree; parent, children; dependence_node, dependence_edge]
+    """
+    def __init__(self, tree, dependence_node: CDependenceNode, dependence_edge=None):
+        self.tree = tree
+        self.dependence_node = dependence_node
+        self.dependence_edge = dependence_edge
+        self.parent = None
+        self.children = list()
+        return
+
+    def get_tree(self):
+        self.tree: CDependenceTree
+        return self.tree
+
+    def get_parent(self):
+        self.parent: CDependenceTreeNode
+        return self.parent
+
+    def get_children(self):
+        return self.children
+
+    def get_child(self, k: int):
+        child = self.children[k]
+        child: CDependenceTreeNode
+        return child
+
+    def is_root(self):
+        return self.parent is None
+
+    def is_leaf(self):
+        return len(self.children) == 0
+
+    def get_dependence_node(self):
+        return self.dependence_node
+
+    def get_dependence_edge(self):
+        self.dependence_edge: CDependenceEdge
+        return self.dependence_edge
+
+    def add_child(self, dependence_edge: CDependenceEdge):
+        """
+        :param dependence_edge:
+        :return: None if the edge's source does not match the dependence node in current tree node
+        """
+        if dependence_edge.get_source() == self.dependence_node:
+            for child in self.children:
+                child: CDependenceTreeNode
+                if child.dependence_edge == dependence_edge:
+                    return child
+            child = CDependenceTreeNode(self.tree, dependence_edge.get_target(), dependence_edge)
+            child.parent = self
+            self.children.append(child)
+            return child
+        else:
+            return None
+
+    def get_path_edges(self):
+        """
+        :return: edges from current node to its root
+        """
+        tree_node = self
+        edges = list()
+        while not tree_node.is_root():
+            edges.append(tree_node.get_dependence_edge())
+            tree_node = tree_node.get_parent()
+        return edges
+
+    def get_path(self):
+        """
+        :return: path from root to the current node
+        """
+        tree_node = self
+        path = list()
+        while not tree_node.is_root():
+            path.append(tree_node.get_dependence_edge())
+            tree_node = tree_node.get_parent()
+        path.reverse()
+        dependence_path = CDependencePath(tree_node.get_dependence_node())
+        for dependence_edge in path:
+            dependence_path.add_edge(dependence_edge)
+        return dependence_path
+
+
+class CDependenceTree:
+    """
+    [root]
+    """
+    def __init__(self, dependence_root: CDependenceNode, max_depth: int):
+        self.root = CDependenceTreeNode(self, dependence_root)
+        self.__extend__(self.root, max_depth)
+        return
+
+    def __extend__(self, tree_node: CDependenceTreeNode, max_depth: int):
+        if max_depth > 0:
+            edges = tree_node.get_path_edges()
+            for dependence_edge in tree_node.get_dependence_node().get_ou_edges():
+                dependence_edge: CDependenceEdge
+                if dependence_edge not in edges:
+                    child = tree_node.add_child(dependence_edge)
+                    self.__extend__(child, max_depth - 1)
+        return
+
+    def get_root(self):
+        return self.root
+
+    def get_leafs(self):
+        queue = deque()
+        queue.append(self.root)
+        leafs = set()
+        while len(queue) > 0:
+            tree_node = queue.popleft()
+            tree_node: CDependenceTreeNode
+            if tree_node.is_leaf():
+                leafs.add(tree_node)
+            else:
+                for child in tree_node.get_children():
+                    queue.append(child)
+        return leafs
+
+
+def get_dependence_paths(root: CDependenceNode, max_depth: int):
+    """
+    :param root:
+    :param max_depth:
+    :return: the set of dependence flow from the root w.r.t. maximal distance in information flow graph.
+    """
+    tree = CDependenceTree(root, max_depth)
+    leafs = tree.get_leafs()
+    paths = set()
+    for leaf in leafs:
+        path = leaf.get_path()
+        paths.add(path)
+    return paths
 
 
 if __name__ == "__main__":

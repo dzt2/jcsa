@@ -1,3 +1,4 @@
+from collections import deque
 from enum import Enum
 import random
 import src.com.jcparse.base as base
@@ -102,6 +103,7 @@ class CSymbolNode:
         """
         :return: get the parent of the node in tree
         """
+        self.parent: CSymbolNode
         return self.parent
 
     def get_children(self):
@@ -258,6 +260,12 @@ class CSymbolNode:
         for child in self.children:
             copy.add_child(child.clone())
         return copy
+
+    def is_reference(self):
+        """
+        :return: dereference or field-expression
+        """
+        return self.sym_type == CSymbolType.FieldExpression or self.get_operator() == base.COperator.dereference
 
 
 class CSymMemoryBlock:
@@ -590,6 +598,7 @@ class CSymEvaluator:
     """
     def __init__(self):
         self.__memory__ = CSymMemorySpace()
+        self.__debugging__ = False
         return
 
     def reset(self):
@@ -597,33 +606,98 @@ class CSymEvaluator:
         :return: reset the state of memory
         """
         self.__memory__ = CSymMemorySpace()
+        self.__debugging__ = False
         return
 
     def __done__(self):
         return self
 
     def evaluate(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return: standardized symbolic expression
+        """
         if expression.sym_type == CSymbolType.Address:
-            return self.__eval_address__(expression)
+            result = self.__eval_address__(expression)
         elif expression.sym_type == CSymbolType.Constant:
-            return self.__eval_constant__(expression)
+            result = self.__eval_constant__(expression)
         elif expression.sym_type == CSymbolType.Literal:
-            return self.__eval_literal__(expression)
+            result = self.__eval_literal__(expression)
         elif expression.sym_type == CSymbolType.DefaultValue:
-            return self.__eval_default_value__(expression)
+            result = self.__eval_default_value__(expression)
         elif expression.sym_type == CSymbolType.Field:
-            return self.__eval_field__(expression)
+            result = self.__eval_field__(expression)
         elif expression.sym_type == CSymbolType.FieldExpression:
-            return self.__eval_field_expression__(expression)
+            result = self.__eval_field_expression__(expression)
         elif expression.sym_type == CSymbolType.ArgumentList:
-            return self.__eval_argument_list__(expression)
+            result = self.__eval_argument_list__(expression)
         elif expression.sym_type == CSymbolType.CallExpression:
-            return self.__eval_call_expression__(expression)
+            result = self.__eval_call_expression__(expression)
         elif expression.sym_type == CSymbolType.SequenceExpression:
-            return self.__eval_sequence_expression__(expression)
-        # TODO implement more here.
+            result = self.__eval_sequence_expression__(expression)
+        elif expression.sym_type == CSymbolType.UnaryExpression:
+            operator = expression.get_operator()
+            if operator == base.COperator.positive:
+                result = self.__eval_positive_expression__(expression)
+            elif operator == base.COperator.negative:
+                result = self.__eval_negative_expression__(expression)
+            elif operator == base.COperator.bitws_rsv:
+                result = self.__eval_bitws_rsv_expression__(expression)
+            elif operator == base.COperator.logic_not:
+                result = self.__eval_logic_not_expression__(expression)
+            elif operator == base.COperator.address_of:
+                result = self.__eval_address_of_expression__(expression)
+            elif operator == base.COperator.dereference:
+                result = self.__eval_dereference_expression__(expression)
+            elif operator == base.COperator.assign:
+                result = self.__eval_cast_expression__(expression)
+            else:
+                result = self.__eval_otherwise__(expression)
+        elif expression.sym_type == CSymbolType.MultiExpression or expression.sym_type == CSymbolType.BinaryExpression:
+            operator = expression.get_operator()
+            if operator == base.COperator.arith_add:
+                result = self.__eval_arith_add__(expression)
+            elif operator == base.COperator.arith_sub:
+                result = self.__eval_arith_sub__(expression)
+            elif operator == base.COperator.arith_mul:
+                result = self.__eval_arith_mul__(expression)
+            elif operator == base.COperator.arith_div:
+                result = self.__eval_arith_div__(expression)
+            elif operator == base.COperator.arith_mod:
+                result = self.__eval_arith_mod__(expression)
+            elif operator == base.COperator.bitws_and:
+                result = self.__eval_bitws_and__(expression)
+            elif operator == base.COperator.bitws_ior:
+                result = self.__eval_bitws_ior__(expression)
+            elif operator == base.COperator.bitws_xor:
+                result = self.__eval_bitws_xor__(expression)
+            elif operator == base.COperator.bitws_lsh:
+                result = self.__eval_bitws_lsh__(expression)
+            elif operator == base.COperator.bitws_rsh:
+                result = self.__eval_bitws_rsh__(expression)
+            elif operator == base.COperator.logic_and:
+                result = self.__eval_logic_and__(expression)
+            elif operator == base.COperator.logic_ior:
+                result = self.__eval_logic_ior__(expression)
+            elif operator == base.COperator.greater_tn:
+                result = self.__eval_greater_tn__(expression)
+            elif operator == base.COperator.greater_eq:
+                result = self.__eval_greater_eq__(expression)
+            elif operator == base.COperator.smaller_tn:
+                result = self.__eval_smaller_tn__(expression)
+            elif operator == base.COperator.smaller_eq:
+                result = self.__eval_smaller_eq__(expression)
+            elif operator == base.COperator.not_equals:
+                result = self.__eval_not_equals__(expression)
+            elif operator == base.COperator.equal_with:
+                result = self.__eval_equal_with__(expression)
+            else:
+                result = self.__eval_otherwise__(expression)
         else:
-            return expression.clone()
+            result = self.__eval_otherwise__(expression)
+        if self.__debugging__:
+            print("\t==> DEBUG:", expression.generate_code(True), "\t==>", result.generate_code(True))
+        return result
 
     # toolkit methods
 
@@ -700,6 +774,32 @@ class CSymEvaluator:
             return constant
         else:
             return -1024 * 1024 * 1024
+
+    def __extend_in_operand__(self, expression: CSymbolNode, operand: CSymbolNode, operands: list):
+        """
+        :param expression: multi-operands expression
+        :param operand:
+        :param operands:
+        :return: append the available operand in available level to the operands of list
+        """
+        operator = expression.get_operator()
+        if operand.get_operator() == operator:
+            for operand_child in operand.get_children():
+                self.__extend_in_operand__(operand, operand_child, operands)
+        else:
+            operands.append(operand)
+        return
+
+    def __extend_operands__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return: operands in the same level w.r.t. the operator of expression
+        """
+        operands = list()
+        for child in expression.get_children():
+            operand = self.evaluate(child)
+            self.__extend_in_operand__(expression, operand, operands)
+        return operands
 
     # basic expressions
 
@@ -806,6 +906,12 @@ class CSymEvaluator:
         call_expression.add_child(arguments)
         return call_expression
 
+    def __eval_otherwise__(self, expression: CSymbolNode):
+        result = CSymbolNode(expression.sym_type, expression.data_type, expression.content)
+        for child in expression.get_children():
+            result.add_child(self.evaluate(child))
+        return result
+
     # unary expression
 
     def __eval_positive_expression__(self, expression: CSymbolNode):
@@ -821,9 +927,882 @@ class CSymEvaluator:
         :return:
             (1) operand as constant --> -constant
             (2) operand as negative --> operand.children[0]
-            (3) operand as 
+            (3) operand as multiply --> -1 * operand
+            (4) negative[operand]
         """
+        operand = self.evaluate(expression.get_child(0))
+        if operand.sym_type == CSymbolType.Constant:
+            number = self.__number__(operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, -number)
+        elif operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.negative:
+            return operand.get_child(0).clone()
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.arith_mul:
+            operand.add_child(CSymbolNode(CSymbolType.Constant, expression.data_type, -1))
+            return self.evaluate(operand)
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.arith_add:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.arith_add)
+            for child in operand.get_children():
+                child: CSymbolNode
+                new_child = CSymbolNode(CSymbolType.UnaryExpression, child.data_type, base.COperator.negative)
+                new_child.add_child(child.clone())
+                result.add_child(new_child)
+            return self.evaluate(result)
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.arith_sub:
+            l_operand = operand.get_child(0)
+            r_operand = operand.get_child(1)
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.arith_sub)
+            result.add_child(r_operand.clone())
+            result.add_child(l_operand.clone())
+            return self.evaluate(result)
+        else:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.negative)
+            result.add_child(operand)
+            return result
 
+    def __eval_bitws_rsv_expression__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant    --> ~constant
+            (2) operand as ~    --> operand.children[0]
+            (3) x1 & x2 & x3    --> {~x1} | {~x2} | {~x3}
+                x1 | x2 | x3    --> {~x1} | {~x2} | {~x3}
+            (4) operand as -    --> operand.children[0] - 1
+            (5) ~{operand}
+        """
+        operand = self.evaluate(expression.get_child(0))
+        if operand.sym_type == CSymbolType.Constant:
+            constant = self.__integer__(operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, ~constant)
+        elif operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.negative:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.arith_sub)
+            result.add_child(operand.get_child(0).clone())
+            result.add_child(CSymbolNode(CSymbolType.Constant, expression.data_type, 1))
+            return self.evaluate(result)
+        elif operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.bitws_rsv:
+            return operand.get_child(0).clone()
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.bitws_and:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.bitws_ior)
+            for operand_child in operand.get_children():
+                operand_child: CSymbolNode
+                new_child = CSymbolNode(CSymbolType.UnaryExpression, operand_child.data_type, base.COperator.bitws_rsv)
+                new_child.add_child(operand_child.clone())
+                result.add_child(new_child)
+            return self.evaluate(result)
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.bitws_ior:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.bitws_and)
+            for operand_child in operand.get_children():
+                operand_child: CSymbolNode
+                new_child = CSymbolNode(CSymbolType.UnaryExpression, operand_child.data_type, base.COperator.bitws_rsv)
+                new_child.add_child(operand_child.clone())
+                result.add_child(new_child)
+            return self.evaluate(result)
+        else:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.bitws_rsv)
+            result.add_child(operand)
+            return result
+
+    def __eval_logic_not_expression__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant        --> !constant
+            (2) operand as !    --> operand.children[0]
+            (3) x1 && x2 && x3  --> !x1 || !x2 || !x3
+            (4) x1 || x2 || x3  --> !x1 && !x2 && !x3
+            (5) !(x1 == x2)     --> x1 != x2
+                !(x1 != x2)     --> x1 == x2
+                !(x1 > x2)      --> x1 <= x2
+                !(x1 >= x2)     --> x1 < x2
+                !(x1 < x2)      --> x2 <= x1
+                !(x1 <= x2)     --> x2 < x1
+            (6) !{operand}
+        """
+        operand = self.evaluate(expression.get_child(0))
+        if operand.sym_type == CSymbolType.Constant:
+            constant = self.__boolean__(operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, not constant)
+        elif operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.logic_not:
+            return operand.get_child(0).clone()
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.logic_and:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.logic_ior)
+            for operand_child in operand.get_children():
+                operand_child: CSymbolNode
+                new_child = CSymbolNode(CSymbolType.UnaryExpression, operand_child.data_type, base.COperator.logic_not)
+                new_child.add_child(operand_child.clone())
+                result.add_child(new_child)
+            return self.evaluate(result)
+        elif operand.sym_type == CSymbolType.MultiExpression and operand.get_operator() == base.COperator.logic_ior:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.logic_and)
+            for operand_child in operand.get_children():
+                operand_child: CSymbolNode
+                new_child = CSymbolNode(CSymbolType.UnaryExpression, operand_child.data_type, base.COperator.logic_not)
+                new_child.add_child(operand_child.clone())
+                result.add_child(new_child)
+            return self.evaluate(result)
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.equal_with:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.not_equals)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.not_equals:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.equal_with)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.greater_tn:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_eq)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.greater_eq:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_tn)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.smaller_tn:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_eq)
+            result.add_child(r_operand)
+            result.add_child(l_operand)
+            return result
+        elif operand.sym_type == CSymbolType.BinaryExpression and operand.get_operator() == base.COperator.smaller_eq:
+            l_operand = operand.get_child(0).clone()
+            r_operand = operand.get_child(1).clone()
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_tn)
+            result.add_child(r_operand)
+            result.add_child(l_operand)
+            return result
+        else:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.logic_not)
+            result.add_child(operand)
+            return result
+
+    def __eval_address_of_expression__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) operand as *x   --> evaluate(x)
+            (2) &{operand}
+        """
+        operand = expression.get_child(0)
+        if operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.dereference:
+            return self.evaluate(operand.get_child(0))
+        else:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.address_of)
+            result.add_child(self.evaluate(operand))
+            return result
+
+    def __eval_dereference_expression__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant --> try-load{integer_constant}
+            (2) operand as &x   --> evaluate(x)
+            (3) *{operand}
+        """
+        operand = expression.get_child(0)
+        if operand.sym_type == CSymbolType.UnaryExpression and operand.get_operator() == base.COperator.address_of:
+            return self.evaluate(operand.get_child(0))
+        else:
+            operand = self.evaluate(operand)
+            if operand.sym_type == CSymbolType.Constant:
+                int_address = self.__integer__(operand.content)
+                value = self.__memory__.load(int_address)
+                if value is None:
+                    sym_address = self.__memory__.sym_address(int_address)
+                    result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.dereference)
+                    result.add_child(CSymbolNode(CSymbolType.Address, operand.data_type, sym_address))
+                    return result
+                else:
+                    value: CSymbolNode
+                    return value
+            else:
+                result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.dereference)
+                result.add_child(operand)
+                return result
+
+    def __eval_cast_expression__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant    --> cast[constant]
+            (2) cast{operand}
+        """
+        operand = self.evaluate(expression.get_child(0))
+        if operand.sym_type == CSymbolType.Constant:
+            cast_type = expression.get_data_type()
+            if cast_type.is_bool_type():
+                constant = self.__boolean__(operand.content)
+            elif cast_type.is_integer_type():
+                constant = self.__integer__(operand.content)
+            elif cast_type.is_real_type():
+                constant = self.__float__(operand.content)
+            else:
+                constant = operand.content
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, constant)
+        else:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.assign)
+            result.add_child(operand)
+            return result
+
+    # binary expressions
+
+    def __divide_operands_in_arith_add__(self, operands: list):
+        """
+        :param operands:
+        :return: variables, constant
+        """
+        variables, constant = list(), 0
+        for operand in operands:
+            if operand.sym_type == CSymbolType.Constant:
+                number = self.__number__(operand.content)
+                constant = constant + number
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_arith_add__(self, expression: CSymbolNode, variables: list, constant):
+        """
+        :param variables:
+        :param constant:
+        :return: standard generation of arith addition w.r.t. variable operands and one constant
+        """
+        # 1. generate the operands in arith addition expression
+        self.__done__()
+        operands = list()
+        for variable in variables:
+            variable: CSymbolNode
+            operands.append(variable)
+        if constant != 0:
+            operands.append(CSymbolNode(CSymbolType.Constant, expression.data_type, constant))
+        # 2. generate standard form
+        if len(operands) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif len(operands) == 1:
+            return operands[0]
+        else:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.arith_add)
+            for operand in operands:
+                result.add_child(operand)
+            return result
+
+    def __eval_arith_add__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return: concatenation
+        """
+        # 1. collect the operands in the same level
+        operands = self.__extend_operands__(expression)
+        # 2. divide into variables and constant
+        variables, constant = self.__divide_operands_in_arith_add__(operands)
+        # 3. generate the standard arith addition
+        return self.__reconstruct_for_arith_add__(expression, variables, constant)
+
+    def __eval_arith_sub__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return: evaluate(x + (-y))
+        """
+        result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.arith_add)
+        result.add_child(expression.get_child(0).clone())
+        neg_y = CSymbolNode(CSymbolType.UnaryExpression, expression.get_child(1).data_type, base.COperator.negative)
+        neg_y.add_child(expression.get_child(1).clone())
+        result.add_child(neg_y)
+        return self.evaluate(result)
+
+    def __divide_operands_in_arith_mul__(self, operands: list):
+        """
+        :param operands:
+        :return: variables, constant
+        """
+        variables, constant = list(), 1
+        for operand in operands:
+            if operand.sym_type == CSymbolType.Constant:
+                number = self.__number__(operand.content)
+                constant = constant * number
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_arith_mul__(self, expression: CSymbolNode, variables: list, constant):
+        """
+        :param expression:
+        :param variables:
+        :param constant:
+        :return: standard generation of arithmetic multiplication
+        """
+        self.__done__()
+        if constant == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        else:
+            operands = list()
+            if constant != 1:
+                operands.append(CSymbolNode(CSymbolType.Constant, expression.data_type, constant))
+            for variable in variables:
+                variable: CSymbolNode
+                operands.append(variable)
+            if len(operands) == 0:
+                return CSymbolNode(CSymbolType.Constant, expression.data_type, 1)
+            elif len(operands) == 1:
+                return operands[0]
+            else:
+                result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.arith_mul)
+                for operand in operands:
+                    result.add_child(operand)
+                return result
+
+    def __eval_arith_mul__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+        """
+        # 1. collect the operands in the same level
+        operands = self.__extend_operands__(expression)
+        # 2. divide operands into variables and constant
+        variables, constant = self.__divide_operands_in_arith_mul__(operands)
+        # 3. generate standard format of arith multiply
+        return self.__reconstruct_for_arith_mul__(expression, variables, constant)
+
+    def __eval_arith_div__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant % constant
+            (2) 0 / any
+            (3) any / 1 or -1
+            (4) [loperand] / [roperand]
+        """
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and self.__number__(l_operand.content) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif r_operand.sym_type == CSymbolType.Constant and self.__number__(r_operand.content) == 1:
+            return l_operand
+        elif r_operand.sym_type == CSymbolType.Constant and self.__number__(r_operand.content) == -1:
+            result = CSymbolNode(CSymbolType.UnaryExpression, expression.data_type, base.COperator.negative)
+            result.add_child(l_operand)
+            return self.evaluate(result)
+        elif l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            if expression.get_data_type().is_real_type():
+                constant = l_value / r_value
+            else:
+                constant = l_value // r_value
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, constant)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.arith_div)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __eval_arith_mod__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant % constant
+            (2) 0, 1, -1 % any
+            (3) any % 1, -1
+            (4) [loperand] % [roperand]
+        """
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and self.__integer__(l_operand.content) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif l_operand.sym_type == CSymbolType.Constant and self.__integer__(l_operand.content) == 1:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 1)
+        elif l_operand.sym_type == CSymbolType.Constant and self.__integer__(l_operand.content) == -1:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 1)
+        elif r_operand.sym_type == CSymbolType.Constant and self.__integer__(r_operand.content) == 1:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif r_operand.sym_type == CSymbolType.Constant and self.__integer__(r_operand.content) == -1:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__integer__(l_operand.content)
+            r_value = self.__integer__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value % r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.arith_mod)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __divide_operands_in_bitws_and__(self, operands: list):
+        """
+        :param operands:
+        :return: variables, constant
+        """
+        variables, constant = list(), ~0
+        for operand in operands:
+            operand: CSymbolNode
+            if operand.sym_type == CSymbolType.Constant:
+                number = self.__integer__(operand.content)
+                constant = constant & number
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_bitws_and__(self, expression: CSymbolNode, variables: list, constant: int):
+        self.__done__()
+        if constant == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        else:
+            operands = list()
+            if constant != ~0:
+                operands.append(CSymbolNode(CSymbolType.Constant, expression.data_type, constant))
+            for variable in variables:
+                variable: CSymbolNode
+                operands.append(variable)
+            if len(operands) == 0:
+                return CSymbolNode(CSymbolType.Constant, expression.data_type, ~0)
+            elif len(operands) == 1:
+                return operands[0]
+            else:
+                result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.bitws_and)
+                for operand in operands:
+                    result.add_child(operand)
+                return result
+
+    def __eval_bitws_and__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+        """
+        operands = self.__extend_operands__(expression)
+        variables, constant = self.__divide_operands_in_bitws_and__(operands)
+        return self.__reconstruct_for_bitws_and__(expression, variables, constant)
+
+    def __divide_operands_in_bitws_ior__(self, operands: list):
+        """
+        :param operands:
+        :return: variables, constant
+        """
+        variables, constant = list(), 0
+        for operand in operands:
+            operand: CSymbolNode
+            if operand.sym_type == CSymbolType.Constant:
+                number = self.__integer__(operand.content)
+                constant = constant | number
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_bitws_ior__(self, expression: CSymbolNode, variables: list, constant: int):
+        self.__done__()
+        if constant == ~0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, ~0)
+        else:
+            operands = list()
+            if constant != 0:
+                operands.append(CSymbolNode(CSymbolType.Constant, expression.data_type, constant))
+            for variable in variables:
+                variable: CSymbolNode
+                operands.append(variable)
+            if len(operands) == 0:
+                return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+            elif len(operands) == 1:
+                return operands[0]
+            else:
+                result = CSymbolNode(CSymbolType.Constant, expression.data_type, base.COperator.bitws_ior)
+                for operand in operands:
+                    result.add_child(operand)
+                return result
+
+    def __eval_bitws_ior__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+        """
+        operands = self.__extend_operands__(expression)
+        variables, constant = self.__divide_operands_in_bitws_ior__(operands)
+        return self.__reconstruct_for_bitws_ior__(expression, variables, constant)
+
+    def __divide_operands_in_bitws_xor__(self, operands: list):
+        variables, constant = list(), 0
+        for operand in operands:
+            operand: CSymbolNode
+            if operand.sym_type == CSymbolType.Constant:
+                number = self.__integer__(operand.content)
+                constant = constant ^ number
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_bitws_xor__(self, expression: CSymbolNode, variables: list, constant: int):
+        self.__done__()
+        operands = list()
+        if constant != 0:
+            operands.append(CSymbolNode(CSymbolType.Constant, expression.data_type, constant))
+        for variable in variables:
+            variable: CSymbolNode
+            operands.append(variable)
+        if len(operands) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif len(operands) == 1:
+            return operands[0]
+        else:
+            result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.bitws_xor)
+            for operand in operands:
+                result.add_child(operand)
+            return result
+
+    def __eval_bitws_xor__(self, expression: CSymbolNode):
+        operands = self.__extend_operands__(expression)
+        variables, constant = self.__divide_operands_in_bitws_xor__(operands)
+        return self.__reconstruct_for_bitws_xor__(expression, variables, constant)
+
+    def __eval_bitws_lsh__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant << constant
+            (2) 0 << ant
+            (3) any << 0
+            (4) otherwise
+        """
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and self.__integer__(l_operand.content) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif r_operand.sym_type == CSymbolType.Constant and self.__integer__(r_operand.content) == 0:
+            return l_operand
+        elif l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__integer__(l_operand.content)
+            r_value = self.__integer__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value << r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.bitws_lsh)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __eval_bitws_rsh__(self, expression: CSymbolNode):
+        """
+        :param expression:
+        :return:
+            (1) constant >> constant
+            (2) 0 >> ant
+            (3) any >> 0
+            (4) otherwise
+        """
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and self.__integer__(l_operand.content) == 0:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, 0)
+        elif r_operand.sym_type == CSymbolType.Constant and self.__integer__(r_operand.content) == 0:
+            return l_operand
+        elif l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__integer__(l_operand.content)
+            r_value = self.__integer__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value >> r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.bitws_rsh)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __divide_operands_in_logic_and__(self, operands: list):
+        variables, constant = list(), True
+        for operand in operands:
+            operand: CSymbolNode
+            if operand.sym_type == CSymbolType.Constant:
+                value = self.__boolean__(operand.content)
+                constant = (constant and value)
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_logic_and__(self, expression: CSymbolNode, variables: list, constant: bool):
+        self.__done__()
+        if constant:
+            if len(variables) == 0:
+                return CSymbolNode(CSymbolType.Constant, expression.data_type, True)
+            elif len(variables) == 1:
+                result = variables[0]
+                result: CSymbolNode
+                return result
+            else:
+                result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.logic_and)
+                for variable in variables:
+                    result.add_child(variable)
+                return result
+        else:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, False)
+
+    def __eval_logic_and__(self, expression: CSymbolNode):
+        operands = self.__extend_operands__(expression)
+        variables, constant = self.__divide_operands_in_logic_and__(operands)
+        return self.__reconstruct_for_logic_and__(expression, variables, constant)
+
+    def __divide_operands_in_logic_ior__(self, operands: list):
+        variables, constant = list(), False
+        for operand in operands:
+            operand: CSymbolNode
+            if operand.sym_type == CSymbolType.Constant:
+                value = self.__boolean__(operand.content)
+                constant = (constant or value)
+            else:
+                variables.append(operand)
+        return variables, constant
+
+    def __reconstruct_for_logic_ior__(self, expression: CSymbolNode, variables: list, constant: bool):
+        self.__done__()
+        if constant:
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, True)
+        else:
+            if len(variables) == 0:
+                return CSymbolNode(CSymbolType.Constant, expression.data_type, False)
+            elif len(variables) == 1:
+                variables[0]: CSymbolNode
+                return variables[0]
+            else:
+                result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.logic_ior)
+                for variable in variables:
+                    result.add_child(variable)
+                return result
+
+    def __eval_logic_ior__(self, expression: CSymbolNode):
+        operands = self.__extend_operands__(expression)
+        variables, constant = self.__divide_operands_in_logic_ior__(operands)
+        return self.__reconstruct_for_logic_ior__(expression, variables, constant)
+
+    def __eval_greater_tn__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value > r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_tn)
+            result.add_child(r_operand)
+            result.add_child(l_operand)
+            return result
+
+    def __eval_greater_eq__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value >= r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_eq)
+            result.add_child(r_operand)
+            result.add_child(l_operand)
+            return result
+
+    def __eval_smaller_tn__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value < r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_tn)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __eval_smaller_eq__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value <= r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.smaller_eq)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __eval_equal_with__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value == r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.equal_with)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+    def __eval_not_equals__(self, expression: CSymbolNode):
+        l_operand = self.evaluate(expression.get_child(0))
+        r_operand = self.evaluate(expression.get_child(1))
+        if l_operand.sym_type == CSymbolType.Constant and r_operand.sym_type == CSymbolType.Constant:
+            l_value = self.__number__(l_operand.content)
+            r_value = self.__number__(r_operand.content)
+            return CSymbolNode(CSymbolType.Constant, expression.data_type, l_value != r_value)
+        else:
+            result = CSymbolNode(CSymbolType.BinaryExpression, expression.data_type, base.COperator.not_equals)
+            result.add_child(l_operand)
+            result.add_child(r_operand)
+            return result
+
+
+sym_evaluator = CSymEvaluator()
+
+
+class CSymTemplate:
+    """
+    [sym_template_expression{@input, @any}; cir_source_list+]
+    """
+    def __init__(self, sym_template: CSymbolNode, cir_nodes: list):
+        self.sym_template = sym_template
+        self.cir_source_list = list()
+        for cir_node in cir_nodes:
+            cir_node: cirtree.CirNode
+            self.cir_source_list.append(cir_node)
+        return
+
+    def get_sym_template(self):
+        """
+        :return: template of symbolic expression with @input and @any
+        """
+        return self.sym_template
+
+    def get_cir_source_list(self):
+        """
+        :return: source w.r.t. @input in CIR-source code
+        """
+        return self.cir_source_list
+
+    @staticmethod
+    def sym_cir_associations(sym_root: CSymbolNode, cir_root: cirtree.CirNode):
+        """
+        :param sym_root:
+        :param cir_root:
+        :return: dict[sym_node, list[cir_node]]: the cir-location(s) to the entry of @input in the symbolic expression
+        """
+        # 1. collect references in cir_tree
+        cir_references = set()
+        cir_queue = deque()
+        cir_queue.append(cir_root)
+        while len(cir_queue) > 0:
+            cir_node = cir_queue.popleft()
+            cir_node: cirtree.CirNode
+            if cir_node.is_reference_expression():
+                cir_references.add(cir_node)
+            for child in cir_node.get_children():
+                cir_queue.append(child)
+        # 2. collect references in symbolic root
+        sym_references = set()
+        sym_queue = deque()
+        sym_queue.append(sym_root)
+        while len(sym_queue) > 0:
+            sym_node = sym_queue.popleft()
+            sym_node: CSymbolNode
+            if sym_node.is_reference():
+                sym_references.add(sym_node)
+            for child in sym_node.get_children():
+                sym_queue.append(child)
+        # 3. generate association maps from sym-reference to its cir-reference(s)
+        sym_cir_dict = dict()
+        for sym_reference in sym_references:
+            cir_buffer = list()
+            for cir_reference in cir_references:
+                if sym_reference.generate_code(True) == sym_parser.parse_by_cir_tree(cir_reference).generate_code(True):
+                    cir_buffer.append(cir_reference)
+            sym_cir_dict[sym_reference] = cir_buffer
+        return sym_cir_dict
+
+    @staticmethod
+    def __input_entry__(data_type: base.CType):
+        """
+        :param data_type:
+        :return: *(@input)
+        """
+        address_type = base.CType(base.CMetaType.PointType)
+        address_type.get_operands().append(data_type)
+        address = CSymbolNode(CSymbolType.Address, address_type, "@Input")
+        result = CSymbolNode(CSymbolType.UnaryExpression, data_type, base.COperator.dereference)
+        result.add_child(address)
+        return result
+
+    @staticmethod
+    def __any_replacement__(data_type: base.CType):
+        """
+        :param data_type:
+        :return: *(@any)
+        """
+        address_type = base.CType(base.CMetaType.PointType)
+        address_type.get_operands().append(data_type)
+        address = CSymbolNode(CSymbolType.Address, address_type, "@Any")
+        result = CSymbolNode(CSymbolType.UnaryExpression, data_type, base.COperator.dereference)
+        result.add_child(address)
+        return result
+
+    @staticmethod
+    def __deep_subtree__(sym_root: CSymbolNode, max_depth: int):
+        """
+        :param sym_root:
+        :param max_depth:
+        :return: symbolic subtree cloned from root w.r.t. maximal depth of specified
+        """
+        if max_depth <= 0:
+            return CSymTemplate.__any_replacement__(sym_root.data_type)
+        else:
+            result = CSymbolNode(sym_root.sym_type, sym_root.data_type, sym_root.content)
+            for child in sym_root.get_children():
+                child_result = CSymTemplate.__deep_subtree__(child, max_depth - 1)
+                result.add_child(child_result)
+            return result
+
+    @staticmethod
+    def path_template(sym_reference: CSymbolNode, cir_references: list, max_depth=0):
+        """
+        :param sym_reference: replaced as @input
+        :param cir_references: as the source of @input in template expression
+        :param max_depth: maximal depth of the subtree along the path to root
+        :return:
+        """
+        # 1. original tree and clone tree
+        sym_node = sym_reference
+        sym_clone_node = CSymTemplate.__input_entry__(sym_reference.data_type)
+        # 2. generate from the root node
+        while sym_node.get_parent() is not None:
+            sym_parent = sym_node.get_parent()
+            sym_clone_parent = CSymbolNode(sym_parent.sym_type, sym_parent.data_type, sym_parent.content)
+            for sym_child in sym_parent.get_children():
+                if sym_child == sym_node:
+                    sym_clone_parent.add_child(sym_clone_node)
+                else:
+                    sym_clone_parent.add_child(CSymTemplate.__deep_subtree__(sym_child, max_depth))
+            sym_node = sym_parent
+            sym_clone_node = sym_clone_parent
+        # 3. construct the symbolic template
+        return CSymTemplate(sym_clone_node, cir_references)
+
+    @staticmethod
+    def templates(sym_root: CSymbolNode, cir_root: cirtree.CirNode, max_depth: int):
+        """
+        :param sym_root:
+        :param cir_root:
+        :param max_depth:
+        :return: set of symbolic templates generated from symbolic root and cir references in specified root.
+        """
+        sym_cir_associations = CSymTemplate.sym_cir_associations(sym_root, cir_root)
+        sym_templates = set()
+        for sym_node, cir_nodes in sym_cir_associations.items():
+            if len(cir_nodes) > 0:
+                sym_template = CSymTemplate.path_template(sym_node, cir_nodes, max_depth)
+                sym_templates.add(sym_template)
+        return sym_templates
 
 
 if __name__ == "__main__":
@@ -836,6 +1815,9 @@ if __name__ == "__main__":
     lines.append("[sym]\t889659405\tSymConstant\tlong\tint@0")
     node = sym_parser.parse_by_text_lines(lines)
     print(node.generate_code(True))
+    sym_evaluator.__debugging__ = True
+    node2 = sym_evaluator.evaluate(node)
+    print(node2.generate_code(True))
     print(len(node.children))
     print(base.CType.parse("(function (pointer (pointer (array 27 short))))"))
 

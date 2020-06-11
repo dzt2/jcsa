@@ -111,6 +111,87 @@ class MutantLabels:
         return
 
 
+class StateConstraint:
+    def __init__(self, constraint_lines: list, program: cpro.CProgram):
+        self.execution = None
+        condition_lines = list()
+        for line in constraint_lines:
+            line: str
+            line = line.strip()
+            if line.startswith("[execution]"):
+                items = line.split('\t')
+                self.execution = program.get_function_call_graph().get_execution(items[1].strip())
+            elif line.startswith("[sym]"):
+                condition_lines.append(line)
+        self.condition = sym.sym_parser.parse_by_text_lines(condition_lines)
+        return
+
+    def get_execution(self):
+        """
+        :return: where the condition is evaluated
+        """
+        self.execution: cirflow.CirExecution
+        return self.execution
+
+    def get_condition(self):
+        """
+        :return: the symbolic condition being evaluated
+        """
+        self.condition: sym.CSymbolNode
+        return self.condition
+
+    def __str__(self):
+        return str(self.execution) + "::{ " + self.condition.generate_code(True) + " }"
+
+
+class StateConstraints:
+    """
+    {conjunct|disjunct; constraints}
+    """
+    def __init__(self, constraints_lines: list, program: cpro.CProgram):
+        self.conjunct = False
+        self.constraints = list()
+        constraint_lines = list()
+        for line in constraints_lines:
+            line: str
+            line = line.strip()
+            if line.startswith("[type]"):
+                items = line.split('\t')
+                if items[1].strip() == "conjunct":
+                    self.conjunct = True
+            elif line.startswith("[constraint]"):
+                constraint_lines.clear()
+            elif line.startswith("[execution]") or line.startswith("[sym]"):
+                constraint_lines.append(line.strip())
+            elif line.startswith("[end_constraint]"):
+                constraint = StateConstraint(constraint_lines, program)
+                self.constraints.append(constraint)
+        return
+
+    def is_conjunct(self):
+        return self.conjunct
+
+    def is_disjunct(self):
+        return not self.conjunct
+
+    def get_constraints(self):
+        return self.constraints
+
+    def __str__(self):
+        buffer = ""
+        if self.conjunct:
+            buffer += "["
+        else:
+            buffer += "<"
+        for constraint in self.constraints:
+            buffer += " " + str(constraint) + ";"
+        if self.conjunct:
+            buffer += " ]"
+        else:
+            buffer += " >"
+        return buffer
+
+
 class Mutation:
     """
     syntactic mutation is defined as {m_class, m_operator, location, parameter}
@@ -245,6 +326,16 @@ class StateError:
             buffer += " " + str(operand)
         buffer += " )"
         return buffer
+
+    def get_cir_location(self):
+        """
+        :return: the cir-location as the operand to be described in this error.
+        """
+        for operand in self.operands:
+            if isinstance(operand, cirtree.CirNode):
+                operand: cirtree.CirNode
+                return operand
+        return None
 
 
 class StateErrors:
@@ -395,90 +486,6 @@ class StateErrors:
         state_error.error_type = ErrorType.mut_refer
         state_error.operands.append(expression)
         return self.__record__(state_error)
-
-
-class StateConstraint:
-    """
-    {execution; symbolic_condition}
-    """
-    def __init__(self, constraint_lines: list, program: cpro.CProgram):
-        self.execution = None
-        condition_lines = list()
-        for line in constraint_lines:
-            line: str
-            line = line.strip()
-            if line.startswith("[execution]"):
-                items = line.split('\t')
-                self.execution = program.get_function_call_graph().get_execution(items[1].strip())
-            elif line.startswith("[sym]"):
-                condition_lines.append(line)
-        self.condition = sym.sym_parser.parse_by_text_lines(condition_lines)
-        return
-
-    def get_execution(self):
-        """
-        :return: where the condition is evaluated
-        """
-        self.execution: cirflow.CirExecution
-        return self.execution
-
-    def get_condition(self):
-        """
-        :return: the symbolic condition being evaluated
-        """
-        self.condition: sym.CSymbolNode
-        return self.condition
-
-    def __str__(self):
-        return str(self.execution) + "::{ " + self.condition.generate_code(True) + " }"
-
-
-class StateConstraints:
-    """
-    {conjunct|disjunct; constraints}
-    """
-    def __init__(self, constraints_lines: list, program: cpro.CProgram):
-        self.conjunct = False
-        self.constraints = list()
-        constraint_lines = list()
-        for line in constraints_lines:
-            line: str
-            line = line.strip()
-            if line.startswith("[type]"):
-                items = line.split('\t')
-                if items[1].strip() == "conjunct":
-                    self.conjunct = True
-            elif line.startswith("[constraint]"):
-                constraint_lines.clear()
-            elif line.startswith("[execution]") or line.startswith("[sym]"):
-                constraint_lines.append(line.strip())
-            elif line.startswith("[end_constraint]"):
-                constraint = StateConstraint(constraint_lines, program)
-                self.constraints.append(constraint)
-        return
-
-    def is_conjunct(self):
-        return self.conjunct
-
-    def is_disjunct(self):
-        return not self.conjunct
-
-    def get_constraints(self):
-        return self.constraints
-
-    def __str__(self):
-        buffer = ""
-        if self.conjunct:
-            buffer += "["
-        else:
-            buffer += "<"
-        for constraint in self.constraints:
-            buffer += " " + str(constraint) + ";"
-        if self.conjunct:
-            buffer += " ]"
-        else:
-            buffer += " >"
-        return buffer
 
 
 class StateInfection:
@@ -694,9 +701,28 @@ if __name__ == "__main__":
                 state_infection: StateInfection
                 writer.write("\tcoverage at:\t" + str(state_infection.get_faulty_execution()) + "\n")
                 for state_error, constraints in state_infection.error_infections.items():
-                    writer.write("\tError of " + str(state_error) + "\tfor\t" + str(constraints) + "\n")
+                    constraints: StateConstraints
+                    writer.write("\tError of " + str(state_error) + "\tfor:\n")
+                    writer.write("\t{\n")
+                    for constraint in constraints.get_constraints():
+                        constraint: StateConstraint
+                        writer.write("\t\t")
+                        sym_condition = sym.sym_evaluator.evaluate(constraint.get_condition())
+                        writer.write(sym_condition.generate_code(True))
+                        writer.write("\tat\t" + str(constraint.get_execution()) + "\n")
+                        sym_cir_associations = sym.CSymTemplate.sym_cir_associations(
+                            sym_condition, constraint.get_execution().get_statement())
+                        for sym_reference, cir_references in sym_cir_associations.items():
+                            if len(cir_references) > 0:
+                                sym_template = sym.CSymTemplate.path_template(sym_reference, cir_references, 2)
+                                writer.write("\t\t\t#Template: ")
+                                writer.write(sym_template.get_sym_template().generate_code(True))
+                                writer.write("\tfor\t")
+                                writer.write(cir_references[0].generate_code(True))
+                                writer.write("\n")
+                    writer.write("\t}\n")
                     extension_errors = state_infection.get_extension_set(state_error)
-                    writer.write("\t\t==>\t")
+                    writer.write("\t==>\t")
                     for extension_error in extension_errors:
                         writer.write(str(extension_error) + "; ")
                     writer.write("\n")
