@@ -649,6 +649,9 @@ class AstTree:
         self.__parse__(ast_tree_file)
         return
 
+    def get_program(self):
+        return self.program
+
     def get_source_code(self):
         """
         :return: source code from which the tree is parsed
