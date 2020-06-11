@@ -452,7 +452,7 @@ def __output_state_error__(program: cpro.CProgram, state_error: mut.StateError,
 
 def __output_state_error_main__():
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
-    distance, sym_depth = 3, 2
+    distance, sym_depth, vector_size, optimize, epochs = 6, 3, 128, True, 4
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
         program = cpro.CProgram(directory)
@@ -614,8 +614,9 @@ class PathFeatureEncoding:
 
 def training_doc2vec_encoding():
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
-    distance, sym_depth = 3, 2
-    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    distance, sym_depth, vector_size, optimize, epochs = 6, 3, 128, True, 4
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth,
+                                  optimize=optimize, vector_size=vector_size)
     print("Testing start for files.")
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
@@ -632,8 +633,9 @@ def training_doc2vec_encoding():
 
 def generate_training_csv_files():
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
-    distance, sym_depth = 3, 2
-    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    distance, sym_depth, vector_size, optimize, epochs = 6, 3, 128, True, 4
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth,
+                                  optimize=optimize, vector_size=vector_size)
     encoder.doc2vec = Doc2Vec.load(os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\doc2vec.model"))
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
@@ -647,8 +649,9 @@ def generate_training_csv_files():
 
 def generate_predict_csv_files():
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\pdata"
-    distance, sym_depth = 3, 2
-    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    distance, sym_depth, vector_size, optimize, epochs = 6, 3, 128, True, 4
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth,
+                                  optimize=optimize, vector_size=vector_size)
     encoder.doc2vec = Doc2Vec.load(os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\doc2vec.model"))
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
@@ -664,5 +667,4 @@ if __name__ == "__main__":
     # __output_state_error_main__()
     # training_doc2vec_encoding()
     # generate_training_csv_files()
-    generate_training_csv_files()
     generate_predict_csv_files()
