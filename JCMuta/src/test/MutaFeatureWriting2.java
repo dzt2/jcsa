@@ -111,9 +111,15 @@ public class MutaFeatureWriting2 {
 		operators.addAll(AstMutationGenerators.statement_classes);
 		operators.addAll(AstMutationGenerators.unary_classes);
 		operators.addAll(AstMutationGenerators.operator_classes);
-		operators.add(MutaClass.VBRP);
-		operators.add(MutaClass.VCRP);
 		operators.remove(MutaClass.OPDL);
+		operators.remove(MutaClass.OEAA);
+		operators.remove(MutaClass.OEBA);
+		operators.remove(MutaClass.OAAA);
+		operators.remove(MutaClass.OABA);
+		operators.remove(MutaClass.OAEA);
+		operators.remove(MutaClass.OBAA);
+		operators.remove(MutaClass.OBBA);
+		operators.remove(MutaClass.OBEA);
 		return operators;
 	}
 	private static MutaProject create_project(String name) throws Exception {
