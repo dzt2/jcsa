@@ -146,7 +146,7 @@ if __name__ == "__main__":
         data_frame.append(csv_file)
         print("\tProcessing samples for", filename)
     print("Load", len(data_frame), "mutant samples for training.")
-    classifier = data_frame.train_for(stree.DecisionTreeClassifier())
+    classifier = data_frame.train_for(nnet.MLPClassifier())
 
     for filename in os.listdir(p_prefix):
         directory = os.path.join(p_prefix, filename)
