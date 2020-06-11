@@ -638,6 +638,9 @@ class MutantSpace:
     def get_mutants(self):
         return self.mutants.values()
 
+    def has_mutant(self, mid: int):
+        return mid in self.mutants
+
     def get_mutant_id_set(self):
         return self.mutants.keys()
 

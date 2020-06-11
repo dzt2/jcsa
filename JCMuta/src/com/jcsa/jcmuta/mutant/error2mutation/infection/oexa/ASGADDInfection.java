@@ -5,7 +5,7 @@ import java.util.Map;
 import com.jcsa.jcmuta.mutant.error2mutation.StateError;
 import com.jcsa.jcmuta.mutant.error2mutation.StateErrorGraph;
 import com.jcsa.jcmuta.mutant.error2mutation.StateEvaluation;
-import com.jcsa.jcmuta.mutant.error2mutation.infection.OPRTInfection;
+import com.jcsa.jcmuta.mutant.error2mutation.infection.ASSGInfection;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -17,7 +17,7 @@ import com.jcsa.jcparse.lang.symb.SymExpression;
  * @author yukimula
  *
  */
-public class ASGADDInfection extends OPRTInfection {
+public class ASGADDInfection extends ASSGInfection {
 
 	protected SymExpression muta_expression(CirExpression expression, CirExpression loperand, CirExpression roperand)
 			throws Exception {

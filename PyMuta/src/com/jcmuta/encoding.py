@@ -3,6 +3,7 @@ It defines the data model and algorithms to describe and construct the features 
 """
 
 import os
+import numpy as np
 from typing import TextIO
 import src.com.jcparse.astree as astree
 import src.com.jcparse.cirtree as cirtree
@@ -11,6 +12,7 @@ import src.com.jcparse.cirinst as cirinst
 import src.com.jcparse.cprogram as cpro
 import src.com.jcmuta.mutation as mut
 import src.com.jcmuta.symbol as sym
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 
 class WordsCorpus:
@@ -106,13 +108,25 @@ class WordsCorpus:
             else:
                 word = ""
         elif cir_node.is_name_expression():
-            word = "identifier@" + str(cir_node.get_name())
+            word = "identifier"
+            name = cir_node.get_name()
+            name: str
+            if "#" in name:
+                index = name.index("#")
+                name = name[0: index].strip()
+            word += "@" + name
         elif cir_node.cir_type == cirtree.CirType.defer_expression:
             word = "defer_expression"
         elif cir_node.cir_type == cirtree.CirType.field_expression:
             word = "field_expression"
         elif cir_node.cir_type == cirtree.CirType.field:
-            word = "field@" + str(cir_node.get_name())
+            word = "field"
+            name = cir_node.get_name()
+            name: str
+            if "#" in name:
+                index = name.index("#")
+                name = name[0: index].strip()
+            word += "@" + name
         elif cir_node.cir_type == cirtree.CirType.address_expression:
             word = "address_expression"
         elif cir_node.cir_type == cirtree.CirType.cast_expression:
@@ -217,6 +231,9 @@ class WordsCorpus:
         self.words.clear()
         self.index.clear()
         return
+
+    def __len__(self):
+        return len(self.words)
 
 
 class ErrorInformationPath:
@@ -433,14 +450,14 @@ def __output_state_error__(program: cpro.CProgram, state_error: mut.StateError,
     return
 
 
-if __name__ == "__main__":
+def __output_state_error_main__():
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
     distance, sym_depth = 3, 2
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
         program = cpro.CProgram(directory)
         mutant_space = mut.MutantSpace(program)
-        common_corpus.reset()   # reset the encoding feature space
+        common_corpus.reset()  # reset the encoding feature space
         print("Get mutation information for", program.get_file_name())
         output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\feature_paths", filename + ".path")
         with open(output_file, 'w') as writer:
@@ -469,3 +486,182 @@ if __name__ == "__main__":
                     __output_state_error__(program, state_error, constraints, writer, distance, sym_depth)
                 writer.write("\n")
     print("Testing end for all.")
+
+
+class PathFeatureEncoding:
+    def __init__(self, path_distance: int, sym_depth: int, optimize: bool, vector_size: int):
+        """
+        :param path_distance: maximal distance of error or constraint path
+        :param sym_depth: maximal depth to generate symbolic templates
+        :param optimize: whether to optimize the symbolic constraint at first
+        """
+        self.__corpus__ = WordsCorpus()
+        self.path_distance = path_distance
+        self.sym_depth = sym_depth
+        self.optimize = optimize
+        self.tagged_sentences = list()
+        self.doc2vec = None
+        self.vector_size = vector_size
+        return
+
+    def encoding_word_vectors(self, mutant: mut.Mutant):
+        """
+        :param mutant:
+        :return: set of feature path words as sentences
+        """
+        infection = mutant.get_features()
+        infection: mut.StateInfection
+        program = mutant.get_mutant_space().program
+        program: cpro.CProgram
+        sentence_dict = dict()
+        for state_error, state_constraints in infection.error_infections.items():
+            state_error: mut.StateError
+            state_constraints: mut.StateConstraints
+            error_information_dict = ErrorInformationPath.error_information_paths(program, state_error,
+                                                                                  self.path_distance)
+            for error_information_paths in error_information_dict.values():
+                for error_information_path in error_information_paths:
+                    # encoding error information path
+                    word_list, code_list = error_information_path.get_words(self.__corpus__)
+                    sentence_dict[str(word_list)] = word_list
+            for state_constraint in state_constraints.get_constraints():
+                state_constraint: mut.StateConstraint
+                constraint_dependence_dict = ConstraintDependencePath.constraint_dependence_paths(
+                    program, state_constraint, self.path_distance, self.optimize, self.sym_depth)
+                for constraint_dependence_paths in constraint_dependence_dict.values():
+                    for constraint_dependence_path in constraint_dependence_paths:
+                        # encoding constraint path
+                        word_list, code_list = constraint_dependence_path.get_words(self.__corpus__)
+                        sentence_dict[str(word_list)] = word_list
+        tagged_sentences = list()
+        for key, sentence in sentence_dict.items():
+            tagged_sentence = TaggedDocument(words=sentence, tags=key)
+            tagged_sentences.append(tagged_sentence)
+            self.tagged_sentences.append(tagged_sentence)
+        return tagged_sentences
+
+    def train_doc2vec(self, epochs, model_file: str):
+        self.doc2vec = Doc2Vec(self.tagged_sentences, vector_size=self.vector_size, workers=4, epochs=epochs)
+        self.doc2vec.save(model_file)
+        return
+
+    def __average_feature_vectors__(self, feature_vectors: list):
+        sum_vector = np.zeros(self.vector_size)
+        for feature_vector in feature_vectors:
+            feature_vector = np.array(feature_vector)
+            sum_vector = sum_vector + feature_vector
+        return sum_vector
+        # weights = 1.0
+        # if len(feature_vectors) > 0:
+        #     weights /= len(feature_vectors)
+        # return sum_vector ** weights
+
+    def encode_feature_vectors(self, mutant: mut.Mutant):
+        """
+        :param mutant:
+        :return: feature vector encoded by doc2vec in average weights
+        """
+        infection = mutant.get_features()
+        infection: mut.StateInfection
+        program = mutant.get_mutant_space().program
+        program: cpro.CProgram
+        sentence_dict = dict()
+        for state_error, state_constraints in infection.error_infections.items():
+            state_error: mut.StateError
+            state_constraints: mut.StateConstraints
+            error_information_dict = ErrorInformationPath.error_information_paths(program, state_error,
+                                                                                  self.path_distance)
+            for error_information_paths in error_information_dict.values():
+                for error_information_path in error_information_paths:
+                    # encoding error information path
+                    word_list, code_list = error_information_path.get_words(self.__corpus__)
+                    sentence_dict[str(word_list)] = word_list
+            for state_constraint in state_constraints.get_constraints():
+                state_constraint: mut.StateConstraint
+                constraint_dependence_dict = ConstraintDependencePath.constraint_dependence_paths(
+                    program, state_constraint, self.path_distance, self.optimize, self.sym_depth)
+                for constraint_dependence_paths in constraint_dependence_dict.values():
+                    for constraint_dependence_path in constraint_dependence_paths:
+                        # encoding constraint path
+                        word_list, code_list = constraint_dependence_path.get_words(self.__corpus__)
+                        sentence_dict[str(word_list)] = word_list
+        self.doc2vec: Doc2Vec
+        feature_vectors = list()
+        for key, sentence in sentence_dict.items():
+            feature_vector = self.doc2vec.infer_vector(sentence)
+            feature_vectors.append(feature_vector)
+        return self.__average_feature_vectors__(feature_vectors)
+
+    def write_csv_file(self, mutant_space: mut.MutantSpace, csv_file: str):
+        with open(csv_file, 'w') as writer:
+            writer.write("program,id,label")
+            for k in range(0, self.vector_size):
+                writer.write(",k" + str(k))
+            writer.write("\n")
+            name = mutant_space.get_program().get_file_name()
+            for mutant in mutant_space.get_mutants():
+                mutant: mut.Mutant
+                if mutant.features is not None:
+                    writer.write(name)
+                    writer.write("," + str(mutant.id))
+                    writer.write("," + str(mutant.get_labels().get_category().value))
+                    feature_vector = self.encode_feature_vectors(mutant)
+                    for k in range(0, self.vector_size):
+                        writer.write("," + str(feature_vector[k]))
+                    writer.write("\n")
+        return
+
+
+def training_doc2vec_encoding():
+    prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
+    distance, sym_depth = 3, 2
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    print("Testing start for files.")
+    for filename in os.listdir(prefix):
+        directory = os.path.join(prefix, filename)
+        program = cpro.CProgram(directory)
+        mutant_space = mut.MutantSpace(program)
+        for mutant in mutant_space.get_mutants():
+            encoder.encoding_word_vectors(mutant)
+        print("\tComplete encoding", len(mutant_space.get_mutants()), "mutants for", filename)
+    print("Start training doc2vec with", len(encoder.tagged_sentences), "sentences.")
+    encoder.train_doc2vec(4, os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\doc2vec.model"))
+    print("Complete doc2vec training")
+    return
+
+
+def generate_training_csv_files():
+    prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
+    distance, sym_depth = 3, 2
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    encoder.doc2vec = Doc2Vec.load(os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\doc2vec.model"))
+    for filename in os.listdir(prefix):
+        directory = os.path.join(prefix, filename)
+        program = cpro.CProgram(directory)
+        mutant_space = mut.MutantSpace(program)
+        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\training_files", filename + ".csv")
+        encoder.write_csv_file(mutant_space, output_file)
+        print("\tOutput csv file for", filename, "with", len(mutant_space.mutants), "mutants.")
+    print("Testing end for all.")
+
+
+def generate_predict_csv_files():
+    prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\pdata"
+    distance, sym_depth = 3, 2
+    encoder = PathFeatureEncoding(path_distance=distance, sym_depth=sym_depth, optimize=True, vector_size=128)
+    encoder.doc2vec = Doc2Vec.load(os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\doc2vec.model"))
+    for filename in os.listdir(prefix):
+        directory = os.path.join(prefix, filename)
+        program = cpro.CProgram(directory)
+        mutant_space = mut.MutantSpace(program)
+        output_file = os.path.join("C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\predict_files", filename + ".csv")
+        encoder.write_csv_file(mutant_space, output_file)
+        print("\tOutput csv file for", filename, "with", len(mutant_space.mutants), "mutants.")
+    print("Testing end for all.")
+
+
+if __name__ == "__main__":
+    # __output_state_error_main__()
+    # training_doc2vec_encoding()
+    # generate_training_csv_files()
+    generate_predict_csv_files()
