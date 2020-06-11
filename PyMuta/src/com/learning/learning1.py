@@ -29,44 +29,6 @@ class MutantKey:
     def get_mid(self):
         return self.mid
 
-    @staticmethod
-    def __generate_code__(mutant: mut.Mutant, output_file: str):
-        with open(output_file, 'w') as writer:
-            comment = "/**\n" \
-                      " * Mutant ID: %d\n" \
-                      " * Class: %s\n" \
-                      " * Operator: %s\n" \
-                      " * Location: \"%s\" at line %d\n" \
-                      " * Parameter: %s\n" \
-                      " */\n\n"
-            mid = mutant.id
-            mclass = str(mutant.get_mutation().get_mutation_class())
-            moperator = str(mutant.get_mutation().get_mutation_operator())
-            location = mutant.get_mutation().get_location()
-            location: astree.AstNode
-            location_code = location.get_code(True)
-            location_line = location.get_beg_line() + 9
-            parameter = "None"
-            if mutant.get_mutation().has_parameter():
-                parameter = str(mutant.get_mutation().get_parameter())
-            comment = comment % (mid, mclass, moperator, location_code, location_line, parameter)
-            writer.write(comment)
-            beg_index = location.beg_index
-            end_index = location.end_index
-            source_code = location.get_tree().get_source_code()
-            source_code: astree.SourceCode
-            writer.write(source_code.text[0: beg_index])
-            before_line = True
-            for k in range(beg_index, len(source_code.text)):
-                char = source_code.text[k]
-                if before_line and char == "\n":
-                    writer.write("\t// SEEDED LINE")
-                    before_line = False
-                writer.write(char)
-            if before_line:
-                writer.write("\t// SEEDED LINE\n")
-        return
-
     def interpret(self, mutant_space: mut.MutantSpace, output_file: str):
         """
         :param output_file:
@@ -75,7 +37,8 @@ class MutantKey:
         """
         if mutant_space.has_mutant(self.mid):
             mutant = mutant_space.get_mutant(self.mid)
-            MutantKey.__generate_code__(mutant, output_file)
+            mutant: mut.Mutant
+            mutant.generate_code(output_file)
             return True
         else:
             return False

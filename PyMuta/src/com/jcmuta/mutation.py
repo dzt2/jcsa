@@ -219,6 +219,173 @@ class Mutation:
     def has_parameter(self):
         return self.parameter is not None
 
+    def get_replace_code(self):
+        location = self.location
+        location: astree.AstNode
+        if self.m_operator == mop.MutaOperator.trap_on_true:
+            return "trap_on_true(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.trap_on_false:
+            return "trap_on_false(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.trap_on_case:
+            return "trap_on_case(" + location.get_code(True) + ", " + str(self.parameter) + ")"
+        elif self.m_operator == mop.MutaOperator.trap_on_expression:
+            return "trap_on_expression()"
+        elif self.m_operator == mop.MutaOperator.trap_on_statement:
+            return "trap_on_expression();"
+        elif self.m_operator == mop.MutaOperator.trap_at_statement:
+            prefix = "\ttrap_init_loop_counter(%d);\n" % self.parameter
+            postfix = location.get_code(False) + "\n\ttrap_free_loop_counter();\n"
+            return prefix + postfix
+        elif self.m_operator == mop.MutaOperator.trap_on_pos:
+            return "trap_on_pos(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.trap_on_neg:
+            return "trap_on_neg(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.trap_on_zro:
+            return "trap_on_zro(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.break_to_continue:
+            return "continue;"
+        elif self.m_operator == mop.MutaOperator.continue_to_break:
+            return "break;"
+        elif self.m_operator == mop.MutaOperator.ins_break:
+            return "\n\tbreak;\n\t" + location.get_code(True)
+        elif self.m_operator == mop.MutaOperator.ins_continue:
+            return "\n\tcontinue;\n\t" + location.get_code(True)
+        elif self.m_operator == mop.MutaOperator.while_to_do:
+            return "do " + location.get_child(4).get_code(True) + \
+                   " while(" + location.get_child(2).get_code(True) + ");"
+        elif self.m_operator == mop.MutaOperator.do_to_while:
+            return "while(" + location.get_child(5).get_code(True) + ") " + location.get_child(1).get_code(True)
+        elif self.m_operator == mop.MutaOperator.set_goto_label:
+            return str(self.parameter)
+        elif self.m_operator == mop.MutaOperator.delete_statement:
+            return ";"
+        elif self.m_operator == mop.MutaOperator.set_return_value:
+            self.parameter: astree.AstNode
+            return self.parameter.get_code(True)
+        elif self.m_operator == mop.MutaOperator.prev_inc_to_post_dec:
+            return location.get_child(1).get_code(True) + "--"
+        elif self.m_operator == mop.MutaOperator.prev_inc_to_prev_dec:
+            return "--" + location.get_child(1).get_code(True)
+        elif self.m_operator == mop.MutaOperator.prev_inc_to_post_inc:
+            return location.get_child(1).get_code(True) + "++"
+        elif self.m_operator == mop.MutaOperator.prev_dec_to_post_dec:
+            return location.get_child(1).get_code(True) + "--"
+        elif self.m_operator == mop.MutaOperator.prev_dec_to_post_inc:
+            return location.get_child(1).get_code(True) + "++"
+        elif self.m_operator == mop.MutaOperator.prev_dec_to_prev_inc:
+            return "++" + location.get_child(1).get_code(True)
+        elif self.m_operator == mop.MutaOperator.post_inc_to_post_dec:
+            return location.get_child(0).get_code(True) + "--"
+        elif self.m_operator == mop.MutaOperator.post_inc_to_prev_dec:
+            return "--" + location.get_child(0).get_code(True)
+        elif self.m_operator == mop.MutaOperator.post_inc_to_prev_inc:
+            return "++" + location.get_child(0).get_code(True)
+        elif self.m_operator == mop.MutaOperator.post_dec_to_post_inc:
+            return location.get_child(0).get_code(True) + "++"
+        elif self.m_operator == mop.MutaOperator.post_dec_to_prev_dec:
+            return "--" + location.get_child(0).get_code(True)
+        elif self.m_operator == mop.MutaOperator.post_dec_to_prev_inc:
+            return "++" + location.get_child(0).get_code(True)
+        elif self.m_operator == mop.MutaOperator.insert_prev_dec:
+            return "--(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_prev_inc:
+            return "++(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_post_dec:
+            return "(" + location.get_code(True) + ")--"
+        elif self.m_operator == mop.MutaOperator.insert_post_inc:
+            return "(" + location.get_code(True) + ")++"
+        elif self.m_operator == mop.MutaOperator.delete_prev_inc or self.m_operator == mop.MutaOperator.delete_prev_dec:
+            return location.get_child(1).get_code(True)
+        elif self.m_operator == mop.MutaOperator.delete_post_inc or self.m_operator == mop.MutaOperator.delete_post_dec:
+            return location.get_child(0).get_code(True)
+        elif self.m_operator == mop.MutaOperator.inc_value:
+            return "((" + location.get_code(True) + ") + (" + str(self.parameter) + "))"
+        elif self.m_operator == mop.MutaOperator.mul_value:
+            return "((" + location.get_code(True) + ") * (" + str(self.parameter) + "))"
+        elif self.m_operator == mop.MutaOperator.insert_arith_neg:
+            return "-(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_bitws_rsv:
+            return "~(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_logic_not:
+            return "!(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_abs:
+            return "abs(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.insert_neg_abs:
+            return "nabs(" + location.get_code(True) + ")"
+        elif self.m_operator == mop.MutaOperator.delete_arith_neg or self.m_operator == \
+                mop.MutaOperator.delete_bitws_rsv or self.m_operator == mop.MutaOperator.delete_logic_not:
+            return location.get_child(1).get_code(True)
+        elif self.m_operator == mop.MutaOperator.set_true:
+            return "true"
+        elif self.m_operator == mop.MutaOperator.set_false:
+            return "false"
+        elif self.m_operator == mop.MutaOperator.set_constant:
+            return str(self.parameter)
+        elif self.m_operator == mop.MutaOperator.set_reference:
+            return str(self.parameter)
+        elif self.m_operator == mop.MutaOperator.equal_with_to_assign:
+            return location.get_child(0).get_code(True) + " = " + location.get_child(2).get_code(True)
+        elif str(self.m_operator).endswith("to_arith_add"):
+            return "((" + location.get_child(0).get_code(True) + ") + (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_sub"):
+            return "((" + location.get_child(0).get_code(True) + ") - (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_mul"):
+            return "((" + location.get_child(0).get_code(True) + ") * (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_div"):
+            return "((" + location.get_child(0).get_code(True) + ") / (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_mod"):
+            return "((" + location.get_child(0).get_code(True) + ") % (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_and"):
+            return "((" + location.get_child(0).get_code(True) + ") & (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_ior"):
+            return "((" + location.get_child(0).get_code(True) + ") | (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_xor"):
+            return "((" + location.get_child(0).get_code(True) + ") ^ (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_lsh"):
+            return "((" + location.get_child(0).get_code(True) + ") << (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_rsh"):
+            return "((" + location.get_child(0).get_code(True) + ") >> (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_logic_and"):
+            return "((" + location.get_child(0).get_code(True) + ") && (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_logic_ior"):
+            return "((" + location.get_child(0).get_code(True) + ") || (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_greater_tn"):
+            return "((" + location.get_child(0).get_code(True) + ") > (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_greater_eq"):
+            return "((" + location.get_child(0).get_code(True) + ") >= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_smaller_tn"):
+            return "((" + location.get_child(0).get_code(True) + ") < (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_smaller_eq"):
+            return "((" + location.get_child(0).get_code(True) + ") <= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_equal_with"):
+            return "((" + location.get_child(0).get_code(True) + ") == (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_not_equals"):
+            return "((" + location.get_child(0).get_code(True) + ") != (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") = (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_add_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") += (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_sub_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") -= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_mul_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") *= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_div_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") /= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_arith_mod_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") %= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_and_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") &= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_ior_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") |= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_xor_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") ^= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_lsh_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") <<= (" + location.get_child(2).get_code(True) + "))"
+        elif str(self.m_operator).endswith("to_bitws_rsh_assign"):
+            return "((" + location.get_child(0).get_code(True) + ") >>= (" + location.get_child(2).get_code(True) + "))"
+        else:
+            return "jcm_muta_unknown()"
+
 
 class Mutant:
     """
@@ -254,6 +421,56 @@ class Mutant:
     def get_features(self):
         self.features: StateInfection
         return self.features
+
+    def generate_code(self, output_file: str):
+        mutant = self
+        with open(output_file, 'w') as writer:
+            # 1. comment part
+            comment = "/**\n" \
+                      " * Mutant ID: %d\n" \
+                      " * Class: %s\n" \
+                      " * Operator: %s\n" \
+                      " * Location: \"%s\" at line %d\n" \
+                      " * Parameter: %s\n" \
+                      " */\n\n"
+            mid = mutant.id
+            mclass = str(mutant.get_mutation().get_mutation_class())
+            moperator = str(mutant.get_mutation().get_mutation_operator())
+            location = mutant.get_mutation().get_location()
+            location: astree.AstNode
+            location_code = location.get_code(True)
+            location_line = location.get_beg_line() + 9
+            parameter = "None"
+            if mutant.get_mutation().has_parameter():
+                parameter = str(mutant.get_mutation().get_parameter())
+            comment = comment % (mid, mclass, moperator, location_code, location_line, parameter)
+            writer.write(comment)
+            # 2. before mutation part
+            beg_index = location.beg_index
+            end_index = location.end_index
+            before_line = True
+            source_code = location.get_tree().get_source_code()
+            source_code: astree.SourceCode
+            writer.write(source_code.text[0: beg_index])
+            # 3. mutation part
+            replacement = self.mutation.get_replace_code()
+            for k in range(0, len(replacement)):
+                char = replacement[k]
+                if char == "\n" and before_line:
+                    before_line = False
+                    writer.write("// SEEDED LINE")
+                writer.write(char)
+            # 4. after mutation part
+            for k in range(end_index, len(source_code.text)):
+                char = source_code.text[k]
+                if char == "\n" and before_line:
+                    before_line = False
+                    writer.write("// SEEDED LINE")
+                writer.write(char)
+            # 5. end of file
+            if before_line:
+                writer.write("// SEEDED LINE")
+        return
 
 
 class ErrorType(Enum):
@@ -486,6 +703,232 @@ class StateErrors:
         state_error.error_type = ErrorType.mut_refer
         state_error.operands.append(expression)
         return self.__record__(state_error)
+
+    def __extend__(self, error: StateError, errors: set):
+        if error in errors or error is None:
+            return
+        elif error.error_type == ErrorType.execute_for:
+            loop_times = error.get_operand(1)
+            errors.add(error)
+            if loop_times > 1:
+                child = self.execute_for(error.get_operand(0), loop_times - 1)
+            else:
+                child = self.execute(error.get_operand(0))
+            self.__extend__(child, errors)
+        elif error.error_type == ErrorType.set_bool:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+                child = self.chg_bool(expression)
+                self.__extend__(child, errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                if parameter:
+                    parameter = 1
+                else:
+                    parameter = 0
+                operand = self.set_numb(expression, parameter)
+                self.__extend__(operand, errors)
+            elif data_type.is_address_type():
+                if parameter:
+                    sym_address = sym.sym_evaluator.__memory__.sym_address(1)
+                else:
+                    sym_address = sym.sym_evaluator.__memory__.sym_address(0)
+                operand = self.set_addr(expression, sym_address)
+                self.__extend__(operand, errors)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_bool:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+                self.__extend__(self.mut_expr(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__extend__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                self.__extend__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.set_numb:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__extend__(self.set_bool(expression, parameter != 0), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    parameter = sym.sym_evaluator.__number__(parameter)
+                    difference = parameter - constant
+                    self.__extend__(self.dif_numb(expression, difference), errors)
+                    if parameter == -constant:
+                        self.__extend__(self.neg_numb(expression), errors)
+                    elif int(parameter) == ~int(constant):
+                        self.__extend__(self.rsv_numb(expression), errors)
+                else:
+                    self.__extend__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                address = sym.sym_evaluator.__memory__.sym_address(int(parameter))
+                self.__extend__(self.set_addr(expression, address), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.neg_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__extend__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    if constant != 0:
+                        errors.add(error)
+                        self.__extend__(self.set_numb(expression, -constant), errors)
+                else:
+                    errors.add(error)
+                    self.__extend__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                address = sym.sym_evaluator.__memory__.sym_address(-1)
+                self.__extend__(self.set_addr(expression, address), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.rsv_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__extend__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                errors.add(error)
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__integer__(expr.content)
+                    self.__extend__(self.set_numb(expression, ~constant), errors)
+                else:
+                    self.__extend__(self.chg_numb(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.dif_numb:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if parameter == 0:
+                return
+            elif data_type.is_address_type():
+                self.__extend__(self.dif_addr(expression, parameter), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    self.__extend__(self.set_numb(expression, constant + parameter), errors)
+                if parameter > 0:
+                    self.__extend__(self.inc_numb(expression), errors)
+                else:
+                    self.__extend__(self.dec_numb(expression), errors)
+            elif data_type.is_bool_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    self.__extend__(self.set_numb(expression, constant + parameter), errors)
+                else:
+                    self.__extend__(self.set_bool(expression, True), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.inc_numb or error.error_type == ErrorType.dec_numb:
+            errors.add(error)
+            expression = error.get_operand(0)
+            self.__extend__(self.chg_numb(expression), errors)
+        elif error.error_type == ErrorType.set_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            sym_address = str(error.get_operand(1))
+            int_address = sym.sym_evaluator.__memory__.int_address(sym_address)
+            if data_type.is_bool_type():
+                self.__extend__(self.set_bool(expression, int_address != 0), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__extend__(self.set_numb(expression, int_address), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+                self.__extend__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.dif_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            difference = error.get_operand(1)
+            if data_type.is_bool_type():
+                self.__extend__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__extend__(self.dif_numb(expression, difference), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+                self.__extend__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__extend__(self.chg_bool(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__extend__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+                self.__extend__(self.mut_expr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_bool:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+                self.__extend__(self.mut_expr(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__extend__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                self.__extend__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__extend__(self.chg_bool(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+                self.__extend__(self.mut_expr(expression), errors)
+            elif data_type.is_address_type():
+                self.__extend__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.mut_refer:
+            expression = error.get_operand(0)
+            errors.add(error)
+            self.__extend__(self.mut_expr(expression), errors)
+        elif error.error_type == ErrorType.mut_expr:
+            errors.add(error)
+        else:
+            errors.add(error)
+
+    def extend(self, error: StateError):
+        errors = set()
+        self.__extend__(error, errors)
+        return errors
 
 
 class StateInfection:
@@ -726,6 +1169,11 @@ if __name__ == "__main__":
                     writer.write("\t}\n")
                     extension_errors = state_infection.get_extension_set(state_error)
                     writer.write("\t==>\t")
+                    for extension_error in extension_errors:
+                        writer.write(str(extension_error) + "; ")
+                    writer.write("\n")
+                    extension_errors = mutant_space.state_errors.extend(state_error)
+                    writer.write("\t~~>\t")
                     for extension_error in extension_errors:
                         writer.write(str(extension_error) + "; ")
                     writer.write("\n")
