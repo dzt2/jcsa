@@ -664,4 +664,5 @@ if __name__ == "__main__":
     # __output_state_error_main__()
     # training_doc2vec_encoding()
     # generate_training_csv_files()
+    generate_training_csv_files()
     generate_predict_csv_files()
