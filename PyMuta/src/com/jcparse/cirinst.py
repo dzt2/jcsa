@@ -52,6 +52,12 @@ class CirInstances:
             contexts.add(instance.get_context())
         return contexts
 
+    def has_instances_of_object(self, source_object):
+        if source_object in self.object_instances:
+            return len(self.object_instances[source_object]) > 0
+        else:
+            return False
+
     def get_instances_of_object(self, source_object):
         """
         :param source_object:
@@ -235,6 +241,7 @@ class CirInstanceNode(CirInstance):
         return
 
     def get_graph(self):
+        self.graph: CirInstanceGraph
         return self.graph
 
     def get_id(self):

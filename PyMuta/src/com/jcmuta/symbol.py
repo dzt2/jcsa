@@ -3,6 +3,8 @@ from enum import Enum
 import random
 import src.com.jcparse.base as base
 import src.com.jcparse.cirtree as cirtree
+import src.com.jcparse.cirflow as cirflow
+import src.com.jcparse.cirinst as cirinst
 
 
 class CSymbolType(Enum):
@@ -587,6 +589,54 @@ class CSymParser:
         else:
             target = None
         return target
+
+    def parse_by_execution_flow(self, execution_flow: cirflow.CirExecutionFlow, optimize: bool):
+        """
+        :param optimize:
+        :param execution_flow:
+        :return:
+            (1) true_flow   --> flow.source.condition is true
+            (2) false_flow  --> flow.target.condition is false
+            (3) otherwise   --> true
+        """
+        if execution_flow.get_flow_type() == cirflow.CirExecutionFlowType.true_flow:
+            cir_condition = execution_flow.get_source().get_statement().get_child(0)
+            sym_condition = self.parse_by_cir_tree(cir_condition)
+        elif execution_flow.get_flow_type() == cirflow.CirExecutionFlowType.false_flow:
+            cir_condition = execution_flow.get_source().get_statement().get_child(0)
+            sym_operand = self.parse_by_cir_tree(cir_condition)
+            sym_condition = CSymbolNode(CSymbolType.UnaryExpression, cir_condition.data_type, base.COperator.logic_not)
+            sym_condition.add_child(sym_operand)
+        else:
+            sym_condition = CSymbolNode(CSymbolType.Constant, base.CType(base.CMetaType.BoolType), True)
+        if optimize:
+            return sym_evaluator.evaluate(sym_condition)
+        else:
+            return sym_condition
+
+    def parse_by_instance_edge(self, instance_edge: cirinst.CirInstanceEdge, optimize: bool):
+        """
+        :param optimize:
+        :param instance_edge:
+        :return:
+            (1) true_flow   --> flow.source.condition is true
+            (2) false_flow  --> flow.target.condition is false
+            (3) otherwise   --> true
+        """
+        if instance_edge.get_flow_type() == cirflow.CirExecutionFlowType.true_flow:
+            cir_condition = instance_edge.get_source().get_source_execution().get_statement().get_child(0)
+            sym_condition = self.parse_by_cir_tree(cir_condition)
+        elif instance_edge.get_flow_type() == cirflow.CirExecutionFlowType.false_flow:
+            cir_condition = instance_edge.get_source().get_source_execution().get_statement().get_child(0)
+            sym_operand = self.parse_by_cir_tree(cir_condition)
+            sym_condition = CSymbolNode(CSymbolType.UnaryExpression, cir_condition.data_type, base.COperator.logic_not)
+            sym_condition.add_child(sym_operand)
+        else:
+            sym_condition = CSymbolNode(CSymbolType.Constant, base.CType(base.CMetaType.BoolType), True)
+        if optimize:
+            return sym_evaluator.evaluate(sym_condition)
+        else:
+            return sym_condition
 
 
 sym_parser = CSymParser()

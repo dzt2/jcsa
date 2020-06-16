@@ -172,6 +172,7 @@ class CirNode:
         return
 
     def get_tree(self):
+        self.tree: CirTree
         return self.tree
 
     def get_id(self):

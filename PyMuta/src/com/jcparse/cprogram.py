@@ -87,9 +87,14 @@ class CDominanceGraph:
     def get_nodes(self):
         return self.nodes.values()
 
+    def has_node(self, instance: cirinst.CirInstance):
+        return instance in self.nodes
+
     def get_node(self, instance: cirinst.CirInstance):
         if instance in self.nodes:
-            return self.nodes[instance]
+            node = self.nodes[instance]
+            node: CDominanceNode
+            return node
         else:
             return None
 
@@ -117,6 +122,108 @@ class CDominanceGraph:
                         target: CDominanceNode
                         source.dominate(target)
         return
+
+
+class CDominancePath:
+    """
+    --<prev_edges>-- mid --<post_edges>--
+    """
+    def __init__(self, mid_node: cirinst.CirInstanceNode):
+        self.beg_node = None
+        self.prev_edges = list()
+        self.mid_node = mid_node
+        self.post_edges = list()
+        self.end_node = None
+        self.__build__()
+        return
+
+    def __build__(self):
+        program = self.mid_node.get_graph().program
+        program: CProgram
+        prev_dominance_graph = program.get_prev_dominance_graph()
+        post_dominance_graph = program.get_post_dominance_graph()
+        # build prev-path
+        self.beg_node = self.mid_node
+        self.prev_edges.clear()
+        if prev_dominance_graph.has_node(self.mid_node):
+            dominance_node = prev_dominance_graph.get_node(self.mid_node)
+            while dominance_node is not None:
+                # update edges and node
+                if dominance_node.is_instance_edge():
+                    edge = dominance_node.get_instance_edge()
+                    if edge.get_flow_type() == cirflow.CirExecutionFlowType.true_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.false_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.call_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.return_flow:
+                        self.prev_edges.append(edge)
+                else:
+                    self.beg_node = dominance_node.get_instance_node()
+                # update dominance node
+                if len(dominance_node.in_nodes) > 0:
+                    dominance_node = dominance_node.in_nodes[0]
+                else:
+                    dominance_node = None
+        self.prev_edges.reverse()
+        # build post-path
+        self.end_node = self.mid_node
+        self.post_edges.clear()
+        if post_dominance_graph.has_node(self.mid_node):
+            dominance_node = post_dominance_graph.get_node(self.mid_node)
+            while dominance_node is not None:
+                # update edges and node
+                if dominance_node.is_instance_edge():
+                    edge = dominance_node.get_instance_edge()
+                    if edge.get_flow_type() == cirflow.CirExecutionFlowType.true_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.false_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.call_flow or \
+                            edge.get_flow_type() == cirflow.CirExecutionFlowType.return_flow:
+                        self.post_edges.append(edge)
+                else:
+                    self.end_node = dominance_node.get_instance_node()
+                # update dominance node
+                if len(dominance_node.ou_nodes) > 0:
+                    dominance_node = dominance_node.ou_nodes[0]
+                else:
+                    dominance_node = None
+        # end of all
+        return
+
+    def get_beg_node(self):
+        self.beg_node: cirinst.CirInstanceNode
+        return self.beg_node
+
+    def get_mid_node(self):
+        return self.mid_node
+
+    def get_end_node(self):
+        self.end_node: cirinst.CirInstanceNode
+        return self.end_node
+
+    def get_prev_edges(self):
+        return self.prev_edges
+
+    def get_post_edges(self):
+        return self.post_edges
+
+    @staticmethod
+    def dominance_paths(cir_location: cirtree.CirNode):
+        """
+        all the dominance paths through the statement of location in cir-source code
+        :param cir_location:
+        :return:
+        """
+        statement = cir_location.statement_of()
+        program = cir_location.get_tree().program
+        program: CProgram
+        instance_graph = program.get_instance_graph()
+        paths = set()
+        if instance_graph.get_instances().has_instances_of_object(statement):
+            code_instances = instance_graph.get_instances().get_instances_of_object(statement)
+            for code_instance in code_instances:
+                code_instance: cirinst.CirInstanceCode
+                path = CDominancePath(code_instance.get_instance_node())
+                paths.add(path)
+        return paths
 
 
 class CInformationFlowType(Enum):

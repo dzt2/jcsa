@@ -112,7 +112,12 @@ class MutantLabels:
 
 
 class StateConstraint:
-    def __init__(self, constraint_lines: list, program: cpro.CProgram):
+    def __init__(self):
+        self.execution = None
+        self.condition = None
+        return
+
+    def __build__(self, constraint_lines: list, program: cpro.CProgram):
         self.execution = None
         condition_lines = list()
         for line in constraint_lines:
@@ -148,7 +153,12 @@ class StateConstraints:
     """
     {conjunct|disjunct; constraints}
     """
-    def __init__(self, constraints_lines: list, program: cpro.CProgram):
+    def __init__(self, conjunct: bool):
+        self.conjunct = conjunct
+        self.constraints = list()
+        return
+
+    def __build__(self, constraints_lines: list, program: cpro.CProgram):
         self.conjunct = False
         self.constraints = list()
         constraint_lines = list()
@@ -164,7 +174,8 @@ class StateConstraints:
             elif line.startswith("[execution]") or line.startswith("[sym]"):
                 constraint_lines.append(line.strip())
             elif line.startswith("[end_constraint]"):
-                constraint = StateConstraint(constraint_lines, program)
+                constraint = StateConstraint()
+                constraint.__build__(constraint_lines, program)
                 self.constraints.append(constraint)
         return
 
@@ -190,6 +201,20 @@ class StateConstraints:
         else:
             buffer += " >"
         return buffer
+
+    def sym_condition(self):
+        if len(self.constraints) > 0:
+            if self.conjunct:
+                result = sym.CSymbolNode(sym.CSymbolType.MultiExpression,
+                                         base.CType(base.CMetaType.BoolType), base.COperator.logic_and)
+            else:
+                result = sym.CSymbolNode(sym.CSymbolType.MultiExpression,
+                                         base.CType(base.CMetaType.BoolType), base.COperator.logic_ior)
+            for sym_constraint in self.constraints:
+                result.add_child(sym_constraint.get_condition().clone())
+            return result
+        else:
+            return sym.CSymbolNode(sym.CSymbolType.Constant, base.CType(base.CMetaType.BoolType), True)
 
 
 class Mutation:
@@ -401,6 +426,7 @@ class Mutant:
         return
 
     def get_mutant_space(self):
+        self.mutant_space: MutantSpace
         return self.mutant_space
 
     def get_id(self):
@@ -529,6 +555,7 @@ class StateError:
         return self.errors
 
     def get_error_type(self):
+        self.error_type: ErrorType
         return self.error_type
 
     def get_operands(self):
@@ -538,10 +565,20 @@ class StateError:
         return self.operands[k]
 
     def __str__(self):
-        buffer = str(self.error_type) + "("
+        buffer = str(self.error_type) + "[ "
         for operand in self.operands:
-            buffer += " " + str(operand)
-        buffer += " )"
+            buffer += str(operand) + "; "
+        buffer += "]"
+        return buffer
+
+    def generate_code(self, simplified: bool):
+        buffer = str(self.error_type) + "[ "
+        for operand in self.operands:
+            if isinstance(operand, cirtree.CirNode):
+                buffer += "\"" + operand.generate_code(simplified) + "\"; "
+            else:
+                buffer += str(operand) + "; "
+        buffer += "]"
         return buffer
 
     def get_cir_location(self):
@@ -553,6 +590,12 @@ class StateError:
                 operand: cirtree.CirNode
                 return operand
         return None
+
+    def extend(self):
+        """
+        :return: set of state errors extended from this one
+        """
+        return self.get_error_set().extend(self)
 
 
 class StateErrors:
@@ -571,7 +614,9 @@ class StateErrors:
     def __record__(self, state_error: StateError):
         if str(state_error) not in self.state_errors:
             self.state_errors[str(state_error)] = state_error
-        return self.state_errors[str(state_error)]
+        state_error = self.state_errors[str(state_error)]
+        state_error: StateError
+        return state_error
 
     def failure(self):
         state_error = StateError(self, "", None)
@@ -991,7 +1036,8 @@ class StateInfection:
         for extension_line in extension_lines:
             extension_error = state_errors.get_state_error(extension_line, program)
             extension_errors.add(extension_error)
-        state_constraints = StateConstraints(constraints_lines, program)
+        state_constraints = StateConstraints(True)
+        state_constraints.__build__(constraints_lines, program)
         self.error_infections[state_error] = state_constraints
         self.extension_set[state_error] = extension_errors
         return
