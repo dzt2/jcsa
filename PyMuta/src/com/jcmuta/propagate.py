@@ -1177,19 +1177,635 @@ class StateErrorBuilder:
         :param expression:
         :param error:
         :param error_dict:
-        :return: TODO implement this method
+        :return:
         """
         # 1. declaration
         errors, new_error, constraints = self.graph.get_error_set(), None, mut.StateConstraints(True)
         # 2. generate new-error and constraints based on error-type
         if expression.get_child(0) == error.get_cir_location():         # expression = error / operand
-            pass
+            # 2.1. get the operand, symbolic representation and constant of another
+            cir_operand = expression.get_child(1)
+            sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(cir_operand))
+            sym_constant = None
+            if sym_operand.sym_type == sym.CSymbolType.Constant:
+                sym_constant = sym.sym_evaluator.__number__(sym_operand.content)
+            # 2. error based propagation
+            if error.error_type == mut.ErrorType.set_bool:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter / sym_constant)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_bool:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_numb:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter / sym_constant)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.neg_numb:
+                new_error = errors.neg_numb(expression)
+            elif error.error_type == mut.ErrorType.rsv_numb:
+                if sym_constant is not None and sym_constant == 1:
+                    new_error = errors.rsv_numb(expression)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_numb:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter != 0:
+                    if sym_constant is not None:
+                        new_error = errors.dif_numb(expression, parameter / sym_constant)
+                    else:
+                        new_error = errors.chg_numb(expression)
+                else:
+                    pass
+            elif error.error_type == mut.ErrorType.inc_numb:
+                if sym_constant is not None:
+                    if sym_constant > 0:
+                        new_error = errors.inc_numb(expression)
+                    else:
+                        new_error = errors.dec_numb(expression)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dec_numb:
+                if sym_constant is not None:
+                    if sym_constant > 0:
+                        new_error = errors.dec_numb(expression)
+                    else:
+                        new_error = errors.inc_numb(expression)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_addr:
+                parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter / sym_constant)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_addr:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter != 0:
+                    if sym_constant is not None:
+                        new_error = errors.dif_numb(expression, parameter / sym_constant)
+                    else:
+                        new_error = errors.chg_numb(expression)
+                else:
+                    pass
+            elif error.error_type == mut.ErrorType.chg_addr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_expr or error.error_type == mut.ErrorType.mut_refer:
+                new_error = errors.chg_numb(expression)
+            else:
+                pass
         else:                                                           # expression = operand / error
-            pass
-        # 4. save the result in error-dict
+            # 3.1. get the operand, symbolic expression and constant of the other
+            cir_operand = expression.get_child(1)
+            sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(cir_operand))
+            sym_constant = None
+            if sym_operand.sym_type == sym.CSymbolType.Constant:
+                sym_constant = sym.sym_evaluator.__number__(sym_operand.content)
+            constraints = StateErrorBuilder.__boolean_constraint__(cir_operand, True)   # operand != 0
+            # 3.2. generate error propagation for expression := operand / error
+            if error.error_type == mut.ErrorType.set_bool:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant / parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_bool:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_numb:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant / parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.neg_numb:
+                new_error = errors.neg_numb(expression)
+            elif error.error_type == mut.ErrorType.rsv_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_numb:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter > 0:
+                    if sym_constant > 0:
+                        new_error = errors.dec_numb(expression)
+                    else:
+                        new_error = errors.inc_numb(expression)
+                else:
+                    if sym_constant > 0:
+                        new_error = errors.inc_numb(expression)
+                    else:
+                        new_error = errors.dec_numb(expression)
+            elif error.error_type == mut.ErrorType.inc_numb:
+                if sym_constant is not None:
+                    if sym_constant > 0:
+                        new_error = errors.dec_numb(expression)
+                    else:
+                        new_error = errors.inc_numb(expression)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dec_numb:
+                if sym_constant is not None:
+                    if sym_constant > 0:
+                        new_error = errors.inc_numb(expression)
+                    else:
+                        new_error = errors.dec_numb(expression)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_addr:
+                parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant / parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_addr:
+                parameter = sym.sym_evaluator.__number__(error.get_operand(1))
+                if parameter > 0:
+                    if sym_constant > 0:
+                        new_error = errors.dec_numb(expression)
+                    else:
+                        new_error = errors.inc_numb(expression)
+                else:
+                    if sym_constant > 0:
+                        new_error = errors.inc_numb(expression)
+                    else:
+                        new_error = errors.dec_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_addr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_expr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_refer:
+                new_error = errors.chg_numb(expression)
+            else:
+                pass
+        # 3. save the result in error-dict
         if new_error is not None:
             error_dict[new_error] = constraints
         return error_dict
+
+    @staticmethod
+    def __add_number_constraint__(constraints: mut.StateConstraints,
+                                  expression: cirtree.CirNode, operator: base.COperator, constant):
+        """
+        :param expression:
+        :param operator:
+        :param constant:
+        :return: operand operator value
+        """
+        sym_operand = sym.sym_parser.parse_by_cir_tree(expression)
+        sym_constant = sym.CSymbolNode(sym.CSymbolType.Constant, expression.data_type, constant)
+        sym_condition = sym.CSymbolNode(sym.CSymbolType.BinaryExpression, base.CType(base.CMetaType.BoolType), operator)
+        sym_condition.add_child(sym_operand)
+        sym_condition.add_child(sym_constant)
+        execution = StateErrorBuilder.__execution_of_cir_location__(expression)
+        return constraints.add_constraint(execution, sym_condition)
+
+    def __generate_on_arith_mod__(self, expression: cirtree.CirNode, error: mut.StateError, error_dict: dict):
+        """
+        :param expression:
+        :param error:
+        :param error_dict:
+        :return:
+        """
+        # 1. declaration
+        errors, new_error, constraints = self.graph.get_error_set(), None, mut.StateConstraints(True)
+        # 2. generate new-error and constraints based on error-type
+        if expression.get_child(0) == error.get_cir_location():     # expression := error % operand
+            # 2.1. determine the operand, symbolic expression and its operand value
+            operand = expression.get_child(1)
+            sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(operand))
+            sym_constant = None
+            if sym_operand.sym_type == sym.CSymbolType.Constant:
+                sym_constant = sym.sym_evaluator.__integer__(sym_operand.content)
+            # 2.2. reconstruct the state constraints
+            StateErrorBuilder.__add_number_constraint__(constraints, operand, base.COperator.not_equals, 1)
+            StateErrorBuilder.__add_number_constraint__(constraints, operand, base.COperator.not_equals, -1)
+            # 2.3. error type based analysis
+            if error.error_type == mut.ErrorType.set_bool:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter % sym_constant)
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 1)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_bool:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_numb:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter % sym_constant)
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 1)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.neg_numb:
+                pass
+            elif error.error_type == mut.ErrorType.rsv_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_numb:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if sym_constant is not None:
+                    new_error = errors.dif_numb(expression, parameter % sym_constant)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.inc_numb or error.error_type == mut.ErrorType.dec_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_addr:
+                parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+                if parameter == 0:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, parameter % sym_constant)
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 1)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_addr:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if sym_constant is not None:
+                    new_error = errors.dif_numb(expression, parameter % sym_constant)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_addr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_expr or error.error_type == mut.ErrorType.mut_refer:
+                new_error = errors.chg_numb(expression)
+            else:
+                pass
+        else:                                                       # expression := operand % error
+            # 2.1. determine the operand, symbolic expression and its operand value
+            operand = expression.get_child(1)
+            sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(operand))
+            sym_constant = None
+            if sym_operand.sym_type == sym.CSymbolType.Constant:
+                sym_constant = sym.sym_evaluator.__integer__(sym_operand.content)
+            # 2.2. reconstruct the state constraints
+            StateErrorBuilder.__add_number_constraint__(constraints, operand, base.COperator.not_equals, 0)
+            StateErrorBuilder.__add_number_constraint__(constraints, operand, base.COperator.not_equals, 1)
+            StateErrorBuilder.__add_number_constraint__(constraints, operand, base.COperator.not_equals, -1)
+            # 2.3. generate new-error by source error's type
+            if error.error_type == mut.ErrorType.set_bool:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant % parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_bool:
+                new_error = errors.failure()
+            elif error.error_type == mut.ErrorType.set_numb:
+                parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant % parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.neg_numb:
+                pass
+            elif error.error_type == mut.ErrorType.rsv_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.inc_numb or error.error_type == mut.ErrorType.dec_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_numb:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.set_addr:
+                parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+                if parameter == 0:
+                    new_error = errors.failure()
+                elif parameter == 1 or parameter == -1:
+                    new_error = errors.set_numb(expression, 0)
+                elif sym_constant is not None:
+                    new_error = errors.set_numb(expression, sym_constant % parameter)
+                else:
+                    new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.dif_addr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.chg_addr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_expr:
+                new_error = errors.chg_numb(expression)
+            elif error.error_type == mut.ErrorType.mut_refer:
+                new_error = errors.chg_numb(expression)
+            else:
+                pass
+        # 3. save the result in error-dict
+        if new_error is not None:
+            error_dict[new_error] = constraints
+        return error_dict
+
+    def __generate_on_bitws_and__(self, expression: cirtree.CirNode, error: mut.StateError, error_dict: dict):
+        """
+        :param expression:
+        :param error:
+        :param error_dict:
+        :return:
+        """
+        # 1. declarations and get operand with its constant
+        errors, new_error = self.graph.get_error_set(), None
+        if expression.get_child(0) == error.get_cir_location():
+            cir_operand = expression.get_child(1)
+        else:
+            cir_operand = expression.get_child(0)
+        sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(cir_operand))
+        if sym_operand.sym_type == sym.CSymbolType.Constant:
+            sym_constant = sym.sym_evaluator.__integer__(sym_operand.content)
+        else:
+            sym_constant = None
+        constraints = StateErrorBuilder.__boolean_constraint__(cir_operand, True)
+        # 2. generate new-error w.r.t the type of source state error
+        if error.error_type == mut.ErrorType.set_bool:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if parameter == 0:
+                new_error = errors.set_numb(expression, 0)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter & sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_bool:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if parameter == 0:
+                new_error = errors.set_numb(expression, 0)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter & sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.neg_numb:
+            if sym_constant is not None and sym_constant == -1:
+                new_error = errors.neg_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.rsv_numb:
+            if sym_constant is not None and sym_constant == -1:
+                new_error = errors.rsv_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, parameter & sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.inc_numb:
+            if sym_constant is not None and sym_constant == -1:
+                new_error = errors.inc_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dec_numb:
+            if sym_constant is not None and sym_constant == -1:
+                new_error = errors.dec_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_numb:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_addr:
+            parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+            if parameter == 0:
+                new_error = errors.set_numb(expression, 0)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter & sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_addr:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, parameter & sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_addr:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.mut_expr or error.error_type == mut.ErrorType.mut_refer:
+            new_error = errors.chg_numb(expression)
+        else:
+            pass
+        # 3. save the new-error with its state constraints
+        if new_error is not None:
+            error_dict[new_error] = constraints
+        return error_dict
+
+    def __generate_on_bitws_ior__(self, expression: cirtree.CirNode, error: mut.StateError, error_dict: dict):
+        """
+        :param expression:
+        :param error:
+        :param error_dict:
+        :return:
+        """
+        # 1. declarations and get operand with its constant
+        errors, new_error, constraints = self.graph.get_error_set(), None, mut.StateConstraints(True)
+        if expression.get_child(0) == error.get_cir_location():
+            cir_operand = expression.get_child(1)
+        else:
+            cir_operand = expression.get_child(0)
+        sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(cir_operand))
+        if sym_operand.sym_type == sym.CSymbolType.Constant:
+            sym_constant = sym.sym_evaluator.__integer__(sym_operand.content)
+        else:
+            sym_constant = None
+        StateErrorBuilder.__add_number_constraint__(constraints, cir_operand, base.COperator.not_equals, -1)
+        # 2. generate new-error w.r.t the type of source state error
+        if error.error_type == mut.ErrorType.set_bool:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if parameter == -1:
+                new_error = errors.set_numb(expression, -1)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter | sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_bool:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if parameter == -1:
+                new_error = errors.set_numb(expression, -1)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter | sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.neg_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.neg_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.rsv_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.rsv_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, parameter | sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.inc_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.inc_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dec_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.dec_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_numb:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_addr:
+            parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+            if parameter == -1:
+                new_error = errors.set_numb(expression, -1)
+            elif sym_constant is not None:
+                new_error = errors.set_numb(expression, parameter | sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_addr:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, parameter | sym_constant)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_addr:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.mut_expr or error.error_type == mut.ErrorType.mut_refer:
+            new_error = errors.chg_numb(expression)
+        else:
+            pass
+        # 3. save the new-error with its state constraints
+        if new_error is not None:
+            error_dict[new_error] = constraints
+        return error_dict
+
+    def __generate_on_bitws_xor__(self, expression: cirtree.CirNode, error: mut.StateError, error_dict: dict):
+        """
+        :param expression:
+        :param error:
+        :param error_dict:
+        :return:
+        """
+        # 1. declarations and get operand with its constant
+        errors, new_error, constraints = self.graph.get_error_set(), None, mut.StateConstraints(True)
+        if expression.get_child(0) == error.get_cir_location():
+            cir_operand = expression.get_child(1)
+        else:
+            cir_operand = expression.get_child(0)
+        sym_operand = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(cir_operand))
+        if sym_operand.sym_type == sym.CSymbolType.Constant:
+            sym_constant = sym.sym_evaluator.__integer__(sym_operand.content)
+        else:
+            sym_constant = None
+        # 2. generate new-error w.r.t the type of source state error
+        if error.error_type == mut.ErrorType.set_bool:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.set_numb(expression, sym_constant ^ parameter)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_bool:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.set_numb(expression, sym_constant ^ parameter)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.neg_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.neg_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.rsv_numb:
+            new_error = errors.rsv_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_numb:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, sym_constant ^ parameter)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.inc_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.inc_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dec_numb:
+            if sym_constant is not None and sym_constant == 0:
+                new_error = errors.dec_numb(expression)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_numb:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.set_addr:
+            parameter = sym.sym_evaluator.__memory__.int_address(str(error.get_operand(1)))
+            if sym_constant is not None:
+                new_error = errors.set_numb(expression, sym_constant ^ parameter)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.dif_addr:
+            parameter = sym.sym_evaluator.__integer__(error.get_operand(1))
+            if sym_constant is not None:
+                new_error = errors.dif_numb(expression, sym_constant ^ parameter)
+            else:
+                new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.chg_addr:
+            new_error = errors.chg_numb(expression)
+        elif error.error_type == mut.ErrorType.mut_expr or error.error_type == mut.ErrorType.mut_refer:
+            new_error = errors.chg_numb(expression)
+        else:
+            pass
+        # 3. save the new-error with its state constraints
+        if new_error is not None:
+            error_dict[new_error] = constraints
+        return error_dict
+
+    def __generate_on_bitws_lsh__(self, expression: cirtree.CirNode, error: mut.StateError, error_dict: dict):
+        """
+        :param expression:
+        :param error:
+        :param error_dict:
+        :return: TODO implement this method
+        """
+        # 1. declarations
+        errors, new_error, constraints = self.graph.get_error_set(), None, mut.StateConstraints(True)
+        # 2. generate new-error based on type of source error
+        if expression.get_child(0) == error.get_cir_location():     # expression := error << operand
+            pass
+        else:                                                       # expression := operand << error
+            pass
+        # 3. save the result in error-dict
+        if new_error is not None:
+            error_dict[new_error] = constraints
+        return error_dict
+
 
 
 if __name__ == "__main__":
