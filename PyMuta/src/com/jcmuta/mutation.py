@@ -216,6 +216,18 @@ class StateConstraints:
         else:
             return sym.CSymbolNode(sym.CSymbolType.Constant, base.CType(base.CMetaType.BoolType), True)
 
+    def add_constraint(self, execution: cirflow.CirExecution, condition: sym.CSymbolNode):
+        """
+        :param execution:
+        :param condition:
+        :return: add the constraint of {execution, condition} in the list
+        """
+        constraint = StateConstraint()
+        constraint.execution = execution
+        constraint.condition = condition
+        self.constraints.append(constraint)
+        return constraint
+
 
 class Mutation:
     """
@@ -970,10 +982,231 @@ class StateErrors:
         else:
             errors.add(error)
 
-    def extend(self, error: StateError):
+    def extend(self, error: StateError, necessary=False):
+        """
+        :param error:
+        :param necessary:
+        :return: extension set of the error or necessary set of errors that are equivalent with source error when
+                 the parameter necessary is established as True.
+        """
         errors = set()
-        self.__extend__(error, errors)
+        if necessary:
+            self.__necessary__(error, errors)
+        else:
+            self.__extend__(error, errors)
         return errors
+
+    def __necessary__(self, error: StateError, errors: set):
+        if error in errors or error is None:
+            return
+        elif error.error_type == ErrorType.set_bool:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+                return
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                if parameter:
+                    parameter = 1
+                else:
+                    parameter = 0
+                operand = self.set_numb(expression, parameter)
+                self.__necessary__(operand, errors)
+            elif data_type.is_address_type():
+                if parameter:
+                    sym_address = sym.sym_evaluator.__memory__.sym_address(1)
+                else:
+                    sym_address = sym.sym_evaluator.__memory__.sym_address(0)
+                operand = self.set_addr(expression, sym_address)
+                self.__necessary__(operand, errors)
+            return
+        elif error.error_type == ErrorType.chg_bool:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                self.__necessary__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.set_numb:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.set_bool(expression, parameter != 0), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    parameter = sym.sym_evaluator.__number__(parameter)
+                    difference = parameter - constant
+                    self.__necessary__(self.dif_numb(expression, difference), errors)
+                    if parameter == -constant:
+                        self.__necessary__(self.neg_numb(expression), errors)
+                    elif int(parameter) == ~int(constant):
+                        self.__necessary__(self.rsv_numb(expression), errors)
+            elif data_type.is_address_type():
+                address = sym.sym_evaluator.__memory__.sym_address(int(parameter))
+                self.__necessary__(self.set_addr(expression, address), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.neg_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    if constant != 0:
+                        errors.add(error)
+                        self.__necessary__(self.set_numb(expression, -constant), errors)
+                else:
+                    errors.add(error)
+            elif data_type.is_address_type():
+                address = sym.sym_evaluator.__memory__.sym_address(-1)
+                self.__necessary__(self.set_addr(expression, address), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.rsv_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                errors.add(error)
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__integer__(expr.content)
+                    self.__necessary__(self.set_numb(expression, ~constant), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.dif_numb:
+            expression = error.get_operand(0)
+            parameter = error.get_operand(1)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if parameter == 0:
+                return
+            elif data_type.is_address_type():
+                self.__necessary__(self.dif_addr(expression, parameter), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    self.__necessary__(self.set_numb(expression, constant + parameter), errors)
+            elif data_type.is_bool_type():
+                expr = sym.sym_evaluator.evaluate(sym.sym_parser.parse_by_cir_tree(expression))
+                if expr.sym_type == sym.CSymbolType.Constant:
+                    constant = sym.sym_evaluator.__number__(expr.content)
+                    self.__necessary__(self.set_numb(expression, constant + parameter), errors)
+                else:
+                    self.__necessary__(self.set_bool(expression, True), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.inc_numb or error.error_type == ErrorType.dec_numb:
+            errors.add(error)
+        elif error.error_type == ErrorType.set_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            sym_address = str(error.get_operand(1))
+            int_address = sym.sym_evaluator.__memory__.int_address(sym_address)
+            if data_type.is_bool_type():
+                self.__necessary__(self.set_bool(expression, int_address != 0), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.set_numb(expression, int_address), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+            else:
+                return
+        elif error.error_type == ErrorType.dif_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            difference = error.get_operand(1)
+            if data_type.is_bool_type():
+                self.__necessary__(self.set_bool(expression, True), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.dif_numb(expression, difference), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_addr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.chg_bool(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                errors.add(error)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_bool:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                errors.add(error)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.chg_numb(expression), errors)
+            elif data_type.is_address_type():
+                self.__necessary__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.chg_numb:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.chg_bool(expression), errors)
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                errors.add(error)
+            elif data_type.is_address_type():
+                self.__necessary__(self.chg_addr(expression), errors)
+            else:
+                return
+        elif error.error_type == ErrorType.mut_expr:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.chg_bool(expression))
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.chg_numb(expression))
+            elif data_type.is_address_type():
+                self.__necessary__(self.chg_addr(expression))
+            else:
+                errors.add(error)
+        elif error.error_type == ErrorType.mut_refer:
+            expression = error.get_operand(0)
+            expression: cirtree.CirNode
+            data_type = expression.get_data_type()
+            if data_type.is_bool_type():
+                self.__necessary__(self.chg_bool(expression))
+            elif data_type.is_integer_type() or data_type.is_real_type():
+                self.__necessary__(self.chg_numb(expression))
+            elif data_type.is_address_type():
+                self.__necessary__(self.chg_addr(expression))
+            errors.add(error)
+        else:
+            errors.add(error)
+            return
 
 
 class StateInfection:
