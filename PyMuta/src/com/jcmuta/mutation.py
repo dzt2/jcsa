@@ -609,6 +609,34 @@ class StateError:
         """
         return self.get_error_set().extend(self)
 
+    def is_statement_error(self):
+        return self.error_type == ErrorType.execute or \
+               self.error_type == ErrorType.not_execute or \
+               self.error_type == ErrorType.execute_for
+
+    def is_system_error(self):
+        return self.error_type == ErrorType.failure or self.error_type == ErrorType.syntax_error
+
+    def is_boolean_error(self):
+        return self.error_type == ErrorType.set_bool or self.error_type == ErrorType.chg_bool
+
+    def is_numeric_error(self):
+        return self.error_type == ErrorType.set_numb or self.error_type == ErrorType.neg_numb or \
+               self.error_type == ErrorType.rsv_numb or self.error_type == ErrorType.dif_numb or \
+               self.error_type == ErrorType.inc_numb or self.error_type == ErrorType.dec_numb or \
+               self.error_type == ErrorType.chg_numb
+
+    def is_address_error(self):
+        return self.error_type == ErrorType.set_addr or self.error_type == ErrorType.dif_addr or \
+               self.error_type == ErrorType.chg_addr
+
+    def is_general_expression_error(self):
+        return self.error_type == ErrorType.mut_expr or self.error_type == ErrorType.mut_refer
+
+    def is_expression_error(self):
+        return self.is_boolean_error() or self.is_numeric_error() or self.is_address_error() or \
+               self.is_general_expression_error()
+
 
 class StateErrors:
     """

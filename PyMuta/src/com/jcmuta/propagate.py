@@ -216,7 +216,7 @@ class StateErrorGraph:
         self.infection = infection
         self.nodes = dict()
         self.faulty_node = None
-        self.invalid_chars = ["\""]
+        self.invalid_chars = ["\"", '#']
         builder = StateErrorBuilder(self)
         builder.generate_infection_layer()
         builder.generate_reaching_links()
@@ -289,8 +289,10 @@ class StateErrorGraph:
         buffer = ""
         for k in range(0, len(text)):
             char = text[k]
-            if char in self.invalid_chars:
+            if char == "\"":
                 char = "\'"
+            elif char in self.invalid_chars:
+                char = ""
             buffer += char
         return buffer
 
@@ -312,7 +314,20 @@ class StateErrorGraph:
         # 2. create the nodes for each node in state error propagation graph
         for key, node in self.nodes.items():
             node: StateErrorNode
-            digraph.node(name=key, label=node.node_text(max_code_length))
+            state_error = node.get_error()
+            if state_error.is_system_error():
+                color = "red"
+            elif state_error.is_statement_error():
+                color = "green"
+            elif state_error.is_boolean_error():
+                color = "yellow"
+            elif state_error.is_numeric_error():
+                color = "blue"
+            elif state_error.is_address_error():
+                color = "gray"
+            else:
+                color = "black"
+            digraph.node(name=key, label=self.__normalize_string__(node.node_text(max_code_length)), color=color)
         # 3. create the edges for each propagation pair in the graph
         for source_key, source in self.nodes.items():
             source: StateErrorNode
@@ -3091,7 +3106,7 @@ class StateErrorBuilder:
                 else:
                     target_instance: cirinst.CirInstanceCode
                     target_statement = target_instance.get_cir_source_node()
-                if target_statement.is_statement():
+                if target_statement.is_statement() and not target_statement.is_tag_statement():
                     if information_edge.get_flow().get_flow_type() == cprog.CInformationFlowType.execute_in_true:
                         true_branch.add(target_statement)
                     elif information_edge.get_flow().get_flow_type() == cprog.CInformationFlowType.execute_in_false:
@@ -3252,8 +3267,7 @@ class StateErrorBuilder:
 if __name__ == "__main__":
     prefix = "C:\\Users\\yukimula\\git\\jcsa\\JCMuta\\results\\data"
     postfix = "C:\\Users\\yukimula\\git\\jcsa\\PyMuta\\output\\error_graphs"
-    propagation_distance = 2
-    max_code_length = 64
+    propagation_distance, code_length = 2, 64
     print("Testing start from...")
     for filename in os.listdir(prefix):
         directory = os.path.join(prefix, filename)
@@ -3263,15 +3277,23 @@ if __name__ == "__main__":
         output_directory = os.path.join(postfix, filename)
         if not os.path.exists(output_directory):
             os.mkdir(output_directory)
+        total, pass_number = 0, 0
         for mutant in mutant_space.get_mutants():
             if mutant.get_features() is not None:
-                print("\t\t==> Proceed mutant", mutant.get_id())
+                # print("\t\t==> Proceed mutant", mutant.get_id())
                 state_error_graph = StateErrorGraph(mutant.get_features(), propagation_distance)
                 output_file = os.path.join(output_directory, filename + "." + str(mutant.id))
-                state_error_graph.write_dot_graph(output_file, max_code_length)
-                pdf_file = os.path.join(output_directory, filename + "." + str(mutant.id) + ".pdf")
-                while not os.path.exists(pdf_file):
-                    pass
-                os.remove(output_file)
-        print("\tProcess", len(mutant_space.get_mutants()), "mutants for", filename)
+                try:
+                    state_error_graph.write_dot_graph(output_file, max_code_length=code_length)
+                    pdf_file = os.path.join(output_directory, filename + "." + str(mutant.id) + ".pdf")
+                    while not os.path.exists(pdf_file):
+                        pass
+                    pass_number += 1
+                except graphviz.backend.CalledProcessError:
+                    print("\t\t==> @Failed-For-Mutant-", mutant.id)
+                finally:
+                    os.remove(output_file)
+            total += 1
+        print("\tPass-Rate: ", pass_number, "/", total, "for", filename)
+        print()
     print("Testing end for all.")

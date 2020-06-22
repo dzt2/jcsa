@@ -1464,7 +1464,7 @@ class CSymEvaluator:
             elif len(operands) == 1:
                 return operands[0]
             else:
-                result = CSymbolNode(CSymbolType.Constant, expression.data_type, base.COperator.bitws_ior)
+                result = CSymbolNode(CSymbolType.MultiExpression, expression.data_type, base.COperator.bitws_ior)
                 for operand in operands:
                     result.add_child(operand)
                 return result
