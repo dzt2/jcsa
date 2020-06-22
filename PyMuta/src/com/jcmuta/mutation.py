@@ -1186,11 +1186,11 @@ class StateErrors:
             expression: cirtree.CirNode
             data_type = expression.get_data_type()
             if data_type.is_bool_type():
-                self.__necessary__(self.chg_bool(expression))
+                self.__necessary__(self.chg_bool(expression), errors)
             elif data_type.is_integer_type() or data_type.is_real_type():
-                self.__necessary__(self.chg_numb(expression))
+                self.__necessary__(self.chg_numb(expression), errors)
             elif data_type.is_address_type():
-                self.__necessary__(self.chg_addr(expression))
+                self.__necessary__(self.chg_addr(expression), errors)
             else:
                 errors.add(error)
         elif error.error_type == ErrorType.mut_refer:
@@ -1198,15 +1198,50 @@ class StateErrors:
             expression: cirtree.CirNode
             data_type = expression.get_data_type()
             if data_type.is_bool_type():
-                self.__necessary__(self.chg_bool(expression))
+                self.__necessary__(self.chg_bool(expression), errors)
             elif data_type.is_integer_type() or data_type.is_real_type():
-                self.__necessary__(self.chg_numb(expression))
+                self.__necessary__(self.chg_numb(expression), errors)
             elif data_type.is_address_type():
-                self.__necessary__(self.chg_addr(expression))
+                self.__necessary__(self.chg_addr(expression), errors)
             errors.add(error)
         else:
             errors.add(error)
             return
+
+    @staticmethod
+    def __include__(xset: set, yset: set):
+        for obj in yset:
+            if obj not in xset:
+                return False
+        return True
+
+    def representative_set(self, errors):
+        """
+        :param errors:
+        :return: minimal set of representative errors in original set of errors
+        """
+        error_dict = dict()
+        for error in errors:
+            error: StateError
+            error_dict[error] = self.extend(error)
+        visit_set, remove_set = set(), set()
+        while True:
+            next_error = None
+            for error in error_dict.keys():
+                if error not in visit_set:
+                    visit_set.add(error)
+                    next_error = error
+                    break
+            if next_error is None:
+                break
+            remove_set.clear()
+            next_error_set = error_dict[next_error]
+            for error, error_set in error_dict.items():
+                if error != next_error and StateErrors.__include__(next_error_set, error_set):
+                    remove_set.add(error)
+            for error in remove_set:
+                error_dict.pop(error)
+        return error_dict.keys()
 
 
 class StateInfection:

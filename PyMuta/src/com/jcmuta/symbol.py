@@ -539,6 +539,7 @@ class CSymParser:
         elif source.cir_type == cirtree.CirType.wait_expression:
             target = CSymbolNode(CSymbolType.CallExpression, source.get_data_type(), None)
             target.add_child(self.parse_by_cir_tree(source.get_child(0)))
+            target.add_child(CSymbolNode(CSymbolType.ArgumentList, None, None))
         elif source.cir_type == cirtree.CirType.arith_expression:
             operator = source.get_operator()
             if operator == base.COperator.negative:

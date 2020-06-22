@@ -188,6 +188,7 @@ class CirNode:
         return self.data_type
 
     def get_parent(self):
+        self.parent: CirNode
         return self.parent
 
     def get_children(self):

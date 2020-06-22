@@ -63,9 +63,12 @@ class CirInstances:
         :param source_object:
         :return: set of instances w.r.t. the source object in different contexts
         """
-        if source_object not in self.object_instances:
-            self.object_instances[source_object] = list()
-        return self.object_instances[source_object]
+        if source_object is None:
+            return list()
+        else:
+            if source_object not in self.object_instances:
+                self.object_instances[source_object] = list()
+            return self.object_instances[source_object]
 
     def get_instance(self, context: int, source_object):
         instances = self.get_instances_of_object(source_object)
