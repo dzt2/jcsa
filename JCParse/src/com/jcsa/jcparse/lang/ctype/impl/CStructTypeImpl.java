@@ -50,4 +50,15 @@ public class CStructTypeImpl implements CStructType {
 	public String get_name() {
 		return name;
 	}
+
+	@Override
+	public String generate_code() {
+		if(this.name.isEmpty()) {
+			return "struct@" + this.hashCode();
+		}
+		else {
+			return "struct " + this.name;
+		}
+	}
+	
 }

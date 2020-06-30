@@ -22,4 +22,9 @@ public interface CType {
 	 * @return
 	 */
 	public boolean is_defined();
+	
+	/**
+	 * @return code of the data type
+	 */
+	public String generate_code();
 }

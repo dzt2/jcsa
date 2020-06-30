@@ -724,7 +724,9 @@ class FeatureEvaluation:
         print("Classifier Accuracy <=", metrics.accuracy_score(t_labels, p_labels))
         print(metrics.classification_report(t_labels, p_labels, target_names=["Killable", "Equivalent"]))
         print("Transition Table =", str(transitions))
-        sns.kdeplot(entropy_list, shade=True, color="b", label="entropy")
+        sns.kdeplot(entropy_list, shade=True, color="b", label=" Entropy")
+        plt.xlabel("Feature Entropy")
+        plt.ylabel("Entropy Distribution")
         plt.show()
         return
 
@@ -1053,4 +1055,5 @@ class FeatureEncoding2:
 
 
 if __name__ == "__main__":
-    encoding_feature_vectors()
+    evaluate_feature_model()
+    # encoding_feature_vectors()

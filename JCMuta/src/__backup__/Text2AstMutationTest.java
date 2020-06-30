@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcmuta.mutant.AstMutation;
-import com.jcsa.jcmuta.mutant.back2mutation.Text2MutaTranslators;
 import com.jcsa.jcmuta.mutant.code2mutation.MutationCodeType;
+import com.jcsa.jcmuta.mutant.orig2mutation.Text2MutaTranslators;
 import com.jcsa.jcmuta.project.MutaProject;
 import com.jcsa.jcmuta.project.MutaSourceFile;
 import com.jcsa.jcmuta.project.MutaTestResult;

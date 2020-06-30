@@ -48,4 +48,16 @@ public class CArrayTypeImpl implements CArrayType {
 		} else
 			return false;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		if(this.length > 0) {
+			return this.etype.generate_code() + "[" + this.length + "]";
+		}
+		else {
+			return this.etype.generate_code() + "*";
+		}
+	}
+	
 }

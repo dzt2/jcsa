@@ -47,4 +47,10 @@ public class CQualifierTypeImpl implements CQualifierType {
 		else
 			return false;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		return this.type.generate_code();
+	}
 }

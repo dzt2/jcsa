@@ -38,4 +38,16 @@ public class CEnumTypeImpl implements CEnumType {
 	public String get_name() {
 		return name;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		if(this.name.isEmpty()) {
+			return "enum@" + this.hashCode();
+		}
+		else {
+			return "enum " + this.name;
+		}
+	}
+	
 }

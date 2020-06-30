@@ -38,4 +38,16 @@ public class CUnionTypeImpl implements CUnionType {
 	public String get_name() {
 		return name;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		if(this.name.isEmpty()) {
+			return "union@" + this.hashCode();
+		}
+		else {
+			return "union " + this.name;
+		}
+	}
+	
 }

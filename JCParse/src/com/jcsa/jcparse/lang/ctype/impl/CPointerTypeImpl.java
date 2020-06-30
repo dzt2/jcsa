@@ -36,4 +36,10 @@ public class CPointerTypeImpl implements CPointerType {
 		else
 			return false;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		return this.pointed_type.generate_code() + "*";
+	}
 }

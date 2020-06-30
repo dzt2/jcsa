@@ -68,4 +68,10 @@ public class CFunctionTypeImpl implements CFunctionType {
 		} else
 			return false;
 	}
+
+	
+	@Override
+	public String generate_code() {
+		return this.rtype.generate_code() + "()";
+	}
 }
