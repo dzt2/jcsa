@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProd
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.text.CLocation;
 import com.jcsa.jcparse.lang.text.CText;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 
 /**
  * To generate code for mutation
@@ -33,7 +33,7 @@ public class MutaCodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public void write(Mutant mutant, AstFile source, File target, CodeMutationType mtype) throws Exception {
+	public void write(Mutant mutant, AstCirFile source, File target, CodeMutationType mtype) throws Exception {
 		if(mutant == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else if(source == null)
@@ -66,7 +66,7 @@ public class MutaCodeGenerator {
 	 * @param source
 	 * @throws Exception
 	 */
-	protected void gen_jcm_code(Mutant mutant, AstFile source, CodeMutationType mtype) throws Exception {
+	protected void gen_jcm_code(Mutant mutant, AstCirFile source, CodeMutationType mtype) throws Exception {
 		/* initialization */
 		buff.setLength(0); TextMutation mutation = mutant.get_mutation();
 		 
@@ -93,13 +93,13 @@ public class MutaCodeGenerator {
 	 * @param source
 	 * @throws Exception
 	 */
-	protected void gen_fomutant(TextMutation mutation, AstFile source) throws Exception {
+	protected void gen_fomutant(TextMutation mutation, AstCirFile source) throws Exception {
 		/* declaration */
 		AstNode origin = mutation.get_origin();
 		CLocation loc = origin.get_location();
 		int beg = loc.get_bias(), k = 0;
 		int end = beg + loc.get_length();
-		CText text = source.get_code();
+		CText text = source.get_source_code();
 		
 		/* prefix outputs */
 		for(k = 0; k < beg; k++) 
@@ -124,7 +124,7 @@ public class MutaCodeGenerator {
 	 * @param Source
 	 * @throws Exception
 	 */
-	protected void gen_ctmutant(ContextMutation mutation, AstFile source) throws Exception {
+	protected void gen_ctmutant(ContextMutation mutation, AstCirFile source) throws Exception {
 		this.gen_mut_declar(mutation, source);
 		this.gen_mut_callee(mutation, source);
 		this.gen_mut_define(mutation, source);
@@ -137,13 +137,14 @@ public class MutaCodeGenerator {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void gen_mut_declar(ContextMutation mutation, AstFile source) throws Exception {
+	private void gen_mut_declar(ContextMutation mutation, AstCirFile source) throws Exception {
 		/* get the function where mutant is seeded */
-		AstFunctionDefinition def = source.function_of(mutation.get_origin());
+		AstFunctionDefinition def = 
+				source.get_ast_tree().function_of(mutation.get_origin());
 		if(def == null) throw new IllegalArgumentException("Not in function");
 		
 		/* get the index for deriving text */
-		CText text = source.get_code();
+		CText text = source.get_source_code();
 		int fbeg = def.get_location().get_bias();
 		AstName fname = this.find_name(def.get_declarator()); 
 		int nbeg = fname.get_location().get_bias();
@@ -158,13 +159,14 @@ public class MutaCodeGenerator {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void gen_mut_define(ContextMutation mutation, AstFile source) throws Exception {
+	private void gen_mut_define(ContextMutation mutation, AstCirFile source) throws Exception {
 		/* get the function where mutant is seeded */
-		AstFunctionDefinition def = source.function_of(mutation.get_origin());
+		AstFunctionDefinition def = 
+				source.get_ast_tree().function_of(mutation.get_origin());
 		if(def == null) throw new IllegalArgumentException("Not in function");
 		
 		/* find the mutated point */
-		CText text = source.get_code(); int i; char ch;
+		CText text = source.get_source_code(); int i; char ch;
 		int fbeg = def.get_location().get_bias();
 		int fend = fbeg + def.get_location().get_length();
 		AstName fname = this.find_name(def.get_declarator());
@@ -218,13 +220,13 @@ public class MutaCodeGenerator {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void gen_mut_callee(ContextMutation mutation, AstFile source) throws Exception {
+	private void gen_mut_callee(ContextMutation mutation, AstCirFile source) throws Exception {
 		/* declarations */
 		AstFunCallExpression call_point = mutation.get_callee();
 		AstExpression func_expr = call_point.get_function();
 		
 		/* get the seeding point */
-		CText text = source.get_code(); int end = text.length();
+		CText text = source.get_source_code(); int end = text.length();
 		int cbeg = func_expr.get_location().get_bias(); int i; char ch;
 		int cend = func_expr.get_location().get_length() + cbeg;
 		

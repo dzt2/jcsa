@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 
 /**
  * To manage the generation, compilation, and testing
@@ -212,7 +212,7 @@ public class ExecManager {
 		
 		/* constructor */
 		protected ExecManager executor;
-		protected AstFile source;
+		protected AstCirFile source;
 		protected List<Mutant> mutants;
 		protected List<TestOutput> ans;
 		protected ExecStatus gn_status;
@@ -220,7 +220,7 @@ public class ExecManager {
 		protected int buff_size;
 		protected CodeMutationType mtype;
 		protected MutaThread(ExecManager executor, 
-				List<Mutant> mutants, AstFile source,
+				List<Mutant> mutants, AstCirFile source,
 				int buff_size, long timeout, CodeMutationType mtype) throws Exception {
 			if(executor == null)
 				throw new IllegalArgumentException("Invalid executor: null");
@@ -350,9 +350,9 @@ public class ExecManager {
 	 * @param mtype : 0 (coverage), 1 (weak mutation), 2 (strong mutation)
 	 * @throws Exception
 	 */
-	public void set_mutant(Mutant mutant, AstFile cursor, CodeMutationType mtype) throws Exception {
+	public void set_mutant(Mutant mutant, AstCirFile cursor, CodeMutationType mtype) throws Exception {
 		File cdir = this.resource.get_cdir();
-		String name = FileProcess.name_of(cursor.get_source());
+		String name = FileProcess.name_of(cursor.get_source_file());
 		File target = FileProcess.file_of(cdir, name);
 		writer.write(mutant, cursor, target, mtype);
 	}
@@ -528,7 +528,7 @@ public class ExecManager {
 	 * @return
 	 * @throws Exception
 	 */
-	public MutaThread get_thread(AstFile context, List<Mutant> mutants, int buff_size, long timeout, CodeMutationType mtype) throws Exception {
+	public MutaThread get_thread(AstCirFile context, List<Mutant> mutants, int buff_size, long timeout, CodeMutationType mtype) throws Exception {
 		this.verify_available(); 
 		return new MutaThread(this, mutants, context, buff_size, timeout, mtype);
 	}

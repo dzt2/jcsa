@@ -3,12 +3,11 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.parse.CTranslate;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
@@ -28,6 +27,7 @@ public class CInfluenceTest {
 	
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "result/inf/";
+	protected static final File template_file = new File("config/run_temp.txt");
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
@@ -36,9 +36,9 @@ public class CInfluenceTest {
 	}
 	private static void testing(File file) throws Exception {
 		System.out.println("Testing on " + file.getName());
-		AstTree ast_tree = parse(file);
-		System.out.println("\t1. get the AST-tree [" + ast_tree.number_of_nodes() + "]");
-		CirTree cir_tree = parse(ast_tree);
+		AstCirFile ast_file = parse(file);
+		System.out.println("\t1. get the AST-tree [" + ast_file.get_ast_tree().number_of_nodes() + "]");
+		CirTree cir_tree = ast_file.get_cir_tree();
 		System.out.println("\t2. get th  CIR-tree [" + cir_tree.size() + "]");
 		CirCallContextInstanceGraph program_graph = translate(cir_tree);
 		System.out.println("\t3. get program graph [" + program_graph.size() + "]");
@@ -50,11 +50,8 @@ public class CInfluenceTest {
 	}
 	
 	/* basic methods */
-	private static AstTree parse(File file) throws Exception {
-		return CTranslate.parse(file, ClangStandard.gnu_c89);
-	}
-	private static CirTree parse(AstTree ast_tree) throws Exception {
-		return CTranslate.parse(ast_tree);
+	private static AstCirFile parse(File file) throws Exception {
+		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");

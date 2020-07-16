@@ -5,8 +5,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Iterator;
 
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.AstFile;
 
 public class MutantDBInterface extends DBInterface {
 	
@@ -24,8 +24,8 @@ public class MutantDBInterface extends DBInterface {
 	public static final String READ_ITEM_BY_PONT = "select * from mutants where origin=?;";
 	public static final String READ_ITEM_BY_ID 	= "select * from mutants where id=?;";
 	
-	protected AstFile context;
-	public MutantDBInterface(AstFile context) throws Exception {
+	protected AstCirFile context;
+	public MutantDBInterface(AstCirFile context) throws Exception {
 		super();
 		if(context == null)
 			throw new IllegalArgumentException("No context!");
@@ -247,7 +247,7 @@ public class MutantDBInterface extends DBInterface {
 		MutOperator operator = Mutant.get_operator_by(rs.getString("operator"));
 		MutationMode mut_mode = Mutant.get_mode_from(operator, rs.getString("mode"));
 		int astkey = rs.getInt("origin");
-		AstNode origin = context.get_ast_node(astkey);
+		AstNode origin = context.get_ast_tree().get_node(astkey);
 		String replace = rs.getString("replace");
 		
 		TextMutation mutation = TextMutation.produce(

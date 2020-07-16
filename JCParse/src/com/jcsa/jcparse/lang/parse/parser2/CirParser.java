@@ -1,6 +1,6 @@
 package com.jcsa.jcparse.lang.parse.parser2;
 
-import com.jcsa.jcparse.lang.CSizeofBase;
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
@@ -248,7 +248,10 @@ public class CirParser {
 	private CirTreeImpl cir_tree;
 	private ACPModule cur_module;
 	private CTypeFactory type_factory;
-	private CirParser(AstTranslationUnit ast_root) throws IllegalArgumentException {
+	private CRunTemplate template;
+	private CirParser(AstTranslationUnit ast_root, CRunTemplate 
+			template) throws IllegalArgumentException {
+		this.template = template;
 		this.data = new ACParserData(ast_root);
 		this.cir_tree = this.data.get_cir_tree();
 		this.cur_module = null;
@@ -638,7 +641,7 @@ public class CirParser {
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
 		
-		/* 2. £¨arith_add|arith_sub (E) 1£© */
+		/* 2. ï¿½ï¿½arith_add|arith_sub (E) 1ï¿½ï¿½ */
 		CirReferExpression lvalue = (CirReferExpression) this.cir_tree.copy(osolution.get_result());
 		CirArithExpression rvalue;
 		switch(source.get_operator().get_operator()) {
@@ -1182,7 +1185,7 @@ public class CirParser {
 		}
 		data_type = CTypeAnalyzer.get_value_type(data_type);
 		
-		int size = CSizeofBase.Sizeof(data_type);
+		int size = this.template.sizeof(data_type);
 		CConstant constant = new CConstant();
 		constant.set_int(size);
 		
@@ -1926,8 +1929,9 @@ public class CirParser {
 	 * @return
 	 * @throws Exception
 	 */
-	public static CirTree parse_all(AstTranslationUnit ast_root) throws Exception {
-		CirParser parser = new CirParser(ast_root);		// create CIR-tree empty
+	public static CirTree parse_all(AstTranslationUnit ast_root,
+			CRunTemplate template) throws Exception {
+		CirParser parser = new CirParser(ast_root, template);		// create CIR-tree empty
 		parser.parse(ast_root); 						// parsing AST to construct CIR tree
 		parser.cir_tree.gen_function_call_graph();		// build up the flow graph for CIR
 		return parser.cir_tree;

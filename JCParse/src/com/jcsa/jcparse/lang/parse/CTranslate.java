@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
-import com.jcsa.jcparse.lang.CSizeofBase;
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
@@ -126,7 +126,7 @@ public class CTranslate {
 	 * @return
 	 * @throws Exception
 	 */
-	public static boolean derive_types_for(AstTranslationUnit root, CSizeofBase template) throws Exception {
+	public static boolean derive_types_for(AstTranslationUnit root, CRunTemplate template) throws Exception {
 		/* prepare for the computer */
 		CConstantEvaluator evaluator = new CConstantEvaluator(template);
 		CTypeBuilder builder = new CTypeBuilder(evaluator);
@@ -165,20 +165,6 @@ public class CTranslate {
 	}
 	
 	/**
-	 * generate the abstract syntax tree from source code text.
-	 * @param source_file
-	 * @param is_c99 true for c99 and false for c89
-	 * @return
-	 * @throws Exception
-	 */
-	public static AstTree parse(File source_file, ClangStandard standard) throws Exception {
-		CText source_code = get_source_text(source_file);
-		AstTranslationUnit ast_root = get_ast_root(source_file, standard);
-		derive_types_for(ast_root, CSizeofBase.sizeof_base);
-		
-		return new AstTree(source_file, source_code, ast_root);
-	}
-	/**
 	 * generate the abstract syntax tree from source code text
 	 * @param source_file
 	 * @param standard
@@ -186,7 +172,7 @@ public class CTranslate {
 	 * @return
 	 * @throws Exception
 	 */
-	public static AstTree parse(File source_file, ClangStandard standard, CSizeofBase sizeof_base) throws Exception {
+	public static AstTree parse(File source_file, ClangStandard standard, CRunTemplate sizeof_base) throws Exception {
 		CText source_code = get_source_text(source_file);
 		AstTranslationUnit ast_root = get_ast_root(source_file, standard);
 		derive_types_for(ast_root, sizeof_base);
@@ -199,8 +185,8 @@ public class CTranslate {
 	 * @return
 	 * @throws Exception
 	 */
-	public static CirTree parse(AstTree ast_tree) throws Exception {
-		return CirParser.parse_all(ast_tree.get_ast_root());
+	public static CirTree parse(AstTree ast_tree, CRunTemplate sizeof_base) throws Exception {
+		return CirParser.parse_all(ast_tree.get_ast_root(), sizeof_base);
 	}
 	
 }

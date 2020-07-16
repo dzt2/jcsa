@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Iterator;
 
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
@@ -34,8 +34,8 @@ public class ContextDBInterface extends DBInterface {
 	public static final String READ_ITEM_BY_FUNC = "select * from cmutants where funcname=?;";
 	public static final String READ_ITEM_BY_ID 	= "select * from cmutants where id=?;";
 	
-	protected AstFile context;
-	public ContextDBInterface(AstFile context) throws Exception {
+	protected AstCirFile context;
+	public ContextDBInterface(AstCirFile context) throws Exception {
 		super();
 		if(context == null)
 			throw new IllegalArgumentException("No context!");
@@ -294,10 +294,10 @@ public class ContextDBInterface extends DBInterface {
 		MutOperator operator = Mutant.get_operator_by(rs.getString("operator"));
 		MutationMode mut_mode = Mutant.get_mode_from(operator, rs.getString("mode"));
 		int origin_key = rs.getInt("origin"); 
-		AstNode origin = context.get_ast_node(origin_key);
+		AstNode origin = context.get_ast_tree().get_node(origin_key);
 		String replace = rs.getString("replace");
 		int callee_key = rs.getInt("callee");
-		AstNode callee = context.get_ast_node(callee_key);
+		AstNode callee = context.get_ast_tree().get_node(callee_key);
 		String funcname = rs.getString("funcname");
 		
 		if(!(callee instanceof AstFunCallExpression))

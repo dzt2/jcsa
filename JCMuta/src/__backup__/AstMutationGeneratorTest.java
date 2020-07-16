@@ -11,7 +11,7 @@ import java.util.Set;
 import com.jcsa.jcmuta.MutaClass;
 import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.ast2mutation.AstMutationGenerators;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
 
@@ -19,6 +19,7 @@ public class AstMutationGeneratorTest {
 	
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "results/ast/";
+	protected static final File template_file = new File("config/run_temp.txt");
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
@@ -26,8 +27,8 @@ public class AstMutationGeneratorTest {
 		}
 	}
 	
-	private static AstFile parse(File file) throws Exception {
-		return AstFile.parse(file, ClangStandard.gnu_c89);
+	private static AstCirFile parse(File file) throws Exception {
+		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static Set<MutaClass> all_operators() {
 		Set<MutaClass> operators = new HashSet<MutaClass>();
@@ -65,7 +66,7 @@ public class AstMutationGeneratorTest {
 	
 	private static void testing(File file) throws Exception {
 		System.out.println("Testing " + file.getName());
-		AstFile program = parse(file);
+		AstCirFile program = parse(file);
 		System.out.println("\t1. parsing the source file");
 		Collection<AstMutation> mutations = AstMutationGenerators.
 				generate(program.get_ast_tree(), all_operators());

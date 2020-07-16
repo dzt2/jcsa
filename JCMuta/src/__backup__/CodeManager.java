@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 
 /**
  * to manage the inputs and outputs of the files
@@ -19,7 +19,7 @@ public class CodeManager {
 	
 	/* constructor */
 	protected CodeResource resource;
-	protected AstFile cursor;
+	protected AstCirFile cursor;
 	protected MutantSpace mspace;
 	protected MutaCodeGenerator mut_generator;
 	public CodeManager(CodeResource resource) throws Exception {
@@ -44,7 +44,7 @@ public class CodeManager {
 	 * get the AST and C file as cursor refers to
 	 * @return
 	 */
-	public AstFile get_cursor() { return cursor; }
+	public AstCirFile get_cursor() { return cursor; }
 	/**
 	 * get the mutant space to the mutations of cursor file
 	 * @return
@@ -127,8 +127,9 @@ public class CodeManager {
 		File[] cfiles = resource.get_code().get_files();
 		for(int i = 0; i < cfiles.length; i++) {
 			/* generate mutants */
-			AstFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
-			Set<Mutation> mutations = JCMutationUtil.gen_mutation(astfile.get_ast_root());
+			AstCirFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
+			Set<Mutation> mutations = JCMutationUtil.
+					gen_mutation(astfile.get_ast_tree().get_ast_root());
 			JCMutationUtil.mutation2text(mutations, mspace); mutations.clear();
 			
 			/* write mutants to data file */
@@ -147,8 +148,9 @@ public class CodeManager {
 		File[] cfiles = resource.get_code().get_files();
 		for(int i = 0; i < cfiles.length; i++) {
 			/* generate mutants */
-			AstFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
-			Set<Mutation> mutations = JCMutationUtil.gen_mutation(astfile.get_ast_root());
+			AstCirFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
+			Set<Mutation> mutations = JCMutationUtil.
+					gen_mutation(astfile.get_ast_tree().get_ast_root());
 			JCMutationUtil.mutation2text(mutations, mspace); mutations.clear();
 		}
 	}
@@ -162,8 +164,9 @@ public class CodeManager {
 		File[] cfiles = resource.get_code().get_files();
 		for(int i = 0; i < cfiles.length; i++) {
 			/* generate mutants */
-			AstFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
-			Set<Mutation> mutations = JCMutationUtil.gen_mutation(astfile.get_ast_root());
+			AstCirFile astfile = JCMutationUtil.ast_file_of(cfiles[i]);
+			Set<Mutation> mutations = JCMutationUtil.
+					gen_mutation(astfile.get_ast_tree().get_ast_root());
 			JCMutationUtil.mutation2context(mutations, mspace, astfile); mutations.clear();
 			
 			/* write mutants to data file */
@@ -213,7 +216,7 @@ public class CodeManager {
 			mspace.clear();
 			
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_muta().get_of(source);
 			MutantDBInterface dbi = new MutantDBInterface(cursor);
 			
@@ -238,7 +241,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid operator: null");
 		else {
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_muta().get_of(source);
 			MutantDBInterface dbi = new MutantDBInterface(cursor);
 			
@@ -263,7 +266,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid mode: null");
 		else {
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_muta().get_of(source);
 			MutantDBInterface dbi = new MutantDBInterface(cursor);
 			
@@ -288,7 +291,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid function: null");
 		else {
 			/* getters */
-			File source = cursor.get_source(); int n;
+			File source = cursor.get_source_file(); int n;
 			File dbfile = resource.get_muta().get_of(source);
 			MutantDBInterface dbi = new MutantDBInterface(cursor);
 			Queue<AstNode> queue = new LinkedList<AstNode>();
@@ -326,7 +329,7 @@ public class CodeManager {
 			mspace.clear();
 			
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_mutac().get_of(source);
 			ContextDBInterface dbi = new ContextDBInterface(cursor);
 			
@@ -349,7 +352,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid operator: null");
 		else {
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_mutac().get_of(source);
 			ContextDBInterface dbi = new ContextDBInterface(cursor);
 			
@@ -372,7 +375,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid mode: null");
 		else {
 			/* getters */
-			File source = cursor.get_source();
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_mutac().get_of(source);
 			ContextDBInterface dbi = new ContextDBInterface(cursor);
 			
@@ -395,7 +398,7 @@ public class CodeManager {
 			throw new IllegalArgumentException("Invalid function: null");
 		else {
 			/* getters */
-			File source = cursor.get_source(); 
+			File source = cursor.get_source_file();
 			File dbfile = resource.get_mutac().get_of(source);
 			ContextDBInterface dbi = new ContextDBInterface(cursor);
 			
@@ -426,7 +429,7 @@ public class CodeManager {
 					+ index + "] is not dispatched in " + resource.get_root().getAbsolutePath());
 		else {
 			File cdir = resource.get_compile_list().get_cache(index);
-			String name = FileProcess.name_of(cursor.get_source());
+			String name = FileProcess.name_of(cursor.get_source_file());
 			File target = FileProcess.file_of(cdir, name);
 			mut_generator.write(mspace.get(mutant), cursor, target, mtype);
 		}

@@ -60,7 +60,8 @@ public class MutaSourceFile {
 			this.ast_tree = CTranslate.parse(this.source_file, 
 					this.files.get_project().config.get_lang_standard(),
 					this.files.get_project().config.get_sizeof_template());
-			this.cir_tree = CTranslate.parse(this.ast_tree);
+			this.cir_tree = CTranslate.parse(this.ast_tree,
+					this.files.get_project().config.get_sizeof_template());
 			
 			/** create the mutation space generated from the source file **/
 			this.mutant_space = new MutantSpace(this);

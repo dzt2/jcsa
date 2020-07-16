@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.base.BitSequence;
 
 import __backup__.ExecManager.TestThread;
@@ -291,7 +291,7 @@ public class JCMT_Tester {
 			throw new IllegalArgumentException("No score is specified.");
 		else {
 			/* set the mutant for every compilation space */
-			AstFile cursor = project.get_code_manager().get_cursor();
+			AstCirFile cursor = project.get_code_manager().get_cursor();
 			for(ExecManager exec : exec_spaces) {
 				exec.set_mutant(mutant, cursor, type);
 			}
@@ -499,7 +499,7 @@ public class JCMT_Tester {
 			throw new IllegalArgumentException("no code is available");
 		else {
 			/* declarations */
-			File cfile = project.get_code_manager().get_cursor().get_source();
+			File cfile = project.get_code_manager().get_cursor().get_source_file();
 			CFileOutputDirectory directory = project.get_resource().
 					get_result().get_code_output_directory(cfile);
 			

@@ -14,7 +14,7 @@ import com.jcsa.jcmuta.mutant.AstMutation;
 import com.jcsa.jcmuta.mutant.ast2mutation.AstMutationGenerators;
 import com.jcsa.jcmuta.mutant.code2mutation.MutaCodeGenerators;
 import com.jcsa.jcmuta.mutant.code2mutation.MutationCodeType;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 
 public class MutaCodeGenerateTest {
@@ -22,6 +22,7 @@ public class MutaCodeGenerateTest {
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "results/code/";
 	private static final String command_template = "clang %s %s -o %s";
+	private static final File template_file = new File("config/run_temp.txt");
 	
 	public static void main(String[] args) throws Exception {
 		File[] files = new File(prefix).listFiles();
@@ -31,8 +32,8 @@ public class MutaCodeGenerateTest {
 		}
 	}
 	
-	private static AstFile parse(File file) throws Exception {
-		return AstFile.parse(file, ClangStandard.gnu_c89);
+	private static AstCirFile parse(File file) throws Exception {
+		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static Set<MutaClass> all_operators() {
 		Set<MutaClass> operators = new HashSet<MutaClass>();
@@ -69,7 +70,7 @@ public class MutaCodeGenerateTest {
 			System.out.println("\t\t==> generate {" + mutation.toString() + "} at [" + type + "]");
 	}
 	
-	private static Collection<AstMutation> mutate(AstFile program, MutaClass operator) throws Exception {
+	private static Collection<AstMutation> mutate(AstCirFile program, MutaClass operator) throws Exception {
 		Set<MutaClass> operator_set = new HashSet<MutaClass>();
 		operator_set.add(operator);
 		return AstMutationGenerators.generate(program.get_ast_tree(), operator_set);
@@ -101,11 +102,11 @@ public class MutaCodeGenerateTest {
 	}
 	
 	protected static void test_output_code_samples(File file, Set<MutaClass> operators) throws Exception {
-		AstFile program = parse(file);
+		AstCirFile program = parse(file);
 		Random random = new Random(System.currentTimeMillis());
 		Scanner in = new Scanner(System.in);
 		
-		String name = program.get_source().getName();
+		String name = program.get_source_file().getName();
 		int index = name.lastIndexOf('.');
 		name = name.substring(0, index).strip();
 		System.out.println("Testing on " + name);
@@ -157,7 +158,7 @@ public class MutaCodeGenerateTest {
 				double coverage_rate = 100 * ((double) coverage_pass) / ((double) total);
 				double weak_rate = 100 * ((double) coverage_pass) / ((double) total);
 				double strong_rate = 100 * ((double) strong_pass) / ((double) total);
-				System.out.println(operator + " £º " + total + "\t" + coverage_pass + " ("
+				System.out.println(operator + " ï¿½ï¿½ " + total + "\t" + coverage_pass + " ("
 						+ coverage_rate + ")\t" + weak_pass + " (" + weak_rate + ")\t"
 						+ strong_pass + "(" + strong_rate + ")");
 				
@@ -184,7 +185,7 @@ public class MutaCodeGenerateTest {
 	
 	protected static void testing(File file) throws Exception {
 		System.out.println("Testing " + file.getName());
-		AstFile ast_file = parse(file);
+		AstCirFile ast_file = parse(file);
 		System.out.println("\t1. parse the source code.");
 		
 		Set<MutaClass> operators = all_operators();

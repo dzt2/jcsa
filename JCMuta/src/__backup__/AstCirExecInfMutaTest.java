@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
@@ -66,6 +66,7 @@ public class AstCirExecInfMutaTest {
 	protected static final String prodir = prefix + "TestProjects/";
 	protected static final String postfx = "results/inputs/";
 	private static final double threshold = 0.50;
+	protected static final File template_file = new File("config/run_temp.txt");
 	
 	public static void main(String[] args) throws Exception {
 		File[] files = new File(prodir).listFiles();
@@ -1015,7 +1016,7 @@ public class AstCirExecInfMutaTest {
 	 * @param writer
 	 * @throws Exception
 	 */
-	private static void output_semantic_mutations(String program, AstFile ast_file,
+	private static void output_semantic_mutations(String program, AstCirFile ast_file,
 			CirInstanceGraph program_graph, CirInfluenceGraph influence_graph,
 			Map<Mutant, Object[]> classifier, File output) throws Exception {
 		Mutation2CirSemantic parser = new Mutation2CirSemantic();
@@ -1072,7 +1073,7 @@ public class AstCirExecInfMutaTest {
 				" clusters for " + classifier.size() + " mutants.");
 		
 		/** 3. parsing the program flow and influence graph **/
-		AstFile ast_file = project.get_code_manager().get_cursor();
+		AstCirFile ast_file = project.get_code_manager().get_cursor();
 		CirTree cir_tree = ast_file.get_cir_tree();
 		CirCallContextInstanceGraph program_graph = translate(cir_tree);
 		CirInfluenceGraph influence_graph = generate(program_graph);

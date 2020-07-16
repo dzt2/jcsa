@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 
 /**
  * parse the <code>Mutation</code> to <code>ContextMutation</code>
@@ -21,9 +21,9 @@ import com.jcsa.jcparse.lang.AstFile;
 public class Mutation2ContextParser {
 	
 	/* constructor */
-	protected AstFile source;
+	protected AstCirFile source;
 	protected Mutation2TextParser parser;
-	public Mutation2ContextParser(AstFile source) throws Exception {
+	public Mutation2ContextParser(AstCirFile source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else {
@@ -51,7 +51,7 @@ public class Mutation2ContextParser {
 			
 			/* get the function definition of the mutant */
 			AstNode origin = tmutant.get_origin();
-			AstFunctionDefinition def = source.function_of(origin);
+			AstFunctionDefinition def = source.get_ast_tree().function_of(origin);
 			
 			/* get the function caller in AST level */
 			String name = this.name_of(def.get_declarator());
@@ -91,7 +91,7 @@ public class Mutation2ContextParser {
 			TextMutation tmutant = mutation;
 			/* get the function definition of the mutant */
 			AstNode origin = tmutant.get_origin();
-			AstFunctionDefinition def = source.function_of(origin);
+			AstFunctionDefinition def = source.get_ast_tree().function_of(origin);
 			
 			/* get the function caller in AST level */
 			String name = this.name_of(def.get_declarator());

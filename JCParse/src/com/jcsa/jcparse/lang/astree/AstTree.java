@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Queue;
 
 import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.text.CText;
 
@@ -88,5 +89,16 @@ public class AstTree {
 	 * @throws IndexOutOfBoundsException
 	 */
 	public AstNode get_node(int k) throws IndexOutOfBoundsException { return nodes.get(k); }
+	/**
+	 * @param node
+	 * @return the function definition of the node
+	 */
+	public AstFunctionDefinition function_of(AstNode node) {
+		while(node != null && 
+				!(node instanceof AstFunctionDefinition)) {
+			node = node.get_parent();
+		}
+		return (AstFunctionDefinition) node;
+	}
 	
 }

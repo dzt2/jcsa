@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmuta.MutationUtil;
-import com.jcsa.jcparse.lang.CSizeofBase;
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.ClangStandard;
 
 /**
@@ -54,7 +54,7 @@ public class MutaProjectConfig {
 	
 	/* parameters */
 	/** c-sizeof template **/
-	private CSizeofBase csizeof_template;
+	private CRunTemplate csizeof_template;
 	/** C language standard **/
 	private ClangStandard lang_standard;
 	/** command template for compiling original program **/
@@ -85,7 +85,7 @@ public class MutaProjectConfig {
 	 */
 	private void update_csize_file() throws Exception {
 		if(this.csizeof_file.exists()) {
-			this.csizeof_template = CSizeofBase.parse(this.csizeof_file);
+			this.csizeof_template = new CRunTemplate(this.csizeof_file);
 		}
 		else this.csizeof_template = null;
 	}
@@ -148,7 +148,7 @@ public class MutaProjectConfig {
 	 * get the template for sizeof data
 	 * @return
 	 */
-	public CSizeofBase get_sizeof_template() { return this.csizeof_template; }
+	public CRunTemplate get_sizeof_template() { return this.csizeof_template; }
 	/**
 	 * get the command for compiling the original program from a set of source files
 	 * @param source_files the set of source files being compiled

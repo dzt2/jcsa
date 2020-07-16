@@ -3,13 +3,12 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.parse.CTranslate;
 import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
@@ -22,6 +21,7 @@ public class CDependenceTest {
 	
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "result/dep/";
+	protected static final File template_file = new File("config/run_temp.txt");
 	
 	public static void main(String[] args) throws Exception {
 		File[] files = new File(prefix).listFiles();
@@ -32,19 +32,15 @@ public class CDependenceTest {
 		}
 	}
 	protected static void testing(File file) throws Exception {
-		AstTree ast_tree = parse(file);
-		CirTree cir_tree = parse(ast_tree);
-		CirCallContextInstanceGraph program_graph = translate(cir_tree);
+		AstCirFile ast_file = parse(file);
+		CirCallContextInstanceGraph program_graph = translate(ast_file.get_cir_tree());
 		CDependGraph depend_graph = CDependGraph.graph(program_graph);
 		output(depend_graph, new File(postfx + file.getName() + ".txt"));
 	}
 	
 	/* basic methods */
-	private static AstTree parse(File file) throws Exception {
-		return CTranslate.parse(file, ClangStandard.gnu_c89);
-	}
-	private static CirTree parse(AstTree ast_tree) throws Exception {
-		return CTranslate.parse(ast_tree);
+	private static AstCirFile parse(File file) throws Exception {
+		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");

@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 
 /**
  * Provide basic APIs to generate mutants & mutations from source code.
@@ -19,6 +19,7 @@ public class JCMutationUtil {
 	protected static final Mutation2WeaknessParser weak_parser = new Mutation2WeaknessParser();
 	protected static final MutGenerator mut_generator = new MutGenerator();
 	protected static final MutaCodeGenerator writer = new MutaCodeGenerator();
+	protected static final File template_file = new File("config/run_temp.txt");
 	
 	/* parsers */
 	/**
@@ -27,8 +28,8 @@ public class JCMutationUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static AstFile ast_file_of(File cfile) throws Exception {
-		return AstFile.parse(cfile, ClangStandard.gnu_c89);
+	public static AstCirFile ast_file_of(File cfile) throws Exception {
+		return AstCirFile.parse(cfile, template_file, ClangStandard.gnu_c89);
 	}
 	
 	/* mutation generation */
@@ -68,7 +69,7 @@ public class JCMutationUtil {
 	 * @throws Exception
 	 */
 	public static void mutation2context(Set<Mutation> mutations, 
-			MutantSpace space, AstFile source) throws Exception {
+			MutantSpace space, AstCirFile source) throws Exception {
 		if(space == null)
 			throw new IllegalArgumentException("No outputs are specified");
 		else if(source == null)
@@ -168,7 +169,7 @@ public class JCMutationUtil {
 	 * @throws Exception
 	 */
 	public static void write_mutation_to_file(Mutant mutant, 
-			AstFile source, File target, CodeMutationType mtype) throws Exception {
+			AstCirFile source, File target, CodeMutationType mtype) throws Exception {
 		writer.write(mutant, source, target, mtype);
 	}
 	

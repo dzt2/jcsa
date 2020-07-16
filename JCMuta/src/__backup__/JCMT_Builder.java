@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.jcsa.jcparse.lang.AstFile;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
@@ -228,7 +228,7 @@ public class JCMT_Builder {
 			CodeManager code = project.get_code_manager();
 			
 			code.open_cursor(cfile); 
-			AstFile astfile = project.get_code_manager().get_cursor();
+			AstCirFile astfile = project.get_code_manager().get_cursor();
 			CirFunctionCallGraph graph = astfile.get_cir_tree().get_function_call_graph();
 			
 			for(String name : fnames) {
@@ -348,7 +348,7 @@ public class JCMT_Builder {
 			CodeManager code = project.get_code_manager();
 			
 			code.open_cursor(cfile); 
-			AstFile astfile = project.get_code_manager().get_cursor();
+			AstCirFile astfile = project.get_code_manager().get_cursor();
 			CirFunctionCallGraph graph = astfile.get_cir_tree().get_function_call_graph();
 			
 			for(String name : fnames) {

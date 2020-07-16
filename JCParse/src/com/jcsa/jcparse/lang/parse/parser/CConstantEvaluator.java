@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
 
-import com.jcsa.jcparse.lang.CSizeofBase;
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
@@ -56,13 +56,13 @@ public class CConstantEvaluator {
 	 */
 	protected Map<AstExpression, CConstant> solutions;
 	/** template to compute the sizeof operator **/
-	protected CSizeofBase template;
+	protected CRunTemplate template;
 
 	// constructor
 	/**
 	 * constructor
 	 */
-	public CConstantEvaluator(CSizeofBase template) {
+	public CConstantEvaluator(CRunTemplate template) {
 		if (template == null)
 			throw new IllegalArgumentException("Invalid template: null");
 
@@ -531,10 +531,12 @@ public class CConstantEvaluator {
 		int size;
 		if (expr.is_expression()) {
 			AstExpression child = expr.get_expression();
-			size = CSizeofBase.Sizeof(child.get_value_type());
+			size = this.template.sizeof(child.get_value_type());
+			// size = CSizeofBase.Sizeof(child.get_value_type());
 		} else {
 			AstTypeName typename = expr.get_typename();
-			size = CSizeofBase.Sizeof(typename.get_type());
+			size = this.template.sizeof(typename.get_type());
+			// size = CSizeofBase.Sizeof(typename.get_type());
 		}
 
 		CConstant constant = new CConstant();
