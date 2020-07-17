@@ -35,6 +35,9 @@ public class SymLiteral extends SymBasicExpression {
 			case '\n':	buffer.append("\\n");	break;
 			case '\r':	buffer.append("\\r");	break;
 			case '\0':	buffer.append("\\0");	break;
+			case '\\':	buffer.append("\\\\");	break;
+			case '\'':	buffer.append("\\'");	break;
+			case '\"':	buffer.append("\"");	break;
 			default:	buffer.append(ch);		break;
 			}
 		}

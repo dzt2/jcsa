@@ -142,6 +142,18 @@ public abstract class SymNode {
 			return null;
 		}
 	}
+	/**
+	 * @param obj
+	 * @return whether another expression syntactically equivalent with this one
+	 */
+	public boolean syntax_equivalent(SymNode another) {
+		if(another == this) {
+			return true;
+		}
+		else {
+			return another.toString().equals(this.toString());
+		}
+	}
 	
 	/* utility methods */
 	/**

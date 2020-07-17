@@ -18,6 +18,10 @@ public class SymConstant extends SymBasicExpression {
 	}
 	
 	/**
+	 * @return the constant object that describes its value.
+	 */
+	public CConstant get_constant() { return this.constant; }
+	/**
 	 * @return boolean | character | integer | long | float | double
 	 */
 	public Object get_value() {
