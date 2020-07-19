@@ -1,6 +1,6 @@
 little_endian	1
 word_size	8
-void_size	0
+void_size	1
 bool_size	1
 char_size	1
 short_size	2
