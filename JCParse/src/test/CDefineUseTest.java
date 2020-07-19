@@ -22,7 +22,7 @@ import com.jcsa.jcparse.lopt.models.defuse.CDefineUseNode;
 
 public class CDefineUseTest {
 	
-	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
+	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
 	protected static final String postfx = "result/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	

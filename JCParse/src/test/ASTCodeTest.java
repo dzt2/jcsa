@@ -9,8 +9,8 @@ import com.jcsa.jcparse.lang.astree.code.AstCodeGenerator;
 
 public class ASTCodeTest {
 	
-	protected static final String prefix = "D:\\SourceCode\\MyData\\CODE2\\ifiles";
-	protected static final String postfx = "D:\\SourceCode\\MyData\\CODE2\\gfiles\\"; 
+	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
+	protected static final String postfx = "/home/dzt2/Development/DataSet/Code/gfiles/"; 
 	protected static final File template_file = new File("config/cruntime.txt");
 	
 	public static void main(String[] args) throws Exception {

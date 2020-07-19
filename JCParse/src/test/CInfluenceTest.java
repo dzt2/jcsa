@@ -25,7 +25,7 @@ import com.jcsa.jcparse.lopt.models.influence.CInfluenceNode;
  */
 public class CInfluenceTest {
 	
-	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
+	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
 	protected static final String postfx = "result/inf/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	
