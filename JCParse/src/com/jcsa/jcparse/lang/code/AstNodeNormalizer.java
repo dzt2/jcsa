@@ -1,9 +1,17 @@
-package com.jcsa.jcparse.lang.astree.code;
+package com.jcsa.jcparse.lang.code;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.Stack;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
@@ -33,6 +41,7 @@ import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumerator;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumeratorBody;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumeratorList;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstFunctionQualifier;
+import com.jcsa.jcparse.lang.astree.decl.specifier.AstSpecifier;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstSpecifierQualifierList;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstStorageClass;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstStructDeclaration;
@@ -103,13 +112,12 @@ import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 
 /**
- * It is used to generate the normalized form of code with respect to the <code>AstNode</code>
- * provided from the AST side client.
+ * Used to generate the normalized form of the entire code file.
  * 
  * @author yukimula
  *
  */
-public class AstCodeGenerator {
+public class AstNodeNormalizer {
 	
 	/* properties */
 	/** number of tabs before a statement generated **/
@@ -121,24 +129,132 @@ public class AstCodeGenerator {
 	/**
 	 * private constructor for singleton mode
 	 */
-	private AstCodeGenerator() {
+	private AstNodeNormalizer() {
 		this.buffer = new StringBuilder();
 	}
-	/** singleton of the code generator for each AstNode **/
-	public static AstCodeGenerator generator = new AstCodeGenerator();
+	/** singleton of the code file normalizer **/
+	private static AstNodeNormalizer normalizer = new AstNodeNormalizer();
 	
-	/* main interface */
 	/**
-	 * generate the code to which the AstNode refers
-	 * @param node
+	 * initialize the code generator before translating the entire source program
+	 */
+	private void init() {
+		this.tab_counter = 0;
+		this.buffer.setLength(0);
+	}
+	
+	/* code text generation methods */
+	/**
+	 * Write the tabs before a statement is generated.
+	 */
+	private void write_tabs() {
+		for(int k = 0; k < this.tab_counter; k++) {
+			this.buffer.append('\t');
+		}
+	}
+	private void write_text(String text) {
+		this.buffer.append(text);
+	}
+	private void write_line() {
+		this.buffer.append('\n');
+	}
+	
+	/* type declaration generation */
+	/**
+	 * generate the name for user defined type specifier with explit or implicit name.
+	 * @param specifier
 	 * @return
 	 * @throws Exception
 	 */
-	public String generate_code(AstNode node) throws Exception {
-		this.init();
-		this.generate(node);
-		return buffer.toString();
+	private String name_of_user_specifier(AstSpecifier specifier) throws Exception {
+		if(specifier instanceof AstStructSpecifier) {
+			AstStructSpecifier s_spec = (AstStructSpecifier) specifier;
+			
+			if(s_spec.has_name()) {
+				return s_spec.get_name().get_name();
+			}
+			else {
+				return "struct " + "_u_type_" + s_spec.hashCode();
+			}
+		}
+		else if(specifier instanceof AstUnionSpecifier) {
+			AstUnionSpecifier u_spec = (AstUnionSpecifier) specifier;
+			
+			if(u_spec.has_name()) {
+				return u_spec.get_name().get_name();
+			}
+			else {
+				return "union " + "_u_type_" + u_spec.hashCode();
+			}
+		}
+		else {
+			AstEnumSpecifier e_spec = (AstEnumSpecifier) specifier;
+			
+			if(e_spec.has_name()) {
+				return e_spec.get_name().get_name();
+			}
+			else {
+				return "enum " + "_u_type_" + e_spec.hashCode();
+			}
+		}
 	}
+	/**
+	 * collect all the type definition nodes within the program, including:
+	 * 	AstStructSpecifiers
+	 * 	AstUnionSpecifiers
+	 * 	AstEnumSpecifiers
+	 * @param root
+	 * @return
+	 * @throws Exception
+	 */
+	private List<AstNode> get_user_specifiers(AstTranslationUnit root) throws Exception {
+		Queue<AstNode> queue = new LinkedList<AstNode>();
+		List<AstNode> specifiers = new ArrayList<AstNode>();
+		
+		queue.add(root);
+		while(!queue.isEmpty()) {
+			/* get the next node and collect all its children */
+			AstNode node = queue.poll();
+			for(int k = 0; k < node.number_of_children(); k++) {
+				AstNode child = node.get_child(k);
+				if(child != null) queue.add(child);
+			}
+			
+			/* collect the user type specifiers */
+			if(node instanceof AstStructSpecifier
+				|| node instanceof AstUnionSpecifier
+				|| node instanceof AstEnumSpecifier) {
+				specifiers.add(node);
+			}
+		}
+		
+		return specifiers;
+	}
+	/**
+	 * generate the code for declaring the user type (struct|union|enum) with explicit name
+	 * @param specifiers
+	 * @return
+	 * @throws Exception
+	 */
+	private void generate_utype_declarations(AstTranslationUnit root) throws Exception {
+		/** 1. collect the declaration for all the user-defined specifier (name) **/
+		List<AstNode> specifiers = this.get_user_specifiers(root);
+		Set<String> declarations = new HashSet<String>();
+		for(AstNode specifier : specifiers) {
+			String declaration = name_of_user_specifier((AstSpecifier) specifier);
+			declarations.add(declaration);
+		}
+		
+		/** 2. write the declarations for all the user defined specifiers **/
+		for(String declaration : declarations) {
+			this.write_tabs();
+			this.write_text(declaration + ";");
+			this.write_line();
+		}
+		this.write_line();
+	}
+	
+	/* main generator */
 	private void generate(AstNode node) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node as null");
@@ -164,20 +280,6 @@ public class AstCodeGenerator {
 			this.generate_specifier_qualifier_list((AstSpecifierQualifierList) node);
 		else if(node instanceof AstStructDeclarator)
 			this.generate_struct_declarator((AstStructDeclarator) node);
-		else if(node instanceof AstStructUnionBody)
-			this.generate_struct_union_body((AstStructUnionBody) node);
-		else if(node instanceof AstStructDeclarationList)
-			this.generate_struct_declaration_list((AstStructDeclarationList) node);
-		else if(node instanceof AstStructDeclaration)
-			this.generate_struct_declaration((AstStructDeclaration) node);
-		else if(node instanceof AstStructDeclaratorList)
-			this.generate_struct_declarator_list((AstStructDeclaratorList) node);
-		else if(node instanceof AstInitializerList)
-			this.generate_initializer_list((AstInitializerList) node);
-		else if(node instanceof AstEnumeratorBody)
-			this.generate_enumerator_body((AstEnumeratorBody) node);
-		else if(node instanceof AstEnumeratorList)
-			this.generate_enumerator_list((AstEnumeratorList) node);
 		else if(node instanceof AstEnumerator)
 			this.generate_enumerator((AstEnumerator) node);
 		else if(node instanceof AstName)
@@ -210,10 +312,6 @@ public class AstCodeGenerator {
 			this.generate_designator_list((AstDesignatorList) node);
 		else if(node instanceof AstDeclaration)
 			this.generate_declaration((AstDeclaration) node);
-		else if(node instanceof AstInitDeclarator)
-			this.generate_init_declarator((AstInitDeclarator) node);
-		else if(node instanceof AstInitDeclaratorList)
-			this.generate_init_declarator_list((AstInitDeclaratorList) node);
 		else if(node instanceof AstTypeName)
 			this.generate_typename((AstTypeName) node);
 		else if(node instanceof AstIdExpression)
@@ -306,32 +404,178 @@ public class AstCodeGenerator {
 			this.generate_for_statement((AstForStatement) node);
 		else if(node instanceof AstFunctionDefinition)
 			this.generate_function_definition((AstFunctionDefinition) node);
-		else if(node instanceof AstTranslationUnit)
-			this.generate_translation_unit((AstTranslationUnit) node);
 		else throw new IllegalArgumentException(node.getClass().getSimpleName());
 	}
-	/**
-	 * initialize the code generator before translating the entire source program
-	 */
-	private void init() {
-		this.tab_counter = 0;
-		this.buffer.setLength(0);
-	}
 	
-	/* code text generation methods */
-	/**
-	 * Write the tabs before a statement is generated.
-	 */
-	private void write_tabs() {
-		for(int k = 0; k < this.tab_counter; k++) {
-			this.buffer.append('\t');
+	/* type definition generators */
+	private void generate_struct_definition(AstStructSpecifier specifier) throws Exception {
+		/** struct name **/
+		this.write_tabs();
+		this.write_text(this.name_of_user_specifier(specifier));
+		this.write_line();
+		
+		/** { **/
+		this.write_tabs();
+		this.write_text("{");
+		this.write_line();
+		
+		/** struct declarations here **/
+		AstStructUnionBody body = specifier.get_body();
+		this.tab_counter++;
+		if(body.has_declaration_list()) {
+			AstStructDeclarationList list = body.get_declaration_list();
+			for(int i = 0; i < list.number_of_declarations(); i++) {
+				AstStructDeclaration decl = list.get_declaration(i);
+				AstSpecifierQualifierList specifiers = decl.get_specifiers();
+				AstStructDeclaratorList decl_list = decl.get_declarators();
+				
+				for(int j = 0; j < decl_list.number_of_declarators(); j++) {
+					AstStructDeclarator declarator = decl_list.get_declarator(j);
+					
+					this.write_tabs();
+					this.generate(specifiers);
+					this.write_text(" ");
+					if(declarator.has_declarator()) 
+						this.generate(declarator.get_declarator());
+					if(declarator.has_expression()) {
+						this.write_text(" : ");
+						this.generate(declarator.get_expression());
+					}
+					this.write_text(";");
+					this.write_line();
+				}
+			}
 		}
+		this.tab_counter--;
+		
+		/** }; **/
+		this.write_tabs();
+		this.write_text("};");
+		this.write_line();
 	}
-	private void write_text(String text) {
-		this.buffer.append(text);
+	private void generate_union_definition(AstUnionSpecifier specifier) throws Exception {
+		/** enum name **/
+		this.write_tabs();
+		this.write_text(this.name_of_user_specifier(specifier));
+		this.write_line();
+		
+		/** { **/
+		this.write_tabs();
+		this.write_text("{");
+		this.write_line();
+		
+		/** struct declarations here **/
+		AstStructUnionBody body = specifier.get_body();
+		this.tab_counter++;
+		if(body.has_declaration_list()) {
+			AstStructDeclarationList list = body.get_declaration_list();
+			for(int i = 0; i < list.number_of_declarations(); i++) {
+				AstStructDeclaration decl = list.get_declaration(i);
+				AstSpecifierQualifierList specifiers = decl.get_specifiers();
+				AstStructDeclaratorList decl_list = decl.get_declarators();
+				
+				for(int j = 0; j < decl_list.number_of_declarators(); j++) {
+					AstStructDeclarator declarator = decl_list.get_declarator(j);
+					
+					this.write_tabs();
+					this.generate(specifiers);
+					this.write_text(" ");
+					if(declarator.has_declarator()) 
+						this.generate(declarator.get_declarator());
+					if(declarator.has_expression()) {
+						this.write_text(" : ");
+						this.generate(declarator.get_expression());
+					}
+					this.write_text(";");
+					this.write_line();
+				}
+			}
+		}
+		this.tab_counter--;
+		
+		/** }; **/
+		this.write_tabs();
+		this.write_text("};");
+		this.write_line();
 	}
-	private void write_line() {
-		this.buffer.append('\n');
+	private void generate_enum_definition(AstEnumSpecifier specifier) throws Exception {
+		/** enum name **/
+		this.write_tabs();
+		this.write_text(this.name_of_user_specifier(specifier));
+		this.write_line();
+		
+		/** { **/
+		this.write_tabs();
+		this.write_text("{");
+		this.write_line();
+		
+		/** enumerator+ **/
+		this.tab_counter++;
+		AstEnumeratorBody body = specifier.get_body();
+		AstEnumeratorList list = body.get_enumerator_list();
+		for(int k = 0; k < list.number_of_enumerators(); k++) {
+			AstEnumerator enumerator = list.get_enumerator(k);
+			this.write_tabs();
+			this.write_text(enumerator.get_name().get_name());
+			if(enumerator.has_expression()) {
+				this.write_text(" = ");
+				this.generate(enumerator.get_expression());
+			}
+			if(k < list.number_of_enumerators() - 1) {
+				this.write_text(", ");
+			}
+			this.write_line();
+		}
+		this.tab_counter--;
+		
+		/** }; **/
+		this.write_tabs();
+		this.write_text("};");
+		this.write_line();
+	}
+	private void generate_utype_definitions(AstNode root) throws Exception {
+		Queue<AstNode> queue = new LinkedList<AstNode>(); queue.add(root);
+		Stack<AstSpecifier> specifiers = new Stack<AstSpecifier>();
+		
+		while(!queue.isEmpty()) {
+			AstNode node = queue.poll();
+			for(int k = 0; k < node.number_of_children(); k++) {
+				AstNode child = node.get_child(k);
+				if(child != null) queue.add(child);
+			}
+			
+			if(node instanceof AstStructSpecifier) {
+				if(((AstStructSpecifier) node).has_body()) {
+					specifiers.push((AstSpecifier) node);
+					//this.generate_struct_definition((AstStructSpecifier) node);
+				}
+			}
+			else if(node instanceof AstUnionSpecifier) {
+				if(((AstUnionSpecifier) node).has_body()) {
+					specifiers.push((AstSpecifier) node);
+					//this.generate_union_definition((AstUnionSpecifier) node);
+				}
+			}
+			else if(node instanceof AstEnumSpecifier) {
+				if(((AstEnumSpecifier) node).has_body()) {
+					specifiers.push((AstSpecifier) node);
+					//this.generate_enum_definition((AstEnumSpecifier) node);
+				}
+			}
+		}
+		
+		while(!specifiers.isEmpty()) {
+			AstSpecifier specifier = specifiers.pop();
+			if(specifier instanceof AstStructSpecifier) {
+				this.generate_struct_definition((AstStructSpecifier) specifier);
+			}
+			else if(specifier instanceof AstUnionSpecifier) {
+				this.generate_union_definition((AstUnionSpecifier) specifier);
+			}
+			else {
+				this.generate_enum_definition((AstEnumSpecifier) specifier);
+			}
+		}
 	}
 	
 	/* specifiers generators */
@@ -381,46 +625,13 @@ public class AstCodeGenerator {
 		}
 	}
 	private void generate_struct_specifier(AstStructSpecifier node) throws Exception {
-		/** struct name **/
-		if(node.has_name())
-			this.write_text(node.get_name().get_name() + " ");
-		else this.write_text("struct ");
-		
-		/** fields body **/
-		if(node.has_body()) {
-			this.write_line();
-			this.generate(node.get_body());
-		}
-		
-		this.write_text(" ");
+		this.write_text(this.name_of_user_specifier(node));
 	}
 	private void generate_union_specifier(AstUnionSpecifier node) throws Exception {
-		/** union name **/
-		if(node.has_name())
-			this.write_text(node.get_name().get_name() + " ");
-		else this.write_text("union ");
-		
-		/** fields body **/
-		if(node.has_body()) {
-			this.write_line();
-			this.generate(node.get_body());
-		}
-		
-		this.write_text(" ");
+		this.write_text(this.name_of_user_specifier(node));
 	}
 	private void generate_enum_specifier(AstEnumSpecifier node) throws Exception {
-		/** enum name **/
-		if(node.has_name())
-			this.write_text(node.get_name().get_name() + " ");
-		else this.write_text("enum ");
-		
-		/** fields body **/
-		if(node.has_body()) {
-			this.write_line();
-			this.generate(node.get_body());
-		}
-		
-		this.write_text(" ");
+		this.write_text(this.name_of_user_specifier(node));
 	}
 	private void generate_declaration_specifiers(AstDeclarationSpecifiers node) throws Exception {
 		if(node.number_of_specifiers() > 0) {
@@ -462,65 +673,6 @@ public class AstCodeGenerator {
 		if(node.has_expression()) {
 			this.write_text(" = ");
 			this.generate(node.get_expression());
-		}
-	}
-	private void generate_struct_union_body(AstStructUnionBody node) throws Exception {
-		/* { */
-		this.write_tabs();
-		this.write_text("{");
-		this.write_line();
-		
-		/* fields list */
-		if(node.has_declaration_list()) {
-			this.tab_counter++;
-			this.generate(node.get_declaration_list());
-			this.tab_counter--;
-		}
-		
-		/* } */
-		this.write_tabs();
-		this.write_text("}");
-	}
-	private void generate_struct_declaration_list(AstStructDeclarationList node) throws Exception {
-		for(int k = 0; k < node.number_of_declarations(); k++) {
-			this.generate(node.get_declaration(k));
-		}
-	}
-	private void generate_struct_declaration(AstStructDeclaration node) throws Exception {
-		this.write_tabs();
-		this.generate(node.get_specifiers());
-		this.write_text(" ");
-		this.generate(node.get_declarators());
-		this.write_text(";");
-		this.write_line();
-	}
-	private void generate_struct_declarator_list(AstStructDeclaratorList node) throws Exception {
-		for(int k = 0; k < node.number_of_declarators(); k++) {
-			this.generate(node.get_declarator(k));
-			if(k < node.number_of_declarators() - 1) {
-				this.write_text(", ");
-			}
-		}
-	}
-	private void generate_enumerator_body(AstEnumeratorBody node) throws Exception {
-		this.write_tabs();
-		this.write_text("{");
-		this.write_line();
-		
-		this.tab_counter++;
-		this.generate(node.get_enumerator_list());
-		this.tab_counter--;
-		
-		this.write_tabs();
-		this.write_text("}");
-	}
-	private void generate_enumerator_list(AstEnumeratorList node) throws Exception {
-		for(int k = 0; k < node.number_of_enumerators(); k++) {
-			this.write_tabs();
-			this.generate(node.get_enumerator(k));
-			if(k < node.number_of_enumerators() - 1)
-				this.write_text(", ");
-			this.write_line();
 		}
 	}
 	
@@ -678,10 +830,12 @@ public class AstCodeGenerator {
 			break;
 		case declarator_dimension:
 			this.generate(node.get_declarator());
+			this.write_text(" ");
 			this.generate(node.get_dimension());
 			break;
 		case declarator_parambody:
 			this.generate(node.get_declarator());
+			this.write_text(" ");
 			this.generate(node.get_parameter_body());
 			break;
 		case lp_declarator_rp:
@@ -735,21 +889,19 @@ public class AstCodeGenerator {
 	private void generate_initializer_body(AstInitializerBody node) throws Exception {
 		this.write_text("{ ");
 		
-		this.generate(node.get_initializer_list());
+		AstInitializerList list = node.get_initializer_list();
+		for(int k = 0; k < list.number_of_initializer(); k++) {
+			this.generate(list.get_initializer(k));
+			if(k < list.number_of_initializer() - 1) {
+				this.write_text(", ");
+			}
+		}
 		
 		if(node.has_tail_comma()) {
 			this.write_text(",");
 		}
 		
 		this.write_text(" }");
-	}
-	private void generate_initializer_list(AstInitializerList node) throws Exception {
-		for(int k = 0; k < node.number_of_initializer(); k++) {
-			this.generate(node.get_initializer(k));
-			if(k < node.number_of_initializer() - 1) {
-				this.write_text(", ");
-			}
-		}
 	}
 	private void generate_field_initializer(AstFieldInitializer node) throws Exception {
 		if(node.has_designator_list()) {
@@ -762,27 +914,40 @@ public class AstCodeGenerator {
 		this.write_text(node.get_location().trim_code());
 	}
 	private void generate_declaration(AstDeclaration node) throws Exception {
-		this.generate(node.get_specifiers());
+		/** previous type definition **/ this.generate_utype_definitions(node);
+		
+		AstDeclarationSpecifiers specifiers = node.get_specifiers();
 		if(node.has_declarator_list()) {
-			this.write_text(" ");
-			this.generate(node.get_declarator_list());
+			AstInitDeclaratorList declarators = node.get_declarator_list();
+			
+			for(int k = 0; k < declarators.number_of_init_declarators(); k++) {
+				AstInitDeclarator init_decl = declarators.get_init_declarator(k);
+				AstDeclarator declarator = init_decl.get_declarator();
+				
+				/** specifiers declarator (= initializer); **/
+				this.write_tabs();
+				this.generate(specifiers);
+				this.write_text(" ");
+				this.generate(declarator);
+				if(init_decl.has_initializer()) {
+					this.write_text(" = ");
+					this.generate(init_decl.get_initializer());
+				}
+				this.write_text(";");
+				this.write_line();
+			}
 		}
-	}
-	private void generate_init_declarator_list(AstInitDeclaratorList node) throws Exception {
-		for(int k = 0; k < node.number_of_init_declarators(); k++) {
-			this.generate(node.get_init_declarator(k));
-			if(k < node.number_of_init_declarators() - 1)
-				this.write_text(", ");
-		}
-	}
-	private void generate_init_declarator(AstInitDeclarator node) throws Exception {
-		this.generate(node.get_declarator());
-		if(node.has_initializer()) {
-			this.write_text(" = ");
-			this.generate(node.get_initializer());
+		else {
+			this.write_tabs();
+			this.generate(node.get_specifiers());
+			this.write_text(";");
+			this.write_line();
 		}
 	}
 	private void generate_typename(AstTypeName node) throws Exception {
+		/** previous type definition **/ 
+		this.generate_utype_definitions(node);
+		
 		this.generate(node.get_specifiers());
 		if(node.has_declarator()) {
 			this.write_text(" ");
@@ -1021,10 +1186,7 @@ public class AstCodeGenerator {
 		this.write_line();
 	}
 	private void generate_declaration_statement(AstDeclarationStatement node) throws Exception {
-		this.write_tabs();
 		this.generate(node.get_declaration());
-		this.write_text(";");
-		this.write_line();
 	}
 	private void generate_compound_statement(AstCompoundStatement node) throws Exception {
 		this.write_tabs();
@@ -1213,17 +1375,42 @@ public class AstCodeGenerator {
 	
 	/* unit generator */
 	private void generate_function_definition(AstFunctionDefinition node) throws Exception {
-		this.write_line();
 		this.generate(node.get_specifiers());
 		this.write_text(" ");
 		this.generate(node.get_declarator());
 		this.write_line();
 		this.generate(node.get_body());
+		this.write_line();
 	}
-	private void generate_translation_unit(AstTranslationUnit node) throws Exception {
-		for(int k = 0; k < node.number_of_units(); k++) {
-			this.generate(node.get_unit(k));
+	
+	/* main generator methods */
+	private void generate_external_units(AstTranslationUnit root) throws Exception {
+		for(int k = 0; k < root.number_of_units(); k++) {
+			this.generate(root.get_unit(k));
 		}
+	}
+	
+	/**
+	 * @param node
+	 * @return the normalized code generated from the given node.
+	 * @throws Exception
+	 */
+	public static String normalize(AstNode node) throws Exception {
+		normalizer.init();
+		normalizer.generate(node);
+		return normalizer.buffer.toString();
+	}
+	/**
+	 * @param tree
+	 * @return the normalized and correct code for entire program file.
+	 * @throws Exception
+	 */
+	public static String normalize(AstTree tree) throws Exception {
+		normalizer.init();
+		/* implement the parsing process */
+		normalizer.generate_utype_declarations(tree.get_ast_root());
+		normalizer.generate_external_units(tree.get_ast_root());
+		return normalizer.buffer.toString();
 	}
 	
 }

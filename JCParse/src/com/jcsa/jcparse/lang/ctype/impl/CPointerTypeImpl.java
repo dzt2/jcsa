@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.ctype.impl;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 
-public class CPointerTypeImpl implements CPointerType {
+public class CPointerTypeImpl extends CTypeImpl implements CPointerType {
 
 	protected CType pointed_type;
 
@@ -36,10 +36,5 @@ public class CPointerTypeImpl implements CPointerType {
 		else
 			return false;
 	}
-
 	
-	@Override
-	public String generate_code() {
-		return this.pointed_type.generate_code() + "*";
-	}
 }

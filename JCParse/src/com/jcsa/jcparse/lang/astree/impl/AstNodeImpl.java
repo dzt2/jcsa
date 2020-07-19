@@ -3,7 +3,9 @@ package com.jcsa.jcparse.lang.astree.impl;
 import com.jcsa.jcparse.lang.CSyntaxElmImpl;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.astree.code.AstCodeGenerator;
+import com.jcsa.jcparse.lang.code.AstCodeGenerator;
+import com.jcsa.jcparse.lang.code.AstNodeNormalizer;
+import com.jcsa.jcparse.lang.text.CText;
 
 /**
  * abstract node for all AstNode subclasses
@@ -54,8 +56,52 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 	}
 	
 	@Override
-	public String get_code() throws Exception {
-		return AstCodeGenerator.generator.generate_code(this);
+	public String get_code() {
+		return this.get_code(false);
+	}
+	
+	@Override
+	public String get_code(boolean heading) {
+		CText source_code = this.tree.get_source_code();
+		StringBuilder buffer = new StringBuilder();
+		
+		try {
+			if(heading) {
+				String class_name = this.getClass().getSimpleName();
+				class_name = class_name.substring(3, class_name.length() - 4);
+				int line = source_code.line_of(this.location.get_bias());
+				buffer.append(class_name + "[" + line + "]:\n");
+			}
+			buffer.append(source_code.substring(this.location.get_bias(), 
+					this.location.get_bias() + this.location.get_length()));
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			buffer.append("##Error Occurs##");
+		}
+		
+		return buffer.toString();
+	}
+	
+	@Override
+	public String generate_code() {
+		return this.generate_code(false);
+	}
+	
+	@Override
+	public String generate_code(boolean normalized) {
+		try {
+			if(normalized) {
+				return AstNodeNormalizer.normalize(this);
+			}
+			else {
+				return AstCodeGenerator.generate_code(this);
+			}
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 	
 	public void set_tree(AstTree tree) throws Exception {

@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.CTypeQualifier;
 
-public class CQualifierTypeImpl implements CQualifierType {
+public class CQualifierTypeImpl extends CTypeImpl implements CQualifierType {
 
 	protected CTypeQualifier qualifier;
 	protected CType type;
@@ -48,9 +48,4 @@ public class CQualifierTypeImpl implements CQualifierType {
 			return false;
 	}
 
-	
-	@Override
-	public String generate_code() {
-		return this.type.generate_code();
-	}
 }

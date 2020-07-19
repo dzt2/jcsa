@@ -53,11 +53,27 @@ public interface AstNode extends CLocalable {
 	 * @return : null if k is out of index
 	 */
 	public AstNode get_child(int k);
-
+	
 	/**
-	 * get the normalized code to which this node refers
-	 * @return
-	 * @throws Exception
+	 * @return this.get_code(false)
 	 */
-	public String get_code() throws Exception;
+	public String get_code();
+	
+	/**
+	 * @param heading whether to print the head of the AST-node with type and line
+	 * @return the original source code in .c file that corresponds to the AST node.
+	 */
+	public String get_code(boolean heading);
+	
+	/**
+	 * @return this.generate_code(false);
+	 */
+	public String generate_code();
+	
+	/**
+	 * @param normalized
+	 * @return the (normalized) code generated w.r.t. the structure defined in AST node
+	 */
+	public String generate_code(boolean normalized);
+	
 }

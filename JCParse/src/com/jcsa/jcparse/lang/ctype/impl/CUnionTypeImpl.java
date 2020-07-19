@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.ctype.impl;
 import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 
-public class CUnionTypeImpl implements CUnionType {
+public class CUnionTypeImpl extends CTypeImpl implements CUnionType {
 	
 	private String name;
 	protected CFieldBody body;
@@ -37,17 +37,6 @@ public class CUnionTypeImpl implements CUnionType {
 	@Override
 	public String get_name() {
 		return name;
-	}
-
-	
-	@Override
-	public String generate_code() {
-		if(this.name.isEmpty()) {
-			return "union@" + this.hashCode();
-		}
-		else {
-			return "union " + this.name;
-		}
 	}
 	
 }

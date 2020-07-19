@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CField;
 import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 
-public class CStructTypeImpl implements CStructType {
+public class CStructTypeImpl extends CTypeImpl implements CStructType {
 
 	protected String name;
 	protected CFieldBody body;
@@ -49,16 +49,6 @@ public class CStructTypeImpl implements CStructType {
 	@Override
 	public String get_name() {
 		return name;
-	}
-
-	@Override
-	public String generate_code() {
-		if(this.name.isEmpty()) {
-			return "struct@" + this.hashCode();
-		}
-		else {
-			return "struct " + this.name;
-		}
 	}
 	
 }

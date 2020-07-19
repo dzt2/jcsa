@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CParameterTypeList;
 import com.jcsa.jcparse.lang.ctype.CType;
 
-public class CFunctionTypeImpl implements CFunctionType {
+public class CFunctionTypeImpl extends CTypeImpl implements CFunctionType {
 
 	protected CType rtype;
 	protected CParameterTypeList plist;
@@ -68,10 +68,5 @@ public class CFunctionTypeImpl implements CFunctionType {
 		} else
 			return false;
 	}
-
 	
-	@Override
-	public String generate_code() {
-		return this.rtype.generate_code() + "()";
-	}
 }

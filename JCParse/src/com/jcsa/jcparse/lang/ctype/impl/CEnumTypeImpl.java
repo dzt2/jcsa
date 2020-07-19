@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.ctype.impl;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CEnumeratorList;
 
-public class CEnumTypeImpl implements CEnumType {
+public class CEnumTypeImpl extends CTypeImpl implements CEnumType {
 
 	private String name;
 	protected CEnumeratorList elist;
@@ -37,17 +37,6 @@ public class CEnumTypeImpl implements CEnumType {
 	@Override
 	public String get_name() {
 		return name;
-	}
-
-	
-	@Override
-	public String generate_code() {
-		if(this.name.isEmpty()) {
-			return "enum@" + this.hashCode();
-		}
-		else {
-			return "enum " + this.name;
-		}
 	}
 	
 }

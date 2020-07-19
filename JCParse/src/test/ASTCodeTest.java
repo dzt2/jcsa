@@ -1,11 +1,8 @@
 package test;
 
 import java.io.File;
-import java.io.FileWriter;
-
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.lang.astree.code.AstCodeGenerator;
 
 public class ASTCodeTest {
 	
@@ -51,16 +48,11 @@ public class ASTCodeTest {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static void normal_code(AstCirFile source_program, File target_file) throws Exception {
-		String code = AstCodeGenerator.generator.generate_code(
-				source_program.get_ast_tree().get_ast_root());
-		FileWriter writer = new FileWriter(target_file);
-		writer.write(code); writer.close();
+		source_program.get_ast_tree().generate(true, target_file);
 		parse(target_file);
 	}
 	private static void write_code(AstCirFile source_program, File target_file) throws Exception {
-		FileWriter writer = new FileWriter(target_file);
-		writer.write(source_program.get_ast_tree().get_ast_root().get_code());
-		writer.close();
+		source_program.get_ast_tree().generate(false, target_file);
 		parse(target_file);
 	}
 	

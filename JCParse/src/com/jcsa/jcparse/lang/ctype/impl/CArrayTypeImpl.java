@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.ctype.impl;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CType;
 
-public class CArrayTypeImpl implements CArrayType {
+public class CArrayTypeImpl extends CTypeImpl implements CArrayType {
 
 	protected CType etype;
 	protected int length;
@@ -47,17 +47,6 @@ public class CArrayTypeImpl implements CArrayType {
 			return ((CArrayType) val).get_element_type().equals(etype) && ((CArrayType) val).length() == length;
 		} else
 			return false;
-	}
-
-	
-	@Override
-	public String generate_code() {
-		if(this.length > 0) {
-			return this.etype.generate_code() + "[" + this.length + "]";
-		}
-		else {
-			return this.etype.generate_code() + "*";
-		}
 	}
 	
 }

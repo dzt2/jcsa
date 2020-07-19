@@ -1,6 +1,7 @@
 package com.jcsa.jcparse.lang.astree;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.Queue;
 import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
+import com.jcsa.jcparse.lang.code.AstCodeGenerator;
+import com.jcsa.jcparse.lang.code.AstNodeNormalizer;
 import com.jcsa.jcparse.lang.text.CText;
 
 /**
@@ -99,6 +102,27 @@ public class AstTree {
 			node = node.get_parent();
 		}
 		return (AstFunctionDefinition) node;
+	}
+	
+	/* code generator */
+	/**
+	 * generate the (normalized code) of this code file based on its AST structure
+	 * @param normalized
+	 * @param cfile
+	 * @throws Exception
+	 */
+	public void generate(boolean normalized, File cfile) throws Exception {
+		String code;
+		if(normalized) {
+			code = AstNodeNormalizer.normalize(this);
+		}
+		else {
+			code = AstCodeGenerator.generate_code(this.get_ast_root());
+		}
+		
+		FileWriter writer = new FileWriter(cfile);
+		writer.write(code);
+		writer.close();
 	}
 	
 }

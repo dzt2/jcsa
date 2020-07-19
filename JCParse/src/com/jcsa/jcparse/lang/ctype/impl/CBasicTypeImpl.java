@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.ctype.impl;
 
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 
-public class CBasicTypeImpl implements CBasicType {
+public class CBasicTypeImpl extends CTypeImpl implements CBasicType {
 
 	/** void **/
 	public static CBasicType void_type;
@@ -158,31 +158,5 @@ public class CBasicTypeImpl implements CBasicType {
 		ldouble_imaginary_type = new CBasicTypeImpl(CBasicTypeTag.c_ldouble_imaginary);
 		gnu_va_list_type = new CBasicTypeImpl(CBasicTypeTag.gnu_va_list);
 	}
-
-	@Override
-	public String generate_code() {
-		switch(this.tag) {
-		case c_void:	return "void";
-		case c_bool:	return "bool";
-		case c_char:	return "char";
-		case c_uchar:	return "unsigned char";
-		case c_int:		return "int";
-		case c_uint:	return "unsigned int";
-		case c_long:	return "long";
-		case c_ulong: 	return "unsigned long";
-		case c_llong:	return "long long";
-		case c_ullong:	return "unsigned long long";
-		case c_float:	return "float";
-		case c_double:	return "double";
-		case c_ldouble:	return "long double";
-		case c_float_complex:	return "float complex";
-		case c_double_complex:	return "double complex";
-		case c_ldouble_complex:	return "long double complex";
-		case c_float_imaginary:	return "float imaginary";
-		case c_double_imaginary:	return "double imaginary";
-		case c_ldouble_imaginary:	return "long double imaginary";
-		case gnu_va_list:	return "va_list";
-		default: return "unknown";
-		}
-	}
+	
 }
