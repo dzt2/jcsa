@@ -27,7 +27,7 @@ public class CInfluenceTest {
 	
 	protected static final String prefix = "D:/SourceCode/MyData/CODE2/gfiles/";
 	protected static final String postfx = "result/inf/";
-	protected static final File template_file = new File("config/run_temp.txt");
+	protected static final File template_file = new File("config/cruntime.txt");
 	
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
