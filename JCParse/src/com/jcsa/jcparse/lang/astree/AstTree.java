@@ -7,11 +7,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import com.jcsa.jcparse.lang.AstCodeGenerator;
+import com.jcsa.jcparse.lang.AstNodeNormalizer;
 import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
-import com.jcsa.jcparse.lang.code.AstCodeGenerator;
-import com.jcsa.jcparse.lang.code.AstNodeNormalizer;
 import com.jcsa.jcparse.lang.text.CText;
 
 /**

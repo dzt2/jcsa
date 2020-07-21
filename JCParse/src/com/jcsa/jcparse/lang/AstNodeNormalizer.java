@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.code;
+package com.jcsa.jcparse.lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;

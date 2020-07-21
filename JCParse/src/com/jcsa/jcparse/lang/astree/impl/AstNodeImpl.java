@@ -1,10 +1,10 @@
 package com.jcsa.jcparse.lang.astree.impl;
 
+import com.jcsa.jcparse.lang.AstCodeGenerator;
+import com.jcsa.jcparse.lang.AstNodeNormalizer;
 import com.jcsa.jcparse.lang.CSyntaxElmImpl;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.code.AstCodeGenerator;
-import com.jcsa.jcparse.lang.code.AstNodeNormalizer;
 import com.jcsa.jcparse.lang.text.CText;
 
 /**
