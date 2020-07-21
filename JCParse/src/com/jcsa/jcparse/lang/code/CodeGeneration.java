@@ -5,6 +5,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
 /**
+ * It provides basic interfaces to generate code for both AST and CIR nodes.
  * 
  * @author yukimula
  *
