@@ -48,8 +48,10 @@ public class ASTCodeTest {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static void normal_code(AstCirFile source_program, File target_file) throws Exception {
+		/*
 		source_program.get_ast_tree().generate(true, target_file);
 		parse(target_file);
+		*/
 	}
 	private static void write_code(AstCirFile source_program, File target_file) throws Exception {
 		source_program.get_ast_tree().generate(false, target_file);
