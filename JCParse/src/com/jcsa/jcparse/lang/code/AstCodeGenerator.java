@@ -128,6 +128,18 @@ public class AstCodeGenerator {
 		}
 	}
 	/**
+	 * @param statement
+	 * @return whether the statement is empty
+	 */
+	private boolean is_empty_statement(AstStatement statement) {
+		if(statement instanceof AstExpressionStatement) {
+			return !((AstExpressionStatement) statement).has_expression();
+		}
+		else {
+			return false;
+		}
+	}
+	/**
 	 * @param node
 	 * @return the source code generated from the generator based on abstract structure
 	 * 			of the syntactic node
@@ -1093,7 +1105,7 @@ public class AstCodeGenerator {
 				this.gen(statement);
 				this.tabs++;
 			}
-			else {
+			else if(!this.is_empty_statement(statement)) {
 				this.new_line();
 				this.gen(statement);
 			}
