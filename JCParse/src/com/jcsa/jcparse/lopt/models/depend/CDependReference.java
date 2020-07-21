@@ -44,7 +44,7 @@ public class CDependReference {
 	@Override
 	public String toString() {
 		try {
-			return def.generate_code();
+			return def.generate_code(true);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

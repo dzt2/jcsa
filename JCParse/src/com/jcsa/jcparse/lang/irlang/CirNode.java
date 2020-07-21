@@ -129,31 +129,14 @@ public interface CirNode {
 	 * @throws IndexOutOfBoundsException
 	 */
 	public CirNode get_child(int k) throws IndexOutOfBoundsException;
+	
 	/**
-	 * generate the code in intermediate representation
-	 * @return
+	 * @param simplified
+	 * @return generate the code (simplified) that describes the C-intermediate
+	 * 			representation language based on the structure of this node.
 	 * @throws Exception
 	 */
-	public String generate_code() throws Exception;
-	/**
-	 * generate the code without \n and \t (replaced as space)
-	 * @return
-	 * @throws Exception
-	 */
-	public String generate_trim_code() throws Exception;
-	/**
-	 * generate the code in intermediate representation with unique key-address
-	 * @return
-	 * @throws Exception
-	 */
-	public String generate_unique_code() throws Exception;
-	/**
-	 * generate the code in intermediate representation with unique key-address
-	 * without \n and \t (replaced as space)
-	 * @return
-	 * @throws Exception
-	 */
-	public String generate_unique_trim_code() throws Exception;
+	public String generate_code(boolean simplified) throws Exception;
 	
 	/**
 	 * get the function to which the node belongs to

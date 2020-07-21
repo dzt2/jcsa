@@ -10,7 +10,7 @@ import java.util.Queue;
 import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
-import com.jcsa.jcparse.lang.code.AstCodeGenerator;
+import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.text.CText;
 
 /**
@@ -116,7 +116,7 @@ public class AstTree {
 			throw new RuntimeException("Nor supported");
 		}
 		else {
-			code = AstCodeGenerator.generate(this.get_ast_root());
+			code = CodeGeneration.generate_code(this.get_ast_root());
 		}
 		
 		FileWriter writer = new FileWriter(cfile);

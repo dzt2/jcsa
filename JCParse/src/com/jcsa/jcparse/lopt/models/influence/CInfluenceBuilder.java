@@ -167,7 +167,7 @@ public class CInfluenceBuilder {
 			else if(cir_source.get_parent() instanceof CirWaitExpression) { 
 				this.output.connect(CInfluenceEdgeType.argument_to_wait, target, source);
 			}
-			else throw new IllegalArgumentException(cir_source.get_parent().generate_code());
+			else throw new IllegalArgumentException(cir_source.get_parent().generate_code(true));
 		}
 		break;
 		

@@ -55,7 +55,7 @@ public class CDependenceTest {
 		writer.write("\t");
 		writer.write(node.get_execution().toString());
 		writer.write("\t");
-		writer.write(node.get_statement().generate_trim_code());
+		writer.write(node.get_statement().generate_code(true));
 		writer.write("\n");
 		
 		for(CDependEdge edge : node.get_in_edges()) {

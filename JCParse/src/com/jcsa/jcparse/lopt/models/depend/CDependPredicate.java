@@ -40,7 +40,7 @@ public class CDependPredicate {
 	@Override
 	public String toString() {
 		try {
-			return condition.generate_trim_code() + " as " + predicate_value;
+			return condition.generate_code(true) + " as " + predicate_value;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

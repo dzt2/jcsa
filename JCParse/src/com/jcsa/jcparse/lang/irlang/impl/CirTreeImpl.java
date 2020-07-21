@@ -66,8 +66,6 @@ public class CirTreeImpl implements CirTree {
 	private List<CirNode> nodes;
 	private Map<AstNode, List<CirNode>> index;
 	private Map<AstNode, AstCirPair> ranges;
-	private CirCodeGenerator generator;
-	private CirCodeGenerator unique_generator;
 	private CirFunctionCallGraph call_graph;
 	
 	public CirTreeImpl(AstTranslationUnit astroot) throws IllegalArgumentException {
@@ -80,9 +78,6 @@ public class CirTreeImpl implements CirTree {
 			CirNode root = new CirTransitionUnitImpl(this, 0);
 			this.nodes.add(root); root.set_ast_source(astroot);
 			this.call_graph = null;
-			
-			this.generator = new CirCodeGenerator(false);
-			this.unique_generator = new CirCodeGenerator(true);
 		}
 	}
 	
@@ -715,16 +710,6 @@ public class CirTreeImpl implements CirTree {
 			return this.ranges.get(ast_source);
 		}
 	}
-	/**
-	 * get the generator for generating intermediate representation code
-	 * @return
-	 */
-	protected CirCodeGenerator get_generator() { return this.generator; }
-	/**
-	 * get the generator for generating intermediate representation code with unique name of identifier.
-	 * @return
-	 */
-	protected CirCodeGenerator get_unique_generator() { return this.unique_generator; }
 	
 	@Override
 	public CirFunctionCallGraph get_function_call_graph() { return this.call_graph; }

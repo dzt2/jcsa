@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.irlang.impl;
+package com.jcsa.jcparse.lang.code;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -57,10 +57,11 @@ public class CirCodeGenerator {
 	 * representation with specified unique switch.
 	 * @param unique_code true when the generated identifier is unique-name rather than simple name
 	 */
-	protected CirCodeGenerator(boolean unique_code) {
+	private CirCodeGenerator() {
 		this.buffer = new StringBuilder();
-		this.unique_code = unique_code;
 	}
+	/** the singleton used to generate code that describes in CIR language **/
+	public static final CirCodeGenerator generator = new CirCodeGenerator();
 	
 	/* type generation */
 	private void parse(CType type) throws Exception {
@@ -383,14 +384,17 @@ public class CirCodeGenerator {
 	}
 	
 	/**
-	 * generate the intermediate representation code for the node
+	 * @param simplified
 	 * @param node
-	 * @return
+	 * @return code being generated to describe the structure of C-intermediate
+	 * 			representation language specified by the node
 	 * @throws Exception
 	 */
-	public String generate(CirNode node) throws Exception {
-		this.buffer.setLength(0);
-		this.parse(node);
-		return buffer.toString();
+	protected static String generate(boolean simplified, CirNode node) throws Exception {
+		generator.unique_code = simplified;
+		generator.buffer.setLength(0);
+		generator.parse(node);
+		return generator.buffer.toString();
 	}
+	
 }

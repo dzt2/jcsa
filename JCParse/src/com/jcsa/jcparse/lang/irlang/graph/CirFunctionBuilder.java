@@ -82,9 +82,6 @@ class CirFunctionBuilder {
 		else if(statement instanceof CirCaseStatement) {
 			int true_id = statement.get_child_index() + 1;
 			int fals_id = ((CirCaseStatement) statement).get_false_label().get_target_node_id();
-			if(fals_id < 0) {
-				System.out.println(statement.generate_code());
-			}
 			CirStatement true_statement = function_body.get_statement(true_id);
 			CirStatement fals_statement = (CirStatement) function_body.get_tree().get_node(fals_id);
 			CirExecution true_execution = flow_graph.get_execution(true_statement);

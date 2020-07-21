@@ -134,7 +134,7 @@ public class CirInstanceNode extends CirInstance {
 		if(!this.has_cir_node(node))
 			throw new IllegalArgumentException("Undefined expression: " + node);
 		else {
-			return node.generate_unique_code() + "#" + this.get_context().hashCode();
+			return node.generate_code(false) + "#" + this.get_context().hashCode();
 		}
 	}
 	

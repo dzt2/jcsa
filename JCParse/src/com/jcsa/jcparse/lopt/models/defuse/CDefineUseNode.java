@@ -126,7 +126,7 @@ public class CDefineUseNode {
 	 * @return
 	 * @throws Exception
 	 */
-	public String get_reference() throws Exception { return this.expression.generate_code(); }
+	public String get_reference() throws Exception { return this.expression.generate_code(false); }
 	
 	/* setters */
 	/**

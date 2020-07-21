@@ -85,7 +85,7 @@ public class CRelationshipTest {
 				writer.write("\t");
 				writer.write(instance.get_execution().toString());
 				writer.write("\t");
-				writer.write(instance.get_execution().get_statement().generate_trim_code());
+				writer.write(instance.get_execution().get_statement().generate_code(true));
 				writer.write("\n");
 				
 				output(relation_graph, instance, writer);

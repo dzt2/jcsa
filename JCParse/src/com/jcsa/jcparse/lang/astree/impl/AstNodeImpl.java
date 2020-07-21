@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.astree.impl;
 import com.jcsa.jcparse.lang.CSyntaxElmImpl;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.code.AstCodeGenerator;
+import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.text.CText;
 
 /**
@@ -63,7 +63,7 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 	
 	@Override
 	public String generate_code() throws Exception {
-		return AstCodeGenerator.generate(this);
+		return CodeGeneration.generate_code(this);
 	}
 	
 	public void set_tree(AstTree tree) throws Exception {

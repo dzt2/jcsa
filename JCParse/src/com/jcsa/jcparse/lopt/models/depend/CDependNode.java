@@ -99,7 +99,7 @@ public class CDependNode {
 		if(target_stmt instanceof CirAssignStatement) {
 			CirExpression def = ((CirAssignStatement) target_stmt).get_lvalue();
 			Set<CirExpression> usage_set = new HashSet<CirExpression>();
-			this.collect_usage_set(source_stmt, usage_set, def.generate_code());
+			this.collect_usage_set(source_stmt, usage_set, def.generate_code(true));
 			
 			if(!usage_set.isEmpty()) {
 				CirExecution source_execution = this.get_execution();
@@ -138,7 +138,7 @@ public class CDependNode {
 	}
 	private void collect_usage_set(CirExpression expression, Set<CirExpression> uses, String key) throws Exception {
 		if(expression instanceof CirReferExpression) {
-			if(expression.generate_code().equals(key)) {
+			if(expression.generate_code(true).equals(key)) {
 				uses.add(expression);
 			}
 		}

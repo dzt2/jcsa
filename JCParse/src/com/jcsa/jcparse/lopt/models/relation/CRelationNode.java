@@ -165,17 +165,17 @@ public class CRelationNode {
 			switch(type) {
 			case Statement:
 			{
-				return "[stmt]: " + this.get_statement().generate_trim_code();
+				return "[stmt]: " + this.get_statement().generate_code(true);
 			}
 			case Reference:
 			{
-				return "[refr]: {" + this.cir_source.generate_trim_code() + 
-						"} in {" + this.get_statement().generate_trim_code() + "}";
+				return "[refr]: {" + this.cir_source.generate_code(true) + 
+						"} in {" + this.get_statement().generate_code(true) + "}";
 			}
 			case Expression:
 			{
-				return "[expr]: {" + this.cir_source.generate_trim_code() + 
-						"} in {" + this.get_statement().generate_trim_code() + "}";
+				return "[expr]: {" + this.cir_source.generate_code(true) + 
+						"} in {" + this.get_statement().generate_code(true) + "}";
 			}
 			default: throw new IllegalArgumentException("Invalid type: " + type);
 			}

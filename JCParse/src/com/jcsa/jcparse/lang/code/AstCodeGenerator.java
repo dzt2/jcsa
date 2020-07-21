@@ -145,7 +145,7 @@ public class AstCodeGenerator {
 	 * 			of the syntactic node
 	 * @throws Exception
 	 */
-	public static String generate(AstNode node) throws Exception {
+	protected static String generate(AstNode node) throws Exception {
 		generator.init();
 		generator.gen(node);
 		return generator.buffer.toString();

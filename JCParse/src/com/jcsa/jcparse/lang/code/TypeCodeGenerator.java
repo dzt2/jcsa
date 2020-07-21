@@ -142,7 +142,7 @@ public class TypeCodeGenerator {
 	 * @return the code that describes the data type in C programming language.
 	 * @throws Exception
 	 */
-	public static String generate(CType data_type) throws Exception {
+	protected static String generate(CType data_type) throws Exception {
 		generator.buffer.setLength(0);
 		generator.gen(data_type);
 		return generator.buffer.toString();

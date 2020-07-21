@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
@@ -86,42 +87,8 @@ public abstract class CirNodeImpl implements CirNode {
 	}
 	
 	@Override
-	public String generate_code() throws Exception {
-		return ((CirTreeImpl) this.tree).get_generator().generate(this);
-	}
-	@Override
-	public String generate_trim_code() throws Exception {
-		StringBuilder buffer = new StringBuilder();
-		
-		String code = this.generate_code();
-		for(int k = 0; k < code.length(); k++) {
-			char ch = code.charAt(k);
-			if(ch == '\t' || ch == '\n') {
-				ch = ' ';
-			}
-			buffer.append(ch);
-		}
-		
-		return buffer.toString();
-	}
-	@Override
-	public String generate_unique_code() throws Exception {
-		return ((CirTreeImpl) this.tree).get_unique_generator().generate(this);
-	}
-	@Override
-	public String generate_unique_trim_code() throws Exception {
-		StringBuilder buffer = new StringBuilder();
-		
-		String code = this.generate_unique_code();
-		for(int k = 0; k < code.length(); k++) {
-			char ch = code.charAt(k);
-			if(ch == '\t' || ch == '\n') {
-				ch = ' ';
-			}
-			buffer.append(ch);
-		}
-		
-		return buffer.toString();
+	public String generate_code(boolean simplified) throws Exception {
+		return CodeGeneration.generate_code(simplified, this);
 	}
 	
 	/* children setter */

@@ -64,7 +64,7 @@ public class CDefineUseTest {
 					writer.write("\t");
 					writer.write(execution.toString());
 					writer.write("\t");
-					writer.write(execution.get_statement().generate_code());
+					writer.write(execution.get_statement().generate_code(true));
 					writer.write('\n');
 					
 					for(CDefineUseNode node : define_use_graph.get_nodes(instance)) {
