@@ -7,7 +7,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
+import com.jcsa.jcparse.lang.astree.unit.AstExternalUnit;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.code.CodeGeneration;
@@ -101,6 +104,35 @@ public class AstTree {
 			node = node.get_parent();
 		}
 		return (AstFunctionDefinition) node;
+	}
+	/**
+	 * @return the function definition node of main(); or null if not defined
+	 */
+	public AstFunctionDefinition get_main_function() throws Exception {
+		return this.get_function("main");
+	}
+	/**
+	 * @param name
+	 * @return the function with respect to the specified name or null;
+	 * @throws Exception
+	 */
+	public AstFunctionDefinition get_function(String name) throws Exception {
+		AstTranslationUnit root = this.get_ast_root();
+		for(int k = 0; k < root.number_of_units(); k++) {
+			AstExternalUnit unit = root.get_unit(k);
+			if(unit instanceof AstFunctionDefinition) {
+				AstDeclarator declarator = ((AstFunctionDefinition) unit).get_declarator();
+				
+				while(declarator.get_production() != DeclaratorProduction.identifier) {
+					declarator = declarator.get_declarator();
+				}
+				
+				if(declarator.get_identifier().get_name().strip().equals(name.strip())) {
+					return (AstFunctionDefinition) unit;
+				}
+			}
+		}
+		return null;
 	}
 	
 	/* code generator */

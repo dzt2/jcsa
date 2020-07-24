@@ -88,6 +88,15 @@ public class CirFunctionCallGraph {
 		else return this.functions.get(definition);
 	}
 	/**
+	 * @return main function in CIR or null
+	 */
+	public CirFunction get_main_function() {
+		if(name_function_index.containsKey("main"))
+			return name_function_index.get("main");
+		else
+			return null;
+	}
+	/**
 	 * whether the execution flow corresponds to any calling relations in the graph
 	 * @param flow
 	 * @return

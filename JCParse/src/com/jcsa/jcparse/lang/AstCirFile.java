@@ -123,6 +123,13 @@ public class AstCirFile {
 		return null;
 	}
 	/**
+	 * @return the function definition of the main() in AST
+	 * @throws Exception
+	 */
+	public AstFunctionDefinition get_main_ast_function() throws Exception {
+		return this.ast_tree.get_main_function();
+	}
+	/**
 	 * @return C-intermediate representation
 	 */
 	public CirTree get_cir_tree() {
@@ -205,6 +212,13 @@ public class AstCirFile {
 		else {
 			return null;
 		}
+	}
+	/**
+	 * @return the cir-function of main() or null
+	 * @throws Exception
+	 */
+	public CirFunction get_cir_main_function() throws Exception {
+		return this.cir_tree.get_function_call_graph().get_main_function();
 	}
 	/**
 	 * @param source

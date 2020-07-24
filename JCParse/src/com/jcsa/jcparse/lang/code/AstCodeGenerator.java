@@ -1265,6 +1265,10 @@ public class AstCodeGenerator {
 				this.gen(unit);
 				this.new_line();
 			}
+			else {
+				this.buffer.append(unit.get_code());
+				this.new_line();
+			}
 		}
 	}
 	
