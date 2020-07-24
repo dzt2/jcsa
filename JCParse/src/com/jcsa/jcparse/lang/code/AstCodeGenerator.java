@@ -1192,6 +1192,7 @@ public class AstCodeGenerator {
 					this.gen(specifiers);
 					this.buffer.append(" ");
 					this.gen(list.get_init_declarator(j));
+					break;
 				}
 			}
 		}

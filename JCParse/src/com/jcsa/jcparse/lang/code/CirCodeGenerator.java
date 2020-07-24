@@ -391,7 +391,7 @@ public class CirCodeGenerator {
 	 * @throws Exception
 	 */
 	protected static String generate(boolean simplified, CirNode node) throws Exception {
-		generator.unique_code = simplified;
+		generator.unique_code = !simplified;
 		generator.buffer.setLength(0);
 		generator.parse(node);
 		return generator.buffer.toString();

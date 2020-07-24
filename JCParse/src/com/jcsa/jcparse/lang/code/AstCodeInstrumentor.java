@@ -5,13 +5,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstIdentifierList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclaratorList;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
+import com.jcsa.jcparse.lang.astree.decl.specifier.AstDeclarationSpecifiers;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
@@ -39,7 +43,9 @@ import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstContinueStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDeclarationStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDefaultStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstGotoStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstLabeledStatement;
@@ -47,7 +53,11 @@ import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatementList;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstDeclarationList;
+import com.jcsa.jcparse.lang.astree.unit.AstExternalUnit;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
+import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -115,6 +125,7 @@ public class AstCodeInstrumentor {
 	private static final String jcm_prev_template = "jcm_prev(%d)";
 	private static final String jcm_post_template = "jcm_post(%d)";
 	private static final String jcm_open_template = "jcm_sta(\"%s\");";
+	private static final String jcm_include_code = "\n#include \"jcinst.h\"\t// instrumental library\n";
 	
 	/* attributes */
 	/** the number of tabs at the beginning of the new line **/
@@ -149,10 +160,27 @@ public class AstCodeInstrumentor {
 	/**
 	 * initialize the code generator
 	 */
-	private void init() {
-		this.tabs = 0;
-		this.buffer.setLength(0);
-		// TODO implement more parameters.
+	private void input(AstFunctionDefinition start_function,
+			Iterable<AstFunctionDefinition> ifunctions,
+			File output_file) throws Exception {
+		if(start_function == null)
+			throw new IllegalArgumentException("Invalid start_function");
+		else if(ifunctions == null)
+			throw new IllegalArgumentException("Invalid ifunctions set");
+		else if(output_file == null)
+			throw new IllegalArgumentException("Invalid output_file");
+		else {
+			this.tabs = 0;
+			this.buffer.setLength(0);
+			this.start_function = start_function;
+			this.ifunctions.clear();
+			this.ifunctions.add(start_function);
+			for(AstFunctionDefinition ifunction : ifunctions) {
+				if(ifunction != null)
+					this.ifunctions.add(ifunction);
+			}
+			this.output_file = output_file;
+		}
 	}
 	/**
 	 * \n\t\t\t...\t
@@ -188,7 +216,10 @@ public class AstCodeInstrumentor {
 			default:			return true;
 			}
 		}
-		else if(data_type instanceof CArrayType || data_type instanceof CPointerType) {
+		else if(data_type instanceof CArrayType) {
+			return false;
+		}
+		else if(data_type instanceof CPointerType) {
 			return true;
 		}
 		else if(data_type instanceof CFunctionType) {
@@ -270,12 +301,41 @@ public class AstCodeInstrumentor {
 		}
 	}
 	/**
+	 * the expression is invalid for analysis when it is assignment.
+	 * @param node
+	 * @return
+	 * @throws Exception
+	 */
+	private boolean is_valid_expression(AstExpression node) throws Exception {
+		if(node instanceof AstBinaryExpression) {
+			switch(((AstBinaryExpression) node).get_operator().get_operator()) {
+			case assign:
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case arith_mod_assign:
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:	return false;
+			default: return true;
+			}
+		}
+		else {
+			return true;
+		}
+	}
+	/**
 	 * insert the "jcm_add(expr_id, " into buffer
 	 * @param node
 	 * @throws Exception
 	 */
 	private void ins_jcm_add_head(AstExpression node) throws Exception {
-		if(this.is_valid_context(node) && this.is_valid_type(node.get_value_type())) {
+		if(this.is_valid_context(node)
+				&& this.is_valid_type(node.get_value_type())
+				&& this.is_valid_expression(node)) {
 			this.buffer.append(String.format(jcm_add_head, node.get_key()));
 		}
 	}
@@ -285,7 +345,9 @@ public class AstCodeInstrumentor {
 	 * @throws Exception
 	 */
 	private void ins_jcm_add_tail(AstExpression node) throws Exception {
-		if(this.is_valid_context(node) && this.is_valid_type(node.get_value_type())) {
+		if(this.is_valid_context(node)
+				&& this.is_valid_type(node.get_value_type())
+				&& this.is_valid_expression(node)) {
 			this.buffer.append(jcm_add_tail);
 		}
 	}
@@ -352,6 +414,88 @@ public class AstCodeInstrumentor {
 	private void ins(AstNode node) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node: null");
+		else if(node instanceof AstDeclaration)
+			this.ins_declaration((AstDeclaration) node);
+		else if(node instanceof AstInitDeclaratorList) 
+			this.ins_init_declarator_list((AstInitDeclaratorList) node);
+		else if(node instanceof AstInitDeclarator)
+			this.ins_init_declarator((AstInitDeclarator) node);
+		else if(node instanceof AstInitializer)
+			this.ins_initializer((AstInitializer) node);
+		else if(node instanceof AstInitializerBody)
+			this.ins_initializer_body((AstInitializerBody) node);
+		else if(node instanceof AstInitializerList)
+			this.ins_initializer_list((AstInitializerList) node);
+		else if(node instanceof AstFieldInitializer)
+			this.ins_field_initializer((AstFieldInitializer) node);
+		else if(node instanceof AstIdExpression)
+			this.ins_id_expression((AstIdExpression) node);
+		else if(node instanceof AstConstant)
+			this.ins_constant((AstConstant) node);
+		else if(node instanceof AstLiteral)
+			this.ins_literal((AstLiteral) node);
+		else if(node instanceof AstUnaryExpression)
+			this.ins_unary_expression((AstUnaryExpression) node);
+		else if(node instanceof AstPostfixExpression)
+			this.ins_postfix_expression((AstPostfixExpression) node);
+		else if(node instanceof AstBinaryExpression)
+			this.ins_binary_expression((AstBinaryExpression) node);
+		else if(node instanceof AstArrayExpression)
+			this.ins_array_expression((AstArrayExpression) node);
+		else if(node instanceof AstCastExpression)
+			this.ins_cast_expression((AstCastExpression) node);
+		else if(node instanceof AstCommaExpression)
+			this.ins_comma_expression((AstCommaExpression) node);
+		else if(node instanceof AstConditionalExpression)
+			this.ins_conditional_expression((AstConditionalExpression) node);
+		else if(node instanceof AstFieldExpression)
+			this.ins_field_expression((AstFieldExpression) node);
+		else if(node instanceof AstFunCallExpression)
+			this.ins_fun_call_expression((AstFunCallExpression) node);
+		else if(node instanceof AstArgumentList)
+			this.ins_argument_list((AstArgumentList) node);
+		else if(node instanceof AstSizeofExpression)
+			this.ins_sizeof_expression((AstSizeofExpression) node);
+		else if(node instanceof AstParanthExpression)
+			this.ins_paranth_expression((AstParanthExpression) node);
+		else if(node instanceof AstConstExpression)
+			this.ins_const_expression((AstConstExpression) node);
+		else if(node instanceof AstBreakStatement)
+			this.ins_break_statement((AstBreakStatement) node);
+		else if(node instanceof AstContinueStatement)
+			this.ins_continue_statement((AstContinueStatement) node);
+		else if(node instanceof AstGotoStatement)
+			this.ins_goto_statement((AstGotoStatement) node);
+		else if(node instanceof AstReturnStatement)
+			this.ins_return_statement((AstReturnStatement) node);
+		else if(node instanceof AstLabeledStatement)
+			this.ins_labeled_statement((AstLabeledStatement) node);
+		else if(node instanceof AstCaseStatement)
+			this.ins_case_statement((AstCaseStatement) node);
+		else if(node instanceof AstDefaultStatement)
+			this.ins_default_statement((AstDefaultStatement) node);
+		else if(node instanceof AstExpressionStatement)
+			this.ins_expression_statement((AstExpressionStatement) node);
+		else if(node instanceof AstDeclarationStatement)
+			this.ins_declaration_statement((AstDeclarationStatement) node);
+		else if(node instanceof AstCompoundStatement)
+			this.ins_compound_statement((AstCompoundStatement) node);
+		else if(node instanceof AstStatementList)
+			this.ins_statement_list((AstStatementList) node);
+		else if(node instanceof AstIfStatement)
+			this.ins_if_statement((AstIfStatement) node);
+		else if(node instanceof AstSwitchStatement)
+			this.ins_switch_statement((AstSwitchStatement) node);
+		else if(node instanceof AstForStatement)
+			this.ins_for_statement((AstForStatement) node);
+		else if(node instanceof AstWhileStatement)
+			this.ins_while_statement((AstWhileStatement) node);
+		else if(node instanceof AstDoWhileStatement)
+			this.ins_do_while_statement((AstDoWhileStatement) node);
+		else if(node instanceof AstFunctionDefinition)
+			this.ins_function_definition((AstFunctionDefinition) node);
+		else if(node instanceof AstTranslationUnit)
+			this.ins_translation_unit((AstTranslationUnit) node);
 		else
 			throw new IllegalArgumentException("Unsupport: " + node);
 	}
@@ -599,6 +743,7 @@ public class AstCodeInstrumentor {
 			this.tabs++;
 			this.new_line();
 			this.ins_jcm_open();
+			this.tabs--;
 		}
 		
 		this.tabs++;
@@ -649,10 +794,12 @@ public class AstCodeInstrumentor {
 			if(statement instanceof AstLabeledStatement
 				|| statement instanceof AstCaseStatement
 				|| statement instanceof AstDefaultStatement) {
+				this.new_line();
 				this.ins(statement);
 			}
 			else {
 				this.tabs++;
+				this.new_line();
 				this.ins(statement);
 				this.tabs--;
 			}
@@ -680,6 +827,197 @@ public class AstCodeInstrumentor {
 		this.buffer.append(")");
 		this.ins_block(node.get_body());
 	}
+	private void ins_while_statement(AstWhileStatement node) throws Exception {
+		this.buffer.append("while(");
+		this.ins(node.get_condition());
+		this.buffer.append(")");
+		this.ins_block(node.get_body());
+	}
+	private void ins_do_while_statement(AstDoWhileStatement node) throws Exception {
+		this.buffer.append("do");
+		this.ins_block(node.get_body());
+		this.new_line();
+		this.buffer.append("while(");
+		this.ins(node.get_condition());
+		this.buffer.append(");");
+	}
+	private void ins_for_statement(AstForStatement node) throws Exception {
+		this.buffer.append("for( ");
+		
+		AstStatement initializer = node.get_initializer();
+		if(initializer instanceof AstDeclarationStatement) {
+			AstDeclarationStatement statement = (AstDeclarationStatement) initializer;
+			this.ins(statement.get_declaration()); this.buffer.append("; ");
+		}
+		else {
+			AstExpressionStatement statement = (AstExpressionStatement) initializer;
+			if(statement.has_expression()) {
+				this.ins_jcm_prev(statement);
+				this.buffer.append(", ");
+				this.ins(statement.get_expression());
+				this.buffer.append("; ");
+			}
+			else {
+				this.ins_jcm_prev(statement);
+				this.buffer.append(", ");
+				this.ins_jcm_post(statement);
+				this.buffer.append("; ");
+			}
+		}
+		
+		AstExpressionStatement condition = node.get_condition();
+		if(condition.has_expression()) {
+			this.ins_jcm_prev(condition);
+			this.buffer.append(", ");
+			this.ins(condition.get_expression());
+			this.buffer.append("; ");
+		}
+		else {
+			this.ins_jcm_prev(condition);
+			this.buffer.append(", ");
+			this.ins_jcm_post(condition);
+			this.buffer.append("; ");
+		}
+		
+		if(node.has_increment()) {
+			this.ins(node.get_increment());
+		}
+		
+		this.buffer.append(")");
+		
+		this.ins_block(node.get_body());
+		
+	}
+	/* external-unit package */
+	private String get_declarator_name(AstDeclarator declarator) throws Exception {
+		while(declarator != null) {
+			switch(declarator.get_production()) {
+			case identifier: return declarator.get_identifier().get_name();
+			default: declarator = declarator.get_declarator(); break;
+			}
+		}
+		return null;
+	}
+	private void gen_parameter_declaration(String name, AstDeclarationList dlist) throws Exception {
+		for(int i = 0; i < dlist.number_of_declarations(); i++) {
+			AstDeclaration declaration = dlist.get_declaration(i).get_declaration();
+			AstDeclarationSpecifiers specifiers = declaration.get_specifiers();
+			AstInitDeclaratorList list = declaration.get_declarator_list();
+			for(int j = 0; j < list.number_of_init_declarators(); j++) {
+				String dname = this.get_declarator_name(list.get_init_declarator(j).get_declarator());
+				if(name.equals(dname)) {
+					this.gen(specifiers);
+					this.buffer.append(" ");
+					this.gen(list.get_init_declarator(j));
+					break;
+				}
+			}
+		}
+	}
+	private void gen_function_declarator(AstDeclarator declarator, AstDeclarationList dlist) throws Exception {
+		switch(declarator.get_production()) {
+		case pointer_declarator:
+		{
+			this.gen(declarator.get_pointer());
+			this.buffer.append(" ");
+			this.gen_function_declarator(declarator.get_declarator(), dlist);
+		}
+		break;
+		case declarator_dimension:
+		{
+			this.gen_function_declarator(declarator.get_declarator(), dlist);
+			this.gen(declarator.get_dimension());
+		}
+		break;
+		case declarator_parambody:
+		{
+			this.gen_function_declarator(declarator.get_declarator(), dlist);
+			
+			AstIdentifierList ilist = declarator.get_parameter_body().get_identifier_list();
+			this.buffer.append("(");
+			for(int k = 0; k < ilist.number_of_identifiers(); k++) {
+				String name = ilist.get_identifier(k).get_name();
+				this.gen_parameter_declaration(name, dlist);
+				if(k < ilist.number_of_identifiers() - 1) {
+					this.buffer.append(", ");
+				}
+			}
+			this.buffer.append(")");
+		}
+		break;
+		case lp_declarator_rp:
+		{
+			this.buffer.append("(");
+			this.gen_function_declarator(declarator.get_declarator(), dlist);
+			this.buffer.append(")");
+		}
+		break;
+		case identifier:
+		{
+			this.gen(declarator.get_identifier());
+		}
+		break;
+		default: throw new IllegalArgumentException("Invalid production: " + declarator.get_production());
+		}
+	}
+	private void ins_function_definition(AstFunctionDefinition node) throws Exception {
+		this.gen(node.get_specifiers());
+		this.buffer.append(" ");
+		if(node.has_declaration_list()) {
+			this.gen_function_declarator(node.get_declarator(), node.get_declaration_list());
+		}
+		else {
+			this.gen(node.get_declarator());
+		}
+		this.ins_block(node.get_body());
+	}
+	private void ins_translation_unit(AstTranslationUnit node) throws Exception {
+		for(int k = 0; k < node.number_of_units(); k++) {
+			AstExternalUnit unit = node.get_unit(k);
+			if(unit instanceof AstDeclarationStatement) {
+				this.gen(unit);
+				this.new_line();
+			}
+			else if(unit instanceof AstFunctionDefinition) {}
+			else {
+				this.buffer.append(unit.get_code());
+				this.new_line();
+			}
+		}
+		
+		this.buffer.append(jcm_include_code);
+		
+		for(int k = 0; k < node.number_of_units(); k++) {
+			AstExternalUnit unit = node.get_unit(k);
+			if(unit instanceof AstFunctionDefinition) {
+				if(this.ifunctions.contains(unit)) {
+					this.new_line();
+					this.ins(unit);
+					this.new_line();
+				}
+				else {
+					this.new_line();
+					this.gen(unit);
+					this.new_line();
+				}
+			}
+		}
+	}
 	
+	/* instrument API */
+	/**
+	 * @param tree the program being instrumented.
+	 * @param start_function the function where jcm_open is injected.
+	 * @param instrument_functions the set of functions being instrumented.
+	 * @param output_file the path where the instrumental code is written.
+	 * @return generate the source code with instrumented 
+	 * @throws Exception
+	 */
+	protected static String instrument(AstTree tree, AstFunctionDefinition start_function,
+			Iterable<AstFunctionDefinition> instrument_functions, File output_file) throws Exception {
+		instrumentor.input(start_function, instrument_functions, output_file);
+		instrumentor.ins(tree.get_ast_root());
+		return instrumentor.buffer.toString();
+	}
 	
 }

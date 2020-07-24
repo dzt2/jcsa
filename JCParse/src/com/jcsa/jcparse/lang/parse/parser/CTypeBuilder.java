@@ -23,6 +23,7 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterTypeList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstPointer;
+import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstDeclarationSpecifiers;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumSpecifier;
@@ -43,6 +44,7 @@ import com.jcsa.jcparse.lang.astree.decl.specifier.AstTypeKeyword;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstTypeQualifier;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstTypedefName;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstUnionSpecifier;
+import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstDeclarationStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstDeclarationList;
@@ -54,8 +56,10 @@ import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CField;
 import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CParameterTypeList;
+import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
@@ -730,6 +734,7 @@ public class CTypeBuilder {
 		/* compute declarator type */
 		AstName name = null;
 		CType type = base;
+		AstDeclarator old_declarator = declarator;
 		while (declarator != null) {
 			switch (declarator.get_production()) {
 			case pointer_declarator:
@@ -774,6 +779,9 @@ public class CTypeBuilder {
 						"Duplicated definition at line " + this.line_of(name) + " : " + name.get_name());
 		} else if (cname instanceof CInstanceName) {
 			if (((CInstanceName) cname).get_instance() == null) {
+				/* fix the pointer type as array type when initializer list is provided */
+				type = this.fix_array_type_in_declarator(old_declarator, type);
+				
 				CInstance instance;
 				if (storage == null)
 					instance = efactory.get_instance_of(type);
@@ -788,6 +796,42 @@ public class CTypeBuilder {
 					"Invalid cname at line " + this.line_of(name) + " : " + cname.getClass().getSimpleName());
 
 		return type; /* return */
+	}
+	
+	/**
+	 * To fix the bug for declarator as x[] = {1, 2, 3...} to array_type rather than pointer type.
+	 * @param declarator
+	 * @param data_type
+	 * @throws Exception
+	 */
+	private CType fix_array_type_in_declarator(AstDeclarator declarator, CType data_type) throws Exception {
+		data_type = CTypeAnalyzer.get_value_type(data_type);
+		AstNode parent = declarator.get_parent();
+		while(parent != null && !(parent instanceof AstInitDeclarator)) {
+			parent = parent.get_parent();
+		}
+		
+		if(parent != null) {
+			AstInitDeclarator init_declarator = (AstInitDeclarator) parent;
+			if(init_declarator.has_initializer()) {
+				if(data_type instanceof CPointerType) {
+					if(init_declarator.get_initializer().is_body()) {
+						AstInitializerBody body = init_declarator.get_initializer().get_body();
+						int length = body.get_initializer_list().number_of_initializer();
+						data_type = this.factory.get_array_type(
+								((CPointerType) data_type).get_pointed_type(), length);
+					}
+					else if(init_declarator.get_initializer().get_expression() instanceof AstLiteral) {
+						AstLiteral literal = (AstLiteral) init_declarator.get_initializer().get_expression();
+						int length = literal.get_literal().length() + 1;
+						data_type = this.factory.get_array_type(
+								((CPointerType) data_type).get_pointed_type(), length);
+					}
+				}
+			}
+		}
+		
+		return data_type;
 	}
 
 	/**
