@@ -1,13 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
+extern int fclose(FILE * __stream);
+extern int fflush(FILE * __stream);
+extern FILE * fopen(const char * __filename, const char * __modes);
+extern int fprintf(FILE * __stream, const char * __format, ...);
 
 
 static FILE * jcm_writer;
 
 static void jcm_close() {
-	if(jcm_writer != NULL) {
+	if(jcm_writer != (void *) 0) {
 		fclose(jcm_writer);
-		jcm_writer = NULL;
+		jcm_writer = (void *) 0;
 	}
 }
 
@@ -17,7 +19,7 @@ static void jcm_open(char * filepath) {
 }
 
 static void jcm_append(int id, void * address, unsigned int length) {
-	if(jcm_writer != NULL) {
+	if(jcm_writer != (void *) 0) {
 		fprintf(jcm_writer, "%d", id);
 		unsigned char * char_address = (unsigned char *) address;
 		for(int k = 0; k < length; k++) {
