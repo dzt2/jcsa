@@ -50,7 +50,7 @@ public class CCompiler {
 		/* 2. delete the original intermediate file for being over-written */
 		if(tfile.exists()) {
 			tfile.delete();
-			while(!tfile.exists());
+			while(tfile.exists());
 		}
 		
 		/* 3. perform command processing for pre-processing source file */
@@ -116,7 +116,7 @@ public class CCompiler {
 		/* 2. remove the original executional file */
 		if(exe_file.exists()) {
 			exe_file.delete();
-			while(!exe_file.exists());
+			while(exe_file.exists());
 		}
 		
 		/* 3. perform command processing for compiling source file */

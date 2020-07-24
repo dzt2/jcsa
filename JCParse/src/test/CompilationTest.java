@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.AstCirFile;
+import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.run.CCompiler;
 import com.jcsa.jcparse.lang.run.CCompilers;
 
@@ -20,6 +22,7 @@ public class CompilationTest {
 				System.out.println("Testing on " + cfile.getName());
 				File tfile = testing_preprocess(cfile);
 				testing_compilation(tfile);
+				testing_parsing(tfile);
 				System.out.println();
 			}
 		}
@@ -38,6 +41,15 @@ public class CompilationTest {
 		}
 		else {
 			throw new RuntimeException("Unable to preprocess " + source_file.getAbsolutePath());
+		}
+	}
+	
+	protected static void testing_parsing(File tfile) throws Exception {
+		try {
+			AstCirFile.parse(tfile, new File("config/cruntime.txt"), ClangStandard.gnu_c89);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
 		}
 	}
 	
