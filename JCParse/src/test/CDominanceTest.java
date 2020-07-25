@@ -5,20 +5,20 @@ import java.io.FileWriter;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallTreeNode;
+import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
+import com.jcsa.jcparse.flwa.dominate.CDominanceNode;
+import com.jcsa.jcparse.flwa.graph.CirInstanceEdge;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
-import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
-import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
-import com.jcsa.jcparse.lopt.ingraph.CirInstanceEdge;
-import com.jcsa.jcparse.lopt.ingraph.CirInstanceGraph;
-import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
-import com.jcsa.jcparse.lopt.models.dominate.CDominanceGraph;
-import com.jcsa.jcparse.lopt.models.dominate.CDominanceNode;
 
 public class CDominanceTest {
 	

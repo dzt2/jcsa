@@ -3,19 +3,19 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallTreeNode;
+import com.jcsa.jcparse.flwa.depend.CDependEdge;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.depend.CDependNode;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lopt.context.CirCallContextInstanceGraph;
-import com.jcsa.jcparse.lopt.context.CirFunctionCallPathType;
-import com.jcsa.jcparse.lopt.context.CirFunctionCallTreeNode;
-import com.jcsa.jcparse.lopt.ingraph.CirInstanceNode;
-import com.jcsa.jcparse.lopt.models.depend.CDependEdge;
-import com.jcsa.jcparse.lopt.models.depend.CDependGraph;
-import com.jcsa.jcparse.lopt.models.depend.CDependNode;
 
 public class CDependenceTest {
 	
