@@ -54,7 +54,7 @@ public class TestInputs {
 	 * @param input_file the file from which test inputs are loaded
 	 * @throws Exception
 	 */
-	public void load(File input_file) throws Exception {
+	private void load(File input_file) throws Exception {
 		String parameter; this.inputs.clear();
 		Set<String> parameter_set = new HashSet<String>();
 		
@@ -74,7 +74,7 @@ public class TestInputs {
 	 * @param input_files the files from which test inputs are loaded
 	 * @throws Exception
 	 */
-	public void load(Iterable<File> input_files) throws Exception {
+	private void load(Iterable<File> input_files) throws Exception {
 		String parameter; this.inputs.clear();
 		Set<String> parameter_set = new HashSet<String>();
 		
@@ -91,6 +91,26 @@ public class TestInputs {
 			}
 			reader.close();
 		}
+	}
+	
+	/* parameter */
+	/**
+	 * @param input_file the file from which test inputs are loaded
+	 * @return test inputs space
+	 * @throws Exception
+	 */
+	public static TestInputs inputs(File input_file) throws Exception {
+		TestInputs inputs = new TestInputs();
+		inputs.load(input_file); return inputs;
+	}
+	/**
+	 * @param input_files the files from which test inputs are loaded
+	 * @return test inputs space
+	 * @throws Exception
+	 */
+	public static TestInputs inputs(Iterable<File> input_files) throws Exception {
+		TestInputs inputs = new TestInputs();
+		inputs.load(input_files); return inputs;
 	}
 	
 }
