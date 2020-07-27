@@ -6,8 +6,8 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.CCompiler;
-import com.jcsa.jcparse.test.CCompilers;
+import com.jcsa.jcparse.test.cpl.CCompilation;
+import com.jcsa.jcparse.test.cpl.CCompiler;
 
 public class CompilationTest {
 	
@@ -28,20 +28,38 @@ public class CompilationTest {
 		}
 	}
 	
-	protected static File testing_preprocess(File source_file) throws Exception {
-		File tfile = new File(idirectory + source_file.getName());
+	protected static File testing_preprocess(File cfile) throws Exception {
+		File ifile = new File(idirectory + cfile.getName());
 		File hfile = new File("config/linux.h");
-		List<File> hfiles = new ArrayList<File>();
-		hfiles.add(new File(cdirectory));
+		List<File> dfiles = new ArrayList<File>();
+		dfiles.add(new File(cdirectory));
 		
-		CCompiler compiler = CCompiler.get_compiler(CCompilers.clang);
-		if(compiler.do_preprocess(source_file, tfile, hfile, hfiles)) {
-			System.out.println("\t1. Preprocess to generate " + tfile.getAbsolutePath());
-			return tfile;
+		if(CCompilation.do_preprocess(CCompiler.clang, cfile, ifile, hfile, dfiles)) {
+			System.out.println("\t1. Preprocess to generate " + ifile.getAbsolutePath());
+			return ifile;
 		}
 		else {
-			throw new RuntimeException("Unable to preprocess " + source_file.getAbsolutePath());
+			throw new RuntimeException("Unable to preprocess " + cfile.getAbsolutePath());
 		}
+	}
+	
+	protected static File testing_compilation(File tfile) throws Exception {
+		List<File> cfiles = new ArrayList<File>();
+		cfiles.add(tfile);
+		List<File> hdirs = new ArrayList<File>();
+		List<File> lfiles = new ArrayList<File>();
+		List<String> params = new ArrayList<String>();
+		params.add("-lm");
+		File efile = new File(edirectory + tfile.getName() + ".exe");
+		
+		if(CCompilation.do_compilation(CCompiler.clang, cfiles, hdirs, lfiles, params, efile)) {
+			System.out.println("\t2. Succeed to compile " + efile.getAbsolutePath());
+		}
+		else {
+			System.out.println("\t2. Failed to compile " + efile.getAbsolutePath());
+		}
+		
+		return efile;
 	}
 	
 	protected static void testing_parsing(File tfile) throws Exception {
@@ -51,25 +69,6 @@ public class CompilationTest {
 		catch(Exception ex) {
 			ex.printStackTrace();
 		}
-	}
-	
-	protected static File testing_compilation(File tfile) throws Exception {
-		List<File> cfiles = new ArrayList<File>();
-		cfiles.add(tfile);
-		List<File> hfiles = new ArrayList<File>();
-		List<File> lfiles = new ArrayList<File>();
-		List<String> params = new ArrayList<String>();
-		params.add("-lm");
-		File efile = new File(edirectory + tfile.getName() + ".exe");
-		
-		CCompiler compiler = CCompiler.get_compiler(CCompilers.clang);
-		if(compiler.do_compile(cfiles, hfiles, lfiles, params, efile)) {
-			System.out.println("\t2. Succeed to compile " + efile.getAbsolutePath());
-		}
-		else {
-			System.out.println("\t2. Failed to compile " + efile.getAbsolutePath());
-		}
-		return efile;
 	}
 	
 }
