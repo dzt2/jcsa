@@ -55,6 +55,13 @@ public class TestInput {
 	public File get_stderr_file(File odir) {
 		return new File(odir.getAbsolutePath() + "/" + this.id + ".err");
 	}
+	/**
+	 * @param odir
+	 * @return the file where the instrumental result is preserved.
+	 */
+	public File get_instrument_file(File odir) {
+		return new File(odir.getAbsolutePath() + "/" + this.id + ".ins");
+	}
 	
 	/** the template for running the command of test input on program **/
 	private static final String command_template = "%s %s >%s 2>%s";

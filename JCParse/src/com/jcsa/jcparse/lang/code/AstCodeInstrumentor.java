@@ -163,9 +163,7 @@ public class AstCodeInstrumentor {
 	private void input(AstFunctionDefinition start_function,
 			Iterable<AstFunctionDefinition> ifunctions,
 			File output_file) throws Exception {
-		if(start_function == null)
-			throw new IllegalArgumentException("Invalid start_function");
-		else if(ifunctions == null)
+		if(ifunctions == null)
 			throw new IllegalArgumentException("Invalid ifunctions set");
 		else if(output_file == null)
 			throw new IllegalArgumentException("Invalid output_file");
@@ -174,7 +172,8 @@ public class AstCodeInstrumentor {
 			this.buffer.setLength(0);
 			this.start_function = start_function;
 			this.ifunctions.clear();
-			this.ifunctions.add(start_function);
+			if(start_function != null)
+				this.ifunctions.add(start_function);
 			for(AstFunctionDefinition ifunction : ifunctions) {
 				if(ifunction != null)
 					this.ifunctions.add(ifunction);

@@ -1,7 +1,13 @@
 package com.jcsa.jcparse.test.cpl;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.jcsa.jcparse.lang.AstCirFile;
+import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.test.cmd.CommandProcess;
 
 /**
@@ -130,6 +136,42 @@ public class CCompilation {
 		CommandProcess.do_process(commands, null, CommandProcess.buff_size_1);
 		
 		/* 4. return true if the generation succeed. */ return efile.exists();
+	}
+	
+	/**
+	 * @param ifile the xxx.c file in which the instruments are inserted.
+	 * @param sfile the xxx.c file that the instrumental code is written.
+	 * @param result_file the file used to preserve the instrument results.
+	 * @param c_template_file the cruntime.txt used to parse AST in C file.
+	 * @param standard the C language standard used to parse AST in C file.
+	 * @throws Exception
+	 */
+	private static void generate_instrument(File ifile, File sfile, File result_file,
+			File c_template_file, ClangStandard standard) throws Exception {
+		AstCirFile ast_cir_file = AstCirFile.parse(ifile, c_template_file, standard);
+		String code = CodeGeneration.instrument_code(ast_cir_file.get_ast_tree(), result_file);
+		FileWriter writer = new FileWriter(sfile);
+		writer.write(code);
+		writer.close();
+	}
+	
+	/**
+	 * @param ifiles the set of .c files in which the instruments are seeded.
+	 * @param sdir the directory where the instrumental code files are written.
+	 * @param result_file the file to preserve the instrumental results.
+	 * @param c_template_file the cruntime.txt used to parse AST in C file.
+	 * @param standard the C language standard used to parse AST in C file.
+	 * @return the set of instrumental code files generated from ifiles as given.
+	 * @throws Exception
+	 */
+	public static Iterable<File> generate_instruments(Iterable<File> ifiles, File sdir, 
+			File result_file, File c_template_file, ClangStandard standard) throws Exception {
+		List<File> sfiles = new ArrayList<File>();
+		for(File ifile : ifiles) {
+			File sfile = new File(sdir.getAbsolutePath() + "/" + ifile.getName()); sfiles.add(sfile);
+			CCompilation.generate_instrument(ifile, sfile, result_file, c_template_file, standard);
+		}
+		return sfiles;
 	}
 	
 }
