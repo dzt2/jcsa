@@ -2,6 +2,8 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
+import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.test.exe.CCompiler;
 import com.jcsa.jcparse.test.exe.CommandUtil;
 import com.jcsa.jcparse.test.exe.TestInput;
 
@@ -29,9 +31,11 @@ public class JCTestProject {
 	 * @param command_util the interface to execute command-line processing
 	 * @throws Exception
 	 */
-	public JCTestProject(File root, CommandUtil command_util) throws Exception {
+	private JCTestProject(File root, CommandUtil command_util, boolean load_config) throws Exception {
 		this.files = new JCTestProjectFiles(root);
 		this.config = new JCTestConfig(command_util);
+		if(load_config) 
+			this.config.load(this.files.get_config_directory());
 		this.code_part = new JCTestProjectCode(this);
 		this.test_part = new JCTestProjectTest(this);
 	}
@@ -118,6 +122,41 @@ public class JCTestProject {
 	 */
 	public void instrument_execute(Iterable<TestInput> test_inputs, long timeout) throws Exception {
 		this.test_part.instrument_execution(test_inputs, timeout);
+	}
+	
+	/* creator */
+	/**
+	 * create a new test project and update its configuration data
+	 * @param root the directory where the test project is created.
+	 * @param command_util the interface to execute command-line processing.
+	 * @param compiler the compiler used to compile the source code files.
+	 * @param lang_standard the language standard used for parsing code files.
+	 * @param c_template_file the template file {config/cruntime.txt}
+	 * @param c_instrument_head_file the instrumental header file {config/jcinst.h}
+	 * @param c_pre_process_mac_file the pre-processing file for macros {config/linux.h}
+	 * @param compile_parameters the parameters used for compilation
+	 * @return C-test project with updating the configuration base.
+	 * @throws Exception
+	 */
+	public static JCTestProject new_project(File root, CommandUtil command_util, 
+			CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
+			File c_instrument_head_file, File c_pre_process_mac_file, 
+			Iterable<String> compile_parameters) throws Exception {
+		JCTestProject project = new JCTestProject(root, command_util, false);
+		project.config.set(compiler, lang_standard, c_template_file, 
+				c_instrument_head_file, c_pre_process_mac_file, compile_parameters);
+		project.config.save(project.files.get_config_directory());
+		return project;
+	}
+	/**
+	 * open an existing test project with specified configuration.
+	 * @param root the directory where the test project is created.
+	 * @param command_util the interface to execute command-line processing.
+	 * @return C-test project with the existing configuration base.
+	 * @throws Exception
+	 */
+	public static JCTestProject open_project(File root, CommandUtil command_util) throws Exception {
+		return new JCTestProject(root, command_util, true);
 	}
 	
 }
