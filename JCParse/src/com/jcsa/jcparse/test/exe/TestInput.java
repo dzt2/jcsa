@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.inp;
+package com.jcsa.jcparse.test.exe;
 
 import java.io.File;
 
