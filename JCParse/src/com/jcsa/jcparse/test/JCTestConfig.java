@@ -3,6 +3,7 @@ package com.jcsa.jcparse.test;
 import java.io.File;
 
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.test.exe.CCompiler;
 import com.jcsa.jcparse.test.exe.CommandUtil;
 
 /**
@@ -17,6 +18,8 @@ import com.jcsa.jcparse.test.exe.CommandUtil;
  */
 public class JCTestConfig {
 	
+	/** the name of the compiler to compile the source code files **/
+	private static final String compiler_file_name = "compiler.name";
 	/** the name of the language standard used for parsing the C program **/
 	private static final String lang_standard_file_name = "lang.standard";
 	/** the name of C template for parsing the source code file **/
@@ -26,6 +29,8 @@ public class JCTestConfig {
 	/** the name of the header file for pre-processing the source file **/
 	private static final String c_pre_process_mac_file_name = "linux.h";
 	
+	/** the compiler used for C program compilations **/
+	private CCompiler compiler;
 	/** the C language standard used for parsing .i file **/
 	private ClangStandard lang_standard;
 	/** the config/cruntime.txt used for parsing .i file **/
@@ -45,6 +50,10 @@ public class JCTestConfig {
 	public JCTestConfig() { }
 	
 	/* getters */
+	/**
+	 * @return the compiler used to compile the .c source code files
+	 */
+	public CCompiler get_compiler() { return this.compiler; }
 	/**
 	 * @return the C language standard used for parsing .i file
 	 */
@@ -71,9 +80,11 @@ public class JCTestConfig {
 	 * @param c_pre_process_mac_file
 	 * @throws Exception
 	 */
-	public void set(ClangStandard lang_standard, File c_template_file, 
+	public void set(CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
 			File c_instrument_head_file, File c_pre_process_mac_file) throws Exception {
-		if(lang_standard == null)
+		if(compiler == null)
+			throw new IllegalArgumentException("Invalid compiler: null");
+		else if(lang_standard == null)
 			throw new IllegalArgumentException("Invalid language-standard: null");
 		else if(c_template_file == null || !c_template_file.exists())
 			throw new IllegalArgumentException("Invalid C-template-file: null");
@@ -82,6 +93,7 @@ public class JCTestConfig {
 		else if(c_pre_process_mac_file == null || !c_pre_process_mac_file.exists())
 			throw new IllegalArgumentException("Invalid C-Pre-Process-header-file");
 		else {
+			this.compiler = compiler;
 			this.lang_standard = lang_standard;
 			this.c_template_file = c_template_file;
 			this.c_instrument_head_file = c_instrument_head_file;
@@ -98,6 +110,8 @@ public class JCTestConfig {
 			throw new IllegalArgumentException("Invalid directory: null");
 		}
 		else {
+			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
+					"/" + compiler_file_name), this.compiler.toString());
 			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
 					"/" + lang_standard_file_name), this.lang_standard.toString());
 			CommandUtil.copy_file(this.c_template_file, new File(config_dir.
@@ -118,13 +132,17 @@ public class JCTestConfig {
 			throw new IllegalArgumentException("Invalid directory: null");
 		}
 		else {
+			String compiler_text = CommandUtil.read_text(
+					new File(config_dir.getAbsolutePath() + "/" + compiler_file_name));
 			String lang_std_text = CommandUtil.read_text(
 					new File(config_dir.getAbsolutePath() + "/" + lang_standard_file_name));
+			CCompiler compiler = CCompiler.valueOf(compiler_text.strip());
 			ClangStandard lang_standard = ClangStandard.valueOf(lang_std_text.strip());
 			File c_template_file = new File(config_dir.getAbsolutePath() + "/" + c_template_file_name);
 			File c_instrument_head_file = new File(config_dir.getAbsolutePath() + "/" + c_instrument_head_file_name);
 			File c_pre_process_mac_file = new File(config_dir.getAbsolutePath() + "/" + c_pre_process_mac_file_name);
-			this.set(lang_standard, c_template_file, c_instrument_head_file, c_pre_process_mac_file); return;
+			this.set(compiler, lang_standard, c_template_file, c_instrument_head_file, c_pre_process_mac_file); 
+			return;
 		}
 	}
 	

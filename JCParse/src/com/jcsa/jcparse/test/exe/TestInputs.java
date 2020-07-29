@@ -23,7 +23,7 @@ public class TestInputs {
 	/**
 	 * create the test inputs space as empty
 	 */
-	protected TestInputs() {
+	public TestInputs() {
 		this.inputs = new ArrayList<TestInput>();
 	}
 	
@@ -39,11 +39,11 @@ public class TestInputs {
 	
 	/* read & write */
 	/**
-	 * @param input_file the file to which the test inputs are written
+	 * @param suite_file the file to which the test inputs are written
 	 * @throws Exception 
 	 */
-	public void save(File input_file) throws Exception {
-		FileWriter writer = new FileWriter(input_file);
+	public void save(File suite_file) throws Exception {
+		FileWriter writer = new FileWriter(suite_file);
 		for(TestInput input : this.inputs) {
 			String parameter = input.get_parameter();
 			writer.write(parameter.strip() + "\n");
@@ -51,66 +51,68 @@ public class TestInputs {
 		writer.close();
 	}
 	/**
-	 * @param input_file the file from which test inputs are loaded
+	 * @param suite_file the file in which the test inputs are saved
 	 * @throws Exception
 	 */
-	private void load(File input_file) throws Exception {
-		String parameter; this.inputs.clear();
-		Set<String> parameter_set = new HashSet<String>();
-		
-		BufferedReader reader = new 
-				BufferedReader(new FileReader(input_file));
-		while((parameter = reader.readLine()) != null) {
-			parameter = parameter.strip();
-			if(!parameter_set.contains(parameter)) {
-				parameter_set.add(parameter);
-				this.inputs.add(new TestInput(this, 
-						this.inputs.size(), parameter));
+	public void load(File suite_file) throws Exception {
+		BufferedReader reader = new BufferedReader(new FileReader(suite_file));
+		Set<String> parameters = new HashSet<String>(); 
+		String line; this.inputs.clear(); TestInput input;
+		while((line = reader.readLine()) != null) {
+			line = line.strip();
+			if(!parameters.contains(line)) {
+				parameters.add(line);
+				input = new TestInput(this, this.inputs.size(), line);
+				this.inputs.add(input);
 			}
 		}
 		reader.close();
 	}
 	/**
-	 * @param input_files the files from which test inputs are loaded
+	 * @param suite_file the test suite file where test inputs are appended
 	 * @throws Exception
 	 */
-	private void load(Iterable<File> input_files) throws Exception {
-		String parameter; this.inputs.clear();
-		Set<String> parameter_set = new HashSet<String>();
+	public void append(File suite_file) throws Exception {
+		Set<String> parameters = new HashSet<String>();
+		for(TestInput input : this.inputs) {
+			parameters.add(input.get_parameter());
+		}
 		
-		for(File input_file : input_files) {
-			BufferedReader reader = new 
-					BufferedReader(new FileReader(input_file));
-			while((parameter = reader.readLine()) != null) {
-				parameter = parameter.strip();
-				if(!parameter_set.contains(parameter)) {
-					parameter_set.add(parameter);
-					this.inputs.add(new TestInput(this, 
-							this.inputs.size(), parameter));
+		BufferedReader reader = new BufferedReader(new FileReader(suite_file));
+		String line; TestInput input;
+		while((line = reader.readLine()) != null) {
+			line = line.strip();
+			if(!parameters.contains(line)) {
+				parameters.add(line);
+				input = new TestInput(this, this.inputs.size(), line);
+				this.inputs.add(input);
+			}
+		}
+		reader.close();
+	}
+	/**
+	 * @param suite_files the test suite files where test inputs are provided
+	 * @throws Exception
+	 */
+	public void append(Iterable<File> suite_files) throws Exception {
+		Set<String> parameters = new HashSet<String>();
+		for(TestInput input : this.inputs) {
+			parameters.add(input.get_parameter());
+		}
+		
+		for(File suite_file : suite_files) {
+			BufferedReader reader = new BufferedReader(new FileReader(suite_file));
+			String line; TestInput input;
+			while((line = reader.readLine()) != null) {
+				line = line.strip();
+				if(!parameters.contains(line)) {
+					parameters.add(line);
+					input = new TestInput(this, this.inputs.size(), line);
+					this.inputs.add(input);
 				}
 			}
 			reader.close();
 		}
-	}
-	
-	/* parameter */
-	/**
-	 * @param input_file the file from which test inputs are loaded
-	 * @return test inputs space
-	 * @throws Exception
-	 */
-	public static TestInputs inputs(File input_file) throws Exception {
-		TestInputs inputs = new TestInputs();
-		inputs.load(input_file); return inputs;
-	}
-	/**
-	 * @param input_files the files from which test inputs are loaded
-	 * @return test inputs space
-	 * @throws Exception
-	 */
-	public static TestInputs inputs(Iterable<File> input_files) throws Exception {
-		TestInputs inputs = new TestInputs();
-		inputs.load(input_files); return inputs;
 	}
 	
 }
