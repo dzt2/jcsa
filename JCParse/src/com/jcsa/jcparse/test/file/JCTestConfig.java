@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test;
+package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
@@ -18,6 +18,7 @@ import com.jcsa.jcparse.test.exe.CommandUtil;
  */
 public class JCTestConfig {
 	
+	/* file name parameters */
 	/** the name of the compiler to compile the source code files **/
 	private static final String compiler_file_name = "compiler.name";
 	/** the name of the language standard used for parsing the C program **/
@@ -29,6 +30,7 @@ public class JCTestConfig {
 	/** the name of the header file for pre-processing the source file **/
 	private static final String c_pre_process_mac_file_name = "linux.h";
 	
+	/* attributes */
 	/** the compiler used for C program compilations **/
 	private CCompiler compiler;
 	/** the C language standard used for parsing .i file **/
@@ -40,6 +42,7 @@ public class JCTestConfig {
 	/** the config/linux.h used for pre-processing .c file with -imacros **/
 	private File c_pre_process_mac_file;
 	
+	/* constructor */
 	/**
 	 * @param lang_standard	the C language standard used for parsing .i file
 	 * @param c_template_file the config/cruntime.txt used for parsing .i file
@@ -47,7 +50,7 @@ public class JCTestConfig {
 	 * @param c_pre_process_mac_file the config/linux.h used for pre-processing .c file with -imacros
 	 * @throws Exception
 	 */
-	public JCTestConfig() { }
+	protected JCTestConfig() { }
 	
 	/* getters */
 	/**
@@ -80,7 +83,7 @@ public class JCTestConfig {
 	 * @param c_pre_process_mac_file
 	 * @throws Exception
 	 */
-	public void set(CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
+	protected void set(CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
 			File c_instrument_head_file, File c_pre_process_mac_file) throws Exception {
 		if(compiler == null)
 			throw new IllegalArgumentException("Invalid compiler: null");
@@ -105,7 +108,7 @@ public class JCTestConfig {
 	 * @param config_dir the directory where the configuration data is saved.
 	 * @throws Exception
 	 */
-	public void save(File config_dir) throws Exception {
+	protected void save(File config_dir) throws Exception {
 		if(config_dir == null || !config_dir.isDirectory()) {
 			throw new IllegalArgumentException("Invalid directory: null");
 		}
@@ -127,7 +130,7 @@ public class JCTestConfig {
 	 * @param config_dir
 	 * @throws Exception
 	 */
-	public void load(File config_dir) throws Exception {
+	protected void load(File config_dir) throws Exception {
 		if(config_dir == null || !config_dir.isDirectory()) {
 			throw new IllegalArgumentException("Invalid directory: null");
 		}
