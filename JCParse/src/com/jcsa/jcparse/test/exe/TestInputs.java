@@ -39,6 +39,10 @@ public class TestInputs {
 	
 	/* read & write */
 	/**
+	 * clear all the test inputs in the space
+	 */
+	public void clear() { this.inputs.clear(); }
+	/**
 	 * @param suite_file the file to which the test inputs are written
 	 * @throws Exception 
 	 */

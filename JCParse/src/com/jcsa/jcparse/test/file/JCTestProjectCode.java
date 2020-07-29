@@ -241,7 +241,7 @@ public class JCTestProjectCode {
 	 * @param lfiles the xxx.lib library files
 	 * @throws Exception
 	 */
-	protected void set_inputs(Iterable<File> cfiles, Iterable<File> hfiles, Iterable<File> lfiles) throws Exception {
+	protected void set(Iterable<File> cfiles, Iterable<File> hfiles, Iterable<File> lfiles) throws Exception {
 		if(cfiles == null)
 			throw new IllegalArgumentException("Invalid cfiles: null");
 		else if(hfiles == null)
@@ -257,6 +257,15 @@ public class JCTestProjectCode {
 			this.gen_instrumental_files();
 			this.gen_executional_files();
 		}
+	}
+	/**
+	 * update the intermediate code, instrumental code and executional files.
+	 * @throws Exception
+	 */
+	protected void update() throws Exception {
+		this.gen_intermediate_files();
+		this.gen_instrumental_files();
+		this.gen_executional_files();
 	}
 	
 }
