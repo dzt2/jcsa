@@ -145,4 +145,47 @@ public interface CommandUtil {
 		reader.close(); return buffer.toString();
 	}
 	
+	/**
+	 * delete all the files under the directory and itself.
+	 * @param file
+	 * @throws Exception
+	 */
+	public static void delete_file(File file) throws Exception {
+		if(file != null && !file.exists()) {
+			if(file.isDirectory()) {
+				File[] ifiles = file.listFiles();
+				for(File ifile : ifiles) {
+					delete_file(ifile);
+				}
+			}
+			file.delete();
+			while(file.exists());
+		}
+	}
+	
+	/**
+	 * @param dir the directory being created
+	 * @throws Exception
+	 */
+	public static void make_directory(File dir) throws Exception {
+		if(!dir.exists()) {
+			dir.mkdir();
+			while(!dir.exists());
+		}
+	}
+	
+	/**
+	 * delete all the files under the directory
+	 * @param dir
+	 * @throws Exception
+	 */
+	public static void delete_files_in(File dir) throws Exception {
+		File[] files = dir.listFiles();
+		if(files != null) {
+			for(File file : files) {
+				delete_file(file);
+			}
+		}
+	}
+	
 }

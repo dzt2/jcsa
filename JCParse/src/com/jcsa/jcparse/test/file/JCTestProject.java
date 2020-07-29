@@ -2,6 +2,8 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
+import com.jcsa.jcparse.test.exe.CommandUtil;
+
 /**
  * 	The C-testing project to execute software testing on program provided.
  * 	
@@ -15,14 +17,17 @@ public class JCTestProject {
 	private JCTestProjectFiles files;
 	/** the configuration data used in test project **/
 	private JCTestConfig config;
+	/** the interface to manage the code files in project **/
+	private JCTestProjectCode code_part;
 	
 	/**
 	 * @param root the root directory where test project is created
+	 * @param command_util the interface to execute command-line processing
 	 * @throws Exception
 	 */
-	private JCTestProject(File root) throws Exception {
+	private JCTestProject(File root, CommandUtil command_util) throws Exception {
 		this.files = new JCTestProjectFiles(root);
-		this.config = new JCTestConfig();
+		this.config = new JCTestConfig(command_util);
 	}
 	
 	/* getters */
@@ -42,5 +47,9 @@ public class JCTestProject {
 	 * @return the configuration data used to build up testing.
 	 */
 	public JCTestConfig get_config() { return this.config; }
+	/**
+	 * @return the interface to manage the code files in project
+	 */
+	public JCTestProjectCode get_code_part() { return this.code_part; }
 	
 }
