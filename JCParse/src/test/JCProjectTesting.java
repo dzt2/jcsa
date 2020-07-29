@@ -20,8 +20,8 @@ public class JCProjectTesting {
 	private static final File c_pre_process_mac_file = new File("config/linux.h");
 	private static final List<String> compile_parameters = new ArrayList<String>();
 	
-	private static final String prefix = "/home/dzt2/Development/Data/Code/cfiles/";
-	private static final String postfix = "/home/dzt2/Development/Data/Code/projects/";
+	private static final String prefix = "/home/dzt2/Development/Data/Code2/cfiles/";
+	private static final String postfix = "/home/dzt2/Development/Data/Code2/projects/";
 	
 	public static void main(String[] args) throws Exception {
 		compile_parameters.add("-lm");
