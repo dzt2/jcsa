@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.test.exe.CCompiler;
 import com.jcsa.jcparse.test.exe.CommandUtil;
@@ -119,6 +120,17 @@ public class JCTestProjectCode {
 		List<File> mfiles = new ArrayList<File>();
 		mfiles.add(this.project.get_config().get_c_pre_process_mac_file());
 		return mfiles;
+	}
+	/**
+	 * @param id
+	 * @return the program being parsed from the kth intermediate code in project
+	 * @throws Exception
+	 */
+	public AstCirFile get_program(int k) throws Exception {
+		File cfile = this.project.get_project_files().get_i_file_directory().listFiles()[k];
+		return AstCirFile.parse(cfile, 
+				this.project.get_config().get_c_template_file(), 
+				this.project.get_config().get_lang_standard());
 	}
 	
 	/* actions */

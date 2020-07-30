@@ -18,12 +18,17 @@ static void jcm_open(char * filepath) {
 	jcm_writer = fopen(filepath, "w");
 }
 
+static void jcm_print(char value) {
+	int int_value = value;
+	fprintf(jcm_writer, " %d", int_value);
+}
+
 static void jcm_append(int id, void * address, unsigned int length) {
 	if(jcm_writer != (void *) 0) {
 		fprintf(jcm_writer, "%d", id);
-		unsigned char * char_address = (unsigned char *) address;
+		char * char_address = (char *) address;
 		for(int k = 0; k < length; k++) {
-			fprintf(jcm_writer, " %d", char_address[k]);
+			jcm_print(char_address[k]);
 		}
 		fprintf(jcm_writer, "\n");
 		fflush(jcm_writer);

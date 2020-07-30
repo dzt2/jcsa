@@ -36,6 +36,14 @@ public class TestInputs {
 	 * @return the test inputs created in this space.
 	 */
 	public Iterable<TestInput> get_inputs() { return inputs; }
+	/**
+	 * @param id
+	 * @return the test input w.r.t. the identifier
+	 * @throws IndexOutOfBoundsException
+	 */
+	public TestInput get_input(int id) throws IndexOutOfBoundsException {
+		return this.inputs.get(id);
+	}
 	
 	/* read & write */
 	/**
