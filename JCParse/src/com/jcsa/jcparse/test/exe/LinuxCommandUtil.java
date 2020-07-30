@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.test.cmd.CommandProcess;
-import com.jcsa.jcparse.test.cmd.CommandStatus;
+// import com.jcsa.jcparse.test.cmd.CommandStatus;
 
 /**
  * It performs the implementation of running command-line interfaces
@@ -48,6 +48,9 @@ public class LinuxCommandUtil implements CommandUtil {
 	
 	/** command for copying instrumental result to specified file **/
 	private static final String copy_file_template = "cp %s %s\n";
+	
+	/** command for deleting the instrumental result file in testing **/
+	private static final String remove_file_template = "rm %s\n";
 	
 	@Override
 	public boolean do_preprocess(CCompiler compiler, File cfile, File ifile, Iterable<File> hdirs,
@@ -126,10 +129,12 @@ public class LinuxCommandUtil implements CommandUtil {
 		writer.write(String.format(cd_template, cdir.getAbsolutePath()));
 		for(TestInput input : inputs) {
 			String command = input.command(efile, odir, timeout);
+			writer.write(String.format(remove_file_template, rfile.getAbsolutePath()));
 			writer.write(command + "\n");
 			writer.write(String.format(
 					copy_file_template, rfile.getAbsolutePath(), 
 					input.get_instrument_file(odir).getAbsolutePath()));
+			writer.write("\n");
 		}
 		writer.write("\n"); writer.close(); 
 		return sfile.exists();
@@ -138,8 +143,8 @@ public class LinuxCommandUtil implements CommandUtil {
 	@Override
 	public boolean do_execute_shell(File sfile, File cdir) throws Exception {
 		String[] command = String.format(exec_shell_template, sfile.getAbsolutePath()).strip().split(" ");
-		return CommandProcess.do_process(
-				command, cdir, CommandProcess.buff_size_2).get_exit_status() == CommandStatus.normal_exit;
+		CommandProcess.do_process(command, cdir, CommandProcess.buff_size_2);
+		return true;
 	}
 
 }

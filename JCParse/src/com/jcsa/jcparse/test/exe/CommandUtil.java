@@ -151,7 +151,7 @@ public interface CommandUtil {
 	 * @throws Exception
 	 */
 	public static void delete_file(File file) throws Exception {
-		if(file != null && !file.exists()) {
+		if(file != null && file.exists()) {
 			if(file.isDirectory()) {
 				File[] ifiles = file.listFiles();
 				for(File ifile : ifiles) {
