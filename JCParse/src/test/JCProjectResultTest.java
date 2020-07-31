@@ -8,8 +8,8 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.rest.InstrumentList;
-import com.jcsa.jcparse.test.rest.InstrumentNode;
+import com.jcsa.jcparse.test.path.InstrumentList;
+import com.jcsa.jcparse.test.path.InstrumentNode;
 
 public class JCProjectResultTest {
 	

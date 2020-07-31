@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.rest;
+package com.jcsa.jcparse.test.path;
 
 /**
  * The type of each instrumental element in form of AstNode, fetched from the

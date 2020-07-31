@@ -4,7 +4,7 @@ import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.rest.InstrumentList;
+import com.jcsa.jcparse.test.path.InstrumentList;
 
 /**
  * It provides the interfaces to fetch the results generated during the

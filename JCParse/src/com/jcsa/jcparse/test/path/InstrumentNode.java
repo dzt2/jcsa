@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.rest;
+package com.jcsa.jcparse.test.path;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;

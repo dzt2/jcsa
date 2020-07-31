@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.rest;
+package com.jcsa.jcparse.test.path;
 
 import java.io.BufferedReader;
 import java.io.File;
