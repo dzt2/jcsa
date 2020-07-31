@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.exe.CCompiler;
-import com.jcsa.jcparse.test.exe.CommandUtil;
-import com.jcsa.jcparse.test.file.JCTestConfig;
+import com.jcsa.jcparse.test.file.JCTestProjectConfig;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.JCTestProject;
 
 public class JCProjectTesting {
@@ -63,7 +63,7 @@ public class JCProjectTesting {
 		JCTestProject project = 
 				JCTestProject.open_project(new File(postfix + name), command_util);
 		
-		JCTestConfig config = project.get_config();
+		JCTestProjectConfig config = project.get_config();
 		System.out.println("\t" + config.get_lang_standard().toString());
 		System.out.println("\t" + config.get_command_util().toString());
 		System.out.println("\t" + config.get_compiler().toString());

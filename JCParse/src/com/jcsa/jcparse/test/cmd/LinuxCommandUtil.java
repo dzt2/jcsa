@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.exe;
+package com.jcsa.jcparse.test.cmd;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -7,8 +7,8 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.code.CodeGeneration;
-import com.jcsa.jcparse.test.cmd.CommandProcess;
-// import com.jcsa.jcparse.test.cmd.CommandStatus;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.file.TestInput;
 
 /**
  * It performs the implementation of running command-line interfaces

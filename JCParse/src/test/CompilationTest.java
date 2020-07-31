@@ -6,8 +6,8 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.exe.CCompiler;
-import com.jcsa.jcparse.test.exe.CommandUtil;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.cmd.CCompiler;
 
 public class CompilationTest {
 	

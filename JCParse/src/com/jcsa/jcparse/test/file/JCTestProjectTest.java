@@ -2,9 +2,7 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
-import com.jcsa.jcparse.test.exe.CommandUtil;
-import com.jcsa.jcparse.test.exe.TestInput;
-import com.jcsa.jcparse.test.exe.TestInputs;
+import com.jcsa.jcparse.test.CommandUtil;
 
 /**
  * It provides the interfaces to execute the testing part of project.

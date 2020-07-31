@@ -5,9 +5,9 @@ import java.io.FileWriter;
 import java.util.Random;
 
 import com.jcsa.jcparse.lang.AstCirFile;
-import com.jcsa.jcparse.test.exe.CommandUtil;
-import com.jcsa.jcparse.test.exe.TestInput;
+import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
+import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.rest.InstrumentList;
 import com.jcsa.jcparse.test.rest.InstrumentNode;
 

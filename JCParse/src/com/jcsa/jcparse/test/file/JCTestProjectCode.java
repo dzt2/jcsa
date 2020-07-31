@@ -8,8 +8,8 @@ import java.util.Map;
 
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.exe.CCompiler;
-import com.jcsa.jcparse.test.exe.CommandUtil;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.cmd.CCompiler;
 
 /**
  * 	It provides the management on source code under test in the project.

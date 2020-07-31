@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.exe.CCompiler;
-import com.jcsa.jcparse.test.exe.CommandUtil;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.cmd.CCompiler;
 
 /**
  * The configuration data used in C-Testing Project, including:<br>
@@ -22,7 +22,7 @@ import com.jcsa.jcparse.test.exe.CommandUtil;
  * @author yukimula
  *
  */
-public class JCTestConfig {
+public class JCTestProjectConfig {
 	
 	/* file name parameters */
 	/** the name of the compiler to compile the source code files **/
@@ -62,7 +62,7 @@ public class JCTestConfig {
 	 * @param c_pre_process_mac_file the config/linux.h used for pre-processing .c file with -imacros
 	 * @throws Exception
 	 */
- 	protected JCTestConfig(CommandUtil command_util) throws Exception {
+ 	protected JCTestProjectConfig(CommandUtil command_util) throws Exception {
 		if(command_util == null)
 			throw new IllegalArgumentException("Invalid util: null");
 		else {

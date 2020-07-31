@@ -2,7 +2,7 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
-import com.jcsa.jcparse.test.exe.CommandUtil;
+import com.jcsa.jcparse.test.CommandUtil;
 
 /**
  * It constructs the structure of files in test project as:<br>

@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.test.exe.CCompiler;
-import com.jcsa.jcparse.test.exe.CommandUtil;
+import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.JCTestProject;
 
 public class JCProjectExecute {

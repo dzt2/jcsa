@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.exe;
+package com.jcsa.jcparse.test.cmd;
 
 /**
  * The compiler that is used to compile the C program in system platform.

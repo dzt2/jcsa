@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.exe;
+package com.jcsa.jcparse.test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +7,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.test.cmd.CCompiler;
+import com.jcsa.jcparse.test.cmd.LinuxCommandUtil;
+import com.jcsa.jcparse.test.file.TestInput;
 
 /**
  * It provides interfaces to execute the command-line programs for 

@@ -3,8 +3,7 @@ package com.jcsa.jcparse.test.file;
 import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.test.exe.CommandUtil;
-import com.jcsa.jcparse.test.exe.TestInput;
+import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.rest.InstrumentList;
 
 /**
