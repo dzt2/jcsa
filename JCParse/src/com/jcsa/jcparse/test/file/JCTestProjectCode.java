@@ -2,7 +2,9 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
@@ -29,12 +31,15 @@ public class JCTestProjectCode {
 	/* constructor */
 	/** the test project that performs on the code **/
 	private JCTestProject project;
+	/** the buffer to preserve the parsed data for c source code **/
+	private Map<String, AstCirFile> program_buff;
 	/**
 	 * create the code space in the test project.
 	 * @param project
 	 */
 	protected JCTestProjectCode(JCTestProject project) {
 		this.project = project;
+		this.program_buff = new HashMap<String, AstCirFile>();
 	}
 	
 	/* getters */
@@ -122,15 +127,35 @@ public class JCTestProjectCode {
 		return mfiles;
 	}
 	/**
-	 * @param id
-	 * @return the program being parsed from the kth intermediate code in project
+	 * @return the number of .c files in cfiles/ and ifiles/ and sfiles/
+	 */
+	public int number_of_c_files() { 
+		int counter = 0;
+		for(@SuppressWarnings("unused") File file : this.get_source_code_files()) {
+			counter++;
+		}
+		return counter;
+	}
+	/**
+	 * @param k [0, this.number_of_c_files())
+	 * @return the program being parsed for the kth source file in ifiles/
 	 * @throws Exception
 	 */
 	public AstCirFile get_program(int k) throws Exception {
-		File cfile = this.project.get_project_files().get_i_file_directory().listFiles()[k];
-		return AstCirFile.parse(cfile, 
-				this.project.get_config().get_c_template_file(), 
-				this.project.get_config().get_lang_standard());
+		File[] cfiles = this.project.get_project_files().get_i_file_directory().listFiles();
+		if(cfiles == null) {
+			throw new IllegalArgumentException("No .c file is generated in ifiles/");
+		}
+		else {
+			File cfile = cfiles[k];
+			if(!this.program_buff.containsKey(cfile.getName())) {
+				AstCirFile program = AstCirFile.parse(cfile, 
+						this.project.get_config().get_c_template_file(), 
+						this.project.get_config().get_lang_standard());
+				this.program_buff.put(cfile.getName(), program);
+			}
+			return this.program_buff.get(cfile.getName());
+		}
 	}
 	
 	/* actions */

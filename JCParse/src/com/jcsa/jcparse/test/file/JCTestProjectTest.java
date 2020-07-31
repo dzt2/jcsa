@@ -57,6 +57,18 @@ public class JCTestProjectTest {
 	 */
 	public TestInputs get_test_inputs() { return this.test_inputs; }
 	/**
+	 * @return the total number of test inputs for running the project
+	 */
+	public int number_of_test_inputs() { return this.test_inputs.number_of_inputs(); }
+	/**
+	 * @param k
+	 * @return the kth test input in the project
+	 * @throws IndexOutOfBoundsException
+	 */
+	public TestInput get_test_input(int k) throws IndexOutOfBoundsException {
+		return this.test_inputs.get_input(k);
+	}
+	/**
 	 * @return the directory where the input data files are used.
 	 */
 	public File get_inputs_directory() {

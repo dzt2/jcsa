@@ -2,7 +2,6 @@ package com.jcsa.jcparse.test.file;
 
 import java.io.File;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.test.exe.CCompiler;
 import com.jcsa.jcparse.test.exe.CommandUtil;
@@ -25,6 +24,8 @@ public class JCTestProject {
 	private JCTestProjectCode code_part;
 	/** the interface to manage the test files in project **/
 	private JCTestProjectTest test_part;
+	/** the interface to load the test results in project **/
+	private JCTestProjectResult result_part;
 	
 	/* constructor */
 	/**
@@ -39,6 +40,7 @@ public class JCTestProject {
 			this.config.load(this.files.get_config_directory());
 		this.code_part = new JCTestProjectCode(this);
 		this.test_part = new JCTestProjectTest(this);
+		this.result_part = new JCTestProjectResult(this);
 	}
 	
 	/* getters */
@@ -66,6 +68,10 @@ public class JCTestProject {
 	 * @return the interface to manage the test files in project
 	 */
 	public JCTestProjectTest get_test_part() { return this.test_part; }
+	/**
+	 * @return the interface to load the test results in project
+	 */
+	public JCTestProjectResult get_result_part() { return this.result_part; }
 	
 	/* setters */
 	/**
@@ -158,17 +164,6 @@ public class JCTestProject {
 	 */
 	public static JCTestProject open_project(File root, CommandUtil command_util) throws Exception {
 		return new JCTestProject(root, command_util, true);
-	}
-	
-	/* result analysis */
-	/**
-	 * @param program the program under test being parsed
-	 * @param input the test input of which result is created
-	 * @return the execution result when executed against the input.
-	 * @throws Exception
-	 */
-	public TestExecutionResult get_result(AstCirFile program, TestInput input) throws Exception {
-		return new TestExecutionResult(this, program, input);
 	}
 	
 }
