@@ -12,8 +12,6 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 public class AstExecutionUnit {
 	
 	/* attributes */
-	/** the node where the unit is performed **/
-	protected AstExecutionNode node;
 	/** type of the execution unit **/
 	private AstExecutionType type;
 	/** the AST node that the unit is performed **/
@@ -49,10 +47,6 @@ public class AstExecutionUnit {
 	}
 	
 	/* getters */
-	/**
-	 * @return the node where the unit is performed
-	 */
-	public AstExecutionNode get_node() { return this.node; }
 	/**
 	 * @return type of the execution unit
 	 */

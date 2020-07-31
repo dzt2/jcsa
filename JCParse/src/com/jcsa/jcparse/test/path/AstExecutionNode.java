@@ -32,7 +32,6 @@ public class AstExecutionNode {
 			this.path = path;
 			this.index = index;
 			this.unit = unit;
-			this.unit.node = this;
 			this.prev_edge = null;
 			this.next_edge = null;
 		}

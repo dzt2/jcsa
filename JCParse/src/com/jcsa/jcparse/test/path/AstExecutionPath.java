@@ -52,19 +52,25 @@ public class AstExecutionPath {
 	
 	/* setters */
 	/**
-	 * create a new node in the tail of the path
-	 * @param type the type of the execution unit
+	 * @param type  the type of the execution unit
 	 * @param location the location where the execution is performed
 	 * @param status the bytes that describe the status of expression
+	 * @return the newly created unit that defines the next node
+	 * @throws IllegalArgumentException
+	 */
+	private AstExecutionUnit new_unit(AstExecutionType type, 
+			AstNode location, byte[] status) throws IllegalArgumentException {
+		return new AstExecutionUnit(type, location, status);
+	}
+	/**
+	 * add the unit with its node in the tail of the path
+	 * @param unit 
 	 * @param flow_type the type of the execution flow from prior to the next
 	 * @return the newly created node in the path.
 	 * @throws Exception
 	 */
-	private AstExecutionNode add(AstExecutionType type, AstNode location,
-			byte[] status, CirExecutionFlowType flow_type) throws Exception {
-		AstExecutionUnit unit = new AstExecutionUnit(type, location, status);
+	private AstExecutionNode add_node(AstExecutionUnit unit, CirExecutionFlowType flow_type) throws Exception {
 		AstExecutionNode node = new AstExecutionNode(this, nodes.size(), unit);
-		
 		AstExecutionNode tail = this.get_tail();
 		if(tail != null) {
 			AstExecutionEdge edge = new AstExecutionEdge(flow_type, tail, node);
