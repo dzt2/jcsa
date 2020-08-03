@@ -49,16 +49,16 @@ public class JCProjectResultTest {
 			if(list != null) {
 				for(InstrumentNode node : list.get_nodes()) {
 					writer.write("\t\tlist[" + node.get_index() + "] as " + node.get_type() + "\n");
-					writer.write("\t\t==> location[" + node.get_ast_location().get_key() + "] "
-							+ "at line#" + node.get_ast_location().get_location().line_of() + "\n");
-					String ast_code = node.get_ast_location().generate_code();
+					writer.write("\t\t==> location[" + node.get_location().get_key() + "] "
+							+ "at line#" + node.get_location().get_location().line_of() + "\n");
+					String ast_code = node.get_location().generate_code();
 					int line_index = ast_code.indexOf('\n');
 					if(line_index >= 0) {
 						ast_code = ast_code.substring(0, line_index);
 					}
 					writer.write("\t\t==> code: " + ast_code.strip() + "\n");
 					writer.write("\t\t==> bytes:");
-					for(byte value : node.get_bytes_status()) {
+					for(byte value : node.get_status()) {
 						writer.write(" " + value);
 					}
 					writer.write("\n\n");

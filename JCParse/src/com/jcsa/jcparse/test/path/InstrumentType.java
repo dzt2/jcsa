@@ -1,21 +1,19 @@
 package com.jcsa.jcparse.test.path;
 
 /**
- * The type of each instrumental element in form of AstNode, fetched from the
- * instrumental file (xxx.ins), including:<br>
- * 	(1) prev_stmt: it records the time-point before a statement is executed. <br>
- * 	(2) post_stmt: it records the time-point that a statement was completed. <br>
- * 	(3) eval_expr: it records the result of the expression in form of bytes. <br>
- * 
+ * The type of instrumental node is:<br>
+ * 	1) beg_stmt: the time-point before a statement node was executed;<br>
+ * 	2) end_stmt: the time-point after the statement node is executed;<br>
+ * 	3) evaluate: the time-point when a expression value is evaluated.<br>
  * @author yukimula
  *
  */
 public enum InstrumentType {
 	
-	/** the time-point before a statement was executed **/	prev_stmt,
+	/** time-point before a statement was executed **/	beg_stmt,
 	
-	/** the time-point after the statement was executed **/	post_stmt,
+	/** time-point after the statement is executed **/	end_stmt,
 	
-	/** the value evaluated from the expression in test **/	eval_expr,
+	/** time-point when an expression is evaluated **/	evaluate,
 	
 }

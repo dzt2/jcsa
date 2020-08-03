@@ -5,110 +5,97 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 
 /**
- * Each node in instrumental analysis represents a node in abstract syntax tree,
- * which can be either a statement or expression, of which the latter record the
- * value evaluated at some point of the testing process.
- * 
+ * The node in instrumental list is a tuple, defined as:<br>
+ * <code>(type, location, status)</code>
  * @author yukimula
  *
  */
 public class InstrumentNode {
 	
-	/** the list in which the node is created **/
+	/* attributes */
+	/** the list of instrumental node **/
 	private InstrumentList list;
-	/** the index of the node in its list **/
+	/** the index of the node in list **/
 	private int index;
-	/** node that directly leads to this node or null **/
-	protected InstrumentNode prev;
-	/** node that this node directly leads to or null **/
-	protected InstrumentNode next;
-	/** type of the instrumental node **/
+	/** the type of instrumental node **/
 	private InstrumentType type;
-	/** the location where the instrumentation is performed **/
-	private AstNode ast_location;
-	/** the status of the node recording during test process **/
-	private byte[] bytes_status;
+	/** location that the node describes **/
+	private AstNode location;
+	/** the bytes status hold by the node **/
+	private byte[] status;
 	
 	/* constructor */
 	/**
-	 * @param list the list in which the node is created
-	 * @param index the index of this node in its list
-	 * @param ast_location the location where the instrumentation is performed
-	 * @param bytes_status the status of the node recording during test process
-	 * @throws Exception
+	 * @param location
+	 * @param status
+	 * @return the type of the instrumental node w.r.t. the given input
+	 * @throws IllegalArgumentException
 	 */
-	protected InstrumentNode(InstrumentList list, int index, AstNode 
-			ast_location, byte[] bytes_status) throws Exception {
-		if(list == null)
-			throw new IllegalArgumentException("Invalid list: null");
-		else if(ast_location == null)
-			throw new IllegalArgumentException("Invalid ast_location");
-		else if(bytes_status == null || bytes_status.length == 0)
-			throw new IllegalArgumentException("Invalid bytes_status");
-		else if(ast_location instanceof AstStatement) {
-			this.list = list;
-			this.index = index;
-			this.ast_location = ast_location;
-			this.bytes_status = new byte[0];
-			this.type = InstrumentType.prev_stmt;
-			for(byte value : bytes_status) {
+	private InstrumentType type_of(AstNode location, byte[] status) throws IllegalArgumentException {
+		if(location instanceof AstStatement) {
+			for(byte value : status) {
 				if(value != 0) {
-					this.type = InstrumentType.post_stmt;
-					break;
+					return InstrumentType.end_stmt;
 				}
 			}
-			this.prev = null;
-			this.next = null;
+			return InstrumentType.beg_stmt;
 		}
-		else if(ast_location instanceof AstExpression) {
+		else if(location instanceof AstExpression) {
+			return InstrumentType.evaluate;
+		}
+		else {
+			throw new IllegalArgumentException("Invalid location: " + location);
+		}
+	}
+	/**
+	 * @param list the list where the node is created
+	 * @param index the index of the node in the list
+	 * @param location the location on which the node describes
+	 * @param status which records the byte-status of the node
+	 * @throws IllegalArgumentException
+	 */
+	protected InstrumentNode(InstrumentList list, int index, 
+			AstNode location, byte[] status) throws IllegalArgumentException {
+		if(list == null)
+			throw new IllegalArgumentException("Invalid list: null");
+		else if(location == null)
+			throw new IllegalArgumentException("Invalid location: null");
+		else if(status == null || status.length < 1)
+			throw new IllegalArgumentException("Invalid status: null");
+		else {
 			this.list = list;
 			this.index = index;
-			this.ast_location = ast_location;
-			this.bytes_status = bytes_status;
-			this.type = InstrumentType.eval_expr;
-			this.prev = null;
-			this.next = null;
+			this.type = this.type_of(location, status);
+			this.location = location;
+			if(this.type == InstrumentType.evaluate) {
+				this.status = status;
+			}
+			else {
+				this.status = new byte[0];
+			}
 		}
-		else 
-			throw new IllegalArgumentException("Unknown: " + ast_location);
 	}
 	
 	/* getters */
-	/** 
-	 * @return the list in which the node is created
+	/**
+	 * @return the list of instrumental node
 	 */
 	public InstrumentList get_list() { return this.list; }
 	/**
-	 * @return the index of the node in its list 
+	 * @return the index of the node in list 
 	 */
 	public int get_index() { return this.index; }
 	/**
-	 * @return type of the instrumental node
+	 * @return the type of instrumental node
 	 */
 	public InstrumentType get_type() { return this.type; }
 	/**
-	 * @return the location where the instrumentation is performed
+	 * @return location that the node describes 
 	 */
-	public AstNode get_ast_location() { return this.ast_location; }
+	public AstNode get_location() { return this.location; }
 	/**
-	 * @return the status of the node recording during test process
+	 * @return the bytes status hold by the node
 	 */
-	public byte[] get_bytes_status() { return this.bytes_status; }
-	/**
-	 * @return node that directly leads to this node or null if it is head
-	 */
-	public InstrumentNode get_prev_node() { return this.prev; }
-	/**
-	 * @return node that this node directly leads to or null if it is tail
-	 */
-	public InstrumentNode get_next_node() { return this.next; }
-	/**
-	 * @return whether the node is the first node in the list
-	 */
-	public boolean is_head() { return this.prev == null; }
-	/**
-	 * @return whether the node is the final node in the list
-	 */
-	public boolean is_tail() { return this.next == null; }
+	public byte[] get_status() { return this.status; }
 	
 }

@@ -9,114 +9,89 @@ import java.util.List;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
 
+/**
+ * The list of the instrumental file
+ * @author yukimula
+ *
+ */
 public class InstrumentList {
 	
-	/* attribute */
-	/** the sequence of nodes fetched from instrumental results **/
+	/** the sequence of instrumental nodes **/
 	private List<InstrumentNode> nodes;
+	/**
+	 * @param tree the abstract syntax tree that interprets the instrumental results
+	 * @param instrument_file the file from which the instrumental nodes are fetched
+	 * @throws Exception
+	 */
+	private InstrumentList(AstTree tree, File instrument_file) throws Exception {
+		if(tree == null)
+			throw new IllegalArgumentException("Invalid tree: null");
+		else if(instrument_file == null || !instrument_file.exists())
+			throw new IllegalArgumentException("Invalid file: null");
+		else {
+			this.nodes = new ArrayList<InstrumentNode>(); String line;
+			
+			BufferedReader reader = new 
+					BufferedReader(new FileReader(instrument_file));
+			while((line = reader.readLine()) != null) {
+				this.parse(tree, line.strip());
+			}
+			reader.close();
+		}
+	}
+	/**
+	 * @param tree
+	 * @param line
+	 * @throws Exception
+	 */
+	private void parse(AstTree tree, String line) throws Exception {
+		if(!line.isEmpty()) {
+			String[] items = line.split(" ");
+			AstNode location = tree.get_node(Integer.parseInt(items[0].strip()));
+			byte[] status = new byte[items.length - 1];
+			for(int k = 1; k < status.length; k++) {
+				status[k - 1] = (byte) Integer.parseInt(items[k].strip());
+			}
+			
+			InstrumentNode node = new InstrumentNode(this, nodes.size(), location, status);
+			this.nodes.add(node);
+		}
+	}
 	
 	/* getters */
 	/**
-	 * @return whether the list is empty
+	 * @return the number of nodes in the list
 	 */
-	public boolean isEmpty() { return this.nodes.isEmpty(); }
+	public int length() { return this.nodes.size(); }
 	/**
-	 * @return the length of the list in instrumental analysis result
+	 * @return the sequence of instrumental nodes
 	 */
-	public int size() { return this.nodes.size(); }
+	public Iterable<InstrumentNode> get_nodes() { return this.nodes; }
 	/**
-	 * @param k 
+	 * @param k
 	 * @return the kth node in the list
 	 * @throws IndexOutOfBoundsException
 	 */
 	public InstrumentNode get_node(int k) throws IndexOutOfBoundsException {
 		return this.nodes.get(k);
 	}
-	/**
-	 * @return the sequence of instrumental nodes in this list
-	 */
-	public Iterable<InstrumentNode> get_nodes() { return this.nodes; }
-	/**
-	 * @return the first node in the list or null
-	 */
-	public InstrumentNode get_head_node() {
-		if(this.nodes.isEmpty())
-			return null;
-		else
-			return this.nodes.get(0);
-	}
-	/**
-	 * @return the first node in the list or null
-	 */
-	public InstrumentNode get_tail_node() {
-		if(this.nodes.isEmpty())
-			return null;
-		else
-			return this.nodes.get(this.nodes.size() - 1);
-	}
 	
-	/* setters */
+	/* parsing */
 	/**
-	 * @param ast_location
-	 * @param bytes_status
-	 * @return the node created by the arguments in the tail of the list
+	 * @param tree
+	 * @param instrument_file
+	 * @return the instrumental list by reading the file or null if the file is not defined
 	 * @throws Exception
 	 */
-	private InstrumentNode append(AstNode ast_location, byte[] bytes_status) throws Exception {
-		InstrumentNode node = new InstrumentNode(this, 
-				this.nodes.size(), ast_location, bytes_status);
-		InstrumentNode prev = this.get_tail_node();
-		
-		node.prev = prev; node.next = null;
-		if(prev != null) prev.next = node;
-		this.nodes.add(node); return node;
-	}
-	/**
-	 * parse one line in instrumental result file to a node in the list
-	 * @param ast_tree
-	 * @param line
-	 * @throws Exception
-	 */
-	private void parse(AstTree ast_tree, String line) throws Exception {
-		if(!line.isBlank()) {
-			String[] items = line.strip().split(" ");
-			AstNode ast_location = ast_tree.get_node(Integer.parseInt(items[0].strip()));
-			byte[] bytes_status = new byte[items.length - 1];
-			for(int k = 1; k < items.length; k++) {
-				bytes_status[k - 1] = (byte) Integer.parseInt(items[k].strip());
-			}
-			this.append(ast_location, bytes_status);
-		}
-	}
-	/**
-	 * @param ast_tree the abstract sytax tree that interprets the instrumental results
-	 * @param instrument_file the file that records the instrumental analysis result.
-	 * @throws Exception
-	 */
-	private InstrumentList(AstTree ast_tree, File instrument_file) throws Exception {
-		if(ast_tree == null)
-			throw new IllegalArgumentException("Invalid ast_tree: null");
+	public static InstrumentList list(AstTree tree, File instrument_file) throws Exception {
+		if(tree == null)
+			throw new IllegalArgumentException("Invalid tree: null");
 		else if(instrument_file == null)
-			throw new IllegalArgumentException("Invalid instrument file");
-		else {
-			this.nodes = new ArrayList<InstrumentNode>();
-			
-			BufferedReader reader = new BufferedReader(new FileReader(instrument_file));
-			String line;
-			while((line = reader.readLine()) != null) {
-				this.parse(ast_tree, line.strip());
-			}
-			reader.close();
-		}
-	}
-	/**
-	 * @param ast_tree the abstract sytax tree that interprets the instrumental results
-	 * @param instrument_file the file that records the instrumental analysis result.
-	 * @return the list of instrumental analysis nodes
-	 * @throws Exception
-	 */
-	public static InstrumentList list(AstTree ast_tree, File instrument_file) throws Exception {
-		return new InstrumentList(ast_tree, instrument_file);
+			throw new IllegalArgumentException("Invalid file: null");
+		else if(instrument_file.exists())
+			return new InstrumentList(tree, instrument_file);
+		else
+			return null;
 	}
 	
 }
