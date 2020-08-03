@@ -1,16 +1,15 @@
 package com.jcsa.jcparse.lang.ir.unit;
 
-import com.jcsa.jcparse.lang.ir.CirNode;
-
 /**
- * field |-- name
+ * field |-- {name: String}
+ * 
  * @author yukimula
  *
  */
-public interface CirField extends CirNode {
+public interface CirField extends CirUnit {
 	
 	/**
-	 * @return the field name
+	 * @return the name of the field 
 	 */
 	public String get_name();
 	

@@ -1,19 +1,17 @@
 package com.jcsa.jcparse.lang.ir.unit;
 
-import com.jcsa.jcparse.lang.ir.CirNode;
-
 /**
- * statement_label is the integer index of the statement in the list.
- * <br>
- * 	{statement_index}
+ * label	|--	{label: int}
+ * 
  * @author yukimula
  *
  */
-public interface CirLabel extends CirNode {
+public interface CirLabel extends CirUnit {
 	
 	/**
-	 * @return the index of the statement in the function body.
+	 * @return the integer index of the statement in the statement list
+	 * 		   in which the label is defined.
 	 */
-	public int get_statement_index();
+	public int get_label();
 	
 }

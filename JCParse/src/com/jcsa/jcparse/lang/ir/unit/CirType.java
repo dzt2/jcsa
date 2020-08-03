@@ -1,13 +1,17 @@
 package com.jcsa.jcparse.lang.ir.unit;
 
 import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ir.CirNode;
 
-public interface CirType extends CirNode {
+/**
+ * type |-- {data_type: CType}
+ * @author yukimula
+ *
+ */
+public interface CirType extends CirUnit {
 	
 	/**
-	 * @return type that the node describes
+	 * @return the data type of the node
 	 */
-	public CType get_type();
+	public CType get_data_type();
 	
 }
