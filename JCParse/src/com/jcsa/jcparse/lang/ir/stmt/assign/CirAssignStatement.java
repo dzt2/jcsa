@@ -15,6 +15,7 @@ import com.jcsa.jcparse.lang.ir.stmt.CirStatement;
  * 	|--	|--	return_assign_statement										<br>
  * 	|--	|--	temporal_assign_statement									<br>
  * 	|--	|--	wait_assign_statement										<br>
+ * 	|--	|-- parameter_assign_statement									<br>
  * </code>
  * @author yukimula
  *

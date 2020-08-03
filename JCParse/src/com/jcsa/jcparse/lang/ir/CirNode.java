@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.ir;
 
+import com.jcsa.jcparse.lang.ir.unit.CirFunctionDefinition;
+
 /**
  * 	The syntax of C-intermediate representation language is defined as:	<br>
  * 	<code>
@@ -142,6 +144,6 @@ public interface CirNode {
 	 * @return the function definition where the node belongs to
 	 * 		   or null if the node is an external unit.
 	 */
-	// public CirFunctionDefinition get_function_definition();
+	public CirFunctionDefinition get_function_definition();
 	
 }
