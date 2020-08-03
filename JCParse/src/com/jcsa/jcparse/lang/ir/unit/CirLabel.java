@@ -14,4 +14,10 @@ public interface CirLabel extends CirUnit {
 	 */
 	public int get_label();
 	
+	/**
+	 * set the label that the point refers to
+	 * @param label
+	 */
+	public void set_label(int label);
+	
 }

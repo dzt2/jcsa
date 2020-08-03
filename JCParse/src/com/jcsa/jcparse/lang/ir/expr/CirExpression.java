@@ -2,6 +2,7 @@ package com.jcsa.jcparse.lang.ir.expr;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ir.CirNode;
+import com.jcsa.jcparse.lang.ir.stmt.CirStatement;
 
 /**
  * <code>
@@ -42,5 +43,10 @@ public interface CirExpression extends CirNode {
 	 * @return the data type of the value hold by the expression
 	 */
 	public CType get_data_type();
+	
+	/**
+	 * @return the statement where the expression belongs to
+	 */
+	public CirStatement get_statement();
 	
 }
