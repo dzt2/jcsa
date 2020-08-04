@@ -1,6 +1,7 @@
 package com.jcsa.jcparse.lang.cirlang.stmt;
 
 import com.jcsa.jcparse.lang.cirlang.CirNode;
+import com.jcsa.jcparse.lang.cirlang.unit.CirLabel;
 import com.jcsa.jcparse.lang.cirlang.unit.CirStatementList;
 
 /**
@@ -50,6 +51,6 @@ public interface CirStatement extends CirNode {
 	/**
 	 * @return the integer ID as the label of the statement in the body
 	 */
-	public int get_statement_label();
+	public CirLabel get_statement_label();
 	
 }
