@@ -3,6 +3,9 @@ package com.jcsa.jcparse.flwa.dominate;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.jcsa.jcparse.base.BitSequence;
+import com.jcsa.jcparse.base.BitSet;
+import com.jcsa.jcparse.base.BitSetBase;
 import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.analysis.AbsInterpreter;
 import com.jcsa.jcparse.flwa.analysis.AbsOperator;
@@ -11,9 +14,6 @@ import com.jcsa.jcparse.flwa.analysis.BitSetValue;
 import com.jcsa.jcparse.flwa.graph.CirInstanceEdge;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
-import com.jcsa.jcparse.lang.base.BitSequence;
-import com.jcsa.jcparse.lang.base.BitSet;
-import com.jcsa.jcparse.lang.base.BitSetBase;
 
 /**
  * Used to build up the dominance graph in C program.

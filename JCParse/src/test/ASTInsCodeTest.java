@@ -6,8 +6,8 @@ import java.io.FileWriter;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 public class ASTInsCodeTest {
 	

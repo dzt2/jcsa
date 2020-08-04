@@ -1,7 +1,5 @@
 package com.jcsa.jcparse.lang.scope;
 
-import com.jcsa.jcparse.lang.centity.CInstance;
-
 /**
  * name to represent parameter in function
  * 

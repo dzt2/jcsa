@@ -1,7 +1,7 @@
 package com.jcsa.jcparse.lang.scope.impl;
 
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
-import com.jcsa.jcparse.lang.centity.CLabel;
+import com.jcsa.jcparse.lang.scope.CLabel;
 import com.jcsa.jcparse.lang.scope.CLabelName;
 import com.jcsa.jcparse.lang.scope.CScope;
 

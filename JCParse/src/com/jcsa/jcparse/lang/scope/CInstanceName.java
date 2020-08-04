@@ -1,7 +1,5 @@
 package com.jcsa.jcparse.lang.scope;
 
-import com.jcsa.jcparse.lang.centity.CInstance;
-
 /**
  * name to represent instance: variable, function. Different from other name,
  * instance name can occurs for more than one times. That is: there might be

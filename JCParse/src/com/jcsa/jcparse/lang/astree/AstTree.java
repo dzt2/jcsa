@@ -13,8 +13,8 @@ import com.jcsa.jcparse.lang.astree.impl.AstNodeImpl;
 import com.jcsa.jcparse.lang.astree.unit.AstExternalUnit;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
-import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.text.CText;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * The abstract syntax tree.

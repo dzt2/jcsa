@@ -1,7 +1,7 @@
 package com.jcsa.jcparse.lang.scope.impl;
 
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
-import com.jcsa.jcparse.lang.centity.CInstance;
+import com.jcsa.jcparse.lang.scope.CInstance;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 import com.jcsa.jcparse.lang.scope.CScope;
 

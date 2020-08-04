@@ -3,8 +3,8 @@ package com.jcsa.jcparse.lang.astree.impl;
 import com.jcsa.jcparse.lang.CSyntaxElmImpl;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.text.CText;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * abstract node for all AstNode subclasses

@@ -1,7 +1,7 @@
 package com.jcsa.jcparse.lang.ctype.impl;
 
-import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 public abstract class CTypeImpl implements CType {
 

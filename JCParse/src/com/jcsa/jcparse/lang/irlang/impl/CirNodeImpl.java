@@ -5,10 +5,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.code.CodeGeneration;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * The abstract implementation of node in C-like intermediate representation.

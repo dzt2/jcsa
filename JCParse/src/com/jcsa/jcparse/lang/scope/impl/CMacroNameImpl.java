@@ -1,7 +1,7 @@
 package com.jcsa.jcparse.lang.scope.impl;
 
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
-import com.jcsa.jcparse.lang.centity.CMacro;
+import com.jcsa.jcparse.lang.scope.CMacro;
 import com.jcsa.jcparse.lang.scope.CMacroName;
 import com.jcsa.jcparse.lang.scope.CScope;
 

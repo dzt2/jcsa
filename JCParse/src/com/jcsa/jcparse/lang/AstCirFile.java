@@ -14,10 +14,10 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
-import com.jcsa.jcparse.lang.parse.CTranslate;
 import com.jcsa.jcparse.lang.sym.SymNode;
 import com.jcsa.jcparse.lang.sym.SymParser;
 import com.jcsa.jcparse.lang.text.CText;
+import com.jcsa.jcparse.parse.CTranslate;
 
 /**
  * It manages the data model of source code in C programming language.

@@ -1,7 +1,5 @@
 package com.jcsa.jcparse.lang.scope;
 
-import com.jcsa.jcparse.lang.centity.CLabel;
-
 /**
  * name to represent label in function statement
  * 

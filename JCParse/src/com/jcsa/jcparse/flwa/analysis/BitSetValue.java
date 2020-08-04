@@ -1,7 +1,7 @@
 package com.jcsa.jcparse.flwa.analysis;
 
-import com.jcsa.jcparse.lang.base.BitSequence;
-import com.jcsa.jcparse.lang.base.BitSet;
+import com.jcsa.jcparse.base.BitSequence;
+import com.jcsa.jcparse.base.BitSet;
 
 /**
  * The value that describes a set of objects used for data flow analysis
