@@ -13,17 +13,8 @@ public class AstExecutionPath {
 	/* constructor */
 	/** the sequence of execution path in form of AST-node **/
 	private List<AstExecutionNode> nodes;
-	/**
-	 * @param unit the unit of which node is the head
-	 * @throws IllegalArgumentException
-	 */
-	private AstExecutionPath(AstExecutionUnit unit) throws IllegalArgumentException {
-		if(unit == null)
-			throw new IllegalArgumentException("Invalid unit: null");
-		else {
-			this.nodes = new ArrayList<AstExecutionNode>();
-			this.nodes.add(new AstExecutionNode(this, 0, unit));
-		}
+	protected AstExecutionPath() {
+		this.nodes = new ArrayList<AstExecutionNode>();
 	}
 	
 	/* getters */
@@ -43,32 +34,12 @@ public class AstExecutionPath {
 	public AstExecutionNode get_node(int k) throws IllegalArgumentException {
 		return this.nodes.get(k);
 	}
-	/**
-	 * @return the first node in the execution path
-	 */
-	public AstExecutionNode get_head_node() { return this.nodes.get(0); }
-	/**
-	 * @return the final node in the execution path
-	 */
-	public AstExecutionNode get_tail_node() { return this.nodes.get(nodes.size() - 1); }
 	
 	/* setter */
-	/**
-	 * append a new node w.r.t. the unit and in_flow w.r.t. the flow type
-	 * @param flow_type
-	 * @param next_unit
-	 * @return
-	 * @throws IllegalArgumentException
-	 */
-	protected AstExecutionNode add(AstExecutionFlowType flow_type,
-			AstExecutionUnit next_unit) throws IllegalArgumentException {
-		AstExecutionNode source = this.get_tail_node();
-		AstExecutionNode target = new AstExecutionNode(this, this.nodes.size(), next_unit);
-		AstExecutionFlow flow = new AstExecutionFlow(flow_type, source, target);
-		source.ou_flow = flow; 
-		target.in_flow = flow;
-		this.nodes.add(target);
-		return target;
+	protected AstExecutionNode new_node(AstExecutionUnit unit) throws IllegalArgumentException {
+		AstExecutionNode node = new AstExecutionNode(this, nodes.size(), unit);
+		this.nodes.add(node);
+		return node;
 	}
 	
 }

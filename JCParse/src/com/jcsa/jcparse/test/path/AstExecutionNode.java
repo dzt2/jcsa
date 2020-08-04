@@ -10,7 +10,7 @@ public class AstExecutionNode {
 	/* attributes */
 	/** the execution path in which the node is created **/
 	private AstExecutionPath path;
-	/** the index of the node in the execution path **/
+	/** the index of the node in the path **/
 	private int index;
 	/** the unit that defines the actions performed in the node **/
 	private AstExecutionUnit unit;
@@ -27,8 +27,8 @@ public class AstExecutionNode {
 	 * @param unit the unit that defines the actions performed in the node
 	 * @throws IllegalArgumentException
 	 */
-	protected AstExecutionNode(AstExecutionPath path, 
-			int index, AstExecutionUnit unit) throws IllegalArgumentException {
+	protected AstExecutionNode(AstExecutionPath path, int 
+			index, AstExecutionUnit unit) throws IllegalArgumentException {
 		if(path == null)
 			throw new IllegalArgumentException("Invalid path: null");
 		else if(unit == null)
@@ -48,7 +48,7 @@ public class AstExecutionNode {
 	 */
 	public AstExecutionPath get_path() { return this.path; }
 	/**
-	 * @return the index of the node in the execution path
+	 * @return the index of the node in the path
 	 */
 	public int get_index() { return this.index; }
 	/**
@@ -71,5 +71,23 @@ public class AstExecutionNode {
 	 * @return the flow that is directly pointed from this
 	 */
 	public AstExecutionFlow get_ou_flow() { return this.ou_flow; }
+	/**
+	 * @param flow_type
+	 * @param target
+	 * @return the flow that connects the node with the target
+	 * @throws IllegalArgumentException
+	 */
+	protected AstExecutionFlow connect(AstExecutionFlowType flow_type, 
+			AstExecutionNode target) throws IllegalArgumentException {
+		if(this.ou_flow != null)
+			throw new IllegalArgumentException("Conflicted flow");
+		else {
+			AstExecutionFlow flow = new 
+					AstExecutionFlow(flow_type, this, target);
+			this.ou_flow = flow;
+			target.in_flow = flow;
+			return flow;
+		}
+	}
 	
 }
