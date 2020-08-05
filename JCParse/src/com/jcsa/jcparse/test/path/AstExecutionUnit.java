@@ -63,6 +63,19 @@ public class AstExecutionUnit {
 		else 
 			this.state = state;
 	}
+	/**
+	 * @return boolean value of the state or null
+	 */
+	protected Boolean get_boolean_state() {
+		if(this.state.length == 0)
+			return null;	// unable to fetch boolean
+		else {
+			for(byte value : this.state)
+				if(value != 0)
+					return Boolean.TRUE;
+			return Boolean.FALSE;
+		}
+	}
 	
 	/* creators */
 	/**
