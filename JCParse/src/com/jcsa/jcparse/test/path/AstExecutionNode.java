@@ -78,7 +78,7 @@ public class AstExecutionNode {
 	 * @return the flow that connects this node to the target node
 	 * @throws IllegalArgumentException
 	 */
-	protected AstExecutionFlow connect(AstExecutionFlowType flow_type, 
+	public AstExecutionFlow connect(AstExecutionFlowType flow_type, 
 			AstExecutionNode target) throws IllegalArgumentException {
 		if(target == null || target.in_flow != null)
 			throw new IllegalArgumentException("Invalid target: " + target);
