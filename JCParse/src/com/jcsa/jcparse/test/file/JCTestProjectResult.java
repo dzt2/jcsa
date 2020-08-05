@@ -1,10 +1,11 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
+import java.util.List;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.path.InstrumentList;
+import com.jcsa.jcparse.test.path.InstrumentLine;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -74,11 +75,11 @@ public class JCTestProjectResult {
 	 * 			or null if the instrumental testing was not performed yet.
 	 * @throws Exception
 	 */
-	public InstrumentList load_instrument(AstTree ast_tree, TestInput input) throws Exception {
+	public List<InstrumentLine> load_instrument(AstTree ast_tree, TestInput input) throws Exception {
 		File instrument_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrument_file.exists()) {
-			return InstrumentList.list(ast_tree, instrument_file);
+			return InstrumentLine.parse(ast_tree, instrument_file);
 		}
 		else {
 			return null;

@@ -2,14 +2,14 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.Random;
 
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.path.InstrumentList;
-import com.jcsa.jcparse.test.path.InstrumentNode;
+import com.jcsa.jcparse.test.path.InstrumentLine;
 
 public class JCProjectResultTest {
 	
@@ -43,22 +43,23 @@ public class JCProjectResultTest {
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		
 		try {
-			InstrumentList list = project.get_result_part().load_instrument(program.get_ast_tree(), input);
+			List<InstrumentLine> list = project.get_result_part().load_instrument(program.get_ast_tree(), input);
 			writer.write("Instrument List of tests[" + tid + "]:\n");
 			writer.write("\tParameters: " + input.get_parameter() + "\n");
 			if(list != null) {
-				for(InstrumentNode node : list.get_nodes()) {
-					writer.write("\t\tlist[" + node.get_index() + "] as " + node.get_type() + "\n");
-					writer.write("\t\t==> location[" + node.get_location().get_key() + "] "
-							+ "at line#" + node.get_location().get_location().line_of() + "\n");
-					String ast_code = node.get_location().generate_code();
+				for(int k = 0; k < list.size(); k++) {
+					InstrumentLine line = list.get(k);
+					writer.write("\t\tline[" + k + "] as " + line.get_location().getClass().getSimpleName() + "\n");
+					writer.write("\t\t==> location[" + line.get_location().get_key() + "] "
+							+ "at line#" + line.get_location().get_location().line_of() + "\n");
+					String ast_code = line.get_location().generate_code();
 					int line_index = ast_code.indexOf('\n');
 					if(line_index >= 0) {
 						ast_code = ast_code.substring(0, line_index);
 					}
 					writer.write("\t\t==> code: " + ast_code.strip() + "\n");
 					writer.write("\t\t==> bytes:");
-					for(byte value : node.get_status()) {
+					for(byte value : line.get_state()) {
 						writer.write(" " + value);
 					}
 					writer.write("\n\n");
