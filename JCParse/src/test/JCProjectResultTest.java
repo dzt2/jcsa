@@ -2,7 +2,6 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.List;
 import java.util.Random;
 
 import com.jcsa.jcparse.lang.AstCirFile;
@@ -10,6 +9,7 @@ import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.path.InstrumentLine;
+import com.jcsa.jcparse.test.path.InstrumentList;
 
 public class JCProjectResultTest {
 	
@@ -43,13 +43,12 @@ public class JCProjectResultTest {
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		
 		try {
-			List<InstrumentLine> list = project.get_result_part().load_instrument(program.get_ast_tree(), input);
+			InstrumentList list = project.get_result_part().load_instrument(program.get_ast_tree(), input);
 			writer.write("Instrument List of tests[" + tid + "]:\n");
 			writer.write("\tParameters: " + input.get_parameter() + "\n");
 			if(list != null) {
-				for(int k = 0; k < list.size(); k++) {
-					InstrumentLine line = list.get(k);
-					writer.write("\t\tline[" + k + "] as " + line.get_location().getClass().getSimpleName() + "\n");
+				for(InstrumentLine line : list.get_lines()) {
+					writer.write("\t\tline[" + line.get_index() + "] as " + line.get_type() + "\n");
 					writer.write("\t\t==> location[" + line.get_location().get_key() + "] "
 							+ "at line#" + line.get_location().get_location().line_of() + "\n");
 					String ast_code = line.get_location().generate_code();
