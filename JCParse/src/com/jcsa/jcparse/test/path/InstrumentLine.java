@@ -92,5 +92,16 @@ public class InstrumentLine {
 	 * @return the byte-sequence describing the state of the location
 	 */
 	public byte[] get_state() { return this.state; }
+	@Override
+	public String toString() {
+		String type_name = this.location.getClass().getSimpleName();
+		type_name = type_name.substring(3, type_name.length() - 4);
+		try {
+			return this.type + "::" + type_name + "[" + this.location.get_key() + "]:\n\"" + this.location.get_code() + "\"";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 	
 }

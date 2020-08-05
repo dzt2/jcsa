@@ -56,6 +56,21 @@ public class AstExecutionUnit {
 		else
 			this.state = state;
 	}
+	/**
+	 * @return the boolean value whether the state is zero
+	 */
+	public Boolean get_bool_state() {
+		if(this.state.length == 0)
+			return null;
+		else {
+			for(byte value : this.state) {
+				if(value != 0) {
+					return Boolean.TRUE;
+				}
+			}
+			return Boolean.FALSE;
+		}
+	}
 	
 	/* factory methods */
 	/**
@@ -63,7 +78,7 @@ public class AstExecutionUnit {
 	 * @return  
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit beg_func(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit beg_func(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.beg_func, location);
 	}
 	/**
@@ -71,7 +86,7 @@ public class AstExecutionUnit {
 	 * @return  
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit end_func(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit end_func(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.end_func, location);
 	}
 	/**
@@ -79,7 +94,7 @@ public class AstExecutionUnit {
 	 * @return  
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit beg_stmt(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit beg_stmt(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.beg_stmt, location);
 	}
 	/**
@@ -87,7 +102,7 @@ public class AstExecutionUnit {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit end_stmt(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit end_stmt(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.end_stmt, location);
 	}
 	/**
@@ -95,7 +110,7 @@ public class AstExecutionUnit {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit execute(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit execute(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.execute, location);
 	}
 	/**
@@ -103,7 +118,7 @@ public class AstExecutionUnit {
 	 * @return 
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit beg_expr(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit beg_expr(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.beg_expr, location);
 	}
 	/**
@@ -111,7 +126,7 @@ public class AstExecutionUnit {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit end_expr(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit end_expr(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.end_expr, location);
 	}
 	/**
@@ -119,8 +134,11 @@ public class AstExecutionUnit {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	protected static AstExecutionUnit evaluate(AstNode location) throws IllegalArgumentException {
+	public static AstExecutionUnit evaluate(AstNode location) throws IllegalArgumentException {
 		return new AstExecutionUnit(AstExecutionType.evaluate, location);
+	}
+	public static AstExecutionUnit declare(AstNode location) throws IllegalArgumentException {
+		return new AstExecutionUnit(AstExecutionType.declare, location);
 	}
 	
 }

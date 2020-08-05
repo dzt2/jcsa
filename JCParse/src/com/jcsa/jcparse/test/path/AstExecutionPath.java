@@ -37,7 +37,7 @@ public class AstExecutionPath {
 	 * @return the node w.r.t. the unit
 	 * @throws IllegalArgumentException
 	 */
-	protected AstExecutionNode new_node(AstExecutionUnit unit) throws IllegalArgumentException {
+	public AstExecutionNode new_node(AstExecutionUnit unit) throws IllegalArgumentException {
 		AstExecutionNode node = new AstExecutionNode(this, this.nodes.size(), unit);
 		this.nodes.add(node);
 		return node;

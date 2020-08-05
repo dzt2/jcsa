@@ -12,4 +12,5 @@ public enum AstExecutionFlowType {
 	/** from the node to another node in body **/	goto_flow,
 	/** from fun_call_expr to the definition **/	call_flow,
 	/** from definition to the fun_call_expr **/	retr_flow,
+	/** from argument_list to fun_call_expr **/		exit_flow,
 }
