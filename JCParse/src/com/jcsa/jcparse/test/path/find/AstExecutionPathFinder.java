@@ -32,6 +32,7 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
@@ -42,6 +43,7 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.test.path.AstExecutionFlowType;
@@ -349,63 +351,475 @@ public class AstExecutionPathFinder {
 	private boolean has_input() { return this.input.get() != null; }
 	
 	/* path finding algorithms */
-	private AstExecutionPathSolution find(AstNode node) throws Exception {
-		if(node == null)
-			throw new IllegalArgumentException("Invalid node: null");
+	private AstExecutionPathSolution find(AstNode location) throws Exception {
+		if(location == null)
+			throw new IllegalArgumentException("Invalid location: null");
+		else if(location instanceof AstIdExpression)
+			return this.find_id_expression((AstIdExpression) location);
+		else if(location instanceof AstConstant)
+			return this.find_constant((AstConstant) location);
+		else if(location instanceof AstLiteral)
+			return this.find_literal((AstLiteral) location);
+		else if(location instanceof AstUnaryExpression)
+			return this.find_unary_expression((AstUnaryExpression) location);
+		else if(location instanceof AstPostfixExpression)
+			return this.find_postfix_expression((AstPostfixExpression) location);
+		else if(location instanceof AstBinaryExpression)
+			return this.find_binary_expression((AstBinaryExpression) location);
+		else if(location instanceof AstArrayExpression)
+			return this.find_array_expression((AstArrayExpression) location);
+		else if(location instanceof AstCastExpression)
+			return this.find_cast_expression((AstCastExpression) location);
+		else if(location instanceof AstCommaExpression)
+			return this.find_comma_expression((AstCommaExpression) location);
+		else if(location instanceof AstConditionalExpression)
+			return this.find_conditional_expression((AstConditionalExpression) location);
+		else if(location instanceof AstConstExpression)
+			return this.find_const_expression((AstConstExpression) location);
+		else if(location instanceof AstParanthExpression)
+			return this.find_paranth_expression((AstParanthExpression) location);
+		else if(location instanceof AstSizeofExpression)
+			return this.find_sizeof_expression((AstSizeofExpression) location);
+		else if(location instanceof AstFieldExpression)
+			return this.find_field_expression((AstFieldExpression) location);
+		else if(location instanceof AstInitializer)
+			return this.find_initializer((AstInitializer) location);
+		else if(location instanceof AstInitializerBody)
+			return this.find_initializer_body((AstInitializerBody) location);
+		else if(location instanceof AstInitializerList)
+			return this.find_initializer_list((AstInitializerList) location);
+		else if(location instanceof AstFieldInitializer)
+			return this.find_field_initializer((AstFieldInitializer) location);
+		else if(location instanceof AstFunCallExpression)
+			return this.find_fun_call_expression((AstFunCallExpression) location);
 		else
-			throw new IllegalArgumentException("Unsupport: " + node);
+			throw new IllegalArgumentException("Unsupport: " + location);
 	}
 	/* expression package */
-	private AstExecutionPathSolution find_id_expression(AstIdExpression node) throws Exception {
-		AstExecutionNode enode = this.new_node(AstExecutionUnit.evaluate(node));
-		if(this.is_instrumental_node(node)) {
-			this.match(enode);
-		}
-		return this.new_solution(enode);
-	}
-	private AstExecutionPathSolution find_constant(AstConstant node) throws Exception {
-		AstExecutionNode enode = this.new_node(AstExecutionUnit.evaluate(node));
-		enode.get_unit().set_state(this.state_of(node.get_constant()));
-		return this.new_solution(enode);
-	}
-	private AstExecutionPathSolution find_literal(AstLiteral node) throws Exception {
-		AstExecutionNode enode = this.new_node(AstExecutionUnit.evaluate(node));
-		enode.get_unit().set_state(this.state_of(node.get_literal()));
-		return this.new_solution(enode);
-	}
-	private AstExecutionPathSolution find_unary_expression(AstUnaryExpression node) throws Exception {
-		AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(node));
-		AstExecutionPathSolution solution = this.new_solution(beg);
-		
-		solution.append(AstExecutionFlowType.down_flow, this.find(node.get_operand()));
-		
+	private AstExecutionPathSolution find_id_expression(AstIdExpression location) throws Exception {
+		AstExecutionPathSolution solution;
 		if(this.has_input()) {
-			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(node));
-			solution.append(AstExecutionFlowType.upon_flow, end);
-			
-			/* record the instrumental state in the node */
-			if(this.is_instrumental_node(node)) { this.match(end); }
+			AstExecutionNode node = this.new_node(AstExecutionUnit.evaluate(location));
+			if(this.is_instrumental_node(location)) { this.match(node); }
+			solution = this.new_solution(node);
 		}
-		
-		return solution;	// do not extend more 
+		else {
+			solution = this.new_solution();
+		}
+		return solution;
 	}
-	private AstExecutionPathSolution find_postfix_expression(AstPostfixExpression node) throws Exception {
-		AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(node));
-		AstExecutionPathSolution solution = this.new_solution(beg);
-		
-		solution.append(AstExecutionFlowType.down_flow, this.find(node.get_operand()));
-		
+	private AstExecutionPathSolution find_constant(AstConstant location) throws Exception {
+		AstExecutionPathSolution solution;
 		if(this.has_input()) {
-			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(node));
-			solution.append(AstExecutionFlowType.upon_flow, end);
-			
-			/* record the instrumental state in the node */
-			if(this.is_instrumental_node(node)) { this.match(end); }
+			AstExecutionNode node = this.new_node(AstExecutionUnit.evaluate(location));
+			node.get_unit().set_state(this.state_of(location.get_constant()));
+			solution = this.new_solution(node);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		return solution;
+	}
+	private AstExecutionPathSolution find_literal(AstLiteral location) throws Exception {
+		AstExecutionPathSolution solution;
+		if(this.has_input()) {
+			AstExecutionNode node = this.new_node(AstExecutionUnit.evaluate(location));
+			node.get_unit().set_state(this.state_of(location.get_literal()));
+			solution = this.new_solution(node);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		return solution;
+	}
+	private AstExecutionPathSolution find_unary_expression(AstUnaryExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
 		}
 		
-		return solution;	// do not extend more 
+		/* down_flow ==> find(expression.operand())*/
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_operand()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
 	}
-	
+	private AstExecutionPathSolution find_postfix_expression(AstPostfixExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.operand())*/
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_operand()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_binary_expression(AstBinaryExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.left_operand) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_loperand()));
+		}
+		
+		/* move_flow ==> find(expression.right_operand) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.move_flow, this.find(location.get_roperand()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_array_expression(AstArrayExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(array_expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find{array} */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_array_expression()));
+		}
+		
+		/* move_flow ==> find{dimension} */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.move_flow, this.find(location.get_dimension_expression()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) {
+				this.match(end);
+			}
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_cast_expression(AstCastExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.operand())*/
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_expression()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_comma_expression(AstCommaExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> operands[0] and move_flow ==> operands[k] */
+		for(int k = 0; k < location.number_of_arguments(); k++) {
+			if(this.has_input()) {
+				if(k == 0) {
+					solution.append(AstExecutionFlowType.down_flow, this.find(location.get_expression(k)));
+				}
+				else {
+					solution.append(AstExecutionFlowType.move_flow, this.find(location.get_expression(k)));
+				}
+			}
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_conditional_expression(AstConditionalExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.condition) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_condition()));
+		}
+		
+		/* move_flow ==> find(expression.true_or_false_branch) */
+		if(this.has_input()) {
+			// find the node with the value of the condition
+			AstExecutionNode prev_condition;
+			prev_condition = this.find_closest(solution.end, AstExecutionType.evaluate, 
+							CTypeAnalyzer.get_expression_of(location.get_condition()));
+			if(prev_condition == null) {
+				prev_condition = this.find_closest(solution.end, AstExecutionType.end_expr, 
+							CTypeAnalyzer.get_expression_of(location.get_condition()));
+			}
+			
+			// decide the next-branch-statement
+			AstExpression selected_branch;
+			if(prev_condition != null) {
+				if(prev_condition.get_unit().get_bool_state().booleanValue()) {
+					selected_branch = location.get_true_branch();
+				}
+				else {
+					selected_branch = location.get_false_branch();
+				}
+				// move_flow ==> find(selected_branch)
+				solution.append(AstExecutionFlowType.move_flow, this.find(selected_branch));
+			}
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_const_expression(AstConstExpression location) throws Exception {
+		return this.find(location.get_expression());
+	}
+	private AstExecutionPathSolution find_paranth_expression(AstParanthExpression location) throws Exception {
+		return this.find(location.get_sub_expression());
+	}
+	private AstExecutionPathSolution find_sizeof_expression(AstSizeofExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		if(this.has_input()) {
+			AstExecutionNode node = this.new_node(AstExecutionUnit.evaluate(location));
+			if(this.is_instrumental_node(location)) { this.match(node); }
+			solution = this.new_solution(node);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		return solution;
+	}
+	private AstExecutionPathSolution find_field_expression(AstFieldExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode beg = this.new_node(AstExecutionUnit.beg_expr(location));
+			solution = this.new_solution(beg);
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.body) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_body()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_initializer(AstInitializer location) throws Exception {
+		if(location.is_body())
+			return this.find(location.get_body());
+		else
+			return this.find(location.get_expression());
+	}
+	private AstExecutionPathSolution find_initializer_body(AstInitializerBody location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(initializer_body) */
+		if(this.has_input()) {
+			solution = this.new_solution(this.new_node(AstExecutionUnit.beg_expr(location)));
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> initializer_body.list */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_initializer_list()));
+		}
+		
+		/* upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			solution.append(AstExecutionFlowType.upon_flow, end);
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_initializer_list(AstInitializerList location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg_expr(expression) */
+		if(this.has_input()) {
+			solution = this.new_solution(this.new_node(AstExecutionUnit.beg_expr(location)));
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> list[0] and move_flow ==> list[k] */
+		for(int k = 0; k < location.number_of_initializer(); k++) {
+			if(this.has_input()) {
+				if(k == 0) {
+					solution.append(AstExecutionFlowType.down_flow, 
+							this.find(location.get_initializer(k)));
+				}
+				else {
+					solution.append(AstExecutionFlowType.move_flow, 
+							this.find(location.get_initializer(k)));
+				}
+			}	
+		}
+		
+		/* end_expr(expression) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.upon_flow, this.new_node(AstExecutionUnit.end_expr(location)));
+		}
+		
+		return solution;
+	}
+	private AstExecutionPathSolution find_field_initializer(AstFieldInitializer location) throws Exception {
+		return this.find(location.get_initializer());
+	}
+	private AstExecutionPathSolution find_fun_call_expression(AstFunCallExpression location) throws Exception {
+		AstExecutionPathSolution solution;
+		
+		/* beg-expr(expression) */
+		if(this.has_input()) {
+			solution = this.new_solution(this.new_node(AstExecutionUnit.beg_expr(location)));
+		}
+		else {
+			solution = this.new_solution();
+		}
+		
+		/* down_flow ==> find(expression.function) */
+		if(this.has_input()) {
+			solution.append(AstExecutionFlowType.down_flow, this.find(location.get_function()));
+		}
+		
+		/* move_flow ==> find(expression.argument_list) */
+		if(this.has_input()) {
+			if(location.has_argument_list()) {
+				solution.append(AstExecutionFlowType.move_flow, 
+						this.find(location.get_argument_list()));
+			}
+		}
+		
+		/* call_flow ==> other function definition */
+		AstExecutionFlowType return_flow_type;
+		if(this.has_input()) {
+			InstrumentLine next_line = this.input.get();
+			if(next_line.get_location() instanceof AstCompoundStatement) {
+				AstFunctionDefinition callee = 
+						(AstFunctionDefinition) next_line.get_location().get_parent();
+				solution.append(AstExecutionFlowType.call_flow, 
+						this.new_node(AstExecutionUnit.beg_func(callee)));
+				return_flow_type = AstExecutionFlowType.retr_flow;
+			}
+			else {
+				return_flow_type = AstExecutionFlowType.upon_flow;
+			}
+		}
+		else {
+			return_flow_type = null;
+		}
+		
+		/* retr_flow or upon_flow ==> end_expr(expression) */
+		if(this.has_input()) {
+			AstExecutionNode end = this.new_node(AstExecutionUnit.end_expr(location));
+			if(this.is_instrumental_node(location)) { this.match(end); }
+			solution.append(return_flow_type, end);
+		}
+		
+		return solution;
+	}
+	/* statement package */
 	
 	
 	
