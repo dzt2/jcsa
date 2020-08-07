@@ -10,10 +10,10 @@ import com.jcsa.jcparse.test.path.InstrumentList;
  * @author yukimula
  *
  */
-class InstrumentListConsummer {
+class InstrumentListConsumer {
 	private InstrumentList list;
 	private int cursor;
-	InstrumentListConsummer(InstrumentList list) {
+	InstrumentListConsumer(InstrumentList list) {
 		this.list = list;
 		this.cursor = 0;
 	}
@@ -27,16 +27,18 @@ class InstrumentListConsummer {
 	boolean match(AstExecutionUnit unit) {
 		InstrumentLine line = this.get();
 		if(line == null)
-			return false;
+			return false;	/* no more line from tokens */
 		else {
 			switch(line.get_type()) {
-			case beg_stmt:
-				return unit.get_type() == AstExecutionType.beg_stmt
+			case beg_stmt:		/* beg_stmt[statement] */
+				return (unit.get_type() == AstExecutionType.beg_stmt
+						|| unit.get_type() == AstExecutionType.execute)
 						&& unit.get_location() == line.get_location();
-			case end_stmt:
-				return unit.get_type() == AstExecutionType.end_stmt
+			case end_stmt:		/* end_stmt [statement] */
+				return (unit.get_type() == AstExecutionType.end_stmt
+						|| unit.get_type() == AstExecutionType.execute)
 						&& unit.get_location() == line.get_location();
-			case evaluate:
+			case evaluate:		/* evaluate|end_expr[expression] */
 			default:
 				return (unit.get_type() == AstExecutionType.end_expr
 						|| unit.get_type() == AstExecutionType.evaluate)
