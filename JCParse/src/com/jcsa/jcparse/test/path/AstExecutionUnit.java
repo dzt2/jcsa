@@ -141,4 +141,15 @@ public class AstExecutionUnit {
 		return new AstExecutionUnit(AstExecutionType.declare, location);
 	}
 	
+	@Override
+	public String toString() {
+		try {
+			return this.type + "::\"" + this.location.generate_code() + 
+						"\"#" + this.location.get_location().line_of();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 }

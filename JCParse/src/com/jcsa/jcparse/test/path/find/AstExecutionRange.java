@@ -86,8 +86,14 @@ class AstExecutionRange {
 		else if(range == null)
 			throw new IllegalArgumentException("Invalid range as null");
 		else if(range.beg_execution != null) {
-			this.end_execution.connect(flow_type, range.beg_execution);
-			this.end_execution = range.end_execution;
+			if(this.beg_execution != null) {
+				this.end_execution.connect(flow_type, range.beg_execution);
+				this.end_execution = range.end_execution;
+			}
+			else {
+				this.beg_execution = range.beg_execution;
+				this.end_execution = range.end_execution;
+			}
 		}
 	}
 	
@@ -131,6 +137,14 @@ class AstExecutionRange {
 			}
 		}
 		return execution;
+	}
+	
+	@Override
+	public String toString() {
+		if(this.beg_execution == null) 
+			return "[]";
+		else
+			return "[" + this.beg_execution + ", " + this.end_execution + "]";
 	}
 	
 }

@@ -11,7 +11,7 @@ public class AstExecutionPath {
 	/**
 	 * create an empty path of execution in form of AST-node
 	 */
-	private AstExecutionPath() { 
+	public AstExecutionPath() { 
 		this.nodes = new ArrayList<AstExecutionNode>(); 
 	}
 	

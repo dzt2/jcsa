@@ -92,4 +92,9 @@ public class AstExecutionNode {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return "[" + this.index + "]::" + this.unit;
+	}
+	
 }

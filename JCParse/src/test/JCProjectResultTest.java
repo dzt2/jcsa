@@ -8,8 +8,8 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.path.InstrumentLine;
-import com.jcsa.jcparse.test.path.InstrumentList;
+import com.jcsa.jcparse.test.path.AstExecutionNode;
+import com.jcsa.jcparse.test.path.AstExecutionPath;
 
 public class JCProjectResultTest {
 	
@@ -43,32 +43,36 @@ public class JCProjectResultTest {
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		
 		try {
-			InstrumentList list = project.get_result_part().load_instrument(program.get_ast_tree(), input);
+			AstExecutionPath path = project.get_result_part().load_ast_path(program.get_ast_tree(), input);
 			writer.write("Instrument List of tests[" + tid + "]:\n");
 			writer.write("\tParameters: " + input.get_parameter() + "\n");
-			if(list != null) {
-				for(InstrumentLine line : list.get_lines()) {
-					writer.write("\t\tline[" + line.get_index() + "] as " + line.get_type() + "\n");
-					writer.write("\t\t==> location[" + line.get_location().get_key() + "] "
-							+ "at line#" + line.get_location().get_location().line_of() + "\n");
-					String ast_code = line.get_location().generate_code();
+			if(path != null) {
+				for(AstExecutionNode execution : path.get_nodes()) {
+					writer.write("[" + execution.get_index() + "]::" + execution.get_unit().get_type() + "\n");
+					String ast_code = execution.get_unit().get_location().generate_code();
 					int line_index = ast_code.indexOf('\n');
 					if(line_index >= 0) {
 						ast_code = ast_code.substring(0, line_index);
 					}
+					String ast_type = execution.get_unit().get_location().getClass().getSimpleName();
+					ast_type = ast_type.substring(3, ast_type.length() - 4).strip();
+					writer.write("\t\t==> type: " + ast_type + "[" + execution.get_unit().get_location().get_key() + "]\n");
 					writer.write("\t\t==> code: " + ast_code.strip() + "\n");
-					writer.write("\t\t==> bytes:");
-					for(byte value : line.get_state()) {
-						writer.write(" " + value);
+					if(execution.get_unit().get_state().length > 0) {
+						writer.write("\t\t==> bytes:");
+						for(byte value : execution.get_unit().get_state()) {
+							writer.write(" " + value);
+						}
+						writer.write("\n");
 					}
-					writer.write("\n\n");
+					writer.write("\n");
 				}
 			}
 			writer.write("\n");
 			System.out.println("\t==> Complete parsing the test#" + tid);
 		}
 		catch(Exception ex) {
-			System.out.println("\t==> Error occurs in parsing test#" + tid);
+			throw ex;
 		}
 	}
 	

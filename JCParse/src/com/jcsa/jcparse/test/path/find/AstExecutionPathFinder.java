@@ -20,6 +20,7 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
@@ -56,6 +57,7 @@ import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
+import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.test.path.AstExecutionFlowType;
 import com.jcsa.jcparse.test.path.AstExecutionNode;
 import com.jcsa.jcparse.test.path.AstExecutionPath;
@@ -427,6 +429,8 @@ public class AstExecutionPathFinder {
 			return this.find_conditional_expression((AstConditionalExpression) location);
 		else if(location instanceof AstFunCallExpression)
 			return this.find_fun_call_expression((AstFunCallExpression) location);
+		else if(location instanceof AstArgumentList)
+			return this.find_argument_list((AstArgumentList) location);
 		else if(location instanceof AstExpressionStatement)
 			return this.find_expression_statement((AstExpressionStatement) location);
 		else if(location instanceof AstDeclarationStatement)
@@ -829,6 +833,27 @@ public class AstExecutionPathFinder {
 		return range;
 	}
 	/**
+	 * @param operator
+	 * @return whether the operator first performs the right-operand
+	 */
+	private boolean is_right_operator(COperator operator) {
+		switch(operator) {
+		case assign:
+		case arith_add_assign:
+		case arith_sub_assign:
+		case arith_mul_assign:
+		case arith_div_assign:
+		case arith_mod_assign:
+		case bit_and_assign:
+		case bit_or_assign:
+		case bit_xor_assign:
+		case left_shift_assign:
+		case righ_shift_assign:
+					return true;
+		default: 	return false;
+		}
+	}
+	/**
 	 * 	beg_expr(expression)
 	 * 	down_flow::find(expression.loperand)
 	 * 	move_flow::find(expression.roperand)
@@ -847,12 +872,22 @@ public class AstExecutionPathFinder {
 		
 		/* down_flow::find(expression.loperand) */
 		if(this.has_line()) {
-			range.append(AstExecutionFlowType.down_flow, find(location.get_loperand()));
+			if(this.is_right_operator(location.get_operator().get_operator())) {
+				range.append(AstExecutionFlowType.down_flow, find(location.get_roperand()));
+			}
+			else {
+				range.append(AstExecutionFlowType.down_flow, find(location.get_loperand()));
+			}
 		}
 		
 		/* move_flow::find(expression.roperand) */
 		if(this.has_line()) {
-			range.append(AstExecutionFlowType.move_flow, find(location.get_roperand()));
+			if(this.is_right_operator(location.get_operator().get_operator())) {
+				range.append(AstExecutionFlowType.move_flow, find(location.get_loperand()));
+			}
+			else {
+				range.append(AstExecutionFlowType.move_flow, find(location.get_roperand()));
+			}
 		}
 		
 		/* upon_flow::end_expr(expression)	#match */
@@ -1140,6 +1175,44 @@ public class AstExecutionPathFinder {
 					new_execution(AstExecutionUnit.end_expr(location));
 			this.match(end_execution, true);
 			range.append(return_flow_type, end_execution);
+		}
+		
+		return range;
+	}
+	/**
+	 * 	beg_expr(location)
+	 * 	down_flow::find(arguments[0])
+	 * 	move_flow::find(arguments[1])
+	 * 	...
+	 * 	move_flow::find(arguments[n - 1])
+	 * 	upon_flow::end_expr(location)
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	private AstExecutionRange find_argument_list(AstArgumentList location) throws Exception {
+		AstExecutionRange range = this.new_range(location);
+		
+		/* beg_expr(argumen_list) */
+		if(this.has_line()) {
+			range.append(this.new_execution(AstExecutionUnit.beg_expr(location)));
+		}
+		
+		/* down_flow|move_flow::arguments[k] */
+		for(int k = 0; k < location.number_of_arguments(); k++) {
+			if(this.has_line()) {
+				if(k == 0) {
+					range.append(AstExecutionFlowType.down_flow, this.find(location.get_argument(k)));
+				}
+				else {
+					range.append(AstExecutionFlowType.move_flow, this.find(location.get_argument(k)));
+				}
+			}
+		}
+		
+		/* upon_flow::end_expr(argument_list) */
+		if(this.has_line()) {
+			range.append(AstExecutionFlowType.upon_flow, this.new_execution(AstExecutionUnit.end_expr(location)));
 		}
 		
 		return range;
@@ -1508,13 +1581,18 @@ public class AstExecutionPathFinder {
 	private AstExecutionRange find_compound_statement(AstCompoundStatement location) throws Exception {
 		AstExecutionRange range = this.new_range(location);
 		if(this.has_line()) {
+			AstExecutionNode execution;
 			switch(this.get_line().get_type()) {
-			case beg_stmt:	
-				range.append(this.new_execution(AstExecutionUnit.beg_stmt(location))); break;
+			case beg_stmt:
+				execution = this.new_execution(AstExecutionUnit.beg_stmt(location));
+				break;
 			case end_stmt:	
-				range.append(this.new_execution(AstExecutionUnit.end_stmt(location))); break;
+				execution = this.new_execution(AstExecutionUnit.end_stmt(location));
+				break;
 			default: throw new IllegalArgumentException("Invalid line: " + this.get_line());
 			}
+			this.match(execution, true);
+			range.append(execution);
 		}
 		return range;
 	}
@@ -1622,6 +1700,30 @@ public class AstExecutionPathFinder {
 			if(next_location instanceof AstReturnStatement) { break; }
 		}		
 		return range;
+	}
+	/**
+	 * start the run the path finding
+	 * @throws Exception
+	 */
+	private void run() throws Exception {
+		if(this.has_line()) {
+			AstFunctionDefinition def = (AstFunctionDefinition) 
+					this.get_line().get_location().get_parent();
+			this.find(def);
+		}
+	}
+	
+	/* method */
+	/**
+	 * @param list
+	 * @return construct the execution path from the instrumental results
+	 * @throws Exception
+	 */
+	public static AstExecutionPath find(InstrumentList list) throws Exception {
+		AstExecutionPath path = new AstExecutionPath();
+		AstExecutionPathFinder finder = new AstExecutionPathFinder(list, path);
+		finder.run();
+		return path;
 	}
 	
 }
