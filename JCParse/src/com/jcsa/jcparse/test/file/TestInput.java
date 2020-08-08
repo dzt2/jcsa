@@ -88,5 +88,25 @@ public class TestInput {
 			return cmd;
 		}
 	}
+	/**
+	 * @param efile the executional file used to run the program
+	 * @param stdout the file to preserve the standard output
+	 * @param stderr the file to preserve the standard error
+	 * @param timeout the maximal seconds that is needed for running test 
+	 * 		  or negative (or zero) when the time-out is not established.
+	 * @return the command for running the test input over the efile as specified.
+	 * @throws Exception
+	 */
+	public String command(File efile, File stdout, File stderr, long timeout) throws Exception {
+		String cmd = String.format(command_template, efile.getAbsolutePath(), 
+									this.parameter, stdout.getAbsolutePath(), 
+									stderr.getAbsolutePath());
+		if(timeout > 0) {
+			return String.format(timeout_template, timeout, cmd);
+		}
+		else {
+			return cmd;
+		}
+	}
 	
 }

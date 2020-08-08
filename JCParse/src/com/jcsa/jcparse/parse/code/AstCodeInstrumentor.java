@@ -559,7 +559,9 @@ public class AstCodeInstrumentor {
 		this.ins_jcm_add_tail(node);
 	}
 	private void ins_constant(AstConstant node) throws Exception {
-		this.gen(node);		/* no instrumentation for constant */
+		this.ins_jcm_add_head(node);
+		this.gen(node);
+		this.ins_jcm_add_tail(node);
 	}
 	private void ins_literal(AstLiteral node) throws Exception {
 		this.gen(node);

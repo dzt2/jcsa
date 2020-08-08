@@ -169,7 +169,8 @@ public class JCTestProjectTest {
 		if(!util.gen_instrumental_shell(pfiles.get_exe_directory(), 
 				this.project.get_code_part().get_instrument_executional_file(), 
 				inputs, pfiles.get_instrument_result_file(), 
-				this.get_instrumental_output_directory(), timeout, 
+				pfiles.get_instrument_stdout_file(), pfiles.get_instrument_stderr_file(),
+				pfiles.get_instrument_output_directory(), timeout, 
 				this.get_instrumental_shell_file())) {
 			throw new RuntimeException("Unable to generate " + 
 					this.get_instrumental_shell_file().getAbsolutePath());

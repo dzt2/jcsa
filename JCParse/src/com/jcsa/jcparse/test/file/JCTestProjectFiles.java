@@ -40,6 +40,8 @@ public class JCTestProjectFiles {
 	private static final String input_data_directory_name = "inputs";
 	private static final String normal_output_directory_name = "n_output";
 	private static final String instrument_output_directory_name = "i_output";
+	private static final String instrument_stdout_file_name = "instrument.out";
+	private static final String instrument_stderr_file_name = "instrument.err";
 	private static final String instrument_result_file_name = "instrument.txt";
 	private static final String config_directory_name = "config";
 	
@@ -66,6 +68,10 @@ public class JCTestProjectFiles {
 	private File normal_output_directory;
 	/** the directory where the instrumental test outputs saved **/
 	private File instrument_output_directory;
+	/** the file to preserve standard output in instrument testing **/
+	private File instrument_stdout_file;
+	/** the file to preserve standard errors in instrument testing **/
+	private File instrument_stderr_file;
 	/** the file to preserve the instrumental analysis results **/
 	private File instrument_result_file;
 	/** the directory where the configuration data is saved **/
@@ -116,6 +122,8 @@ public class JCTestProjectFiles {
 			this.input_data_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + input_data_directory_name));
 			this.normal_output_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + normal_output_directory_name));
 			this.instrument_output_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + instrument_output_directory_name));
+			this.instrument_stdout_file = this.try_to_create(new File(root.getAbsoluteFile() + "/" + instrument_stdout_file_name));
+			this.instrument_stderr_file = this.try_to_create(new File(root.getAbsolutePath() + "/" + instrument_stderr_file_name));
 			this.instrument_result_file = this.try_to_create(new File(root.getAbsolutePath() + "/" + instrument_result_file_name));
 			this.config_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + config_directory_name));
 		}
@@ -162,6 +170,14 @@ public class JCTestProjectFiles {
 	 * @return the directory where the normal testing outputs are saved
 	 */
 	public File get_normal_output_directory() { return this.normal_output_directory; }
+	/**
+	 * @return the file to preserve standard output in instrument testing
+	 */
+	public File get_instrument_stdout_file() { return this.instrument_stdout_file; }
+	/**
+	 * @return the file to preserve standard errors in instrument testing
+	 */
+	public File get_instrument_stderr_file() { return this.instrument_stderr_file; }
 	/**
 	 * @return the directory where the instrumental test outputs saved
 	 */

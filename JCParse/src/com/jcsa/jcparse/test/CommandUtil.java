@@ -83,14 +83,16 @@ public interface CommandUtil {
 	 * @param efile the executional file (xxx.exe)
 	 * @param inputs the set of test inputs used to run the program.
 	 * @param rfile the file to preserve the instrumental analysis result
-	 * @param odir the directory where the output and instrumental results are saved.
+	 * @param ofile the file to preserve the standard output in instrumental testing
+	 * @param o2file the file to preserve the standard error in instrumental testing
 	 * @param timeout the maximal seconds needed for running the program on each test inputs or non-positive when time is not limited.
+	 * @param idir the directory where the instrumental result files are preserved for each test input that was executed before.
 	 * @param sfile the xxx.sh shell script file being generated
 	 * @return true if the shell file is successfully generated.
 	 * @throws Exception is thrown during executing the command-line program.
 	 */
 	public boolean gen_instrumental_shell(File cdir, File efile, Iterable<TestInput> inputs, 
-			File rfile, File odir, long timeout, File sfile) throws Exception;
+			File rfile, File ofile, File o2file, File idir, long timeout, File sfile) throws Exception;
 	
 	/**
 	 * perform the execution on the shell script file as given

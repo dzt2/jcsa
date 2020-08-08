@@ -122,18 +122,18 @@ public class LinuxCommandUtil implements CommandUtil {
 
 	@Override
 	public boolean gen_instrumental_shell(File cdir, File efile, 
-			Iterable<TestInput> inputs, File rfile, File odir, long timeout,
-			File sfile) throws Exception {
+			Iterable<TestInput> inputs, File rfile, File stdout, 
+			File stderr, File idir, long timeout, File sfile) throws Exception {
 		FileWriter writer = new FileWriter(sfile);
 		writer.write(bash_shell_head);
 		writer.write(String.format(cd_template, cdir.getAbsolutePath()));
 		for(TestInput input : inputs) {
-			String command = input.command(efile, odir, timeout);
+			String command = input.command(efile, stdout, stderr, timeout);
 			writer.write(String.format(remove_file_template, rfile.getAbsolutePath()));
 			writer.write(command + "\n");
 			writer.write(String.format(
 					copy_file_template, rfile.getAbsolutePath(), 
-					input.get_instrument_file(odir).getAbsolutePath()));
+					input.get_instrument_file(idir).getAbsolutePath()));
 			writer.write("\n");
 		}
 		writer.write("\n"); writer.close(); 
