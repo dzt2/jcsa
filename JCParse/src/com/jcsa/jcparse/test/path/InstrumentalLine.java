@@ -106,6 +106,22 @@ public class InstrumentalLine {
 			throw new IllegalArgumentException("Invalid value: null");
 		this.value = value; 
 	}
+	@Override
+	public String toString() {
+		StringBuilder buffer = new StringBuilder();
+		buffer.append(this.tag.toString()).append("::");
+		String ast_type = this.location.getClass().getSimpleName();
+		ast_type = ast_type.substring(3, ast_type.length() - 4).strip();
+		buffer.append(ast_type + "[" + this.location.get_key() + "]");
+		if(this.value != null) {
+			buffer.append("::{");
+			for(byte item : this.value) {
+				buffer.append(" " + item);
+			}
+			buffer.append(" }");
+		}
+		return buffer.toString();
+	}
 	
 	/* factory methods */
 	public InstrumentalLine call_fun(AstFunctionDefinition location) throws Exception {
