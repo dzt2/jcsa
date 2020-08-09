@@ -8,8 +8,8 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.path.AstExecutionNode;
-import com.jcsa.jcparse.test.path.AstExecutionPath;
+import com.jcsa.jcparse.test.path.read.InstrumentalLine;
+import com.jcsa.jcparse.test.path.read.InstrumentalList;
 
 public class JCProjectResultTest {
 	
@@ -26,7 +26,7 @@ public class JCProjectResultTest {
 			FileWriter writer = new FileWriter(ofile);
 			for(int k = 0; k < 24; k++) {
 				int tid = Math.abs(random.nextInt()) % project.get_test_part().number_of_test_inputs();
-				print_instrument_path(project, tid, writer);
+				if(!print_instrument_path(project, tid, writer)) { k--; }
 			}
 			writer.close();
 		}
@@ -38,38 +38,41 @@ public class JCProjectResultTest {
 		System.out.println("\t\t==> include " + project.get_test_part().get_test_inputs().number_of_inputs() + " test inputs.");
 		return project;
 	}
-	private static void print_instrument_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
+	private static boolean print_instrument_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
 		AstCirFile program = project.get_code_part().get_program(0);
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		
 		try {
-			AstExecutionPath path = project.get_result_part().load_ast_path(program.get_ast_tree(), input);
+			InstrumentalList ilist = project.get_result_part().load_instrument(program.get_ast_tree(), input);
 			writer.write("Instrument List of tests[" + tid + "]:\n");
 			writer.write("\tParameters: " + input.get_parameter() + "\n");
-			if(path != null) {
-				for(AstExecutionNode execution : path.get_nodes()) {
-					writer.write("[" + execution.get_index() + "]::" + execution.get_unit().get_type() + "\n");
-					String ast_code = execution.get_unit().get_location().generate_code();
+			if(ilist != null) {
+				int index = 0;
+				for(InstrumentalLine line : ilist.get_lines()) {
+					writer.write("[" + index + "]::" + line.get_tag() + "\n");
+					String ast_code = line.get_location().generate_code();
 					int line_index = ast_code.indexOf('\n');
 					if(line_index >= 0) {
 						ast_code = ast_code.substring(0, line_index);
 					}
-					String ast_type = execution.get_unit().get_location().getClass().getSimpleName();
+					String ast_type = line.get_location().getClass().getSimpleName();
 					ast_type = ast_type.substring(3, ast_type.length() - 4).strip();
-					writer.write("\t\t==> type: " + ast_type + "[" + execution.get_unit().get_location().get_key() + "]\n");
+					writer.write("\t\t==> type: " + ast_type + "[" + line.get_location().get_key() + "]\n");
 					writer.write("\t\t==> code: " + ast_code.strip() + "\n");
-					if(execution.get_unit().get_state().length > 0) {
+					if(line.has_value()) {
 						writer.write("\t\t==> bytes:");
-						for(byte value : execution.get_unit().get_state()) {
+						for(byte value : line.get_value()) {
 							writer.write(" " + value);
 						}
 						writer.write("\n");
 					}
 					writer.write("\n");
+					index++;
 				}
+				System.out.println("\t==> Complete parsing the test#" + tid);
 			}
 			writer.write("\n");
-			System.out.println("\t==> Complete parsing the test#" + tid);
+			return ilist != null;
 		}
 		catch(Exception ex) {
 			throw ex;

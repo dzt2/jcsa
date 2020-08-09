@@ -4,9 +4,7 @@ import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.path.AstExecutionPath;
-import com.jcsa.jcparse.test.path.InstrumentList;
-import com.jcsa.jcparse.test.path.find.AstExecutionPathFinder;
+import com.jcsa.jcparse.test.path.read.InstrumentalList;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -76,28 +74,11 @@ public class JCTestProjectResult {
 	 * 			or null if the instrumental testing was not performed yet.
 	 * @throws Exception
 	 */
-	public InstrumentList load_instrument(AstTree ast_tree, TestInput input) throws Exception {
+	public InstrumentalList load_instrument(AstTree ast_tree, TestInput input) throws Exception {
 		File instrument_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrument_file.exists()) {
-			return InstrumentList.parse(ast_tree, instrument_file);
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param ast_tree the abstract syntax tree to interpret the test result
-	 * @param input the test input of which result is fetched
-	 * @return the execution path in form of AST-node fetched from instrument file
-	 * @throws Exception
-	 */
-	public AstExecutionPath load_ast_path(AstTree ast_tree, TestInput input) throws Exception {
-		File instrument_file = input.get_instrument_file(this.project.
-				get_project_files().get_instrument_output_directory());
-		if(instrument_file.exists()) {
-			InstrumentList list = InstrumentList.parse(ast_tree, instrument_file);
-			return AstExecutionPathFinder.find(list);
+			return InstrumentalList.list(ast_tree, instrument_file);
 		}
 		else {
 			return null;
