@@ -5,6 +5,7 @@ import java.io.File;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.path.read.InstrumentalList;
+import com.jcsa.jcparse.test.path.read.InstrumentalReader;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -79,6 +80,22 @@ public class JCTestProjectResult {
 				get_project_files().get_instrument_output_directory());
 		if(instrument_file.exists()) {
 			return InstrumentalList.list(ast_tree, instrument_file);
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param ast_tree the abstract syntax tree to interpret the test result
+	 * @param input the test input of which result is fetched
+	 * @return the reader that fecthes the instrumental line from result until it reaches EOF.
+	 * @throws Exception
+	 */
+	public InstrumentalReader instrument_reader(AstTree ast_tree, TestInput input) throws Exception {
+		File instrument_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrument_file.exists()) {
+			return new InstrumentalReader(ast_tree, instrument_file);
 		}
 		else {
 			return null;
