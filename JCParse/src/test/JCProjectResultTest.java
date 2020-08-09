@@ -8,9 +8,9 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.path.read.InstrumentalLine;
-import com.jcsa.jcparse.test.path.read.InstrumentalList;
-import com.jcsa.jcparse.test.path.read.InstrumentalReader;
+import com.jcsa.jcparse.test.path.InstrumentalLine;
+import com.jcsa.jcparse.test.path.InstrumentalList;
+import com.jcsa.jcparse.test.path.InstrumentalReader;
 
 public class JCProjectResultTest {
 	

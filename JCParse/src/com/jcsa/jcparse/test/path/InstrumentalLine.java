@@ -1,9 +1,9 @@
-package com.jcsa.jcparse.test.path.read;
+package com.jcsa.jcparse.test.path;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
-import com.jcsa.jcparse.test.path.InstrumentalTag;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
 /**
  * 	Each line in instrumental file is a tuple as 
@@ -64,6 +64,21 @@ public class InstrumentalLine {
 			throw new IllegalArgumentException("Invalid node: " + location);
 		}
 	}
+	/**
+	 * @param tag the tag that defines the line
+	 * @param location in which the instrument is seeded
+	 * @param value hold at the location (expression) when the instrument is executed
+	 */
+	protected InstrumentalLine(InstrumentalTag tag, AstNode location) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else {
+			this.tag = tag;
+			this.location = location;
+			this.value = null;
+		}
+	}
 	
 	/* getters */
 	/**
@@ -83,6 +98,43 @@ public class InstrumentalLine {
 	 * 		   was executed
 	 */
 	public byte[] get_value() { return this.value; }
+	/**
+	 * @param value set the value hold by the expression in the instrument
+	 */
+	protected void set_value(byte[] value) throws Exception { 
+		if(value == null || value.length == 0)
+			throw new IllegalArgumentException("Invalid value: null");
+		this.value = value; 
+	}
 	
+	/* factory methods */
+	public InstrumentalLine call_fun(AstFunctionDefinition location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.call_fun, location);
+	}
+	public InstrumentalLine exit_fun(AstFunctionDefinition location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.exit_fun, location);
+	}
+	public InstrumentalLine beg_stmt(AstStatement location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.beg_stmt, location);
+	}
+	public InstrumentalLine end_stmt(AstStatement location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.end_stmt, location);
+	}
+	public InstrumentalLine execute(AstStatement location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.execute, location);
+	}
+	public InstrumentalLine beg_expr(AstExpression location) throws Exception {
+		return new InstrumentalLine(InstrumentalTag.beg_expr, location);
+	}
+	public InstrumentalLine end_expr(AstExpression location, byte[] value) throws Exception {
+		InstrumentalLine line = new InstrumentalLine(
+				InstrumentalTag.end_expr, location);
+		line.set_value(value); return line;
+	}
+	public InstrumentalLine evaluate(AstExpression location, byte[] value) throws Exception {
+		InstrumentalLine line = new InstrumentalLine(
+				InstrumentalTag.evaluate, location);
+		line.set_value(value); return line;
+	}
 	
 }

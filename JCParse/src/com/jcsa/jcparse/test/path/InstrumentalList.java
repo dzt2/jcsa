@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.path.read;
+package com.jcsa.jcparse.test.path;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,7 +19,7 @@ public class InstrumentalList {
 	
 	/* attributes and constructor */
 	private List<InstrumentalLine> lines;
-	private InstrumentalList() {
+	protected InstrumentalList() {
 		this.lines = new ArrayList<InstrumentalLine>();
 	}
 	
@@ -40,6 +40,18 @@ public class InstrumentalList {
 	 * @return the sequence of instrumental lines from the file
 	 */
 	public Iterable<InstrumentalLine> get_lines() { return this.lines; }
+	/**
+	 * add a new line at the tail of the list
+	 * @param line
+	 * @throws Exception
+	 */
+	protected void append(InstrumentalLine line) throws Exception {
+		if(line == null)
+			throw new IllegalArgumentException("Invalid line: null");
+		else {
+			this.lines.add(line);
+		}
+	}
 	
 	/* factory */
 	/**
@@ -48,7 +60,7 @@ public class InstrumentalList {
 	 * @return the instrumental lines fetched from the specified file
 	 * @throws Exception
 	 */
-	public static InstrumentalList list(AstTree tree, File file) throws Exception {
+	public static InstrumentalList read(AstTree tree, File file) throws Exception {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
 		else if(file == null || !file.exists())

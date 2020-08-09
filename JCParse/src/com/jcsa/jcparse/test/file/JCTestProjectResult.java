@@ -4,8 +4,8 @@ import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.path.read.InstrumentalList;
-import com.jcsa.jcparse.test.path.read.InstrumentalReader;
+import com.jcsa.jcparse.test.path.InstrumentalList;
+import com.jcsa.jcparse.test.path.InstrumentalReader;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -79,7 +79,7 @@ public class JCTestProjectResult {
 		File instrument_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrument_file.exists()) {
-			return InstrumentalList.list(ast_tree, instrument_file);
+			return InstrumentalList.read(ast_tree, instrument_file);
 		}
 		else {
 			return null;
