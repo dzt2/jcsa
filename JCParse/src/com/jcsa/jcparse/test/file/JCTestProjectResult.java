@@ -4,7 +4,8 @@ import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.path.InstrumentalList;
+import com.jcsa.jcparse.test.path.InstrumentalPath;
+import com.jcsa.jcparse.test.path.InstrumentalPathFinder;
 import com.jcsa.jcparse.test.path.InstrumentalReader;
 
 /**
@@ -70,24 +71,6 @@ public class JCTestProjectResult {
 	/**
 	 * @param ast_tree the abstract syntax tree to interpret the test result
 	 * @param input the test input of which result is fetched
-	 * @return the list of instrumental analysis results fetched from the file
-	 * 			by interpreting the abstract syntax tree specified in parameter
-	 * 			or null if the instrumental testing was not performed yet.
-	 * @throws Exception
-	 */
-	public InstrumentalList load_instrument(AstTree ast_tree, TestInput input) throws Exception {
-		File instrument_file = input.get_instrument_file(this.project.
-				get_project_files().get_instrument_output_directory());
-		if(instrument_file.exists()) {
-			return InstrumentalList.read(ast_tree, instrument_file);
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param ast_tree the abstract syntax tree to interpret the test result
-	 * @param input the test input of which result is fetched
 	 * @return the reader that fecthes the instrumental line from result until it reaches EOF.
 	 * @throws Exception
 	 */
@@ -96,6 +79,21 @@ public class JCTestProjectResult {
 				get_project_files().get_instrument_output_directory());
 		if(instrument_file.exists()) {
 			return new InstrumentalReader(ast_tree, instrument_file);
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param ast_tree
+	 * @param input
+	 * @return the instrumental path (complete) w.r.t. the test input
+	 * @throws Exception
+	 */
+	public InstrumentalPath instrument_path(AstTree ast_tree, TestInput input) throws Exception {
+		InstrumentalReader reader = this.instrument_reader(ast_tree, input);
+		if(reader != null) {
+			return InstrumentalPathFinder.find(reader);
 		}
 		else {
 			return null;

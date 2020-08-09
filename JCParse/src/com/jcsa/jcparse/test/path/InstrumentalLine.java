@@ -3,7 +3,6 @@ package com.jcsa.jcparse.test.path;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
-import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
 /**
  * 	Each line in instrumental file is a tuple as 
@@ -24,7 +23,7 @@ public class InstrumentalLine {
 	/** the location in which the instrument is seeded **/
 	private AstNode location;
 	/** the value hold at the location (expression) when the instrument is executed **/
-	private byte[] value;
+	protected byte[] value;
 	
 	/* constructor */
 	/**
@@ -69,14 +68,15 @@ public class InstrumentalLine {
 	 * @param location in which the instrument is seeded
 	 * @param value hold at the location (expression) when the instrument is executed
 	 */
-	protected InstrumentalLine(InstrumentalTag tag, AstNode location) throws Exception {
+	protected InstrumentalLine(InstrumentalTag tag, AstNode 
+				location, byte[] value) throws Exception {
 		if(location == null) {
 			throw new IllegalArgumentException("Invalid location: null");
 		}
 		else {
 			this.tag = tag;
 			this.location = location;
-			this.value = null;
+			this.value = value;
 		}
 	}
 	
@@ -98,14 +98,6 @@ public class InstrumentalLine {
 	 * 		   was executed
 	 */
 	public byte[] get_value() { return this.value; }
-	/**
-	 * @param value set the value hold by the expression in the instrument
-	 */
-	protected void set_value(byte[] value) throws Exception { 
-		if(value == null || value.length == 0)
-			throw new IllegalArgumentException("Invalid value: null");
-		this.value = value; 
-	}
 	@Override
 	public String toString() {
 		StringBuilder buffer = new StringBuilder();
@@ -122,35 +114,76 @@ public class InstrumentalLine {
 		}
 		return buffer.toString();
 	}
-	
-	/* factory methods */
-	public InstrumentalLine call_fun(AstFunctionDefinition location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.call_fun, location);
+	/**
+	 * @param line
+	 * @return whether this line matches with the line
+	 */
+	public boolean match(InstrumentalLine line) {
+		if(line == null) {
+			return false;
+		}
+		else if(line.location == this.location) {
+			if(this.tag == InstrumentalTag.execute) {
+				return line.tag == InstrumentalTag.beg_stmt
+						|| line.tag == InstrumentalTag.end_stmt
+						|| line.tag == InstrumentalTag.execute;
+			}
+			else if(this.tag == InstrumentalTag.beg_stmt) {
+				return line.tag == InstrumentalTag.beg_stmt
+						|| line.tag == InstrumentalTag.execute;
+			}
+			else if(this.tag == InstrumentalTag.end_stmt) {
+				return line.tag == InstrumentalTag.end_stmt
+						|| line.tag == InstrumentalTag.execute;
+			}
+			else if(this.tag == InstrumentalTag.beg_expr) {
+				return line.tag == InstrumentalTag.beg_expr
+						|| line.tag == InstrumentalTag.evaluate;
+			}
+			else if(this.tag == InstrumentalTag.end_expr) {
+				return line.tag == InstrumentalTag.end_expr
+						|| line.tag == InstrumentalTag.evaluate;
+			}
+			else if(this.tag == InstrumentalTag.evaluate) {
+				return line.tag == InstrumentalTag.beg_expr
+						|| line.tag == InstrumentalTag.evaluate
+						|| line.tag == InstrumentalTag.end_expr;
+			}
+			else {
+				return this.tag == line.tag;
+			}
+		}
+		else {
+			return false;
+		}
 	}
-	public InstrumentalLine exit_fun(AstFunctionDefinition location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.exit_fun, location);
+	/**
+	 * @return whether the node is the entry of the location
+	 */
+	public boolean is_entry() {
+		switch(this.tag) {
+		case call_fun:
+		case beg_stmt:
+		case beg_expr:
+		case beg_node:
+		case execute:
+		case evaluate:	return true;
+		default: return false;
+		}
 	}
-	public InstrumentalLine beg_stmt(AstStatement location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.beg_stmt, location);
-	}
-	public InstrumentalLine end_stmt(AstStatement location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.end_stmt, location);
-	}
-	public InstrumentalLine execute(AstStatement location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.execute, location);
-	}
-	public InstrumentalLine beg_expr(AstExpression location) throws Exception {
-		return new InstrumentalLine(InstrumentalTag.beg_expr, location);
-	}
-	public InstrumentalLine end_expr(AstExpression location, byte[] value) throws Exception {
-		InstrumentalLine line = new InstrumentalLine(
-				InstrumentalTag.end_expr, location);
-		line.set_value(value); return line;
-	}
-	public InstrumentalLine evaluate(AstExpression location, byte[] value) throws Exception {
-		InstrumentalLine line = new InstrumentalLine(
-				InstrumentalTag.evaluate, location);
-		line.set_value(value); return line;
+	/**
+	 * @return whether the node is the exit of the location
+	 */
+	public boolean is_exit() {
+		switch(this.tag) {
+		case exit_fun:
+		case end_stmt:
+		case end_expr:
+		case end_node:
+		case execute:
+		case evaluate:	return true;
+		default: return false;
+		}
 	}
 	
 }
