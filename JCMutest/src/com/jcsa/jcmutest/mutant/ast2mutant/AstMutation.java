@@ -80,4 +80,28 @@ public class AstMutation {
 	 */
 	public boolean has_parameter() { return parameter != null; }
 	
+	/* identifier */
+	@Override
+	public String toString() {
+		try {
+			return AstMutations.mutation2string(this);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof AstMutation) {
+			return this.toString().equals(obj.toString());
+		}
+		else {
+			return false;
+		}
+	}
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
+	}
+	
 }

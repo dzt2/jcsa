@@ -29,6 +29,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
@@ -70,10 +71,9 @@ public class AstMutations {
 	public static AstMutation trap_on_case(AstSwitchStatement 
 			switch_statement, AstCaseStatement case_statement) throws Exception {
 		return new AstMutation(MutaGroup.Trapping_Mutation, 
-				MutaClass.CTRP, 
-				MutaOperator.trap_on_case, 
-				switch_statement.get_condition(), 
-				case_statement.get_expression());
+				MutaClass.CTRP, MutaOperator.trap_on_case, 
+				CTypeAnalyzer.get_expression_of(switch_statement.get_condition()), 
+				CTypeAnalyzer.get_expression_of(case_statement.get_expression()));
 	}
 	/**
 	 * @param expression
