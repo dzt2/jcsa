@@ -1007,5 +1007,22 @@ public class InstrumentalBuilder {
 			return builder.new_path();	// empty executional path
 		}
 	}
+	/**
+	 * @param tree abstract syntax tree to interpret the instrumental file
+	 * @param file the instrumental file from which the path is created
+	 * @return read the simple-path without completing the begin and end of the unit
+	 * 		   between which the nodes are connected.
+	 * @throws Exception
+	 */
+	public static InstrumentalPath read(AstTree tree, File file) throws Exception {
+		InstrumentalPath path = new InstrumentalPath();
+		InstrumentalReader reader = new InstrumentalReader(tree, file);
+		InstrumentalUnit unit;
+		while((unit = reader.next()) != null) {
+			InstrumentalNode node = new InstrumentalNode(unit);
+			path.append(InstrumentalLink.goto_flow, node);
+		}
+		return path;
+	}
 	
 }

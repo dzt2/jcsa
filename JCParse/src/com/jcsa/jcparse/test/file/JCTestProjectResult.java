@@ -73,11 +73,27 @@ public class JCTestProjectResult {
 	 * @return the executional path from which the instrumental file is created
 	 * @throws Exception
 	 */
-	public InstrumentalPath load_path(AstTree tree, TestInput input) throws Exception {
+	public InstrumentalPath load_complete_path(AstTree tree, TestInput input) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
 			return InstrumentalBuilder.find(tree, instrumental_file);
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param tree
+	 * @param input
+	 * @return the sequence of instrumental lines directly fetched from file
+	 * @throws Exception
+	 */
+	public InstrumentalPath load_simple_path(AstTree tree, TestInput input) throws Exception {
+		File instrumental_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrumental_file.exists()) {
+			return InstrumentalBuilder.read(tree, instrumental_file);
 		}
 		else {
 			return null;
