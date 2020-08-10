@@ -4,13 +4,18 @@ import com.jcsa.jcmutest.MutaClass;
 import com.jcsa.jcmutest.MutaGroup;
 import com.jcsa.jcmutest.MutaOperator;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithBinaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstAssignExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstRelationExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstBreakStatement;
@@ -602,9 +607,9 @@ public class AstMutations {
 	 * @return set_operator(expression, operator)
 	 * @throws Exception
 	 */
-	public static AstMutation OAAN(AstArithBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	public static AstMutation OAXN(AstArithBinaryExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + expression.generate_code());
 		}
 		else {
 			switch(operator) {
@@ -613,16 +618,48 @@ public class AstMutations {
 			case arith_mul:
 			case arith_div:
 			case arith_mod:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OAAN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+								OAAN, MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OABN, MutaOperator.set_operator, expression, operator);
+			}
+			case logic_and:
+			case logic_or:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OALN, MutaOperator.set_operator, expression, operator);
+			}
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OARN, MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
 		}
 	}
-	public static AstMutation OBAN(AstBitwiseBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OBXN(AstBitwiseBinaryExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + expression.generate_code());
 		}
 		else {
 			switch(operator) {
@@ -631,16 +668,48 @@ public class AstMutations {
 			case arith_mul:
 			case arith_div:
 			case arith_mod:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OBAN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBAN, MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBBN, MutaOperator.set_operator, expression, operator);
+			}
+			case logic_and:
+			case logic_or:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBLN, MutaOperator.set_operator, expression, operator);
+			}
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBRN, MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
 		}
 	}
-	public static AstMutation OBAN(AstShiftBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OBXN(AstShiftBinaryExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + expression.generate_code());
 		}
 		else {
 			switch(operator) {
@@ -649,16 +718,48 @@ public class AstMutations {
 			case arith_mul:
 			case arith_div:
 			case arith_mod:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OBAN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBAN, MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBBN, MutaOperator.set_operator, expression, operator);
+			}
+			case logic_and:
+			case logic_or:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBLN, MutaOperator.set_operator, expression, operator);
+			}
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OBRN, MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
 		}
 	}
-	public static AstMutation OLAN(AstLogicBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OLXN(AstLogicBinaryExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + expression.generate_code());
 		}
 		else {
 			switch(operator) {
@@ -667,16 +768,48 @@ public class AstMutations {
 			case arith_mul:
 			case arith_div:
 			case arith_mod:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OLAN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OLAN, MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OLBN, MutaOperator.set_operator, expression, operator);
+			}
+			case logic_and:
+			case logic_or:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OLLN, MutaOperator.set_operator, expression, operator);
+			}
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						OLRN, MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
 		}
 	}
-	public static AstMutation ORAN(AstRelationExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation ORXN(AstRelationExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + expression.generate_code());
 		}
 		else {
 			switch(operator) {
@@ -685,103 +818,302 @@ public class AstMutations {
 			case arith_mul:
 			case arith_div:
 			case arith_mod:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.ORAN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						ORAN, MutaOperator.set_operator, expression, operator);
 			}
-		}
-	}
-	public static AstMutation OABN(AstArithBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
-		}
-		else {
-			switch(operator) {
 			case bit_and:
 			case bit_or:
 			case bit_xor:
 			case left_shift:
 			case righ_shift:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OABN,
-						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						ORBN, MutaOperator.set_operator, expression, operator);
+			}
+			case logic_and:
+			case logic_or:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						ORLN, MutaOperator.set_operator, expression, operator);
+			}
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			{
+				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.
+						ORRN, MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
 		}
 	}
-	public static AstMutation OBBN(AstBitwiseBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OAXA(AstArithAssignExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 		else {
 			switch(operator) {
-			case bit_and:
-			case bit_or:
-			case bit_xor:
-			case left_shift:
-			case righ_shift:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OBBN,
+			case assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OAEA,
 						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			}
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case arith_mod_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OAAA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OABA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
 	}
-	public static AstMutation OBBN(AstShiftBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OBXA(AstBitwiseAssignExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 		else {
 			switch(operator) {
-			case bit_and:
-			case bit_or:
-			case bit_xor:
-			case left_shift:
-			case righ_shift:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OBBN,
+			case assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBEA,
 						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			}
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case arith_mod_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBAA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBBA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
 	}
-	public static AstMutation OBBN(AstLogicBinaryExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OBXA(AstShiftAssignExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 		else {
 			switch(operator) {
-			case bit_and:
-			case bit_or:
-			case bit_xor:
-			case left_shift:
-			case righ_shift:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.OLBN,
+			case assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBEA,
 						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			}
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case arith_mod_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBAA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OBBA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
 	}
-	public static AstMutation ORBN(AstRelationExpression expression, COperator operator) throws Exception {
-		if(operator == expression.get_operator().get_operator()) {
-			throw new IllegalArgumentException("Invalid operator: null");
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return set_operator(expression, operator)
+	 * @throws Exception
+	 */
+	public static AstMutation OEXA(AstAssignExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 		else {
 			switch(operator) {
-			case bit_and:
-			case bit_or:
-			case bit_xor:
-			case left_shift:
-			case righ_shift:
-				return new AstMutation(MutaGroup.Binary_Operator_Mutation, MutaClass.ORBN,
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case arith_mod_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OEAA,
 						MutaOperator.set_operator, expression, operator);
-			default:		
-				throw new IllegalArgumentException("Invalid operator: null");
+			}
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:
+			{
+				return new AstMutation(MutaGroup.Assign_Operator_Mutation, MutaClass.OEBA,
+						MutaOperator.set_operator, expression, operator);
+			}
+			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
 	}
 	
+	/* parameter parsing method */
+	/**
+	 * @param parameter {AstNode, Boolean, Integer, Long, Double, String, COperator}
+	 * @return the string of the parameter
+	 * @throws Exception
+	 */
+	private static String parameter2string(Object parameter) throws Exception {
+		if(parameter instanceof AstNode) {
+			return "a@" + ((AstNode) parameter).get_key();
+		}
+		else if(parameter instanceof Boolean) {
+			return "b@" + parameter.toString();
+		}
+		else if(parameter instanceof Integer) {
+			return "i@" + parameter.toString();
+		}
+		else if(parameter instanceof Long) {
+			return "l@" + parameter.toString();
+		}
+		else if(parameter instanceof Double) {
+			return "d@" + parameter.toString();
+		}
+		else if(parameter instanceof String) {
+			return "s@" + parameter.toString();
+		}
+		else if(parameter instanceof COperator) {
+			return "o@" + parameter.toString();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid parameter: " + parameter);
+		}
+	}
+	/**
+	 * @param tree
+	 * @param param_str
+	 * @return [AstNode, Boolean, Integer, Long, Double, String, COperator]
+	 * @throws Exception
+	 */
+	private static Object string2parameter(AstTree tree, String param_str) throws Exception {
+		int index = param_str.strip().indexOf('@');
+		String title = param_str.substring(0, index).strip();
+		String content = param_str.substring(index + 1).strip();
+		if(title.equals("a")) {
+			return tree.get_node(Integer.parseInt(content));
+		}
+		else if(title.equals("b")) {
+			if(content.equals(Boolean.TRUE.toString())) {
+				return Boolean.TRUE;
+			}
+			else if(content.equals(Boolean.FALSE.toString())) {
+				return Boolean.FALSE;
+			}
+			else {
+				throw new IllegalArgumentException("Invalid: " + param_str);
+			}
+		}
+		else if(title.equals("i")) {
+			return Integer.valueOf(Integer.parseInt(content));
+		}
+		else if(title.equals("l")) {
+			return Long.valueOf(Long.parseLong(content));
+		}
+		else if(title.equals("d")) {
+			return Double.valueOf(Double.parseDouble(content));
+		}
+		else if(title.equals("s")) {
+			return content.toString();
+		}
+		else if(title.equals("o")) {
+			return COperator.valueOf(content);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid string: " + param_str);
+		}
+	}
+	
+	/* read and write methods */
+	/**
+	 * @param mutation
+	 * @return (group, class, operator, location (, parameter)?)
+	 * @throws Exception
+	 */
+	public static String mutation2string(AstMutation mutation) throws Exception {
+		StringBuilder buffer = new StringBuilder();
+		/* (group, class, operator, location(, parameter)?) */
+		buffer.append(mutation.get_group().toString()).append("\t");
+		buffer.append(mutation.get_class().toString()).append("\t");
+		buffer.append(mutation.get_operator().toString()).append("\t");
+		buffer.append(mutation.get_location().get_key());
+		if(mutation.has_parameter()) {
+			buffer.append("\t");
+			buffer.append(parameter2string(mutation.get_parameter()));
+		}
+		return buffer.toString();
+	}
+	/**
+	 * @param line
+	 * @return (group, class, operator, location (, parameter)?)
+	 * @throws Exception
+	 */
+	public static AstMutation string2mutation(AstTree tree, String line) throws Exception {
+		String[] items = line.strip().split("\t");
+		MutaGroup m_group = MutaGroup.valueOf(items[0].strip());
+		MutaClass m_class = MutaClass.valueOf(items[1].strip());
+		MutaOperator operator = MutaOperator.valueOf(items[2].strip());
+		AstNode location = tree.get_node(Integer.parseInt(items[3].strip()));
+		Object parameter = null;
+		if(items.length > 4) {
+			parameter = string2parameter(tree, items[4].strip());
+		}
+		return new AstMutation(m_group, m_class, operator, location, parameter);
+	}
 	
 }
