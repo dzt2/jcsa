@@ -27,7 +27,7 @@ public class JCProjectResultTest {
 				File ofile = new File(result_dir.getAbsolutePath() + "/" + file.getName() + ".txt");
 				FileWriter writer = new FileWriter(ofile);
 				for(int k = 0; k < 12; k++) {
-					int tid = Math.abs(random.nextInt()) % 1024;
+					int tid = Math.abs(random.nextInt()) % (1024 * 3);
 					if(!print_instrument_path(project, tid, writer)) { k--; }
 				}
 				writer.close();
