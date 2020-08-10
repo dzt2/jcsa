@@ -4,9 +4,8 @@ import java.io.File;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.path.InstrumentalPath;
-import com.jcsa.jcparse.test.path.InstrumentalPathFinder;
-import com.jcsa.jcparse.test.path.InstrumentalReader;
+import com.jcsa.jcparse.test.inst.InstrumentalBuilder;
+import com.jcsa.jcparse.test.inst.InstrumentalPath;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -69,31 +68,16 @@ public class JCTestProjectResult {
 		}
 	}
 	/**
-	 * @param ast_tree the abstract syntax tree to interpret the test result
-	 * @param input the test input of which result is fetched
-	 * @return the reader that fecthes the instrumental line from result until it reaches EOF.
-	 * @throws Exception
-	 */
-	public InstrumentalReader instrument_reader(AstTree ast_tree, TestInput input) throws Exception {
-		File instrument_file = input.get_instrument_file(this.project.
-				get_project_files().get_instrument_output_directory());
-		if(instrument_file.exists()) {
-			return new InstrumentalReader(ast_tree, instrument_file);
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param ast_tree
+	 * @param tree
 	 * @param input
-	 * @return the instrumental path (complete) w.r.t. the test input
+	 * @return the executional path from which the instrumental file is created
 	 * @throws Exception
 	 */
-	public InstrumentalPath instrument_path(AstTree ast_tree, TestInput input) throws Exception {
-		InstrumentalReader reader = this.instrument_reader(ast_tree, input);
-		if(reader != null) {
-			return InstrumentalPathFinder.find(reader);
+	public InstrumentalPath load_path(AstTree tree, TestInput input) throws Exception {
+		File instrumental_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrumental_file.exists()) {
+			return InstrumentalBuilder.find(tree, instrumental_file);
 		}
 		else {
 			return null;
