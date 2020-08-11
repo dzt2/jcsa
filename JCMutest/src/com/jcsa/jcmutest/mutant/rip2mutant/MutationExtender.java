@@ -417,7 +417,21 @@ public abstract class MutationExtender {
 				return this.coverage_at(((AstBinaryExpression) expression).get_roperand());
 			}
 			else if(this.is_left_reference(location)) {
-				return this.coverage_at(statement);
+				while(location != null) {
+					if(this.is_left_reference(location)) {
+						location = location.get_parent();
+					}
+					else if(location instanceof AstStatement) {
+						return AstMutations.trap_on_statement((AstStatement) location);
+					}
+					else if(location instanceof AstExpression) {
+						return AstMutations.trap_on_expression((AstExpression) location);
+					}
+					else {
+						throw new IllegalArgumentException("Invalid location: " + location);
+					}
+				}
+				throw new IllegalArgumentException("Unable to locate: " + expression);
 			}
 			else {
 				return AstMutations.trap_on_expression(expression);
