@@ -3,7 +3,9 @@ package com.jcsa.jcmutest.mutant.ast2mutant.extend;
 import com.jcsa.jcmutest.mutant.ast2mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 /**
@@ -58,6 +60,22 @@ public abstract class AstMutationExtender {
 		}
 		else {
 			return null;
+		}
+	}
+	/**
+	 * @param statement
+	 * @return empty statement or empty block
+	 * @throws Exception
+	 */
+	protected boolean is_empty_statement(AstStatement statement) throws Exception {
+		if(statement instanceof AstExpressionStatement) {
+			return !((AstExpressionStatement) statement).has_expression();
+		}
+		else if(statement instanceof AstCompoundStatement) {
+			return !((AstCompoundStatement) statement).has_statement_list();
+		}
+		else {
+			return false;
 		}
 	}
 	
