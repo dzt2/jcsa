@@ -467,7 +467,7 @@ public class AstMutations {
 			}
 		}
 		else if(expression instanceof AstIncrePostfixExpression) {
-			switch(((AstIncreUnaryExpression) expression).get_operator().get_operator()) {
+			switch(((AstIncrePostfixExpression) expression).get_operator().get_operator()) {
 			case increment:
 				return new AstMutation(MutaGroup.Unary_Operator_Mutation,
 						MutaClass.UIOD, MutaOperator.delete_post_inc,

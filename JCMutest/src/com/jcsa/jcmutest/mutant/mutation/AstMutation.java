@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.mutation;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstTree;
 
 /**
  * The mutation defined based on syntactic rule on abstract syntax tree node.
@@ -99,6 +100,11 @@ public class AstMutation {
 	@Override
 	public int hashCode() {
 		return this.toString().hashCode();
+	}
+	
+	/* string-mutation */
+	public static AstMutation parse(AstTree tree, String line) throws Exception {
+		return AstMutations.string2mutation(tree, line);
 	}
 	
 }

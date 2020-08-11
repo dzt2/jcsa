@@ -1,11 +1,14 @@
 package test;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
-import com.jcsa.jcmutest.mutant.ast2mutant.Ast2Mutation;
+import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
@@ -30,6 +33,7 @@ public class MutantSpaceTest {
 		MutantSpace space = new_space(program);
 		save_space(space, cfile);
 		load_space(space, cfile);
+		print_space(space);
 		System.out.println();
 	}
 	private static AstCirFile parse(File cfile) throws Exception {
@@ -38,17 +42,17 @@ public class MutantSpaceTest {
 	}
 	private static Iterable<MutaClass> get_classes() {
 		Set<MutaClass> classes = new HashSet<MutaClass>();
-		classes.addAll(Ast2Mutation.trap_mutation_classes());
-		classes.addAll(Ast2Mutation.unary_mutation_classes());
-		classes.addAll(Ast2Mutation.statement_mutation_classes());
-		classes.addAll(Ast2Mutation.operator_mutation_classes());
-		classes.addAll(Ast2Mutation.assign_mutation_classes());
-		classes.addAll(Ast2Mutation.reference_mutation_classes());
+		classes.addAll(MutationGenerators.trapping_classes());
+		classes.addAll(MutationGenerators.unary_classes());
+		classes.addAll(MutationGenerators.statement_classes());
+		classes.addAll(MutationGenerators.operator_classes());
+		classes.addAll(MutationGenerators.assign_classes());
+		classes.addAll(MutationGenerators.reference_classes());
 		return classes;
 	}
 	private static MutantSpace new_space(AstCirFile program) throws Exception {
-		MutantSpace space = new MutantSpace(program);
-		space.generate(get_classes());
+		MutantSpace space = new MutantSpace(program.get_ast_tree());
+		space.update(get_classes());
 		System.out.println("\t2. Generate " + space.size() + " mutants.");
 		return space;
 	}
@@ -62,6 +66,18 @@ public class MutantSpaceTest {
 		space.load(mfile);
 		System.out.println("\t3. Load " + space.size() + " mutants in " + mfile.getAbsolutePath());
 	}
-	
+	private static void print_space(MutantSpace space) throws Exception {
+		Map<MutaClass, Integer> counter = new HashMap<MutaClass, Integer>();
+		for(Mutant mutant : space.get_mutants()) {
+			MutaClass mclass = mutant.get_muta_class();
+			if(!counter.containsKey(mclass)) {
+				counter.put(mclass, 0);
+			}
+			counter.put(mclass, counter.get(mclass) + 1);
+		}
+		for(MutaClass mclass : counter.keySet()) {
+			System.out.println("\t\t" + mclass + ": " + counter.get(mclass));
+		}
+	}
 	
 }
