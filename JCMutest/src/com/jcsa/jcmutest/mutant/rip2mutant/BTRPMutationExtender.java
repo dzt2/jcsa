@@ -5,6 +5,13 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutations;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
+/**
+ * trap_on_expr(e); trap_on_true(e); trap_on_true(e);
+ * trap_on_expr(e); trap_on_false(e); trap_on_false(e);
+ * 
+ * @author yukimula
+ *
+ */
 public class BTRPMutationExtender extends MutationExtender {
 
 	@Override

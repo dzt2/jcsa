@@ -7,6 +7,12 @@ import com.jcsa.jcmutest.mutant.mutation.MutaGroup;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 
+/**
+ * trap_on_expr(e); trap_on_case(e, c); trap_on_case(e, c);
+ * 
+ * @author dzt2
+ *
+ */
 public class CTRPMutationExtender extends MutationExtender {
 
 	@Override

@@ -90,11 +90,17 @@ public class VCRPMutationGenerator extends MutationGenerator {
 		for(CConstant target : this.constants.values()) {
 			if(CTypeAnalyzer.is_integer(source.get_value_type())
 				&& CTypeAnalyzer.is_integer(target.get_type())) {
-				mutations.add(AstMutations.VCRP(source, target.get_long().longValue()));
+				long source_value = this.standard_constant(source.get_constant()).get_long();
+				if(source_value != target.get_long().longValue()) {
+					mutations.add(AstMutations.VCRP(source, target.get_long().longValue()));
+				}
 			}
 			else if(CTypeAnalyzer.is_real(source.get_value_type())
 				&& CTypeAnalyzer.is_real(target.get_type())) {
-				mutations.add(AstMutations.VCRP(source, target.get_double().doubleValue()));
+				double source_value = this.standard_constant(source.get_constant()).get_double();
+				if(source_value != target.get_double().doubleValue()) {
+					mutations.add(AstMutations.VCRP(source, target.get_double().doubleValue()));
+				}
 			}
 		}
 	}
