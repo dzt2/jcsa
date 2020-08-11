@@ -21,6 +21,7 @@ public enum MutaOperator {
 	/** trap_on_pos(expression) **/			trap_on_pos,
 	/** trap_on_zro(expression) **/			trap_on_zro,
 	/** trap_on_neg(expression) **/			trap_on_neg,
+	/** trap_on_nzro(expression) **/		trap_on_nzro,
 	
 	/* SBCR */
 	/** break_to_continue(break_statement) **/		break_to_continue,

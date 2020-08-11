@@ -62,7 +62,8 @@ public enum MutaClass {
 	/** trap_on_expression(expression) **/				ETRP,
 	/** trap_on_statement(statement) **/				STRP,
 	/** trap_at_time(statement, times) **/				TTRP,
-	/** trap_on_pos | trap_on_neg | trap_on_zro **/ 	VTRP,
+	/** trap_on_pos | trap_on_neg | trap_on_zro
+	 *  | trap_on_nzro **/ 								VTRP,
 	
 	/* statement mutation class */
 	/** break_to_continue | continue_to_break **/		SBCR,
