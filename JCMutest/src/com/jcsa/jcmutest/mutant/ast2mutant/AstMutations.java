@@ -1085,7 +1085,7 @@ public class AstMutations {
 	 * @return (group, class, operator, location (, parameter)?)
 	 * @throws Exception
 	 */
-	public static String mutation2string(AstMutation mutation) throws Exception {
+	protected static String mutation2string(AstMutation mutation) throws Exception {
 		StringBuilder buffer = new StringBuilder();
 		/* (group, class, operator, location(, parameter)?) */
 		buffer.append(mutation.get_group().toString()).append("\t");
@@ -1103,7 +1103,7 @@ public class AstMutations {
 	 * @return (group, class, operator, location (, parameter)?)
 	 * @throws Exception
 	 */
-	public static AstMutation string2mutation(AstTree tree, String line) throws Exception {
+	protected static AstMutation string2mutation(AstTree tree, String line) throws Exception {
 		String[] items = line.strip().split("\t");
 		MutaGroup m_group = MutaGroup.valueOf(items[0].strip());
 		MutaClass m_class = MutaClass.valueOf(items[1].strip());

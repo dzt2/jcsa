@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.parse;
+package com.jcsa.jcmutest.mutant.ast2mutant;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,8 +11,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.MutaClass;
-import com.jcsa.jcmutest.mutant.ast2mutant.AstMutation;
-import com.jcsa.jcmutest.mutant.ast2mutant.AstMutations;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.AstMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXAMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXNMutationGenerator;

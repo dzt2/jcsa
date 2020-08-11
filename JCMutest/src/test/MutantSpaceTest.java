@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.test;
+package test;
 
 import java.io.File;
 import java.util.HashSet;
@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.MutaClass;
 import com.jcsa.jcmutest.mutant.MutantSpace;
-import com.jcsa.jcmutest.mutant.parse.Ast2Mutation;
+import com.jcsa.jcmutest.mutant.ast2mutant.Ast2Mutation;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 
