@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant;
+package com.jcsa.jcmutest.mutant.mutation;
 
 /**
  * The class of mutation operators defined on C programming language.<br>

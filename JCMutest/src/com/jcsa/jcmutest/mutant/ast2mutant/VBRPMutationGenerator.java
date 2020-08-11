@@ -5,28 +5,26 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.AstMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-public class STRPMutationGenerator extends MutationGenerator {
-
+public class VBRPMutationGenerator extends MutationGenerator {
+	
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
-
+	
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		if(location instanceof AstStatement) {
-			return !(location.get_parent() instanceof AstFunctionDefinition);
-		}
-		else {
-			return false;
-		}
+		return this.is_condition_expression(location);
 	}
-
+	
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
-		AstStatement statement = (AstStatement) location;
-		mutations.add(AstMutations.trap_on_statement(statement));
+		AstExpression expression = (AstExpression) location;
+		expression = CTypeAnalyzer.get_expression_of(expression);
+		mutations.add(AstMutations.VBRP(expression, true));
+		mutations.add(AstMutations.VBRP(expression, false));
 	}
 
 }
