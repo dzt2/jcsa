@@ -12,6 +12,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.MutaClass;
 import com.jcsa.jcmutest.mutant.ast2mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.ast2mutant.AstMutations;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.AstMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXAMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXNMutationGenerator;
@@ -47,12 +48,13 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 
 /**
- * It provides interface to seed syntax mutations in source code.
+ * It provides interface to generate mutations by seeding syntactic faults
+ * in the source code based on its abstract syntax structure.
  * 
  * @author yukimula
  *
  */
-public class AstMutationGeneration {
+public class Ast2Mutation {
 	
 	/** mutation generator based on mutation operator class **/
 	private static final Map<MutaClass, AstMutationGenerator> 
@@ -237,6 +239,26 @@ public class AstMutationGeneration {
 			}
 		}
 		return mutations;
+	}
+	
+	/**
+	 * @param mutation
+	 * @return the string that preserves the state of the mutation information
+	 * @throws Exception
+	 */
+	public static String mutation2string(AstMutation mutation) throws Exception {
+		return AstMutations.mutation2string(mutation);
+	}
+	
+	/**
+	 * @param ast_tree
+	 * @param mut_str
+	 * @return the mutation generated from the text line by interpreting the
+	 * 			abstract syntactic tree node.
+	 * @throws Exception
+	 */
+	public static AstMutation string2mutation(AstTree tree, String line) throws Exception {
+		return AstMutations.string2mutation(tree, line);
 	}
 	
 }

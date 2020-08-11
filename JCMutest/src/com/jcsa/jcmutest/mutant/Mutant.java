@@ -3,24 +3,24 @@ package com.jcsa.jcmutest.mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.AstMutation;
 
 /**
- * 	The mutant instance used to generate the mutation code.
- * 	
- * 	@author yukimula
- *	
+ * Mutant provides interface to manage the mutations generated on C program.
+ * 
+ * @author yukimula
+ *
  */
 public class Mutant {
 	
-	/* definitions */
-	/** the space of mutations generated **/
+	/* definition */
+	/** the space in which the mutant is managed **/
 	private MutantSpace space;
-	/** the integer ID of the mutant in the space **/
+	/** the unique ID of the mutant in its space **/
 	private int id;
-	/** the mutation to be performed on source code **/
+	/** the source mutation under the management **/
 	private AstMutation mutation;
 	/**
-	 * @param space the space of mutations generated
-	 * @param id the integer ID of the mutant in the space
-	 * @param mutation the mutation to be performed on source code
+	 * @param space the space in which the mutant is managed
+	 * @param id the unique ID of the mutant in its space
+	 * @param mutation the source mutation under the management
 	 * @throws Exception
 	 */
 	protected Mutant(MutantSpace space, int id, AstMutation mutation) throws Exception {
@@ -37,16 +37,24 @@ public class Mutant {
 	
 	/* getters */
 	/**
-	 * @return the space of mutations generated
+	 * @return the space in which the mutant is managed
 	 */
 	public MutantSpace get_space() { return this.space; }
 	/**
-	 * @return the integer ID of the mutant in the space
+	 * @return the unique ID of the mutant in its space
 	 */
 	public int get_id() { return this.id; }
 	/**
-	 * @return the mutation to be performed on source code
+	 * @return the source mutation under the management
 	 */
-	public AstMutation get_mutation() { return this.mutation; }
+	public AstMutation get_mutation() { return mutation; }
+	/**
+	 * remove this mutant from the space
+	 */
+	protected void remove() { 
+		this.space = null; 
+		this.id = -1; 
+		this.mutation = null; 
+	}
 	
 }
