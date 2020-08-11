@@ -234,5 +234,55 @@ public abstract class AstMutationGenerator {
 			return false;
 		}
 	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return whether the operator is available to replace the operator in expression
+	 * @throws Exception
+	 */
+	protected boolean is_compatible(AstBinaryExpression expression, COperator operator) throws Exception {
+		if(expression.get_operator().get_operator() == operator) {
+			return false;
+		}
+		else {
+			CType data_type = CTypeAnalyzer.get_value_type(expression.get_value_type());
+			switch(operator) {
+			case arith_mod:
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			case arith_mod_assign:
+			case bit_and_assign:
+			case bit_or_assign:
+			case bit_xor_assign:
+			case left_shift_assign:
+			case righ_shift_assign:
+				return CTypeAnalyzer.is_boolean(data_type) || CTypeAnalyzer.is_integer(data_type);
+			case arith_add:
+			case arith_sub:
+			case arith_mul:
+			case arith_div:
+			case arith_add_assign:
+			case arith_sub_assign:
+			case arith_mul_assign:
+			case arith_div_assign:
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+				return CTypeAnalyzer.is_boolean(data_type) || CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type);
+			case logic_and:
+			case logic_or:
+			case assign:
+				return CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type) || CTypeAnalyzer.is_boolean(data_type);
+			default:
+				return false;
+			}
+		}
+	}
 	
 }

@@ -33,14 +33,14 @@ public class OBXNMutationGenerator extends AstMutationGenerator {
 		AstBinaryExpression expression = (AstBinaryExpression) location;
 		if(location instanceof AstBitwiseBinaryExpression) {
 			for(COperator operator : this.operators) {
-				if(operator != expression.get_operator().get_operator()) {
+				if(this.is_compatible(expression, operator)) {
 					mutations.add(AstMutations.OBXN((AstBitwiseBinaryExpression) expression, operator));
 				}
 			}
 		}
 		else {
 			for(COperator operator : this.operators) {
-				if(operator != expression.get_operator().get_operator()) {
+				if(this.is_compatible(expression, operator)) {
 					mutations.add(AstMutations.OBXN((AstShiftBinaryExpression) expression, operator));
 				}
 			}

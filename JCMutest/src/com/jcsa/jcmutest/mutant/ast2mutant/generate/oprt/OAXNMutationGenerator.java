@@ -30,7 +30,7 @@ public class OAXNMutationGenerator extends AstMutationGenerator {
 	protected void generate_mutations(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstBinaryExpression expression = (AstBinaryExpression) location;
 		for(COperator operator : this.operators) {
-			if(operator != expression.get_operator().get_operator()) {
+			if(this.is_compatible(expression, operator)) {
 				mutations.add(AstMutations.OAXN((AstArithBinaryExpression) expression, operator));
 			}
 		}

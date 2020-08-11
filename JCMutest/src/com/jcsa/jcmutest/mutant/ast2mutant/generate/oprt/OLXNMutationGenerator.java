@@ -29,7 +29,7 @@ public class OLXNMutationGenerator extends AstMutationGenerator {
 	protected void generate_mutations(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstLogicBinaryExpression expression = (AstLogicBinaryExpression) location;
 		for(COperator operator : this.operators) {
-			if(operator != expression.get_operator().get_operator()) {
+			if(this.is_compatible(expression, operator)) {
 				mutations.add(AstMutations.OLXN(expression, operator));
 			}
 		}

@@ -41,6 +41,21 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public class AstMutations {
 	
+	/**
+	 * @param group
+	 * @param mclass
+	 * @param operator
+	 * @param location
+	 * @param parameter
+	 * @return create the mutation based on its parameters
+	 * @throws Exception
+	 */
+	public static AstMutation new_mutation(MutaGroup group, 
+			MutaClass mclass, MutaOperator operator, 
+			AstNode location, Object parameter) throws Exception {
+		return new AstMutation(group, mclass, operator, location, parameter);
+	}
+	
 	/* factory methods */
 	/**
 	 * @param expression

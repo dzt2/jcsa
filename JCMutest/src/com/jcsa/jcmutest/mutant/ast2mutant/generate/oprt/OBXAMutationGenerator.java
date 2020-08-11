@@ -37,7 +37,7 @@ public class OBXAMutationGenerator extends AstMutationGenerator {
 	protected void generate_mutations(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstBinaryExpression expression = (AstBinaryExpression) location;
 		for(COperator operator : this.operators) {
-			if(operator != expression.get_operator().get_operator()) {
+			if(this.is_compatible(expression, operator)) {
 				if(expression instanceof AstBitwiseAssignExpression)
 					mutations.add(AstMutations.OBXA((AstBitwiseAssignExpression) expression, operator));
 				else
