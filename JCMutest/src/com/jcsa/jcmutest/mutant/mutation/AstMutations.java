@@ -95,7 +95,7 @@ public class AstMutations {
 	public static AstMutation trap_on_expression(AstExpression expression) throws Exception {
 		return new AstMutation(MutaGroup.Trapping_Mutation,
 				MutaClass.ETRP, MutaOperator.trap_on_expression,
-				expression, null);
+				CTypeAnalyzer.get_expression_of(expression), null);
 	}
 	/**
 	 * @param statement
