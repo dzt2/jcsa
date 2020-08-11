@@ -1,8 +1,8 @@
 package com.jcsa.jcmutest.mutant.ast2mutant;
 
-import com.jcsa.jcmutest.MutaClass;
-import com.jcsa.jcmutest.MutaGroup;
-import com.jcsa.jcmutest.MutaOperator;
+import com.jcsa.jcmutest.mutant.MutaClass;
+import com.jcsa.jcmutest.mutant.MutaGroup;
+import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcparse.lang.astree.AstNode;
 
 /**

@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.jcsa.jcmutest.MutaClass;
+import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.AstMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXAMutationGenerator;
 import com.jcsa.jcmutest.mutant.ast2mutant.generate.oprt.OAXNMutationGenerator;

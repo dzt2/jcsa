@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest;
+package com.jcsa.jcmutest.mutant;
 
 /**
  * The group of mutation operators.

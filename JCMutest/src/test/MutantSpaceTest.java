@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.jcsa.jcmutest.MutaClass;
+import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.Ast2Mutation;
 import com.jcsa.jcparse.lang.AstCirFile;

@@ -18,6 +18,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
 public class STDLMutationGenerator extends AstMutationGenerator {
 
@@ -36,7 +37,10 @@ public class STDLMutationGenerator extends AstMutationGenerator {
 				return ((AstExpressionStatement) location).has_expression();
 			}
 			else if(location instanceof AstCompoundStatement) {
-				return ((AstCompoundStatement) location).has_statement_list();
+				if(!(location.get_parent() instanceof AstFunctionDefinition))
+					return ((AstCompoundStatement) location).has_statement_list();
+				else
+					return false;
 			}
 			else if(location instanceof AstIfStatement
 					|| location instanceof AstSwitchStatement
