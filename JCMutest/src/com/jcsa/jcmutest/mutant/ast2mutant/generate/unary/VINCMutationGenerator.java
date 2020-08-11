@@ -13,18 +13,20 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 public class VINCMutationGenerator extends AstMutationGenerator {
 	
 	private int[] int_differences = new int[] {
-		1, 2, 3, 4, 5, 6, 7, 8, 10,
-		-1,-2,-3,-4,-5,-6,-7,-8,-10
+		1, 2,
+		-1,-2
 	};
 	
 	private double[] float_multiplies = new double[] {
-		1.00001, 1.0001, 1.001, 1.01, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9,
-		0.99999, 0.9999, 0.999, 0.99, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1
+		1.0001, 1.01,
+		0.9999, 0.99
 	};
 
 	@Override
 	protected boolean is_available(AstNode location) throws Exception {
-		return this.is_numeric_expression(location) && !this.is_left_reference(location);
+		return this.is_numeric_expression(location) && 
+				!this.is_left_reference(location) &&
+				!this.is_condition_expression(location);
 	}
 
 	@Override
