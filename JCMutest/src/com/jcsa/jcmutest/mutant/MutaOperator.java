@@ -86,5 +86,6 @@ public enum MutaOperator {
 	 * ORLN, ORRN, OEAA, OEBA, OAEA, OBEA, OAAA,
 	 * OABA, OBAA, OBBA */
 	/** set_operator(expression, operator) **/		set_operator,
+	/** cmp_operator(expression, operator) **/		cmp_operator,
 	
 }

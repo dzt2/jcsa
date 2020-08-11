@@ -7,16 +7,19 @@ import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstRelationExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
@@ -30,6 +33,7 @@ import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * It provides interface to seed syntactic mutations in source code based on
@@ -46,7 +50,8 @@ public abstract class MutationGenerator {
 	 * @param function
 	 * @throws Exception
 	 */
-	protected abstract void initialize(AstFunctionDefinition function) throws Exception;
+	protected abstract void initialize(AstFunctionDefinition function,
+			Iterable<AstNode> locations) throws Exception;
 	/**
 	 * @param location
 	 * @return whether the location is available for seeding mutation of specified class in
@@ -67,7 +72,7 @@ public abstract class MutationGenerator {
 	 * @throws Exception
 	 */
 	protected List<AstMutation> generate(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {
-		this.initialize(function);
+		this.initialize(function, locations);
 		List<AstMutation> mutations = new ArrayList<AstMutation>();
 		for(AstNode location : locations) {
 			if(this.available(location)) {
@@ -251,7 +256,97 @@ public abstract class MutationGenerator {
 		}
 		return new AstNode[] { parent, child };
 	}
-	
-	
+	/**
+	 * id_expression
+	 * array_expression
+	 * dereference_expression
+	 * field_expression
+	 * 
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean is_reference_expression(AstNode location) throws Exception {
+		if(location instanceof AstIdExpression
+			|| location instanceof AstArrayExpression
+			|| location instanceof AstFieldExpression) {
+			return true;
+		}
+		else if(location instanceof AstUnaryExpression) {
+			return ((AstUnaryExpression) location).get_operator().get_operator() == COperator.dereference;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * assign_expr
+	 * arith-assign-expr
+	 * bitws-assign-expr
+	 * incre-xxxxxx-expr
+	 * 
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean is_assign_expression(AstNode location) throws Exception {
+		return location instanceof AstAssignExpression
+				|| location instanceof AstArithAssignExpression
+				|| location instanceof AstBitwiseAssignExpression
+				|| location instanceof AstShiftAssignExpression
+				|| location instanceof AstIncreUnaryExpression
+				|| location instanceof AstIncrePostfixExpression;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return whether the operator is compatible for replacing the expression
+	 * @throws Exception
+	 */
+	protected boolean is_compatible(AstBinaryExpression expression, COperator operator) throws Exception {
+		CType type = CTypeAnalyzer.get_value_type(expression.get_value_type());
+		if(expression.get_operator().get_operator() != operator) {
+			switch(operator) {
+			case arith_mod:
+			case arith_mod_assign:
+			case bit_and:
+			case bit_and_assign:
+			case bit_or:
+			case bit_or_assign:
+			case bit_xor:
+			case bit_xor_assign:
+			case left_shift:
+			case left_shift_assign:
+			case righ_shift:
+			case righ_shift_assign:
+			{
+				return CTypeAnalyzer.is_integer(type);
+			}
+			case arith_add:
+			case arith_sub:
+			case arith_mul:
+			case arith_div:
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals:
+			case logic_and:
+			case logic_or:
+			case assign:
+			{
+				return this.is_numeric_expression(expression);
+			}
+			default:	
+			{
+				return false;
+			}
+			}
+		}
+		else {
+			return false;
+		}
+	}
 	
 }

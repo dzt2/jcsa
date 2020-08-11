@@ -5,24 +5,32 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.AstMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
-public class BTRPMutationGenerator extends MutationGenerator {
-	
+public class UNODMutationGenerator extends MutationGenerator {
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return this.is_condition_expression(location);
+		if(location instanceof AstUnaryExpression) {
+			switch(((AstUnaryExpression) location).get_operator().get_operator()) {
+			case negative:
+			case bit_not:
+			case logic_not:	return true;
+			default: 		return false;
+			}
+		}
+		else {
+			return false;
+		}
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
-		AstExpression expression = (AstExpression) location;
-		mutations.add(AstMutations.trap_on_true(expression));
-		mutations.add(AstMutations.trap_on_false(expression));
+		mutations.add(AstMutations.UNOD((AstUnaryExpression) location));
 	}
-	
+
 }

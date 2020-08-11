@@ -6,31 +6,25 @@ import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.AstMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-/**
- * 	trap_on_expression(expression);
- * 	
- * 	@author yukimula
- *
- */
-public class ETRPMutationGenerator extends MutationGenerator {
-	
+public class UIODMutationGenerator extends MutationGenerator {
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception { }
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return this.is_numeric_expression(location)
-				&& !this.is_left_reference(location);
+		return location instanceof AstIncrePostfixExpression
+				|| location instanceof AstIncreUnaryExpression;
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstExpression expression = (AstExpression) location;
-		expression = CTypeAnalyzer.get_expression_of(expression);
-		mutations.add(AstMutations.trap_on_expression(expression));
+		mutations.add(AstMutations.UIOD(expression));
 	}
 
 }

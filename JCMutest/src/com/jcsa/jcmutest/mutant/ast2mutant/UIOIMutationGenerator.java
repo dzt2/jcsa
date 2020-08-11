@@ -7,30 +7,26 @@ import com.jcsa.jcmutest.mutant.AstMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-/**
- * 	trap_on_expression(expression);
- * 	
- * 	@author yukimula
- *
- */
-public class ETRPMutationGenerator extends MutationGenerator {
-	
+public class UIOIMutationGenerator extends MutationGenerator {
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception { }
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return this.is_numeric_expression(location)
-				&& !this.is_left_reference(location);
+		return this.is_numeric_expression(location) 
+				&& !this.is_left_reference(location)
+				&& this.is_reference_expression(location);
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstExpression expression = (AstExpression) location;
-		expression = CTypeAnalyzer.get_expression_of(expression);
-		mutations.add(AstMutations.trap_on_expression(expression));
+		mutations.add(AstMutations.insert_prev_inc(expression));
+		mutations.add(AstMutations.insert_prev_dec(expression));
+		mutations.add(AstMutations.insert_post_inc(expression));
+		mutations.add(AstMutations.insert_post_dec(expression));
 	}
 
 }

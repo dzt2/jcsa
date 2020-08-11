@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 public class STRPMutationGenerator extends MutationGenerator {
 
 	@Override
-	protected void initialize(AstFunctionDefinition function) throws Exception {}
+	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
