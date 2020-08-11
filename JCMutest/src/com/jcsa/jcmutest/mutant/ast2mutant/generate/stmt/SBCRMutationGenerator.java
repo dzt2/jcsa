@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 
-public class SBRCMutationGenerator extends AstMutationGenerator {
+public class SBCRMutationGenerator extends AstMutationGenerator {
 
 	@Override
 	protected boolean is_available(AstNode location) throws Exception {
