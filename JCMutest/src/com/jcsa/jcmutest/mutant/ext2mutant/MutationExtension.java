@@ -208,12 +208,14 @@ public abstract class MutationExtension {
 			if(statement instanceof AstCaseStatement) {
 				return AstMutations.trap_on_statement(statement);
 			}
-			else if(this.is_numeric_expression(expression)) {
-				return AstMutations.trap_on_expression(expression);
+			else if(expression instanceof AstAssignExpression
+					|| expression instanceof AstArithAssignExpression
+					|| expression instanceof AstBitwiseAssignExpression
+					|| expression instanceof AstShiftAssignExpression) {
+				return this.coverage_mutation(((AstBinaryExpression) expression).get_roperand());
 			}
 			else {
-				throw new IllegalArgumentException(
-						"Unsupport: " + expression.generate_code());
+				return AstMutations.trap_on_expression(expression);
 			}
 		}
 		else if(location instanceof AstStatement) {

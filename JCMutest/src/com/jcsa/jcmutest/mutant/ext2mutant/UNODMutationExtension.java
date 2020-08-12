@@ -3,42 +3,39 @@ package com.jcsa.jcmutest.mutant.ext2mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.AstMutations;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
-/**
- * trap_on_expression(e)
- * trap_on_pos|neg|zro(e)
- * trap_on_pos|neg|zro(e)
- * 
- * @author yukimula
- *
- */
-public class VTRPMutationExtension extends MutationExtension {
+public class UNODMutationExtension extends MutationExtension {
 
 	@Override
 	protected AstMutation cover(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
-		expression = CTypeAnalyzer.get_expression_of(expression);
 		return this.coverage_mutation(expression);
 	}
 
 	@Override
 	protected AstMutation weak(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
-		expression = CTypeAnalyzer.get_expression_of(expression);
 		switch(source.get_operator()) {
-		case trap_on_pos:	return AstMutations.trap_on_pos(expression);
-		case trap_on_zro:	return AstMutations.trap_on_zro(expression);
-		case trap_on_neg:	return AstMutations.trap_on_neg(expression);
-		case trap_on_dif:	return AstMutations.trap_on_dif(
-									expression, source.get_parameter());
+		case delete_arith_neg:	return AstMutations.trap_on_true(expression);
+		case delete_bitws_rsv:	return this.coverage_mutation(expression);
+		case delete_logic_not:	return this.coverage_mutation(expression);
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}
 
 	@Override
 	protected AstMutation strong(AstMutation source) throws Exception {
-		return this.weak(source);
+		AstExpression expression = (AstExpression) source.get_location();
+		switch(source.get_operator()) {
+		case delete_arith_neg:	
+			return AstMutations.UNOI(expression, COperator.negative);
+		case delete_bitws_rsv:
+			return AstMutations.UNOI(expression, COperator.bit_not);
+		case delete_logic_not:
+			return AstMutations.UNOI(expression, COperator.logic_not);
+		default: throw new IllegalArgumentException(source.toString());
+		}
 	}
 
 }

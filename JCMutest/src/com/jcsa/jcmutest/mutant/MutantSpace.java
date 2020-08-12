@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.rip2mutant.MutationExtension;
 import com.jcsa.jcparse.lang.astree.AstTree;
 
 public class MutantSpace {
@@ -120,7 +120,7 @@ public class MutantSpace {
 		List<AstMutation> source_mutations = 
 				MutationGenerators.generate(tree, mutation_classes);
 		for(AstMutation source_mutation : source_mutations) {
-			AstMutation[] all_mutations = MutationExtension.extend(source_mutation);
+			AstMutation[] all_mutations = MutationExtensions.extend(source_mutation);
 			all_mutations[0] = this.get_mutation(all_mutations[0]);
 			all_mutations[1] = this.get_mutation(all_mutations[1]);
 			all_mutations[2] = this.get_mutation(all_mutations[2]);

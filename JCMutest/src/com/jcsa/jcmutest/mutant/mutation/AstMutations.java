@@ -610,8 +610,10 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	public static AstMutation RTRP(AstReturnStatement source, AstReturnStatement target) throws Exception {
-		return new AstMutation(MutaGroup.Reference_Mutation, MutaClass.RTRP,
-				MutaOperator.set_return, source.get_expression(), target.get_expression());
+		return new AstMutation(MutaGroup.Reference_Mutation, 
+				MutaClass.RTRP, MutaOperator.set_return, 
+				CTypeAnalyzer.get_expression_of(source.get_expression()), 
+				CTypeAnalyzer.get_expression_of(target.get_expression()));
 	}
 	/**
 	 * @param expression
@@ -1012,6 +1014,25 @@ public class AstMutations {
 			}
 			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
+		}
+	}
+	/**
+	 * @param expression
+	 * @param parameter boolean|long|double|String|expression
+	 * @return trap_on_dif(expression, parameter)
+	 * @throws Exception
+	 */
+	public static AstMutation trap_on_dif(AstExpression expression, Object parameter) throws Exception {
+		if(parameter instanceof Boolean
+			|| parameter instanceof Long
+			|| parameter instanceof Double
+			|| parameter instanceof String
+			|| parameter instanceof AstExpression) {
+			return new AstMutation(MutaGroup.Trapping_Mutation, MutaClass.VTRP,
+					MutaOperator.trap_on_dif, expression, parameter);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid parameter:" + parameter);
 		}
 	}
 	

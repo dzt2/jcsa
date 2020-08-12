@@ -21,6 +21,8 @@ public enum MutaOperator {
 	/** trap_on_pos(expression) **/					trap_on_pos,
 	/** trap_on_zro(expression) **/					trap_on_zro,
 	/** trap_on_neg(expression) **/					trap_on_neg,
+	/** trap_on_dif(expression, String|boolean|
+	 * 				long|double|expression) **/		trap_on_dif,
 	
 	/* SBCR */
 	/** break_to_continue(break_statement) **/		break_to_continue,
@@ -86,5 +88,6 @@ public enum MutaOperator {
 	 * ORLN, ORRN, OEAA, OEBA, OAEA, OBEA, OAAA,
 	 * OABA, OBAA, OBBA */
 	/** set_operator(expression, operator) **/		set_operator,
+	/** cmp_operator(expression, operator) **/		cmp_operator,
 	
 }

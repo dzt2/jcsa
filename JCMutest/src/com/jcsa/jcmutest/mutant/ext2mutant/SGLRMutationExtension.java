@@ -25,7 +25,7 @@ public class SGLRMutationExtension extends MutationExtension {
 		AstGotoStatement source_statement = 
 				(AstGotoStatement) source.get_location().get_parent();
 		AstLabeledStatement target_statement = (AstLabeledStatement) 
-						((AstNode) source.get_location()).get_parent();
+						((AstNode) source.get_parameter()).get_parent();
 		return AstMutations.set_goto_label(source_statement, target_statement);
 	}
 
