@@ -9,19 +9,18 @@ package com.jcsa.jcmutest.mutant.mutation;
 public enum MutaOperator {
 	
 	/* BTRP */
-	/** trap_on_true(expression) **/	trap_on_true,
-	/** trap_on_false(expression) **/	trap_on_false,
+	/** trap_on_true(expression) **/				trap_on_true,
+	/** trap_on_false(expression) **/				trap_on_false,
 	/* CTRP */
-	/** trap_on_case(expression, int) **/	trap_on_case,
+	/** trap_on_case(expression, int) **/			trap_on_case,
 	/* ETRP & STRP & TTRP */
-	/** trap_on_expression(expression) **/	trap_on_expression,
-	/** trap_on_statement(statement) **/	trap_on_statement,
-	/** trap_for_time(statement, int) **/	trap_for_time,
+	/** trap_on_expression(expression) **/			trap_on_expression,
+	/** trap_on_statement(statement) **/			trap_on_statement,
+	/** trap_for_time(statement, int) **/			trap_for_time,
 	/* VTRP */
-	/** trap_on_pos(expression) **/			trap_on_pos,
-	/** trap_on_zro(expression) **/			trap_on_zro,
-	/** trap_on_neg(expression) **/			trap_on_neg,
-	/** trap_on_nzro(expression) **/		//trap_on_nzro,
+	/** trap_on_pos(expression) **/					trap_on_pos,
+	/** trap_on_zro(expression) **/					trap_on_zro,
+	/** trap_on_neg(expression) **/					trap_on_neg,
 	
 	/* SBCR */
 	/** break_to_continue(break_statement) **/		break_to_continue,
@@ -87,7 +86,5 @@ public enum MutaOperator {
 	 * ORLN, ORRN, OEAA, OEBA, OAEA, OBEA, OAAA,
 	 * OABA, OBAA, OBBA */
 	/** set_operator(expression, operator) **/		set_operator,
-	/** cmp_operator(expression, operator) **/		//cmp_operator,
-	/** cmp_reference(expression, String) **/		//cmp_reference,
 	
 }
