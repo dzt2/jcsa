@@ -1,12 +1,10 @@
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+extern int printf (const char * __format, ...);
+extern void exit (int __status) ;
 
 /** trapping-function **/
 static int jcm_trap()
 {
-	fprintf(stderr, "\n\nException occurs in testing.\n");
+	printf("\n\nException occurs in testing.\n");
 	exit(1);
 	return -1;
 }
