@@ -72,6 +72,4 @@ public class MuTestProgram {
 	 */
 	public CRunTemplate get_sizeof_template() { return this.sizeof_template; }
 	
-	/* setters */
-	
 }

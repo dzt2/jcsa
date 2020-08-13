@@ -97,6 +97,16 @@ public class MutantSpace {
 	 * @return the {coverage, weak, strong} mutations for the mutants in the space
 	 */
 	public Iterable<AstMutation> get_mutations() { return this.mutations.values(); }
+	/**
+	 * @param key
+	 * @return the mutation w.r.t. the String key
+	 */
+	public AstMutation get_mutation(String key) {
+		if(!this.mutations.containsKey(key))
+			return null;
+		else
+			return this.mutations.get(key);
+	}
 	
 	/* setters */
 	/**

@@ -6,8 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
 import com.jcsa.jcmutest.project.util.FileOperations;
+import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -94,9 +97,23 @@ public class MuTestProjectCode {
 	/**
 	 * @return the executional file being compiled and executed
 	 */
-	public File get_exe_file() {
+	public File get_normal_exe_file() {
 		return new File(this.project.get_files().get_efiles_directory().
-				getAbsolutePath() + "/" + this.project.get_name() + ".exe");
+				getAbsolutePath() + "/" + this.project.get_name() + ".n.exe");
+	}
+	/**
+	 * @return the instrumental file being compiled and executed
+	 */
+	public File get_instrumental_exe_file() {
+		return new File(this.project.get_files().get_efiles_directory().
+				getAbsolutePath() + "/" + this.project.get_name() + ".s.exe");
+	}
+	/**
+	 * @return the executional file of mutant being compiled and executed
+	 */
+	public File get_mutation_exe_file() {
+		return new File(this.project.get_files().get_efiles_directory().
+				getAbsolutePath() + "/" + this.project.get_name() + ".m.exe");
 	}
 	/**
 	 * @param ifile
@@ -209,6 +226,17 @@ public class MuTestProjectCode {
 		}
 	}
 	/**
+	 * copy the ifiles to mfiles
+	 * @throws Exception
+	 */
+	private void init_mfiles() throws Exception {
+		File directory = this.project.get_files().get_mfiles_directory();
+		for(File source : this.get_ifiles()) {
+			File target = new File(directory.getAbsolutePath() + "/" + source.getName());
+			FileOperations.copy(source, target);
+		}
+	}
+	/**
 	 * set xxx.c files, generate xxx.i and xxx.s files for testing,
 	 * parse programs from xxx.i files and load mutation files
 	 * @param cfiles source code files before pre-processed
@@ -219,7 +247,9 @@ public class MuTestProjectCode {
 		this.do_preprocess();
 		this.do_parsing();
 		this.do_instrument();
+		this.init_mfiles();
 		this.load_mutants();
+		this.compile();
 	}
 	/**
 	 * generate the mutations w.r.t. the specified operators for each program
@@ -232,7 +262,69 @@ public class MuTestProjectCode {
 		for(MuTestProgram program : this.programs.values()) {
 			File mfile = new File(directory.getAbsolutePath() + 
 					"/" + program.get_ifile().getName() + ".m");
-			program.get_mutant_space().load(mfile);
+			program.get_mutant_space().update(mutation_classes);
+			program.get_mutant_space().save(mfile);
+		}
+	}
+	
+	/* compilation operations */
+	/**
+	 * generate the normal and instrumental programs w.r.t. xxx.i in ifiles.
+	 * @throws Exception
+	 */
+	protected void compile() throws Exception {
+		/* 1. compilation parameters */
+		List<File> ifiles = this.get_ifiles();
+		List<File> hdirs = this.get_hdirs();
+		List<File> lfiles = this.get_lfiles();
+		MuTestProjectConfig config = project.get_config();
+		MuCommandUtil command_util = project.get_config().get_command_util();
+		
+		/* 2. compile original program without instrumentation */
+		if(!command_util.do_compile(config.get_compiler(), ifiles, 
+				this.get_normal_exe_file(), hdirs, lfiles, 
+				config.get_compile_parameters())) {
+			throw new RuntimeException("Failed to compile " + 
+				this.get_normal_exe_file().getAbsolutePath());
+		}
+		
+		/* 3. compile the instrumental program for analysis */
+		if(!command_util.do_compile(config.get_compiler(), ifiles, 
+				this.get_instrumental_exe_file(), hdirs, lfiles, 
+				config.get_compile_parameters())) {
+			throw new RuntimeException("Failed to compile " + 
+					this.get_instrumental_exe_file().getAbsolutePath());
+		}
+	}
+	/**
+	 * generate the code file of the mutation in mfiles and compile them as the 
+	 * mutation executional program.
+	 * @param mutation
+	 * @throws Exception
+	 */
+	protected void compile(AstMutation mutation) throws Exception {
+		/* 1. code generation */
+		String code = MutaCodeGeneration.generate(mutation);
+		
+		/* 2. initialize the mfiles directory */
+		this.init_mfiles();
+		
+		/* 3. write the code to mutation source file */
+		File directory = this.project.get_files().get_mfiles_directory();
+		File mfile = new File(directory.getAbsolutePath() + "/" + mutation.
+				get_location().get_tree().get_source_file().getName());
+		FileOperations.write(mfile, code);
+		
+		/* 4. compile the mutation code into program */
+		MuTestProjectConfig config = this.project.get_config();
+		List<File> mfiles = this.get_mfiles();
+		List<File> hdirs = this.get_hdirs();
+		List<File> lfiles = this.get_lfiles();
+		MuCommandUtil util = config.get_command_util();
+		if(!util.do_compile(config.get_compiler(), mfiles, 
+				this.get_mutation_exe_file(), hdirs, lfiles, 
+				config.get_compile_parameters())) {
+			throw new RuntimeException("Unable to compile: " + mutation);
 		}
 	}
 	

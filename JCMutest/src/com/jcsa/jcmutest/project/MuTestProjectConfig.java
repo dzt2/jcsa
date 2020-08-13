@@ -49,6 +49,8 @@ public class MuTestProjectConfig {
 	private CCompiler compiler;
 	/** the language standard used to parse source code **/
 	private ClangStandard lang_std;
+	/** the maximal seconds for running one test against program **/
+	private long max_timeout_second;
 	/** the parameters like -lm to compile C code **/
 	private List<String> compilation_parameters;
 	/** configs/cruntime.txt for sizeof operation in static analysis **/
@@ -101,6 +103,7 @@ public class MuTestProjectConfig {
 			writer.write("compiler: " + compiler + "\n");
 		if(this.lang_std != null)
 			writer.write("lang_std: " + lang_std + "\n");
+		writer.write("max_timeout_seconds: " + this.max_timeout_second + "\n");
 		writer.write("compilation_parameters: ");
 		for(String parameter : this.compilation_parameters) {
 			if(!parameter.isBlank())
@@ -129,6 +132,9 @@ public class MuTestProjectConfig {
 					}
 					else if(title.equals("lang_std")) {
 						this.lang_std = ClangStandard.valueOf(value);
+					}
+					else if(title.equals("max_timeout_seconds")) {
+						this.max_timeout_second = Long.parseLong(value);
 					}
 					else if(title.equals("compilation_parameters")) {
 						String[] parameters = value.split(" ");
@@ -186,6 +192,10 @@ public class MuTestProjectConfig {
 	 * @return the configuration file in which parameters are preserved
 	 */
 	public File get_config_data_file() { return this.config_file; }
+	/**
+	 * @return the maximal seconds for running one test against program
+	 */
+	public long get_maximal_timeout_seconds() { return this.max_timeout_second; }
 	
 	/* setters */
 	/**
@@ -202,7 +212,7 @@ public class MuTestProjectConfig {
 	public void set(CCompiler compiler, ClangStandard lang_std, 
 			Iterable<String> compilation_parameters, File sizeof_template_file, 
 			File instrument_head_file, File preprocess_macro_file, 
-			File mutation_head_file) throws Exception {
+			File mutation_head_file, long max_timeout_seconds) throws Exception {
 		if(compiler == null)
 			throw new IllegalArgumentException("Invalid compiler: null");
 		else if(lang_std == null)
@@ -220,6 +230,7 @@ public class MuTestProjectConfig {
 		else {
 			this.compiler = compiler;
 			this.lang_std = lang_std;
+			this.max_timeout_second = max_timeout_seconds;
 			this.compilation_parameters.clear();
 			for(String parameter : compilation_parameters) {
 				if(!parameter.isBlank()) {
