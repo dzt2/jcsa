@@ -6,8 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
+import com.jcsa.jcmutest.mutant.txt2mutant.MutationTestType;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.CRunTemplate;
@@ -122,6 +124,24 @@ public class MuTestProjectCode {
 			return this.programs.get(key);
 		}
 	}
+	/**
+	 * @return null or the file that tags the mutant being selected to
+	 * 		   generate code files in mfiles directory
+	 */
+	public Mutant get_mfile_mutant() {
+		File[] mfiles = project.get_files().get_mfiles_directory().listFiles();
+		if(mfiles != null) {
+			for(File mfile : mfiles) {
+				if(!mfile.getName().endsWith(".c")) {
+					int index = mfile.getName().lastIndexOf('.');
+					String name = mfile.getName().substring(0, index).strip();
+					int id = Integer.parseInt(mfile.getName().substring(index + 1));
+					return this.programs.get(name).get_mutant_space().get_mutant(id);
+				}
+			}
+		}
+		return null;
+	}
 	
 	/* synchronize methods */
 	/**
@@ -161,6 +181,7 @@ public class MuTestProjectCode {
 			File mutant_file = this.get_mutant_file(program.get_ifile());
 			program.get_mutant_space().load(mutant_file);
 		}
+		/* remove the selected mutant in mfiles */ this.set_mfiles(null);
 	}
 	/**
 	 * It performs pre-processing and generate ifiles from cfiles as input
@@ -194,18 +215,6 @@ public class MuTestProjectCode {
 			FileOperations.write(sfile, code);
 		}
 	}
-	/**
-	 * Copy all the files in ifiles/ to mfiles/ for initialization
-	 * @throws Exception
-	 */
-	private void update_mfiles() throws Exception {
-		File directory = project.get_files().get_mfiles_directory();
-		FileOperations.delete_in(directory);
-		for(File ifile : this.get_ifiles()) {
-			File mfile = new File(directory.getAbsolutePath() + "/" + ifile.getName());
-			FileOperations.copy(ifile, mfile);
-		}
-	}
 	
 	/* input-setters */
 	/**
@@ -232,6 +241,9 @@ public class MuTestProjectCode {
 		File directory = project.get_files().get_cfiles_directory();
 		FileOperations.delete_in(directory);
 		for(File source : cfiles) {
+			if(!source.getName().endsWith(".c")) {
+				throw new IllegalArgumentException("Not source: " + source.getName());
+			}
 			File target = new File(directory.getAbsolutePath() + "/" + source.getName());
 			FileOperations.copy(source, target);
 		}
@@ -245,6 +257,9 @@ public class MuTestProjectCode {
 		File directory = project.get_files().get_hfiles_directory();
 		FileOperations.delete_in(directory);
 		for(File source : hfiles) {
+			if(!source.getName().endsWith(".h")) {
+				throw new IllegalArgumentException("Not header: " + source.getName());
+			}
 			File target = new File(directory.getAbsolutePath() + "/" + source.getName());
 			FileOperations.copy(source, target);
 		}
@@ -276,7 +291,6 @@ public class MuTestProjectCode {
 		this.update_ifiles();
 		this.update_programs();
 		this.update_sfiles();
-		this.update_mfiles();
 	}
 	/**
 	 * remove the mutations and generate new ones in each xxx.c files and save them in mutants/ directory
@@ -290,6 +304,34 @@ public class MuTestProjectCode {
 			File mfile = this.get_mutant_file(program.get_ifile());
 			program.get_mutant_space().update(mutation_classes);
 			program.get_mutant_space().save(mfile);
+		}
+		this.set_mfiles(null);	/* remove the selected mutation */ 
+	}
+	/**
+	 * update the code files in mfiles and record the mutant being selected
+	 * by mfiles/xxx.c.id which is empty.
+	 * @param mutant
+	 * @throws Exception
+	 */
+	protected void set_mfiles(Mutant mutant) throws Exception {
+		File directory = project.get_files().get_mfiles_directory();
+		FileOperations.delete_in(directory);
+		if(mutant != null) {
+			String name = mutant.get_mutation().get_location().
+						get_tree().get_source_file().getName();
+			File log_file = new File(directory.getAbsolutePath() + 
+							"/" + name + "." + mutant.get_id());
+			FileOperations.write(log_file, "");
+			
+			for(File ifile : this.get_ifiles()) {
+				File mfile = new File(directory.getAbsolutePath() + "/" + ifile.getName());
+				if(ifile.getName().equals(name)) {
+					MutaCodeGeneration.generate(mutant, MutationTestType.original, mfile);
+				}
+				else {
+					FileOperations.copy(ifile, mfile);
+				}
+			}
 		}
 	}
 	
