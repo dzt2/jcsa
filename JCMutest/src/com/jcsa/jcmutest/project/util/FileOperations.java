@@ -117,4 +117,23 @@ public class FileOperations {
 		}
 	}
 	
+	/**
+	 * delete all the files under the directory
+	 * @param dir
+	 * @throws Exception
+	 */
+	public static void delete_in(File dir) throws Exception {
+		if(dir == null || !dir.isDirectory()) {
+			throw new IllegalArgumentException("Not directory");
+		}
+		else {
+			File[] files = dir.listFiles();
+			if(files != null) {
+				for(File file : files) {
+					delete(file);
+				}
+			}
+		}
+	}
+	
 }

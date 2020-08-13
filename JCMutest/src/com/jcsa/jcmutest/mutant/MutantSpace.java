@@ -15,18 +15,27 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcparse.lang.astree.AstTree;
 
+/**
+ * The mutant space that manages the mutations being generated from the program.
+ * 
+ * @author yukimula
+ *
+ */
 public class MutantSpace {
 	
-	/** syntactic tree on which the mutations are seeded **/
+	/* attributes */
+	/** the abstract syntax tree on which the mutants are seeded **/
 	private AstTree tree;
-	/** the list of mutants objects **/
-	private List<Mutant> mutants;
-	/** from strong mutation to its unique mutant in space **/
-	private Map<AstMutation, Mutant> index;
-	/** to ensure the uniqueness of each syntactic mutation **/
+	/** mappings from the unique string of mutation to itself **/
 	private Map<String, AstMutation> mutations;
+	/** the list of mutants that contain coverage, weak and strong versions **/
+	private List<Mutant> mutants;
+	/** mapping from the representative mutation to mutant object in space **/
+	private Map<AstMutation, Mutant> index;
+	
+	/* constructor */
 	/**
-	 * an empty mutant space defined on specified program
+	 * create an empty mutant space defined on the AST of the program
 	 * @param tree
 	 * @throws Exception
 	 */
@@ -35,28 +44,28 @@ public class MutantSpace {
 			throw new IllegalArgumentException("Invalid tree: null");
 		else {
 			this.tree = tree;
+			this.mutations = new HashMap<String, AstMutation>();
 			this.mutants = new ArrayList<Mutant>();
 			this.index = new HashMap<AstMutation, Mutant>();
-			this.mutations = new HashMap<String, AstMutation>();
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return the syntactic tree on which the mutations are seeded
+	 * @return the abstract syntax tree on which the mutations are seeded
 	 */
 	public AstTree get_ast_tree() { return this.tree; }
 	/**
-	 * @return the number of mutants managed under the space
+	 * @return the number of mutants for being tested in the program
 	 */
-	public int size() { return this.mutants.size(); }
+	public int number_of_mutants() { return this.mutants.size(); }
 	/**
-	 * @return mutants managed under the space
+	 * @return the mutants created in the program
 	 */
 	public Iterable<Mutant> get_mutants() { return this.mutants; }
 	/**
 	 * @param id
-	 * @return mutant w.r.t. the unitue ID
+	 * @return the mutant w.r.t. the unique ID
 	 * @throws IndexOutOfBoundsException
 	 */
 	public Mutant get_mutant(int id) throws IndexOutOfBoundsException {
@@ -64,41 +73,46 @@ public class MutantSpace {
 	}
 	/**
 	 * @param mutation
-	 * @return whether there is mutant w.r.t. the strong mutation
+	 * @return whether there is a mutant w.r.t. the mutation as its strong version
 	 */
 	public boolean has_mutant(AstMutation mutation) {
 		return this.index.containsKey(mutation);
 	}
 	/**
 	 * @param mutation
-	 * @return the mutant w.r.t. strong mutation as given
+	 * @return the mutant w.r.t. the mutation as its strong version or
+	 * 		   null when no such mutant exists
 	 * @throws Exception
 	 */
 	public Mutant get_mutant(AstMutation mutation) throws Exception {
-		return this.index.get(mutation);
+		if(this.index.containsKey(mutation))
+			return this.index.get(mutation);
+		else return null;
 	}
 	/**
-	 * @return the set of strong mutations w.r.t. all the mutants in the space
+	 * @return the number of mutations generated from the source code
 	 */
-	public Iterable<AstMutation> get_mutations() {
-		return this.index.keySet();
-	}
+	public int number_of_mutations() { return this.mutations.size(); }
+	/**
+	 * @return the {coverage, weak, strong} mutations for the mutants in the space
+	 */
+	public Iterable<AstMutation> get_mutations() { return this.mutations.values(); }
 	
 	/* setters */
 	/**
-	 * remove all the mutants from the space
+	 * remove all the mutations and mutants in the space
 	 */
 	public void clear() {
+		this.mutations.clear();
 		for(Mutant mutant : this.mutants) {
 			mutant.delete();
 		}
 		this.mutants.clear();
 		this.index.clear();
-		this.mutations.clear();
 	}
 	/**
 	 * @param mutation
-	 * @return the unique mutation in the space
+	 * @return the unique version of the mutation
 	 */
 	private AstMutation get_mutation(AstMutation mutation) {
 		String key = mutation.toString();
@@ -108,40 +122,36 @@ public class MutantSpace {
 		return this.mutations.get(key);
 	}
 	/**
-	 * update the space by removing old mutants and generate new ones for
-	 * the entire program w.r.t. the mutation classes as specified.
 	 * @param mutation_classes
-	 * @return
+	 * @return the number of mutants being seeded in the program
 	 * @throws Exception
 	 */
 	public int update(Iterable<MutaClass> mutation_classes) throws Exception {
 		this.clear();
-		
-		List<AstMutation> source_mutations = 
+		List<AstMutation> mutations = 
 				MutationGenerators.generate(tree, mutation_classes);
-		for(AstMutation source_mutation : source_mutations) {
-			AstMutation[] all_mutations = MutationExtensions.extend(source_mutation);
-			all_mutations[0] = this.get_mutation(all_mutations[0]);
-			all_mutations[1] = this.get_mutation(all_mutations[1]);
-			all_mutations[2] = this.get_mutation(all_mutations[2]);
-			if(!this.index.containsKey(all_mutations[2])) {
-				Mutant mutant = new Mutant(this, mutants.size(), all_mutations);
+		for(AstMutation mutation : mutations) {
+			AstMutation[] mutant_mutations = MutationExtensions.extend(mutation);
+			mutant_mutations[0] = this.get_mutation(mutant_mutations[0]);
+			mutant_mutations[1] = this.get_mutation(mutant_mutations[1]);
+			mutant_mutations[2] = this.get_mutation(mutant_mutations[2]);
+			if(!this.index.containsKey(mutant_mutations[2])) {
+				Mutant mutant = new Mutant(this, mutants.size(), mutant_mutations);
 				this.mutants.add(mutant);
-				this.index.put(all_mutations[2], mutant);
+				this.index.put(mutant.get_mutation(), mutant);
 			}
 		}
-		
 		return this.mutants.size();
 	}
 	/**
-	 * save the mutations in the specified file
+	 * write the mutant and mutations in the file
 	 * @param file
 	 * @throws Exception
 	 */
 	public void save(File file) throws Exception {
 		FileWriter writer = new FileWriter(file);
 		for(Mutant mutant : this.mutants) {
-			writer.write("#" + mutant.get_id() + "\n");
+			writer.write("#\n");
 			writer.write(mutant.get_coverage_mutation().toString() + "\n");
 			writer.write(mutant.get_weak_mutation().toString() + "\n");
 			writer.write(mutant.get_strong_mutation().toString() + "\n");
@@ -149,9 +159,8 @@ public class MutantSpace {
 		writer.close();
 	}
 	/**
-	 * read the data in specified file and build the mutants in space
 	 * @param file
-	 * @return
+	 * @return the number of mutants read from the file
 	 * @throws Exception
 	 */
 	public int load(File file) throws Exception {
@@ -160,18 +169,20 @@ public class MutantSpace {
 		String line;
 		while((line = reader.readLine()) != null) {
 			if(!line.isBlank()) {
+				line = line.strip();
 				if(line.startsWith("#")) {
-					AstMutation c_mutation = AstMutation.parse(tree, reader.readLine().strip());
-					AstMutation w_mutation = AstMutation.parse(tree, reader.readLine().strip());
-					AstMutation s_mutation = AstMutation.parse(tree, reader.readLine().strip());
-					c_mutation = this.get_mutation(c_mutation);
-					w_mutation = this.get_mutation(w_mutation);
-					s_mutation = this.get_mutation(s_mutation);
-					if(!this.index.containsKey(s_mutation)) {
-						Mutant mutant = new Mutant(this, mutants.size(), new 
-								AstMutation[] { c_mutation, w_mutation, s_mutation });
+					AstMutation cov_mutation = this.get_mutation(
+							AstMutation.parse(tree, reader.readLine().strip()));
+					AstMutation weak_mutation = this.get_mutation(
+							AstMutation.parse(tree, reader.readLine().strip()));
+					AstMutation strong_mutation = this.get_mutation(
+							AstMutation.parse(tree, reader.readLine().strip()));
+					if(!this.index.containsKey(strong_mutation)) {
+						Mutant mutant = new Mutant(this, mutants.size(), new AstMutation[] {
+								cov_mutation, weak_mutation, strong_mutation
+						});
 						this.mutants.add(mutant);
-						this.index.put(s_mutation, mutant);
+						this.index.put(mutant.get_strong_mutation(), mutant);
 					}
 				}
 			}

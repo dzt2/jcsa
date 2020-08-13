@@ -13,6 +13,7 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
  */
 public class MuTestProject {
 	
+	/* definitions */
 	private MuTestProjectFiles files;
 	private MuTestProjectConfig config;
 	public MuTestProject(File root, MuCommandUtil command_util) throws Exception {
@@ -25,6 +26,12 @@ public class MuTestProject {
 	}
 	
 	/* getters */
+	/**
+	 * @return the name of the mutation test project
+	 */
+	public String get_name() {
+		return this.files.get_root().getName();
+	}
 	/**
 	 * @return the files in the mutation test project
 	 */

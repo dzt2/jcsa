@@ -97,8 +97,4 @@ public class Mutant {
 	 */
 	public Object get_parameter() { return this.get_strong_mutation().get_parameter(); }
 	
-	
-	
-	
-	
 }

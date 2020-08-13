@@ -60,18 +60,19 @@ public class MutantSpaceTest {
 	private static MutantSpace new_space(AstCirFile program) throws Exception {
 		MutantSpace space = new MutantSpace(program.get_ast_tree());
 		space.update(get_classes());
-		System.out.println("\t2. Generate " + space.size() + " mutants.");
+		System.out.println(
+				"\t2. Generate " + space.number_of_mutants() + " mutants.");
 		return space;
 	}
 	private static void save_space(MutantSpace space, File cfile) throws Exception {
 		File mfile = new File(postfix + cfile.getName() + ".m");
 		space.save(mfile);
-		System.out.println("\t3. Save " + space.size() + " mutants to " + mfile.getAbsolutePath());
+		System.out.println("\t3. Save " + space.number_of_mutants() + " mutants to " + mfile.getAbsolutePath());
 	}
 	private static void load_space(MutantSpace space, File cfile) throws Exception {
 		File mfile = new File(postfix + cfile.getName() + ".m");
 		space.load(mfile);
-		System.out.println("\t3. Load " + space.size() + " mutants in " + mfile.getAbsolutePath());
+		System.out.println("\t3. Load " + space.number_of_mutants() + " mutants in " + mfile.getAbsolutePath());
 	}
 	private static void print_space(MutantSpace space) throws Exception {
 		Map<MutaClass, Integer> counter = new HashMap<MutaClass, Integer>();
@@ -90,7 +91,7 @@ public class MutantSpaceTest {
 		if(!dir.exists())
 			dir.mkdir();
 		for(int k = 0; k < 24; k++) {
-			int mid = Math.abs(random.nextInt()) % space.size();
+			int mid = Math.abs(random.nextInt()) % space.number_of_mutants();
 			Mutant mutant = space.get_mutant(mid);
 			File cfile = new File(dir.getAbsolutePath() + "/" + mid + ".c.c");
 			File wfile = new File(dir.getAbsolutePath() + "/" + mid + ".w.c");
