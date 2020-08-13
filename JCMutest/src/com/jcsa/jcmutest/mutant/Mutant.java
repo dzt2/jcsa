@@ -1,100 +1,77 @@
 package com.jcsa.jcmutest.mutant;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.mutation.MutaGroup;
-import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
-import com.jcsa.jcparse.lang.astree.AstNode;
 
 /**
- * Mutant is an object that is managed in the space,
- * directly used for mutation testing.
- * 
+ * It provides the interface to manage the access to the mutation data
+ * in the space.
  * @author yukimula
  *
  */
 public class Mutant {
 	
-	/* definition */
+	/* definitions */
 	/** the space in which the mutant is managed **/
 	private MutantSpace space;
-	/** the unique identifier of the mutant in the space **/
+	/** the unique ID that tags the mutant in space **/
 	private int id;
-	/** coverage, weak and strong mutation of the mutant **/
-	private AstMutation[] mutations;
+	/** the mutation that the mutant represents **/
+	private AstMutation mutation;
+	/** coverage, weak and strong version of mutant **/
+	protected Mutant[] versions;
 	/**
-	 * @param space the space in which the mutant is managed
-	 * @param id the unique identifier of the mutant in the space
-	 * @param mutations coverage, weak and strong mutation of the mutant
+	 * create an isolated mutant in the space w.r.t the given mutation
+	 * @param space
+	 * @param id
+	 * @param mutation
 	 * @throws Exception
 	 */
-	protected Mutant(MutantSpace space, int id,
-			AstMutation[] mutations) throws Exception {
+	protected Mutant(MutantSpace space, int id, AstMutation mutation) throws Exception {
 		if(space == null)
 			throw new IllegalArgumentException("Invalid space: null");
-		else if(mutations == null || mutations.length != 3)
-			throw new IllegalArgumentException("Invalid mutations: null");
+		else if(mutation == null)
+			throw new IllegalArgumentException("Invalid mutation: null");
 		else {
 			this.space = space;
 			this.id = id;
-			this.mutations = mutations;
+			this.mutation = mutation;
+			this.versions = new Mutant[] { null, null, null };
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return the space in which the mutant is created
+	 * @return the space in which the mutant is managed
 	 */
 	public MutantSpace get_space() { return this.space; }
 	/**
-	 * @return the unique identifier of the mutant in the space
+	 * @return the unique ID that tags the mutant in space
 	 */
 	public int get_id() { return this.id; }
 	/**
-	 * @return coverage mutation of the mutant
+	 * @return the mutation that the mutant represents
 	 */
-	public AstMutation get_coverage_mutation() { return mutations[0]; }
+	public AstMutation get_mutation() { return this.mutation; }
 	/**
-	 * @return weak mutation of the mutant
+	 * @return the coverage version of mutation for this mutant
 	 */
-	public AstMutation get_weak_mutation() { return mutations[1]; }
+	public Mutant get_coverage_mutant() { return this.versions[0]; }
 	/**
-	 * @return strong mutation of the mutant
+	 * @return the weak version of mutation for this mutant
 	 */
-	public AstMutation get_strong_mutation() { return mutations[2]; }
+	public Mutant get_weak_mutant() { return this.versions[1]; }
 	/**
-	 * delete this mutant from the space
+	 * @return the strong version of mutation for this mutant
+	 */
+	public Mutant get_strong_mutant() { return this.versions[2]; }
+	/**
+	 * remove the mutant from its space
 	 */
 	protected void delete() {
 		this.space = null;
 		this.id = -1;
-		this.mutations = null;
+		this.mutation = null;
+		this.versions = null;
 	}
-	
-	/* implicator */
-	/**
-	 * @return the representative mutation of this mutant
-	 */
-	public AstMutation get_mutation() { return this.get_strong_mutation(); }
-	/**
-	 * @return the group of the representative mutation
-	 */
-	public MutaGroup get_muta_group() { return this.get_strong_mutation().get_group(); }
-	/**
-	 * @return the class of the representative mutation
-	 */
-	public MutaClass get_muta_class() { return this.get_strong_mutation().get_class(); }
-	/**
-	 * @return the operator of the representative mutation
-	 */
-	public MutaOperator get_muta_operator() { return this.get_strong_mutation().get_operator(); }
-	/**
-	 * @return the location of the representative mutation
-	 */
-	public AstNode get_location() { return this.get_strong_mutation().get_location(); }
-	/**
-	 * @return the parameter of the representative mutation
-	 */
-	public Object get_parameter() { return this.get_strong_mutation().get_parameter(); }
 	
 }

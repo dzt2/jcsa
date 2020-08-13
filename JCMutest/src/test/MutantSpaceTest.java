@@ -60,24 +60,23 @@ public class MutantSpaceTest {
 	private static MutantSpace new_space(AstCirFile program) throws Exception {
 		MutantSpace space = new MutantSpace(program.get_ast_tree());
 		space.update(get_classes());
-		System.out.println(
-				"\t2. Generate " + space.number_of_mutants() + " mutants.");
+		System.out.println("\t2. Generate " + space.size() + " mutants.");
 		return space;
 	}
 	private static void save_space(MutantSpace space, File cfile) throws Exception {
 		File mfile = new File(postfix + cfile.getName() + ".m");
 		space.save(mfile);
-		System.out.println("\t3. Save " + space.number_of_mutants() + " mutants to " + mfile.getAbsolutePath());
+		System.out.println("\t3. Save " + space.size() + " mutants to " + mfile.getAbsolutePath());
 	}
 	private static void load_space(MutantSpace space, File cfile) throws Exception {
 		File mfile = new File(postfix + cfile.getName() + ".m");
 		space.load(mfile);
-		System.out.println("\t3. Load " + space.number_of_mutants() + " mutants in " + mfile.getAbsolutePath());
+		System.out.println("\t3. Load " + space.size() + " mutants in " + mfile.getAbsolutePath());
 	}
 	private static void print_space(MutantSpace space) throws Exception {
 		Map<MutaClass, Integer> counter = new HashMap<MutaClass, Integer>();
 		for(Mutant mutant : space.get_mutants()) {
-			MutaClass mclass = mutant.get_muta_class();
+			MutaClass mclass = mutant.get_mutation().get_class();
 			if(!counter.containsKey(mclass)) {
 				counter.put(mclass, 0);
 			}
@@ -90,12 +89,14 @@ public class MutantSpaceTest {
 	private static void generate_mfiles(MutantSpace space, File dir) throws Exception {
 		if(!dir.exists())
 			dir.mkdir();
-		for(int k = 0; k < 24; k++) {
-			int mid = Math.abs(random.nextInt()) % space.number_of_mutants();
+		for(int k = 0; k < 16; k++) {
+			int mid = Math.abs(random.nextInt()) % space.size();
 			Mutant mutant = space.get_mutant(mid);
+			File ofile = new File(dir.getAbsolutePath() + "/" + mid + ".o.c");
 			File cfile = new File(dir.getAbsolutePath() + "/" + mid + ".c.c");
 			File wfile = new File(dir.getAbsolutePath() + "/" + mid + ".w.c");
 			File sfile = new File(dir.getAbsolutePath() + "/" + mid + ".s.c");
+			MutaCodeGeneration.generate(mutant, MutationTestType.original, 	ofile);
 			MutaCodeGeneration.generate(mutant, MutationTestType.coverage, 	cfile);
 			MutaCodeGeneration.generate(mutant, MutationTestType.weak, 		wfile);
 			MutaCodeGeneration.generate(mutant, MutationTestType.strong, 	sfile);

@@ -22,7 +22,7 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
  * 	6. preprocess_macro_file: config/linux.h to -imacros the preprocess;<br>
  * 	7. compilation_parameters: the parameters like -lm to compile C code;<br>
  * 	8. mutation_head_file: config/jcmutest.h to compile the mutation code;<br>
- * 
+ * 	9. max_timeout_second: the maximal seconds required to complete a test;<br>
  * @author yukimula
  *
  */
@@ -209,7 +209,7 @@ public class MuTestProjectConfig {
 	 * @param mutation_head_file config/jcmutest.h to compile the mutation code
 	 * @throws Exception
 	 */
-	public void set(CCompiler compiler, ClangStandard lang_std, 
+	protected void set(CCompiler compiler, ClangStandard lang_std, 
 			Iterable<String> compilation_parameters, File sizeof_template_file, 
 			File instrument_head_file, File preprocess_macro_file, 
 			File mutation_head_file, long max_timeout_seconds) throws Exception {
