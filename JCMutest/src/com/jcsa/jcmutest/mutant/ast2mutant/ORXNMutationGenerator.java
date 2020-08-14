@@ -17,7 +17,13 @@ public class ORXNMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstRelationExpression;
+		if(location instanceof AstRelationExpression) {
+			return this.is_numeric_expression(((AstRelationExpression) location).get_loperand())
+					&& this.is_numeric_expression(((AstRelationExpression) location).get_roperand());
+		}
+		else {
+			return false;
+		}
 	}
 	
 	private final COperator[] operators = new COperator[] {

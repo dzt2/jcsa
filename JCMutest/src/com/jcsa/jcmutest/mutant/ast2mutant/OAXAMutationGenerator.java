@@ -17,7 +17,8 @@ public class OAXAMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstArithAssignExpression;
+		return location instanceof AstArithAssignExpression
+				&& this.is_numeric_expression(location);
 	}
 	
 	private final COperator[] operators = new COperator[] {

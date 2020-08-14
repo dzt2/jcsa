@@ -32,9 +32,11 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.lexical.CTypeQualifier;
 
 /**
  * It provides interface to seed syntactic mutations in source code based on
@@ -109,6 +111,28 @@ public abstract class MutationGenerator {
 				}
 			}
 			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param location
+	 * @return whether the type of location contains const
+	 * @throws Exception
+	 */
+	protected boolean is_const_type(AstNode location) throws Exception {
+		if(location instanceof AstExpression) {
+			CType type = ((AstExpression) location).get_value_type();
+			while(type instanceof CQualifierType) {
+				if(((CQualifierType) type).get_qualifier() == CTypeQualifier.c_const) {
+					return true;
+				}
+				else {
+					type = ((CQualifierType) type).get_reference();
+				}
+			}
+			return false;
 		}
 		else {
 			return false;

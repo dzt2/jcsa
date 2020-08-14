@@ -17,7 +17,14 @@ public class OLXNMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstLogicBinaryExpression;
+		if(location instanceof AstLogicBinaryExpression) {
+			return this.is_numeric_expression(((AstLogicBinaryExpression) location).get_loperand())
+					&& this.is_numeric_expression(((AstLogicBinaryExpression) location).get_roperand());
+			
+		}
+		else {
+			return false;
+		}
 	}
 	
 	private final COperator[] operators = new COperator[] {

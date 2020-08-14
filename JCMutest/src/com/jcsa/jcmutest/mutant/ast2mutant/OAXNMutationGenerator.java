@@ -26,7 +26,8 @@ public class OAXNMutationGenerator extends MutationGenerator {
 	
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstArithBinaryExpression;
+		return location instanceof AstArithBinaryExpression
+				&& this.is_numeric_expression(location);
 	}
 
 	@Override

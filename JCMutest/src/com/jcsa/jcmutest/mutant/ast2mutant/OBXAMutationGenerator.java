@@ -18,8 +18,9 @@ public class OBXAMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstBitwiseAssignExpression
-				|| location instanceof AstShiftAssignExpression;
+		return (location instanceof AstBitwiseAssignExpression
+				|| location instanceof AstShiftAssignExpression)
+				&& this.is_numeric_expression(location);
 	}
 	
 	private final COperator[] operators = new COperator[] {

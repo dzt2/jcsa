@@ -17,7 +17,8 @@ public class OEXAMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstAssignExpression;
+		return location instanceof AstAssignExpression
+				&& this.is_numeric_expression(location);
 	}
 	
 	private final COperator[] operators = new COperator[] {

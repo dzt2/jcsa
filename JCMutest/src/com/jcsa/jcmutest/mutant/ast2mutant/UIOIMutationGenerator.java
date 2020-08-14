@@ -16,6 +16,7 @@ public class UIOIMutationGenerator extends MutationGenerator {
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return this.is_numeric_expression(location) 
+				&& !this.is_const_type(location)
 				&& !this.is_left_reference(location)
 				&& this.is_reference_expression(location);
 	}
