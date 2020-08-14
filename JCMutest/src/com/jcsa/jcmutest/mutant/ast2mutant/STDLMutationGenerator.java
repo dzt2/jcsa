@@ -30,7 +30,7 @@ public class STDLMutationGenerator extends MutationGenerator {
 				return ((AstExpressionStatement) location).has_expression();
 			}
 			else if(location instanceof AstCompoundStatement) {
-				return ((AstCompoundStatement) location).has_statement_list();
+				return false;
 			}
 			else {
 				return true;

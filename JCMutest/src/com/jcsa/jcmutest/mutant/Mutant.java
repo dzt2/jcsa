@@ -73,5 +73,9 @@ public class Mutant {
 		this.mutation = null;
 		this.versions = null;
 	}
+	@Override
+	public String toString() {
+		return "[" + id + "]: " + mutation;
+	}
 	
 }

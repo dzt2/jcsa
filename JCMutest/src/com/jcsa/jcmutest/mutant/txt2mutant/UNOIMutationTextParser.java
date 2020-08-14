@@ -24,9 +24,9 @@ public class UNOIMutationTextParser extends MutationTextParser {
 		case insert_logic_not:
 			return "(!(" + expression.generate_code() + "))";
 		case insert_abs_value:
-			return "jcm_insert_abs_value((" + expression.generate_code() + "))";
+			return "(jcm_insert_abs_value((" + expression.generate_code() + ")))";
 		case insert_nabs_value:
-			return "jcm_insert_nabs_value((" + expression.generate_code() + "))";
+			return "(jcm_insert_nabs_value((" + expression.generate_code() + ")))";
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}

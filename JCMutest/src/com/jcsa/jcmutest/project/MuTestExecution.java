@@ -215,5 +215,27 @@ public class MuTestExecution {
 		result.save(this.get_mutation_result_file(mutant));
 		return result;
 	}
+	/**
+	 * @param mutant
+	 * @return whether the mutant can be successfully compiled as executional
+	 * @throws Exception
+	 */
+	protected boolean test_compile(Mutant mutant) throws Exception {
+		FileOperations.delete(this.get_mutation_executional_file());
+		MuTestProjectConfig config = project.get_config();
+		MuTestCodeSpace code_space = project.get_code_space();
+		MuCommandUtil command_util = config.get_command_util();
+		
+		if(!code_space.generate_mfiles(mutant)) {
+			throw new RuntimeException("Undefined: " + mutant);
+		}
+		
+		return command_util.do_compile(config.get_compiler(), 
+				code_space.get_mfiles(), 
+				this.get_mutation_executional_file(), 
+				code_space.get_hdirs(), 
+				code_space.get_lfiles(), 
+				config.get_compile_parameters());
+	}
 	
 }

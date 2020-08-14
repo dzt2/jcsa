@@ -42,11 +42,11 @@ public class VTRPMutationTextParser extends MutationTextParser {
 		case trap_on_zro:
 		case trap_on_neg:
 		{
-			return "jcm_" + source.get_operator() + "((" + expression.generate_code() + "))";
+			return "(jcm_" + source.get_operator() + "((" + expression.generate_code() + ")))";
 		}
 		case trap_on_dif:
 		{
-			return "jcm_trap_on_dif((" + expression.generate_code() + "), " + this.param_code(source.get_parameter()) + ")";
+			return "(jcm_trap_on_dif((" + expression.generate_code() + "), " + this.param_code(source.get_parameter()) + "))";
 		}
 		default: throw new IllegalArgumentException(source.toString());
 		}

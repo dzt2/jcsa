@@ -1,11 +1,14 @@
 package test;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestCodeFile;
@@ -36,8 +39,15 @@ public class MuTestProjectExecute {
 		}
 	}
 	protected static void testing(File cfile) throws Exception {
-		//new_project(cfile);
-		get_project(cfile);
+		String name = get_name(cfile);
+		File root = new File(root_path + "projects/" + name);
+		if(!root.exists()) {
+			Scanner in = new Scanner(System.in);
+			new_project(cfile);
+			get_project(cfile);
+			in.nextLine();
+			in.close();
+		}
 	}
 	
 	/* create */
@@ -104,6 +114,7 @@ public class MuTestProjectExecute {
 		System.out.println("\tinstrument_head? " + project.get_config().get_instrument_head_file().exists());
 		System.out.println("\tconfig_data? " + project.get_config().get_config_data_file().exists());
 		
+		int mutants_number = 0;
 		System.out.println("Mutation-Code-Files:");
 		for(MuTestCodeFile code_file : project.get_code_space().get_code_files()) {
 			System.out.println("\tname: " + code_file.get_name());
@@ -113,13 +124,23 @@ public class MuTestProjectExecute {
 			System.out.println("\tmfile: " + code_file.get_mfile().exists());
 			System.out.println("\tufile: " + code_file.get_mutant_data_file().exists());
 			System.out.println("\tmutants: " + code_file.get_mutant_space().size());
+			mutants_number += code_file.get_mutant_space().size();
 		}
 		
 		System.out.println("Testing-Space with " + project.
 				get_test_space().get_test_space().number_of_inputs() + " tests.");
 		
+		System.out.println("Testing Compilation on Mutations:");
+		List<Mutant> errors = project.test_compile_mutants();
+		System.out.println("Error-Rate: " + errors.size() + "/" + mutants_number);
+		
+		FileWriter writer = new FileWriter(new File("result/err/" + name + ".txt"));
+		for(Mutant mutant : errors) {
+			writer.write("\t\t[Error]: " + mutant.toString() + "\n");
+		}
+		writer.close();
+		
 		return project;
 	}
-	
 	
 }

@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class OXXNMutationTextParser extends MutationTextParser {
 	
-	private static final String template = "jcm_%s_%s(%d, %s, %s)";
+	private static final String template = "(jcm_%s_%s(%d, %s, %s))";
 	
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {

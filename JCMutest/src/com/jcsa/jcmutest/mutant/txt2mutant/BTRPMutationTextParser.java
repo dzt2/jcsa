@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 public class BTRPMutationTextParser extends MutationTextParser {
 	
 	/** operator, expression.generate_code **/
-	private static final String template = "jcm_%s(%s)";
+	private static final String template = "(jcm_%s(%s))";
 	
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {

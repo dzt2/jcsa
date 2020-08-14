@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.project;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -133,6 +135,26 @@ public class MuTestProject {
 	 */
 	public MuTestResult execute_mutation_program(Mutant mutant) throws Exception {
 		return this.exec_space.execute_mutation_testing(mutant);
+	}
+	/**
+	 * @return the mutants that can not be successfully compiled
+	 * @throws Exception
+	 */
+	public List<Mutant> test_compile_mutants() throws Exception {
+		List<Mutant> error_mutants = new ArrayList<Mutant>();
+		for(MuTestCodeFile code_file : this.code_space.get_code_files()) {
+			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+				if(!this.exec_space.test_compile(mutant)) {
+					error_mutants.add(mutant);
+				}
+				else {
+					System.out.println("\t==> Test-in-" + 
+							code_file.get_mutant_space().size() + ": " +
+							code_file.get_name() + mutant.toString());
+				}
+			}
+		}
+		return error_mutants;
 	}
 	
 }

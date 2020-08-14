@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 public class CTRPMutationTextParser extends MutationTextParser {
 	
 	/** switch_condition.code, case_condition.code **/
-	private static final String template = "jcm_trap_on_case(%s, %s)";
+	private static final String template = "(jcm_trap_on_case(%s, %s))";
 	
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
