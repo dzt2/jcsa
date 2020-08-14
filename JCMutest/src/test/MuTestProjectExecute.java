@@ -131,7 +131,7 @@ public class MuTestProjectExecute {
 				get_test_space().get_test_space().number_of_inputs() + " tests.");
 		
 		System.out.println("Testing Compilation on Mutations:");
-		List<Mutant> errors = project.test_compile_mutants();
+		List<Mutant> errors = project.test_compile_mutants(0);
 		System.out.println("Error-Rate: " + errors.size() + "/" + mutants_number);
 		
 		FileWriter writer = new FileWriter(new File("result/err/" + name + ".txt"));

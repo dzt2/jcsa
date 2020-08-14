@@ -30,7 +30,7 @@ public class VCRPMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected boolean available(AstNode location) throws Exception {
-		return location instanceof AstConstant;
+		return location instanceof AstConstant && this.is_valid_context(location);
 	}
 	
 	private CConstant standard_constant(CConstant source) throws Exception {

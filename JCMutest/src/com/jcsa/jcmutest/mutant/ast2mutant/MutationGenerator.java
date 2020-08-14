@@ -22,6 +22,7 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
+import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
@@ -84,6 +85,36 @@ public abstract class MutationGenerator {
 	
 	/* utility methods */
 	/**
+	 * @param expression
+	 * @return not in case-statement or left-operand of some assignment.
+	 * @throws Exception
+	 */
+	protected boolean is_valid_context(AstNode expression) throws Exception {
+		if(expression instanceof AstExpression) {
+			AstNode child = expression;
+			AstNode parent = expression.get_parent();
+			while(parent != null) {
+				if(parent instanceof AstCaseStatement) {
+					return false;
+				}
+				else if(parent instanceof AstAssignExpression
+						|| parent instanceof AstArithAssignExpression
+						|| parent instanceof AstBitwiseAssignExpression
+						|| parent instanceof AstShiftAssignExpression) {
+					return child != ((AstBinaryExpression) parent).get_loperand();
+				}
+				else {
+					child = parent;
+					parent = parent.get_parent();
+				}
+			}
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
 	 * @param location
 	 * @return whether the type of the expression is numeric {bool, char, short, int, long, float,
 	 * 		   double, enum} such that it can be used as the 
@@ -112,7 +143,9 @@ public abstract class MutationGenerator {
 				case c_ullong:
 				case c_float:
 				case c_double:
-				case c_ldouble:	return true;
+				case c_ldouble:	// return true;
+						 /* only numeric expressions in valid contexts allowed */
+						 return this.is_valid_context((AstExpression) location);
 				default: return false;
 				}
 			}

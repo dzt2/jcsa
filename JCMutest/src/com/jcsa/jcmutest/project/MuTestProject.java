@@ -140,17 +140,19 @@ public class MuTestProject {
 	 * @return the mutants that can not be successfully compiled
 	 * @throws Exception
 	 */
-	public List<Mutant> test_compile_mutants() throws Exception {
+	public List<Mutant> test_compile_mutants(int start_id) throws Exception {
 		List<Mutant> error_mutants = new ArrayList<Mutant>();
 		for(MuTestCodeFile code_file : this.code_space.get_code_files()) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-				if(!this.exec_space.test_compile(mutant)) {
-					error_mutants.add(mutant);
-				}
-				else {
-					System.out.println("\t==> Test-in-" + 
-							code_file.get_mutant_space().size() + ": " +
-							code_file.get_name() + mutant.toString());
+				if(mutant.get_id() >= start_id) {
+					if(!this.exec_space.test_compile(mutant)) {
+						throw new RuntimeException("Failed to compile " + mutant);
+					}
+					else {
+						System.out.println("\t==> Test-in-" + 
+								code_file.get_mutant_space().size() + ": " +
+								code_file.get_name() + mutant.toString());
+					}
 				}
 			}
 		}
