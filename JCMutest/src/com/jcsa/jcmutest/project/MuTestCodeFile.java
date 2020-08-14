@@ -162,7 +162,7 @@ public class MuTestCodeFile {
 	private void update_cfile(File cfile) throws Exception {
 		if(cfile == null || !cfile.exists())
 			throw new IllegalArgumentException("Invalid cfile: null");
-		else if(cfile.getAbsolutePath().equals(cfile.getAbsolutePath())) 
+		else if(this.cfile.getAbsolutePath().equals(cfile.getAbsolutePath())) 
 			throw new IllegalArgumentException("Invalid cpath: same");
 		else {
 			FileOperations.copy(cfile, this.cfile);
@@ -235,6 +235,7 @@ public class MuTestCodeFile {
 		else {
 			this.mutant_space.clear();
 			this.mutant_space.update(mutation_classes);
+			System.out.println("==> Generate " + mutant_space.size() + " mutants in " + name);
 			this.mutant_space.save(this.ufile);
 		}
 	}

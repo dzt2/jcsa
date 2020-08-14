@@ -237,10 +237,10 @@ public class MuTestProjectConfig {
 					this.compilation_parameters.add(parameter.strip());
 				}
 			}
-			FileOperations.copy(this.sizeof_template_file, sizeof_template_file);
-			FileOperations.copy(this.instrument_head_file, instrument_head_file);
-			FileOperations.copy(this.preprocess_macro_file, preprocess_macro_file);
-			FileOperations.copy(this.mutation_head_file, mutation_head_file);
+			FileOperations.copy(sizeof_template_file, this.sizeof_template_file);
+			FileOperations.copy(instrument_head_file, this.instrument_head_file);
+			FileOperations.copy(preprocess_macro_file, this.preprocess_macro_file);
+			FileOperations.copy(mutation_head_file, this.mutation_head_file);
 			this.save_config_file();
 		}
 	}

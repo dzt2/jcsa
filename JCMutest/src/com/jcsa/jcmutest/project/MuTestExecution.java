@@ -106,9 +106,8 @@ public class MuTestExecution {
 	 * compile from the normal and instrumental file
 	 * @throws Exception
 	 */
-	protected void compile_program() throws Exception {
+	private void compile_normal_program() throws Exception {
 		FileOperations.delete(this.get_normal_executional_file());
-		FileOperations.delete(this.get_instrumental_executional_file());
 		
 		MuTestProjectConfig config = project.get_config();
 		MuTestCodeSpace code_space = project.get_code_space();
@@ -119,7 +118,17 @@ public class MuTestExecution {
 				code_space.get_lfiles(), config.get_compile_parameters())) {
 			throw new RuntimeException("Failed to compile " + this.get_normal_executional_file().getAbsolutePath());
 		}
+	}
+	/**
+	 * compile from instrumental code files in sfiles/
+	 * @throws Exception
+	 */
+	private void compile_instrumental_program() throws Exception {
+		FileOperations.delete(this.get_instrumental_executional_file());
 		
+		MuTestProjectConfig config = project.get_config();
+		MuTestCodeSpace code_space = project.get_code_space();
+		MuCommandUtil command_util = config.get_command_util();
 		if(!command_util.do_compile(config.get_compiler(), code_space.get_sfiles(), 
 				this.get_instrumental_executional_file(), code_space.get_hdirs(), 
 				code_space.get_lfiles(), config.get_compile_parameters())) {
@@ -167,18 +176,20 @@ public class MuTestExecution {
 				config.get_maximal_timeout_seconds());
 	}
 	protected void execute_normal_testing() throws Exception {
+		this.compile_normal_program();
 		FileOperations.delete_in(project.get_files().get_n_output_directory());
 		MuTestProjectConfig config = project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
 		command_util.do_execute(this.get_normal_script_file(), this.get_efiles_directory());
 	}
 	protected void execute_instrumental_testing() throws Exception {
+		this.compile_instrumental_program();
 		FileOperations.delete_in(project.get_files().get_s_output_directory());
 		MuTestProjectConfig config = project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
 		command_util.do_execute(this.get_instrumental_script_file(), this.get_efiles_directory());
 	}
-	protected void execute_mutation_testing(Mutant mutant) throws Exception {
+	protected MuTestResult execute_mutation_testing(Mutant mutant) throws Exception {
 		MuTestProjectConfig config = project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
 		
@@ -195,6 +206,7 @@ public class MuTestExecution {
 		result.set(project.get_test_space().get_normal_output_directory(), 
 				project.get_test_space().get_mutation_output_directory());
 		result.save(this.get_mutation_result_file(mutant));
+		return result;
 	}
 	
 }

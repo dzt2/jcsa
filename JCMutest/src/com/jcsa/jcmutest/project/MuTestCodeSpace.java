@@ -37,6 +37,13 @@ public class MuTestCodeSpace {
 		else {
 			this.project = project;
 			this.files = new HashMap<String, MuTestCodeFile>();
+			for(File cfile : this.get_cfiles()) {
+				if(cfile.getName().endsWith(".c")) {
+					String name = cfile.getName();
+					MuTestCodeFile code_file = new MuTestCodeFile(this, name);
+					this.files.put(name, code_file);
+				}
+			}
 		}
 	}
 	
@@ -117,6 +124,7 @@ public class MuTestCodeSpace {
 				String name = cfile.getName();
 				MuTestCodeFile code_file = new MuTestCodeFile(this, name);
 				code_file.set_cfile(cfile);
+				this.files.put(name, code_file);
 			}
 		}
 	}

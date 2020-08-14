@@ -81,9 +81,9 @@ public class FileOperations {
 	 * @throws Exception
 	 */
 	public static void delete(File file) throws Exception {
-		if(file == null || !file.exists())
-			throw new IllegalArgumentException("Invalid file: null");
-		else {
+		if(file == null)
+			throw new IllegalArgumentException("Invalid file: " + file);
+		else if(file.exists()) {
 			if(file.isDirectory()) {
 				File[] children = file.listFiles();
 				if(children != null) {
@@ -105,7 +105,7 @@ public class FileOperations {
 	 */
 	public static void copy(File source, File target) throws Exception {
 		if(source == null || !source.exists())
-			throw new IllegalArgumentException("Invalid source: null");
+			throw new IllegalArgumentException("Invalid source: " + source.getAbsolutePath());
 		else if(target == null)
 			throw new IllegalArgumentException("Invalid target: null");
 		else {
@@ -152,6 +152,37 @@ public class FileOperations {
 			}
 		}
 		return flist;
+	}
+	
+	/**
+	 * copy all the files in source to the directory of target
+	 * @param source
+	 * @param target
+	 * @throws Exception
+	 */
+	public static void copy_all(File source, File target) throws Exception {
+		if(source == null || !source.exists())
+			throw new IllegalArgumentException("Invalid source: null");
+		else if(target == null)
+			throw new IllegalArgumentException("Invalid target: null");
+		else {
+			if(source.isDirectory()) {
+				if(!target.exists()) {
+					FileOperations.mkdir(target);
+				}
+				
+				File[] sfiles = source.listFiles();
+				if(sfiles != null) {
+					for(File sfile : sfiles) {
+						File tfile = new File(target.getAbsolutePath() + "/" + sfile.getName());
+						copy_all(sfile, tfile);
+					}
+				}
+			}
+			else {
+				copy(source, target);
+			}
+		}
 	}
 	
 }

@@ -85,14 +85,14 @@ public class MuTestInputSpace {
 	 */
 	public File get_instrument_err_file() { return project.get_files().get_instrument_err_file(); }
 	private void update_test_space() throws Exception {
-		if(!this.get_test_suite_file().exists()) {
+		if(this.get_test_suite_file().exists()) {
 			this.test_space.load(this.get_test_suite_file());
 		}
 	}
 	
 	/* setters */
 	/**
-	 * Set the test inputs and save them in test suite file
+	 * Set the test inputs and save them in test suite file and generate the test scripts files
 	 * @param test_suite_files
 	 * @throws Exception
 	 */
@@ -100,6 +100,7 @@ public class MuTestInputSpace {
 		this.test_space.clear();
 		this.test_space.append(test_suite_files);
 		this.test_space.save(this.get_test_suite_file());
+		this.project.get_exec_space().generate_test_scripts();
 	}
 	/**
 	 * #!bash
