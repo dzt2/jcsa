@@ -16,16 +16,14 @@ public class MuTestProject {
 	/* definitions */
 	private MuTestProjectFiles files;
 	private MuTestProjectConfig config;
-	private MuTestProjectCode code;
-	private MuTestProjectTest test;
+	private MuTestCodeFiles code_files;
 	public MuTestProject(File root, MuCommandUtil command_util) throws Exception {
 		if(root == null)
 			throw new IllegalArgumentException("Invalid root: null");
 		else {
 			this.files = new MuTestProjectFiles(this, root);
 			this.config = new MuTestProjectConfig(this, command_util);
-			this.code = new MuTestProjectCode(this);
-			this.test = new MuTestProjectTest(this);
+			this.code_files = new MuTestCodeFiles(this);
 		}
 	}
 	
@@ -44,7 +42,9 @@ public class MuTestProject {
 	 * @return the configuration data in test project
 	 */
 	public MuTestProjectConfig get_config() { return this.config; }
-	public MuTestProjectCode get_code_part() { return this.code; }
-	public MuTestProjectTest get_test_part() { return this.test; }
+	/**
+	 * @return the code space in the project 
+	 */
+	public MuTestCodeFiles get_code_files() { return this.code_files; }
 	
 }

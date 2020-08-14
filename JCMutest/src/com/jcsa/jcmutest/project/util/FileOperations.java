@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * It provides general interfaces to manage the operations on file system.
@@ -134,6 +136,22 @@ public class FileOperations {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * @param dir
+	 * @return the list of files in the directory
+	 * @throws Exception
+	 */
+	public static List<File> list_files(File dir) {
+		List<File> flist = new ArrayList<File>();
+		File[] files = dir.listFiles();
+		if(files != null) {
+			for(File file : files) {
+				flist.add(file);
+			}
+		}
+		return flist;
 	}
 	
 }
