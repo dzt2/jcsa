@@ -90,15 +90,22 @@ public class MuTestExecution {
 	}
 	/**
 	 * @param mutant
-	 * @return mutation test result for the specified mutant
+	 * @return mutation test result for the specified mutant or null if no
+	 * 			test result file is in results/ directory
 	 * @throws Exception
 	 */
 	public MuTestResult load_test_result(Mutant mutant) throws Exception {
-		MuTestResult result = new MuTestResult(mutant, project.
-				get_test_space().get_test_space().number_of_inputs());
 		File result_file = this.get_mutation_result_file(mutant);
-		result.load(result_file);
-		return result;
+		if(result_file.exists()) {
+			MuTestResult result = new MuTestResult(mutant, project.
+					get_test_space().get_test_space().number_of_inputs());
+			
+			result.load(result_file);
+			return result;
+		}
+		else {
+			return null;
+		}
 	}
 	
 	/* update */
