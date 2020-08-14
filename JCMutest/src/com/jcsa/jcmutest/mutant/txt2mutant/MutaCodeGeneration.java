@@ -90,4 +90,15 @@ public class MutaCodeGeneration extends CodeGeneration {
 		return code;
 	}
 	
+	/**
+	 * generate the mutation code in the specified file
+	 * @param mutant
+	 * @param file where the mutation code is produced
+	 * @return
+	 * @throws Exception
+	 */
+	public static String generate(Mutant mutant, File file) throws Exception {
+		return generate(mutant, MutationTestType.original, file);
+	}
+	
 }

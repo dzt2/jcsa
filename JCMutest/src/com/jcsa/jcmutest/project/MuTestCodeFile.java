@@ -24,7 +24,7 @@ public class MuTestCodeFile {
 	
 	/* definition */
 	/** the code part in which the file is managed **/
-	private MuTestCodeFiles files;
+	private MuTestCodeSpace space;
 	/** the unique name of the files in code space **/
 	private String name;
 	/** the source code file before pre-processed **/
@@ -51,15 +51,15 @@ public class MuTestCodeFile {
 	 * @param name
 	 * @throws Exception
 	 */
-	protected MuTestCodeFile(MuTestCodeFiles files, String name) throws Exception {
-		if(files == null)
-			throw new IllegalArgumentException("Invalid code_part");
+	protected MuTestCodeFile(MuTestCodeSpace space, String name) throws Exception {
+		if(space == null)
+			throw new IllegalArgumentException("Invalid space");
 		else if(name == null || !name.endsWith(".c"))
 			throw new IllegalArgumentException("Invalid name: null");
 		else {
-			this.files = files;
+			this.space = space;
 			this.name = name;
-			MuTestProjectFiles pfiles = files.get_project().get_files();
+			MuTestProjectFiles pfiles = space.get_project().get_files();
 			this.cfile = new File(pfiles.get_cfiles_directory().getAbsolutePath() + "/" + name);
 			this.ifile = new File(pfiles.get_ifiles_directory().getAbsolutePath() + "/" + name);
 			this.sfile = new File(pfiles.get_sfiles_directory().getAbsolutePath() + "/" + name);
@@ -76,7 +76,7 @@ public class MuTestCodeFile {
 	/**
 	 * @return the code part in which the file is managed
 	 */
-	public MuTestCodeFiles get_code_part() { return this.files; }
+	public MuTestCodeSpace get_space() { return this.space; }
 	/**
 	 * @return the unique name of the files in code space
 	 */
@@ -124,7 +124,7 @@ public class MuTestCodeFile {
 	 * @throws Exception
 	 */
 	private void update_ast_tree() throws Exception {
-		MuTestProjectConfig config = this.files.get_project().get_config();
+		MuTestProjectConfig config = this.space.get_project().get_config();
 		if(this.ifile.exists()) {
 			this.sizeof_template = 
 					new CRunTemplate(config.get_sizeof_template_file());
@@ -173,13 +173,13 @@ public class MuTestCodeFile {
 	 * @throws Exception
 	 */
 	private void update_ifile() throws Exception {
-		MuTestProjectConfig config = files.get_project().get_config();
+		MuTestProjectConfig config = space.get_project().get_config();
 		MuCommandUtil command_util = config.get_command_util();
 		FileOperations.delete(ifile);
 		
 		if(this.cfile.exists()) {
 			/* prepare the parameters and do preprocess */
-			List<File> hdirs = this.files.get_hdirs();
+			List<File> hdirs = this.space.get_hdirs();
 			List<String> parameters = new ArrayList<String>();
 			parameters.add("-imacros");
 			parameters.add(config.get_preprocess_macro_file().getAbsolutePath());
@@ -198,7 +198,7 @@ public class MuTestCodeFile {
 	 */
 	private void update_sfile() throws Exception {
 		FileOperations.delete(this.sfile);;
-		MuTestProjectFiles pfiles = files.get_project().get_files();
+		MuTestProjectFiles pfiles = space.get_project().get_files();
 		if(this.ast_tree != null) {
 			String code = MutaCodeGeneration.
 					instrument_code(ast_tree, pfiles.get_instrument_txt_file());

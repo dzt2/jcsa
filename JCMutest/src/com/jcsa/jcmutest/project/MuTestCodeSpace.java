@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
 import com.jcsa.jcmutest.project.util.FileOperations;
 
 /**
@@ -24,12 +26,12 @@ import com.jcsa.jcmutest.project.util.FileOperations;
  * @author yukimula
  *
  */
-public class MuTestCodeFiles {
+public class MuTestCodeSpace {
 	
 	/* definition */
 	private MuTestProject project;
 	private Map<String, MuTestCodeFile> files;
-	protected MuTestCodeFiles(MuTestProject project) throws Exception {
+	protected MuTestCodeSpace(MuTestProject project) throws Exception {
 		if(project == null)
 			throw new IllegalArgumentException("Invalid project: null");
 		else {
@@ -43,6 +45,11 @@ public class MuTestCodeFiles {
 	 * @return mutation test project in which the code part is defined
 	 */
 	public MuTestProject get_project() { return this.project; }
+	public List<File> get_cfiles() { return FileOperations.list_files(project.get_files().get_cfiles_directory()); }
+	public List<File> get_ifiles() { return FileOperations.list_files(project.get_files().get_ifiles_directory()); }
+	public List<File> get_sfiles() { return FileOperations.list_files(project.get_files().get_sfiles_directory()); }
+	public List<File> get_mfiles() { return FileOperations.list_files(project.get_files().get_mfiles_directory()); }
+	public List<File> get_hfiles() { return FileOperations.list_files(project.get_files().get_hfiles_directory()); }
 	/**
 	 * @return [hfiles, config] as the header directories used in compilation
 	 */
@@ -122,6 +129,26 @@ public class MuTestCodeFiles {
 		for(MuTestCodeFile code_file : this.files.values()) {
 			code_file.set_mutant_space(mutation_classes);
 		}
+	}
+	/**
+	 * Generate the xxx.c seeded with mutant in mfiles/
+	 * @param mutant
+	 * @return whether the mutant is generated with some code file in mfiles
+	 * @throws Exception
+	 */
+	protected boolean generate_mfiles(Mutant mutant) throws Exception {
+		FileOperations.delete_in(project.get_files().get_mfiles_directory());
+		boolean found = false;
+		for(MuTestCodeFile code_file : this.files.values()) {
+			if(code_file.get_mutant_space() == mutant.get_space()) {
+				MutaCodeGeneration.generate(mutant, code_file.get_mfile());
+				found = true;
+			}
+			else {
+				FileOperations.copy(code_file.get_ifile(), code_file.get_mfile());
+			}
+		}
+		return found;
 	}
 	
 }
