@@ -1716,6 +1716,7 @@ public class CExpressionBuilder {
 		if (this.is_const_type(e1) && !this.is_const_type(e2))
 			return false;
 		else {
+			/*
 			CType VT1 = this.type_of_value(e1);
 			CType VT2 = this.type_of_value(e2);
 			if (this.is_void_type(e1))
@@ -1724,6 +1725,8 @@ public class CExpressionBuilder {
 				return true;
 			else
 				return VT1.equals(VT2);
+			*/
+			return true;
 		}
 	}
 

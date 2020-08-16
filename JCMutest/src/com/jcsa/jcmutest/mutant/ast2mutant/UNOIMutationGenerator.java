@@ -20,7 +20,7 @@ public class UNOIMutationGenerator extends MutationGenerator {
 	protected boolean available(AstNode location) throws Exception {
 		if(location instanceof AstExpression) {
 			if(this.is_condition_expression(location)) {
-				return true;
+				return this.is_numeric_expression(location);
 			}
 			else if(this.is_numeric_expression(location)) {
 				return !this.is_left_reference(location)

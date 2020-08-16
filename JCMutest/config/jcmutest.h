@@ -37,8 +37,8 @@ static void jcm_decre_loop_counter()
 #define jcm_insert_arith_neg(e)	(-(e))
 #define jcm_insert_bitws_rsv(e)	(~(e))
 #define jcm_insert_logic_not(e)	(!(e))
-#define jcm_insert_abs_value(e)	{ typeof(e) rs = (e); if(rs < 0) rs = -rs; rs; }
-#define jcm_insert_nabs_value(e)	{typeof(e) rs = (e); if(rs > 0) rs = -rs; rs; }
+#define jcm_insert_abs_value(e)	{ typeof(e) rs = (e); typeof(rs) ns = -rs; (rs < 0)?ns:rs; }
+#define jcm_insert_nabs_value(e)	{ typeof(e) rs = (e); typeof(rs) ns = -rs; (rs > 0)?ns:rs; }
 
 /* reference-mutation-class */
 #define jcm_set_expression(x, y)	(y)
