@@ -34,7 +34,6 @@ public class MuTestProjectExecute {
 				testing(cfile, in);
 				System.out.println("----------------------------------");
 				System.out.println();
-				// in.nextLine();
 			}
 		}
 		in.close();

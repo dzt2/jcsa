@@ -15,7 +15,7 @@ public class VCRPMutationTextParser extends MutationTextParser {
 
 	@Override
 	protected String get_muta_code(AstMutation source, AstNode location) throws Exception {
-		return source.get_parameter().toString();
+		return "(" + source.get_parameter().toString() + ")";
 	}
 
 }

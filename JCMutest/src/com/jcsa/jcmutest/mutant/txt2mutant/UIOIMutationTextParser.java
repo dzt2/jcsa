@@ -18,10 +18,10 @@ public class UIOIMutationTextParser extends MutationTextParser {
 		AstExpression expression = (AstExpression) location;
 		String operand = expression.generate_code();
 		switch(source.get_operator()) {
-		case insert_prev_inc:	return "++(" + operand + ")";
-		case insert_prev_dec:	return "--(" + operand + ")";
-		case insert_post_inc:	return "(" + operand + ")++";
-		case insert_post_dec:	return "(" + operand + ")--";
+		case insert_prev_inc:	return "(++(" + operand + "))";
+		case insert_prev_dec:	return "(--(" + operand + "))";
+		case insert_post_inc:	return "((" + operand + ")++)";
+		case insert_post_dec:	return "((" + operand + ")--)";
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}
