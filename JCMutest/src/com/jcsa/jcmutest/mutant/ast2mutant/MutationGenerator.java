@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
@@ -97,13 +98,17 @@ public abstract class MutationGenerator {
 			AstNode parent = expression.get_parent();
 			while(parent != null) {
 				if(parent instanceof AstCaseStatement) {
-					return false;
+					return false;	/* constant in the case-statement is removed */
 				}
 				else if(parent instanceof AstAssignExpression
 						|| parent instanceof AstArithAssignExpression
 						|| parent instanceof AstBitwiseAssignExpression
 						|| parent instanceof AstShiftAssignExpression) {
+					/* reference that is assigned in statement cannot be seeded */
 					return child != ((AstBinaryExpression) parent).get_loperand();
+				}
+				else if(parent instanceof AstDeclarator) {
+					return false;	/* constant in array-declarator is not allowed */
 				}
 				else {
 					child = parent;
@@ -361,7 +366,10 @@ public abstract class MutationGenerator {
 	 * @throws Exception
 	 */
 	protected boolean is_compatible(AstBinaryExpression expression, COperator operator) throws Exception {
-		CType type = CTypeAnalyzer.get_value_type(expression.get_value_type());
+		// CType type = CTypeAnalyzer.get_value_type(expression.get_value_type());
+		CType ltype = CTypeAnalyzer.get_value_type(expression.get_loperand().get_value_type());
+		CType rtype = CTypeAnalyzer.get_value_type(expression.get_roperand().get_value_type());
+		
 		if(expression.get_operator().get_operator() != operator) {
 			switch(operator) {
 			case arith_mod:
@@ -377,7 +385,7 @@ public abstract class MutationGenerator {
 			case righ_shift:
 			case righ_shift_assign:
 			{
-				return CTypeAnalyzer.is_integer(type);
+				return CTypeAnalyzer.is_integer(ltype) && CTypeAnalyzer.is_integer(rtype);
 			}
 			case arith_add:
 			case arith_sub:

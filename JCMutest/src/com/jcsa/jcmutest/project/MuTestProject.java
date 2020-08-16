@@ -1,8 +1,6 @@
 package com.jcsa.jcmutest.project;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -137,26 +135,41 @@ public class MuTestProject {
 		return this.exec_space.execute_mutation_testing(mutant);
 	}
 	/**
-	 * @return the mutants that can not be successfully compiled
+	 * Perform testing by compiling the code generated for each mutant in the program
+	 * @param start_id
+	 * @param error_directory where the incorrect mutation code files are saved
+	 * @return the number of mutants failed to be compiled and its total number
 	 * @throws Exception
 	 */
-	public List<Mutant> test_compile_mutants(int start_id) throws Exception {
-		List<Mutant> error_mutants = new ArrayList<Mutant>();
-		for(MuTestCodeFile code_file : this.code_space.get_code_files()) {
-			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-				if(mutant.get_id() >= start_id) {
-					if(!this.exec_space.test_compile(mutant)) {
-						throw new RuntimeException("Failed to compile " + mutant);
+	public int[] test_compile_mutants(File error_directory) throws Exception {
+		if(error_directory == null || !error_directory.exists())
+			throw new IllegalArgumentException("Invalid directory: null");
+		else {
+			int total_number = 0, error_number = 0, local_number = 0;
+			for(MuTestCodeFile code_file : this.code_space.get_code_files()) {
+				local_number = 0;
+				for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+					String file_name = code_file.get_name();
+					local_number++;
+					if(this.exec_space.test_compile(mutant)) {
+						System.out.println(file_name + "(" + local_number + "/" + code_file.
+								get_mutant_space().size() + ")-Passed: " + mutant.get_mutation());
 					}
 					else {
-						System.out.println("\t==> Test-in-" + 
-								code_file.get_mutant_space().size() + ": " +
-								code_file.get_name() + mutant.toString());
+						error_number++;
+						System.out.println(file_name + "(" + local_number + "/" + code_file.
+								get_mutant_space().size() + ")-Failed: " + mutant.get_mutation());
+						
+						/* save the incorrect mutation code to error-directory */
+						String muta_name = file_name + mutant.get_mutation().get_class() + "." + mutant.get_id() + ".c";
+						File muta_file = new File(error_directory.getAbsolutePath() + "/" + muta_name);
+						FileOperations.write(muta_file, FileOperations.read(code_file.get_mfile()));
 					}
+					total_number++;
 				}
 			}
+			return new int[] { error_number, total_number };
 		}
-		return error_mutants;
 	}
 	
 }

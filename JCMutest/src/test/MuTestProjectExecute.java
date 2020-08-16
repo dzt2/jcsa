@@ -1,14 +1,12 @@
 package test;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestCodeFile;
@@ -29,24 +27,25 @@ public class MuTestProjectExecute {
 	
 	public static void main(String[] args) throws Exception {
 		File[] cfiles = new File(root_path + "cfiles").listFiles();
+		Scanner in = new Scanner(System.in);
 		for(File cfile : cfiles) {
 			if(cfile.getName().endsWith(".c")) {
 				System.out.println("----------------------------------");
-				testing(cfile);
+				testing(cfile, in);
 				System.out.println("----------------------------------");
 				System.out.println();
+				// in.nextLine();
 			}
 		}
+		in.close();
 	}
-	protected static void testing(File cfile) throws Exception {
+	protected static void testing(File cfile, Scanner in) throws Exception {
 		String name = get_name(cfile);
 		File root = new File(root_path + "projects/" + name);
 		if(!root.exists()) {
-			Scanner in = new Scanner(System.in);
 			new_project(cfile);
 			get_project(cfile);
 			in.nextLine();
-			in.close();
 		}
 	}
 	
@@ -114,7 +113,6 @@ public class MuTestProjectExecute {
 		System.out.println("\tinstrument_head? " + project.get_config().get_instrument_head_file().exists());
 		System.out.println("\tconfig_data? " + project.get_config().get_config_data_file().exists());
 		
-		int mutants_number = 0;
 		System.out.println("Mutation-Code-Files:");
 		for(MuTestCodeFile code_file : project.get_code_space().get_code_files()) {
 			System.out.println("\tname: " + code_file.get_name());
@@ -124,21 +122,16 @@ public class MuTestProjectExecute {
 			System.out.println("\tmfile: " + code_file.get_mfile().exists());
 			System.out.println("\tufile: " + code_file.get_mutant_data_file().exists());
 			System.out.println("\tmutants: " + code_file.get_mutant_space().size());
-			mutants_number += code_file.get_mutant_space().size();
 		}
 		
 		System.out.println("Testing-Space with " + project.
 				get_test_space().get_test_space().number_of_inputs() + " tests.");
 		
 		System.out.println("Testing Compilation on Mutations:");
-		List<Mutant> errors = project.test_compile_mutants(0);
-		System.out.println("Error-Rate: " + errors.size() + "/" + mutants_number);
-		
-		FileWriter writer = new FileWriter(new File("result/err/" + name + ".txt"));
-		for(Mutant mutant : errors) {
-			writer.write("\t\t[Error]: " + mutant.toString() + "\n");
-		}
-		writer.close();
+		File error_directory = new File("result/err/" + name);
+		if(!error_directory.exists()) { error_directory.mkdir(); }
+		int[] error_total_numbers = project.test_compile_mutants(error_directory);
+		System.out.println("Error-Rate: " + error_total_numbers[0] + "/" + error_total_numbers[1]);
 		
 		return project;
 	}
