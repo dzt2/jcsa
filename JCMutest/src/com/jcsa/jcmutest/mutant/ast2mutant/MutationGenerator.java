@@ -8,7 +8,9 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
@@ -38,6 +40,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CTypeQualifier;
+import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 
 /**
  * It provides interface to seed syntactic mutations in source code based on
@@ -137,7 +140,19 @@ public abstract class MutationGenerator {
 					type = ((CQualifierType) type).get_reference();
 				}
 			}
-			return false;
+			
+			if(location instanceof AstConstant) {
+				return true;
+			}
+			else if(location instanceof AstIdExpression) {
+				return ((AstIdExpression) location).get_cname() instanceof CEnumeratorName;
+			}
+			else if(location instanceof AstLiteral) {
+				return true;
+			}
+			else {
+				return false;
+			}
 		}
 		else {
 			return false;
@@ -329,8 +344,10 @@ public abstract class MutationGenerator {
 	 * @throws Exception
 	 */
 	protected boolean is_reference_expression(AstNode location) throws Exception {
-		if(location instanceof AstIdExpression
-			|| location instanceof AstArrayExpression
+		if(location instanceof AstIdExpression) {
+			return !(((AstIdExpression) location).get_cname() instanceof CEnumeratorName);
+		}
+		else if(location instanceof AstArrayExpression
 			|| location instanceof AstFieldExpression) {
 			return true;
 		}
