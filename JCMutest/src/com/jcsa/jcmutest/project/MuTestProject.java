@@ -154,7 +154,7 @@ public class MuTestProject {
 		for(MuTestProjectCodeFile code_file : this.code_space.get_code_files()) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				if(this.exec_space.compile_program(mutant)) {
-					System.out.println("\t\t==> Pass on " + code_file.get_name() + 
+					System.out.println("\t==> Pass on " + code_file.get_name() + 
 							"[" + mutant.get_id() + "]:\t" + mutant.get_mutation());
 				}
 				else {
