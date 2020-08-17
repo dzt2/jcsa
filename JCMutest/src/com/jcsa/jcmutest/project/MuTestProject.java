@@ -155,7 +155,7 @@ public class MuTestProject {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				if(this.exec_space.compile_program(mutant)) {
 					System.out.println("\t==> Pass on " + code_file.get_name() + 
-							"[" + mutant.get_id() + "]:\t" + mutant.get_mutation());
+							"[" + mutant.get_id() + "/" + code_file.get_mutant_space().size() + "]:\t" + mutant.get_mutation());
 				}
 				else {
 					File target = new File(error_directory.getAbsolutePath() + "/" + 
@@ -168,7 +168,7 @@ public class MuTestProject {
 			}
 		}
 		
-		return new int[] { total_number, error_number };
+		return new int[] { error_number, total_number };
 	}
 	
 }
