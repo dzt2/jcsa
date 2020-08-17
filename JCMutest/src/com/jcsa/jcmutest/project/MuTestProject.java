@@ -21,18 +21,18 @@ public class MuTestProject {
 	/* definitions */
 	private MuTestProjectFiles files;
 	private MuTestProjectConfig config;
-	private MuTestCodeSpace code_space;
-	private MuTestInputSpace test_space;
-	private MuTestExecution exec_space;
+	private MuTestProjectCodeSpace code_space;
+	private MuTestProjectTestSpace test_space;
+	private MuTestProjectExecSpace exec_space;
 	public MuTestProject(File root, MuCommandUtil command_util) throws Exception {
 		if(root == null)
 			throw new IllegalArgumentException("Invalid root: null");
 		else {
 			this.files = new MuTestProjectFiles(this, root);
 			this.config = new MuTestProjectConfig(this, command_util);
-			this.code_space = new MuTestCodeSpace(this);
-			this.test_space = new MuTestInputSpace(this);
-			this.exec_space = new MuTestExecution(this);
+			this.code_space = new MuTestProjectCodeSpace(this);
+			this.test_space = new MuTestProjectTestSpace(this);
+			this.exec_space = new MuTestProjectExecSpace(this);
 		}
 	}
 	
@@ -52,11 +52,18 @@ public class MuTestProject {
 	 */
 	public MuTestProjectConfig get_config() { return this.config; }
 	/**
-	 * @return the code space in the project 
+	 * @return code space of the project wher code and mutations are managed
 	 */
-	public MuTestCodeSpace get_code_space() { return this.code_space; }
-	public MuTestInputSpace get_test_space() { return this.test_space; }
-	public MuTestExecution get_exec_space() { return this.exec_space; }
+	public MuTestProjectCodeSpace get_code_space() { return this.code_space; }
+	/**
+	 * @return test space of the project manages the test data used in testing
+	 */
+	public MuTestProjectTestSpace get_test_space() { return this.test_space; }
+	/**
+	 * @return execution space of the project manages the compilation and execution
+	 * 		   of the testing process.
+	 */
+	public MuTestProjectExecSpace get_exec_space() { return this.exec_space; }
 	
 	/* setters */
 	/**
@@ -81,95 +88,87 @@ public class MuTestProject {
 				mutation_head_file, max_timeout_seconds);
 	}
 	/**
-	 * input the cfiles, hfiles and lfiles, and building the code file space,
-	 * this will clear the mutant spaces
-	 * @param cfiles xxx.c files before pre-processing
-	 * @param hfiles xxx.h header files for compilation
-	 * @param lfiles xxx.lib library files to compile
+	 * delete the original code files and set the new code items for specified input source code files.
+	 * @param cfiles xxx.c files
+	 * @param hfiles xxx.h files
+	 * @param lfiles xxx.lib files
 	 * @throws Exception
 	 */
-	public void input_code(Iterable<File> cfiles, Iterable<File> hfiles, 
-			Iterable<File> lfiles) throws Exception {
-		this.code_space.input_code_files(cfiles, hfiles, lfiles);
+	public void set_cfiles(Iterable<File> cfiles, Iterable<File> hfiles, Iterable<File> lfiles) throws Exception {
+		this.code_space.set_cfiles(cfiles, hfiles, lfiles);
 	}
 	/**
-	 * update and generate the mutations in each code file of the space
+	 * generate the mutants in space of each code file in the project
 	 * @param mutation_classes
 	 * @throws Exception
 	 */
 	public void generate_mutants(Iterable<MutaClass> mutation_classes) throws Exception {
-		this.code_space.update_mutations(mutation_classes);
+		this.code_space.set_mutants(mutation_classes);
 	}
 	/**
-	 * update the test inputs used for executing the program under test and
-	 * generate the test scripts file.
+	 * set the test inputs from suite files and input data in inputs directory
 	 * @param test_suite_files
+	 * @param inputs_directory
 	 * @throws Exception
 	 */
-	public void input_tests(Iterable<File> test_suite_files,
-			File inputs_directory) throws Exception {
-		this.test_space.set_test_space(test_suite_files);
-		FileOperations.copy_all(inputs_directory, this.files.get_inputs_directory());
+	public void set_test_inputs(Iterable<File> test_suite_files, File inputs_directory) throws Exception {
+		this.test_space.set_test_inputs(test_suite_files, inputs_directory);
 	}
 	/**
-	 * Execute tests against original program
+	 * compile the original program
+	 * generate the test shell file
+	 * execute the shell file to test it
+	 * @param instrumental
 	 * @throws Exception
 	 */
-	public void execute_original_program() throws Exception {
-		this.exec_space.execute_normal_testing();
+	public void execute_original_program(boolean instrumental) throws Exception {
+		this.exec_space.initialize_testing();
+		this.exec_space.execute_original_program(instrumental);
 	}
 	/**
-	 * Execute tests against original program with instrumental analysis
+	 * generate the mutated code files in mfiles
+	 * compile mfiles into executional
+	 * execute the test scripts against mfiles
+	 * save the test results and return it
+	 * @param mutant
+	 * @return
 	 * @throws Exception
 	 */
-	public void execute_instrumental_program() throws Exception {
-		this.exec_space.execute_instrumental_testing();
+	public MuTestProjectTestResult execute_mutation_program(Mutant mutant) throws Exception {
+		return this.exec_space.execute_mutation_program(mutant);
 	}
+	
+	/* other utilities */
 	/**
-	 * Execute tests against the mutated program
-	 * @param mutant mutation being tested over
-	 * @throws Exception
-	 * @return the result of the testing on specified mutant
-	 */
-	public MuTestResult execute_mutation_program(Mutant mutant) throws Exception {
-		return this.exec_space.execute_mutation_testing(mutant);
-	}
-	/**
-	 * Perform testing by compiling the code generated for each mutant in the program
-	 * @param start_id
-	 * @param error_directory where the incorrect mutation code files are saved
-	 * @return the number of mutants failed to be compiled and its total number
+	 * To assert whether the normal, instrumental and mutated program can be 
+	 * correctly compiled, if not, the incorrect code will be output on the 
+	 * directory of specified.
+	 * @param error_directory
 	 * @throws Exception
 	 */
-	public int[] test_compile_mutants(File error_directory) throws Exception {
-		if(error_directory == null || !error_directory.exists())
-			throw new IllegalArgumentException("Invalid directory: null");
-		else {
-			int total_number = 0, error_number = 0, local_number = 0;
-			for(MuTestCodeFile code_file : this.code_space.get_code_files()) {
-				local_number = 0;
-				for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-					String file_name = code_file.get_name();
-					local_number++;
-					if(this.exec_space.test_compile(mutant)) {
-						System.out.println(file_name + "(" + local_number + "/" + code_file.
-								get_mutant_space().size() + ")-Passed: " + mutant.get_mutation());
-					}
-					else {
-						error_number++;
-						System.out.println(file_name + "(" + local_number + "/" + code_file.
-								get_mutant_space().size() + ")-Failed: " + mutant.get_mutation());
-						
-						/* save the incorrect mutation code to error-directory */
-						String muta_name = file_name + mutant.get_mutation().get_class() + "." + mutant.get_id() + ".c";
-						File muta_file = new File(error_directory.getAbsolutePath() + "/" + muta_name);
-						FileOperations.write(muta_file, FileOperations.read(code_file.get_mfile()));
-					}
-					total_number++;
+	public int[] assert_compilation(File error_directory) throws Exception {
+		this.exec_space.compile_program(false);
+		this.exec_space.compile_program(true);
+		
+		int total_number = 0, error_number = 0;
+		for(MuTestProjectCodeFile code_file : this.code_space.get_code_files()) {
+			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+				if(this.exec_space.compile_program(mutant)) {
+					System.out.println("\t\t==> Pass on " + code_file.get_name() + 
+							"[" + mutant.get_id() + "]:\t" + mutant.get_mutation());
 				}
+				else {
+					File target = new File(error_directory.getAbsolutePath() + "/" + 
+										code_file.get_name() + mutant.get_mutation().
+										get_class() + "." + mutant.get_id() + ".c");
+					FileOperations.copy(code_file.get_mfile(), target);
+					error_number++;
+				}
+				total_number++;
 			}
-			return new int[] { error_number, total_number };
 		}
+		
+		return new int[] { total_number, error_number };
 	}
 	
 }

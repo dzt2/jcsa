@@ -14,9 +14,9 @@ import com.jcsa.jcmutest.project.util.FileOperations;
  * 	|--	|--	[mfiles]	// source files seeded with mutation		<br>
  * 	|--	|--	[hfiles]	// header files to compile programs			<br>
  * 	|--	|--	[lfiles]	// library files for linking program		<br>
+ * 	|--	|--	[mutants]	// the data file preserving mutations		<br>
  * 	|--	[test]			// test files directory						<br>
  * 	|--	|--	test.suite	// file that preserve test suite data		<br>
- * 	|--	|--	[mutants]	// the data file preserving mutations		<br>
  * 	|--	|--	[inputs]	// the data files used in testing			<br>
  * 	|--	|--	[n_output]	// normal output files in testing			<br>
  * 	|--	|--	[s_output]	// instrumental output files in testing		<br>
@@ -130,11 +130,11 @@ public class MuTestProjectFiles {
 			this.mfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + mfiles_name));
 			this.hfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + hfiles_name));
 			this.lfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + lfiles_name));
+			this.mutants_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + mutants_name));
 			
 			/* test */
 			File test_dir = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + test_name));
 			this.test_suite_file = this.try_to_create(new File(test_dir.getAbsolutePath() + "/" + test_suite_name));
-			this.mutants_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + mutants_name));
 			this.inputs_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + inputs_name));
 			this.n_output_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + n_output_name));
 			this.s_output_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + s_output_name));

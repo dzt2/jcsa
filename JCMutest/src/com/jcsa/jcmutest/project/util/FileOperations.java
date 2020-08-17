@@ -185,4 +185,22 @@ public class FileOperations {
 		}
 	}
 	
+	/**
+	 * whether two files are identical with their bytes
+	 * @param source
+	 * @param target
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean compare(File source, File target) throws Exception {
+		if(source == null || target == null)
+			throw new IllegalArgumentException("Invalid input as null");
+		else if(!source.exists() || !target.exists()) {
+			return !source.exists() && !target.exists();
+		}
+		else {
+			return FileOperations.read(source).equals(FileOperations.read(target));
+		}
+	}
+	
 }

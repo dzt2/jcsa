@@ -9,8 +9,8 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.project.MuTestCodeFile;
 import com.jcsa.jcmutest.project.MuTestProject;
+import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
@@ -30,10 +30,7 @@ public class MuTestProjectExecute {
 		Scanner in = new Scanner(System.in);
 		for(File cfile : cfiles) {
 			if(cfile.getName().endsWith(".c")) {
-				System.out.println("----------------------------------");
 				testing(cfile, in);
-				System.out.println("----------------------------------");
-				System.out.println();
 			}
 		}
 		in.close();
@@ -42,9 +39,12 @@ public class MuTestProjectExecute {
 		String name = get_name(cfile);
 		File root = new File(root_path + "projects/" + name);
 		if(!root.exists()) {
+			System.out.println("----------------------------------");
 			new_project(cfile);
 			get_project(cfile);
 			in.nextLine();
+			System.out.println("----------------------------------");
+			System.out.println();
 		}
 	}
 	
@@ -80,7 +80,7 @@ public class MuTestProjectExecute {
 		List<File> hfiles = new ArrayList<File>();
 		List<File> lfiles = new ArrayList<File>();
 		cfiles.add(cfile);
-		project.input_code(cfiles, hfiles, lfiles);
+		project.set_cfiles(cfiles, hfiles, lfiles);
 		
 		/* input the test inputs */
 		File test_suite_file = new File(root_path + "tests/" + name + ".c.txt");
@@ -88,7 +88,7 @@ public class MuTestProjectExecute {
 		if(test_suite_file.exists()) test_suite_files.add(test_suite_file);
 		File inputs_directory = new File(root_path + "inputs/" + name);
 		if(!inputs_directory.exists()) FileOperations.mkdir(inputs_directory);
-		project.input_tests(test_suite_files, inputs_directory);
+		project.set_test_inputs(test_suite_files, inputs_directory);
 		
 		/* generate mutations */
 		project.generate_mutants(get_classes());
@@ -113,13 +113,13 @@ public class MuTestProjectExecute {
 		System.out.println("\tconfig_data? " + project.get_config().get_config_data_file().exists());
 		
 		System.out.println("Mutation-Code-Files:");
-		for(MuTestCodeFile code_file : project.get_code_space().get_code_files()) {
+		for(MuTestProjectCodeFile code_file : project.get_code_space().get_code_files()) {
 			System.out.println("\tname: " + code_file.get_name());
 			System.out.println("\tcfile: " + code_file.get_cfile().exists());
 			System.out.println("\tifile: " + code_file.get_ifile().exists());
 			System.out.println("\tsfile: " + code_file.get_sfile().exists());
 			System.out.println("\tmfile: " + code_file.get_mfile().exists());
-			System.out.println("\tufile: " + code_file.get_mutant_data_file().exists());
+			System.out.println("\tufile: " + code_file.get_ufile().exists());
 			System.out.println("\tmutants: " + code_file.get_mutant_space().size());
 		}
 		
@@ -129,7 +129,7 @@ public class MuTestProjectExecute {
 		System.out.println("Testing Compilation on Mutations:");
 		File error_directory = new File("result/err/" + name);
 		if(!error_directory.exists()) { error_directory.mkdir(); }
-		int[] error_total_numbers = project.test_compile_mutants(error_directory);
+		int[] error_total_numbers = project.assert_compilation(error_directory);
 		System.out.println("Error-Rate: " + error_total_numbers[0] + "/" + error_total_numbers[1]);
 		
 		return project;
