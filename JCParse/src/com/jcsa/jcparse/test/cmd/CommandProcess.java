@@ -27,6 +27,8 @@ public class CommandProcess implements Runnable {
 	private StringBuilder stdout;
 	/** the buffer to preserve standard errors **/
 	private StringBuilder stderr;
+	/** the thread that executes this process runnable **/
+	private Thread thread;
 	
 	/* constructor */
 	/**
@@ -47,6 +49,7 @@ public class CommandProcess implements Runnable {
 			this.out_of_time = false;
 			this.stdout = new StringBuilder(); 
 			this.stderr = new StringBuilder();
+			this.thread = null;
 		}
 	}
 	
@@ -95,6 +98,30 @@ public class CommandProcess implements Runnable {
 			/* destroy command-line process */ 	proc.destroy();	
 		}
 	}
+	/**
+	 * execute the thread under the command until it is completed
+	 * @return the result of executing the command-line process
+	 * @throws Exception
+	 */
+	public CommandResult join() throws Exception {
+		this.thread.join();
+		CommandStatus status;
+		if(this.out_of_time) {
+			status = CommandStatus.out_of_time;
+		}
+		else if(this.stdout.length() >= this.buffer_size
+				|| this.stderr.length() >= this.buffer_size) {
+			status = CommandStatus.out_of_buff;
+		}
+		else if(this.exit_code != 0) {
+			status = CommandStatus.except_exit;
+		}
+		else {
+			status = CommandStatus.normal_exit;
+		}
+		return new CommandResult(status, this.exit_code, 
+				this.stdout.toString(), this.stderr.toString());
+	}
 	
 	/* running method */
 	/**
@@ -130,6 +157,25 @@ public class CommandProcess implements Runnable {
 		}
 		return new CommandResult(status, processor.exit_code, 
 				processor.stdout.toString(), processor.stderr.toString());
+	}
+	/**
+	 * @param command
+	 * @param cur_directory
+	 * @param buffer_length
+	 * @return the process with a thread that starts to execute it
+	 * @throws Exception
+	 */
+	public static CommandProcess new_process(String[] command, 
+			File cur_directory, int buffer_length) throws Exception {
+		/** 1. create the command-line processing threads **/
+		CommandProcess processor = 
+				new CommandProcess(command, cur_directory, buffer_length);
+		
+		/** 2. execute the command-line process concurrently **/
+		Thread thread = new Thread(processor); thread.start();
+		
+		/** 3. reset the thread and return the process thread **/
+		processor.thread = thread;	return processor;
 	}
 	
 	/* buffer size selections */

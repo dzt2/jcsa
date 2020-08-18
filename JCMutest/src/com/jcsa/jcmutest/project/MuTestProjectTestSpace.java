@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.project;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -51,8 +52,8 @@ public class MuTestProjectTestSpace {
 	/**
 	 * @return all the test inputs within the project space
 	 */
-	public Iterable<TestInput> get_test_inputs() {
-		return this.test_space.get_inputs();
+	public Collection<TestInput> get_test_inputs() {
+		return (Collection<TestInput>) this.test_space.get_inputs();
 	}
 	/**
 	 * @return the number of test inputs defined in this project space
@@ -66,7 +67,7 @@ public class MuTestProjectTestSpace {
 	 * @return the test inputs of which id ranges from [beg_id, end_id)
 	 * @throws Exception
 	 */
-	public Iterable<TestInput> get_test_inputs(int beg_id, int end_id) throws Exception {
+	public Collection<TestInput> get_test_inputs(int beg_id, int end_id) throws Exception {
 		List<TestInput> inputs = new ArrayList<TestInput>();
 		for(TestInput input : this.test_space.get_inputs()) {
 			if(input.get_id() >= beg_id && input.get_id() < end_id) {

@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.project;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -8,6 +10,7 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.test.cmd.CCompiler;
+import com.jcsa.jcparse.test.file.TestInput;
 
 /**
  * Mutation test project provides the top-perspective to manage the data and
@@ -64,6 +67,34 @@ public class MuTestProject {
 	 * 		   of the testing process.
 	 */
 	public MuTestProjectExecSpace get_exec_space() { return this.exec_space; }
+	/**
+	 * @param beg
+	 * @param end
+	 * @return the tests inputs range from [beg, end)
+	 * @throws Exception
+	 */
+	public Collection<TestInput> get_tests(int beg, int end) throws Exception {
+		return this.test_space.get_test_inputs(beg, end);
+	}
+	/**
+	 * @param cfile
+	 * @param beg
+	 * @param end
+	 * @return the mutants range from [beg, end) w.r.t. specified code file
+	 * @throws Exception
+	 */
+	public Collection<Mutant> get_mutants(File cfile, int beg, int end) throws Exception {
+		Collection<Mutant> mutants = new ArrayList<Mutant>();
+		MuTestProjectCodeFile code_file = this.code_space.get_code_file(cfile);
+		if(code_file != null) {
+			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+				if(mutant.get_id() >= beg && mutant.get_id() < end) {
+					mutants.add(mutant);
+				}
+			}
+		}
+		return mutants;
+	}
 	
 	/* setters */
 	/**
@@ -123,11 +154,11 @@ public class MuTestProject {
 		this.test_space.add_test_inputs(test_suite_files);
 	}
 	
-	/* other utilities */
+	/* execution utilities */
 	/**
 	 * To assert whether the normal, instrumental and mutated program can be 
 	 * correctly compiled, if not, the incorrect code will be output on the 
-	 * directory of specified.
+	 * directory of specified. [error_number, total_number]
 	 * @param error_directory
 	 * @throws Exception
 	 */
@@ -152,6 +183,29 @@ public class MuTestProject {
 			}
 		}
 		return new int[] { error_number, total_number };
+	}
+	/**
+	 * execute the mutation testing by executing each test against each mutant and generating their results
+	 * in linear way (classical method will take much time to complete the testing process).
+	 * @param mutants
+	 * @param tests
+	 * @throws Exception
+	 * @return the seconds taken for executing the mutation testing process
+	 */
+	public long execute(Collection<Mutant> mutants, Collection<TestInput> tests) throws Exception {
+		this.exec_space.generate_exec_scripts(tests);
+		this.exec_space.execute_normal_program();
+		System.out.println("\t1. Complete original program testing with " + tests.size() + " tests.");
+		System.out.println("\t2. Start mutation testing over " + mutants.size() + " mutations within.");
+		long beg = System.currentTimeMillis();
+		for(Mutant mutant : mutants) {
+			this.exec_space.execute_mutation_program(mutant);
+			System.out.println("\t\t==> Complete executing on " + mutant.toString());
+		}
+		long end = System.currentTimeMillis();
+		long time = (end - beg) / 1000;
+		System.out.println("\t3. Complete all the testing process using " + time + " seconds");
+		return time;
 	}
 	
 }
