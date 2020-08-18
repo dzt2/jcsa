@@ -106,36 +106,21 @@ public class MuTestProject {
 		this.code_space.set_mutants(mutation_classes);
 	}
 	/**
-	 * set the test inputs from suite files and input data in inputs directory
+	 * set the input data in inputs directory
 	 * @param test_suite_files
 	 * @param inputs_directory
 	 * @throws Exception
 	 */
-	public void set_test_inputs(Iterable<File> test_suite_files, File inputs_directory) throws Exception {
-		this.test_space.set_test_inputs(test_suite_files, inputs_directory);
+	public void set_inputs_directory(File inputs_directory) throws Exception {
+		this.test_space.set_inputs_directory(inputs_directory);
 	}
 	/**
-	 * compile the original program
-	 * generate the test shell file
-	 * execute the shell file to test it
-	 * @param instrumental
+	 * add new test inputs to the test space
+	 * @param test_suite_files
 	 * @throws Exception
 	 */
-	public void execute_original_program(boolean instrumental) throws Exception {
-		this.exec_space.initialize_testing();
-		this.exec_space.execute_original_program(instrumental);
-	}
-	/**
-	 * generate the mutated code files in mfiles
-	 * compile mfiles into executional
-	 * execute the test scripts against mfiles
-	 * save the test results and return it
-	 * @param mutant
-	 * @return
-	 * @throws Exception
-	 */
-	public MuTestProjectTestResult execute_mutation_program(Mutant mutant) throws Exception {
-		return this.exec_space.execute_mutation_program(mutant);
+	public void add_test_inputs(Iterable<File> test_suite_files) throws Exception {
+		this.test_space.add_test_inputs(test_suite_files);
 	}
 	
 	/* other utilities */
@@ -147,13 +132,12 @@ public class MuTestProject {
 	 * @throws Exception
 	 */
 	public int[] assert_compilation(File error_directory) throws Exception {
-		this.exec_space.compile_program(false);
-		this.exec_space.compile_program(true);
-		
+		this.exec_space.compile_normal_program();
+		this.exec_space.compile_instrumental_program();
 		int total_number = 0, error_number = 0;
 		for(MuTestProjectCodeFile code_file : this.code_space.get_code_files()) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-				if(this.exec_space.compile_program(mutant)) {
+				if(this.exec_space.compile_mutation_program(mutant)) {
 					System.out.println("\t==> Pass on " + code_file.get_name() + 
 							"[" + mutant.get_id() + "/" + code_file.get_mutant_space().size() + "]:\t" + mutant.get_mutation());
 				}
@@ -167,7 +151,6 @@ public class MuTestProject {
 				total_number++;
 			}
 		}
-		
 		return new int[] { error_number, total_number };
 	}
 	

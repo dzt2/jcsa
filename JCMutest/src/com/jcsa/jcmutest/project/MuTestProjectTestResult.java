@@ -1,124 +1,117 @@
 package com.jcsa.jcmutest.project;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.BitSequence;
-import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.file.TestInputs;
 
 /**
- * It records the state of test results for each mutant.
+ * It records the data information from testing results, including:<br>
+ * 	1. mutant: the mutation that is executed against test cases.<br>
+ * 	2. exec_set: the matrix defines of which tests are executed against the mutant.<br>
+ * 	3. kill_set: the matrix defines of which tests in exec_set killed the mutation.<br>
+ * <br>
+ * NOTE that: the kill-set is the subset of the exec-set.<br>
  * 
  * @author yukimula
  *
  */
 public class MuTestProjectTestResult {
 	
-	/* definition */
-	private boolean executed;
+	/* definitions */
+	/** the mutation that is executed against test cases **/
 	private Mutant mutant;
-	private BitSequence score;
-	protected MuTestProjectTestResult(Mutant mutant) throws Exception {
+	/** the matrix defines of which tests are executed against the mutant **/
+	private BitSequence exec_set;
+	/** the matrix defines of which tests in exec_set killed the mutation **/
+	private BitSequence kill_set;
+	/**
+	 * create a test result initialized as non-compiled mutant with non-executed
+	 * set of test matrix.
+	 * @param mutant
+	 * @param number_of_tests
+	 * @throws Exception
+	 */
+	protected MuTestProjectTestResult(Mutant mutant, int number_of_tests) throws Exception {
 		if(mutant == null)
 			throw new IllegalArgumentException("Invalid mutant: null");
-		this.mutant = mutant;
-		this.executed = false;
-		this.score = null;
+		else if(number_of_tests < 0)
+			throw new IllegalArgumentException("Invalid number-of-tests");
+		else {
+			this.mutant = mutant;
+			this.exec_set = new BitSequence(number_of_tests);
+			this.kill_set = new BitSequence(number_of_tests);
+		}
 	}
 	
 	/* getters */
 	/**
-	 * @return whether the mutant has been executed before
-	 *         amd false means it may not be compiled.
-	 */
-	public boolean is_executed() { return this.executed; }
-	/**
-	 * @return the mutant of which results are described
+	 * @return the mutation that is executed against test cases
 	 */
 	public Mutant get_mutant() { return this.mutant; }
 	/**
-	 * @return it specifies of which test in space kill this mutant
-	 * 			or null if the mutant has not been executed yet.
+	 * @return the number of test inputs to build up the mutation project
 	 */
-	public BitSequence get_socre_list() { return this.score; }
+	public int number_of_tests() { return this.exec_set.length(); }
+	/**
+	 * @return the matrix defines of which tests are executed against the mutant
+	 */
+	public BitSequence get_exec_set() { return this.exec_set; }
+	/**
+	 * @return the matrix defines of which tests in exec_set killed the mutation
+	 */
+	public BitSequence get_kill_set() { return this.kill_set; }
 	
 	/* setters */
 	/**
-	 * Load the old data from result file
+	 * exec_set			{101101...001011}
+	 * kill_set			{100001...001000}
 	 * @param rfile
 	 * @throws Exception
 	 */
-	protected void load(File rfile) throws Exception {
-		if(!rfile.exists()) {
-			this.executed = false;
-			this.score = null;
-		}
+	protected void save(File rfile) throws Exception {
+		if(rfile == null)
+			throw new IllegalArgumentException("Invalid rfile: null");
 		else {
-			String text = FileOperations.read(rfile).strip();
-			this.executed = true;
-			this.score = new BitSequence(text.length());
-			for(int k = 0; k < text.length(); k++) {
-				if(text.charAt(k) == '0') {
-					this.score.set(k, BitSequence.BIT0);
-				}
-				else {
-					this.score.set(k, BitSequence.BIT1);
-				}
-			}
+			FileWriter writer = new FileWriter(rfile);
+			writer.write(this.exec_set.toString() + "\n");
+			writer.write(this.kill_set.toString() + "\n");
+			writer.close();
 		}
 	}
 	/**
-	 * save the result to the specified file in results directory
 	 * @param rfile
+	 * @return 	(1) if rfile does not exist, returns null;
+	 * 			(2) else generate the test result saved in file.
 	 * @throws Exception
 	 */
-	private void save(File rfile) throws Exception {
-		FileOperations.delete(rfile);
-		if(this.score != null) {
-			FileOperations.write(rfile, this.score.toString());
-		}
-	}
-	/**
-	 * generate the score-matrix for the mutant 
-	 * @param test_number the number of test inputs involved in testing
-	 * @param n_outputs the directory where outputs from original program 
-	 * @param m_outputs the directory where outputs from mutated programs
-	 * @param rfile the file that preserves the updated results of mutant
-	 * @throws Exception
-	 */
-	protected void update(TestInputs test_space, File n_outputs, File m_outputs, File rfile) throws Exception {
-		if(test_space == null)
-			throw new IllegalArgumentException("Invalid test_space: null");
-		else if(n_outputs == null || !n_outputs.isDirectory())
-			throw new IllegalArgumentException("Not directory: " + n_outputs);
-		else if(m_outputs == null || !m_outputs.isDirectory())
-			throw new IllegalArgumentException("Not directory: " + m_outputs);
+	protected static MuTestProjectTestResult load(Mutant mutant, int number_of_tests, File rfile) throws Exception {
+		if(mutant == null)
+			throw new IllegalArgumentException("Invalid mutant: null");
 		else if(rfile == null)
-			throw new IllegalArgumentException("Invalid result file as null");
+			throw new IllegalArgumentException("Invalid rfile: null");
+		else if(rfile.exists()) {
+			BufferedReader reader = new BufferedReader(new FileReader(rfile));
+			MuTestProjectTestResult result = new MuTestProjectTestResult(mutant, number_of_tests);
+			parse(result.exec_set, reader.readLine().strip());
+			parse(result.kill_set, reader.readLine().strip());
+			reader.close();
+			return result;
+		}
 		else {
-			this.score = new BitSequence(test_space.number_of_inputs());
-			
-			for(TestInput input : test_space.get_inputs()) {
-				File osource = input.get_stdout_file(n_outputs);
-				File otarget = input.get_stdout_file(m_outputs);
-				if(FileOperations.compare(osource, otarget)) {
-					File esource = input.get_stderr_file(n_outputs);
-					File etarget = input.get_stderr_file(m_outputs);
-					if(FileOperations.compare(esource, etarget)) {
-						this.score.set(input.get_id(), BitSequence.BIT0);
-					}
-					else {
-						this.score.set(input.get_id(), BitSequence.BIT1);
-					}
-				}
-				else {
-					this.score.set(input.get_id(), BitSequence.BIT1);
-				}
+			return null;	/* no result file for mutant if it has not been tested */
+		}
+	}
+	private static void parse(BitSequence bits, String text) throws Exception {
+		for(int k = 0; k < text.length() && k < bits.length(); k++) {
+			switch(text.charAt(k)) {
+			case '0':	bits.set(k, BitSequence.BIT0); 	break;
+			case '1':	bits.set(k, BitSequence.BIT1); 	break;
+			default: 	/* invalid character ignored */	break;
 			}
-			
-			this.save(rfile);
 		}
 	}
 	

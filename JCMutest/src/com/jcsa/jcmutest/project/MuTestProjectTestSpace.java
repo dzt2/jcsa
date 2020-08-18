@@ -1,9 +1,13 @@
 package com.jcsa.jcmutest.project;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.project.util.FileOperations;
+import com.jcsa.jcparse.base.BitSequence;
+import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.file.TestInputs;
 
 /**
@@ -45,6 +49,33 @@ public class MuTestProjectTestSpace {
 	 */
 	public TestInputs get_test_space() { return this.test_space; }
 	/**
+	 * @return all the test inputs within the project space
+	 */
+	public Iterable<TestInput> get_test_inputs() {
+		return this.test_space.get_inputs();
+	}
+	/**
+	 * @return the number of test inputs defined in this project space
+	 */
+	public int number_of_test_inputs() { 
+		return this.test_space.number_of_inputs(); 
+	}
+	/**
+	 * @param beg_id
+	 * @param end_id
+	 * @return the test inputs of which id ranges from [beg_id, end_id)
+	 * @throws Exception
+	 */
+	public Iterable<TestInput> get_test_inputs(int beg_id, int end_id) throws Exception {
+		List<TestInput> inputs = new ArrayList<TestInput>();
+		for(TestInput input : this.test_space.get_inputs()) {
+			if(input.get_id() >= beg_id && input.get_id() < end_id) {
+				inputs.add(input);
+			}
+		}
+		return inputs;
+	}
+	/**
 	 * @return test suite data file in which test inputs are provided
 	 */
 	public File get_test_suite_file() { 
@@ -81,22 +112,6 @@ public class MuTestProjectTestSpace {
 		return this.project.get_files().get_result_directory();
 	}
 	/**
-	 * @param mutant
-	 * @return get the file of test results with mutant specified
-	 */
-	private File get_test_result_file(Mutant mutant) {
-		return new File(this.get_result_directory().getAbsolutePath() + "/" + mutant.get_id());
-	}
-	/**
-	 * @param mutant
-	 * @return the test result of the mutant loaded from result directory
-	 * @throws Exception
-	 */
-	public MuTestProjectTestResult get_test_result(Mutant mutant) throws Exception {
-		MuTestProjectTestResult result = new MuTestProjectTestResult(mutant);
-		result.load(this.get_test_result_file(mutant)); return result;
-	}
-	/**
 	 * @return the file that saves the instrumental result data
 	 */
 	public File get_instrumental_txt_file() {
@@ -114,6 +129,27 @@ public class MuTestProjectTestSpace {
 	public File get_instrumental_err_file() {
 		return this.project.get_files().get_instrument_err_file();
 	}
+	/**
+	 * @param mutant
+	 * @return the file that preserves the test results of the mutant
+	 * @throws Exception
+	 */
+	private File get_test_result_file(Mutant mutant) throws Exception {
+		String name = mutant.get_mutation().get_location().
+				get_tree().get_source_file().getName();
+		return new File(this.get_result_directory().getAbsolutePath() + 
+				"/" + name + mutant.get_id() + ".rs");
+	}
+	/**
+	 * @param mutant
+	 * @return the test results w.r.t. the mutant or null if it has not been tested.
+	 * @throws Exception
+	 */
+	public MuTestProjectTestResult get_test_result(Mutant mutant) throws Exception {
+		return MuTestProjectTestResult.load(mutant, 
+				this.test_space.number_of_inputs(),
+				this.get_test_result_file(mutant));
+	}
 	
 	/* setters */
 	private void load() throws Exception {
@@ -123,33 +159,83 @@ public class MuTestProjectTestSpace {
 		}
 	}
 	/**
-	 * put the inputs from test-suite-files into the test space and save in file
-	 * @param test_suite_files
+	 * set the data files in inputs directory
+	 * @param inputs_directory
 	 * @throws Exception
 	 */
-	protected void set_test_inputs(Iterable<File> test_suite_files, File inputs_directory) throws Exception {
-		this.test_space.clear();
-		this.test_space.append(test_suite_files);
-		this.test_space.save(this.get_test_suite_file());
-		
-		FileOperations.delete_in(this.get_inputs_directory());
-		if(inputs_directory.isDirectory()) {
+	protected void set_inputs_directory(File inputs_directory) throws Exception {
+		if(inputs_directory == null || !inputs_directory.isDirectory())
+			throw new IllegalArgumentException("Not inputs-directory");
+		else {
+			FileOperations.delete_in(this.get_inputs_directory());
 			FileOperations.copy_all(inputs_directory, this.get_inputs_directory());
 		}
 	}
 	/**
-	 * take the results in current n_outputs and m_outputs as the outputs during
-	 * testing the mutant as provided and generate its result and save in file.
-	 * @param mutant
+	 * append the test inputs in test suite files are appended in the test space
+	 * @param test_suite_files
 	 * @throws Exception
 	 */
-	protected MuTestProjectTestResult save_test_result(Mutant mutant) throws Exception {
-		MuTestProjectTestResult result = new MuTestProjectTestResult(mutant);
-		result.update(this.test_space, 
-				this.get_normal_output_directory(), 
-				this.get_mutation_output_directory(), 
-				this.get_test_result_file(mutant));
+	protected void add_test_inputs(Iterable<File> test_suite_files) throws Exception {
+		this.test_space.append(test_suite_files);
+		this.test_space.save(this.get_test_suite_file());
+	}
+	/**
+	 * update the test result information w.r.t. mutant using the newest results in
+	 * n_outputs and m_outputs.
+	 * 
+	 * @param mutant
+	 * @return
+	 * @throws Exception
+	 */
+	protected MuTestProjectTestResult update_test_result(Mutant mutant) throws Exception {
+		/* get the test result data from current space */
+		MuTestProjectTestResult result = this.get_test_result(mutant);
+		if(result == null) {
+			result = new MuTestProjectTestResult(mutant, 
+					this.test_space.number_of_inputs());
+		}
+		
+		/* update the test result information for mutant */
+		File n_outputs = this.get_normal_output_directory();
+		File m_outputs = this.get_mutation_output_directory();
+		for(TestInput input : this.test_space.get_inputs()) {
+			/* get the output files for determining the result */
+			File n_stdout = input.get_stdout_file(n_outputs);
+			File n_stderr = input.get_stderr_file(n_outputs);
+			File m_stdout = input.get_stdout_file(m_outputs);
+			File m_stderr = input.get_stderr_file(m_outputs);
+			
+			if(m_stdout.exists() || m_stderr.exists()) {
+				/* record the mutation is executed against the test input */
+				result.get_exec_set().set(input.get_id(), BitSequence.BIT1);
+				
+				/* mutation is killed iff. its stdout or stderr different */
+				if(!this.compare_file(n_stdout, m_stdout)
+					|| !this.compare_file(n_stderr, m_stderr)) {
+					result.get_kill_set().set(input.get_id(), BitSequence.BIT1);
+				}
+			}
+		}
+		
+		/* save the updated data information to file */
+		result.save(this.get_test_result_file(mutant));
 		return result;
+	}
+	/**
+	 * @param n_output
+	 * @param m_output
+	 * @return whether two files are identical with their content
+	 * @throws Exception
+	 */
+	private boolean compare_file(File n_output, File m_output) throws Exception {
+		if(!n_output.exists())
+			return false;
+		else {
+			String n_output_text = FileOperations.read(n_output);
+			String m_output_text = FileOperations.read(m_output);
+			return m_output_text.equals(n_output_text);
+		}
 	}
 	
 }

@@ -7,7 +7,6 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.file.TestInputs;
 
 /**
  * The execution space where the program and test script files are compiled,
@@ -84,48 +83,190 @@ public class MuTestProjectExecSpace {
 		return new File(this.get_efiles_directory().getAbsolutePath() + "/" + this.project.get_name() + ".m.sh");
 	}
 	
-	/* setters */
+	/* running methods */
 	/**
-	 * the original & instrumental program is successfully compiled
+	 * #!bash
+	 * cd efiles
+	 * rm normal_outputs/*
+	 * [efile inputs (timeout) > output 2> errors]+
 	 * @throws Exception
 	 */
-	protected void compile_program(boolean instrumental) throws Exception {
-		/* declarations */
+	private void generate_normal_shell(Iterable<TestInput> tests, long timeout) throws Exception {
+		/*
+		 * #!bash
+		 * cd project/efiles/
+		 * rm project/test/n_outputs/*
+		 */
+		FileWriter writer = new FileWriter(this.get_normal_test_script_file());
+		writer.write(bash_shell_head);
+		writer.write(String.format(cd_template, 
+				project.get_files().get_efiles_directory().getAbsolutePath()));
+		writer.write(String.format(remove_files_template, this.project.
+				get_test_space().get_normal_output_directory().getAbsolutePath()));
+		
+		/*
+		 * {(timeout max_seconds)? [project/xxx.n.out {input_parameter} > n_outputs/tid.out 2> n_outputs/tid.err]}+
+		 */
+		for(TestInput input : tests) {
+			String command = input.command(this.get_normal_executional_file(), this.
+					project.get_test_space().get_normal_output_directory(), timeout);
+			writer.write(command);
+			writer.write("\n");
+		}
+		writer.write("\n");
+		writer.close();
+	}
+	/**
+	 * 	#!bash
+	 * 	cd efiles/
+	 * 	rm s_outputs/*
+	 * 	{
+	 * 		command > instrument.out 2> instrument.err
+	 * 		cp instrument.txt m_output/tid.ins
+	 * 	}
+	 * @param tests
+	 * @param timeout
+	 * @throws Exception
+	 */
+	private void generate_instrumental_shell(Iterable<TestInput> tests, long timeout) throws Exception {
+		/*
+		 * #!bash
+		 * cd project/efiles/
+		 * rm project/s_outputs/*
+		 */
+		FileWriter writer = new FileWriter(this.get_instrumental_test_script_file());
+		writer.write(bash_shell_head);
+		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
+		writer.write(String.format(remove_files_template, 
+						this.project.get_test_space().get_instrumental_output_directory().getAbsolutePath()));
+		
+		/*
+		 * (timeout max_seconds)? [efiles/xxx.s.out input_parameter > instrument.out 2> instrument.err]
+		 * cp instrument.txt project/s_outputs/tid.ins
+		 */
+		for(TestInput input : tests) {
+			writer.write("\n");
+			writer.write(input.command(this.get_instrumental_executional_file(), 
+					this.project.get_test_space().get_instrumental_out_file(), 
+					this.project.get_test_space().get_instrumental_err_file(), timeout));
+			writer.write("\n");
+			writer.write(String.format(copy_file_template, 
+					this.project.get_test_space().get_instrumental_txt_file(),
+					input.get_instrument_file(this.project.get_test_space().
+							get_instrumental_output_directory()).getAbsolutePath()));
+		}
+		writer.write("\n");
+		writer.close();
+	}
+	/**
+	 * #!bash
+	 * cd efiles
+	 * rm mutation_outputs/*
+	 * efile inputs (timeout) > output 2> errors
+	 * @param tests
+	 * @param timeout
+	 * @throws Exception
+	 */
+	private void generate_mutation_shell(Iterable<TestInput> tests, long timeout) throws Exception {
+		/*
+		 * #!bash
+		 * cd project/efiles/
+		 * rm project/m_outputs/*
+		 * {
+		 * (timeout max_seconds)? project/xxx.m.out input_parameter > m_ouputs/tid.out 2> m_outputs/tid.err +
+		 * }
+		 */
+		FileWriter writer = new FileWriter(this.get_mutation_test_script_file());
+		writer.write(bash_shell_head);
+		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
+		writer.write(String.format(remove_files_template, this.project.
+				get_test_space().get_mutation_output_directory().getAbsolutePath()));
+		
+		for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
+			String command = input.command(this.get_mutation_executional_file(), 
+					this.project.get_test_space().get_mutation_output_directory(), timeout);
+			writer.write(command);
+			writer.write("\n");
+		}
+		writer.close();
+	}
+	/**
+	 * generate the execution script files for running tests on normal, 
+	 * instrumental and mutated program as compiled.
+	 * @param tests
+	 * @throws Exception
+	 */
+	protected void generate_exec_scripts(Iterable<TestInput> tests) throws Exception {
+		long timeout = project.get_config().get_maximal_timeout_seconds();
+		this.generate_normal_shell(tests, 0);
+		this.generate_instrumental_shell(tests, 0);
+		this.generate_mutation_shell(tests, timeout);
+	}
+	/**
+	 * generate xxx.n.out from ifiles
+	 * @throws Exception
+	 */
+	protected void compile_normal_program() throws Exception {
 		MuTestProjectConfig config = this.project.get_config();
 		MuTestProjectCodeSpace code_space = project.get_code_space();
 		MuCommandUtil command_util = config.get_command_util();
-		
-		if(instrumental) {
-			/* compile the instrumental program */
-			FileOperations.delete(this.get_instrumental_executional_file());
-			if(!command_util.do_compile(config.get_compiler(), 
-					code_space.get_sfiles(), 
-					this.get_instrumental_executional_file(), 
-					code_space.get_hdirs(), code_space.get_lfiles(), 
-					config.get_compile_parameters())) {
-				throw new RuntimeException("Unable to compile the instrumental program");
-			}
-		}
-		else {
-			/* compile the original program */
-			FileOperations.delete(this.get_normal_executional_file());
-			if(!command_util.do_compile(config.get_compiler(), 
-					code_space.get_ifiles(), 
-					this.get_normal_executional_file(), 
-					code_space.get_hdirs(), 
-					code_space.get_lfiles(), 
-					config.get_compile_parameters())) {
-				throw new RuntimeException("Unable to compile the normal program");
-			}
+		FileOperations.delete(this.get_normal_executional_file());
+		if(!command_util.do_compile(config.get_compiler(), 
+				code_space.get_ifiles(), 
+				this.get_normal_executional_file(), 
+				code_space.get_hdirs(), 
+				code_space.get_lfiles(), 
+				config.get_compile_parameters())) {
+			throw new RuntimeException("Unable to compile the normal program");
 		}
 	}
 	/**
-	 * the mutation program compiled from parsing mfiles directory
-	 * @param mutant
-	 * @return whether the mutant can be compiled successfully
+	 * compile and execute the original program, which produces the 
+	 * outputs in the n_outputs directory.
 	 * @throws Exception
 	 */
-	protected boolean compile_program(Mutant mutant) throws Exception {
+	protected void execute_normal_program() throws Exception {
+		this.compile_normal_program();
+		MuTestProjectConfig config = this.project.get_config();
+		MuCommandUtil command_util = config.get_command_util();
+		command_util.do_execute(this.get_normal_test_script_file(), 
+				this.get_efiles_directory());
+	}
+	/**
+	 * compile xxx.s.out from sfiles
+	 * @throws Exception
+	 */
+	protected void compile_instrumental_program() throws Exception {
+		MuTestProjectConfig config = this.project.get_config();
+		MuTestProjectCodeSpace code_space = project.get_code_space();
+		MuCommandUtil command_util = config.get_command_util();
+		FileOperations.delete(this.get_instrumental_executional_file());
+		if(!command_util.do_compile(config.get_compiler(), 
+				code_space.get_sfiles(), 
+				this.get_instrumental_executional_file(), 
+				code_space.get_hdirs(), code_space.get_lfiles(), 
+				config.get_compile_parameters())) {
+			throw new RuntimeException("Unable to compile the instrumental program");
+		}
+	}
+	/**
+	 * compile and execute the instrumental program, which generates the
+	 * instrumental results on s_outputs directory.
+	 * @throws Exception
+	 */
+	protected void execute_instrumental_program() throws Exception {
+		this.compile_instrumental_program();
+		MuTestProjectConfig config = this.project.get_config();
+		MuCommandUtil command_util = config.get_command_util();
+		command_util.do_execute(this.get_instrumental_test_script_file(), 
+				this.get_efiles_directory());
+	}
+	/**
+	 * @param mutant
+	 * @return compile the mutated program or return false if mutation is error
+	 * @throws Exception
+	 */
+	protected boolean compile_mutation_program(Mutant mutant) throws Exception {
 		/* declarations */
 		MuTestProjectConfig config = this.project.get_config();
 		MuTestProjectCodeSpace code_space = project.get_code_space();
@@ -143,134 +284,17 @@ public class MuTestProjectExecSpace {
 				config.get_compile_parameters());
 	}
 	/**
-	 * #!bash
-	 * cd efiles
-	 * rm normal_outputs/*
-	 * efile inputs (timeout) > output 2> errors
-	 * @throws Exception
-	 */
-	private void generate_normal_shell() throws Exception {
-		FileWriter writer = new FileWriter(this.get_normal_test_script_file());
-		TestInputs test_space = this.project.get_test_space().get_test_space();
-		
-		writer.write(bash_shell_head);
-		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
-		writer.write(String.format(remove_files_template, this.project.
-				get_test_space().get_normal_output_directory().getAbsolutePath()));
-		
-		for(TestInput input : test_space.get_inputs()) {
-			String command = input.command(this.get_normal_executional_file(), 
-					this.project.get_test_space().get_normal_output_directory(), 0);
-			writer.write(command);
-			writer.write("\n");
-		}
-		
-		writer.close();
-	}
-	/**
-	 * #!bash
-	 * cd efiles/
-	 * {
-	 * 	rm s_output/*
-	 * 	command
-	 * 	cp instrument_txt_file s_output_file 
-	 * }
-	 * @throws Exception
-	 */
-	private void generate_instrumental_shell() throws Exception {
-		FileWriter writer = new FileWriter(this.get_instrumental_test_script_file());
-		
-		writer.write(bash_shell_head);
-		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
-		writer.write(String.format(remove_files_template, 
-						this.project.get_test_space().get_instrumental_output_directory().getAbsolutePath()));
-		
-		for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
-			writer.write("\n");
-			writer.write(input.command(this.get_instrumental_executional_file(), 
-					this.project.get_test_space().get_instrumental_out_file(), 
-					this.project.get_test_space().get_instrumental_err_file(), 0));
-			writer.write("\n");
-			writer.write(String.format(copy_file_template, 
-					this.project.get_test_space().get_instrumental_txt_file(),
-					input.get_instrument_file(this.project.get_test_space().
-							get_instrumental_output_directory()).getAbsolutePath()));
-		}
-		
-		writer.close();
-	}
-	/**
-	 * #!bash
-	 * cd efiles
-	 * rm mutation_outputs/*
-	 * efile inputs (timeout) > output 2> errors
-	 * @throws Exception
-	 */
-	private void generate_mutation_shell() throws Exception {
-		FileWriter writer = new FileWriter(this.get_mutation_test_script_file());
-		long timeout = this.project.get_config().get_maximal_timeout_seconds();
-		
-		writer.write(bash_shell_head);
-		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
-		writer.write(String.format(remove_files_template, this.project.
-				get_test_space().get_mutation_output_directory().getAbsolutePath()));
-		
-		for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
-			String command = input.command(this.get_mutation_executional_file(), 
-					this.project.get_test_space().get_mutation_output_directory(), timeout);
-			writer.write(command);
-			writer.write("\n");
-		}
-		
-		writer.close();
-	}
-	/**
-	 * compile original and instrumental programs
-	 * generate test shell scripts for all versions
-	 * and call it before execute_xxx method invoked
-	 * @throws Exception
-	 */
-	protected void initialize_testing() throws Exception {
-		this.compile_program(true);
-		this.compile_program(false);
-		this.generate_normal_shell();
-		this.generate_instrumental_shell();
-		this.generate_mutation_shell();
-	}
-	/**
-	 * execute tests against the original program without instrumentation
-	 * @param instrumental whether to execute the instrumental version of program
-	 * @throws Exception
-	 */
-	protected void execute_original_program(boolean instrumental) throws Exception {
-		MuTestProjectConfig config = this.project.get_config();
-		MuCommandUtil command_util = config.get_command_util();
-		
-		if(instrumental) {
-			/* execute instrumental testing */
-			command_util.do_execute(this.get_instrumental_test_script_file(), 
-					this.get_efiles_directory());
-		}
-		else {
-			/* execute normal testing */
-			command_util.do_execute(this.get_normal_test_script_file(), 
-					this.get_efiles_directory());
-		}
-	}
-	/**
-	 * (1) compile the mutation program
-	 * (2) perform execution on mutation shell script
-	 * (3) save the test result in results directory
 	 * @param mutant
+	 * @return the test result executed w.r.t. the mutant and test inputs established before
 	 * @throws Exception
 	 */
 	protected MuTestProjectTestResult execute_mutation_program(Mutant mutant) throws Exception {
+		this.compile_mutation_program(mutant);
 		MuTestProjectConfig config = this.project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
-		this.compile_program(mutant);
 		command_util.do_execute(this.get_mutation_test_script_file(), 
 				this.get_efiles_directory());
-		return this.project.get_test_space().save_test_result(mutant);
+		return this.project.get_test_space().update_test_result(mutant);
 	}
 	
 }

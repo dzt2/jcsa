@@ -16,7 +16,7 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
-public class MuTestProjectExecute {
+public class MuTestProjectCompilation {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/Code3/";
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
@@ -88,7 +88,8 @@ public class MuTestProjectExecute {
 		if(test_suite_file.exists()) test_suite_files.add(test_suite_file);
 		File inputs_directory = new File(root_path + "inputs/" + name);
 		if(!inputs_directory.exists()) FileOperations.mkdir(inputs_directory);
-		project.set_test_inputs(test_suite_files, inputs_directory);
+		project.set_inputs_directory(inputs_directory);
+		project.add_test_inputs(test_suite_files);
 		
 		/* generate mutations */
 		project.generate_mutants(get_classes());
