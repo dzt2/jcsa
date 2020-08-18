@@ -23,8 +23,9 @@ import com.jcsa.jcmutest.project.util.FileOperations;
  * 	|--	|--	[m_output]	// mutation output files in testing			<br>
  * 	|--	|--	[result]	// analysis result files after testing		<br>
  * 	|--	|--	instrument.txt | instrument.out | instrument.err		<br>
+ * 	|--	|-- [efiles]		// executional and script files			<br>	
  * 	|--	[config]		// configuration data files in project		<br>
- * 	|--	[efiles]		// executional and script files				<br>	
+ * 	
  * </code>
  * 
  * @author yukimula
@@ -120,7 +121,6 @@ public class MuTestProjectFiles {
 			this.project = project;
 			this.root = this.try_to_mkdir(root);
 			this.config_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + config_name));
-			this.efiles_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + efiles_name));
 			
 			/* code */
 			File code_dir = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + code_name));
@@ -143,6 +143,7 @@ public class MuTestProjectFiles {
 			this.instrument_txt_file = this.try_to_create(new File(test_dir.getAbsolutePath() + "/" + instrument_txt_name));
 			this.instrument_err_file = this.try_to_create(new File(test_dir.getAbsolutePath() + "/" + instrument_err_name));
 			this.instrument_out_file = this.try_to_create(new File(test_dir.getAbsolutePath() + "/" + instrument_out_name));
+			this.efiles_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + efiles_name));
 		}
 	}
 	
