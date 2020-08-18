@@ -207,5 +207,14 @@ public class MuTestProject {
 		System.out.println("\t3. Complete all the testing process using " + time + " seconds");
 		return time;
 	}
+	/**
+	 * execute the instrumental program over the specified test inputs
+	 * @param tests
+	 * @throws Exception
+	 */
+	public void execute_instrumental(Collection<TestInput> tests) throws Exception {
+		this.exec_space.generate_exec_scripts(tests);
+		this.exec_space.execute_instrumental_program();
+	}
 	
 }
