@@ -10,7 +10,17 @@ import com.jcsa.jcparse.test.file.TestInput;
 
 /**
  * The execution space where the program and test script files are compiled,
- * generated and executed in an automatic manner.
+ * generated and executed in an automatic manner.<br>
+ * <code>
+ * 	0.	inputs: mutants, tests;	output: results.			<br>
+ * 	1. 	generate_exec_scripts(tests)						<br>
+ * 	2. 	execute_normal_program()							<br>
+ * 	3. 	[execute_instrumental_program()]?					<br>
+ * 	4. 	for mutant in mutants:								<br>
+ * 	5.		result = execute_mutation_program(mutant)		<br>
+ * 	6. 		results.add(result)								<br>
+ * 	7.	return results										<br>
+ * </code>
  * @author yukimula
  *
  */

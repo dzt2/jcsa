@@ -211,9 +211,17 @@ public class MuTestProjectTestSpace {
 				result.get_exec_set().set(input.get_id(), BitSequence.BIT1);
 				
 				/* mutation is killed iff. its stdout or stderr different */
-				if(!this.compare_file(n_stdout, m_stdout)
-					|| !this.compare_file(n_stderr, m_stderr)) {
-					result.get_kill_set().set(input.get_id(), BitSequence.BIT1);
+				if(n_stdout.exists() && n_stderr.exists()) {
+					if(!this.compare_file(n_stdout, m_stdout)
+							|| !this.compare_file(n_stderr, m_stderr)) {
+						result.get_kill_set().set(input.get_id(), BitSequence.BIT1);
+					}
+					else {
+						result.get_kill_set().set(input.get_id(), BitSequence.BIT0);
+					}
+				}
+				else {
+					/* unable to update the test result since original outputs lost */
 				}
 			}
 		}
@@ -230,7 +238,7 @@ public class MuTestProjectTestSpace {
 	 */
 	private boolean compare_file(File n_output, File m_output) throws Exception {
 		if(!n_output.exists())
-			return false;
+			return false;	/* none of output from original program */
 		else {
 			String n_output_text = FileOperations.read(n_output);
 			String m_output_text = FileOperations.read(m_output);
