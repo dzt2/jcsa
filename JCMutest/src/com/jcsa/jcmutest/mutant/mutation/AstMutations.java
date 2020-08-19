@@ -591,7 +591,7 @@ public class AstMutations {
 	 */
 	public static AstMutation VCRP(AstExpression expression, double constant) throws Exception {
 		return new AstMutation(MutaGroup.Reference_Mutation, MutaClass.VCRP,
-				MutaOperator.set_integer, expression, Double.valueOf(constant));
+				MutaOperator.set_double, expression, Double.valueOf(constant));
 	}
 	/**
 	 * @param expression
@@ -1018,13 +1018,12 @@ public class AstMutations {
 	}
 	/**
 	 * @param expression
-	 * @param parameter boolean|long|double|String|expression
+	 * @param parameter long|double|String|expression
 	 * @return trap_on_dif(expression, parameter)
 	 * @throws Exception
 	 */
 	public static AstMutation trap_on_dif(AstExpression expression, Object parameter) throws Exception {
-		if(parameter instanceof Boolean
-			|| parameter instanceof Long
+		if(parameter instanceof Long
 			|| parameter instanceof Double
 			|| parameter instanceof String
 			|| parameter instanceof AstExpression) {

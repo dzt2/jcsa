@@ -84,7 +84,7 @@ public enum MutaClass {
 	OBAN, OBBN, OBLN, OBRN,
 	OLAN, OLBN, OLLN, OLRN,
 	ORAN, ORBN, ORLN, ORRN,
-	OEAA, OEBA, OAAA, OABA, 
+	OEAA, OEBA, OAAA, OABA,
 	OAEA, OBAA, OBBA, OBEA,
 	
 	/* value mutation class */

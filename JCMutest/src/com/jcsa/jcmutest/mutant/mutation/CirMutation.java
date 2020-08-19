@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.mutant.mutation;
 
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * The mutation defined on standard intermediate representation for C (CIR).
@@ -90,6 +92,92 @@ public class CirMutation {
 	@Override
 	public int hashCode() {
 		return this.toString().hashCode();
+	}
+	private String parameter2string() {
+		if(this.parameter == null)
+			return "";
+		else if(this.parameter instanceof Boolean) {
+			return "b@" + this.parameter;
+		}
+		else if(this.parameter instanceof Integer) {
+			return "i@" + this.parameter;
+		}
+		else if(this.parameter instanceof Long) {
+			return "l@" + this.parameter;
+		}
+		else if(this.parameter instanceof Double) {
+			return "d@" + this.parameter;
+		}
+		else if(this.parameter instanceof String) {
+			return "s@" + this.parameter;
+		}
+		else if(this.parameter instanceof COperator) {
+			return "o@" + this.parameter;
+		}
+		else if(this.parameter instanceof CirNode) {
+			return "r@" + this.parameter;
+		}
+		else {
+			throw new IllegalArgumentException("Invalid parameter: " + parameter);
+		}
+	}
+	@Override
+	public String toString() {
+		return this.muta_group.toString() + "\t"
+				+ this.muta_class.toString() + "\t"
+				+ this.operator.toString() + "\t"
+				+ this.location.get_node_id() + "\t"
+				+ this.parameter2string();
+	}
+	private static Object string2parameter(CirTree tree, String text) {
+		int index = text.indexOf('@');
+		char title = text.charAt(0);
+		String value = text.substring(index + 1).strip();
+		switch(title) {
+		case 'b':
+			if(value.equals("true")) {
+				return Boolean.TRUE;
+			}
+			else {
+				return Boolean.FALSE;
+			}
+		case 'i':
+			return Integer.valueOf(value);
+		case 'l':
+			return Long.valueOf(value);
+		case 'd':
+			return Double.valueOf(value);
+		case 's':
+			return value;
+		case 'o':
+			return COperator.valueOf(value);
+		case 'r':
+			return tree.get_node(Integer.parseInt(value));
+		default: throw new IllegalArgumentException("Invalid " + text);
+		}
+	}
+	/**
+	 * @param line
+	 * @return group class operator location parameter
+	 * @throws Exception
+	 */
+	public static CirMutation parse(CirTree tree, String line) throws Exception {
+		if(line == null || line.isBlank())
+			throw new IllegalArgumentException("Empty line");
+		else if(tree == null)
+			throw new IllegalArgumentException("Invalid tree");
+		else {
+			String[] items = line.strip().split("\t");
+			MutaGroup group = MutaGroup.valueOf(items[0].strip());
+			MutaClass mclass = MutaClass.valueOf(items[1].strip());
+			MutaOperator operator = MutaOperator.valueOf(items[2].strip());
+			CirNode location = tree.get_node(Integer.valueOf(items[3].strip()));
+			Object parameter = null;
+			if(items.length > 4) {
+				parameter = string2parameter(tree, items[4].strip());
+			}
+			return new CirMutation(group, mclass, operator, location, parameter);
+		}
 	}
 	
 }
