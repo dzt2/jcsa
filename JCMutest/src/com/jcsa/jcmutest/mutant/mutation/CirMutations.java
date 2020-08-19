@@ -39,10 +39,12 @@ public class CirMutations {
 	 * @return trap_on_expression(expression)
 	 * @throws Exception
 	 */
+	/*
 	public static CirMutation ETRP(CirExpression expression) throws Exception {
 		return new CirMutation(MutaGroup.Trapping_Mutation, MutaClass.ETRP,
 						MutaOperator.trap_on_expression, expression, null);
 	}
+	*/
 	/**
 	 * @param statement
 	 * @return trap_on_statement(statement)
