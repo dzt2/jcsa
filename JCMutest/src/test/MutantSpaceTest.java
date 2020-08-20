@@ -58,7 +58,7 @@ public class MutantSpaceTest {
 		return classes;
 	}
 	private static MutantSpace new_space(AstCirFile program) throws Exception {
-		MutantSpace space = new MutantSpace(program.get_ast_tree());
+		MutantSpace space = new MutantSpace(program.get_ast_tree(), program.get_cir_tree());
 		space.update(get_classes());
 		System.out.println("\t2. Generate " + space.size() + " mutants.");
 		return space;

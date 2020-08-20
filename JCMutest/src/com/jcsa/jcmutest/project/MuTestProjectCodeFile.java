@@ -152,7 +152,7 @@ public class MuTestProjectCodeFile {
 				this.code_space.get_project().get_config().get_lang_standard(), 
 				this.sizeof_template);
 		this.cir_tree = CTranslate.parse(this.ast_tree, this.sizeof_template);
-		this.mutant_space = new MutantSpace(this.ast_tree);
+		this.mutant_space = new MutantSpace(this.ast_tree, this.cir_tree);
 		
 		/* 2. update the instrumental code file */
 		String code = MutaCodeGeneration.instrument_code(ast_tree, this.

@@ -64,6 +64,7 @@ public class Mutant {
 	 * @return the strong version of mutation for this mutant
 	 */
 	public Mutant get_strong_mutant() { return this.versions[2]; }
+	
 	/**
 	 * remove the mutant from its space
 	 */

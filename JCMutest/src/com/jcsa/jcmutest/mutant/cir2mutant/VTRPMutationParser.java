@@ -31,13 +31,16 @@ public class VTRPMutationParser extends CirMutationParser {
 				targets.add(CirMutations.trap_on_diff(expression, 
 						((Double) parameter).doubleValue()));
 			}
+			else if(parameter instanceof String) {
+				targets.add(CirMutations.trap_on_diff(expression, parameter.toString()));
+			}
 			else if(parameter instanceof AstNode) {
 				CirExpression param = this.
 						get_use_point(tree, (AstNode) parameter);
 				targets.add(CirMutations.trap_on_diff(expression, param));
 			}
 			else {
-				throw new IllegalArgumentException("Invalid parameter");
+				throw new IllegalArgumentException("Invalid: " + parameter.getClass());
 			}
 			break;
 		default: throw new IllegalArgumentException("Unsupport: " + source.toString());

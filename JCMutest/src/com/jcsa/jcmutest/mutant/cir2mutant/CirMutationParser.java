@@ -5,6 +5,7 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.CirMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
@@ -113,9 +114,21 @@ public abstract class CirMutationParser {
 	 * @throws Exception
 	 */
 	protected CirExpression get_use_point(CirTree tree, AstNode location) throws Exception {
+		if(location instanceof AstParanthExpression) {
+			location = ((AstParanthExpression) location).get_sub_expression();
+		}
+		else if(location instanceof AstConstExpression) {
+			location = ((AstConstExpression) location).get_expression();
+		}
+		else if(location instanceof AstInitializer) {
+			if(((AstInitializer) location).is_body())
+				location = ((AstInitializer) location).get_body();
+			else
+				location = ((AstInitializer) location).get_expression();
+		}
 		AstCirPair range = this.get_cir_range(tree, location);
 		if(range == null || !range.computational()) {
-			throw new IllegalArgumentException("Not computable: " + location);
+			throw new IllegalArgumentException("Not computable: " + location.generate_code());
 		}
 		else if(location instanceof AstIdExpression
 				|| location instanceof AstConstant

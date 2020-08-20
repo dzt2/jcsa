@@ -45,13 +45,13 @@ public enum MutaFunction {
 	 *  time of the statement being executed **/
 	set_data_state,
 	
-	/** inc_expression(expression, long|double|string|cir) in which
-	 *  the expression is inserted as (expression + parameter) **/
-	inc_expression,
+	/** add_expression(expression, operator, long|double|string|cir)
+	 *  where expression replaced as expression operator parameter **/
+	add_expression,
 	
-	/** mul_expression(expression, long|double|string|cir) in which
-	 *  the expression is inserted as (expression * parameter) **/
-	mul_expression,
+	/** ins_expression(expression, operator, long|double|string|cir)
+	 *  where expression set as {parameter operator expression} **/
+	ins_expression,
 	
 	/** set_operator(binary_expression, operator) in which operator
 	 *  of the binary-expression as the parameter specified **/

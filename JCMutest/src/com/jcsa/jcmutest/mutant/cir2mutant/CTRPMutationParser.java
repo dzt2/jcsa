@@ -20,6 +20,7 @@ public class CTRPMutationParser extends CirMutationParser {
 				CirCaseStatement stmt = (CirCaseStatement) get_cir_nodes(
 						tree, parameter, CirCaseStatement.class).get(0);
 				targets.add(CirMutations.trap_on_equal(stmt.get_condition(), true));
+				return;
 			}
 			else {
 				parameter = parameter.get_parent();

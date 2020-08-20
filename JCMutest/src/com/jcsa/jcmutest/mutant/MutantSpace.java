@@ -14,12 +14,15 @@ import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 
 public class MutantSpace {
 	
 	/* definition */
 	/** syntax tree in which mutants are seeded **/
 	private AstTree ast_tree;
+	/** syntax tree in C-intermediate representation **/
+	private CirTree cir_tree;
 	/** mutants created in the space **/
 	private List<Mutant> mutants;
 	/** mapping from the mutation to its mutant **/
@@ -29,11 +32,14 @@ public class MutantSpace {
 	 * @param ast_tree
 	 * @throws Exception
 	 */
-	public MutantSpace(AstTree ast_tree) throws Exception {
+	public MutantSpace(AstTree ast_tree, CirTree cir_tree) throws Exception {
 		if(ast_tree == null)
 			throw new IllegalArgumentException("Invalid ast_tree");
+		else if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree");
 		else {
 			this.ast_tree = ast_tree;
+			this.cir_tree = cir_tree;
 			this.mutants = new ArrayList<Mutant>();
 			this.index = new HashMap<String, Mutant>();
 		}
@@ -44,6 +50,7 @@ public class MutantSpace {
 	 * @return syntax tree in which mutants are seeded
 	 */
 	public AstTree get_ast_tree() { return this.ast_tree; }
+	public CirTree get_cir_tree() { return this.cir_tree; }
 	/**
 	 * @return the number of mutants in the space
 	 */

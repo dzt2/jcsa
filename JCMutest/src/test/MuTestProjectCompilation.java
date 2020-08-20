@@ -4,10 +4,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -18,7 +19,7 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
 
 public class MuTestProjectCompilation {
 	
-	private static final String root_path = "/home/dzt2/Development/Data/Code3/";
+	private static final String root_path = "/home/dzt2/Development/Data/";
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
 	private static final File instrument_head_file = new File("config/jcinst.h");
 	private static final File preprocess_macro_file = new File("config/linux.h");
@@ -27,25 +28,19 @@ public class MuTestProjectCompilation {
 	
 	public static void main(String[] args) throws Exception {
 		File[] cfiles = new File(root_path + "cfiles").listFiles();
-		Scanner in = new Scanner(System.in);
 		for(File cfile : cfiles) {
 			if(cfile.getName().endsWith(".c")) {
-				testing(cfile, in);
+				testing(cfile);
 			}
 		}
-		in.close();
 	}
-	protected static void testing(File cfile, Scanner in) throws Exception {
-		String name = get_name(cfile);
-		File root = new File(root_path + "projects/" + name);
-		if(!root.exists()) {
-			System.out.println("----------------------------------");
-			new_project(cfile);
-			get_project(cfile);
-			in.nextLine();
-			System.out.println("----------------------------------");
-			System.out.println();
-		}
+	protected static void testing(File cfile) throws Exception {
+		System.out.println("----------------------------------");
+		new_project(cfile);
+		// test_compile(cfile);
+		test_cir_mutations(cfile);
+		System.out.println("----------------------------------");
+		System.out.println();
 	}
 	
 	/* create */
@@ -96,7 +91,7 @@ public class MuTestProjectCompilation {
 		
 		return project;
 	}
-	protected static MuTestProject get_project(File cfile) throws Exception {
+	protected static MuTestProject test_compile(File cfile) throws Exception {
 		String name = get_name(cfile);
 		File root = new File(root_path + "projects/" + name);
 		MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
@@ -132,6 +127,44 @@ public class MuTestProjectCompilation {
 		if(!error_directory.exists()) { error_directory.mkdir(); }
 		int[] error_total_numbers = project.assert_compilation(error_directory);
 		System.out.println("Error-Rate: " + error_total_numbers[0] + "/" + error_total_numbers[1]);
+		
+		return project;
+	}
+	protected static MuTestProject test_cir_mutations(File cfile) throws Exception {
+		String name = get_name(cfile);
+		File root = new File(root_path + "projects/" + name);
+		MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
+		System.out.println("Project-" + name);
+		
+		System.out.println("Configuration:");
+		System.out.println("\tcompiler: " + project.get_config().get_compiler());
+		System.out.println("\tlang_std: " + project.get_config().get_lang_standard());
+		System.out.println("\tparameters: " + project.get_config().get_compile_parameters());
+		System.out.println("\tmax_timeout: " + project.get_config().get_maximal_timeout_seconds());
+		System.out.println("\tsizeof_template? " + project.get_config().get_sizeof_template_file().exists());
+		System.out.println("\tpreprocess_macro? " + project.get_config().get_preprocess_macro_file().exists());
+		System.out.println("\tmutation_head? " + project.get_config().get_mutation_head_file().exists());
+		System.out.println("\tinstrument_head? " + project.get_config().get_instrument_head_file().exists());
+		System.out.println("\tconfig_data? " + project.get_config().get_config_data_file().exists());
+		
+		System.out.println("Execute-cir-mutations:"); int error = 0, total = 0;
+		for(MuTestProjectCodeFile code_file : project.get_code_space().get_code_files()) {
+			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+				total++;
+				try {
+					CirMutationParsers.parse(code_file.get_cir_tree(), mutant.get_mutation());
+				}
+				catch(Exception ex) {
+					System.out.println("\t\t==> Error: " + mutant.toString());
+					error++;
+				}
+				/*
+				System.out.println("\t==> " + mutant.get_mutation());
+				CirMutationParsers.parse(code_file.get_cir_tree(), mutant.get_mutation());
+				*/
+			}
+		}
+		System.out.println("Error-Rate: " + error + "/" + total);
 		
 		return project;
 	}

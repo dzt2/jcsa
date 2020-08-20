@@ -432,8 +432,9 @@ public class CirMutations {
 	 */
 	public static CirMutation inc_expression(CirExpression 
 			expression, long parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.inc_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_add);
 		mutation.add_parameter(Long.valueOf(parameter));
 		return mutation;
 	}
@@ -445,8 +446,9 @@ public class CirMutations {
 	 */
 	public static CirMutation inc_expression(CirExpression 
 			expression, double parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.inc_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_add);
 		mutation.add_parameter(Double.valueOf(parameter));
 		return mutation;
 	}
@@ -458,8 +460,9 @@ public class CirMutations {
 	 */
 	public static CirMutation inc_expression(CirExpression 
 			expression, String parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.inc_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_add);
 		mutation.add_parameter(parameter);
 		return mutation;
 	}
@@ -471,8 +474,9 @@ public class CirMutations {
 	 */
 	public static CirMutation inc_expression(CirExpression 
 			expression, CirExpression parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.inc_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_add);
 		mutation.add_parameter(parameter);
 		return mutation;
 	}
@@ -485,8 +489,9 @@ public class CirMutations {
 	 */
 	public static CirMutation mul_expression(CirExpression 
 			expression, long parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.mul_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_mul);
 		mutation.add_parameter(Long.valueOf(parameter));
 		return mutation;
 	}
@@ -498,8 +503,9 @@ public class CirMutations {
 	 */
 	public static CirMutation mul_expression(CirExpression 
 			expression, double parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.mul_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_mul);
 		mutation.add_parameter(Double.valueOf(parameter));
 		return mutation;
 	}
@@ -511,8 +517,9 @@ public class CirMutations {
 	 */
 	public static CirMutation mul_expression(CirExpression 
 			expression, String parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.mul_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_mul);
 		mutation.add_parameter(parameter);
 		return mutation;
 	}
@@ -524,8 +531,131 @@ public class CirMutations {
 	 */
 	public static CirMutation mul_expression(CirExpression 
 			expression, CirExpression parameter) throws Exception {
-		CirMutation mutation = new CirMutation(MutaFunction.mul_expression);
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
 		mutation.add_parameter(expression);
+		mutation.add_parameter(COperator.arith_mul);
+		mutation.add_parameter(parameter);
+		return mutation;
+	}
+	
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation add_expression(CirExpression expression, 
+				COperator operator, long parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(Long.valueOf(parameter));
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation add_expression(CirExpression expression, 
+				COperator operator, double parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(Double.valueOf(parameter));
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation add_expression(CirExpression expression, 
+				COperator operator, CirExpression parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(parameter);
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation add_expression(CirExpression expression, 
+				COperator operator, String parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.add_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(parameter);
+		return mutation;
+	}
+	
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {parameter operator expression}
+	 * @throws Exception
+	 */
+	public static CirMutation ins_expression(CirExpression expression, 
+				COperator operator, long parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.ins_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(Long.valueOf(parameter));
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {parameter operator expression}
+	 * @throws Exception
+	 */
+	public static CirMutation ins_expression(CirExpression expression, 
+				COperator operator, double parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.ins_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(Double.valueOf(parameter));
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation ins_expression(CirExpression expression, 
+				COperator operator, CirExpression parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.ins_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		mutation.add_parameter(parameter);
+		return mutation;
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @param parameter
+	 * @return set expression as {expression operator parameter}
+	 * @throws Exception
+	 */
+	public static CirMutation ins_expression(CirExpression expression, 
+				COperator operator, String parameter) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.ins_expression);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
 		mutation.add_parameter(parameter);
 		return mutation;
 	}
