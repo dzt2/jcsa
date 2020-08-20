@@ -1,6 +1,10 @@
 package com.jcsa.jcmutest.mutant;
 
+import java.util.List;
+
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.mutation.CirMutation;
 
 /**
  * It provides the interface to manage the access to the mutation data
@@ -19,6 +23,8 @@ public class Mutant {
 	private AstMutation mutation;
 	/** coverage, weak and strong version of mutant **/
 	protected Mutant[] versions;
+	/** the set of cir-mutations parsed from ast-mutation **/
+	private List<CirMutation> cir_mutations;
 	/**
 	 * create an isolated mutant in the space w.r.t the given mutation
 	 * @param space
@@ -36,6 +42,12 @@ public class Mutant {
 			this.id = id;
 			this.mutation = mutation;
 			this.versions = new Mutant[] { null, null, null };
+			try {
+				this.cir_mutations = CirMutationParsers.parse(space.get_cir_tree(), mutation);
+			}
+			catch(Exception ex) {
+				this.cir_mutations = null;
+			}
 		}
 	}
 	
@@ -64,7 +76,6 @@ public class Mutant {
 	 * @return the strong version of mutation for this mutant
 	 */
 	public Mutant get_strong_mutant() { return this.versions[2]; }
-	
 	/**
 	 * remove the mutant from its space
 	 */
@@ -78,5 +89,13 @@ public class Mutant {
 	public String toString() {
 		return this.mutation.get_location().get_tree().get_source_file().getName() + "[" + id + "]: " + mutation;
 	}
+	/**
+	 * @return the cir-mutations is null if the mutant is syntactically error
+	 */
+	public boolean has_cir_mutations() { return this.cir_mutations != null; }
+	/**
+	 * @return the set of cir-mutations parsed from the AST location
+	 */
+	public List<CirMutation> get_cir_mutations() { return this.cir_mutations; }
 	
 }

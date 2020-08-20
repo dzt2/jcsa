@@ -8,7 +8,6 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -38,13 +37,13 @@ public class MuTestProjectCompilation {
 		String name = get_name(cfile);
 		File root = new File(root_path + "projects/" + name);
 		if(!root.exists()) {
-			System.out.println("----------------------------------");
 			new_project(cfile);
-			// test_compile(cfile);
-			test_cir_mutations(cfile);
-			System.out.println("----------------------------------");
-			System.out.println();
 		}
+		System.out.println("----------------------------------");
+		// test_compile(cfile);
+		test_cir_mutations(cfile);
+		System.out.println("----------------------------------");
+		System.out.println();
 	}
 	
 	/* create */
@@ -138,34 +137,14 @@ public class MuTestProjectCompilation {
 		String name = get_name(cfile);
 		File root = new File(root_path + "projects/" + name);
 		MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
-		System.out.println("Project-" + name);
-		
-		System.out.println("Configuration:");
-		System.out.println("\tcompiler: " + project.get_config().get_compiler());
-		System.out.println("\tlang_std: " + project.get_config().get_lang_standard());
-		System.out.println("\tparameters: " + project.get_config().get_compile_parameters());
-		System.out.println("\tmax_timeout: " + project.get_config().get_maximal_timeout_seconds());
-		System.out.println("\tsizeof_template? " + project.get_config().get_sizeof_template_file().exists());
-		System.out.println("\tpreprocess_macro? " + project.get_config().get_preprocess_macro_file().exists());
-		System.out.println("\tmutation_head? " + project.get_config().get_mutation_head_file().exists());
-		System.out.println("\tinstrument_head? " + project.get_config().get_instrument_head_file().exists());
-		System.out.println("\tconfig_data? " + project.get_config().get_config_data_file().exists());
-		
-		System.out.println("Execute-cir-mutations:"); int error = 0, total = 0;
+		System.out.println("Project-" + name); int error = 0, total = 0;
 		for(MuTestProjectCodeFile code_file : project.get_code_space().get_code_files()) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				total++;
-				try {
-					CirMutationParsers.parse(code_file.get_cir_tree(), mutant.get_mutation());
-				}
-				catch(Exception ex) {
+				if(!mutant.has_cir_mutations()) {
 					System.out.println("\t\t==> Error: " + mutant.toString());
 					error++;
 				}
-				/*
-				System.out.println("\t==> " + mutant.get_mutation());
-				CirMutationParsers.parse(code_file.get_cir_tree(), mutant.get_mutation());
-				*/
 			}
 		}
 		System.out.println("Error-Rate: " + error + "/" + total);
