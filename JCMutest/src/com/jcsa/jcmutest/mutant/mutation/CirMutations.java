@@ -186,21 +186,35 @@ public class CirMutations {
 		case positive:
 			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
 									MutaOperator.insert_abs_value, expression, operator);
-		case increment:
-			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
-									MutaOperator.insert_prev_inc, expression, operator);
-		case decrement:
-			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
-									MutaOperator.insert_prev_dec, expression, operator);
-		case arith_add:
-			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
-									MutaOperator.insert_post_inc, expression, operator);
-		case arith_sub:
-			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
-									MutaOperator.insert_post_dec, expression, operator);
 		default: 
 			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UNOI,
 									MutaOperator.insert_nabs_value, expression, operator);
+		}
+	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return	insert_prev_inc(expression, increment)
+	 * 			insert_prev_dec(expression, decrement)
+	 * 			insert_post_inc(expression, arith_add)
+	 * 			insert_post_dec(expression, arith_sub)
+	 * @throws Exception
+	 */
+	public static CirMutation UIOI(CirExpression expression, COperator operator) throws Exception {
+		switch(operator) {
+		case increment:
+			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UIOI,
+									MutaOperator.insert_prev_inc, expression, operator);
+		case decrement:
+			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UIOI,
+									MutaOperator.insert_prev_dec, expression, operator);
+		case arith_add:
+			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UIOI,
+									MutaOperator.insert_post_inc, expression, operator);
+		case arith_sub:
+			return new CirMutation(MutaGroup.Unary_Operator_Mutation, MutaClass.UIOI,
+									MutaOperator.insert_post_dec, expression, operator);
+		default: throw new IllegalArgumentException("Invalid: " + operator);
 		}
 	}
 	
