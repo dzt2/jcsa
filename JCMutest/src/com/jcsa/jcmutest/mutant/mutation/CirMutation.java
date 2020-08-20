@@ -1,11 +1,14 @@
 package com.jcsa.jcmutest.mutant.mutation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
- * The mutation that is injected in program written in C-intermediate
- * representation language.
+ * The mutation injected in C-intermediate representation.
  * 
  * @author yukimula
  *
@@ -13,95 +16,73 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 public class CirMutation {
 	
 	/* attributes */
-	/** the group of mutation operator **/
-	private MutaGroup muta_group;
-	/** the class of mutation operator **/
-	private MutaClass muta_class;
-	/** the mutation operator on AST **/
-	private MutaOperator operator;
-	/** the location in which the mutation is seeded **/
-	private CirNode location;
-	/** the parameter that defines the mutation **/
-	private Object parameter;
-	
-	/* constructors */
+	/** the function that defines the mutation in CIR **/
+	private MutaFunction function;
+	/** the parameters used to refine mutation in CIR **/
+	private List<Object> parameters;
 	/**
-	 * @param muta_group the group of mutation operator
-	 * @param muta_class the class of mutation operator 
-	 * @param operator the mutation operator on AST
-	 * @param location the location in which the mutation is seeded
-	 * @param parameter the parameter that defines the mutation
-	 * @throws IllegalArgumentException
+	 * create a cir-mutation without parameters
+	 * @param function
+	 * @throws Exception
 	 */
-	protected CirMutation(MutaGroup muta_group, MutaClass muta_class, 
-			MutaOperator operator, CirNode location, Object parameter) 
-					throws IllegalArgumentException {
-		if(muta_group == null)
-			throw new IllegalArgumentException("Invalid group: null");
-		else if(muta_class == null)
-			throw new IllegalArgumentException("Invalid class: null");
-		else if(operator == null)
-			throw new IllegalArgumentException("Invalid operator: null");
-		else if(location == null)
-			throw new IllegalArgumentException("Invalid location: null");
+	protected CirMutation(MutaFunction function) throws Exception {
+		if(function == null)
+			throw new IllegalArgumentException("Invalid function");
 		else {
-			this.muta_group = muta_group;
-			this.muta_class = muta_class;
-			this.operator = operator;
-			this.location = location;
-			this.parameter = parameter;
+			this.function = function;
+			this.parameters = new ArrayList<Object>();
 		}
+	}
+	protected void add_parameter(Object parameter) throws Exception {
+		if(parameter == null)
+			throw new IllegalArgumentException("Invalid parameter");
+		else
+			this.parameters.add(parameter);
 	}
 	
 	/* getters */
 	/**
-	 * @return the group of mutation operator
+	 * @return the function that defines the mutation in CIR
 	 */
-	public MutaGroup get_group() { return this.muta_group; }
-	/**
-	 * @return the class of mutation operator
-	 */
-	public MutaClass get_class() { return this.muta_class; }
-	/**
-	 * @return the mutation operator on AST
-	 */
-	public MutaOperator get_operator() { return operator; }
+	public MutaFunction get_function() {
+		return this.function;
+	}
 	/**
 	 * @return the location in which the mutation is seeded
 	 */
-	public CirNode get_location() { return this.location; }
-	/**
-	 * @return the parameter that defines the mutation
-	 */
-	public Object get_parameter() { return this.parameter; }
-	/**
-	 * @return whether the parameter is non-null in mutation
-	 */
-	public boolean has_parameter() { return parameter != null; }
-	
-	/* identification */
-	@Override
-	public boolean equals(Object obj) {
-		if(obj instanceof AstMutation) {
-			return this.toString().equals(obj.toString());
-		}
-		else {
-			return false;
-		}
-	}
-	@Override
-	public int hashCode() {
-		return this.toString().hashCode();
+	public CirNode get_location() {
+		return (CirNode) this.parameters.get(0);
 	}
 	/**
-	 * @return bool | char | short | int | long | float | double | string | cir_node
+	 * @return the number of parameters in the mutation
 	 */
-	private String parameter2string() {
+	public int number_of_parameters() {
+		return this.parameters.size();
+	}
+	/**
+	 * @return the parameters used to refine the mutation
+	 */
+	public Iterable<Object> get_parameters() {
+		return this.parameters;
+	}
+	/**
+	 * @param k
+	 * @return the kth parameter that defines the cir-mutation
+	 * @throws IndexOutOfBoundsException
+	 */
+	public Object get_parameter(int k) throws IndexOutOfBoundsException {
+		return this.parameters.get(k);
+	}
+	/**
+	 * @param parameter
+	 * @return the typed string of parameter
+	 */
+	private String parameter2string(Object parameter) {
 		if(parameter == null) {
 			return "";
 		}
 		else if(parameter instanceof Boolean) {
-			return "bool@" + parameter.toString();
+			return "bool@" + parameter;
 		}
 		else if(parameter instanceof Character) {
 			return "char@" + ((int) ((Character) parameter).charValue());
@@ -122,48 +103,49 @@ public class CirMutation {
 			return "double@" + parameter;
 		}
 		else if(parameter instanceof String) {
-			return "string@" + parameter;
+			return "string@" + parameter.toString();
+		}
+		else if(parameter instanceof COperator) {
+			return "oprt@" + parameter.toString();
 		}
 		else if(parameter instanceof CirNode) {
 			return "cir@" + ((CirNode) parameter).get_node_id();
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + parameter);
+			return null;
 		}
 	}
 	@Override
 	public String toString() {
-		return this.muta_group.toString() + "\t"
-				+ this.muta_class.toString() + "\t"
-				+ this.operator.toString() + "\t"
-				+ this.location.get_node_id() + "\t"
-				+ this.parameter2string();
+		StringBuilder buffer = new StringBuilder();
+		buffer.append(this.function.toString());
+		for(Object parameter : this.parameters) {
+			buffer.append(" ").append(this.parameter2string(parameter));
+		}
+		return buffer.toString();
 	}
-	
-	/* parsing methods */
 	/**
 	 * @param tree
 	 * @param text
-	 * @return bool | char | short | int | long | float | double | string | cir_node
+	 * @return the parameter translated from the text based on CIR-tree
 	 * @throws Exception
 	 */
-	private static Object string2parameter(
-			CirTree tree, String text) throws Exception {
-		if(text == null || text.isBlank())
+	private static Object string2parameter(CirTree tree, String text) throws Exception {
+		if(text == null || text.isBlank()) {
 			return null;
+		}
 		else {
 			int index = text.indexOf('@');
 			String title = text.substring(0, index).strip();
 			String value = text.substring(index + 1).strip();
-			
 			if(title.equals("bool")) {
-				return Boolean.valueOf(value.equals("true"));
+				return Boolean.valueOf(Boolean.TRUE.toString().equals(value));
 			}
 			else if(title.equals("char")) {
 				return Character.valueOf((char) Integer.parseInt(value));
 			}
 			else if(title.equals("short")) {
-				return Short.valueOf(value);
+				return Short.valueOf((short) Integer.parseInt(value));
 			}
 			else if(title.equals("int")) {
 				return Integer.parseInt(value);
@@ -172,42 +154,45 @@ public class CirMutation {
 				return Long.parseLong(value);
 			}
 			else if(title.equals("float")) {
-				return Float.valueOf(value);
+				return Float.parseFloat(value);
 			}
 			else if(title.equals("double")) {
-				return Double.valueOf(value);
+				return Double.parseDouble(value);
 			}
 			else if(title.equals("string")) {
 				return value;
+			}
+			else if(title.equals("oprt")) {
+				return COperator.valueOf(value);
 			}
 			else if(title.equals("cir")) {
 				return tree.get_node(Integer.parseInt(value));
 			}
 			else {
-				throw new IllegalArgumentException("Unsupport: " + text);
+				throw new IllegalArgumentException("Invalid type: " + title);
 			}
 		}
 	}
 	/**
 	 * @param tree
 	 * @param line
-	 * @return the cir-mutation parsed from the string line
+	 * @return the cir-mutation parsed from string-line and cir-tree base.
 	 * @throws Exception
 	 */
 	public static CirMutation parse(CirTree tree, String line) throws Exception {
-		if(line == null || line.isBlank())
-			throw new IllegalArgumentException("Invalid line: null");
+		if(line == null || line.isBlank()) {
+			return null;
+		}
 		else {
-			String[] items = line.strip().split("\t");
-			MutaGroup group = MutaGroup.valueOf(items[0].strip());
-			MutaClass mclass = MutaClass.valueOf(items[1].strip());
-			MutaOperator operator = MutaOperator.valueOf(items[2].strip());
-			CirNode location = tree.get_node(Integer.parseInt(items[3].strip()));
-			Object parameter = null;
-			if(items.length > 4) {
-				parameter = string2parameter(tree, items[4].strip());
+			String[] items = line.strip().split(" ");
+			MutaFunction function = MutaFunction.valueOf(items[0].strip());
+			CirMutation mutation = new CirMutation(function);
+			for(int k = 1; k < items.length; k++) {
+				if(!items[k].isBlank()) {
+					mutation.parameters.add(string2parameter(tree, items[k]));
+				}
 			}
-			return new CirMutation(group, mclass, operator, location, parameter);
+			return mutation;
 		}
 	}
 	
