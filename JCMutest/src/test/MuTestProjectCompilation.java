@@ -35,12 +35,16 @@ public class MuTestProjectCompilation {
 		}
 	}
 	protected static void testing(File cfile) throws Exception {
-		System.out.println("----------------------------------");
-		new_project(cfile);
-		// test_compile(cfile);
-		test_cir_mutations(cfile);
-		System.out.println("----------------------------------");
-		System.out.println();
+		String name = get_name(cfile);
+		File root = new File(root_path + "projects/" + name);
+		if(!root.exists()) {
+			System.out.println("----------------------------------");
+			new_project(cfile);
+			// test_compile(cfile);
+			test_cir_mutations(cfile);
+			System.out.println("----------------------------------");
+			System.out.println();
+		}
 	}
 	
 	/* create */
