@@ -65,4 +65,6 @@ public enum MutaFunction {
 	 *  the expression is removed **/
 	del_operator,
 	
+	/** ins_operator(expression, operator|string) **/
+	ins_operator,
 }

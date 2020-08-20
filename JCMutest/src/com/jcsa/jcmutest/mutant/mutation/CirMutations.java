@@ -569,5 +569,25 @@ public class CirMutations {
 		mutation.add_parameter(expression);
 		return mutation;
 	}
+	/**
+	 * @param expression
+	 * @param operator
+	 * @return	(1) negative	==> insert_arith_neg
+	 * 			(2) positive	==> insert_abs_value
+	 * 			(3) increment	==> insert_prev_inc
+	 * 			(4)	decrement	==> insert_prev_dec
+	 * 			(5) bit_not		==> insert_bitws_rsv
+	 * 			(6)	logic_not	==> insert_logic_not
+	 * 			(7) arith_add	==> insert_post_inc
+	 * 			(8)	arith_sub	==> insert_post_dec
+	 * 			(9) assign		==> insert_nabs_value
+	 * @throws Exception
+	 */
+	public static CirMutation ins_operator(CirExpression expression, COperator operator) throws Exception {
+		CirMutation mutation = new CirMutation(MutaFunction.ins_operator);
+		mutation.add_parameter(expression);
+		mutation.add_parameter(operator);
+		return mutation;
+	}
 	
 }
