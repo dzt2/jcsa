@@ -24,8 +24,8 @@ public class SymIdentifier extends SymBasicExpression {
 	@Override
 	protected String generate_code(boolean ast_style) throws Exception {
 		if(ast_style) {
-			if(this.name.contains("@")) {
-				int index = this.name.indexOf('@');
+			if(this.name.contains("#")) {
+				int index = this.name.indexOf('#');
 				return this.name.substring(0, index);
 			}
 			else {
