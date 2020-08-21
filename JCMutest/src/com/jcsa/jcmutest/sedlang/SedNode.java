@@ -37,8 +37,10 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	SedLabel										{source: CirStatement}	<br>
  * 	+--------------------------------------------------------------------------+<br>
  * 	|--	<i>SedAssertion</i>														<br>
- * 	|--	|--	SedAssertOnCondition												<br>
- * 	|--	|--	SedExecuteOnStatement												<br>
+ * 	|--	|--	SedConditionAssertion												<br>
+ * 	|--	|--	SedStatementAssertion												<br>
+ * 	|--	|--	SedConjunctAssertion												<br>
+ * 	|--	|--	SedDisjunctAssertion												<br>
  * 	+--------------------------------------------------------------------------+<br>
  * 	|--	<i>SedMutation</i>														<br>
  * 	|--	|--	SedSetExpression													<br>
