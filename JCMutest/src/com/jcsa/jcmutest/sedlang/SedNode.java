@@ -42,10 +42,11 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	|--	SedConjunctAssertion												<br>
  * 	|--	|--	SedDisjunctAssertion												<br>
  * 	+--------------------------------------------------------------------------+<br>
- * 	|--	<i>SedMutation</i>														<br>
+ * 	|--	<i>SedStateMutation</i>													<br>
  * 	|--	|--	SedSetExpression													<br>
  * 	|--	|--	SedAddExpression													<br>
  * 	|--	|--	SedInsExpression													<br>
+ * 	|--	|--	SedAddOperator														<br>
  * 	|--	|--	SedInsOperator														<br>
  * 	|--	|--	SedSetOperator														<br>
  * 	|--	|--	SedMutExpression													<br>
