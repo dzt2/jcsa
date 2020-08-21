@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.sedlang;
+package com.jcsa.jcmutest.sedlang.lang;
 
+import com.jcsa.jcmutest.sedlang.SedNode;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
@@ -33,7 +34,7 @@ public class SedBinaryExpression extends SedExpression {
 		return new SedBinaryExpression(this.get_source(), this.get_data_type());
 	}
 	@Override
-	protected String generate_code() throws Exception {
+	public String generate_code() throws Exception {
 		return "(" + this.get_operator().generate_code() 
 				+ " " + this.get_loperand().generate_code()
 				+ " " + this.get_roperand().generate_code() + ")";

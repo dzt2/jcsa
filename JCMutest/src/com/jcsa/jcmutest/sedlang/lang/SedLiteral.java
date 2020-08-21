@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.sedlang;
+package com.jcsa.jcmutest.sedlang.lang;
 
+import com.jcsa.jcmutest.sedlang.SedNode;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
@@ -23,14 +24,14 @@ public class SedLiteral extends SedBasicExpression {
 	 * @return the literal that this node defines
 	 */
 	public String get_literal() { return this.literal; }
-
+	
+	/* implementation */
 	@Override
 	protected SedNode copy_self() {
 		return new SedLiteral(this.get_source(), this.get_data_type(), this.literal);
 	}
-	
 	@Override
-	protected String generate_code() throws Exception {
+	public String generate_code() throws Exception {
 		StringBuilder buffer = new StringBuilder();
 		for(int k = 0; k < this.literal.length(); k++) {
 			switch(literal.charAt(k)) {
@@ -48,6 +49,5 @@ public class SedLiteral extends SedBasicExpression {
 		}
 		return buffer.toString();
 	}
-	
 	
 }

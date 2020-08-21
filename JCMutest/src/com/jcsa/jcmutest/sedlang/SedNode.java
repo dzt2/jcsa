@@ -172,6 +172,6 @@ public abstract class SedNode {
 	 * 		   language code.
 	 * @throws Exception
 	 */
-	protected abstract String generate_code() throws Exception;
+	public abstract String generate_code() throws Exception;
 	
 }

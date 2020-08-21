@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.sedlang;
+package com.jcsa.jcmutest.sedlang.lang;
 
+import com.jcsa.jcmutest.sedlang.SedNode;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
@@ -24,13 +25,13 @@ public class SedUnaryExpression extends SedExpression {
 	 */
 	public SedExpression get_operand() { return (SedExpression) this.get_child(1); }
 	
+	/* implementation */
 	@Override
 	protected SedNode copy_self() {
 		return new SedUnaryExpression(this.get_source(), this.get_data_type());
 	}
-	
 	@Override
-	protected String generate_code() throws Exception {
+	public String generate_code() throws Exception {
 		return "(" + this.get_operator().generate_code() + " " + 
 						this.get_operand().generate_code() + ")";
 	}

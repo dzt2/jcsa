@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.sedlang;
+package com.jcsa.jcmutest.sedlang.lang;
 
+import com.jcsa.jcmutest.sedlang.SedNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -23,13 +24,13 @@ public class SedOperator extends SedNode {
 	 */
 	public COperator get_operator() { return this.operator; }
 	
+	/* implementation */
 	@Override
 	protected SedNode copy_self() {
 		return new SedOperator(this.get_source(), this.operator);
 	}
-	
 	@Override
-	protected String generate_code() throws Exception {
+	public String generate_code() throws Exception {
 		switch(this.operator) {
 		case positive:		return "";
 		case negative:		return "-";

@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.sedlang;
+package com.jcsa.jcmutest.sedlang.lang;
 
+import com.jcsa.jcmutest.sedlang.SedNode;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
