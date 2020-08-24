@@ -141,7 +141,7 @@ public abstract class SadNode {
 	 * @param child
 	 * @throws IllegalArgumentException
 	 */
-	protected void add_child(SadNode child) throws IllegalArgumentException {
+	public void add_child(SadNode child) throws IllegalArgumentException {
 		if(child == null || child.parent != null)
 			throw new IllegalArgumentException("Invalid child: " + child);
 		else {
