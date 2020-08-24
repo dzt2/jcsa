@@ -12,25 +12,24 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public class SadUnaryExpression extends SadExpression {
 	
-	private COperator operator;
 	protected SadUnaryExpression(CirNode source, CType data_type, COperator operator) {
 		super(source, data_type);
-		this.operator = operator;
+		this.add_child(new SadOperator(operator));
 	}
 	
 	/**
 	 * @return {+,-,~,!,&,*,cast}
 	 */
-	public COperator get_operator() { return this.operator; }
+	public SadOperator get_operator() { return (SadOperator) this.get_child(0); }
 	/**
 	 * @return the operand under the unary expression
 	 */
-	public SadExpression get_operand() { return (SadExpression) this.get_child(0); }
+	public SadExpression get_operand() { return (SadExpression) this.get_child(1); }
 
 	@Override
 	public String generate_code() throws Exception {
 		String operand = this.get_operand().generate_code();
-		switch(this.operator) {
+		switch(this.get_operator().get_operator()) {
 		case positive:		return operand;
 		case negative:		return "-(" + operand + ")";
 		case bit_not:		return "~(" + operand + ")";
@@ -38,14 +37,14 @@ public class SadUnaryExpression extends SadExpression {
 		case address_of:	return "&(" + operand + ")";
 		case dereference:	return "*(" + operand + ")";
 		case assign:		return "@(" + operand + ")";
-		default: throw new IllegalArgumentException("Invalid: " + this.operator);
+		default: throw new IllegalArgumentException("Invalid: " + this.get_operator());
 		}
 	}
 
 	@Override
 	protected SadNode clone_self() {
-		return new SadUnaryExpression(this.get_cir_source(), 
-				this.get_data_type(), this.operator);
+		return new SadUnaryExpression(this.get_cir_source(), this.
+				get_data_type(), this.get_operator().get_operator());
 	}
 
 }

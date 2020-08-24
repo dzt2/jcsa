@@ -12,34 +12,33 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public class SadMultiExpression extends SadExpression {
 
-	private COperator operator;
 	protected SadMultiExpression(CirNode source, CType data_type, COperator operator) {
 		super(source, data_type);
-		this.operator = operator;
+		this.add_child(new SadOperator(operator));
 	}
 	
 	/* getters */
 	/**
 	 * @return {+,*,&,|,^,&&,||}
 	 */
-	public COperator get_operator() { return this.operator; }
+	public SadOperator get_operator() { return (SadOperator) this.get_child(0); }
 	/**
 	 * @return the number of operands within the expression
 	 */
-	public int number_of_operands() { return this.number_of_children(); }
+	public int number_of_operands() { return this.number_of_children() - 1; }
 	/**
 	 * @param k
 	 * @return the kth operand under the expression
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SadExpression get_operand(int k) throws IndexOutOfBoundsException {
-		return (SadExpression) this.get_child(k);
+		return (SadExpression) this.get_child(k + 1);
 	}
 	
 	@Override
 	public String generate_code() throws Exception {
 		String opcode;
-		switch(this.operator) {
+		switch(this.get_operator().get_operator()) {
 		case arith_add:		opcode = " + ";		break;
 		case arith_mul:		opcode = " * ";		break;
 		case bit_and:		opcode = " & ";		break;
@@ -47,7 +46,7 @@ public class SadMultiExpression extends SadExpression {
 		case bit_xor:		opcode = " ^ ";		break;
 		case logic_and:		opcode = " && ";	break;
 		case logic_or:		opcode = " || ";	break;
-		default: throw new IllegalArgumentException("Invalid: " + this.operator);
+		default: throw new IllegalArgumentException("Invalid: " + this.get_operator());
 		}
 		
 		StringBuilder buffer = new StringBuilder();
@@ -65,7 +64,7 @@ public class SadMultiExpression extends SadExpression {
 	@Override
 	protected SadNode clone_self() {
 		return new SadMultiExpression(this.get_cir_source(), 
-					this.get_data_type(), this.operator);
+					this.get_data_type(), this.get_operator().get_operator());
 	}
 	
 }

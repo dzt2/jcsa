@@ -12,33 +12,32 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public class SadBinaryExpression extends SadExpression {
 
-	private COperator operator;
 	protected SadBinaryExpression(CirNode source, CType data_type, COperator operator) {
 		super(source, data_type);
-		this.operator = operator;
+		this.add_child(new SadOperator(operator));
 	}
 	
 	/**
 	 * @return {-,/,%,<<,>>,<,<=,>,>=,==,!=}
 	 */
-	public COperator get_operator() { return this.operator; }
+	public SadOperator get_operator() { return (SadOperator) this.get_child(0); }
 	/**
 	 * @return the left-operand
 	 */
 	public SadExpression get_loperand() {
-		return (SadExpression) this.get_child(0);
+		return (SadExpression) this.get_child(1);
 	}
 	/**
 	 * @return the right-operand
 	 */
 	public SadExpression get_roperand() {
-		return (SadExpression) this.get_child(1);
+		return (SadExpression) this.get_child(2);
 	}
 	
 	@Override
 	public String generate_code() throws Exception {
 		String opcode;
-		switch(this.operator) {
+		switch(this.get_operator().get_operator()) {
 		case arith_sub:		opcode = "-";	break;
 		case arith_div:		opcode = "/";	break;
 		case arith_mod:		opcode = "%";	break;
@@ -50,7 +49,7 @@ public class SadBinaryExpression extends SadExpression {
 		case smaller_eq:	opcode = "<=";	break;
 		case equal_with:	opcode = "==";	break;
 		case not_equals:	opcode = "!=";	break;
-		default: throw new IllegalArgumentException("Invalid: " + this.operator);
+		default: throw new IllegalArgumentException("Invalid: " + this.get_operator());
 		}
 		return "(" + this.get_loperand().generate_code() + ") "
 				+ opcode +
@@ -60,7 +59,7 @@ public class SadBinaryExpression extends SadExpression {
 	@Override
 	protected SadNode clone_self() {
 		return new SadBinaryExpression(this.get_cir_source(), 
-				this.get_data_type(), this.operator);
+				this.get_data_type(), this.get_operator().get_operator());
 	}
 
 }
