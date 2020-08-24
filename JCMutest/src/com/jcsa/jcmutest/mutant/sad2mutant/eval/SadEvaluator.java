@@ -12,6 +12,7 @@ import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFieldExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadIdExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadInitializerList;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadLiteral;
+import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadUnaryExpression;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 
 /**
@@ -46,6 +47,41 @@ public class SadEvaluator {
 		}
 		else {
 			return null;
+		}
+	}
+	/**
+	 * @param constant
+	 * @return long | double
+	 * @throws Exception
+	 */
+	private Object get_number(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:
+			if(constant.get_bool().booleanValue()) {
+				return Long.valueOf(1);
+			}
+			else {
+				return Long.valueOf(0);
+			}
+		case c_char:
+		case c_uchar:
+			return Long.valueOf(constant.get_char().charValue());
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:
+			return Long.valueOf(constant.get_integer().intValue());
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:
+			return Long.valueOf(constant.get_long().longValue());
+		case c_float:
+			return Double.valueOf(constant.get_float().floatValue());
+		case c_double:
+		case c_ldouble:
+			return Double.valueOf(constant.get_double().doubleValue());
+		default: throw new IllegalArgumentException("Invalid: " + constant);
 		}
 	}
 	
@@ -124,6 +160,30 @@ public class SadEvaluator {
 		}
 		return SadFactory.initializer_list(source.get_data_type(), operands);
 	}
+	private SadExpression eval_arith_pos(SadUnaryExpression source) throws Exception {
+		return this.eval(source.get_operand());
+	}
+	private SadExpression eval_arith_neg(SadUnaryExpression source) throws Exception {
+		SadExpression operand = this.eval(source.get_operand());
+		if(operand instanceof SadConstant) {
+			Object number = this.get_number(((SadConstant) operand).get_constant());
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				return SadFactory.constant(-value);
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				return SadFactory.constant(-value);
+			}
+		}
+		else {
+			return SadFactory.arith_neg(source.get_data_type(), operand);
+		}
+	}
+	
+	
+	
+	
 	
 	
 }
