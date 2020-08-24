@@ -25,6 +25,11 @@ public class SadFactory {
 		constant.set_bool(value);
 		return new SadConstant(null, constant.get_type(), constant);
 	}
+	public static SadConstant constant(char value) {
+		CConstant constant = new CConstant();
+		constant.set_char(value);
+		return new SadConstant(null, constant.get_type(), constant);
+	}
 	public static SadConstant constant(int value) {
 		CConstant constant = new CConstant();
 		constant.set_int(value);
@@ -47,6 +52,9 @@ public class SadFactory {
 	}
 	public static SadLiteral literal(String literal) throws Exception {
 		return new SadLiteral(null, tfactory.get_array_type(CBasicTypeImpl.char_type, literal.length() + 1), literal);
+	}
+	public static SadDefaultValue default_value(CType data_type) throws Exception {
+		return new SadDefaultValue(null, data_type);
 	}
 	public static SadUnaryExpression arith_neg(CType data_type, SadExpression operand) throws Exception {
 		SadUnaryExpression expression = new SadUnaryExpression(null, data_type, COperator.negative);
