@@ -4,16 +4,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 
 public class SadGraph {
 	
+	/** the C-intermediate representation tree **/
+	private CirTree tree;
 	/** the mapping from assertion to node **/
 	private Map<String, SadVertex> vertices;
-	protected SadGraph() {
+	protected SadGraph(CirTree tree) throws Exception {
+		this.tree = tree;
 		this.vertices = new HashMap<String, SadVertex>();
 	}
 	
 	/* getters */
+	/**
+	 * @return the tree of C-intermediate representation.
+	 */ 
+	public CirTree get_cir_tree() { return this.tree; }
 	/**
 	 * @return the number of nodes in the graph
 	 */
