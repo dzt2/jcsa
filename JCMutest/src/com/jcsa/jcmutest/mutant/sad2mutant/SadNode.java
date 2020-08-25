@@ -41,18 +41,21 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|-- SadField						{name: String}					<br>
  * 	|--	SadArgumentList													<br>
  * 	+------------------------------------------------------------------+<br>
- * 	SadAssertion						{location: SadStatement}		<br>
- * 	|--	SadExecuteOnAssertion											<br>
- * 	|--	SadConditionAssertion											<br>
- * 	|--	SadConjunctAssertion											<br>
- * 	|--	SadDisjunctAssertion											<br>
- * 	|--	SadSetExpressionAssertion										<br>
- * 	|--	SadSetLabelAssertion											<br>
- * 	|--	SadAddOperandAssertion											<br>
- * 	|--	SadInsOperandAssertion											<br>
- * 	|--	SadAddOperatorAssertion											<br>
- * 	|--	SadInsOperatorAssertion											<br>
- * 	|--	SadMutExpressionAssertion										<br>
+ * 	SadAssertion														<br>
+ * 	|--	SadConstraintAssertion				{location: SadStatement}	<br>
+ * 	|--	|--	SadExecuteOnAssertion										<br>
+ * 	|--	|--	SadConditionAssertion										<br>
+ * 	|--	SadMutationAssertion				{location: SadStatement}	<br>
+ * 	|--	|--	SadSetExpressionAssertion									<br>
+ * 	|--	|--	SadSetLabelAssertion										<br>
+ * 	|--	|--	SadAddOperandAssertion										<br>
+ * 	|--	|--	SadInsOperandAssertion										<br>
+ * 	|--	|--	SadAddOperatorAssertion										<br>
+ * 	|--	|--	SadInsOperatorAssertion										<br>
+ * 	|--	|--	SadMutExpressionAssertion									<br>
+ * 	|--	SadCompositeAssertion				{assertions: SadAssertion*}	<br>
+ * 	|--	|--	SadConjunctAssertion										<br>
+ * 	|--	|--	SadDisjunctAssertion										<br>
  * 	+------------------------------------------------------------------+<br>
  * </code>
  * <br>

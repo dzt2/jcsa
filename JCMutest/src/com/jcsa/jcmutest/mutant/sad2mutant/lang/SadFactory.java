@@ -247,72 +247,73 @@ public class SadFactory {
 		statement.add_child(new SadLabel(null, execution));
 		return statement;
 	}
-	public static SadExecuteOnAssertion execute_assertion(SadStatement location, int times) throws Exception {
+	
+	public static SadExecuteOnAssertion assert_execute_on(SadStatement statement, int times) throws Exception {
 		SadExecuteOnAssertion assertion = new SadExecuteOnAssertion(null);
-		assertion.add_child(location);
+		assertion.add_child(statement);
 		assertion.add_child(constant(times));
 		return assertion;
 	}
-	public static SadConditionAssertion condition_assertion(SadStatement location, SadExpression condition) throws Exception {
+	public static SadConditionAssertion assert_condition(SadStatement 
+				statement, SadExpression condition) throws Exception {
 		SadConditionAssertion assertion = new SadConditionAssertion(null);
-		assertion.add_child(location);
+		assertion.add_child(statement);
 		assertion.add_child(condition);
 		return assertion;
 	}
-	public static SadSetExpressionAssertion set_expression(SadStatement location, 
-			SadExpression orig_expr, SadExpression muta_expr) throws Exception {
-		SadSetExpressionAssertion assertion = new SadSetExpressionAssertion(null);
-		assertion.add_child(location);
-		assertion.add_child(orig_expr);
-		assertion.add_child(muta_expr);
-		return assertion;
-	}
-	public static SadSetLabelAssertion set_goto_label(SadStatement location, CirExecution target) throws Exception {
+	public static SadSetLabelAssertion set_label_mutation(SadStatement source, SadStatement target) throws Exception {
 		SadSetLabelAssertion assertion = new SadSetLabelAssertion(null);
-		assertion.add_child(location);
-		assertion.add_child(new SadLabel(null, target));
+		assertion.add_child(source);
+		assertion.add_child(target);
 		return assertion;
 	}
-	public static SadInsOperatorAssertion insert_operator(SadStatement location, SadExpression operand, COperator operator) throws Exception {
+	public static SadSetExpressionAssertion set_expression(SadStatement 
+			statement, SadExpression source, SadExpression target) throws Exception {
+		SadSetExpressionAssertion assertion = new SadSetExpressionAssertion(null);
+		assertion.add_child(statement);
+		assertion.add_child(source);
+		assertion.add_child(target);
+		return assertion;
+	}
+	public static SadInsOperatorAssertion ins_operator(SadStatement statement,
+			SadExpression expression, COperator operator) throws Exception {
 		SadInsOperatorAssertion assertion = new SadInsOperatorAssertion(null);
-		assertion.add_child(location);
-		assertion.add_child(operand);
+		assertion.add_child(statement);
+		assertion.add_child(expression);
 		assertion.add_child(new SadOperator(operator));
 		return assertion;
 	}
-	public static SadInsOperandAssertion insert_operand(SadStatement location, 
-			SadExpression orig_expression, COperator operator, SadExpression operand) throws Exception {
-		SadInsOperandAssertion assertion = new SadInsOperandAssertion(null);
-		assertion.add_child(location);
-		assertion.add_child(orig_expression);
-		assertion.add_child(new SadOperator(operator));
-		assertion.add_child(operand);
-		return assertion;
-	}
-	public static SadAddOperandAssertion add_operand(SadStatement location, 
-			SadExpression orig_expression, COperator operator, SadExpression operand) throws Exception {
+	public static SadAddOperandAssertion add_operand(SadStatement statement,
+			SadExpression expression, COperator operator, SadExpression operand) throws Exception {
 		SadAddOperandAssertion assertion = new SadAddOperandAssertion(null);
-		assertion.add_child(location);
-		assertion.add_child(orig_expression);
+		assertion.add_child(statement);
+		assertion.add_child(expression);
 		assertion.add_child(new SadOperator(operator));
 		assertion.add_child(operand);
 		return assertion;
 	}
-	public static SadConjunctAssertion conjunct(SadStatement location, Iterable<SadAssertion> assertions) throws Exception {
-		SadConjunctAssertion result = new SadConjunctAssertion(null);
-		result.add_child(location);
-		for(SadAssertion assertion : assertions) {
-			result.add_child(assertion);
-		}
-		return result;
+	public static SadInsOperandAssertion ins_operand(SadStatement statement,
+			SadExpression expression, COperator operator, SadExpression operand) throws Exception {
+		SadInsOperandAssertion assertion = new SadInsOperandAssertion(null);
+		assertion.add_child(statement);
+		assertion.add_child(expression);
+		assertion.add_child(new SadOperator(operator));
+		assertion.add_child(operand);
+		return assertion;
 	}
-	public static SadDisjunctAssertion disjunct(SadStatement location, Iterable<SadAssertion> assertions) throws Exception {
-		SadDisjunctAssertion result = new SadDisjunctAssertion(null);
-		result.add_child(location);
+	public static SadConjunctAssertion conjunct(Iterable<SadAssertion> assertions) throws Exception {
+		SadConjunctAssertion set = new SadConjunctAssertion(null);
 		for(SadAssertion assertion : assertions) {
-			result.add_child(assertion);
+			set.add_child(assertion);
 		}
-		return result;
+		return set;
+	}
+	public static SadDisjunctAssertion disjunct(Iterable<SadAssertion> assertions) throws Exception {
+		SadDisjunctAssertion set = new SadDisjunctAssertion(null);
+		for(SadAssertion assertion : assertions) {
+			set.add_child(assertion);
+		}
+		return set;
 	}
 	
 }

@@ -4,28 +4,31 @@ import com.jcsa.jcmutest.mutant.sad2mutant.SadNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 
 /**
- * assert execute(constant) at statement
+ * assert#location: execute(int)
  * @author yukimula
  *
  */
-public class SadExecuteOnAssertion extends SadAssertion {
-	
+public class SadExecuteOnAssertion extends SadConstraintAssertion {
+
 	protected SadExecuteOnAssertion(CirNode source) {
 		super(source);
 	}
 	
-	public SadConstant get_execute_times() {
-		return (SadConstant) this.get_child(1);
+	/** 
+	 * @return the expression that defines the loop-times
+	 */
+	public SadExpression get_loop_time() {
+		return (SadExpression) this.get_child(1);
 	}
 
 	@Override
 	protected String generate_content() throws Exception {
-		return "execute(" + this.get_execute_times().generate_code() + ")";
+		return "execute(" + this.get_loop_time().generate_code() + ")";
 	}
 
 	@Override
 	protected SadNode clone_self() {
 		return new SadExecuteOnAssertion(this.get_cir_source());
 	}
-
+	
 }
