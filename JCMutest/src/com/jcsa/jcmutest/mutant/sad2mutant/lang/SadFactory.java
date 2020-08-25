@@ -20,6 +20,9 @@ public class SadFactory {
 	public static SadIdExpression id_expression(CType data_type, String name) {
 		return new SadIdExpression(null, data_type, name);
 	}
+	public static SadConstant constant(CConstant constant) {
+		return new SadConstant(null, constant.get_type(), constant);
+	}
 	public static SadConstant constant(boolean value) {
 		CConstant constant = new CConstant();
 		constant.set_bool(value);
