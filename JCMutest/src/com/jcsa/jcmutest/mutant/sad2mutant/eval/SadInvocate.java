@@ -1,9 +1,11 @@
 package com.jcsa.jcmutest.mutant.sad2mutant.eval;
 
+import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadCallExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 
 /**
- * It performs the evaluation for call-expression.
+ * It implements the evaluation on the level of calling function,
+ * which returns the symbolic result of the SadCallExpression.
  * 
  * @author yukimula
  *
@@ -11,12 +13,11 @@ import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 public interface SadInvocate {
 	
 	/**
-	 * @param function  the expression of function to be called
-	 * @param arguments actual arguments to be applied
-	 * @return the result computed from the function w.r.t. the arguments as given or null if the invocation
-	 * 		   is not able to be interpreted.
+	 * @param call_expression
+	 * @return the symbolic result of the function w.r.t. the arguments
+	 * 		   or null if the invocation machine cannot interpret it.
 	 * @throws Exception
 	 */
-	public SadExpression invocate(SadExpression function, Iterable<SadExpression> arguments) throws Exception;
+	public SadExpression invocate(SadCallExpression call_expression) throws Exception;
 	
 }
