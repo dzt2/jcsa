@@ -44,6 +44,8 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	SadAssertion						{location: SadStatement}		<br>
  * 	|--	SadExecuteOnAssertion											<br>
  * 	|--	SadConditionAssertion											<br>
+ * 	|--	SadConjunctAssertion											<br>
+ * 	|--	SadDisjunctAssertion											<br>
  * 	|--	SadSetExpressionAssertion										<br>
  * 	|--	SadSetLabelAssertion											<br>
  * 	|--	SadAddOperandAssertion											<br>

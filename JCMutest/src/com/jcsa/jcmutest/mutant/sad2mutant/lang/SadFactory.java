@@ -298,5 +298,21 @@ public class SadFactory {
 		assertion.add_child(operand);
 		return assertion;
 	}
+	public static SadConjunctAssertion conjunct(SadStatement location, Iterable<SadAssertion> assertions) throws Exception {
+		SadConjunctAssertion result = new SadConjunctAssertion(null);
+		result.add_child(location);
+		for(SadAssertion assertion : assertions) {
+			result.add_child(assertion);
+		}
+		return result;
+	}
+	public static SadDisjunctAssertion disjunct(SadStatement location, Iterable<SadAssertion> assertions) throws Exception {
+		SadDisjunctAssertion result = new SadDisjunctAssertion(null);
+		result.add_child(location);
+		for(SadAssertion assertion : assertions) {
+			result.add_child(assertion);
+		}
+		return result;
+	}
 	
 }
