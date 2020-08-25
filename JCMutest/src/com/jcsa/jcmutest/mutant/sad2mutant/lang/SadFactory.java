@@ -301,18 +301,18 @@ public class SadFactory {
 		assertion.add_child(operand);
 		return assertion;
 	}
-	public static SadConjunctAssertion conjunct(Iterable<SadAssertion> assertions) throws Exception {
+	public static SadConjunctAssertion conjunct(SadStatement statement, Iterable<SadAssertion> assertions) throws Exception {
 		SadConjunctAssertion set = new SadConjunctAssertion(null);
-		for(SadAssertion assertion : assertions) {
+		set.add_child(statement);
+		for(SadAssertion assertion : assertions) 
 			set.add_child(assertion);
-		}
 		return set;
 	}
-	public static SadDisjunctAssertion disjunct(Iterable<SadAssertion> assertions) throws Exception {
+	public static SadDisjunctAssertion disjunct(SadStatement statement, Iterable<SadAssertion> assertions) throws Exception {
 		SadDisjunctAssertion set = new SadDisjunctAssertion(null);
-		for(SadAssertion assertion : assertions) {
+		set.add_child(statement);
+		for(SadAssertion assertion : assertions) 
 			set.add_child(assertion);
-		}
 		return set;
 	}
 	

@@ -30,5 +30,12 @@ public abstract class SadAssertion extends SadNode {
 	protected SadAssertion(CirNode source) {
 		super(source);
 	}
-
+	
+	/**
+	 * @return the statement at which the assertion is performed.
+	 */
+	public SadStatement get_location() {
+		return (SadStatement) this.get_child(0);
+	}
+	
 }

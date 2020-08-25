@@ -10,7 +10,7 @@ public class SadConjunctAssertion extends SadCompositeAssertion {
 	}
 
 	@Override
-	public String generate_code() throws Exception {
+	protected String generate_content() throws Exception  {
 		StringBuilder buffer = new StringBuilder();
 		for(int k = 0; k < this.number_of_assertions(); k++) {
 			buffer.append(this.get_assertion(k).generate_code());

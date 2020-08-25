@@ -19,17 +19,10 @@ public abstract class SadConstraintAssertion extends SadAssertion {
 		super(source);
 	}
 	
-	/**
-	 * @return the statement at which the constraint is asserted
-	 */
-	public SadStatement get_location() {
-		return (SadStatement) this.get_child(0);
-	}
-
 	@Override
 	public String generate_code() throws Exception {
 		return "assert#" + this.get_location().generate_code() + 
-								"::" + this.generate_content();
+							"::{" + this.generate_content() + "}";
 	}
 	
 	protected abstract String generate_content() throws Exception;
