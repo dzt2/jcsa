@@ -3,8 +3,6 @@ package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
-import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadParser;
-import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadStatement;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -30,10 +28,9 @@ public class TTRPSadInfection extends SadInfection {
 		int time = ((Integer) mutation.get_parameter()).intValue();
 		
 		/* execute_on(statement, time) */
-		SadAssertion constraint = SadFactory.assert_execute_on(
-				(SadStatement) SadParser.cir_parse(statement), time);
-		reach_node.link(constraint, reach_node.
-					get_graph().get_vertex(this.trapping(statement)));
+		SadAssertion constraint = SadFactory.assert_execution(statement, time);
+		SadAssertion state_error = SadFactory.trap_statement(statement);
+		this.connect(reach_node, state_error, constraint);
 	}
 	
 }

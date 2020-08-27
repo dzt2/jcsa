@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
  * Each vertex in cause-effect graph describes a requirement that 
@@ -53,6 +54,12 @@ public class SadVertex {
 	 */
 	public SadAssertion get_assertion() {
 		return this.assertion;
+	}
+	/**
+	 * @return the loocation where the assertion of the node is taken
+	 */
+	public CirStatement get_location() {
+		return (CirStatement) this.assertion.get_location().get_cir_source();
 	}
 	/**
 	 * @return the cause-effect relations to this node as the effect

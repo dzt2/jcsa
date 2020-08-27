@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
+import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -33,8 +35,10 @@ public class BTRPSadInfection extends SadInfection {
 		}
 		
 		/* execute(statement, 1) --> assert(condition, true|false) --> trapping() */
-		SadVertex target = reach_node.get_graph().get_vertex(this.trapping(statement));
-		reach_node.link(this.assert_condition(statement, expression, value), target);
+		SadAssertion constraint = SadFactory.assert_condition(
+						statement, this.condition_of(expression, value));
+		SadAssertion state_error = SadFactory.trap_statement(statement);
+		this.connect(reach_node, state_error, constraint);
 	}
 
 }

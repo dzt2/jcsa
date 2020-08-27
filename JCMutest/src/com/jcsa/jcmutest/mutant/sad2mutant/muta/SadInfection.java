@@ -7,7 +7,6 @@ import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadParser;
-import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadStatement;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
@@ -432,8 +431,7 @@ public abstract class SadInfection {
 	protected SadVertex get_reach(CirTree tree, AstMutation mutation, SadGraph graph) throws Exception {
 		CirStatement statement = this.find_beg_stmt(tree, mutation.get_location());
 		if(statement != null) {
-			SadStatement sad_statement = (SadStatement) SadParser.cir_parse(statement);
-			return graph.get_vertex(SadFactory.assert_execute_on(sad_statement, 1));
+			return graph.get_vertex(SadFactory.assert_execution(statement, 1));
 		}
 		else {
 			return null;
@@ -461,71 +459,53 @@ public abstract class SadInfection {
 	
 	/* construction methods */
 	/**
-	 * @param statement
-	 * @param value 
-	 * @return assert#statement:(value)
-	 * @throws Exception
-	 */
-	protected SadAssertion const_constraint(CirStatement statement, boolean value) throws Exception {
-		SadStatement sad_statement = 
-					(SadStatement) SadParser.cir_parse(statement);
-		SadExpression sad_expression = SadFactory.constant(value);
-		return SadFactory.assert_condition(sad_statement, sad_expression);
-	}
-	/**
-	 * @param statement
 	 * @param expression
-	 * @param value
-	 * @return assert#statement:condition
+	 * @return standard condition translated from the expression
 	 * @throws Exception
 	 */
-	protected SadAssertion assert_condition(CirStatement statement, 
-			CirExpression expression, boolean value) throws Exception {
-		/* declarations */
-		SadStatement sad_statement = (SadStatement) SadParser.cir_parse(statement);
-		SadExpression sad_expression = (SadExpression) SadParser.cir_parse(expression);
-		CType data_type = CTypeAnalyzer.get_value_type(sad_expression.get_data_type());
-		
-		/* symbolic condition */
-		SadExpression sad_condition;
-		if(CTypeAnalyzer.is_boolean(data_type)) {
-			/* (boolean) expression */
+	protected SadExpression condition_of(CirExpression expression, boolean value) throws Exception {
+		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		SadExpression condition = (SadExpression) SadParser.cir_parse(expression);
+		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) {
-				sad_condition = sad_expression;
+				return condition;
 			}
-			/* !((boolean) expression) */
 			else {
-				sad_condition = SadFactory.logic_not(CBasicTypeImpl.bool_type, sad_expression);
+				return SadFactory.logic_not(CBasicTypeImpl.bool_type, condition);
 			}
 		}
-		else if(CTypeAnalyzer.is_integer(data_type) || 
-				CTypeAnalyzer.is_real(data_type) || 
-				CTypeAnalyzer.is_pointer(data_type)) {
-			/* expression != 0 */
+		else if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
 			if(value) {
-				sad_condition = SadFactory.not_equals(CBasicTypeImpl.
-						bool_type, sad_expression, SadFactory.constant(0));
+				return SadFactory.not_equals(CBasicTypeImpl.bool_type, condition, SadFactory.constant(0));
 			}
-			/* expression == 0 */
 			else {
-				sad_condition = SadFactory.equal_with(CBasicTypeImpl.
-						bool_type, sad_expression, SadFactory.constant(0));
+				return SadFactory.equal_with(CBasicTypeImpl.bool_type, condition, SadFactory.constant(0));
 			}
 		}
 		else {
-			throw new IllegalArgumentException("Invalid type: " + data_type.generate_code());
+			throw new IllegalArgumentException("Invalid type: " + type.generate_code());
 		}
-		
-		/* assert#statement: condition */
-		return SadFactory.assert_condition(sad_statement, sad_condition);
 	}
 	/**
-	 * @param statement
-	 * @return assert#statement:trapping()
+	 * @param source
+	 * @param state_error
+	 * @param constraint
+	 * @return
 	 * @throws Exception
 	 */
-	protected SadAssertion trapping(CirStatement statement) throws Exception {
-		return SadFactory.trapping((SadStatement) SadParser.cir_parse(statement));
+	protected SadRelation connect(SadVertex source, SadAssertion state_error, SadAssertion constraint) throws Exception {
+		return source.link(constraint, source.get_graph().get_vertex(state_error));
+	}
+	/**
+	 * @param source
+	 * @param state_error
+	 * @return 
+	 * @throws Exception
+	 */
+	protected SadRelation connect(SadVertex source, SadAssertion state_error) throws Exception {
+		return source.link(
+				SadFactory.assert_condition(source.get_location(), SadFactory.constant(true)), 
+				source.get_graph().get_vertex(state_error));
 	}
 	
 }

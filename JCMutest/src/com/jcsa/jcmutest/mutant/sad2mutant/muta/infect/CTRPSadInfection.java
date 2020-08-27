@@ -5,7 +5,6 @@ import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadParser;
-import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadStatement;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -33,12 +32,11 @@ public class CTRPSadInfection extends SadInfection {
 	 */
 	private SadAssertion equal_with(CirStatement statement, 
 			CirExpression loperand, CirExpression roperand) throws Exception {
-		SadStatement sad_statement = (SadStatement) SadParser.cir_parse(statement);
 		SadExpression sad_loperand = (SadExpression) SadParser.cir_parse(loperand);
 		SadExpression sad_roperand = (SadExpression) SadParser.cir_parse(roperand);
 		SadExpression sad_condition = SadFactory.
 					equal_with(CBasicTypeImpl.bool_type, sad_loperand, sad_roperand);
-		return SadFactory.assert_condition(sad_statement, sad_condition);
+		return SadFactory.assert_condition(statement, sad_condition);
 	}
 	
 	@Override
@@ -47,7 +45,8 @@ public class CTRPSadInfection extends SadInfection {
 		CirExpression swit_expression = this.find_result(tree, mutation.get_location());
 		CirExpression case_expression = this.find_result(tree, (AstNode) mutation.get_parameter());
 		SadAssertion constraint = this.equal_with(statement, swit_expression, case_expression);
-		reach_node.link(constraint, reach_node.get_graph().get_vertex(this.trapping(statement)));
+		SadAssertion state_error = SadFactory.trap_statement(statement);
+		this.connect(reach_node, state_error, constraint);
 	}
 	
 }
