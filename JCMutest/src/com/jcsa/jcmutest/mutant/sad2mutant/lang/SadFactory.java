@@ -315,5 +315,10 @@ public class SadFactory {
 			set.add_child(assertion);
 		return set;
 	}
+	public static SadTrappingAssertion trapping(SadStatement statement) throws Exception {
+		SadTrappingAssertion assertion = new SadTrappingAssertion(null);
+		assertion.add_child(statement);
+		return assertion;
+	}
 	
 }

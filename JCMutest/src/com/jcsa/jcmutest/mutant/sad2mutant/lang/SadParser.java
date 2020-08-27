@@ -69,11 +69,15 @@ public class SadParser {
 	
 	/* definition */
 	private CRunTemplate sizeof_template;
-	public SadParser(CRunTemplate sizeof_template) throws Exception {
-		if(sizeof_template == null)
-			throw new IllegalArgumentException("No template");
-		this.sizeof_template = sizeof_template;
-	}
+	private SadParser() { }
+	private static final SadParser parser = new SadParser();
+	
+	/* basic method */
+	/**
+	 * @param location
+	 * @return the executional node to which the Cir-Node is used
+	 * @throws Exception
+	 */
 	private CirExecution find_execution(CirNode location) throws Exception {
 		while(location != null) {
 			if(location instanceof CirStatement) {
@@ -94,7 +98,7 @@ public class SadParser {
 	 * @return the symbolic assertion node parsed from CirNode
 	 * @throws Exception
 	 */
-	public SadNode parse(CirNode source) throws Exception {
+	private SadNode parse(CirNode source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(source instanceof CirNameExpression)
@@ -292,7 +296,7 @@ public class SadParser {
 	 * @return the symbolic assertion node parsed from AstNode
 	 * @throws Exception
 	 */
-	public SadNode parse(AstNode source) throws Exception {
+	private SadNode parse(AstNode source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source null");
 		else if(source instanceof AstIdExpression)
@@ -586,6 +590,19 @@ public class SadParser {
 			list.add_child(this.parse(source.get_argument(k)));
 		}
 		return list;
+	}
+	
+	/* interface */
+	public static SadNode ast_parse(AstNode location, CRunTemplate sizeof_template) throws Exception {
+		parser.sizeof_template = sizeof_template;
+		return parser.parse(location);
+	}
+	public static SadNode ast_parse(AstNode location) throws Exception {
+		parser.sizeof_template = null;
+		return parser.parse(location);
+	}
+	public static SadNode cir_parse(CirNode location) throws Exception {
+		return parser.parse(location);
 	}
 	
 }

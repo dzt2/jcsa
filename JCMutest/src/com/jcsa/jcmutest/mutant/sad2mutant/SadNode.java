@@ -53,6 +53,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	|--	SadAddOperatorAssertion										<br>
  * 	|--	|--	SadInsOperatorAssertion										<br>
  * 	|--	|--	SadMutExpressionAssertion									<br>
+ * 	|--	|--	SadTrappingAssertion										<br>
  * 	|--	SadCompositeAssertion				{assertions: SadAssertion*}	<br>
  * 	|--	|--	SadConjunctAssertion										<br>
  * 	|--	|--	SadDisjunctAssertion										<br>
