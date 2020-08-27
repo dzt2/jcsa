@@ -3,7 +3,9 @@ package com.jcsa.jcmutest.mutant.sad2mutant.lang;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -248,76 +250,136 @@ public class SadFactory {
 		return statement;
 	}
 	
-	public static SadExecuteOnAssertion assert_execute_on(SadStatement statement, int times) throws Exception {
+	/* assertion part */
+	/**
+	 * @param statement
+	 * @param times
+	 * @return assert#stmt:execute_on(int)
+	 * @throws Exception
+	 */
+	public static SadExecuteOnAssertion assert_execution(CirStatement statement, int times) throws Exception {
 		SadExecuteOnAssertion assertion = new SadExecuteOnAssertion(null);
-		assertion.add_child(statement);
-		assertion.add_child(constant(times));
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadFactory.constant(times));
 		return assertion;
 	}
-	public static SadConditionAssertion assert_condition(SadStatement 
-				statement, SadExpression condition) throws Exception {
+	/**
+	 * @param statement
+	 * @param condition
+	 * @return assert#stmt:condition
+	 * @throws Exception
+	 */
+	public static SadConditionAssertion assert_condition(CirStatement statement, CirExpression condition) throws Exception {
 		SadConditionAssertion assertion = new SadConditionAssertion(null);
-		assertion.add_child(statement);
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadParser.cir_parse(condition));
+		return assertion;
+	}
+	/**
+	 * @param statement
+	 * @param condition
+	 * @return assert#stmt:condition
+	 * @throws Exception
+	 */
+	public static SadConditionAssertion assert_condition(CirStatement statement, SadExpression condition) throws Exception {
+		SadConditionAssertion assertion = new SadConditionAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
 		assertion.add_child(condition);
 		return assertion;
 	}
-	public static SadSetLabelAssertion set_label_mutation(SadStatement source, SadStatement target) throws Exception {
-		SadSetLabelAssertion assertion = new SadSetLabelAssertion(null);
-		assertion.add_child(source);
-		assertion.add_child(target);
-		return assertion;
-	}
-	public static SadSetExpressionAssertion set_expression(SadStatement 
-			statement, SadExpression source, SadExpression target) throws Exception {
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param muta_expression
+	 * @return seed#stmt:set_expr(e1, e2)
+	 * @throws Exception
+	 */
+	public static SadSetExpressionAssertion set_expression(CirStatement statement, 
+			CirExpression orig_expression, SadExpression muta_expression) throws Exception {
 		SadSetExpressionAssertion assertion = new SadSetExpressionAssertion(null);
-		assertion.add_child(statement);
-		assertion.add_child(source);
-		assertion.add_child(target);
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadParser.cir_parse(orig_expression));
+		assertion.add_child(muta_expression);
 		return assertion;
 	}
-	public static SadInsOperatorAssertion ins_operator(SadStatement statement,
-			SadExpression expression, COperator operator) throws Exception {
+	/**
+	 * @param statement
+	 * @param expression
+	 * @param operator
+	 * @return expr --> operator(expr)
+	 * @throws Exception
+	 */
+	public static SadInsOperatorAssertion insert_operator(CirStatement statement, CirExpression expression, COperator operator) throws Exception {
 		SadInsOperatorAssertion assertion = new SadInsOperatorAssertion(null);
-		assertion.add_child(statement);
-		assertion.add_child(expression);
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadParser.cir_parse(expression));
 		assertion.add_child(new SadOperator(operator));
 		return assertion;
 	}
-	public static SadAddOperandAssertion add_operand(SadStatement statement,
-			SadExpression expression, COperator operator, SadExpression operand) throws Exception {
-		SadAddOperandAssertion assertion = new SadAddOperandAssertion(null);
-		assertion.add_child(statement);
-		assertion.add_child(expression);
-		assertion.add_child(new SadOperator(operator));
-		assertion.add_child(operand);
-		return assertion;
-	}
-	public static SadInsOperandAssertion ins_operand(SadStatement statement,
-			SadExpression expression, COperator operator, SadExpression operand) throws Exception {
+	/**
+	 * @param statement
+	 * @param expression
+	 * @param operator
+	 * @param operand
+	 * @return e1 --> e2 o e1
+	 * @throws Exception
+	 */
+	public static SadInsOperandAssertion insert_operand(CirStatement statement, 
+			CirExpression expression, COperator operator, SadExpression operand) throws Exception {
 		SadInsOperandAssertion assertion = new SadInsOperandAssertion(null);
-		assertion.add_child(statement);
-		assertion.add_child(expression);
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadParser.cir_parse(expression));
 		assertion.add_child(new SadOperator(operator));
 		assertion.add_child(operand);
 		return assertion;
 	}
-	public static SadConjunctAssertion conjunct(SadStatement statement, Iterable<SadAssertion> assertions) throws Exception {
-		SadConjunctAssertion set = new SadConjunctAssertion(null);
-		set.add_child(statement);
-		for(SadAssertion assertion : assertions) 
-			set.add_child(assertion);
-		return set;
+	/**
+	 * @param statement
+	 * @param expression
+	 * @param operator
+	 * @param operand
+	 * @return e1 --> e1 o e2
+	 * @throws Exception
+	 */
+	public static SadAddOperandAssertion add_operand(CirStatement statement, 
+			CirExpression expression, COperator operator, SadExpression operand) throws Exception {
+		SadAddOperandAssertion assertion = new SadAddOperandAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
+		assertion.add_child(SadParser.cir_parse(expression));
+		assertion.add_child(new SadOperator(operator));
+		assertion.add_child(operand);
+		return assertion;
 	}
-	public static SadDisjunctAssertion disjunct(SadStatement statement, Iterable<SadAssertion> assertions) throws Exception {
-		SadDisjunctAssertion set = new SadDisjunctAssertion(null);
-		set.add_child(statement);
-		for(SadAssertion assertion : assertions) 
-			set.add_child(assertion);
-		return set;
+	/**
+	 * @param source
+	 * @param target
+	 * @return seed#source:set_stmt(source, target)
+	 * @throws Exception
+	 */
+	public static SadSetStatementAssertion set_statement(CirStatement source, CirStatement target) throws Exception {
+		SadSetStatementAssertion assertion = new SadSetStatementAssertion(null);
+		assertion.add_child(SadParser.cir_parse(source));
+		assertion.add_child(SadParser.cir_parse(target));
+		return assertion;
 	}
-	public static SadTrappingAssertion trapping(SadStatement statement) throws Exception {
-		SadTrappingAssertion assertion = new SadTrappingAssertion(null);
-		assertion.add_child(statement);
+	/**
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	public static SadDelStatementAssertion del_statement(CirStatement statement) throws Exception {
+		SadDelStatementAssertion assertion = new SadDelStatementAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
+		return assertion;
+	}
+	/**
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	public static SadTrapStatementAssertion trap_statement(CirStatement statement) throws Exception {
+		SadTrapStatementAssertion assertion = new SadTrapStatementAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
 		return assertion;
 	}
 	
