@@ -131,7 +131,49 @@ public class OAANSadInfection extends SadInfection {
 						arith_div(expression.get_data_type(), loperand, roperand));
 		this.connect(reach_node, state_error, constraint);
 	}
+	/**
+	 * {y == 0} --> trapping()
+	 * {x == 0 || y == 1} --> set_expr(0)
+	 * {y != 0} --> set_expr(expr, x % y)
+	 * @param reach_node
+	 * @param expression
+	 * @param loperand
+	 * @param roperand
+	 * @param statement
+	 * @throws Exception
+	 */
+	private void arith_add_to_arith_mod(SadVertex reach_node, CirExpression expression,
+			CirExpression loperand, CirExpression roperand, CirStatement statement) throws Exception {
+		SadExpression condition; SadAssertion constraint, state_error;
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		
+		condition = SadFactory.equal_with(CBasicTypeImpl.bool_type, 
+				(SadExpression) SadParser.cir_parse(roperand), 
+				(SadExpression) SadFactory.constant(0));
+		constraint = SadFactory.assert_condition(statement, condition);
+		state_error = SadFactory.trap_statement(statement);
+		this.connect(reach_node, state_error, constraint);
+		
+		operands.add(SadFactory.equal_with(CBasicTypeImpl.bool_type, 
+				(SadExpression) SadParser.cir_parse(loperand), 
+				(SadExpression) SadFactory.constant(0)));
+		operands.add(SadFactory.equal_with(CBasicTypeImpl.bool_type, 
+				(SadExpression) SadParser.cir_parse(roperand), 
+				(SadExpression) SadFactory.constant(1)));
+		condition = SadFactory.logic_ior(CBasicTypeImpl.bool_type, operands);
+		state_error = SadFactory.set_expression(statement, expression, SadFactory.constant(0));
+		this.connect(reach_node, state_error, constraint);
+		
+		condition = SadFactory.not_equals(CBasicTypeImpl.bool_type, 
+				(SadExpression) SadParser.cir_parse(roperand), 
+				(SadExpression) SadFactory.constant(0));
+		constraint = SadFactory.assert_condition(statement, condition);
+		state_error = SadFactory.set_expression(statement, expression, 
+				SadFactory.arith_mod(expression.get_data_type(), loperand, roperand));
+		this.connect(reach_node, state_error, constraint);
+	}
 	
+	/* x - y */
 	
 	@Override
 	protected void get_infect(CirTree tree, AstMutation mutation, SadVertex reach_node) throws Exception {
@@ -142,6 +184,59 @@ public class OAANSadInfection extends SadInfection {
 		COperator op1 = location.get_operator().get_operator();
 		COperator op2 = (COperator) mutation.get_parameter();
 		
+		if(op1 == COperator.arith_add) {
+			switch(op2) {
+			case arith_add: this.arith_add_to_arith_add(reach_node, expression, loperand, roperand, statement);	break;
+			case arith_sub: this.arith_add_to_arith_sub(reach_node, expression, loperand, roperand, statement);	break;
+			case arith_mul: this.arith_add_to_arith_mul(reach_node, expression, loperand, roperand, statement);	break;
+			case arith_div: this.arith_add_to_arith_div(reach_node, expression, loperand, roperand, statement);	break;
+			case arith_mod: this.arith_add_to_arith_mod(reach_node, expression, loperand, roperand, statement);	break;
+			default: throw new IllegalArgumentException("Invalid op2: " + op2);
+			}
+		}
+		else if(op1 == COperator.arith_sub) {
+			switch(op2) {
+			case arith_add:	break;
+			case arith_sub:	break;
+			case arith_mul:	break;
+			case arith_div:	break;
+			case arith_mod:	break;
+			default: throw new IllegalArgumentException("Invalid op2: " + op2);
+			}
+		}
+		else if(op1 == COperator.arith_mul) {
+			switch(op2) {
+			case arith_add:	break;
+			case arith_sub:	break;
+			case arith_mul:	break;
+			case arith_div:	break;
+			case arith_mod:	break;
+			default: throw new IllegalArgumentException("Invalid op2: " + op2);
+			}
+		}
+		else if(op1 == COperator.arith_div) {
+			switch(op2) {
+			case arith_add:	break;
+			case arith_sub:	break;
+			case arith_mul:	break;
+			case arith_div:	break;
+			case arith_mod:	break;
+			default: throw new IllegalArgumentException("Invalid op2: " + op2);
+			}
+		}
+		else if(op1 == COperator.arith_mod) {
+			switch(op2) {
+			case arith_add:	break;
+			case arith_sub:	break;
+			case arith_mul:	break;
+			case arith_div:	break;
+			case arith_mod:	break;
+			default: throw new IllegalArgumentException("Invalid op2: " + op2);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid op1: " + op1);
+		}
 	}
 
 }
