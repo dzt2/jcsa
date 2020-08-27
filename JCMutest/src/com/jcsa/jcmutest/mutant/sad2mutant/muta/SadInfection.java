@@ -646,4 +646,7 @@ public abstract class SadInfection {
 				source.get_graph().get_vertex(state_error));
 	}
 	
+	/* simplification methods */
+	
+	
 }
