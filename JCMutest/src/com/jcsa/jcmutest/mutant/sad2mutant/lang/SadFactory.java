@@ -382,5 +382,21 @@ public class SadFactory {
 		assertion.add_child(SadParser.cir_parse(statement));
 		return assertion;
 	}
+	public static SadConjunctAssertion conjunct(CirStatement statement, Iterable<SadAssertion> assertions) throws Exception {
+		SadConjunctAssertion assertion = new SadConjunctAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
+		for(SadAssertion child_assertion : assertions) {
+			assertion.add_child(child_assertion);
+		}
+		return assertion;
+	}
+	public static SadDisjunctAssertion disjunct(CirStatement statement, Iterable<SadAssertion> assertions) throws Exception {
+		SadDisjunctAssertion assertion = new SadDisjunctAssertion(null);
+		assertion.add_child(SadParser.cir_parse(statement));
+		for(SadAssertion child_assertion : assertions) {
+			assertion.add_child(child_assertion);
+		}
+		return assertion;
+	}
 	
 }

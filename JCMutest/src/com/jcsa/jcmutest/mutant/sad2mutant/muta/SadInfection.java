@@ -36,8 +36,10 @@ import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstLabeledStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatementList;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -45,6 +47,7 @@ import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
@@ -60,6 +63,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 
 /**
  * It generates the infection part in the symbolic graph, including:<br>
@@ -193,7 +197,7 @@ public abstract class SadInfection {
 	 * @return the first statement being executed for the location to be started
 	 * @throws Exception
 	 */
-	protected CirStatement find_beg_stmt(CirTree tree, AstNode location) throws Exception {
+	private CirStatement get_beg_stmt(CirTree tree, AstNode location) throws Exception {
 		AstCirPair range = this.get_cir_range(tree, location);
 		if(range == null || !range.executional()) {
 			return null;	/* not available to locate the first statement */
@@ -303,6 +307,23 @@ public abstract class SadInfection {
 				return range.get_beg_statement();
 			}
 		}
+		else if(location instanceof AstStatementList) {
+			CirStatement statement = null;
+			for(int k = 0; k < location.number_of_children(); k++) {
+				statement = this.get_beg_stmt(tree, 
+						((AstStatementList) location).get_statement(k));
+				if(statement != null) {
+					return statement;
+				}
+			}
+			return null;
+		}
+		else if(location instanceof AstFunctionDefinition) {
+			CirFunctionDefinition def = (CirFunctionDefinition) this.
+					get_cir_nodes(tree, location, CirFunctionDefinition.class).get(0);
+			CirFunction function = tree.get_function_call_graph().get_function(def);
+			return function.get_flow_graph().get_entry().get_statement();
+		}
 		else {
 			return range.get_beg_statement();
 		}
@@ -313,7 +334,7 @@ public abstract class SadInfection {
 	 * @return the final statement being executed for the location to be started
 	 * @throws Exception
 	 */
-	protected CirStatement find_end_stmt(CirTree tree, AstNode location) throws Exception {
+	private CirStatement get_end_stmt(CirTree tree, AstNode location) throws Exception {
 		AstCirPair range = this.get_cir_range(tree, location);
 		if(range == null || !range.executional()) {
 			return null;	/* not available to locate the final statement */
@@ -415,9 +436,126 @@ public abstract class SadInfection {
 				return range.get_end_statement();
 			}
 		}
+		else if(location instanceof AstStatementList) {
+			CirStatement statement = null, cur_statement;
+			for(int k = 0; k < location.number_of_children(); k++) {
+				cur_statement = this.get_end_stmt(tree, 
+						((AstStatementList) location).get_statement(k));
+				if(cur_statement != null) statement = cur_statement;
+			}
+			return statement;
+		}
+		else if(location instanceof AstFunctionDefinition) {
+			CirFunctionDefinition def = (CirFunctionDefinition) this.
+					get_cir_nodes(tree, location, CirFunctionDefinition.class).get(0);
+			CirFunction function = tree.get_function_call_graph().get_function(def);
+			return function.get_flow_graph().get_exit().get_statement();
+		}
 		else {
 			return range.get_end_statement();
 		}
+	}
+	/**
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	private AstNode get_prev_location(AstNode location) throws Exception {
+		AstNode parent = location.get_parent();
+		if(parent == null) {
+			return null;
+		}
+		else {
+			for(int k = 0; k < parent.number_of_children(); k++) {
+				if(parent.get_child(k) == location && k > 0) {
+					return parent.get_child(k - 1);
+				}
+			}
+			return null;
+		}
+	}
+	/**
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	private AstNode get_succ_location(AstNode location) throws Exception {
+		AstNode parent = location.get_parent();
+		if(parent == null) {
+			return null;
+		}
+		else {
+			for(int k = 0; k < parent.number_of_children(); k++) {
+				if(parent.get_child(k) == location && k < parent.number_of_children() - 1) {
+					return parent.get_child(k + 1);
+				}
+			}
+			return null;
+		}
+	}
+	/**
+	 * @param tree
+	 * @param location
+	 * @return the statement just before the location is reached
+	 * @throws Exception
+	 */
+	protected CirStatement find_beg_stmt(CirTree tree, AstNode location) throws Exception {
+		CirStatement statement = null; AstNode cursor;
+		while(location != null && statement == null) {
+			cursor = location;
+			do {
+				statement = this.get_beg_stmt(tree, cursor);
+				cursor = this.get_succ_location(cursor);
+			} while(statement == null && cursor != null);
+			
+			if(statement == null) {
+				cursor = location;
+				do {
+					statement = this.get_end_stmt(tree, cursor);
+					cursor = this.get_prev_location(cursor);
+				} while(statement == null && cursor != null);
+			}
+			
+			if(statement == null) {
+				location = location.get_parent();
+			}
+			else {
+				break;
+			}
+		}
+		return statement;
+	}
+	/**
+	 * @param tree
+	 * @param location
+	 * @return
+	 * @throws Exception
+	 */
+	protected CirStatement find_end_statement(CirTree tree, AstNode location) throws Exception {
+		CirStatement statement = null; AstNode cursor;
+		while(location != null && statement == null) {
+			cursor = location;
+			do {
+				statement = this.get_end_stmt(tree, cursor);
+				cursor = this.get_prev_location(cursor);
+			} while(statement == null && cursor != null);
+			
+			if(statement == null) {
+				cursor = location;
+				do {
+					statement = this.get_beg_stmt(tree, cursor);
+					cursor = this.get_succ_location(cursor);
+				} while(statement == null && cursor != null);
+			}
+			
+			if(statement == null) {
+				location = location.get_parent();
+			}
+			else {
+				break;
+			}
+		}
+		return statement;
 	}
 	
 	/* implementation methods */
