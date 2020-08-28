@@ -77,6 +77,9 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
  */
 public abstract class SadInfection {
 	
+	/** maximal number of bytes being shifted **/
+	protected static final int max_shift_size = 16;
+	
 	/* location identification */
 	/**
 	 * @param tree
@@ -759,6 +762,12 @@ public abstract class SadInfection {
 	}
 	protected SadExpression any_value(CType data_type) throws Exception {
 		return SadFactory.id_expression(data_type, "$ANY");
+	}
+	protected SadExpression any_pos_value(CType data_type) throws Exception {
+		return SadFactory.id_expression(data_type, "$POS");
+	}
+	protected SadExpression any_neg_value(CType data_type) throws Exception {
+		return SadFactory.id_expression(data_type, "$NEG");
 	}
 	
 }
