@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sad2mutant.muta;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -647,6 +648,117 @@ public abstract class SadInfection {
 	}
 	
 	/* simplification methods */
-	
+	/**
+	 * @param expression
+	 * @return bool | char | int | long | float | double | CirExpression
+	 * @throws Excecption
+	 */
+	protected SadExpression sad_expression(Object expression) throws Exception {
+		if(expression instanceof Boolean) {
+			return SadFactory.constant(((Boolean) expression).booleanValue());
+		}
+		else if(expression instanceof Character) {
+			return SadFactory.constant(((Character) expression).charValue());
+		}
+		else if(expression instanceof Integer) {
+			return SadFactory.constant(((Integer) expression).intValue());
+		}
+		else if(expression instanceof Long) {
+			return SadFactory.constant(((Long) expression).longValue());
+		}
+		else if(expression instanceof Float) {
+			return SadFactory.constant(((Float) expression).floatValue());
+		}
+		else if(expression instanceof Double) {
+			return SadFactory.constant(((Double) expression).doubleValue());
+		}
+		else if(expression instanceof CirExpression) {
+			return (SadExpression) SadParser.cir_parse((CirExpression) expression);
+		}
+		else if(expression instanceof SadExpression) {
+			return (SadExpression) ((SadExpression) expression).clone();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid type: " + expression.getClass().getSimpleName());
+		}
+	}
+	protected SadExpression arith_sub(CType type, Object loperand, Object roperand) throws Exception {
+		return SadFactory.arith_sub(type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression arith_div(CType type, Object loperand, Object roperand) throws Exception {
+		return SadFactory.arith_div(type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression arith_mod(CType type, Object loperand, Object roperand) throws Exception {
+		return SadFactory.arith_mod(type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression bitws_lsh(CType type, Object loperand, Object roperand) throws Exception {
+		return SadFactory.bitws_lsh(type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression bitws_rsh(CType type, Object loperand, Object roperand) throws Exception {
+		return SadFactory.bitws_rsh(type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression greater_tn(Object loperand, Object roperand) throws Exception {
+		return SadFactory.greater_tn(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression greater_eq(Object loperand, Object roperand) throws Exception {
+		return SadFactory.greater_eq(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression smaller_tn(Object loperand, Object roperand) throws Exception {
+		return SadFactory.smaller_tn(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression smaller_eq(Object loperand, Object roperand) throws Exception {
+		return SadFactory.smaller_eq(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression equal_with(Object loperand, Object roperand) throws Exception {
+		return SadFactory.equal_with(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression not_equals(Object loperand, Object roperand) throws Exception {
+		return SadFactory.not_equals(CBasicTypeImpl.bool_type, this.sad_expression(loperand), this.sad_expression(roperand));
+	}
+	protected SadExpression arith_add(CType type, Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.arith_add(type, operands);
+	}
+	protected SadExpression arith_mul(CType type, Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.arith_mul(type, operands);
+	}
+	protected SadExpression bitws_and(CType type, Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.bitws_and(type, operands);
+	}
+	protected SadExpression bitws_ior(CType type, Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.bitws_ior(type, operands);
+	}
+	protected SadExpression bitws_xor(CType type, Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.bitws_xor(type, operands);
+	}
+	protected SadExpression logic_and(Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.logic_and(CBasicTypeImpl.bool_type, operands);
+	}
+	protected SadExpression logic_ior(Object loperand, Object roperand) throws Exception {
+		List<SadExpression> operands = new ArrayList<SadExpression>();
+		operands.add(this.sad_expression(loperand));
+		operands.add(this.sad_expression(roperand));
+		return SadFactory.logic_ior(CBasicTypeImpl.bool_type, operands);
+	}
+	protected SadExpression any_value(CType data_type) throws Exception {
+		return SadFactory.id_expression(data_type, "$ANY");
+	}
 	
 }
