@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
+package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.stmt;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -6,8 +6,8 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
-import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.SadInfection;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirTree;

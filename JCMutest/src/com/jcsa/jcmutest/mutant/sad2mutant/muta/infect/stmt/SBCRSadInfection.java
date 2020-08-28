@@ -1,10 +1,10 @@
-package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
+package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.stmt;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
-import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.SadInfection;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;

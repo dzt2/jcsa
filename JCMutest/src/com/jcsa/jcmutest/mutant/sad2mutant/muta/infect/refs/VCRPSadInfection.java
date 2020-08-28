@@ -1,12 +1,12 @@
-package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
+package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.refs;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadParser;
-import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadInfection;
 import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.infect.SadInfection;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sad2mutant.muta;
+package com.jcsa.jcmutest.mutant.sad2mutant.muta.infect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,9 @@ import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadAssertion;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadExpression;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadFactory;
 import com.jcsa.jcmutest.mutant.sad2mutant.lang.SadParser;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadGraph;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadRelation;
+import com.jcsa.jcmutest.mutant.sad2mutant.muta.SadVertex;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;

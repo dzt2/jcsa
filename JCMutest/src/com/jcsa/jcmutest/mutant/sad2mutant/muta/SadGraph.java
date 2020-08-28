@@ -12,7 +12,7 @@ public class SadGraph {
 	private CirTree tree;
 	/** the mapping from assertion to node **/
 	private Map<String, SadVertex> vertices;
-	protected SadGraph(CirTree tree) throws Exception {
+	public SadGraph(CirTree tree) throws Exception {
 		this.tree = tree;
 		this.vertices = new HashMap<String, SadVertex>();
 	}
