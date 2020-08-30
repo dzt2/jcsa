@@ -9,9 +9,9 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * @author yukimula
  *
  */
-public class SadWaitStatement extends SedStatement {
+public class SedWaitStatement extends SedStatement {
 
-	public SadWaitStatement(CirNode cir_source) {
+	public SedWaitStatement(CirNode cir_source) {
 		super(cir_source);
 	}
 	
@@ -30,7 +30,7 @@ public class SadWaitStatement extends SedStatement {
 
 	@Override
 	protected SedNode clone_self() {
-		return new SadWaitStatement(this.get_cir_source());
+		return new SedWaitStatement(this.get_cir_source());
 	}
 	
 }

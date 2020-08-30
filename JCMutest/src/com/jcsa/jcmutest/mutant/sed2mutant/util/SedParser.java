@@ -11,8 +11,15 @@ import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedIdExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedInitializerList;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedLiteral;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedUnaryExpression;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedAssignStatement;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedCallStatement;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedGotoStatement;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedIfStatement;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedTagStatement;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.stmt.SedWaitStatement;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.token.SedArgumentList;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.token.SedField;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.token.SedLabel;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
@@ -41,6 +48,30 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirField;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
+import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
@@ -72,13 +103,11 @@ public class SedParser {
 			throw new IllegalArgumentException("Not a pointer type");
 		}
 	}
+	private CirExecution get_execution(CirStatement location) throws Exception {
+		return location.get_tree().get_function_call_graph().get_function(location).get_flow_graph().get_execution(location);
+	}
 	
 	/* AstNode parse */
-	/**
-	 * @param source
-	 * @return parsed from AstNode
-	 * @throws Exception
-	 */
 	private SedNode parse_ast(AstNode source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
@@ -373,5 +402,217 @@ public class SedParser {
 	}
 	
 	/* CirNode parse */
+	private SedNode parse_cir(CirNode source) throws Exception {
+		if(source == null)
+			throw new IllegalArgumentException("Invalid source: null");
+		else if(source instanceof CirNameExpression)
+			return this.parse_name_expression((CirNameExpression) source);
+		else if(source instanceof CirConstExpression)
+			return this.parse_constant((CirConstExpression) source);
+		else if(source instanceof CirStringLiteral)
+			return this.parse_literal((CirStringLiteral) source);
+		else if(source instanceof CirDefaultValue)
+			return this.parse_default_value((CirDefaultValue) source);
+		else if(source instanceof CirDeferExpression)
+			return this.parse_defer_expression((CirDeferExpression) source);
+		else if(source instanceof CirField)
+			return this.parse_field((CirField) source);
+		else if(source instanceof CirFieldExpression)
+			return this.parse_field_expression((CirFieldExpression) source);
+		else if(source instanceof CirAddressExpression)
+			return this.parse_address_expression((CirAddressExpression) source);
+		else if(source instanceof CirCastExpression)
+			return this.parse_cast_expression((CirCastExpression) source);
+		else if(source instanceof CirInitializerBody)
+			return this.parse_initializer_body((CirInitializerBody) source);
+		else if(source instanceof CirComputeExpression)
+			return this.parse_compute_expression((CirComputeExpression) source);
+		else if(source instanceof CirWaitExpression)
+			return this.parse_wait_expression((CirWaitExpression) source);
+		else if(source instanceof CirArgumentList)
+			return this.parse_argument_list((CirArgumentList) source);
+		else if(source instanceof CirLabel)
+			return this.parse_label((CirLabel) source);
+		else if(source instanceof CirAssignStatement)
+			return this.parse_assign_statement((CirAssignStatement) source);
+		else if(source instanceof CirGotoStatement)
+			return this.parse_goto_statement((CirGotoStatement) source);
+		else if(source instanceof CirIfStatement)
+			return this.parse_if_statement((CirIfStatement) source);
+		else if(source instanceof CirCaseStatement)
+			return this.parse_case_statement((CirCaseStatement) source);
+		else if(source instanceof CirCallStatement)
+			return this.parse_call_statement((CirCallStatement) source);
+		else if(source instanceof CirTagStatement)
+			return this.parse_tag_statement((CirTagStatement) source);
+		else
+			throw new IllegalArgumentException("Unsupport: " + source);
+	}
+	private SedNode parse_name_expression(CirNameExpression source) throws Exception {
+		return new SedIdExpression(source, source.get_data_type(), source.get_unique_name());
+	}
+	private SedNode parse_constant(CirConstExpression source) throws Exception {
+		return new SedConstant(source, source.get_data_type(), source.get_constant());
+	}
+	private SedNode parse_literal(CirStringLiteral source) throws Exception {
+		return new SedLiteral(source, source.get_data_type(), source.get_literal());
+	}
+	private SedNode parse_default_value(CirDefaultValue source) throws Exception {
+		return new SedDefaultValue(source, source.get_data_type());
+	}
+	private SedNode parse_defer_expression(CirDeferExpression source) throws Exception {
+		SedUnaryExpression expr = new SedUnaryExpression(source, 
+				source.get_data_type(), COperator.dereference);
+		expr.add_child(this.parse_cir(source.get_address()));
+		return expr;
+	}
+	private SedNode parse_field(CirField source) throws Exception {
+		return new SedField(source, source.get_name());
+	}
+	private SedNode parse_field_expression(CirFieldExpression source) throws Exception {
+		SedFieldExpression expr = new 
+				SedFieldExpression(source, source.get_data_type());
+		expr.add_child(this.parse_cir(source.get_body()));
+		expr.add_child(this.parse_cir(source.get_field()));
+		return expr;
+	}
+	private SedNode parse_address_expression(CirAddressExpression source) throws Exception {
+		SedUnaryExpression expr = new SedUnaryExpression(source, 
+				source.get_data_type(), COperator.address_of);
+		expr.add_child(this.parse_cir(source.get_operand()));
+		return expr;
+	}
+	private SedNode parse_cast_expression(CirCastExpression source) throws Exception {
+		SedUnaryExpression expr = new SedUnaryExpression(source, 
+				source.get_data_type(), COperator.assign);
+		expr.add_child(this.parse_cir(source.get_operand()));
+		return expr;
+	}
+	private SedNode parse_initializer_body(CirInitializerBody source) throws Exception {
+		SedNode list = new SedInitializerList(source, source.get_data_type());
+		for(int k = 0; k < source.number_of_elements(); k++) {
+			list.add_child(this.parse_cir(source.get_element(k)));
+		}
+		return list;
+	}
+	private SedNode parse_compute_expression(CirComputeExpression source) throws Exception {
+		switch(source.get_operator()) {
+		case negative:
+		case bit_not:
+		case logic_not:
+		{
+			SedUnaryExpression expr = new SedUnaryExpression(source, 
+					source.get_data_type(), source.get_operator());
+			expr.add_child(this.parse_cir(source.get_operand(0)));
+			return expr;
+		}
+		case arith_add:
+		case arith_sub:
+		case arith_mul:
+		case arith_div:
+		case arith_mod:
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case left_shift:
+		case righ_shift:
+		case logic_and:
+		case logic_or:
+		case greater_tn:
+		case greater_eq:
+		case smaller_tn:
+		case smaller_eq:
+		case equal_with:
+		{
+			SedBinaryExpression expr = new SedBinaryExpression(source,
+					source.get_data_type(), source.get_operator());
+			expr.add_child(this.parse_cir(source.get_operand(0)));
+			expr.add_child(this.parse_cir(source.get_operand(1)));
+			return expr;
+		}
+		case not_equals:
+		default: throw new IllegalArgumentException("Invalid: " + source.generate_code(true));
+		}
+	}
+	private SedNode parse_wait_expression(CirWaitExpression source) throws Exception {
+		CirExecution wait_execution = this.get_execution(source.statement_of());
+		CirExecution call_execution = wait_execution.get_graph().get_execution(wait_execution.get_id() - 1);
+		CirCallStatement call_statement = (CirCallStatement) call_execution.get_statement();
+		SedNode expression = new SedCallExpression(source, source.get_data_type());
+		expression.add_child(this.parse_cir(call_statement.get_function()));
+		expression.add_child(this.parse_cir(call_statement.get_arguments()));
+		return expression;
+	}
+	private SedNode parse_argument_list(CirArgumentList source) throws Exception {
+		SedArgumentList list = new SedArgumentList(source);
+		for(int k = 0; k < source.number_of_arguments(); k++) {
+			list.add_child(this.parse_cir(source.get_argument(k)));
+		}
+		return list;
+	}
+	private SedNode parse_label(CirLabel source) throws Exception {
+		CirStatement statement = (CirStatement) source.
+				get_tree().get_node(source.get_target_node_id());
+		return new SedLabel(source, statement);
+	}
+	private SedNode parse_assign_statement(CirAssignStatement source) throws Exception {
+		if(source instanceof CirWaitAssignStatement) {
+			SedNode statement = new SedWaitStatement(source);
+			statement.add_child(new SedLabel(null, source));
+			statement.add_child(this.parse_cir(source.get_lvalue()));
+			statement.add_child(this.parse_cir(source.get_rvalue()));
+			return statement;
+		}
+		else {
+			SedNode statement = new SedAssignStatement(source);
+			statement.add_child(new SedLabel(null, source));
+			statement.add_child(this.parse_cir(source.get_lvalue()));
+			statement.add_child(this.parse_cir(source.get_rvalue()));
+			return statement;
+		}
+	}
+	private SedNode parse_goto_statement(CirGotoStatement source) throws Exception {
+		SedNode statement = new SedGotoStatement(source);
+		statement.add_child(new SedLabel(null, source));
+		statement.add_child(this.parse_cir(source.get_label()));
+		return statement;
+	}
+	private SedNode parse_if_statement(CirIfStatement source) throws Exception {
+		SedNode statement = new SedIfStatement(source);
+		statement.add_child(new SedLabel(null, source));
+		statement.add_child(this.parse_cir(source.get_condition()));
+		statement.add_child(this.parse_cir(source.get_true_label()));
+		statement.add_child(this.parse_cir(source.get_false_label()));
+		return statement;
+	}
+	private SedNode parse_case_statement(CirCaseStatement source) throws Exception {
+		SedNode statement = new SedIfStatement(source);
+		statement.add_child(new SedLabel(null, source));
+		statement.add_child(this.parse_cir(source.get_condition()));
+		
+		CirExecution case_execution = this.get_execution(source);
+		CirExecution next_execution = case_execution.
+				get_graph().get_execution(case_execution.get_id() + 1);
+		CirStatement next_statement = next_execution.get_statement();
+		statement.add_child(new SedLabel(null, next_statement));
+		
+		statement.add_child(this.parse_cir(source.get_false_label()));
+		return statement;
+	}
+	private SedNode parse_call_statement(CirCallStatement source) throws Exception {
+		SedNode statement = new SedCallStatement(source);
+		statement.add_child(new SedLabel(null, source));
+		statement.add_child(this.parse_cir(source.get_function()));
+		statement.add_child(this.parse_cir(source.get_arguments()));
+		return statement;
+	}
+	private SedNode parse_tag_statement(CirTagStatement source) throws Exception {
+		SedNode statement = new SedTagStatement(source);
+		statement.add_child(new SedLabel(null, source));
+		return statement;
+	}
+	public static SedNode parse(CirNode source) throws Exception {
+		return parser.parse_cir(source);
+	}
 	
 }
