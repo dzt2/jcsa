@@ -28,8 +28,8 @@ public class SedUnaryExpression extends SedExpression {
 	/**
 	 * @return the unary operand in expression
 	 */
-	public SedNode get_operand() {
-		return this.get_child(1);
+	public SedExpression get_operand() {
+		return (SedExpression) this.get_child(1);
 	}
 
 	@Override
