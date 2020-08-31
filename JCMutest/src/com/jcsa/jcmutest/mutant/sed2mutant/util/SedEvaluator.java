@@ -4,20 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.SedNode;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedAddExpressionError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedAssertion;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedAssertions;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedConditionConstraint;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedConjunction;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedConstraint;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedDelStatementError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedDisjunction;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedExecutionConstraint;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedInsExpressionError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedInsStatementError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedSetExpressionError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedSetStatementError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.assrt.SedStateError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConditionConstraint;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConjunctConstraints;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConstraint;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedDisjunctConstraints;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedExecutionConstraint;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedBasicExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedBinaryExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedCallExpression;
@@ -780,10 +771,6 @@ public class SedEvaluator {
 			return this.eval_statement((SedStatement) source);
 		else if(source instanceof SedConstraint)
 			return this.eval_constraint((SedConstraint) source);
-		else if(source instanceof SedStateError)
-			return this.eval_state_error((SedStateError) source);
-		else if(source instanceof SedAssertions)
-			return this.eval_assertions((SedAssertions) source);
 		else
 			throw new IllegalArgumentException("Unsupport: " + source.getClass().getSimpleName());
 	}
@@ -830,24 +817,7 @@ public class SedEvaluator {
 		return source.clone();
 	}
 	private SedNode eval_default_value(SedDefaultValue source) throws Exception {
-		CType data_type = CTypeAnalyzer.get_value_type(source.get_data_type());
-		CConstant constant = new CConstant();
-		
-		if(CTypeAnalyzer.is_boolean(data_type)) {
-			constant.set_bool(false);
-			return new SedConstant(source.get_cir_source(), data_type, constant);
-		}
-		else if(CTypeAnalyzer.is_integer(data_type)) {
-			constant.set_long(0L);
-			return new SedConstant(source.get_cir_source(), data_type, constant);
-		}
-		else if(CTypeAnalyzer.is_real(data_type)) {
-			constant.set_double(0.0);
-			return new SedConstant(source.get_cir_source(), data_type, constant);
-		}
-		else {
-			return source.clone();
-		}
+		return source.clone();
 	}
 	private SedNode eval_basic_expression(SedBasicExpression source) throws Exception {
 		if(source instanceof SedIdExpression)
@@ -1690,8 +1660,8 @@ public class SedEvaluator {
 			}
 		}
 		SedExpression expression = new SedBinaryExpression(source.
-				get_cir_source(), source.get_data_type(), COperator.greater_tn);
-		expression.add_child(loperand); expression.add_child(roperand);
+				get_cir_source(), source.get_data_type(), COperator.smaller_tn);
+		expression.add_child(roperand); expression.add_child(loperand);
 		return expression;
 	}
 	private SedNode eval_greater_eq(SedBinaryExpression source) throws Exception {
@@ -1707,8 +1677,8 @@ public class SedEvaluator {
 			}
 		}
 		SedExpression expression = new SedBinaryExpression(source.
-				get_cir_source(), source.get_data_type(), COperator.greater_eq);
-		expression.add_child(loperand); expression.add_child(roperand);
+				get_cir_source(), source.get_data_type(), COperator.smaller_eq);
+		expression.add_child(roperand); expression.add_child(loperand);
 		return expression;
 	}
 	private SedNode eval_smaller_tn(SedBinaryExpression source) throws Exception {
@@ -1922,205 +1892,105 @@ public class SedEvaluator {
 			throw new IllegalArgumentException(source.generate_code());
 	}
 	
-	/* constraint */
+	/* constraint part */
 	private SedNode eval_execution_constraint(SedExecutionConstraint source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode statement = this.eval(source.get_statement());
-		SedNode times = this.eval(source.get_times());
-		SedNode constraint = new SedExecutionConstraint();
-		constraint.add_child(location);
-		constraint.add_child(statement);
-		constraint.add_child(times);
-		return constraint;
+		SedLabel statement = (SedLabel) this.eval(source.get_location());
+		SedConstant times = (SedConstant) this.eval(source.get_times());
+		long number = ((Long) get_number(times.get_constant())).longValue();
+		if(number <= 0) {
+			return SedFactory.sed_node(Boolean.TRUE);
+		}
+		else {
+			SedExecutionConstraint result = new SedExecutionConstraint();
+			result.add_child(statement);
+			result.add_child(times);
+			return result;
+		}
 	}
 	private SedNode eval_condition_constraint(SedConditionConstraint source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode condition = this.eval(source.get_condition());
-		SedNode constraint = new SedConditionConstraint();
-		constraint.add_child(location);
-		constraint.add_child(condition);
-		return constraint;
+		SedLabel statement = (SedLabel) this.eval(source.get_location());
+		SedExpression condition = (SedExpression) this.eval(source.get_condition());
+		if(condition instanceof SedConstant) {
+			if(this.get_bool(((SedConstant) condition).get_constant())) {
+				return SedFactory.sed_node(Boolean.TRUE);
+			}
+			else {
+				return SedFactory.sed_node(Boolean.FALSE);
+			}
+		}
+		else {
+			SedNode constraint = new SedConditionConstraint();
+			constraint.add_child(statement);
+			constraint.add_child(condition);
+			return constraint;
+		}
+	}
+	private SedNode eval_conjunct_constraint(SedConjunctConstraints source) throws Exception {
+		List<SedConstraint> constraints = new ArrayList<SedConstraint>();
+		for(int k = 0; k < source.number_of_constraints(); k++) {
+			SedNode constraint = this.eval(source.get_constraint(k));
+			if(constraint instanceof SedConstraint) {
+				constraints.add((SedConstraint) constraint);
+			}
+			else {
+				SedConstant expression = (SedConstant) constraint;
+				if(!this.get_bool(expression.get_constant())) {
+					return expression;
+				}
+			}
+		}
+		if(constraints.isEmpty()) {
+			return SedFactory.sed_node(Boolean.TRUE);
+		}
+		else if(constraints.size() == 1) {
+			return constraints.get(0);
+		}
+		else {
+			SedConjunctConstraints result = new SedConjunctConstraints();
+			for(SedConstraint constraint : constraints) {
+				result.add_child(constraint);
+			}
+			return result;
+		}
+	}
+	private SedNode eval_disjunct_constraint(SedDisjunctConstraints source) throws Exception {
+		List<SedConstraint> constraints = new ArrayList<SedConstraint>();
+		for(int k = 0; k < source.number_of_constraints(); k++) {
+			SedNode constraint = this.eval(source.get_constraint(k));
+			if(constraint instanceof SedConstraint) {
+				constraints.add((SedConstraint) constraint);
+			}
+			else {
+				SedConstant expression = (SedConstant) constraint;
+				if(this.get_bool(expression.get_constant())) {
+					return expression;
+				}
+			}
+		}
+		if(constraints.isEmpty()) {
+			return SedFactory.sed_node(Boolean.TRUE);
+		}
+		else if(constraints.size() == 1) {
+			return constraints.get(0);
+		}
+		else {
+			SedDisjunctConstraints result = new SedDisjunctConstraints();
+			for(SedConstraint constraint : constraints) {
+				result.add_child(constraint);
+			}
+			return result;
+		}
 	}
 	private SedNode eval_constraint(SedConstraint source) throws Exception {
-		if(source instanceof SedExecutionConstraint)
+		if(source instanceof SedExecutionConstraint) 
 			return this.eval_execution_constraint((SedExecutionConstraint) source);
 		else if(source instanceof SedConditionConstraint)
 			return this.eval_condition_constraint((SedConditionConstraint) source);
-		else
-			throw new IllegalArgumentException(source.generate_code());
-	}
-	
-	/* state-error */
-	private SedNode eval_ins_statement(SedInsStatementError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_statement = this.eval(source.get_orig_statement());
-		SedNode error = new SedInsStatementError();
-		error.add_child(location);
-		error.add_child(orig_statement);
-		return error;
-	}
-	private SedNode eval_del_statement(SedDelStatementError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_statement = this.eval(source.get_orig_statement());
-		SedNode error = new SedDelStatementError();
-		error.add_child(location);
-		error.add_child(orig_statement);
-		return error;
-	}
-	private SedNode eval_set_statement(SedSetStatementError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_statement = this.eval(source.get_orig_statement());
-		SedNode muta_statement = this.eval(source.get_muta_statement());
-		SedNode error = new SedSetStatementError();
-		error.add_child(location);
-		error.add_child(orig_statement);
-		error.add_child(muta_statement);
-		return error;
-	}
-	private SedNode eval_ins_expression(SedInsExpressionError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_expr = this.eval(source.get_orig_expression());
-		SedNode muta_oprt = this.eval(source.get_muta_operator());
-		SedNode error = new SedInsExpressionError();
-		error.add_child(location);
-		error.add_child(orig_expr);
-		error.add_child(muta_oprt);
-		return error;
-	}
-	private SedNode eval_add_expression(SedAddExpressionError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_expr = this.eval(source.get_orig_expression());
-		SedNode muta_oprt = this.eval(source.get_muta_operator());
-		SedNode muta_expr = this.eval(source.get_muta_operand());
-		SedNode error = new SedInsExpressionError();
-		error.add_child(location);
-		error.add_child(orig_expr);
-		error.add_child(muta_oprt);
-		error.add_child(muta_expr);
-		return error;
-	}
-	private SedNode eval_set_expression(SedSetExpressionError source) throws Exception {
-		SedNode location = this.eval(source.get_location());
-		SedNode orig_expr = this.eval(source.get_orig_expression());
-		SedNode muta_expr = this.eval(source.get_muta_expression());
-		SedNode error = new SedSetExpressionError();
-		error.add_child(location);
-		error.add_child(orig_expr);
-		error.add_child(muta_expr);
-		return error;
-	}
-	private SedNode eval_state_error(SedStateError source) throws Exception {
-		if(source instanceof SedInsStatementError)
-			return this.eval_ins_statement((SedInsStatementError) source);
-		else if(source instanceof SedDelStatementError)
-			return this.eval_del_statement((SedDelStatementError) source);
-		else if(source instanceof SedSetStatementError)
-			return this.eval_set_statement((SedSetStatementError) source);
-		else if(source instanceof SedInsExpressionError)
-			return this.eval_ins_expression((SedInsExpressionError) source);
-		else if(source instanceof SedAddExpressionError)
-			return this.eval_add_expression((SedAddExpressionError) source);
-		else if(source instanceof SedSetExpressionError)
-			return this.eval_set_expression((SedSetExpressionError) source);
-		else
-			throw new IllegalArgumentException(source.generate_code());
-	}
-	
-	/* assertions */
-	private Boolean get_boolean(SedAssertion assertion) throws Exception {
-		if(assertion instanceof SedConditionConstraint) {
-			SedExpression condition = ((SedConditionConstraint) assertion).get_condition();
-			if(condition instanceof SedConstant) {
-				return this.get_bool(((SedConstant) condition).get_constant());
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
-	}
-	private SedNode eval_conjunction(SedConjunction source) throws Exception {
-		List<SedAssertion> assertions = new ArrayList<SedAssertion>();
-		for(int k = 0; k < source.number_of_assertions(); k++) {
-			SedAssertion assertion = 
-					(SedAssertion) this.eval(source.get_assertion(k));
-			Boolean value = this.get_boolean(assertion);
-			if(value != null) {
-				if(!value.booleanValue()) {
-					SedAssertion result = new SedConditionConstraint();
-					result.add_child(source.get_location());
-					result.add_child(SedFactory.sed_node(Boolean.FALSE));
-					return result;
-				}
-			}
-			else {
-				assertions.add(assertion);
-			}
-		}
-		
-		if(!assertions.isEmpty()) {
-			SedAssertion result = new SedConditionConstraint();
-			result.add_child(source.get_location());
-			result.add_child(SedFactory.sed_node(Boolean.TRUE));
-			return result;
-		}
-		else if(assertions.size() == 1) {
-			return assertions.get(0);
-		}
-		else {
-			SedAssertion result = new SedConjunction();
-			result.add_child(source.get_location());
-			for(SedAssertion assertion : assertions) {
-				result.add_child(assertion);
-			}
-			return result;
-		}
-	}
-	private SedNode eval_disjunction(SedDisjunction source) throws Exception {
-		List<SedAssertion> assertions = new ArrayList<SedAssertion>();
-		for(int k = 0; k < source.number_of_assertions(); k++) {
-			SedAssertion assertion = 
-					(SedAssertion) this.eval(source.get_assertion(k));
-			Boolean value = this.get_boolean(assertion);
-			if(value != null) {
-				if(value.booleanValue()) {
-					SedAssertion result = new SedConditionConstraint();
-					result.add_child(source.get_location());
-					result.add_child(SedFactory.sed_node(Boolean.TRUE));
-					return result;
-				}
-			}
-			else {
-				assertions.add(assertion);
-			}
-		}
-		
-		if(!assertions.isEmpty()) {
-			SedAssertion result = new SedConditionConstraint();
-			result.add_child(source.get_location());
-			result.add_child(SedFactory.sed_node(Boolean.TRUE));
-			return result;
-		}
-		else if(assertions.size() == 1) {
-			return assertions.get(0);
-		}
-		else {
-			SedAssertion result = new SedDisjunction();
-			result.add_child(source.get_location());
-			for(SedAssertion assertion : assertions) {
-				result.add_child(assertion);
-			}
-			return result;
-		}
-	}
-	private SedNode eval_assertions(SedAssertions source) throws Exception {
-		if(source instanceof SedConjunction)
-			return this.eval_conjunction((SedConjunction) source);
-		else if(source instanceof SedDisjunction)
-			return this.eval_disjunction((SedDisjunction) source);
-		else
+		else if(source instanceof SedConjunctConstraints)
+			return this.eval_conjunct_constraint((SedConjunctConstraints) source);
+		else if(source instanceof SedDisjunctConstraints)
+			return this.eval_disjunct_constraint((SedDisjunctConstraints) source);
+		else 
 			throw new IllegalArgumentException(source.generate_code());
 	}
 	
