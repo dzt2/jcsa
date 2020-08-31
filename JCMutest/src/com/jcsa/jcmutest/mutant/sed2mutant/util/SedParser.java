@@ -345,7 +345,7 @@ public class SedParser {
 			return new SedConstant(null, source.get_value_type(), constant);
 		}
 		else {
-			return new SedDefaultValue(null, source.get_value_type());
+			return new SedDefaultValue(null, source.get_value_type(), SedDefaultValue.AnyPosValue);
 		}
 	}
 	private SedNode parse_ast_conditional_expression(AstConditionalExpression source) throws Exception {
@@ -458,7 +458,8 @@ public class SedParser {
 		return new SedLiteral(source, source.get_data_type(), source.get_literal());
 	}
 	private SedNode parse_default_value(CirDefaultValue source) throws Exception {
-		return new SedDefaultValue(source, source.get_data_type());
+		return new SedDefaultValue(source, source.
+				get_data_type(), SedDefaultValue.AnyValue);
 	}
 	private SedNode parse_defer_expression(CirDeferExpression source) throws Exception {
 		SedUnaryExpression expr = new SedUnaryExpression(source, 
