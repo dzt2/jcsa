@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.SedNode;
+import com.jcsa.jcmutest.mutant.sed2mutant.util.SedEvaluator;
 import com.jcsa.jcmutest.mutant.sed2mutant.util.SedParser;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -95,7 +96,10 @@ public class SedNodeTest {
 		writer.write(":\t");
 		writer.write(execution.get_statement().generate_code(false));
 		writer.write("\n");
-		write_sed(SedParser.parse(execution.get_statement()), writer);
+		SedNode sed_node = SedParser.parse(execution.get_statement());
+		write_sed(sed_node, writer);
+		SedNode eval_node = SedEvaluator.evaluate(sed_node);
+		write_sed(eval_node, writer);
 	}
 	private static void write_sed(SedNode sed_node, FileWriter writer) throws Exception {
 		writer.write("\t\t");

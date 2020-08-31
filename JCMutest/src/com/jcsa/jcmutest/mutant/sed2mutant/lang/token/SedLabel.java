@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
-public class SedLabel extends SedNode {
+public class SedLabel extends SedToken {
 	
 	private CirStatement cir_statement;
 	private CirExecution cir_execution;

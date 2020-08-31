@@ -154,7 +154,7 @@ public abstract class SedNode {
 	}
 	public SedNode clone() {
 		SedNode parent = this.clone_self();
-		for(SedNode child : parent.children) {
+		for(SedNode child : this.children) {
 			parent.add_child(child.clone());
 		}
 		return parent;

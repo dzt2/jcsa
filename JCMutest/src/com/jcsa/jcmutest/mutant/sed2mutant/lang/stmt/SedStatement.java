@@ -29,7 +29,8 @@ public abstract class SedStatement extends SedNode {
 
 	@Override
 	public String generate_code() throws Exception {
-		return this.get_source_label().generate_code() + ": " + this.generate_content() + ";";
+		return this.get_source_label().generate_code() + 
+				": " + this.generate_content() + ";";
 	}
 	
 	protected abstract String generate_content() throws Exception;
