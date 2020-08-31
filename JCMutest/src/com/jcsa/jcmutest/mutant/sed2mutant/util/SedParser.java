@@ -523,6 +523,7 @@ public class SedParser {
 		case smaller_tn:
 		case smaller_eq:
 		case equal_with:
+		case not_equals:
 		{
 			SedBinaryExpression expr = new SedBinaryExpression(source,
 					source.get_data_type(), source.get_operator());
@@ -530,7 +531,6 @@ public class SedParser {
 			expr.add_child(this.parse_cir(source.get_operand(1)));
 			return expr;
 		}
-		case not_equals:
 		default: throw new IllegalArgumentException("Invalid: " + source.generate_code(true));
 		}
 	}
