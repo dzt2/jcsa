@@ -1,7 +1,9 @@
 package com.jcsa.jcmutest.mutant.sed2mutant.util;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedAddExpressionError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedAddStatementError;
@@ -75,6 +77,8 @@ public class SedStateErrors {
 	private SedEvaluator evaluator;
 	/** mapping from key to unique state errors **/
 	private Map<String, SedStateError> errors;
+	/** the error to preserve the extension set of state error **/
+	private Set<SedAbstractValueError> extension_set;
 	/**
 	 * create a state error library such that all the errors in the library
 	 * are of unique
@@ -87,6 +91,7 @@ public class SedStateErrors {
 		else {
 			this.cir_tree = cir_tree;
 			this.evaluator = new SedEvaluator();
+			this.extension_set = new HashSet<SedAbstractValueError>();
 			this.errors = new HashMap<String, SedStateError>();
 		}
 	}
@@ -323,7 +328,7 @@ public class SedStateErrors {
 	}
 	
 	/* abstract error initializer */
-	public SedAbstractValueError abs_error(SedInsExpressionError source) throws Exception {
+	private SedAbstractValueError abs_error(SedInsExpressionError source) throws Exception {
 		CirStatement statement = source.get_location().get_cir_statement();
 		SedExpression expression = source.get_orig_expression();
 		COperator operator = source.get_ins_operator().get_operator();
@@ -337,7 +342,7 @@ public class SedStateErrors {
 		}
 		return (SedAbstractValueError) this.unique_error(result);
 	}
-	public SedAbstractValueError abs_error(SedSetExpressionError source) throws Exception {
+	private SedAbstractValueError abs_error(SedSetExpressionError source) throws Exception {
 		CirStatement statement = source.get_location().get_cir_statement();
 		SedExpression orig_expression = source.get_orig_expression();
 		SedExpression muta_expression = source.get_muta_expression();
@@ -644,23 +649,6 @@ public class SedStateErrors {
 						(SedExpression) SedFactory.sed_node(Boolean.FALSE));
 			}
 		}
-		else if(this.is_character(expression)) {
-			if(muta_expression instanceof SedConstant) {
-				Long value = Long.valueOf(this.get_char(((SedConstant) muta_expression).get_constant()));
-				if(value.longValue() == 0L) {
-					result = new SedSetIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
-				}
-				else {
-					result = new SedMulIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
-				}
-			}
-			else if(muta_expression instanceof SedDefaultValue) {
-				result = new SedChgIntegerError(statement, orig_expression);
-			}
-			else {
-				result = new SedMulIntegerError(statement, orig_expression, muta_expression);
-			}
-		}
 		else if(this.is_integer(expression)) {
 			if(muta_expression instanceof SedConstant) {
 				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
@@ -844,7 +832,7 @@ public class SedStateErrors {
 		}
 		return (SedAbstractValueError) this.unique_error(result);
 	}
-	public SedAbstractValueError abs_error(SedAddExpressionError source) throws Exception {
+	private SedAbstractValueError abs_error(SedAddExpressionError source) throws Exception {
 		CirStatement statement = source.get_location().get_cir_statement();
 		SedExpression orig_expression = source.get_orig_expression();
 		COperator operator = source.get_add_operator().get_operator();
@@ -868,5 +856,174 @@ public class SedStateErrors {
 		}
 		}
 	}
+	/**
+	 * @param source
+	 * @return the initial abstract error generated from the concrete source error
+	 * @throws Exception
+	 */
+	protected SedAbstractValueError init_abs_error(SedExpressionError source) throws Exception {
+		if(source instanceof SedSetExpressionError) {
+			return this.abs_error((SedSetExpressionError) source);
+		}
+		else if(source instanceof SedInsExpressionError) {
+			return this.abs_error((SedInsExpressionError) source);
+		}
+		else if(source instanceof SedAddExpressionError) {
+			return this.abs_error((SedAddExpressionError) source);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid source: " + source);
+		}
+	}
+	
+	/* abstract error extensions */
+	private void extend_at(SedAbstractValueError error) throws Exception {
+		error = (SedAbstractValueError) this.unique_error(error);
+		if(!this.extension_set.contains(error)) {
+			this.extension_set.add(error);
+			// TODO implement the extension algorithms
+		}
+	}
+	/**
+	 * set_bool --> not_bool
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_set_bool(SedSetBooleanError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		this.extend_at(new SedNotBooleanError(statement, orig_expression));
+	}
+	/**
+	 * not_bool --> set_bool when 
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_not_bool(SedNotBooleanError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		SedExpression orig_value = 
+				(SedExpression) this.evaluator.evaluate(orig_expression);
+		
+		if(orig_value instanceof SedConstant) {
+			Boolean value = Boolean.valueOf(this.
+					get_bool(((SedConstant) orig_value).get_constant()));
+			extend_at(new SedSetBooleanError(statement, orig_expression, 
+							(SedExpression) SedFactory.sed_node(value)));
+		}
+	}
+	/**
+	 * set_char |-->	chg_char
+	 * set_char |-->	(neg_numb|rsv_numb) --> chg_char
+	 * set_char |-->	(add_char)			--> chg_char
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_set_char(SedSetCharacterError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		SedExpression orig_value = 
+				(SedExpression) this.evaluator.evaluate(orig_expression);
+		SedExpression muta_expression = error.get_muta_expression();
+		SedExpression muta_value = 
+				(SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		if(orig_value instanceof SedConstant) {
+			if(muta_value instanceof SedConstant) {
+				char orig_char = this.get_char(((SedConstant) orig_value).get_constant());
+				char muta_char = this.get_char(((SedConstant) orig_value).get_constant());
+				if(orig_char == muta_char)	return;
+				this.extend_at(new SedAddCharacterError(statement, orig_expression, 
+						(SedExpression) SedFactory.sed_node(muta_char - orig_char)));
+				
+				if(orig_char == -muta_char) {
+					this.extend_at(new SedNegNumericError(statement, orig_expression));
+				}
+				else if(orig_char == ~muta_char) {
+					this.extend_at(new SedRsvIntegerError(statement, orig_expression));
+				}
+			}
+		}
+		this.extend_at(new SedChgCharacterError(statement, orig_expression));
+	}
+	/**
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_chg_char(SedChgCharacterError error) throws Exception {}
+	/**
+	 * set_long --> (dif_long|(neg_numb|rsv_long)) --> chg_long
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_set_long(SedSetIntegerError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		SedExpression orig_value = 
+				(SedExpression) this.evaluator.evaluate(orig_expression);
+		SedExpression muta_expression = error.get_muta_expression();
+		SedExpression muta_value = 
+				(SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		if(orig_value instanceof SedConstant) {
+			if(muta_value instanceof SedConstant) {
+				long orig_long = this.get_long(((SedConstant) orig_value).get_constant());
+				long muta_long = this.get_long(((SedConstant) muta_value).get_constant());
+				if(orig_long == muta_long) return;	/* equivalent with original program */
+				
+				this.extend_at(new SedAddIntegerError(statement, orig_expression, 
+						(SedExpression) SedFactory.sed_node(muta_long - muta_long)));
+				if(orig_long == -muta_long) {
+					this.extend_at(new SedNegNumericError(statement, orig_expression));
+				}
+				else if(orig_long == ~muta_long) {
+					this.extend_at(new SedRsvIntegerError(statement, orig_expression));
+				}
+			}
+		}
+		this.extend_at(new SedChgIntegerError(statement, orig_expression));
+	}
+	private void extend_chg_long(SedChgIntegerError error) throws Exception {}
+	/**
+	 * set_real --> (add_real|(neg_numb)) --> chg_real
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_set_double(SedSetDoubleError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		SedExpression orig_value = 
+				(SedExpression) this.evaluator.evaluate(orig_expression);
+		SedExpression muta_expression = error.get_muta_expression();
+		SedExpression muta_value = 
+				(SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		if(orig_value instanceof SedConstant) {
+			if(muta_value instanceof SedConstant) {
+				double x = this.get_double(((SedConstant) orig_value).get_constant());
+				double y = this.get_double(((SedConstant) muta_value).get_constant());
+				if(x == y)	return;	/* equivalent with the original program */
+				
+				this.extend_at(new SedAddDoubleError(statement, 
+						orig_expression, (SedExpression) SedFactory.sed_node(y - x)));
+				if(x == -y) {
+					this.extend_at(new SedNegNumericError(statement, orig_expression));
+				}
+			}
+		}
+		this.extend_at(new SedChgDoubleError(statement, orig_expression));
+	}
+	private void extend_chg_double(SedChgDoubleError error) throws Exception {}
+	/**
+	 * set_addr --> (add_addr) --> chg_addr
+	 * @param error
+	 * @throws Exception
+	 */
+	private void extend_set_address(SedSetAddressError error) throws Exception {
+		
+	}
+	
+	
+	
 	
 }
