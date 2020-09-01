@@ -12,12 +12,18 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  */
 public class SedDefaultValue extends SedBasicExpression {
 	
+	/** for any value of boolean **/
+	public static final String AnyBoolean = "#ANY_BOOL";
+	/** for any value of character **/
+	public static final String AnyCharacter = "#ANY_CHAR";
 	/** for any value without considering its data type **/
-	public static final String AnyValue = "#ANY_VAL";
+	public static final String AnyNumber = "#ANY_NUM";
 	/** for any positive value of numeric data type **/
-	public static final String AnyPosValue = "#ANY_POS";
+	public static final String AnyPosNum = "#ANY_POS";
 	/** for any negative value of numeric data type **/
-	public static final String AnyNegValue = "#ANY_NEG";
+	public static final String AnyNegNum = "#ANY_NEG";
+	public static final String AnyAddress = "#ANY_ADDR";
+	public static final String AnySequence = "#ANY_SEQ";
 	
 	private String name;
 	public SedDefaultValue(CirNode cir_source, CType data_type, String name) {

@@ -54,6 +54,43 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	|--	SedInsExpressionError		ins_expr(oprt, expr)			<br>
  *	|--	|--	SedSetExpressionError		set_expr(expr, expr)			<br>
  * 	|--	|--	SedAddExpressionError		add_expr(expr, oprt, expr)		<br>
+ * 	|--	SedAbstractError				{orig_expression: SedExpression}<br>
+ * 	|--	|--	SedNotBooleanError			not_expr(expr)					<br>
+ * 	|--	|--	SedRsvIntegerError			rsv_expr(expr)					<br>
+ * 	|--	|--	SedNegNumericError			neg_expr(expr)					<br>
+ * 	|--	|--	SedSetBooleanError			set_bool(expr, bool)			<br>
+ * 	|--	|--	SedMutBooleanError			mut_bool(expr, expr)			<br>
+ * 	|--	|--	SedSetCharacterError		set_char(expr, char)			<br>
+ * 	|--	|--	SedMutCharacterError		mut_char(expr, expr)			<br>
+ * 	|--	|--	SedChgCharacterError		chg_char(expr)					<br>
+ * 	|--	|--	SedSetIntegerError			set_int(expr, long)				<br>
+ * 	|--	|--	SedMutIntegerError			mut_int(expr, expr)				<br>
+ * 	|--	|--	SedChgIntegerError			chg_int(expr)					<br>
+ * 	|--	|--	SedSetDoubleError			set_real(expr, double)			<br>
+ * 	|--	|--	SedMutDoubleError			mut_real(expr, expr)			<br>
+ * 	|--	|--	SedChgDoubleError			chg_real(expr)					<br>
+ * 	|--	|--	SedSetAddressError			set_addr(expr, long)			<br>
+ * 	|--	|--	SedMutAddressError			mut_addr(expr, expr)			<br>
+ * 	|--	|--	SedChgAddressError			chg_addr(expr)					<br>
+ * 	|--	|--	SedMutStructError			mut_body(expr, expr)			<br>
+ * 	|--	|--	SedChgStructError			chg_body(expr)					<br>
+ * 	|--	|--	SedAddIntegerError			add_int(expr, long)				<br>
+ * 	|--	|--	SedIncIntegerError			inc_int(expr)					<br>
+ * 	|--	|--	SedDecIntegerError			dec_int(expr)					<br>
+ * 	|--	|--	SedAddDoubleError			add_real(expr, double)			<br>
+ * 	|--	|--	SedIncDoubleError|SedDecDoubleError							<br>
+ * 	|--	|--	SedAddAddressError			add_addr(expr, long)			<br>
+ * 	|--	|--	SedIncAddressError|SedDecAddressError						<br>
+ * 	|--	|--	SedMulIntegerError			mul_int(expr, long)				<br>
+ * 	|--	|--	SedGrowIntegerError			grw_int(expr)					<br>
+ * 	|--	|--	SedShrinkIntegerError		shk_int(expr)					<br>
+ * 	|--	|--	SedMulDoubleError			mul_real(expr, double)			<br>
+ * 	|--	|--	SedGrowDoubleError			grw_real(expr)					<br>
+ * 	|--	|--	SedShrinkDoubleError		shk_real(expr)					<br>
+ * 	|--	|--	SedMaskIntegerError			mas_int(expr)					<br>
+ * 	|--	|--	SedRMaskIntegerError		rmas_int(expr)					<br>
+ * 	|--	|--	SedMaskBooleanError			mas_bool(expr)					<br>
+ * 	|--	|--	SedRMaskBooleanError		rmas_bool(expr)					<br>
  * 	+------------------------------------------------------------------+<br>
  * </code>
  * 

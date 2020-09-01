@@ -6,16 +6,59 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedAddExpressionError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedAddStatementError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedDelStatementError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedExpressionError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedInsExpressionError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedMutStatementError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedSetExpressionError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedStateError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedStatementError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.SedAbstractValueError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgAddressError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgBooleanError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgCharacterError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgStructError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedAddAddressError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedAddCharacterError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedAddDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedAddIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedDecAddressError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedDecCharacterError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedDecDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedDecIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedIncAddressError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedIncCharacterError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedIncDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.incval.SedIncIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetAddressError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetBooleanError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetCharacterError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.setval.SedSetStructError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.unary.SedNegNumericError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.unary.SedNotBooleanError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.unary.SedRsvIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedAndIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedGrowthIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedIorIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedMulDoubleError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedMulIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedShrinkIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.zroval.SedXorIntegerError;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedBinaryExpression;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedConstant;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedDefaultValue;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedExpression;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
@@ -29,6 +72,8 @@ public class SedStateErrors {
 	/* definitions */
 	/** the cir-code in which errors are seeded **/
 	private CirTree cir_tree;
+	/** evaluator used to compute symbolic expression **/
+	private SedEvaluator evaluator;
 	/** mapping from key to unique state errors **/
 	private Map<String, SedStateError> errors;
 	/**
@@ -42,6 +87,7 @@ public class SedStateErrors {
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else {
 			this.cir_tree = cir_tree;
+			this.evaluator = new SedEvaluator();
 			this.errors = new HashMap<String, SedStateError>();
 		}
 	}
@@ -52,226 +98,776 @@ public class SedStateErrors {
 	 */
 	public CirTree get_cir_tree() { return this.cir_tree; }
 	/**
-	 * @param error
-	 * @return the unique state error w.r.t. the error in the space
-	 * @throws Exception
+	 * @return evaluator to compute symbolic expression
 	 */
-	private SedStateError get_error(SedStateError error) throws Exception {
-		String key = error.generate_code();
+	public SedEvaluator get_evaluator() { return evaluator; }
+	/**
+	 * @param error
+	 * @return the unique state error w.r.t. error as input
+	 */
+	private SedStateError unique_error(SedStateError error) {
+		String key = error.toString();
 		if(!this.errors.containsKey(key)) {
 			this.errors.put(key, error);
 		}
 		return this.errors.get(key);
 	}
+	
+	/* verifications */
 	/**
-	 * @param orig_statement
-	 * @return seed#stmt::add_stmt(stmt)
+	 * @param expression
+	 * @return whether the expression is taken as a boolean condition
 	 * @throws Exception
 	 */
-	public SedStateError add_stmt(CirStatement orig_statement) throws Exception {
-		return this.get_error(new SedAddStatementError(orig_statement, orig_statement));
+	private boolean is_boolean(CirExpression expression) throws Exception {
+		CType data_type = CTypeAnalyzer.
+				get_value_type(expression.get_data_type());
+		if(CTypeAnalyzer.is_boolean(data_type)) {
+			return true;
+		}
+		else {
+			CirStatement statement = expression.statement_of();
+			if(statement instanceof CirIfStatement
+				|| statement instanceof CirCaseStatement) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
 	}
 	/**
-	 * @param orig_statement
-	 * @return seed#stmt::del_stmt(stmt)
+	 * @param expression
+	 * @return whether the expression is taken and used as a character
 	 * @throws Exception
 	 */
-	public SedStateError del_stmt(CirStatement orig_statement) throws Exception {
-		return this.get_error(new SedDelStatementError(orig_statement, orig_statement));
+	private boolean is_character(CirExpression expression) throws Exception {
+		CType data_type = CTypeAnalyzer.
+				get_value_type(expression.get_data_type());
+		return CTypeAnalyzer.is_character(data_type);
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression is taken as integer or real
+	 * @throws Exception
+	 */
+	private boolean is_integer(CirExpression expression) throws Exception {
+		CType data_type = CTypeAnalyzer.
+				get_value_type(expression.get_data_type());
+		return CTypeAnalyzer.is_integer(data_type);
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression is taken as integer or real
+	 * @throws Exception
+	 */
+	private boolean is_double(CirExpression expression) throws Exception {
+		CType data_type = CTypeAnalyzer.
+				get_value_type(expression.get_data_type());
+		return CTypeAnalyzer.is_real(data_type);
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression is taken as an address (array or pointer)
+	 * @throws Exception
+	 */
+	private boolean is_address(CirExpression expression) throws Exception {
+		CType data_type = CTypeAnalyzer.
+				get_value_type(expression.get_data_type());
+		return CTypeAnalyzer.is_pointer(data_type);
+	}
+	
+	/* expression building */
+	/**
+	 * @param constant
+	 * @return the boolean value of the constant
+	 * @throws Exception
+	 */
+	private boolean get_bool(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:		return constant.get_bool().booleanValue();
+		case c_char:
+		case c_uchar:		return constant.get_char().charValue() != '\0';
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:		return constant.get_integer().intValue() != 0;
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:		return constant.get_long().longValue() != 0L;
+		case c_float:		return constant.get_float().floatValue() != 0.0f;
+		case c_double:
+		case c_ldouble:		return constant.get_double().doubleValue() != 0.0;
+		default: throw new IllegalArgumentException("Invalid: " + constant);
+		}
+	}
+	/**
+	 * @param constant
+	 * @return
+	 * @throws Exception
+	 */
+	private char get_char(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:		return constant.get_bool() ? '\1' : '\0';
+		case c_char:
+		case c_uchar:		return constant.get_char().charValue();
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:		return (char) constant.get_integer().intValue();
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:		return (char) constant.get_long().longValue();
+		case c_float:		return (char) constant.get_float().floatValue();
+		case c_double:
+		case c_ldouble:		return (char) constant.get_double().doubleValue();
+		default: throw new IllegalArgumentException("Invalid: " + constant);
+		}
+	}
+	/**
+	 * @param constant
+	 * @return
+	 * @throws Exception
+	 */
+	private long get_long(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:		return constant.get_bool() ? '\1' : '\0';
+		case c_char:
+		case c_uchar:		return constant.get_char().charValue();
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:		return (long) constant.get_integer().intValue();
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:		return (long) constant.get_long().longValue();
+		case c_float:		return (long) constant.get_float().floatValue();
+		case c_double:
+		case c_ldouble:		return (long) constant.get_double().doubleValue();
+		default: throw new IllegalArgumentException("Invalid: " + constant);
+		}
+	}
+	/**
+	 * @param constant
+	 * @return
+	 * @throws Exception
+	 */
+	private double get_double(CConstant constant) throws Exception {
+		switch(constant.get_type().get_tag()) {
+		case c_bool:		return constant.get_bool() ? '\1' : '\0';
+		case c_char:
+		case c_uchar:		return constant.get_char().charValue();
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:		return (double) constant.get_integer().intValue();
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:		return (double) constant.get_long().longValue();
+		case c_float:		return (double) constant.get_float().floatValue();
+		case c_double:
+		case c_ldouble:		return (double) constant.get_double().doubleValue();
+		default: throw new IllegalArgumentException("Invalid: " + constant);
+		}
+	}
+	
+	/* statement error creators */
+	/**
+	 * @param statement
+	 * @return add_stmt(statement)
+	 * @throws Exception
+	 */
+	public SedStatementError add_stmt(CirStatement statement) throws Exception {
+		return (SedStatementError) this.unique_error(new SedAddStatementError(statement, statement));
+	}
+	/**
+	 * @param statement
+	 * @return del_stmt(statement)
+	 * @throws Exception
+	 */
+	public SedStatementError del_stmt(CirStatement statement) throws Exception {
+		return (SedStatementError) this.unique_error(new SedDelStatementError(statement, statement));
 	}
 	/**
 	 * @param orig_statement
 	 * @param muta_statement
-	 * @return seed#stmt::mut_stmt(stmt, stmt)
+	 * @return mut_stmt(statement, statement)
 	 * @throws Exception
 	 */
-	public SedStateError mut_stmt(CirStatement 
-			orig_statement, CirStatement muta_statement) throws Exception {
-		return this.get_error(new SedMutStatementError(
+	public SedStatementError mut_stmt(CirStatement orig_statement,
+			CirStatement muta_statement) throws Exception {
+		return (SedStatementError) this.unique_error(new SedMutStatementError(
 				orig_statement, orig_statement, muta_statement));
 	}
-	/* ins_expr(expr, oprt) */
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return seed#stmt::ins_expr(oprt, logic_not)
-	 * @throws Exception
-	 */
-	public SedStateError not_expr(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedInsExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression), 
-				COperator.logic_not));
+	
+	/* concrete error creator */
+	public SedExpressionError ins_expr(CirStatement statement, 
+			CirExpression expression, COperator operator) throws Exception {
+		return (SedExpressionError) this.unique_error(new SedInsExpressionError(statement, 
+				(SedExpression) SedParser.parse(expression), operator));
 	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return seed#stmt::ins_expr(oprt, negative)
-	 * @throws Exception
-	 */
-	public SedStateError neg_expr(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedInsExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression), 
-				COperator.negative));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return seed#stmt::ins_expr(oprt, bit_not)
-	 * @throws Exception
-	 */
-	public SedStateError rsv_expr(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedInsExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression), 
-				COperator.bit_not));
-	}
-	/* set_expr(expr::bool, bool|any) */
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return set_bool(expr, true|false)
-	 * @throws Exception
-	 */
-	public SedStateError set_bool(CirStatement statement,
-			CirExpression orig_expression, boolean value) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				(SedExpression) SedFactory.sed_node(Boolean.valueOf(value))));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return set_bool(expr, any)
-	 * @throws Exception
-	 */
-	public SedStateError chg_bool(CirStatement statement,
-			CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				new SedDefaultValue(null, CBasicTypeImpl.bool_type, SedDefaultValue.AnyValue)));
-	}
-	/* set_expr(expr::{int|real|pointer}, long|double|any) */
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return set_numb(expr, long|double)
-	 * @throws Exception
-	 */
-	public SedStateError set_numb(CirStatement statement, 
-			CirExpression orig_expression, long value) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				(SedExpression) SedFactory.sed_node(Long.valueOf(value))));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return set_numb(expr, long|double)
-	 * @throws Exception
-	 */
-	public SedStateError set_numb(CirStatement statement, 
-			CirExpression orig_expression, double value) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				(SedExpression) SedFactory.sed_node(Double.valueOf(value))));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return chg_numb(expr, any)
-	 * @throws Exception
-	 */
-	public SedStateError chg_numb(CirStatement statement, CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression), 
-				new SedDefaultValue(null, orig_expression.get_data_type(), SedDefaultValue.AnyValue)));
-	}
-	/* dif_numb(expr::{int|real|pointer}, long|double|any) */
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return dif_numb(expr, +, long)
-	 * @throws Exception
-	 */
-	public SedStateError dif_numb(CirStatement statement, 
-			CirExpression orig_expression, long value) throws Exception {
-		return this.get_error(new SedAddExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				COperator.arith_add,
-				(SedExpression) SedFactory.sed_node(Long.valueOf(value))));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param value
-	 * @return dif_numb(expr, +, double)
-	 * @throws Exception
-	 */
-	public SedStateError dif_numb(CirStatement statement, 
-			CirExpression orig_expression, double value) throws Exception {
-		return this.get_error(new SedAddExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				COperator.arith_add,
-				(SedExpression) SedFactory.sed_node(Double.valueOf(value))));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return dif_numb(expr, +, any_pos)
-	 * @throws Exception
-	 */
-	public SedStateError inc_numb(CirStatement statement, CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedAddExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				COperator.arith_add,
-				new SedDefaultValue(null, orig_expression.get_data_type(), SedDefaultValue.AnyPosValue)));
-	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @return dif_numb(expr, +, any_neg)
-	 * @throws Exception
-	 */
-	public SedStateError dec_numb(CirStatement statement, CirExpression orig_expression) throws Exception {
-		return this.get_error(new SedAddExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				COperator.arith_add,
-				new SedDefaultValue(null, orig_expression.get_data_type(), SedDefaultValue.AnyNegValue)));
-	}
-	/* abstract expression error */
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return set_expr(expr, expr)
-	 * @throws Exception
-	 */
-	public SedStateError set_expr(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return this.get_error(new SedSetExpressionError(statement,
+	public SedExpressionError set_expr(CirStatement statement,
+			CirExpression orig_expression, 
+			SedExpression muta_expression) throws Exception {
+		return (SedExpressionError) this.unique_error(new SedSetExpressionError(statement, 
 				(SedExpression) SedParser.parse(orig_expression), muta_expression));
 	}
-	/**
-	 * @param statement
-	 * @param orig_expression
-	 * @param add_operator
-	 * @param add_operand
-	 * @return add_expr(expr, oprt, expr)
-	 * @throws Exception
-	 */
-	public SedStateError add_expr(CirStatement statement,
-			CirExpression orig_expression, COperator add_operator,
-			SedExpression add_operand) throws Exception {
-		return this.get_error(new SedAddExpressionError(statement,
-				(SedExpression) SedParser.parse(orig_expression),
-				add_operator, add_operand));
+	public SedExpressionError add_expr(CirStatement statement,
+			CirExpression expression, COperator operator,
+			SedExpression operand) throws Exception {
+		return (SedExpressionError) this.unique_error(new SedAddExpressionError(statement, 
+				(SedExpression) SedParser.parse(expression), operator, operand));
+	}
+	
+	/* abstract error initializer */
+	public SedAbstractValueError abs_error(SedInsExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression expression = source.get_orig_expression();
+		COperator operator = source.get_ins_operator().get_operator();
+		
+		SedAbstractValueError result;
+		switch(operator) {
+		case negative:	result = new SedNegNumericError(statement, expression); break;
+		case bit_not:	result = new SedRsvIntegerError(statement, expression);	break;
+		case logic_not:	result = new SedNotBooleanError(statement, expression);	break;
+		default: throw new IllegalArgumentException("Unsupport: " + operator.toString());
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	public SedAbstractValueError abs_error(SedSetExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_muta_expression();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Boolean value = Boolean.valueOf(this.get_bool(((SedConstant) muta_expression).get_constant()));
+				result = new SedSetBooleanError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgBooleanError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetBooleanError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_character(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Character value = Character.valueOf(this.get_char(((SedConstant) muta_expression).get_constant()));
+				result = new SedSetCharacterError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgCharacterError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetCharacterError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedSetIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_double(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Double value = Double.valueOf(this.get_double(((SedConstant) muta_expression).get_constant()));
+				result = new SedSetDoubleError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgDoubleError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetDoubleError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_address(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedSetAddressError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgAddressError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetAddressError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgStructError(statement, orig_expression);
+			}
+			else {
+				result = new SedSetStructError(statement, orig_expression, muta_expression);
+			}
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_add(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			result = new SedSetBooleanError(statement, orig_expression, 
+					(SedExpression) SedFactory.sed_node(Boolean.TRUE));
+		}
+		else if(this.is_character(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Character value = Character.valueOf(this.get_char(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddCharacterError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedIncCharacterError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedDecCharacterError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgCharacterError(statement, orig_expression);
+				}
+			}
+			else {
+				result = new SedAddCharacterError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedIncIntegerError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedDecIntegerError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgIntegerError(statement, orig_expression);
+				}
+			}
+			else {
+				result = new SedAddIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_double(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Double value = Double.valueOf(this.get_double(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddDoubleError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedIncDoubleError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedDecDoubleError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgDoubleError(statement, orig_expression);
+				}
+			}
+			else {
+				result = new SedAddDoubleError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_address(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddAddressError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedIncAddressError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedDecAddressError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgAddressError(statement, orig_expression);
+				}
+			}
+			else {
+				result = new SedAddAddressError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid type: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_sub(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			result = new SedSetBooleanError(statement, orig_expression, 
+					(SedExpression) SedFactory.sed_node(Boolean.TRUE));
+		}
+		else if(this.is_character(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Character value = Character.valueOf((char) -this.get_char(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddCharacterError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedDecCharacterError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedIncCharacterError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgCharacterError(statement, orig_expression);
+				}
+			}
+			else {
+				muta_expression = SedFactory.arith_neg(expression.get_data_type(), muta_expression);
+				result = new SedAddCharacterError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(-this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedDecIntegerError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedIncIntegerError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgIntegerError(statement, orig_expression);
+				}
+			}
+			else {
+				muta_expression = SedFactory.arith_neg(expression.get_data_type(), muta_expression);
+				result = new SedAddIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_double(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Double value = Double.valueOf(-this.get_double(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddDoubleError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedDecDoubleError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedIncDoubleError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgDoubleError(statement, orig_expression);
+				}
+			}
+			else {
+				muta_expression = SedFactory.arith_neg(expression.get_data_type(), muta_expression);
+				result = new SedAddDoubleError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_address(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(-this.get_long(((SedConstant) muta_expression).get_constant()));
+				result = new SedAddAddressError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				String name = ((SedDefaultValue) muta_expression).get_name();
+				if(name.equals(SedDefaultValue.AnyPosNum)) {
+					result = new SedDecAddressError(statement, orig_expression);
+				}
+				else if(name.equals(SedDefaultValue.AnyNegNum)) {
+					result = new SedIncAddressError(statement, orig_expression);
+				}
+				else {
+					result = new SedChgAddressError(statement, orig_expression);
+				}
+			}
+			else {
+				muta_expression = SedFactory.arith_neg(expression.get_data_type(), muta_expression);
+				result = new SedAddAddressError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid type: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_mul(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				if(this.get_bool(((SedConstant) muta_expression).get_constant())) {
+					return null;	/* equivalent mutation */
+				}
+				else {
+					result = new SedSetBooleanError(statement, orig_expression,
+							(SedExpression) SedFactory.sed_node(Boolean.FALSE));
+				}
+			}
+			else {
+				result = new SedSetBooleanError(statement, orig_expression,
+						(SedExpression) SedFactory.sed_node(Boolean.FALSE));
+			}
+		}
+		else if(this.is_character(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_char(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0L) {
+					result = new SedSetIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+				else {
+					result = new SedMulIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedMulIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0L) {
+					result = new SedSetIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+				else {
+					result = new SedMulIntegerError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedMulIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else if(this.is_double(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Double value = Double.valueOf(this.get_double(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0.0) {
+					result = new SedSetDoubleError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+				else {
+					result = new SedMulDoubleError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgDoubleError(statement, orig_expression);
+			}
+			else {
+				result = new SedMulDoubleError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid type: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_and(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				if(this.get_bool(((SedConstant) muta_expression).get_constant())) {
+					return null;	// equivalent mutation
+				}
+				else {
+					result = new SedSetBooleanError(statement, orig_expression, 
+							(SedExpression) SedFactory.sed_node(Boolean.FALSE));
+				}
+			}
+			else {
+				result = new SedSetBooleanError(statement, orig_expression, 
+						(SedExpression) SedFactory.sed_node(Boolean.FALSE));
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0L) {
+					result = new SedSetIntegerError(statement, orig_expression, 
+							(SedExpression) SedFactory.sed_node(value));
+				}
+				else if(value.longValue() == ~0L) {
+					/* equivalent mutation */	return null;
+				}
+				else {
+					result = new SedAndIntegerError(statement, orig_expression, muta_expression);
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedShrinkIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedAndIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_ior(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				if(this.get_bool(((SedConstant) muta_expression).get_constant())) {
+					return null;	// equivalent mutation
+				}
+				else {
+					result = new SedSetBooleanError(statement, orig_expression, 
+							(SedExpression) SedFactory.sed_node(Boolean.TRUE));
+				}
+			}
+			else {
+				result = new SedSetBooleanError(statement, orig_expression, 
+						(SedExpression) SedFactory.sed_node(Boolean.TRUE));
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0L) {
+					/* equivalent mutation */	return null;
+				}
+				else if(value.longValue() == ~0L) {
+					result = new SedSetIntegerError(statement, orig_expression, 
+							(SedExpression) SedFactory.sed_node(value));
+				}
+				else {
+					result = new SedIorIntegerError(statement, orig_expression, muta_expression);
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedGrowthIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedIorIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	private SedAbstractValueError abs_error_of_xor(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		SedExpression muta_expression = source.get_add_operand();
+		CirExpression expression = (CirExpression) orig_expression.get_cir_source();
+		muta_expression = (SedExpression) this.evaluator.evaluate(muta_expression);
+		
+		SedAbstractValueError result;
+		if(this.is_boolean(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				if(!this.get_bool(((SedConstant) muta_expression).get_constant())) {
+					return null;	// equivalent mutation
+				}
+				else {
+					result = new SedNotBooleanError(statement, orig_expression);
+				}
+			}
+			else {
+				result = new SedNotBooleanError(statement, orig_expression);
+			}
+		}
+		else if(this.is_integer(expression)) {
+			if(muta_expression instanceof SedConstant) {
+				Long value = Long.valueOf(this.get_long(((SedConstant) muta_expression).get_constant()));
+				if(value.longValue() == 0L) {
+					/* equivalent mutation */	return null;
+				}
+				else if(value.longValue() == ~0L) {
+					result = new SedRsvIntegerError(statement, orig_expression);
+				}
+				else {
+					result = new SedXorIntegerError(statement, orig_expression, muta_expression);
+				}
+			}
+			else if(muta_expression instanceof SedDefaultValue) {
+				result = new SedChgIntegerError(statement, orig_expression);
+			}
+			else {
+				result = new SedXorIntegerError(statement, orig_expression, muta_expression);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+		}
+		return (SedAbstractValueError) this.unique_error(result);
+	}
+	public SedAbstractValueError abs_error(SedAddExpressionError source) throws Exception {
+		CirStatement statement = source.get_location().get_cir_statement();
+		SedExpression orig_expression = source.get_orig_expression();
+		COperator operator = source.get_add_operator().get_operator();
+		
+		switch(operator) {
+		case arith_add:	return this.abs_error_of_add(source);
+		case arith_sub:	return this.abs_error_of_sub(source);
+		case arith_mul:	return this.abs_error_of_mul(source);
+		case bit_and:	return this.abs_error_of_and(source);
+		case bit_or:	return this.abs_error_of_ior(source);
+		case bit_xor:	return this.abs_error_of_xor(source);
+		default:
+		{
+			SedExpression muta_expression = new SedBinaryExpression(
+					null, orig_expression.get_data_type(), operator);
+			muta_expression.add_child(orig_expression);
+			muta_expression.add_child(source.get_add_operand());
+			SedSetExpressionError new_source = new 
+					SedSetExpressionError(statement, orig_expression, muta_expression);
+			return this.abs_error(new_source);
+		}
+		}
 	}
 	
 }

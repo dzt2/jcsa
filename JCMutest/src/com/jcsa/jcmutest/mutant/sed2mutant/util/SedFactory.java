@@ -1,14 +1,24 @@
 package com.jcsa.jcmutest.mutant.sed2mutant.util;
 
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.SedNode;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConditionConstraint;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConjunctConstraints;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedConstraint;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedDisjunctConstraints;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.cons.SedExecutionConstraint;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedBinaryExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedConstant;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedDefaultValue;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedIdExpression;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.expr.SedUnaryExpression;
+import com.jcsa.jcmutest.mutant.sed2mutant.lang.token.SedLabel;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -75,9 +85,6 @@ public class SedFactory {
 		}
 	}
 	
-	public static SedIdExpression any_value(CType data_type) throws Exception {
-		return new SedIdExpression(null, data_type, "#ANY");
-	}
 	public static SedIdExpression any_pos_value(CType data_type) throws Exception {
 		return new SedIdExpression(null, data_type, "#POS");
 	}
@@ -244,6 +251,58 @@ public class SedFactory {
 		expr.add_child(sed_node(loperand)); 
 		expr.add_child(sed_node(roperand)); 
 		return expr;
+	}
+	
+	public static SedDefaultValue any_value(CType data_type) throws Exception {
+		data_type = CTypeAnalyzer.get_value_type(data_type);
+		if(CTypeAnalyzer.is_boolean(data_type)) {
+			return new SedDefaultValue(null, 
+					data_type, SedDefaultValue.AnyBoolean);
+		}
+		else if(CTypeAnalyzer.is_character(data_type)) {
+			return new SedDefaultValue(null, 
+					data_type, SedDefaultValue.AnyCharacter);
+		}
+		else if(CTypeAnalyzer.is_number(data_type)) {
+			return new SedDefaultValue(null, 
+					data_type, SedDefaultValue.AnyNumber);
+		}
+		else if(CTypeAnalyzer.is_pointer(data_type)) {
+			return new SedDefaultValue(null, 
+					data_type, SedDefaultValue.AnyAddress);
+		}
+		else {
+			return new SedDefaultValue(null, 
+					data_type, SedDefaultValue.AnySequence);
+		}
+	}
+	
+	public static SedExecutionConstraint execution_constraint(CirStatement statement, int times) throws Exception {
+		SedExecutionConstraint constraint = new SedExecutionConstraint();
+		constraint.add_child(new SedLabel(null, statement));
+		constraint.add_child(SedFactory.sed_node(Long.valueOf(times)));
+		return constraint;
+	}
+	public static SedConditionConstraint condition_constraint(CirStatement statement,
+			SedExpression condition) throws Exception {
+		SedConditionConstraint constraint = new SedConditionConstraint();
+		constraint.add_child(new SedLabel(null, statement));
+		constraint.add_child(condition);
+		return constraint;
+	}
+	public static SedConjunctConstraints conjunct_constraints(Iterable<SedConstraint> constraints) throws Exception {
+		SedConjunctConstraints result = new SedConjunctConstraints();
+		for(SedConstraint constraint : constraints) {
+			result.add_child(constraint);
+		}
+		return result;
+	}
+	public static SedDisjunctConstraints disjunct_constraints(Iterable<SedConstraint> constraints) throws Exception {
+		SedDisjunctConstraints result = new SedDisjunctConstraints();
+		for(SedConstraint constraint : constraints) {
+			result.add_child(constraint);
+		}
+		return result;
 	}
 	
 }

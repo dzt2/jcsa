@@ -345,7 +345,7 @@ public class SedParser {
 			return new SedConstant(null, source.get_value_type(), constant);
 		}
 		else {
-			return new SedDefaultValue(null, source.get_value_type(), SedDefaultValue.AnyPosValue);
+			return new SedDefaultValue(null, source.get_value_type(), SedDefaultValue.AnyPosNum);
 		}
 	}
 	private SedNode parse_ast_conditional_expression(AstConditionalExpression source) throws Exception {
@@ -458,8 +458,26 @@ public class SedParser {
 		return new SedLiteral(source, source.get_data_type(), source.get_literal());
 	}
 	private SedNode parse_default_value(CirDefaultValue source) throws Exception {
-		return new SedDefaultValue(source, source.
-				get_data_type(), SedDefaultValue.AnyValue);
+		String name;
+		if(source.get_data_type() == null) {
+			name = SedDefaultValue.AnySequence;
+		}
+		else {
+			CType type = CTypeAnalyzer.get_value_type(source.get_data_type());
+			if(CTypeAnalyzer.is_boolean(type)) 
+				name = SedDefaultValue.AnyBoolean;
+			else if(CTypeAnalyzer.is_character(type)) 
+				name = SedDefaultValue.AnyCharacter;
+			else if(CTypeAnalyzer.is_integer(type)) 
+				name = SedDefaultValue.AnyNumber;
+			else if(CTypeAnalyzer.is_real(type))
+				name = SedDefaultValue.AnyNumber;
+			else if(CTypeAnalyzer.is_pointer(type))
+				name = SedDefaultValue.AnyAddress;
+			else
+				name = SedDefaultValue.AnySequence;
+		}
+		return new SedDefaultValue(source, source.get_data_type(), name);
 	}
 	private SedNode parse_defer_expression(CirDeferExpression source) throws Exception {
 		SedUnaryExpression expr = new SedUnaryExpression(source, 

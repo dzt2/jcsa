@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.SedNode;
+import com.jcsa.jcmutest.mutant.sed2mutant.util.SedEvalScope;
 import com.jcsa.jcmutest.mutant.sed2mutant.util.SedEvaluator;
 import com.jcsa.jcmutest.mutant.sed2mutant.util.SedParser;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -19,7 +20,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
-public class SedNodeTest {
+public class SedNodeEvaluationTest {
 	
 	/* parameters */
 	protected static final String root_path = "/home/dzt2/Development/Data/";
@@ -74,23 +75,25 @@ public class SedNodeTest {
 	private static void write_sed(CirTree cir_tree, File output) throws Exception {
 		CirFunctionCallGraph call_graph = cir_tree.get_function_call_graph();
 		FileWriter writer = new FileWriter(output);
+		SedEvaluator evaluator = new SedEvaluator();
+		evaluator.set_context(new SedEvalScope(cir_tree.get_function_call_graph().get_main_function()));
 		for(CirFunction function : call_graph.get_functions()) {
-			write_sed(function, writer);
+			write_sed(evaluator, function, writer);
 			writer.write("\n");
 		}
 		writer.close();
 	}
-	private static void write_sed(CirFunction function, FileWriter writer) throws Exception {
+	private static void write_sed(SedEvaluator evaluator, CirFunction function, FileWriter writer) throws Exception {
 		writer.write("function ");
 		writer.write(function.get_name());
 		writer.write(":\n");
 		CirExecutionFlowGraph flow_graph = function.get_flow_graph();
 		for(int i = 1; i <= flow_graph.size(); i++) {
-			write_sed(flow_graph.get_execution(i % flow_graph.size()), writer);
+			write_sed(evaluator, flow_graph.get_execution(i % flow_graph.size()), writer);
 		}
 		writer.write("end function\n");
 	}
-	private static void write_sed(CirExecution execution, FileWriter writer) throws Exception {
+	private static void write_sed(SedEvaluator evaluator, CirExecution execution, FileWriter writer) throws Exception {
 		writer.write("\t");
 		writer.write(execution.toString());
 		writer.write(":\t");
@@ -98,7 +101,7 @@ public class SedNodeTest {
 		writer.write("\n");
 		SedNode sed_node = SedParser.parse(execution.get_statement());
 		write_sed(sed_node, writer);
-		SedNode eval_node = SedEvaluator.evaluate(sed_node);
+		SedNode eval_node = evaluator.evaluate(sed_node);
 		write_sed(eval_node, writer);
 	}
 	private static void write_sed(SedNode sed_node, FileWriter writer) throws Exception {

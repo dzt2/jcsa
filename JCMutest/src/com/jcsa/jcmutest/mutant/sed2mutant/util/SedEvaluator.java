@@ -50,29 +50,22 @@ public class SedEvaluator {
 	
 	/* definitions */
 	private SedEvalScope scope;
-	private SedEvaluator() { }
-	private static final SedEvaluator evaluator = new SedEvaluator();
+	public SedEvaluator() { }
+	
+	/* evaluation interface */
 	/**
-	 * @param source
+	 * set the scope in which the evaluation is performed
 	 * @param scope
-	 * @return the symbolic result evaluated from the source w.r.t. the given scope
-	 * @throws Exception
 	 */
-	public static SedNode evaluate(SedNode source, SedEvalScope scope) throws Exception {
-		if(source == null)
-			throw new IllegalArgumentException("Invalid source: null");
-		else {
-			evaluator.scope = scope;
-			return evaluator.eval(source);
-		}
-	}
-	/**
+	public void set_context(SedEvalScope scope) {
+		this.scope = scope;
+	}/**
 	 * @param source
 	 * @return the symbolic result evaluated from the source without any context of scope
 	 * @throws Exception
 	 */
-	public static SedNode evaluate(SedNode source) throws Exception {
-		return evaluate(source, null);
+	public SedNode evaluate(SedNode source) throws Exception {
+		return this.eval(source);
 	}
 	
 	/* computation methods */
