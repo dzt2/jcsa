@@ -1020,9 +1020,27 @@ public class SedStateErrors {
 	 * @throws Exception
 	 */
 	private void extend_set_address(SedSetAddressError error) throws Exception {
+		CirStatement statement = error.get_location().get_cir_statement();
+		SedExpression orig_expression = error.get_orig_expression();
+		SedExpression orig_value = 
+				(SedExpression) this.evaluator.evaluate(orig_expression);
+		SedExpression muta_expression = error.get_muta_expression();
+		SedExpression muta_value = 
+				(SedExpression) this.evaluator.evaluate(muta_expression);
 		
+		if(orig_value instanceof SedConstant) {
+			if(muta_value instanceof SedConstant) {
+				long orig_long = this.get_long(((SedConstant) orig_value).get_constant());
+				long muta_long = this.get_long(((SedConstant) muta_value).get_constant());
+				if(orig_long == muta_long) return;	/* equivalent with original program */
+				
+				this.extend_at(new SedAddAddressError(statement, orig_expression, 
+						(SedExpression) SedFactory.sed_node(muta_long - muta_long)));
+			}
+		}
+		this.extend_at(new SedChgAddressError(statement, orig_expression));
 	}
-	
+	private void extend_chg_address(SedChgAddressError error) throws Exception {}
 	
 	
 	
