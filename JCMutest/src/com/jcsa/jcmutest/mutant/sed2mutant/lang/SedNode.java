@@ -47,13 +47,13 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	+------------------------------------------------------------------+<br>
  * 	SedStateError						{location: SedLabel}			<br>
  * 	|--	SedStatementError				{orig_statement: SedLabel}		<br>
- * 	|--	|--	SedAddStatementError		add_stmt(orig_stmt)				<br>
- * 	|--	|--	SedDelStatementError		del_stmt(orig_stmt)				<br>
- * 	|--	|--	SedSetStatementError		set_stmt(orig_stmt, muta_stmt)	<br>
- * 	|--	SedExpressionError				{orig_expression: SedExpr}		<br>
- * 	|--	|--	SedInsExpressionError		ins_expr(expr, oprt)			<br>
+ * 	|--	|--	SedAddStatementError		add_stmt(statement)				<br>
+ * 	|--	|--	SedDelStatementError		del_stmt(statement)				<br>
+ * 	|--	|--	SedMutStatementError		mut_stmt(statement, statement)	<br>
+ * 	|--	SedExpressionError				{orig_expression: SedExpression}<br>
+ * 	|--	|--	SedInsExpressionError		ins_expr(oprt, expr)			<br>
+ *	|--	|--	SedSetExpressionError		set_expr(expr, expr)			<br>
  * 	|--	|--	SedAddExpressionError		add_expr(expr, oprt, expr)		<br>
- * 	|--	|--	SedSetExpressionError		set_expr(expr, expr)			<br>
  * 	+------------------------------------------------------------------+<br>
  * </code>
  * 
