@@ -14,7 +14,6 @@ import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedStateError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.SedStatementError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.SedAbstractValueError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgAddressError;
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgBooleanError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgCharacterError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgDoubleError;
 import com.jcsa.jcmutest.mutant.sed2mutant.lang.error.abst.chgval.SedChgIntegerError;
@@ -352,7 +351,7 @@ public class SedStateErrors {
 				result = new SedSetBooleanError(statement, orig_expression, (SedExpression) SedFactory.sed_node(value));
 			}
 			else if(muta_expression instanceof SedDefaultValue) {
-				result = new SedChgBooleanError(statement, orig_expression);
+				result = new SedNotBooleanError(statement, orig_expression);
 			}
 			else {
 				result = new SedSetBooleanError(statement, orig_expression, muta_expression);
