@@ -221,6 +221,15 @@ public abstract class SedNode {
 			return null;
 		}
 	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof SedNode) {
+			return this.toString().equals(obj.toString());
+		}
+		else {
+			return false;
+		}
+	}
 	
 	/* setters */
 	/**

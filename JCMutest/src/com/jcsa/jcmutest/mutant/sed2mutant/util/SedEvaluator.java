@@ -1170,11 +1170,16 @@ public class SedEvaluator {
 				}
 			}
 			else {
-				SedExpression expression = new SedBinaryExpression(source.
-						get_cir_source(), source.get_data_type(), COperator.arith_sub);
-				expression.add_child(loperand);
-				expression.add_child(roperand);
-				return expression;
+				if(loperand.generate_code().equals(roperand.generate_code())) {
+					return SedFactory.sed_node(Long.valueOf(0L));
+				}
+				else {
+					SedExpression expression = new SedBinaryExpression(source.
+							get_cir_source(), source.get_data_type(), COperator.arith_sub);
+					expression.add_child(loperand);
+					expression.add_child(roperand);
+					return expression;
+				}
 			}
 		}
 	}
@@ -1720,10 +1725,16 @@ public class SedEvaluator {
 								source.get_data_type(), constant);
 			}
 		}
-		SedExpression expression = new SedBinaryExpression(source.
-				get_cir_source(), source.get_data_type(), COperator.equal_with);
-		expression.add_child(loperand); expression.add_child(roperand);
-		return expression;
+		
+		if(loperand.generate_code().equals(roperand.generate_code())) {
+			return SedFactory.sed_node(Boolean.TRUE);
+		}
+		else {
+			SedExpression expression = new SedBinaryExpression(source.
+					get_cir_source(), source.get_data_type(), COperator.equal_with);
+			expression.add_child(loperand); expression.add_child(roperand);
+			return expression;
+		}
 	}
 	private SedNode eval_not_equals(SedBinaryExpression source) throws Exception {
 		SedExpression loperand = (SedExpression) this.eval(source.get_loperand());
@@ -1737,10 +1748,16 @@ public class SedEvaluator {
 								source.get_data_type(), constant);
 			}
 		}
-		SedExpression expression = new SedBinaryExpression(source.
-				get_cir_source(), source.get_data_type(), COperator.not_equals);
-		expression.add_child(loperand); expression.add_child(roperand);
-		return expression;
+		
+		if(loperand.generate_code().equals(roperand.generate_code())) {
+			return SedFactory.sed_node(Boolean.FALSE);
+		}
+		else {
+			SedExpression expression = new SedBinaryExpression(source.
+					get_cir_source(), source.get_data_type(), COperator.not_equals);
+			expression.add_child(loperand); expression.add_child(roperand);
+			return expression;
+		}
 	}
 	private SedNode eval_binary_expression(SedBinaryExpression source) throws Exception {
 		switch(source.get_operator().get_operator()) {
