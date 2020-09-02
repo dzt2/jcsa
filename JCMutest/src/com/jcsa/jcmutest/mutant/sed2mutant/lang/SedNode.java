@@ -8,15 +8,15 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 /**
  * The symbolic execution description language is defined as following:<br>
  * <code>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SedNode							{cir_source: CirNode}				<br>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SedToken															<br>
  * 	|--	SedOperator					{operator: COperator}				<br>
  * 	|--	SedField					{name: String}						<br>
  * 	|--	SedLabel					{location: CirStatement}			<br>
  * 	|--	SedArgumentList													<br>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SedExpression					{data_type: CType}					<br>
  * 	|--	SedBasicExpression												<br>
  * 	|--	|--	SedIdExpression			{name: String}						<br>
@@ -28,7 +28,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	SedFieldExpression												<br>
  * 	|--	SedInitializerList												<br>
  * 	|--	SedCallExpression												<br>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SedStatement					{label: SedLabel}					<br>
  * 	|--	SedAssignStatement												<br>
  * 	|--	SedGotoStatement												<br>
@@ -36,7 +36,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	SedCallStatement												<br>
  * 	|--	SedWaitStatement												<br>
  * 	|--	SedTagStatement													<br>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SedConstraint														<br>
  * 	|--	SedBasicConstraint				{location: SedLabel}			<br>
  * 	|--	|--	SedExecutionConstraint		execute(location, int)			<br>
@@ -44,54 +44,69 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 	|--	SedCompositeConstraint			{constraints: SedConstraint+}	<br>
  * 	|--	|--	SedConjunctionConstraint									<br>
  * 	|--	|--	SedDisjunctionConstraint									<br>
- * 	+------------------------------------------------------------------+<br>
- * 	SedStateError						{location: SedLabel}			<br>
- * 	|--	SedStatementError				{orig_statement: SedLabel}		<br>
- * 	|--	|--	SedAddStatementError		add_stmt(statement)				<br>
- * 	|--	|--	SedDelStatementError		del_stmt(statement)				<br>
- * 	|--	|--	SedMutStatementError		mut_stmt(statement, statement)	<br>
- * 	|--	SedExpressionError				{orig_expression: SedExpression}<br>
- * 	|--	|--	SedInsExpressionError		ins_expr(oprt, expr)			<br>
- *	|--	|--	SedSetExpressionError		set_expr(expr, expr)			<br>
- * 	|--	|--	SedAddExpressionError		add_expr(expr, oprt, expr)		<br>
- * 	|--	SedAbstractError				{orig_expression: SedExpression}<br>
- * 	|--	|--	SedNotBooleanError			not_expr(expr)					<br>
- * 	|--	|--	SedRsvIntegerError			rsv_expr(expr)					<br>
- * 	|--	|--	SedNegNumericError			neg_expr(expr)					<br>
- * 	|--	|--	SedSetBooleanError			set_bool(expr, bool)			<br>
- * 	|--	|--	SedMutBooleanError			mut_bool(expr, expr)			<br>
- * 	|--	|--	SedSetCharacterError		set_char(expr, char)			<br>
- * 	|--	|--	SedMutCharacterError		mut_char(expr, expr)			<br>
- * 	|--	|--	SedChgCharacterError		chg_char(expr)					<br>
- * 	|--	|--	SedSetIntegerError			set_int(expr, long)				<br>
- * 	|--	|--	SedMutIntegerError			mut_int(expr, expr)				<br>
- * 	|--	|--	SedChgIntegerError			chg_int(expr)					<br>
- * 	|--	|--	SedSetDoubleError			set_real(expr, double)			<br>
- * 	|--	|--	SedMutDoubleError			mut_real(expr, expr)			<br>
- * 	|--	|--	SedChgDoubleError			chg_real(expr)					<br>
- * 	|--	|--	SedSetAddressError			set_addr(expr, long)			<br>
- * 	|--	|--	SedMutAddressError			mut_addr(expr, expr)			<br>
- * 	|--	|--	SedChgAddressError			chg_addr(expr)					<br>
- * 	|--	|--	SedMutStructError			mut_body(expr, expr)			<br>
- * 	|--	|--	SedChgStructError			chg_body(expr)					<br>
- * 	|--	|--	SedAddIntegerError			add_int(expr, long)				<br>
- * 	|--	|--	SedIncIntegerError			inc_int(expr)					<br>
- * 	|--	|--	SedDecIntegerError			dec_int(expr)					<br>
- * 	|--	|--	SedAddDoubleError			add_real(expr, double)			<br>
- * 	|--	|--	SedIncDoubleError|SedDecDoubleError							<br>
- * 	|--	|--	SedAddAddressError			add_addr(expr, long)			<br>
- * 	|--	|--	SedIncAddressError|SedDecAddressError						<br>
- * 	|--	|--	SedMulIntegerError			mul_int(expr, long)				<br>
- * 	|--	|--	SedGrowIntegerError			grw_int(expr)					<br>
- * 	|--	|--	SedShrinkIntegerError		shk_int(expr)					<br>
- * 	|--	|--	SedMulDoubleError			mul_real(expr, double)			<br>
- * 	|--	|--	SedGrowDoubleError			grw_real(expr)					<br>
- * 	|--	|--	SedShrinkDoubleError		shk_real(expr)					<br>
- * 	|--	|--	SedMaskIntegerError			mas_int(expr)					<br>
- * 	|--	|--	SedRMaskIntegerError		rmas_int(expr)					<br>
- * 	|--	|--	SedMaskBooleanError			mas_bool(expr)					<br>
- * 	|--	|--	SedRMaskBooleanError		rmas_bool(expr)					<br>
- * 	+------------------------------------------------------------------+<br>
+ * 	+----------------------------------------------------------------------+<br>
+ * 	SedStateError						{location: SedLabel}				<br>
+ * 	|--	SedStatementError				{orig_statement: SedLabel}			<br>
+ * 	|--	|--	SedAddStatementError		add_stmt(orig_stmt)					<br>
+ * 	|--	|--	SedDelStatementError		del_stmt(orig_stmt)					<br>
+ * 	|--	|--	SedSetStatementError		set_stmt(orig_stmt, muta_stmt)		<br>
+ * 	|--	SedExpressionError				{orig_expression: SedExpression}	<br>
+ * 	|--	|--	SedAbstractExpressionError										<br>
+ * 	|--	|--	|--	SedInsExpressionError	ins_expr(expr, oprt)				<br>
+ * 	|--	|--	|--	SedSetExpressionError	set_expr(orig_expr, muta_expr)		<br>
+ * 	|--	|--	|--	SedAddExpressionError	add_expr(orig_expr, oprt, oprd)		<br>
+ * 	|--	|--	SedConcretExpressionError										<br>
+ * 	|--	|--	|--	SedBoolExpressionError	{orig_expr : boolean}				<br>
+ * 	|--	|--	|--	|--	SedSetBoolExpressionError	set_bool(expr, bool|expr)	<br>
+ * 	|--	|--	|--	|--	SedNotBoolExpressionError	not_bool(expr)				<br>
+ * 	|--	|--	|-- SedCharExpressionError	{orig_expr : char|uchar}			<br>
+ * 	|--	|--	|--	|--	SedSetCharExpressionError	set_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedAddCharExpressionError	add_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedMulCharExpressionError	mul_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedAndCharExpressionError	and_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedIorCharExpressionError	ior_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedXorCharExpressionError	xor_char(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedNegCharExpressionError	neg_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedRsvCharExpressionError	rsv_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedIncCharExpressionError	inc_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedDecCharExpressionError	dec_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedExtCharExpressionError	ext_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedShkCharExpressionError	shk_char(expr)				<br>
+ * 	|--	|--	|--	|--	SedChgCharExpressionError	chg_char(expr)				<br>
+ * 	|--	|--	|--	SedLongExpressionError	{orig_expr : (u)int|long|llong}		<br>
+ * 	|--	|--	|--	|--	SedSetLongExpressionError	set_long(expr, long|expr)	<br>
+ * 	|--	|--	|--	|--	SedAddLongExpressionError	add_long(expr, long|expr)	<br>
+ * 	|--	|--	|--	|--	SedMulLongExpressionError	mul_long(expr, long|expr)	<br>
+ * 	|--	|--	|--	|--	SedAndLongExpressionError	and_long(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedIorLongExpressionError	ior_long(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedXorLongExpressionError	xor_long(expr, char|expr)	<br>
+ * 	|--	|--	|--	|--	SedNegLongExpressionError	neg_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedRsvLongExpressionError	rsv_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedIncLongExpressionError	inc_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedDecLongExpressionError	dec_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedExtLongExpressionError	ext_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedShkLongExpressionError	shk_long(expr)				<br>
+ * 	|--	|--	|--	|--	SedChgLongExpressionError	chg_long(expr)				<br>
+ * 	|--	|--	|--	SedRealExpressionError	{orig_expr : float|double}			<br>
+ * 	|--	|--	|--	|--	SedSetRealExpressionError	set_real(expr, double|expr)	<br>
+ * 	|--	|--	|--	|--	SedAddRealExpressionError	add_real(expr, double|expr)	<br>
+ * 	|--	|--	|--	|--	SedMulRealExpressionError	mul_real(expr, double|expr)	<br>
+ * 	|--	|--	|--	|--	SedNegRealExpressionError	neg_real(expr)				<br>
+ * 	|--	|--	|--	|--	SedIncRealExpressionError	inc_real(expr)				<br>
+ * 	|--	|--	|--	|--	SedDecRealExpressionError	dec_real(expr)				<br>
+ * 	|--	|--	|--	|--	SedExtRealExpressionError	ext_real(expr)				<br>
+ * 	|--	|--	|--	|--	SedShkRealExpressionError	shk_real(expr)				<br>
+ * 	|--	|--	|--	|--	SedChgRealExpressionError	chg_real(expr)				<br>
+ * 	|--	|--	|--	SedAddrExpressionError	{orig_expr : pointer|address}		<br>
+ * 	|--	|--	|--	|--	SedSetAddrExpressionError	set_addr(expr, long|expr)	<br>
+ * 	|--	|--	|--	|--	SedAddAddrExpressionError	add_addr(expr, long|expr)	<br>
+ * 	|--	|--	|--	|--	SedIncAddrExpressionError	inc_addr(expr)				<br>
+ * 	|--	|--	|--	|--	SedDecAddrExpressionError	dec_addr(expr)				<br>
+ * 	|--	|--	|--	|--	SedChgAddrExpressionError	chg_addr(expr)				<br>
+ * 	|--	|--	|--	SedByteExpressionError	{orig_expr : struct|union|void}		<br>
+ * 	|--	|--	|--	|--	SedSetByteExpressionError	set_byte(expr, expr)		<br>
+ * 	|--	|--	|--	|--	SedChgByteExpressionError	chg_byte(expr)				<br>
+ * 	+----------------------------------------------------------------------+<br>
  * </code>
  * 
  * @author yukimula
