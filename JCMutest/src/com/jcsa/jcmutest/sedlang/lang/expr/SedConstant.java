@@ -183,5 +183,24 @@ public class SedConstant extends SedBasicExpression {
 		default: throw new IllegalArgumentException("Invalid constant.");
 		}
 	}
+	public Object get_number() throws Exception {
+		switch(this.constant.get_type().get_tag()) {
+		case c_bool:	return Long.valueOf((constant.get_bool().booleanValue()?1:0));
+		case c_char:
+		case c_uchar:	return Long.valueOf(constant.get_char().charValue());
+		case c_short:
+		case c_ushort:
+		case c_int:
+		case c_uint:	return Long.valueOf(constant.get_integer().intValue());
+		case c_long:
+		case c_ulong:
+		case c_llong:
+		case c_ullong:	return Long.valueOf(constant.get_long().longValue());
+		case c_float:	return Double.valueOf(constant.get_float().floatValue());
+		case c_double:
+		case c_ldouble:	return Double.valueOf(constant.get_double().doubleValue());
+		default: throw new IllegalArgumentException("Invalid constant.");
+		}
+	}
 	
 }

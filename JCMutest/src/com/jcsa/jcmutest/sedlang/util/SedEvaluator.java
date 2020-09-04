@@ -1,5 +1,8 @@
 package com.jcsa.jcmutest.sedlang.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.jcsa.jcmutest.sedlang.lang.expr.SedBinaryExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedCallExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedConstant;
@@ -438,7 +441,7 @@ public class SedEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		switch(operator) {
 		case arith_add:
-		case arith_sub:
+		case arith_sub:		return this.eval_arith_add_and_sub(source);
 		case arith_mul:
 		case arith_div:
 		case arith_mod:
@@ -459,8 +462,179 @@ public class SedEvaluator {
 		}
 	}
 	
-	/* {+, *, &, |, ^, &&, ||} */
-	
+	/* {+, -} */
+	private boolean compare_with(SedConstant operand, long value) throws Exception {
+		Object number = operand.get_number();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() == value;
+		}
+		else {
+			return ((Double) number).doubleValue() == value;
+		}
+	}
+	private SedConstant solve_arith_add(SedConstant loperand, SedConstant roperand) throws Exception {
+		Object lnumber = loperand.get_number();
+		Object rnumber = roperand.get_number();
+		Object result;
+		if(lnumber instanceof Long) {
+			long x = ((Long) lnumber).longValue();
+			if(rnumber instanceof Long) {
+				long y = ((Long) rnumber).longValue();
+				result = Long.valueOf(x + y);
+			}
+			else {
+				double y = ((Double) rnumber).doubleValue();
+				result = Double.valueOf(x + y);
+			}
+		}
+		else {
+			double x = ((Double) rnumber).doubleValue();
+			if(rnumber instanceof Long) {
+				long y = ((Long) rnumber).longValue();
+				result = Double.valueOf(x + y);
+			}
+			else {
+				double y = ((Double) rnumber).doubleValue();
+				result = Double.valueOf(x + y);
+			}
+		}
+		return SedFactory.constant(result);
+	}
+	private SedConstant solve_arith_sub(SedConstant loperand, SedConstant roperand) throws Exception {
+		Object lnumber = loperand.get_number();
+		Object rnumber = roperand.get_number();
+		Object result;
+		if(lnumber instanceof Long) {
+			long x = ((Long) lnumber).longValue();
+			if(rnumber instanceof Long) {
+				long y = ((Long) rnumber).longValue();
+				result = Long.valueOf(x - y);
+			}
+			else {
+				double y = ((Double) rnumber).doubleValue();
+				result = Double.valueOf(x - y);
+			}
+		}
+		else {
+			double x = ((Double) rnumber).doubleValue();
+			if(rnumber instanceof Long) {
+				long y = ((Long) rnumber).longValue();
+				result = Double.valueOf(x - y);
+			}
+			else {
+				double y = ((Double) rnumber).doubleValue();
+				result = Double.valueOf(x - y);
+			}
+		}
+		return SedFactory.constant(result);
+	}
+	private void get_operands_in_arith_add(SedExpression source, 
+			List<SedExpression> poperands, 
+			List<SedExpression> noperands) throws Exception {
+		if(source instanceof SedBinaryExpression) {
+			COperator operator = 
+					((SedBinaryExpression) source).get_operator().get_operator();
+			if(operator == COperator.arith_add) {
+				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_loperand(), poperands, noperands);
+				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_roperand(), poperands, noperands);
+			}
+			else if(operator == COperator.arith_sub) {
+				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_loperand(), poperands, noperands);
+				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_roperand(), noperands, poperands);
+			}
+			else {
+				poperands.add(source);
+			}
+		}
+		else {
+			poperands.add(source);
+		}
+	}
+	private List<SedExpression> acc_operands_in_arith_add(List<SedExpression> operands) throws Exception {
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		SedConstant constant = SedFactory.constant(Integer.valueOf(0));
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				constant = this.solve_arith_add(constant, (SedConstant) new_operand);
+			}
+			else {
+				new_operands.add(constant);
+			}
+		}
+		new_operands.add(constant);
+		return new_operands;
+	}
+	private SedExpression eval_arith_add_and_sub(SedBinaryExpression source) throws Exception {
+		List<SedExpression> loperands = new ArrayList<SedExpression>();
+		List<SedExpression> roperands = new ArrayList<SedExpression>();
+		this.get_operands_in_arith_add(source, loperands, roperands);
+		
+		loperands = this.acc_operands_in_arith_add(loperands);
+		roperands = this.acc_operands_in_arith_add(roperands);
+		
+		SedConstant lconstant = (SedConstant) loperands.remove(loperands.size() - 1);
+		SedConstant rconstant = (SedConstant) roperands.remove(roperands.size() - 1);
+		SedConstant constant = this.solve_arith_sub(lconstant, rconstant);
+		if(!this.compare_with(constant, 0L)) loperands.add(constant);
+		
+		SedExpression loperand = null;
+		if(loperands.size() == 1) {
+			loperand = loperands.get(0);
+		}
+		else if(loperands.size() > 2) {
+			for(SedExpression operand : loperands) {
+				if(loperand == null)
+					loperand = operand;
+				else {
+					SedExpression expr = new SedBinaryExpression(null, 
+							source.get_data_type(), COperator.arith_add);
+					expr.add_child(loperand); expr.add_child(operand);
+					loperand = expr;
+				}
+			}
+		}
+		
+		SedExpression roperand = null;
+		if(roperands.size() == 1) {
+			roperand = roperands.get(0);
+		}
+		else if(roperands.size() > 1) {
+			for(SedExpression operand : roperands) {
+				if(roperand == null)
+					roperand = operand;
+				else {
+					SedExpression expr = new SedBinaryExpression(null, 
+							source.get_data_type(), COperator.arith_add);
+					expr.add_child(roperand); expr.add_child(operand);
+					loperand = expr;
+				}
+			}
+		}
+		
+		if(loperand == null) {
+			if(roperand == null) {
+				CConstant value = new CConstant();
+				value.set_int(0);
+				return new SedConstant(source.get_cir_expression(), source.get_data_type(), value);
+			}
+			else {
+				SedExpression expr = new SedUnaryExpression(
+						source.get_cir_expression(), source.get_data_type(), COperator.negative);
+				expr.add_child(roperand); return expr;
+			}
+		}
+		else {
+			if(roperand == null) {
+				return loperand;
+			}
+			else {
+				SedExpression expr = new SedBinaryExpression(
+						source.get_cir_expression(), source.get_data_type(), COperator.arith_sub);
+				expr.add_child(loperand); expr.add_child(roperand); return expr;
+			}
+		}
+	}
 	
 	
 	
