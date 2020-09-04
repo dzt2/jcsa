@@ -710,7 +710,7 @@ public class SedEvaluator {
 	private List<SedExpression> acc_operands_ba(CType data_type, 
 			List<SedExpression> operands, COperator operator) throws Exception {
 		List<SedExpression> new_operands = new ArrayList<SedExpression>();
-		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		SedConstant constant = (SedConstant) SedParser.fetch(Long.valueOf(~0L));
 		for(SedExpression operand : operands) {
 			SedExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SedConstant) {
@@ -725,7 +725,7 @@ public class SedEvaluator {
 	private List<SedExpression> acc_operands_bi(CType data_type, 
 			List<SedExpression> operands, COperator operator) throws Exception {
 		List<SedExpression> new_operands = new ArrayList<SedExpression>();
-		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		SedConstant constant = (SedConstant) SedParser.fetch(Long.valueOf(0));
 		for(SedExpression operand : operands) {
 			SedExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SedConstant) {
@@ -740,7 +740,7 @@ public class SedEvaluator {
 	private List<SedExpression> acc_operands_bx(CType data_type, 
 			List<SedExpression> operands, COperator operator) throws Exception {
 		List<SedExpression> new_operands = new ArrayList<SedExpression>();
-		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		SedConstant constant = (SedConstant) SedParser.fetch(Long.valueOf(0));
 		for(SedExpression operand : operands) {
 			SedExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SedConstant) {
@@ -795,11 +795,11 @@ public class SedEvaluator {
 				source.get_data_type(), operands, source.get_operator().get_operator());
 		
 		SedConstant constant = (SedConstant) operands.remove(operands.size() - 1);
-		if(SedComputation.compare(constant, 0)) {
+		if(SedComputation.compare(constant, 0L)) {
 			return new SedConstant(source.get_cir_expression(), 
 					source.get_data_type(), constant.get_constant());
 		}
-		if(!SedComputation.compare(constant, ~0L)) { operands.add(constant); }
+		if(!SedComputation.compare(constant, -1L)) { operands.add(constant); }
 		
 		SedExpression expression = this.conc_operands_ba(source.get_data_type(), operands);
 		if(expression == null) {
