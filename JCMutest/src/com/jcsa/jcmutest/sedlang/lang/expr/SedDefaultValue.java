@@ -6,9 +6,13 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 
 public class SedDefaultValue extends SedBasicExpression {
 	
-	public static final String AnyNumber = "@ANYNUM";
+	public static final String AnyBoolean = "@ANYBOOL";
+	public static final String AnyCharacter = "@AMYCHAR";
+	public static final String AnyNumeric = "@ANYNUM";
 	public static final String AnyPositive = "@ANYPOS";
 	public static final String AnyNegative = "@ANYNEG";
+	public static final String AnySequence = "@ANYSEQ";
+	public static final String AnyAddress = "@ANYADDR";
 
 	private String name;
 	public SedDefaultValue(CirExpression cir_expression, 
