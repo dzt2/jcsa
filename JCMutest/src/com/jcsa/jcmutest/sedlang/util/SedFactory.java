@@ -1,48 +1,19 @@
 package com.jcsa.jcmutest.sedlang.util;
 
-import com.jcsa.jcmutest.sedlang.lang.abst.SedAppExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.abst.SedInsExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.abst.SedMutExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.abst.SedNevExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedAddExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedAndExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedChgExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedDecExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedExtExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedIncExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedIorExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedMulExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedNegExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedRsvExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedSetExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedShkExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.conc.SedXorExpressionError;
-import com.jcsa.jcmutest.sedlang.lang.cons.SedConditionConstraint;
-import com.jcsa.jcmutest.sedlang.lang.cons.SedExecutionConstraint;
-import com.jcsa.jcmutest.sedlang.lang.dess.SedConjunctDescriptions;
-import com.jcsa.jcmutest.sedlang.lang.dess.SedDescription;
-import com.jcsa.jcmutest.sedlang.lang.dess.SedDisjunctDescriptions;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedBinaryExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedCallExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedConstant;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedDefaultValue;
-import com.jcsa.jcmutest.sedlang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedFieldExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedIdExpression;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedInitializerList;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedLiteral;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedUnaryExpression;
-import com.jcsa.jcmutest.sedlang.lang.serr.SedAddStatementError;
-import com.jcsa.jcmutest.sedlang.lang.serr.SedDelStatementError;
-import com.jcsa.jcmutest.sedlang.lang.serr.SedMutStatementError;
-import com.jcsa.jcmutest.sedlang.lang.serr.SedSetStatementError;
 import com.jcsa.jcmutest.sedlang.lang.token.SedArgumentList;
 import com.jcsa.jcmutest.sedlang.lang.token.SedField;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -318,135 +289,6 @@ public class SedFactory {
 			list.add_child(SedParser.fetch(element));
 		}
 		return list;
-	}
-	
-	/* description creators */
-	public static SedExecutionConstraint execute_constraint(
-			CirStatement statement, int loop_times) throws Exception {
-		SedExecutionConstraint constraint = new SedExecutionConstraint(statement);
-		constraint.add_child(SedParser.fetch(Integer.valueOf(loop_times)));
-		return constraint;
-	}
-	public static SedConditionConstraint condition_constraint(
-			CirStatement statement, Object condition) throws Exception {
-		SedConditionConstraint constraint = new SedConditionConstraint(statement);
-		constraint.add_child(SedParser.fetch(condition)); return constraint;
-	}
-	public static SedAddStatementError add_statement(CirStatement statement) throws Exception {
-		return new SedAddStatementError(statement, statement);
-	}
-	public static SedDelStatementError del_statement(CirStatement statement) throws Exception {
-		return new SedDelStatementError(statement, statement);
-	}
-	public static SedSetStatementError set_statement(
-			CirStatement orig_statement,
-			CirStatement muta_statement) throws Exception {
-		return new SedSetStatementError(
-				orig_statement, orig_statement, muta_statement);
-	}
-	public static SedMutStatementError mut_statement(
-			CirStatement orig_statement,
-			CirStatement muta_statement) throws Exception {
-		return new SedMutStatementError(
-				orig_statement, orig_statement, muta_statement);
-	}
-	public static SedAppExpressionError app_expression(
-			CirStatement statement, CirExpression orig_expression, 
-			COperator operator, SedExpression operand) throws Exception {
-		return new SedAppExpressionError(statement, 
-				orig_expression, operator, operand);
-	}
-	public static SedInsExpressionError ins_expression(
-			CirStatement statement, CirExpression orig_expression, 
-			COperator operator, SedExpression operand) throws Exception {
-		return new SedInsExpressionError(statement, 
-				orig_expression, operator, operand);
-	}
-	public static SedNevExpressionError nev_expression(CirStatement statement, 
-			CirExpression orig_expression, COperator operator) throws Exception {
-		return new SedNevExpressionError(statement, orig_expression, operator);
-	}
-	public static SedMutExpressionError mut_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression)
-			throws Exception {
-		return new SedMutExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedChgExpressionError chg_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedChgExpressionError(statement, orig_expression);
-	}
-	public static SedNegExpressionError neg_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedNegExpressionError(statement, orig_expression);
-	}
-	public static SedRsvExpressionError rsv_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedRsvExpressionError(statement, orig_expression);
-	}
-	public static SedIncExpressionError inc_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedIncExpressionError(statement, orig_expression);
-	}
-	public static SedDecExpressionError dec_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedDecExpressionError(statement, orig_expression);
-	}
-	public static SedExtExpressionError ext_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedExtExpressionError(statement, orig_expression);
-	}
-	public static SedShkExpressionError shk_expression(CirStatement statement, 
-			CirExpression orig_expression) throws Exception {
-		return new SedShkExpressionError(statement, orig_expression);
-	}
-	public static SedSetExpressionError set_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedSetExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedAddExpressionError add_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedAddExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedMulExpressionError mul_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedMulExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedAndExpressionError and_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedAndExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedIorExpressionError ior_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedIorExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	public static SedXorExpressionError xor_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
-		return new SedXorExpressionError(
-				statement, orig_expression, muta_expression);
-	}
-	
-	/* descriptions creator */
-	public static SedConjunctDescriptions conjunct(
-			Iterable<SedDescription> descriptions) throws Exception {
-		SedConjunctDescriptions conjunct = new SedConjunctDescriptions();
-		for(SedDescription description : descriptions) {
-			conjunct.add_child(description);
-		}
-		return conjunct;
-	}
-	public static SedDisjunctDescriptions disjunct(
-			Iterable<SedDescription> descriptions) throws Exception {
-		SedDisjunctDescriptions disjunct = new SedDisjunctDescriptions();
-		for(SedDescription description : descriptions) {
-			disjunct.add_child(description);
-		}
-		return disjunct;
 	}
 	
 }

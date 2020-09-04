@@ -72,7 +72,7 @@ public abstract class SedDescription extends SedNode {
 	public String generate_code() throws Exception {
 		return this.get_statement().generate_code() + "::" + 
 				this.get_keyword().generate_code() + "(" + 
-				this.generate_content() + ")";
+				this.generate_content() + ");";
 	}
 	
 	/**
