@@ -49,5 +49,19 @@ public abstract class SedExpression extends SedNode {
 	 * @return the cir-source of this expression describes
 	 */
 	public CirExpression get_cir_expression() { return this.cir_expression; }
+	/**
+	 * reset the expression source and data type of the node
+	 * @param cir_expression
+	 * @param data_type
+	 * @throws Exception
+	 */
+	public void set_cir_expression(CirExpression cir_expression, CType data_type) throws Exception {
+		if(data_type == null)
+			throw new IllegalArgumentException("Invalid data_type");
+		else {
+			this.data_type = data_type;
+			this.cir_expression = cir_expression;
+		}
+	}
 	
 }

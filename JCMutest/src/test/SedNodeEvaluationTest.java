@@ -5,19 +5,23 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.sed2mutant.lang.SedNode;
-import com.jcsa.jcmutest.mutant.sed2mutant.util.SedEvalScope;
-import com.jcsa.jcmutest.mutant.sed2mutant.util.SedEvaluator;
-import com.jcsa.jcmutest.mutant.sed2mutant.util.SedParser;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
+import com.jcsa.jcmutest.sedlang.lang.SedNode;
+import com.jcsa.jcmutest.sedlang.lang.expr.SedExpression;
+import com.jcsa.jcmutest.sedlang.util.SedEvaluator;
+import com.jcsa.jcmutest.sedlang.util.SedParser;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
 public class SedNodeEvaluationTest {
@@ -76,7 +80,6 @@ public class SedNodeEvaluationTest {
 		CirFunctionCallGraph call_graph = cir_tree.get_function_call_graph();
 		FileWriter writer = new FileWriter(output);
 		SedEvaluator evaluator = new SedEvaluator();
-		evaluator.set_context(new SedEvalScope(cir_tree.get_function_call_graph().get_main_function()));
 		for(CirFunction function : call_graph.get_functions()) {
 			write_sed(evaluator, function, writer);
 			writer.write("\n");
@@ -99,15 +102,27 @@ public class SedNodeEvaluationTest {
 		writer.write(":\t");
 		writer.write(execution.get_statement().generate_code(false));
 		writer.write("\n");
-		SedNode sed_node = SedParser.parse(execution.get_statement());
-		write_sed(sed_node, writer);
-		SedNode eval_node = evaluator.evaluate(sed_node);
-		write_sed(eval_node, writer);
-	}
-	private static void write_sed(SedNode sed_node, FileWriter writer) throws Exception {
-		writer.write("\t\t");
-		writer.write(sed_node.generate_code());
-		writer.write("\n");
+		writer.write("\t\t[1] " + SedParser.parse(execution.get_statement()).generate_code() + "\n");
+		
+		CirStatement statement = execution.get_statement();
+		if(statement instanceof CirAssignStatement) {
+			SedNode lvalue = SedParser.parse(((CirAssignStatement) statement).get_lvalue());
+			SedNode rvalue = SedParser.parse(((CirAssignStatement) statement).get_rvalue());
+			SedExpression lexpression = evaluator.evaluate((SedExpression) lvalue);
+			SedExpression rexpression = evaluator.evaluate((SedExpression) rvalue);
+			writer.write("\t\t[2] " + lexpression.toString() + "\n");
+			writer.write("\t\t[3] " + rexpression.toString() + "\n");
+		}
+		else if(statement instanceof CirIfStatement) {
+			SedNode value = SedParser.parse(((CirIfStatement) statement).get_condition());
+			SedExpression expression = evaluator.evaluate((SedExpression) value);
+			writer.write("\t\t[2] " + expression.toString() + "\n");
+		}
+		else if(statement instanceof CirCaseStatement) {
+			SedNode value = SedParser.parse(((CirCaseStatement) statement).get_condition());
+			SedExpression expression = evaluator.evaluate((SedExpression) value);
+			writer.write("\t\t[2] " + expression.toString() + "\n");
+		}
 	}
 	protected static void testing(File cfile) throws Exception {
 		MuTestProject project = get_project(cfile);

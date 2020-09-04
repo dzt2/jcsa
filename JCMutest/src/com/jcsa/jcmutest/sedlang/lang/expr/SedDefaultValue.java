@@ -18,7 +18,7 @@ public class SedDefaultValue extends SedBasicExpression {
 	public SedDefaultValue(CirExpression cir_expression, 
 			CType data_type, String name) throws Exception {
 		super(cir_expression, data_type);
-		
+		this.name = name;
 	}
 	
 	/**

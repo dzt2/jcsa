@@ -13,26 +13,28 @@ public class SedBinaryExpression extends SedExpression {
 		super(cir_expression, data_type);
 		if(operator == null)
 			throw new IllegalArgumentException("Invalid operator");
-		switch(operator) {
-		case arith_add:
-		case arith_sub:
-		case arith_mul:
-		case arith_div:
-		case arith_mod:
-		case bit_and:
-		case bit_or:
-		case bit_xor:
-		case left_shift:
-		case righ_shift:
-		case logic_and:
-		case logic_or:
-		case greater_tn:
-		case greater_eq:
-		case smaller_tn:
-		case smaller_eq:
-		case equal_with:
-		case not_equals:this.add_child(new SedOperator(operator)); break;
-		default: throw new IllegalArgumentException("Invalid operator");
+		else {
+			switch(operator) {
+			case arith_add:
+			case arith_sub:
+			case arith_mul:
+			case arith_div:
+			case arith_mod:
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			case logic_and:
+			case logic_or:
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case equal_with:
+			case not_equals: this.add_child(new SedOperator(operator)); break;
+			default: throw new IllegalArgumentException("Invalid operator");
+			}
 		}
 	}
 	

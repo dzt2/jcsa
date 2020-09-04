@@ -18,6 +18,7 @@ import com.jcsa.jcmutest.sedlang.lang.token.SedField;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
@@ -144,288 +145,9 @@ public class SedEvaluator {
 		return list;
 	}
 	
-	/* unary expression category */
-	private CConstant arith_neg(CConstant constant) throws Exception {
-		CConstant result = new CConstant();
-		switch(constant.get_type().get_tag()) {
-		case c_bool:	
-			result.set_int(constant.get_bool()?-1:0);	break;
-		case c_char:	
-		case c_uchar:	
-			result.set_int(-constant.get_char().charValue()); break;
-		case c_short:
-		case c_ushort:
-		case c_int:
-		case c_uint:
-			result.set_int(-constant.get_integer().intValue()); break;
-		case c_long:
-		case c_ulong:
-		case c_llong:
-		case c_ullong:
-			result.set_long(-constant.get_long().longValue()); break;
-		case c_float:
-			result.set_float(-constant.get_float().floatValue()); break;
-		case c_double:
-		case c_ldouble:
-			result.set_double(-constant.get_double().doubleValue()); break;
-		default: throw new IllegalArgumentException("Invalid constant.");
-		}
-		return result;
-	}
-	private SedExpression eval_arith_neg(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		if(operand instanceof SedConstant) {
-			CConstant constant = this.arith_neg(
-					((SedConstant) operand).get_constant());
-			return new SedConstant(source.get_cir_expression(), 
-						source.get_data_type(), constant);
-		}
-		else if(operand instanceof SedUnaryExpression) {
-			COperator operator = 
-					((SedUnaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.negative) {
-				return ((SedUnaryExpression) operand).get_operand();
-			}
-			else {
-				SedUnaryExpression expression = 
-						new SedUnaryExpression(
-								source.get_cir_expression(), 
-								source.get_data_type(), 
-								COperator.negative);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else if(operand instanceof SedBinaryExpression) {
-			COperator operator = 
-					((SedBinaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.arith_sub) {
-				SedExpression expression = new SedBinaryExpression(
-						source.get_cir_expression(), 
-						source.get_data_type(), COperator.arith_sub);
-				expression.add_child(((SedBinaryExpression) operand).get_roperand());
-				expression.add_child(((SedBinaryExpression) operand).get_loperand());
-				return expression;
-			}
-			else {
-				SedUnaryExpression expression = 
-						new SedUnaryExpression(
-								source.get_cir_expression(), 
-								source.get_data_type(), 
-								COperator.negative);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else {
-			SedUnaryExpression expression = 
-					new SedUnaryExpression(
-							source.get_cir_expression(), 
-							source.get_data_type(), 
-							COperator.negative);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
-	private CConstant bitws_rsv(CConstant constant) throws Exception {
-		CConstant result = new CConstant();
-		switch(constant.get_type().get_tag()) {
-		case c_bool:	
-			result.set_int(constant.get_bool()?~1:~0);	break;
-		case c_char:	
-		case c_uchar:	
-			result.set_int(~constant.get_char().charValue()); break;
-		case c_short:
-		case c_ushort:
-		case c_int:
-		case c_uint:
-			result.set_int(~constant.get_integer().intValue()); break;
-		case c_long:
-		case c_ulong:
-		case c_llong:
-		case c_ullong:
-			result.set_long(~constant.get_long().longValue()); break;
-		default: throw new IllegalArgumentException("Invalid constant.");
-		}
-		return result;
-	}
-	private SedExpression eval_bitws_rsv(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		if(operand instanceof SedConstant) {
-			CConstant constant = 
-					this.bitws_rsv(((SedConstant) operand).get_constant());
-			return new SedConstant(source.
-					get_cir_expression(), source.get_data_type(), constant);
-		}
-		else if(operand instanceof SedUnaryExpression) {
-			COperator operator = 
-					((SedUnaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.bit_not) {
-				return ((SedUnaryExpression) operand).get_operand();
-			}
-			else {
-				SedExpression expression = new SedUnaryExpression(
-						source.get_cir_expression(), source.get_data_type(),
-						COperator.bit_not);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else {
-			SedExpression expression = new SedUnaryExpression(
-					source.get_cir_expression(), source.get_data_type(),
-					COperator.bit_not);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
-	private CConstant logic_not(CConstant constant) throws Exception {
-		CConstant result = new CConstant();
-		switch(constant.get_type().get_tag()) {
-		case c_bool:	
-			result.set_bool(!constant.get_bool());	break;
-		case c_char:	
-		case c_uchar:	
-			result.set_bool(constant.get_char().charValue() == 0); break;
-		case c_short:
-		case c_ushort:
-		case c_int:
-		case c_uint:
-			result.set_bool(constant.get_integer().intValue() == 0); break;
-		case c_long:
-		case c_ulong:
-		case c_llong:
-		case c_ullong:
-			result.set_bool(constant.get_long().longValue() == 0); break;
-		default: throw new IllegalArgumentException("Invalid constant.");
-		}
-		return result;
-	}
-	private SedExpression eval_logic_not(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		if(operand instanceof SedConstant) {
-			CConstant constant = 
-					this.logic_not(((SedConstant) operand).get_constant());
-			return new SedConstant(source.
-					get_cir_expression(), source.get_data_type(), constant);
-		}
-		else if(operand instanceof SedUnaryExpression) {
-			COperator operator = 
-					((SedUnaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.logic_not) {
-				return ((SedUnaryExpression) operand).get_operand();
-			}
-			else {
-				SedExpression expression = new SedUnaryExpression(
-						source.get_cir_expression(),
-						source.get_data_type(), COperator.logic_not);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else {
-			SedExpression expression = new SedUnaryExpression(
-					source.get_cir_expression(),
-					source.get_data_type(), COperator.logic_not);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
-	private SedExpression eval_address_of(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		if(operand instanceof SedUnaryExpression) {
-			COperator operator = 
-					((SedUnaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.dereference) {
-				return ((SedUnaryExpression) operand).get_operand();
-			}
-			else {
-				SedExpression expression = new SedUnaryExpression(
-						source.get_cir_expression(),
-						source.get_data_type(), COperator.address_of);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else {
-			SedExpression expression = new SedUnaryExpression(
-					source.get_cir_expression(),
-					source.get_data_type(), COperator.address_of);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
-	private SedExpression eval_dereference(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		if(operand instanceof SedUnaryExpression) {
-			COperator operator = 
-					((SedUnaryExpression) operand).get_operator().get_operator();
-			if(operator == COperator.address_of) {
-				return ((SedUnaryExpression) operand).get_operand();
-			}
-			else {
-				SedExpression expression = new SedUnaryExpression(
-						source.get_cir_expression(),
-						source.get_data_type(), COperator.dereference);
-				expression.add_child(operand);
-				return expression;
-			}
-		}
-		else {
-			SedExpression expression = new SedUnaryExpression(
-					source.get_cir_expression(),
-					source.get_data_type(), COperator.dereference);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
-	private SedExpression eval_type_cast(SedUnaryExpression source) throws Exception {
-		SedExpression operand = this.evaluate(source.get_operand());
-		CType data_type = CTypeAnalyzer.get_value_type(source.get_data_type());
-		if(operand instanceof SedConstant) {
-			CConstant constant = new CConstant();
-			if(data_type instanceof CBasicType) {
-				switch(((CBasicType) data_type).get_tag()) {
-				case c_bool:	constant.set_bool(((SedConstant) operand).get_bool()); break;
-				case c_char:
-				case c_uchar:	constant.set_char(((SedConstant) operand).get_char()); break;
-				case c_short:
-				case c_ushort:	constant.set_int(((SedConstant) operand).get_short()); break;
-				case c_int:
-				case c_uint:	constant.set_int(((SedConstant) operand).get_int()); break;
-				case c_long:
-				case c_ulong:
-				case c_llong:
-				case c_ullong:	constant.set_long(((SedConstant) operand).get_long()); break;
-				case c_float:	constant.set_float(((SedConstant) operand).get_float()); break;
-				case c_double:
-				case c_ldouble:	constant.set_double(((SedConstant) operand).get_double()); break;
-				default: throw new IllegalArgumentException(data_type.generate_code());
-				}
-			}
-			else if(data_type instanceof CEnumType) {
-				constant.set_int(((SedConstant) operand).get_int());
-			}
-			else if(data_type instanceof CArrayType
-					|| data_type instanceof CPointerType) {
-				constant.set_long(((SedConstant) operand).get_long());
-			}
-			else {
-				throw new IllegalArgumentException(data_type.generate_code());
-			}
-			return new SedConstant(source.get_cir_expression(), data_type, constant);
-		}
-		else {
-			SedExpression expression = new SedUnaryExpression(source.
-					get_cir_expression(), source.get_data_type(), COperator.assign);
-			expression.add_child(operand);
-			return expression;
-		}
-	}
+	/* unary expression evaluation */
 	private SedExpression eval_unary_expression(SedUnaryExpression source) throws Exception {
-		COperator operator = source.get_operator().get_operator();
-		switch(operator) {
-		case positive:		return this.evaluate(source.get_operand());
+		switch(source.get_operator().get_operator()) {
 		case negative:		return this.eval_arith_neg(source);
 		case bit_not:		return this.eval_bitws_rsv(source);
 		case logic_not:		return this.eval_logic_not(source);
@@ -435,207 +157,967 @@ public class SedEvaluator {
 		default: throw new IllegalArgumentException(source.generate_code());
 		}
 	}
+	private SedExpression eval_arith_neg(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		if(operand instanceof SedConstant) {
+			SedConstant result = SedComputation.arith_neg((SedConstant) operand);
+			return new SedConstant(source.get_cir_expression(), 
+					source.get_data_type(), result.get_constant());
+		}
+		else if(operand instanceof SedUnaryExpression) {
+			COperator operator = ((SedUnaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.negative) {
+				return ((SedUnaryExpression) operand).get_operand();
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.negative);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else if(operand instanceof SedBinaryExpression) {
+			COperator operator = ((SedBinaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.arith_sub) {
+				SedExpression expression = new SedBinaryExpression(
+						source.get_cir_expression(), 
+						source.get_data_type(), COperator.arith_sub);
+				expression.add_child(((SedBinaryExpression) operand).get_roperand());
+				expression.add_child(((SedBinaryExpression) operand).get_loperand());
+				return expression;
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.negative);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.negative);
+			expression.add_child(operand); return expression;
+		}
+	}
+	private SedExpression eval_bitws_rsv(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		if(operand instanceof SedConstant) {
+			SedConstant result = SedComputation.bitws_rsv((SedConstant) operand);
+			return new SedConstant(source.get_cir_expression(), 
+					source.get_data_type(), result.get_constant());
+		}
+		else if(operand instanceof SedUnaryExpression) {
+			COperator operator = ((SedUnaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.bit_not) {
+				return ((SedUnaryExpression) operand).get_operand();
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.bit_not);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.bit_not);
+			expression.add_child(operand); return expression;
+		}
+	}
+	private SedExpression eval_logic_not(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		if(operand instanceof SedConstant) {
+			SedConstant result = SedComputation.logic_not((SedConstant) operand);
+			return new SedConstant(source.get_cir_expression(), 
+					source.get_data_type(), result.get_constant());
+		}
+		else if(operand instanceof SedUnaryExpression) {
+			COperator operator = ((SedUnaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.logic_not) {
+				return ((SedUnaryExpression) operand).get_operand();
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.logic_not);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.logic_not);
+			expression.add_child(operand); return expression;
+		}
+	}
+	private SedExpression eval_address_of(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		if(operand instanceof SedUnaryExpression) {
+			COperator operator = ((SedUnaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.dereference) {
+				return ((SedUnaryExpression) operand).get_operand();
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.address_of);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.address_of);
+			expression.add_child(operand); return expression;
+		}
+	}
+	private SedExpression eval_dereference(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		if(operand instanceof SedUnaryExpression) {
+			COperator operator = ((SedUnaryExpression) operand).get_operator().get_operator();
+			if(operator == COperator.address_of) {
+				return ((SedUnaryExpression) operand).get_operand();
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.dereference);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.dereference);
+			expression.add_child(operand); return expression;
+		}
+	}
+	private SedExpression eval_type_cast(SedUnaryExpression source) throws Exception {
+		SedExpression operand = this.evaluate(source.get_operand());
+		CType data_type = CTypeAnalyzer.get_value_type(source.get_data_type());
+		if(operand instanceof SedConstant) {
+			if(data_type instanceof CBasicType) {
+				switch(((CBasicType) data_type).get_tag()) {
+				case c_bool:
+				{
+					CConstant constant = new CConstant();
+					constant.set_bool(SedComputation.get_bool((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_char:
+				case c_uchar:
+				{
+					CConstant constant = new CConstant();
+					constant.set_char(SedComputation.get_char((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_short:
+				case c_ushort:
+				{
+					CConstant constant = new CConstant();
+					constant.set_int(SedComputation.get_short((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_int:
+				case c_uint:
+				{
+					CConstant constant = new CConstant();
+					constant.set_int(SedComputation.get_int((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:
+				{
+					CConstant constant = new CConstant();
+					constant.set_long(SedComputation.get_long((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_float:
+				{
+					CConstant constant = new CConstant();
+					constant.set_float(SedComputation.get_float((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				case c_double:
+				case c_ldouble:
+				{
+					CConstant constant = new CConstant();
+					constant.set_double(SedComputation.get_double((SedConstant) operand));
+					return new SedConstant(
+							source.get_cir_expression(), source.get_data_type(), constant);
+				}
+				default: 
+				{
+					SedExpression expression = new SedUnaryExpression(
+							source.get_cir_expression(),
+							source.get_data_type(), COperator.assign);
+					expression.add_child(operand); return expression;
+				}
+				}
+			}
+			else if(data_type instanceof CArrayType
+					|| data_type instanceof CPointerType
+					|| data_type instanceof CFunctionType) {
+				CConstant constant = new CConstant();
+				constant.set_long(SedComputation.get_long((SedConstant) operand));
+				return new SedConstant(
+						source.get_cir_expression(), source.get_data_type(), constant);
+			}
+			else if(data_type instanceof CEnumType) {
+				CConstant constant = new CConstant();
+				constant.set_int(SedComputation.get_int((SedConstant) operand));
+				return new SedConstant(
+						source.get_cir_expression(), source.get_data_type(), constant);
+			}
+			else {
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.assign);
+				expression.add_child(operand); return expression;
+			}
+		}
+		else {
+			SedExpression expression = new SedUnaryExpression(
+					source.get_cir_expression(),
+					source.get_data_type(), COperator.assign);
+			expression.add_child(operand); return expression;
+		}
+	}
 	
-	/* binary expression category */
+	/* binary expression evaluation */
 	private SedExpression eval_binary_expression(SedBinaryExpression source) throws Exception {
-		COperator operator = source.get_operator().get_operator();
-		switch(operator) {
-		case arith_add:
-		case arith_sub:		return this.eval_arith_add_and_sub(source);
-		case arith_mul:
-		case arith_div:
-		case arith_mod:
-		case bit_and:
-		case bit_or:
-		case bit_xor:
-		case left_shift:
-		case righ_shift:
-		case logic_and:
-		case logic_or:
-		case greater_tn:
-		case greater_eq:
-		case smaller_tn:
-		case smaller_eq:
-		case equal_with:
-		case not_equals:
+		switch(source.get_operator().get_operator()) {
+		case arith_add:		return this.eval_arith_add_or_sub(source);
+		case arith_sub:		return this.eval_arith_add_or_sub(source);
+		case arith_mul:		return this.eval_arith_mul_or_div(source);
+		case arith_div:		return this.eval_arith_mul_or_div(source);
+		case arith_mod:		return this.eval_arith_mod(source);
+		case bit_and:		return this.eval_bitws_and(source);
+		case bit_or:		return this.eval_bitws_ior(source);
+		case bit_xor:		return this.eval_bitws_xor(source);
+		case left_shift:	return this.eval_bitws_lsh(source);
+		case righ_shift:	return this.eval_bitws_rsh(source);
+		case logic_and:		return this.eval_logic_and(source);
+		case logic_or:		return this.eval_logic_ior(source);
+		case greater_tn:	return this.eval_greater_tn(source);
+		case greater_eq:	return this.eval_greater_eq(source);
+		case smaller_tn:	return this.eval_smaller_tn(source);
+		case smaller_eq:	return this.eval_smaller_eq(source);
+		case equal_with:	return this.eval_equal_with(source);
+		case not_equals:	return this.eval_not_equals(source);
 		default: throw new IllegalArgumentException(source.generate_code());
 		}
 	}
 	
 	/* {+, -} */
-	private boolean compare_with(SedConstant operand, long value) throws Exception {
-		Object number = operand.get_number();
-		if(number instanceof Long) {
-			return ((Long) number).longValue() == value;
-		}
-		else {
-			return ((Double) number).doubleValue() == value;
-		}
-	}
-	private SedConstant solve_arith_add(SedConstant loperand, SedConstant roperand) throws Exception {
-		Object lnumber = loperand.get_number();
-		Object rnumber = roperand.get_number();
-		Object result;
-		if(lnumber instanceof Long) {
-			long x = ((Long) lnumber).longValue();
-			if(rnumber instanceof Long) {
-				long y = ((Long) rnumber).longValue();
-				result = Long.valueOf(x + y);
-			}
-			else {
-				double y = ((Double) rnumber).doubleValue();
-				result = Double.valueOf(x + y);
-			}
-		}
-		else {
-			double x = ((Double) rnumber).doubleValue();
-			if(rnumber instanceof Long) {
-				long y = ((Long) rnumber).longValue();
-				result = Double.valueOf(x + y);
-			}
-			else {
-				double y = ((Double) rnumber).doubleValue();
-				result = Double.valueOf(x + y);
-			}
-		}
-		return SedFactory.constant(result);
-	}
-	private SedConstant solve_arith_sub(SedConstant loperand, SedConstant roperand) throws Exception {
-		Object lnumber = loperand.get_number();
-		Object rnumber = roperand.get_number();
-		Object result;
-		if(lnumber instanceof Long) {
-			long x = ((Long) lnumber).longValue();
-			if(rnumber instanceof Long) {
-				long y = ((Long) rnumber).longValue();
-				result = Long.valueOf(x - y);
-			}
-			else {
-				double y = ((Double) rnumber).doubleValue();
-				result = Double.valueOf(x - y);
-			}
-		}
-		else {
-			double x = ((Double) rnumber).doubleValue();
-			if(rnumber instanceof Long) {
-				long y = ((Long) rnumber).longValue();
-				result = Double.valueOf(x - y);
-			}
-			else {
-				double y = ((Double) rnumber).doubleValue();
-				result = Double.valueOf(x - y);
-			}
-		}
-		return SedFactory.constant(result);
-	}
-	private void get_operands_in_arith_add(SedExpression source, 
-			List<SedExpression> poperands, 
-			List<SedExpression> noperands) throws Exception {
+	/**
+	 * collect the loperands and roperands in arithmetic addition and subtract
+	 * @param source
+	 * @param loperands
+	 * @param roperands
+	 * @throws Exception
+	 */
+	private void get_operands_as(SedExpression source, 
+			List<SedExpression> loperands, 
+			List<SedExpression> roperands) throws Exception {
 		if(source instanceof SedBinaryExpression) {
-			COperator operator = 
-					((SedBinaryExpression) source).get_operator().get_operator();
+			COperator operator = ((SedBinaryExpression) source).get_operator().get_operator();
 			if(operator == COperator.arith_add) {
-				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_loperand(), poperands, noperands);
-				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_roperand(), poperands, noperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_loperand(), loperands, roperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_roperand(), loperands, roperands);
 			}
 			else if(operator == COperator.arith_sub) {
-				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_loperand(), poperands, noperands);
-				this.get_operands_in_arith_add(((SedBinaryExpression) source).get_roperand(), noperands, poperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_loperand(), loperands, roperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_roperand(), roperands, loperands);
 			}
 			else {
-				poperands.add(source);
+				loperands.add(source);
 			}
 		}
 		else {
-			poperands.add(source);
+			loperands.add(source);
 		}
 	}
-	private List<SedExpression> acc_operands_in_arith_add(List<SedExpression> operands) throws Exception {
+	/**
+	 * @param operands
+	 * @return compute the operands and accumulate the constants part
+	 * @throws Exception
+	 */
+	private List<SedExpression> acc_operands_as(List<SedExpression> operands) throws Exception {
 		List<SedExpression> new_operands = new ArrayList<SedExpression>();
-		SedConstant constant = SedFactory.constant(Integer.valueOf(0));
+		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(0));
 		for(SedExpression operand : operands) {
 			SedExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SedConstant) {
-				constant = this.solve_arith_add(constant, (SedConstant) new_operand);
+				constant = SedComputation.arith_add(constant, (SedConstant) new_operand);
 			}
 			else {
-				new_operands.add(constant);
+				new_operands.add(new_operand);
 			}
 		}
-		new_operands.add(constant);
-		return new_operands;
+		new_operands.add(constant); return new_operands;
 	}
-	private SedExpression eval_arith_add_and_sub(SedBinaryExpression source) throws Exception {
+	/**
+	 * @param operands
+	 * @return op1 + op2 + op3 + ... + opN or null
+	 * @throws Exception
+	 */
+	private SedExpression con_operands_as(CType type, List<SedExpression> operands) throws Exception {
+		SedExpression expression = null;
+		for(SedExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = SedFactory.arith_add(type, expression, operand);
+			}
+		}
+		return expression;
+	}
+	private SedExpression eval_arith_add_or_sub(SedBinaryExpression source) throws Exception {
 		List<SedExpression> loperands = new ArrayList<SedExpression>();
 		List<SedExpression> roperands = new ArrayList<SedExpression>();
-		this.get_operands_in_arith_add(source, loperands, roperands);
+		this.get_operands_as(source, loperands, roperands);
 		
-		loperands = this.acc_operands_in_arith_add(loperands);
-		roperands = this.acc_operands_in_arith_add(roperands);
+		loperands = this.acc_operands_as(loperands);
+		roperands = this.acc_operands_as(roperands);
 		
 		SedConstant lconstant = (SedConstant) loperands.remove(loperands.size() - 1);
 		SedConstant rconstant = (SedConstant) roperands.remove(roperands.size() - 1);
-		SedConstant constant = this.solve_arith_sub(lconstant, rconstant);
-		if(!this.compare_with(constant, 0L)) loperands.add(constant);
+		SedConstant constant = SedComputation.arith_sub(lconstant, rconstant);
+		if(!SedComputation.compare(constant, 0)) loperands.add(constant);
 		
-		SedExpression loperand = null;
-		if(loperands.size() == 1) {
-			loperand = loperands.get(0);
-		}
-		else if(loperands.size() > 2) {
-			for(SedExpression operand : loperands) {
-				if(loperand == null)
-					loperand = operand;
-				else {
-					SedExpression expr = new SedBinaryExpression(null, 
-							source.get_data_type(), COperator.arith_add);
-					expr.add_child(loperand); expr.add_child(operand);
-					loperand = expr;
-				}
-			}
-		}
-		
-		SedExpression roperand = null;
-		if(roperands.size() == 1) {
-			roperand = roperands.get(0);
-		}
-		else if(roperands.size() > 1) {
-			for(SedExpression operand : roperands) {
-				if(roperand == null)
-					roperand = operand;
-				else {
-					SedExpression expr = new SedBinaryExpression(null, 
-							source.get_data_type(), COperator.arith_add);
-					expr.add_child(roperand); expr.add_child(operand);
-					loperand = expr;
-				}
-			}
-		}
+		SedExpression loperand = this.con_operands_as(source.get_data_type(), loperands);
+		SedExpression roperand = this.con_operands_as(source.get_data_type(), roperands);
 		
 		if(loperand == null) {
 			if(roperand == null) {
-				CConstant value = new CConstant();
-				value.set_int(0);
-				return new SedConstant(source.get_cir_expression(), source.get_data_type(), value);
+				CConstant value = new CConstant(); value.set_int(0);
+				return new SedConstant(source.
+						get_cir_expression(), source.get_data_type(), value);
 			}
 			else {
-				SedExpression expr = new SedUnaryExpression(
-						source.get_cir_expression(), source.get_data_type(), COperator.negative);
-				expr.add_child(roperand); return expr;
+				SedExpression expression = new SedUnaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.negative);
+				expression.add_child(roperand);
+				return this.evaluate(expression);
 			}
 		}
 		else {
 			if(roperand == null) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
 				return loperand;
 			}
 			else {
-				SedExpression expr = new SedBinaryExpression(
-						source.get_cir_expression(), source.get_data_type(), COperator.arith_sub);
-				expr.add_child(loperand); expr.add_child(roperand); return expr;
+				SedExpression expression = new SedBinaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.arith_sub);
+				expression.add_child(loperand);
+				expression.add_child(roperand);
+				return expression;
 			}
 		}
 	}
 	
+	/* {*, /} */
+	/**
+	 * collect the operands in division and divisor
+	 * @param source
+	 * @param loperands
+	 * @param roperands
+	 * @throws Exception
+	 */
+	private void get_operands_md(SedExpression source,
+			List<SedExpression> loperands, 
+			List<SedExpression> roperands) throws Exception {
+		if(source instanceof SedBinaryExpression) {
+			COperator operator = ((SedBinaryExpression) source).get_operator().get_operator();
+			if(operator == COperator.arith_mul) {
+				this.get_operands_as(((SedBinaryExpression) source).get_loperand(), loperands, roperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_roperand(), loperands, roperands);
+			}
+			else if(operator == COperator.arith_div) {
+				this.get_operands_as(((SedBinaryExpression) source).get_loperand(), loperands, roperands);
+				this.get_operands_as(((SedBinaryExpression) source).get_roperand(), roperands, loperands);
+			}
+			else {
+				loperands.add(source);
+			}
+		}
+		else {
+			loperands.add(source);
+		}
+	}
+	/**
+	 * @param operands
+	 * @return compute the operands and accumulate the constants part
+	 * @throws Exception
+	 */
+	private List<SedExpression> acc_operands_md(List<SedExpression> operands) throws Exception {
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(1));
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				constant = SedComputation.arith_mul(constant, (SedConstant) new_operand);
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		new_operands.add(constant); return new_operands;
+	}
+	/**
+	 * @param type
+	 * @param operands
+	 * @return x1 * x2 * x3 * ... * xN
+	 * @throws Exception
+	 */
+	private SedExpression con_operands_md(CType type, List<SedExpression> operands) throws Exception {
+		SedExpression expression = null;
+		for(SedExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = SedFactory.arith_mul(type, expression, operand);
+			}
+		}
+		return expression;
+	}
+	private SedExpression eval_arith_mul_or_div(SedBinaryExpression source) throws Exception {
+		List<SedExpression> loperands = new ArrayList<SedExpression>();
+		List<SedExpression> roperands = new ArrayList<SedExpression>();
+		this.get_operands_md(source, loperands, roperands);
+		
+		loperands = this.acc_operands_md(loperands);
+		roperands = this.acc_operands_md(roperands);
+		
+		SedConstant lconstant = (SedConstant) loperands.remove(loperands.size() - 1);
+		SedConstant rconstant = (SedConstant) roperands.remove(roperands.size() - 1);
+		if(SedComputation.compare(lconstant, 0)) {
+			CConstant constant = new CConstant(); constant.set_int(0);
+			return new SedConstant(source.get_cir_expression(), source.get_data_type(), constant);
+		}
+		if(!SedComputation.compare(lconstant, 1)) loperands.add(lconstant);
+		if(!SedComputation.compare(rconstant, 1)) roperands.add(rconstant);
+		
+		SedExpression loperand = this.con_operands_md(source.get_data_type(), loperands);
+		SedExpression roperand = this.con_operands_md(source.get_data_type(), roperands);
+		
+		if(loperand == null) {
+			if(roperand == null) {
+				CConstant constant = new CConstant(); constant.set_int(1);
+				return new SedConstant(source.get_cir_expression(), source.get_data_type(), constant);
+			}
+			else {
+				CConstant constant = new CConstant(); constant.set_int(1);
+				loperand = new SedConstant(null, source.get_data_type(), constant);
+				SedExpression expression = new SedBinaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.arith_div);
+				expression.add_child(loperand);
+				expression.add_child(roperand);
+				return expression;
+			}
+		}
+		else {
+			if(roperand == null) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return loperand;
+			}
+			else {
+				SedExpression expression = new SedBinaryExpression(
+						source.get_cir_expression(),
+						source.get_data_type(), COperator.arith_div);
+				expression.add_child(loperand);
+				expression.add_child(roperand);
+				return expression;
+			}
+		}
+	}
 	
+	/* {%} */
+	private SedExpression eval_arith_mod(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant && roperand instanceof SedConstant) {
+			SedConstant result = SedComputation.arith_mod(
+					(SedConstant) loperand, (SedConstant) roperand);
+			result.set_cir_expression(source.
+					get_cir_expression(), source.get_data_type());
+			return result;
+		}
+		
+		if(loperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) loperand, 0)) {
+				CConstant constant = new CConstant(); constant.set_int(0);
+				return new SedConstant(source.get_cir_expression(),
+										source.get_data_type(), constant);
+			}
+			else if(SedComputation.compare((SedConstant) loperand, 1)
+					|| SedComputation.compare((SedConstant) loperand, -1)) {
+				CConstant constant = new CConstant(); constant.set_int(1);
+				return new SedConstant(source.get_cir_expression(),
+										source.get_data_type(), constant);
+			}
+		}
+		
+		if(roperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) roperand, 1)
+				|| SedComputation.compare((SedConstant) roperand, -1)) {
+				CConstant constant = new CConstant(); constant.set_int(0);
+				return new SedConstant(source.get_cir_expression(),
+										source.get_data_type(), constant);
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.arith_mod);
+		expression.add_child(loperand);
+		expression.add_child(roperand); return expression;
+	}
+	
+	/* {&, |, ^} */
+	private void get_operands_bt(SedExpression source, COperator operator,
+			List<SedExpression> operands) throws Exception {
+		if(source instanceof SedBinaryExpression) {
+			if(operator == ((SedBinaryExpression) source).get_operator().get_operator()) {
+				this.get_operands_bt(((SedBinaryExpression) source).get_loperand(), operator, operands);
+				this.get_operands_bt(((SedBinaryExpression) source).get_roperand(), operator, operands);
+			}
+			else {
+				operands.add(source);
+			}
+		}
+		else {
+			operands.add(source);
+		}
+	}
+	private List<SedExpression> acc_operands_ba(CType data_type, 
+			List<SedExpression> operands, COperator operator) throws Exception {
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				constant = SedComputation.bitws_and(constant, (SedConstant) new_operand);
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		new_operands.add(constant); return new_operands;
+	}
+	private List<SedExpression> acc_operands_bi(CType data_type, 
+			List<SedExpression> operands, COperator operator) throws Exception {
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				constant = SedComputation.bitws_ior(constant, (SedConstant) new_operand);
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		new_operands.add(constant); return new_operands;
+	}
+	private List<SedExpression> acc_operands_bx(CType data_type, 
+			List<SedExpression> operands, COperator operator) throws Exception {
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		SedConstant constant = (SedConstant) SedParser.fetch(Integer.valueOf(~0));
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				constant = SedComputation.bitws_xor(constant, (SedConstant) new_operand);
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		new_operands.add(constant); return new_operands;
+	}
+	private SedExpression conc_operands_ba(CType type, List<SedExpression> operands) throws Exception {
+		SedExpression expression = null;
+		for(SedExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = SedFactory.bitws_and(type, expression, operand);
+			}
+		}
+		return expression;
+	}
+	private SedExpression conc_operands_bi(CType type, List<SedExpression> operands) throws Exception {
+		SedExpression expression = null;
+		for(SedExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = SedFactory.bitws_ior(type, expression, operand);
+			}
+		}
+		return expression;
+	}
+	private SedExpression conc_operands_bx(CType type, List<SedExpression> operands) throws Exception {
+		SedExpression expression = null;
+		for(SedExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = SedFactory.bitws_xor(type, expression, operand);
+			}
+		}
+		return expression;
+	}
+	private SedExpression eval_bitws_and(SedBinaryExpression source) throws Exception {
+		List<SedExpression> operands = new ArrayList<SedExpression>();
+		this.get_operands_bt(source, source.get_operator().get_operator(), operands);
+		operands = this.acc_operands_ba(
+				source.get_data_type(), operands, source.get_operator().get_operator());
+		
+		SedConstant constant = (SedConstant) operands.remove(operands.size() - 1);
+		if(SedComputation.compare(constant, 0)) {
+			return new SedConstant(source.get_cir_expression(), 
+					source.get_data_type(), constant.get_constant());
+		}
+		if(!SedComputation.compare(constant, ~0L)) { operands.add(constant); }
+		
+		SedExpression expression = this.conc_operands_ba(source.get_data_type(), operands);
+		if(expression == null) {
+			constant.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return constant;
+		}
+		else {
+			expression.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return expression;
+		}
+	}
+	private SedExpression eval_bitws_ior(SedBinaryExpression source) throws Exception {
+		List<SedExpression> operands = new ArrayList<SedExpression>();
+		this.get_operands_bt(source, source.get_operator().get_operator(), operands);
+		operands = this.acc_operands_bi(
+				source.get_data_type(), operands, source.get_operator().get_operator());
+		
+		SedConstant constant = (SedConstant) operands.remove(operands.size() - 1);
+		if(SedComputation.compare(constant, ~0)) {
+			return new SedConstant(source.get_cir_expression(), 
+					source.get_data_type(), constant.get_constant());
+		}
+		if(!SedComputation.compare(constant, 0L)) { operands.add(constant); }
+		
+		SedExpression expression = this.conc_operands_bi(source.get_data_type(), operands);
+		if(expression == null) {
+			constant.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return constant;
+		}
+		else {
+			expression.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return expression;
+		}
+	}
+	private SedExpression eval_bitws_xor(SedBinaryExpression source) throws Exception {
+		List<SedExpression> operands = new ArrayList<SedExpression>();
+		this.get_operands_bt(source, source.get_operator().get_operator(), operands);
+		operands = this.acc_operands_bx(
+				source.get_data_type(), operands, source.get_operator().get_operator());
+		
+		SedConstant constant = (SedConstant) operands.remove(operands.size() - 1);
+		if(!SedComputation.compare(constant, 0L)) { operands.add(constant); }
+		
+		SedExpression expression = this.conc_operands_bx(source.get_data_type(), operands);
+		if(expression == null) {
+			constant.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return constant;
+		}
+		else {
+			expression.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return expression;
+		}
+	}
+	private SedExpression eval_bitws_lsh(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant && roperand instanceof SedConstant) {
+			SedConstant result = 
+					SedComputation.bitws_lsh((SedConstant) loperand, (SedConstant) roperand);
+			result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return result;
+		}
+		
+		if(loperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) loperand, 0)) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return loperand;
+			}
+		}
+		
+		if(roperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) roperand, 0)) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return loperand;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.left_shift);
+		expression.add_child(loperand);
+		expression.add_child(roperand); return expression;
+	}
+	private SedExpression eval_bitws_rsh(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant && roperand instanceof SedConstant) {
+			SedConstant result = 
+					SedComputation.bitws_rsh((SedConstant) loperand, (SedConstant) roperand);
+			result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return result;
+		}
+		
+		if(loperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) loperand, 0)) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return loperand;
+			}
+		}
+		
+		if(roperand instanceof SedConstant) {
+			if(SedComputation.compare((SedConstant) roperand, 0)) {
+				loperand.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return loperand;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.righ_shift);
+		expression.add_child(loperand);
+		expression.add_child(roperand); return expression;
+	}
+	
+	/* {&&, ||} */
+	private SedExpression eval_logic_and(SedBinaryExpression source) throws Exception {
+		List<SedExpression> operands = new ArrayList<SedExpression>();
+		this.get_operands_bt(source, COperator.logic_and, operands);
+		
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				if(!SedComputation.get_bool((SedConstant) new_operand)) {
+					CConstant constant = new CConstant();
+					constant.set_bool(false);
+					return new SedConstant(source.get_cir_expression(),
+							source.get_data_type(), constant);
+				}
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		
+		if(new_operands.isEmpty()) {
+			CConstant constant = new CConstant();
+			constant.set_bool(true);
+			return new SedConstant(source.get_cir_expression(),
+					source.get_data_type(), constant);
+		}
+		else {
+			SedExpression expression = null;
+			for(SedExpression operand : new_operands) {
+				if(expression == null) {
+					expression = operand;
+				}
+				else {
+					expression = SedFactory.logic_and(expression, operand);
+				}
+			}
+			expression.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return expression;
+		}
+	}
+	private SedExpression eval_logic_ior(SedBinaryExpression source) throws Exception {
+		List<SedExpression> operands = new ArrayList<SedExpression>();
+		this.get_operands_bt(source, COperator.logic_or, operands);
+		
+		List<SedExpression> new_operands = new ArrayList<SedExpression>();
+		for(SedExpression operand : operands) {
+			SedExpression new_operand = this.evaluate(operand);
+			if(new_operand instanceof SedConstant) {
+				if(SedComputation.get_bool((SedConstant) new_operand)) {
+					CConstant constant = new CConstant();
+					constant.set_bool(true);
+					return new SedConstant(source.get_cir_expression(),
+							source.get_data_type(), constant);
+				}
+			}
+			else {
+				new_operands.add(new_operand);
+			}
+		}
+		
+		if(new_operands.isEmpty()) {
+			CConstant constant = new CConstant();
+			constant.set_bool(false);
+			return new SedConstant(source.get_cir_expression(),
+					source.get_data_type(), constant);
+		}
+		else {
+			SedExpression expression = null;
+			for(SedExpression operand : new_operands) {
+				if(expression == null) {
+					expression = operand;
+				}
+				else {
+					expression = SedFactory.logic_ior(expression, operand);
+				}
+			}
+			expression.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+			return expression;
+		}
+	}
+	
+	/* relational */
+	private SedExpression eval_greater_tn(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.greater_tn(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.smaller_tn);
+		expression.add_child(roperand);
+		expression.add_child(loperand);
+		return expression;
+	}
+	private SedExpression eval_greater_eq(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.greater_eq(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.smaller_eq);
+		expression.add_child(roperand);
+		expression.add_child(loperand);
+		return expression;
+	}
+	private SedExpression eval_smaller_tn(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.smaller_tn(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.smaller_tn);
+		expression.add_child(loperand);
+		expression.add_child(roperand);
+		return expression;
+	}
+	private SedExpression eval_smaller_eq(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.smaller_eq(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.smaller_eq);
+		expression.add_child(loperand);
+		expression.add_child(roperand);
+		return expression;
+	}
+	private SedExpression eval_equal_with(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.equal_with(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.equal_with);
+		expression.add_child(loperand);
+		expression.add_child(roperand);
+		return expression;
+	}
+	private SedExpression eval_not_equals(SedBinaryExpression source) throws Exception {
+		SedExpression loperand = this.evaluate(source.get_loperand());
+		SedExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SedConstant) {
+			if(roperand instanceof SedConstant) {
+				SedConstant result = SedComputation.not_equals(
+						(SedConstant) loperand, (SedConstant) roperand);
+				result.set_cir_expression(source.get_cir_expression(), source.get_data_type());
+				return result;
+			}
+		}
+		
+		SedExpression expression = new SedBinaryExpression(
+				source.get_cir_expression(),
+				source.get_data_type(), COperator.not_equals);
+		expression.add_child(loperand);
+		expression.add_child(roperand);
+		return expression;
+	}
 	
 }

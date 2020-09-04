@@ -501,7 +501,7 @@ public class SedParser {
 		return expr;
 	}
 	private SedNode parse_initializer_body(CirInitializerBody source) throws Exception {
-		SedNode list = new SedInitializerList(source, source.get_data_type());
+		SedNode list = new SedInitializerList(source, CBasicTypeImpl.void_type);
 		for(int k = 0; k < source.number_of_elements(); k++) {
 			list.add_child(this.parse_cir(source.get_element(k)));
 		}

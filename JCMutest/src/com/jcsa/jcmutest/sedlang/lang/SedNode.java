@@ -146,8 +146,9 @@ public abstract class SedNode {
 				parent = null;
 			}
 		}
-		for(SedNode child : this.children) {
-			parent.add_child(child.clone());
+		for(int k = parent.number_of_children(); 
+				k < this.number_of_children(); k++) {
+			parent.add_child(this.get_child(k).clone());
 		}
 		return parent;
 	}
