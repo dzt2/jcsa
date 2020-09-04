@@ -73,6 +73,12 @@ import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 
+/**
+ * It provides interfaces to parse the SedNode from other objects.
+ * 
+ * @author yukimula
+ *
+ */
 public class SedParser {
 	
 	private CRunTemplate sizeof_template;
@@ -581,6 +587,63 @@ public class SedParser {
 	}
 	public static SedNode parse(CirNode source) throws Exception {
 		return parser.parse_cir(source);
+	}
+	
+	/* abstract parse */
+	/**
+	 * @param source
+	 * @return bool|char|short|int|long|float|double|AstNode|CirNode|SedNode
+	 * @throws Exception
+	 */
+	public static SedExpression fetch(Object source) throws Exception {
+		if(source == null)
+			throw new IllegalArgumentException("Invalid source: null");
+		else if(source instanceof Boolean) {
+			CConstant constant = new CConstant();
+			constant.set_bool(((Boolean) source).booleanValue());
+			return new SedConstant(null, CBasicTypeImpl.bool_type, constant);
+		}
+		else if(source instanceof Character) {
+			CConstant constant = new CConstant();
+			constant.set_char(((Character) source).charValue());
+			return new SedConstant(null, CBasicTypeImpl.char_type, constant);
+		}
+		else if(source instanceof Short) {
+			CConstant constant = new CConstant();
+			constant.set_int(((Short) source).shortValue());
+			return new SedConstant(null, CBasicTypeImpl.short_type, constant);
+		}
+		else if(source instanceof Integer) {
+			CConstant constant = new CConstant();
+			constant.set_int(((Integer) source).intValue());
+			return new SedConstant(null, CBasicTypeImpl.int_type, constant);
+		}
+		else if(source instanceof Long) {
+			CConstant constant = new CConstant();
+			constant.set_long(((Long) source).longValue());
+			return new SedConstant(null, CBasicTypeImpl.long_type, constant);
+		}
+		else if(source instanceof Float) {
+			CConstant constant = new CConstant();
+			constant.set_float(((Float) source).floatValue());
+			return new SedConstant(null, CBasicTypeImpl.float_type, constant);
+		}
+		else if(source instanceof Double) {
+			CConstant constant = new CConstant();
+			constant.set_double(((Double) source).doubleValue());
+			return new SedConstant(null, CBasicTypeImpl.double_type, constant);
+		}
+		else if(source instanceof AstNode) {
+			return (SedExpression) parse((AstNode) source);
+		}
+		else if(source instanceof CirNode) {
+			return (SedExpression) parse((CirNode) source);
+		}
+		else if(source instanceof SedNode) {
+			return (SedExpression) source;
+		}
+		else
+			throw new IllegalArgumentException("Unsupport: " + source);
 	}
 	
 }
