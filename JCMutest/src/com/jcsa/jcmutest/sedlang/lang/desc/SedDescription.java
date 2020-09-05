@@ -1,6 +1,7 @@
-package com.jcsa.jcmutest.sedlang.lang;
+package com.jcsa.jcmutest.sedlang.lang.desc;
 
 import com.jcsa.jcmutest.sedlang.SedKeywords;
+import com.jcsa.jcmutest.sedlang.lang.SedNode;
 import com.jcsa.jcmutest.sedlang.lang.token.SedKeyword;
 import com.jcsa.jcmutest.sedlang.lang.token.SedStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -70,7 +71,8 @@ public abstract class SedDescription extends SedNode {
 	@Override
 	public String generate_code() throws Exception {
 		return this.get_statement().generate_code() + "::" + 
-				this.get_keyword().generate_code() + this.generate_content();
+				this.get_keyword().generate_code() + 
+				this.generate_content() + ";";
 	}
 	
 	/**

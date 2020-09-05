@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.sedlang.lang.conc;
 
 import com.jcsa.jcmutest.sedlang.SedExpressionType;
 import com.jcsa.jcmutest.sedlang.SedKeywords;
-import com.jcsa.jcmutest.sedlang.lang.SedDescription;
+import com.jcsa.jcmutest.sedlang.lang.desc.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.sedlang.util.SedParser;
 import com.jcsa.jcparse.lang.ctype.CArrayType;

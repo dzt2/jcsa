@@ -39,4 +39,8 @@ public enum SedKeywords {
 	neg_expr,
 	rsv_expr,
 	
+	/* composite-error */
+	conjunct,
+	disjunct,
+	
 }

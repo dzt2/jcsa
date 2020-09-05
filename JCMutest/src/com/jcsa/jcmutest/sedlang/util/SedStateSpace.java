@@ -3,7 +3,6 @@ package com.jcsa.jcmutest.sedlang.util;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.sedlang.lang.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedAppExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedInsExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedMutExpressionError;
@@ -23,6 +22,7 @@ import com.jcsa.jcmutest.sedlang.lang.conc.SedShkExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.conc.SedXorExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.cons.SedConditionConstraint;
 import com.jcsa.jcmutest.sedlang.lang.cons.SedExecutionConstraint;
+import com.jcsa.jcmutest.sedlang.lang.desc.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedAddStatementError;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedDelStatementError;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedMutStatementError;
