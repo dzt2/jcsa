@@ -66,6 +66,7 @@ public class CirTreeImpl implements CirTree {
 	private List<CirNode> nodes;
 	private Map<AstNode, List<CirNode>> index;
 	private Map<AstNode, AstCirPair> ranges;
+	private CirLocalizer localizer;
 	private CirFunctionCallGraph call_graph;
 	
 	public CirTreeImpl(AstTranslationUnit astroot) throws IllegalArgumentException {
@@ -77,6 +78,7 @@ public class CirTreeImpl implements CirTree {
 			this.ranges = new HashMap<AstNode, AstCirPair>();
 			CirNode root = new CirTransitionUnitImpl(this, 0);
 			this.nodes.add(root); root.set_ast_source(astroot);
+			this.localizer = new CirLocalizer(this);
 			this.call_graph = null;
 		}
 	}
@@ -720,5 +722,8 @@ public class CirTreeImpl implements CirTree {
 	public void gen_function_call_graph() throws Exception {
 		this.call_graph = CirFunctionCallGraph.graph(this);
 	}
+
+	@Override
+	public CirLocalizer get_localizer() { return this.localizer; }
 	
 }

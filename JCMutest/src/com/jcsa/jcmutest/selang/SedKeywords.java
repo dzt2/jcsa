@@ -17,6 +17,7 @@ public enum SedKeywords {
 	del_stmt,
 	set_stmt,
 	mut_stmt,
+	trp_stmt,
 	
 	/* abs-value-error */
 	app_expr,

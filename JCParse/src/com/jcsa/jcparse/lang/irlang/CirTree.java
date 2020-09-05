@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
+import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
 import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 
 /**
@@ -123,6 +124,10 @@ public interface CirTree {
 	 * @return 
 	 */
 	public AstCirPair get_cir_range(AstNode ast_source) throws IllegalArgumentException;
+	/**
+	 * @return the localization algorithm machine
+	 */
+	public CirLocalizer get_localizer();
 	
 	/* factory methods */
 	/**

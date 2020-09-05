@@ -41,6 +41,7 @@ import com.jcsa.jcmutest.selang.lang.serr.SedDelStatementError;
 import com.jcsa.jcmutest.selang.lang.serr.SedMutStatementError;
 import com.jcsa.jcmutest.selang.lang.serr.SedSetStatementError;
 import com.jcsa.jcmutest.selang.lang.serr.SedStatementError;
+import com.jcsa.jcmutest.selang.lang.serr.SedTrpStatementError;
 import com.jcsa.jcmutest.selang.lang.tokn.SedField;
 import com.jcsa.jcmutest.selang.lang.tokn.SedStatement;
 import com.jcsa.jcparse.lang.CRunTemplate;
@@ -135,36 +136,6 @@ public class SedFactory {
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
-		}
-	}
-	/**
-	 * @param source
-	 * @param value
-	 * @return the condition to be asserted, parsed from the source
-	 * @throws Exception
-	 */
-	public static SedExpression get_condition(SedExpression source, boolean value) throws Exception {
-		CType data_type = CTypeAnalyzer.get_value_type(source.get_data_type());
-		if(CTypeAnalyzer.is_boolean(data_type)) {
-			if(value) {
-				return source;
-			}
-			else {
-				return SedFactory.logic_not(source);
-			}
-		}
-		else if(CTypeAnalyzer.is_number(data_type)
-				|| CTypeAnalyzer.is_pointer(data_type)) {
-			SedNode target = SedFactory.fetch(Integer.valueOf(0));
-			if(value) {
-				return SedFactory.not_equals(source, target);
-			}
-			else {
-				return SedFactory.equal_with(source, target);
-			}
-		}
-		else {
-			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
 	
@@ -386,6 +357,30 @@ public class SedFactory {
 	}
 	
 	/* description creators */
+	public static SedExpression get_condition(SedExpression source, boolean value) throws Exception {
+		CType data_type = CTypeAnalyzer.get_value_type(source.get_data_type());
+		if(CTypeAnalyzer.is_boolean(data_type)) {
+			if(value) {
+				return source;
+			}
+			else {
+				return SedFactory.logic_not(source);
+			}
+		}
+		else if(CTypeAnalyzer.is_number(data_type)
+				|| CTypeAnalyzer.is_pointer(data_type)) {
+			SedNode target = SedFactory.fetch(Integer.valueOf(0));
+			if(value) {
+				return SedFactory.not_equals(source, target);
+			}
+			else {
+				return SedFactory.equal_with(source, target);
+			}
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
+	}
 	public static SedConstraint execution_constraint(
 			CirStatement statement, int loop_times) throws Exception {
 		SedExpression times = (SedExpression) 
@@ -414,6 +409,9 @@ public class SedFactory {
 			CirStatement muta_statement) throws Exception {
 		return new SedMutStatementError(
 				orig_statement, orig_statement, muta_statement);
+	}
+	public static SedStatementError trp_statement(CirStatement statement) throws Exception {
+		return new SedTrpStatementError(statement, statement);
 	}
 	public static SedAbstractValueError nev_expression(CirStatement statement,
 			CirExpression expression, COperator operator) throws Exception {
