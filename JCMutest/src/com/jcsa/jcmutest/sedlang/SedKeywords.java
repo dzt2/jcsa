@@ -39,6 +39,4 @@ public enum SedKeywords {
 	neg_expr,
 	rsv_expr,
 	
-	conjunct,
-	disjunct,
 }

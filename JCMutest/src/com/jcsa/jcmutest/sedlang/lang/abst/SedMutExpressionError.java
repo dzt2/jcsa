@@ -27,8 +27,8 @@ public class SedMutExpressionError extends SedAbstractValueError {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_orig_expression().generate_code() + ", "
-				+ this.get_muta_expression().generate_code();
+		return "(" + this.get_orig_expression().generate_code() + 
+				", " + this.get_muta_expression().generate_code() + ")";
 	}
 
 	@Override

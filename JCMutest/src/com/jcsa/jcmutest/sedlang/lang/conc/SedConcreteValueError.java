@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.sedlang.lang.conc;
 
 import com.jcsa.jcmutest.sedlang.SedExpressionType;
 import com.jcsa.jcmutest.sedlang.SedKeywords;
-import com.jcsa.jcmutest.sedlang.lang.dess.SedDescription;
+import com.jcsa.jcmutest.sedlang.lang.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.sedlang.util.SedParser;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
@@ -114,9 +114,14 @@ public abstract class SedConcreteValueError extends SedDescription {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.expression_type + ", " + this.generate_follow_content();
+		return "::" + this.expression_type.toString() + 
+				"(" + this.generate_follow_content() + ")";
 	}
 	
+	/**
+	 * @return the parameter part
+	 * @throws Exception
+	 */
 	protected abstract String generate_follow_content() throws Exception;
 
 }

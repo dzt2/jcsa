@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.sedlang.util;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcmutest.sedlang.lang.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedAppExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedInsExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.abst.SedMutExpressionError;
@@ -22,7 +23,6 @@ import com.jcsa.jcmutest.sedlang.lang.conc.SedShkExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.conc.SedXorExpressionError;
 import com.jcsa.jcmutest.sedlang.lang.cons.SedConditionConstraint;
 import com.jcsa.jcmutest.sedlang.lang.cons.SedExecutionConstraint;
-import com.jcsa.jcmutest.sedlang.lang.dess.SedDescription;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedAddStatementError;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedDelStatementError;
 import com.jcsa.jcmutest.sedlang.lang.serr.SedMutStatementError;
@@ -73,8 +73,8 @@ public class SedStateSpace {
 	 */
 	public SedExecutionConstraint execution_constraint(
 			CirStatement statement, int loop_times) throws Exception {
-		SedExecutionConstraint constraint = new SedExecutionConstraint(statement);
-		constraint.add_child(SedParser.fetch(Integer.valueOf(loop_times)));
+		SedExecutionConstraint constraint = new SedExecutionConstraint(
+				statement, SedParser.fetch(Integer.valueOf(loop_times)));
 		return (SedExecutionConstraint) this.get_unique_description(constraint);
 	}
 	/**
@@ -85,8 +85,8 @@ public class SedStateSpace {
 	 */
 	public SedConditionConstraint condition_constraint(
 			CirStatement statement, Object condition) throws Exception {
-		SedConditionConstraint constraint = new SedConditionConstraint(statement);
-		constraint.add_child(SedParser.fetch(condition)); 
+		SedConditionConstraint constraint = new 
+				SedConditionConstraint(statement, SedParser.fetch(condition));
 		return (SedConditionConstraint) this.get_unique_description(constraint);
 	}
 	

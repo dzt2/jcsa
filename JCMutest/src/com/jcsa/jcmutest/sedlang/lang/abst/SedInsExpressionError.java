@@ -55,9 +55,9 @@ public class SedInsExpressionError extends SedAbstractValueError {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_orig_expression().generate_code() + ", "
-				+ this.get_ins_operator().generate_code() + ", "
-				+ this.get_ins_operand().generate_code();
+		return "::" + this.get_ins_operator().get_operator() + "("
+				+ this.get_orig_expression().generate_code() + ", "
+				+ this.get_ins_operand().generate_code() + ")";
 	}
 
 	@Override

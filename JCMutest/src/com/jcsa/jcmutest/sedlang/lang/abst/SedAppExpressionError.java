@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 /**
  * app_expr(orig_expr, operator, app_expr):
  *  	orig_expr :==> orig_expr operator app_expr;
- * @author dzt2
+ * @author yukimula
  *
  */
 public class SedAppExpressionError extends SedAbstractValueError {
@@ -54,9 +54,9 @@ public class SedAppExpressionError extends SedAbstractValueError {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_orig_expression().generate_code() + ", "
-				+ this.get_app_operator().generate_code() + ", "
-				+ this.get_app_operand().generate_code();
+		return "::" + this.get_app_operator().get_operator() + "("
+				+ this.get_orig_expression().generate_code() + ", "
+				+ this.get_app_operand().generate_code() + ")";
 	}
 
 	@Override

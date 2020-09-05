@@ -20,6 +20,7 @@ import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
@@ -49,6 +50,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
 import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirField;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
@@ -81,9 +83,12 @@ import com.jcsa.jcparse.lang.scope.CParameterName;
  */
 public class SedParser {
 	
+	/* definitions */
 	private CRunTemplate sizeof_template;
 	private SedParser() { this.sizeof_template = null; }
 	private static final SedParser parser = new SedParser();
+	
+	/* basic methods */
 	private CType get_pointed_type(CType type) throws Exception {
 		type = CTypeAnalyzer.get_value_type(type);
 		if(type instanceof CPointerType) {
@@ -307,7 +312,7 @@ public class SedParser {
 		return this.parse_ast(source.get_initializer_list());
 	}
 	private SedNode parse_ast_initializer_list(AstInitializerList source) throws Exception {
-		SedInitializerList list = new SedInitializerList(null, null);
+		SedInitializerList list = new SedInitializerList(null, CBasicTypeImpl.void_type);
 		for(int k = 0; k < source.number_of_initializer(); k++) {
 			list.add_child(this.parse_ast(source.get_initializer(k)));
 		}
@@ -338,7 +343,7 @@ public class SedParser {
 			return new SedConstant(null, source.get_value_type(), constant);
 		}
 		else {
-			return new SedDefaultValue(null, source.get_value_type(), SedDefaultValue.AnyPositive);
+			return new SedDefaultValue(null, source.get_value_type(), SedDefaultValue.AnyPosInteger);
 		}
 	}
 	private SedNode parse_ast_conditional_expression(AstConditionalExpression source) throws Exception {
@@ -462,9 +467,9 @@ public class SedParser {
 			else if(CTypeAnalyzer.is_character(type)) 
 				name = SedDefaultValue.AnyCharacter;
 			else if(CTypeAnalyzer.is_integer(type)) 
-				name = SedDefaultValue.AnyNumeric;
+				name = SedDefaultValue.AnyInteger;
 			else if(CTypeAnalyzer.is_real(type))
-				name = SedDefaultValue.AnyNumeric;
+				name = SedDefaultValue.AnyDouble;
 			else if(CTypeAnalyzer.is_pointer(type))
 				name = SedDefaultValue.AnyAddress;
 			else
@@ -633,13 +638,13 @@ public class SedParser {
 			constant.set_double(((Double) source).doubleValue());
 			return new SedConstant(null, CBasicTypeImpl.double_type, constant);
 		}
-		else if(source instanceof AstNode) {
+		else if(source instanceof AstExpression) {
 			return (SedExpression) parse((AstNode) source);
 		}
-		else if(source instanceof CirNode) {
+		else if(source instanceof CirExpression) {
 			return (SedExpression) parse((CirNode) source);
 		}
-		else if(source instanceof SedNode) {
+		else if(source instanceof SedExpression) {
 			return (SedExpression) source;
 		}
 		else

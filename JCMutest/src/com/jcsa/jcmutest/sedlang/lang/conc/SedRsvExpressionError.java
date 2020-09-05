@@ -6,7 +6,7 @@ import com.jcsa.jcmutest.sedlang.lang.SedNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
-public class SedRsvExpressionError extends SedConcreteValueError {
+public class SedRsvExpressionError extends SedUnyExpressionError {
 
 	public SedRsvExpressionError(CirStatement statement, CirExpression orig_expression)
 			throws Exception {
@@ -21,11 +21,6 @@ public class SedRsvExpressionError extends SedConcreteValueError {
 		case usign: return true;
 		default:	return false;
 		}
-	}
-
-	@Override
-	protected String generate_follow_content() throws Exception {
-		return this.get_orig_expression().generate_code();
 	}
 
 	@Override

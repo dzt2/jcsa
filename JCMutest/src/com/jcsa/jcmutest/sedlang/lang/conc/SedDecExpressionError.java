@@ -6,13 +6,13 @@ import com.jcsa.jcmutest.sedlang.lang.SedNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
-public class SedDecExpressionError extends SedConcreteValueError {
-
+public class SedDecExpressionError extends SedUnyExpressionError {
+	
 	public SedDecExpressionError(CirStatement statement, CirExpression orig_expression)
 			throws Exception {
 		super(statement, SedKeywords.dec_expr, orig_expression);
 	}
-
+	
 	@Override
 	protected boolean verify_expression_type(SedExpressionType type) {
 		switch(type) {
@@ -24,17 +24,12 @@ public class SedDecExpressionError extends SedConcreteValueError {
 		default:	return false;
 		}
 	}
-
-	@Override
-	protected String generate_follow_content() throws Exception {
-		return this.get_orig_expression().generate_code();
-	}
-
+	
 	@Override
 	protected SedNode construct() throws Exception {
 		return new SedDecExpressionError(
 				this.get_statement().get_cir_statement(),
 				this.get_orig_expression().get_cir_expression());
 	}
-
+	
 }

@@ -7,8 +7,10 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class SedExecutionConstraint extends SedConstraint {
 
-	public SedExecutionConstraint(CirStatement statement) throws Exception {
+	public SedExecutionConstraint(CirStatement statement, 
+			SedExpression loop_times) throws Exception {
 		super(statement, SedKeywords.execute);
+		this.add_child(loop_times);
 	}
 	
 	/**
@@ -20,13 +22,14 @@ public class SedExecutionConstraint extends SedConstraint {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_loop_times().generate_code();
+		return "(" + this.get_loop_times().generate_code() + ")";
 	}
 
 	@Override
 	protected SedNode construct() throws Exception {
 		return new SedExecutionConstraint(this.
-				get_statement().get_cir_statement());
+				get_statement().get_cir_statement(),
+				this.get_loop_times());
 	}
 	
 }

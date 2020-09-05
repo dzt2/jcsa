@@ -24,7 +24,8 @@ public class SedNevExpressionError extends SedAbstractValueError {
 			switch(operator) {
 			case negative:
 			case bit_not:
-			case logic_not: this.add_child(new SedOperator(operator)); break;
+			case logic_not: 
+						this.add_child(new SedOperator(operator)); break;
 			default: throw new IllegalArgumentException("Invalid operator");
 			}
 		}
@@ -36,8 +37,8 @@ public class SedNevExpressionError extends SedAbstractValueError {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_orig_expression().generate_code() + 
-				", " + this.get_nev_operator().generate_code();
+		return "::" + this.get_nev_operator().get_operator() + "("
+				+ this.get_orig_expression().generate_code() + ")";
 	}
 
 	@Override

@@ -13,7 +13,7 @@ public class SedDelStatementError extends SedStatementError {
 
 	@Override
 	protected String generate_content() throws Exception {
-		return this.get_orig_statement().generate_code();
+		return "(" + this.get_orig_statement().generate_code() + ")";
 	}
 
 	@Override

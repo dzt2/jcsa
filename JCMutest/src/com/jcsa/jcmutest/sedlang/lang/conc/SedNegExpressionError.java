@@ -6,7 +6,7 @@ import com.jcsa.jcmutest.sedlang.lang.SedNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
-public class SedNegExpressionError extends SedConcreteValueError {
+public class SedNegExpressionError extends SedUnyExpressionError {
 
 	public SedNegExpressionError(CirStatement statement, CirExpression orig_expression)
 			throws Exception {
@@ -23,12 +23,7 @@ public class SedNegExpressionError extends SedConcreteValueError {
 		default:	return false;
 		}
 	}
-
-	@Override
-	protected String generate_follow_content() throws Exception {
-		return this.get_orig_expression().generate_code();
-	}
-
+	
 	@Override
 	protected SedNode construct() throws Exception {
 		return new SedNegExpressionError(
