@@ -8,10 +8,10 @@ import java.util.List;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
-import com.jcsa.jcmutest.sedlang.lang.SedNode;
-import com.jcsa.jcmutest.sedlang.lang.expr.SedExpression;
-import com.jcsa.jcmutest.sedlang.util.SedEvaluator;
-import com.jcsa.jcmutest.sedlang.util.SedParser;
+import com.jcsa.jcmutest.selang.lang.SedNode;
+import com.jcsa.jcmutest.selang.lang.expr.SedExpression;
+import com.jcsa.jcmutest.selang.util.SedEvaluator;
+import com.jcsa.jcmutest.selang.util.SedFactory;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -102,26 +102,26 @@ public class SedNodeEvaluationTest {
 		writer.write(":\t");
 		writer.write(execution.get_statement().generate_code(false));
 		writer.write("\n");
-		writer.write("\t\t[1] " + SedParser.parse(execution.get_statement()).generate_code() + "\n");
+		writer.write("\t\t[1] " + SedFactory.parse(execution.get_statement()).generate_code() + "\n");
 		
 		CirStatement statement = execution.get_statement();
 		if(statement instanceof CirAssignStatement) {
-			SedNode lvalue = SedParser.parse(((CirAssignStatement) statement).get_lvalue());
-			SedNode rvalue = SedParser.parse(((CirAssignStatement) statement).get_rvalue());
+			SedNode lvalue = SedFactory.parse(((CirAssignStatement) statement).get_lvalue());
+			SedNode rvalue = SedFactory.parse(((CirAssignStatement) statement).get_rvalue());
 			SedExpression lexpression = evaluator.evaluate((SedExpression) lvalue);
 			SedExpression rexpression = evaluator.evaluate((SedExpression) rvalue);
-			writer.write("\t\t[2] " + lexpression.toString() + "\n");
-			writer.write("\t\t[3] " + rexpression.toString() + "\n");
+			writer.write("\t\t[2] " + lexpression.clone().generate_code() + "\n");
+			writer.write("\t\t[3] " + rexpression.clone().generate_code() + "\n");
 		}
 		else if(statement instanceof CirIfStatement) {
-			SedNode value = SedParser.parse(((CirIfStatement) statement).get_condition());
+			SedNode value = SedFactory.parse(((CirIfStatement) statement).get_condition());
 			SedExpression expression = evaluator.evaluate((SedExpression) value);
-			writer.write("\t\t[2] " + expression.toString() + "\n");
+			writer.write("\t\t[2] " + expression.clone().generate_code() + "\n");
 		}
 		else if(statement instanceof CirCaseStatement) {
-			SedNode value = SedParser.parse(((CirCaseStatement) statement).get_condition());
+			SedNode value = SedFactory.parse(((CirCaseStatement) statement).get_condition());
 			SedExpression expression = evaluator.evaluate((SedExpression) value);
-			writer.write("\t\t[2] " + expression.toString() + "\n");
+			writer.write("\t\t[2] " + expression.clone().generate_code() + "\n");
 		}
 	}
 	protected static void testing(File cfile) throws Exception {
