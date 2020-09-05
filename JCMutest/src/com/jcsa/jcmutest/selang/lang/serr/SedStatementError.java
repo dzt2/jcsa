@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.selang.lang.serr;
 
 import com.jcsa.jcmutest.selang.SedKeywords;
-import com.jcsa.jcmutest.selang.lang.SedDescription;
+import com.jcsa.jcmutest.selang.lang.desc.SedDescription;
 import com.jcsa.jcmutest.selang.lang.tokn.SedStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 

@@ -1,6 +1,7 @@
-package com.jcsa.jcmutest.selang.lang;
+package com.jcsa.jcmutest.selang.lang.desc;
 
 import com.jcsa.jcmutest.selang.SedKeywords;
+import com.jcsa.jcmutest.selang.lang.SedNode;
 import com.jcsa.jcmutest.selang.lang.tokn.SedKeyword;
 import com.jcsa.jcmutest.selang.lang.tokn.SedStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;

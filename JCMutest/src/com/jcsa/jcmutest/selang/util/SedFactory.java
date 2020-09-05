@@ -1,10 +1,13 @@
 package com.jcsa.jcmutest.selang.util;
 
 import com.jcsa.jcmutest.selang.lang.SedNode;
+import com.jcsa.jcmutest.selang.lang.cons.SedConstraint;
+import com.jcsa.jcmutest.selang.lang.cons.SedExecutionConstraint;
 import com.jcsa.jcmutest.selang.lang.expr.SedBinaryExpression;
 import com.jcsa.jcmutest.selang.lang.expr.SedCallExpression;
 import com.jcsa.jcmutest.selang.lang.expr.SedConstant;
 import com.jcsa.jcmutest.selang.lang.expr.SedDefaultValue;
+import com.jcsa.jcmutest.selang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.selang.lang.expr.SedFieldExpression;
 import com.jcsa.jcmutest.selang.lang.expr.SedIdExpression;
 import com.jcsa.jcmutest.selang.lang.expr.SedInitializerList;
@@ -323,6 +326,14 @@ public class SedFactory {
 	}
 	
 	/* description creators */
+	public static SedConstraint execution_constraint(
+			CirStatement statement, int loop_times) throws Exception {
+		SedExpression times = (SedExpression) 
+				fetch(Integer.valueOf(loop_times));
+		return new SedExecutionConstraint(statement, times);
+	}
+	
+	
 	
 	
 }

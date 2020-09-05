@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.selang.lang.conc;
 
 import com.jcsa.jcmutest.selang.SedKeywords;
-import com.jcsa.jcmutest.selang.lang.SedDescription;
+import com.jcsa.jcmutest.selang.lang.desc.SedDescription;
 import com.jcsa.jcmutest.selang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.selang.lang.tokn.SedKeyword;
 import com.jcsa.jcmutest.selang.util.SedFactory;
