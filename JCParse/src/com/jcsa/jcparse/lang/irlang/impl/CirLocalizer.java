@@ -44,6 +44,7 @@ import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
@@ -521,6 +522,15 @@ public class CirLocalizer {
 		else {
 			return null;
 		}
+	}
+	/**
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	public CirExecution get_execution(CirStatement statement) throws Exception {
+		return this.cir_tree.get_function_call_graph().get_function(
+				statement).get_flow_graph().get_execution(statement);
 	}
 	
 }
