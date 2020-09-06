@@ -1,11 +1,14 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.inst.InstrumentalBuilder;
-import com.jcsa.jcparse.test.inst.InstrumentalPath;
+import com.jcsa.jcparse.test.inst.InstrumentReader;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -68,32 +71,23 @@ public class JCTestProjectResult {
 		}
 	}
 	/**
-	 * @param tree
+	 * @param ast_file
 	 * @param input
-	 * @return the executional path from which the instrumental file is created
+	 * @return the instrumental lines from data file
 	 * @throws Exception
 	 */
-	public InstrumentalPath load_complete_path(AstTree tree, TestInput input) throws Exception {
+	public List<InstrumentalLine> load_instrumental_lines(
+			CRunTemplate sizeof_template,
+			AstTree ast_tree, TestInput input) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			return InstrumentalBuilder.find(tree, instrumental_file);
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param tree
-	 * @param input
-	 * @return the sequence of instrumental lines directly fetched from file
-	 * @throws Exception
-	 */
-	public InstrumentalPath load_simple_path(AstTree tree, TestInput input) throws Exception {
-		File instrumental_file = input.get_instrument_file(this.project.
-				get_project_files().get_instrument_output_directory());
-		if(instrumental_file.exists()) {
-			return InstrumentalBuilder.read(tree, instrumental_file);
+			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			InstrumentReader reader = new InstrumentReader(
+					sizeof_template, ast_tree, instrumental_file);
+			InstrumentalLine line;
+			while((line = reader.next()) != null) lines.add(line);
+			return lines;
 		}
 		else {
 			return null;

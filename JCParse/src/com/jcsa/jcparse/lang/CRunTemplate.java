@@ -3,6 +3,9 @@ package com.jcsa.jcparse.lang;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +37,7 @@ public class CRunTemplate {
 	
 	/* parameters to build up environment */
 	/** true: {1 --> 01 00 00 00} **/
-	protected boolean little_endian;
+	private boolean little_endian;
 	/** number of bytes occupied by one storage unit **/
 	protected int word_size;
 	/** size of void type **/
@@ -133,6 +136,10 @@ public class CRunTemplate {
 	}
 	
 	/* utility methods */
+	/**
+	 * @return whether the bytes are encoded with little endian.
+	 */
+	public boolean is_little_endian() { return this.little_endian; }
 	/**
 	 * compute the number of bytes occupied by the variable of specified type.
 	 * @param data_type
@@ -246,6 +253,33 @@ public class CRunTemplate {
 		}
 		else
 			throw new IllegalArgumentException("Unsupport: " + expression);
+	}
+	
+	/* stream reader */
+	/**
+	 * @param stream
+	 * @param data_type
+	 * @return obtain the byte buffer from stream w.r.t. data type
+	 * @throws Exception
+	 */
+	public ByteBuffer read(InputStream stream, CType data_type) throws Exception {
+		/* read the data bytes buffer */
+		int length = this.sizeof(data_type);
+		byte[] data_buffer = new byte[length];
+		length = stream.read(data_buffer);
+		
+		/* when EOF is reached */
+		if(length < 0) {
+			return null;
+		}
+		/* when bytes are read */
+		else {
+			ByteBuffer bytes = ByteBuffer.wrap(data_buffer);
+			if(this.little_endian) {
+				bytes.order(ByteOrder.LITTLE_ENDIAN);
+			}
+			bytes.clear(); return bytes;
+		}
 	}
 	
 }

@@ -19,7 +19,7 @@ public class JCProjectExecute {
 	private static final File c_pre_process_mac_file = new File("config/linux.h");
 	private static final List<String> compile_parameters = new ArrayList<String>();
 	
-	private static final String root_path = "/home/dzt2/Development/Data/Code2/";
+	private static final String root_path = "/home/dzt2/Development/Data/";
 	private static final File cfile_dir = new File(root_path + "cfiles");
 	private static final File input_dir = new File(root_path + "inputs");
 	private static final File tests_dir = new File(root_path + "tests");
@@ -42,7 +42,7 @@ public class JCProjectExecute {
 			}
 		}
 		*/
-		testing("bubble_sort");
+		testing("bi_search");
 	}
 	protected static void testing(String name) throws Exception {
 		compile_parameters.clear();
@@ -72,7 +72,7 @@ public class JCProjectExecute {
 			name = name.substring(0, index).strip();
 		File cfile = new File(cfile_dir.getAbsolutePath() + "/" + name + ".c");
 		File idir = new File(input_dir.getAbsolutePath() + "/" + name);
-		File tfile = new File(tests_dir.getAbsolutePath() + "/" + name + ".c.txt");
+		File tfile = new File(tests_dir.getAbsolutePath() + "/" + name + ".txt");
 		File pdir = new File(project_dir.getAbsolutePath() + "/" + name);
 		
 		if(cfile.exists() && tfile.exists()) {

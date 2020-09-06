@@ -1,36 +1,34 @@
-extern int fclose(FILE * __stream);
-extern int fflush(FILE * __stream);
-extern FILE * fopen(const char * __filename, const char * __modes);
-extern int fprintf(FILE * __stream, const char * __format, ...);
-
-
 static FILE * jcm_writer;
+extern int fclose (FILE *__stream);
+extern int fflush (FILE *__stream);
+extern FILE *fopen (const char *__restrict __filename, const char *__restrict __modes);
+extern size_t fwrite (const void *__restrict __ptr, size_t __size, size_t __n, FILE *__restrict __s);
+
 
 static void jcm_close() {
 	if(jcm_writer != (void *) 0) {
 		fclose(jcm_writer);
-		jcm_writer = (void *) 0;
+		jcm_writer = (FILE *) 0;
 	}
 }
 
 static void jcm_open(char * filepath) {
 	jcm_close();
-	jcm_writer = fopen(filepath, "w");
+	jcm_writer = fopen(filepath, "wb");
 }
 
 static void jcm_print(char value) {
-	int int_value = value;
-	fprintf(jcm_writer, " %d", int_value);
+	fwrite(&value, sizeof(char), 1, jcm_writer);
 }
 
-static void jcm_append(int id, void * address, unsigned int length) {
+static void jcm_append(int id, void * address, int length) {
 	if(jcm_writer != (void *) 0) {
-		fprintf(jcm_writer, "%d", id);
+		fwrite(&id, sizeof(int), 1, jcm_writer);
+		fwrite(&length, sizeof(int), 1, jcm_writer);
 		char * char_address = (char *) address;
 		for(int k = 0; k < length; k++) {
 			jcm_print(char_address[k]);
 		}
-		fprintf(jcm_writer, "\n");
 		fflush(jcm_writer);
 	}
 }
