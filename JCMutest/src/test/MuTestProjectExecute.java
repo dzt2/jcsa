@@ -21,7 +21,7 @@ import com.jcsa.jcparse.test.file.TestInput;
 
 public class MuTestProjectExecute {
 	
-	private static final String root_path = "/home/dzt2/Development/";
+	private static final String root_path = "/home/dzt2/Development/Data/";
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
 	private static final File instrument_head_file = new File("config/jcinst.h");
 	private static final File preprocess_macro_file = new File("config/linux.h");
@@ -51,9 +51,7 @@ public class MuTestProjectExecute {
 		File root = new File(root_path + "projects/" + name);
 		
 		if(!root.exists()) {
-			System.out.println("\t\t==> " + root.getAbsolutePath());
 			MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
-			System.out.println("\t\t==> " + root.getAbsolutePath());
 			
 			/* set configuration data */
 			List<String> parameters = new ArrayList<String>();
@@ -70,7 +68,7 @@ public class MuTestProjectExecute {
 			project.set_cfiles(cfiles, hfiles, lfiles);
 			
 			/* input the test inputs */
-			File test_suite_file = new File(root_path + "tests/" + name + ".c.txt");
+			File test_suite_file = new File(root_path + "tests/" + name + ".txt");
 			List<File> test_suite_files = new ArrayList<File>();
 			if(test_suite_file.exists()) test_suite_files.add(test_suite_file);
 			File inputs_directory = new File(root_path + "inputs/" + name);
