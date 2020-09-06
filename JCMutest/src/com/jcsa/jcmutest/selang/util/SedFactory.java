@@ -431,9 +431,9 @@ public class SedFactory {
 				statement, expression, operator, operand);
 	}
 	public static SedAbstractValueError mut_expression(CirStatement statement,
-			CirExpression orig_expression, SedExpression muta_expression) throws Exception {
+			CirExpression orig_expression, Object muta_expression) throws Exception {
 		return new SedMutExpressionError(statement,
-				orig_expression, muta_expression);
+				orig_expression, (SedExpression) SedFactory.fetch(muta_expression));
 	}
 	public static SedConcreteValueError chg_expression(CirStatement statement,
 			CirExpression expression) throws Exception {

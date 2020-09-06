@@ -103,6 +103,7 @@ public abstract class AbsSetOperatorProcess {
 	}
 	
 	/* implementation */
+	protected abstract void assignment() throws Exception;
 	protected abstract void arith_add() throws Exception;
 	protected abstract void arith_sub() throws Exception;
 	protected abstract void arith_mul() throws Exception;
@@ -121,6 +122,5 @@ public abstract class AbsSetOperatorProcess {
 	protected abstract void smaller_eq() throws Exception;
 	protected abstract void equal_with() throws Exception;
 	protected abstract void not_equals() throws Exception;
-	protected abstract void assignment() throws Exception;
 	
 }
