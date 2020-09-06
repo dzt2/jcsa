@@ -89,6 +89,7 @@ public class InstrumentReader {
 			AstNode location = this.ast_tree.get_node(id.intValue());
 			int length = this.next_int().intValue();
 			byte[] value = this.next_bytes(length);
+			value = this.sizeof_template.cast_bytes(value);
 			return new InstrumentalLine(location, value);
 		}
 	}

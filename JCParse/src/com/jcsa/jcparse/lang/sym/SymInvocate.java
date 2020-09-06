@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.sym;
 
 /**
  * It computes the value of call-expression.

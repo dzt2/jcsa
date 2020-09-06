@@ -5,26 +5,32 @@ package com.jcsa.jcparse.lang.sym;
  * @author yukimula
  *
  */
-public class SymField extends SymNode {
+public class SymField extends SymUnit {
 	
+	/* definitions */
 	private String name;
-	protected SymField(String name) {
-		this.name = name;
+	protected SymField(String name) throws IllegalArgumentException {
+		if(name == null || name.isBlank()) {
+			throw new IllegalArgumentException("invalid name");
+		}
+		else {
+			this.name = name;
+		}
 	}
 	
 	/**
-	 * @return name of the field
+	 * @return the name of the field
 	 */
 	public String get_name() { return this.name; }
-
+	
 	@Override
-	protected SymNode new_self() {
+	protected SymNode construct() throws Exception {
 		return new SymField(this.name);
 	}
-
+	
 	@Override
-	protected String generate_code(boolean ast_style) throws Exception {
+	public String generate_code() throws Exception {
 		return this.name;
 	}
-
+	
 }

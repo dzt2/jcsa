@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.sym;
 
 /**
  * It provides computation on the symbolic expressions.

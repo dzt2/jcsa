@@ -1,65 +1,38 @@
 package com.jcsa.jcparse.lang.sym;
 
 import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.lexical.COperator;
 
-/**
- * SymBinaryExpression		{operator: -, /, %, <<, >>, <, <=, >, >=, ==, !=}
- * @author yukimula
- *
- */
 public class SymBinaryExpression extends SymExpression {
-	
-	private COperator operator;
-	protected SymBinaryExpression(CType data_type, COperator operator) {
+
+	protected SymBinaryExpression(CType data_type) throws IllegalArgumentException {
 		super(data_type);
-		this.operator = operator;
 	}
 	
 	/**
-	 * @return {operator: -, /, %, <<, >>, <, <=, >, >=, ==, !=}
+	 * @return {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
 	 */
-	public COperator get_operator() {
-		return this.operator;
-	}
+	public SymOperator get_operator() { return (SymOperator) this.get_child(0); }
+	
 	/**
 	 * @return left-operand
 	 */
-	public SymExpression get_loperand() {
-		return (SymExpression) this.get_child(0);
-	}
+	public SymExpression get_loperand() { return (SymExpression) this.get_child(1); }
+	
 	/**
 	 * @return right-operand
 	 */
-	public SymExpression get_roperand() {
-		return (SymExpression) this.get_child(1);
+	public SymExpression get_roperand() { return (SymExpression) this.get_child(2); }
+
+	@Override
+	protected SymNode construct() throws Exception {
+		return new SymBinaryExpression(this.get_data_type());
 	}
 
 	@Override
-	protected SymNode new_self() {
-		return new SymBinaryExpression(this.get_data_type(), this.operator);
+	public String generate_code() throws Exception {
+		return "(" + this.get_loperand().generate_code() + ") "
+				+ this.get_operator().generate_code() + " ("
+				+ this.get_roperand().generate_code() + ")";
 	}
-
-	@Override
-	protected String generate_code(boolean ast_style) throws Exception {
-		String loperand = "(" + this.get_loperand().generate_code(ast_style) + ")";
-		String roperand = "(" + this.get_roperand().generate_code(ast_style) + ")";
-		String operator;
-		switch(this.operator) {
-		case arith_sub:		operator = " - ";	break;
-		case arith_div:		operator = " / ";	break;
-		case arith_mod:		operator = " % ";	break;
-		case left_shift:	operator = " << ";	break;
-		case righ_shift:	operator = " >> ";	break;
-		case greater_tn:	operator = " > ";	break;
-		case greater_eq:	operator = " >= ";	break;
-		case smaller_tn:	operator = " < ";	break;
-		case smaller_eq:	operator = " <= ";	break;
-		case equal_with:	operator = " == ";	break;
-		case not_equals:	operator = " != ";	break;
-		default: throw new IllegalArgumentException("Invalid operator.");
-		}
-		return loperand + operator + roperand;
-	}
-
+	
 }

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.sym;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;

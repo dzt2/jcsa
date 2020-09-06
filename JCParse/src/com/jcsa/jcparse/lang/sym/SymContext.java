@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.sym;
 
 import java.util.HashMap;
 import java.util.HashSet;

@@ -281,5 +281,17 @@ public class CRunTemplate {
 			bytes.clear(); return bytes;
 		}
 	}
+	/**
+	 * @param bytes directly generated from system environment
+	 * @return generate the correct sequence of bytes in JAVA
+	 * @throws Exception
+	 */
+	public byte[] cast_bytes(byte[] bytes) throws Exception {
+		ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		if(this.little_endian) {
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		buffer.clear(); return buffer.array();
+	}
 	
 }

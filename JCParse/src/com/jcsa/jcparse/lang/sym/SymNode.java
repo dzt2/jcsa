@@ -4,167 +4,177 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Symbolic representation as tree structure as following:<br>
- * 	|--	SymExpression
- * 	|--	|--	SymBasicExpression
- * 	|--	|--	|--	SymIdentifier		{name: String}
- * 	|--	|--	|--	SymConstant			{constant: CConstant}
- * 	|--	|--	|--	SymLiteral			{literal: String}
- * 	|--	|--	SymUnaryExpression		{operator: +, -, ~, !, &, *, assign}
- * 	|--	|--	SymBinaryExpression		{operator: -, /, %, <<, >>, <, <=, >, >=, ==, !=}
- * 	|--	|--	SymMultiExpression		{operator: +, *, &, |, ^, &&, ||}
- * 	|--	|--	SymInitializerList
- * 	|--	|--	SymFieldExpression		{operator: dot}
- * 	|--	|--	SymFunCallExpression
- * 	|--	SymField					{name: String}
- * 	|--	SymArgumentList
- * 	|--	|--	(SymExpression)*
+ * The symbolic language describes the expression, field and statement in C program.
+ * <br>
+ * <code>
+ * 	+----------------------------------------------------------------------+<br>
+ * 	SymNode									{source: AstNode|CirNode}		<br>
+ * 	+----------------------------------------------------------------------+<br>
+ * 	SymUnit																	<br>
+ * 	|--	SymLabel							{statement|execution}			<br>
+ * 	|--	SymField							{name: String}					<br>
+ * 	|--	SymOperator							{operator: COperator}			<br>
+ * 	|--	SymArgumentList														<br>
+ * 	+----------------------------------------------------------------------+<br>
+ * 	SymExpression							{data_type: CType}				<br>
+ * 	|--	SymBasicExpression													<br>
+ * 	|--	|--	SymIdExpression					{name: String}					<br>
+ * 	|--	|--	SymConstant						{constant: CConstant}			<br>
+ * 	|--	|--	SymLiteral						{literal: String}				<br>
+ * 	|--	SymInitializerList													<br>
+ * 	|--	SymFieldExpression													<br>
+ * 	|--	SymCallExpression													<br>
+ * 	|--	SymUnaryExpression					{-, ~, !, &, *, cast}			<br>
+ * 	|--	SymBinaryExpression					{-, /, %, <<, >>, <, ..., >}	<br>
+ * 	+----------------------------------------------------------------------+<br>
+ * </code>
+ * <br>
  * @author yukimula
  *
  */
 public abstract class SymNode {
 	
-	/* attributes */
-	/** parent of this node or null if it's the root **/
+	/* definitions */
+	/** the source from which the node is parsed or null **/
+	private Object source;
+	/** the parent of the node or null if it is the root **/
 	private SymNode parent;
-	/** index of this node in its parent or -1 if it's root **/
-	private int child_index;
-	/** the children of which parents point to this **/
+	/** the index of the node as the child of its parent **/
+	private int index;
+	/** the children under this node **/
 	private List<SymNode> children;
 	
 	/* constructor */
 	/**
-	 * abstract symbolic node
+	 * create an isolated node without parent and children
+	 * @param source
 	 */
 	protected SymNode() {
+		this.source = null;
 		this.parent = null;
-		this.child_index = -1;
+		this.index = -1;
 		this.children = new LinkedList<SymNode>();
 	}
 	
 	/* getters */
 	/**
-	 * @return whether the node is root
+	 * @return whether the node corresponds to any source
 	 */
-	public boolean is_root() {
-		return this.parent != null;
-	}
+	public boolean has_source() { return this.source != null; }
 	/**
-	 * @return the parent of this node or null if it's root
+	 * @return the source from which the node is parsed or null
 	 */
-	public SymNode get_parent() {
-		return this.parent;
-	}
+	public Object get_source() { return this.source; }
 	/**
-	 * @return the index of the node as child in its parent
+	 * @return whether the node is a root
 	 */
-	public int get_child_index() {
-		return this.child_index;
-	}
+	public boolean is_root() { return this.parent == null; }
 	/**
-	 * @return the children created in this node
+	 * @return the parent of the node or null if it is the root
 	 */
-	public Iterable<SymNode> get_children() {
-		return this.children;
-	}
+	public SymNode get_parent() { return this.parent; }
 	/**
-	 * @return the number of children in this node
+	 * @return the index of the node under its parent or -1 if it's root
 	 */
-	public int number_of_children() {
-		return this.children.size();
-	}
+	public int get_child_index() { return this.index; }
+	/**
+	 * @return the children under this node
+	 */
+	public Iterable<SymNode> get_children() { return this.children; }
+	/**
+	 * @return the number of children under this node
+	 */
+	public int number_of_children() { return this.children.size(); }
 	/**
 	 * @param k
-	 * @return get the kth child in this node
+	 * @return the kth child under the node
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymNode get_child(int k) throws IndexOutOfBoundsException {
 		return this.children.get(k);
 	}
 	/**
-	 * @return whether none of children in this node
+	 * @return whether the node contains no children.
 	 */
-	public boolean is_leaf() {
-		return this.children.isEmpty();
-	}
-	/**
-	 * @return the root where this node is defined
-	 */
-	public SymNode get_root() {
-		SymNode root = this;
-		while(!root.is_root()) {
-			root = root.parent;
-		}
-		return root;
-	}
-	/**
-	 * add the child in this node
-	 * @param child
-	 * @throws IllegalArgumentException
-	 */
-	protected void add_child(SymNode child) throws IllegalArgumentException {
-		if(child == null || child.parent != null)
-			throw new IllegalArgumentException("Invalid child: " + child);
-		else {
-			child.parent = this;
-			child.child_index = this.children.size();
-			this.children.add(child);
-		}
-	}
+	public boolean is_leaf() { return this.children.isEmpty(); }
+	
+	/* implication */
 	@Override
 	public SymNode clone() {
-		SymNode parent = this.new_self();
-		for(SymNode child : this.children) {
-			parent.add_child(child.clone());
+		SymNode parent = null;
+		while(parent == null) {
+			try {
+				parent = this.construct();
+			}
+			catch(Exception ex) {
+				ex.printStackTrace();
+				parent = null;
+			}
 		}
+		for(int k = parent.number_of_children(); 
+				k < this.number_of_children(); k++) {
+			parent.children.add(this.children.get(k).clone());
+		}
+		parent.set_source(this.source);
 		return parent;
-	}
-	/**
-	 * @return the code of symbolic node in AST style
-	 * @throws Exception
-	 */
-	public String generate_ast_code() throws Exception {
-		return this.generate_code(true);
-	}
-	/**
-	 * @return the code of symbolic node in CIR style
-	 * @throws Exception
-	 */
-	public String generate_cir_code() throws Exception {
-		return this.generate_code(false);
 	}
 	@Override
 	public String toString() {
-		try {
-			return this.generate_code(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+		while(true) {
+			try {
+				return this.generate_code();
+			}
+			catch(Exception ex) {
+				ex.printStackTrace();
+			}
 		}
 	}
-	/**
-	 * @param obj
-	 * @return whether another expression syntactically equivalent with this one
-	 */
-	public boolean syntax_equivalent(SymNode another) {
-		if(another == this) {
-			return true;
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof SymNode) {
+			return this.toString().equals(obj.toString());
 		}
 		else {
-			return another.toString().equals(this.toString());
+			return false;
 		}
 	}
 	
-	/* utility methods */
+	/* setters */
 	/**
-	 * @return the clone of this node alone
+	 * set the source of the SymNode
+	 * @param source
 	 */
-	protected abstract SymNode new_self();
+	protected void set_source(Object source) { this.source = source; }
 	/**
-	 * @param ast_style
-	 * @return generate the code in specified style.
+	 * @return the isolated copy of this node
 	 * @throws Exception
 	 */
-	protected abstract String generate_code(boolean ast_style) throws Exception;
+	protected abstract SymNode construct() throws Exception;
+	/**
+	 * add the child in the tail of the parent
+	 * @param child
+	 * @throws Exception
+	 */
+	protected void add_child(SymNode child) throws Exception {
+		if(child == null)
+			throw new IllegalArgumentException("Invalid child: null");
+		else {
+			if(child.parent != null) {
+				child = child.clone();
+			}
+			child.parent = this;
+			child.index = this.children.size();
+			this.children.add(child);
+		}
+	}
+	/**
+	 * @return generate the code that describes this expression
+	 * @throws Exception
+	 */
+	public abstract String generate_code() throws Exception;
 	
 }

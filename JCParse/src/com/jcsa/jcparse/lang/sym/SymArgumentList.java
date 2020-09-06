@@ -1,13 +1,13 @@
 package com.jcsa.jcparse.lang.sym;
 
 /**
- * argument_list	|--	(expression)+
- * @author dzt2
+ * argument_list |-- ((expression)*)
+ * @author yukimula
  *
  */
-public class SymArgumentList extends SymNode {
+public class SymArgumentList extends SymUnit {
 	
-	protected SymArgumentList() { }
+	protected SymArgumentList() {}
 	
 	/**
 	 * @return the number of arguments in the list
@@ -15,7 +15,7 @@ public class SymArgumentList extends SymNode {
 	public int number_of_arguments() { return this.number_of_children(); }
 	/**
 	 * @param k
-	 * @return the kth argument in this list
+	 * @return the kth argument in list
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymExpression get_argument(int k) throws IndexOutOfBoundsException {
@@ -23,16 +23,16 @@ public class SymArgumentList extends SymNode {
 	}
 
 	@Override
-	protected SymNode new_self() {
+	protected SymNode construct() throws Exception {
 		return new SymArgumentList();
 	}
 
 	@Override
-	protected String generate_code(boolean ast_style) throws Exception {
+	public String generate_code() throws Exception {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append("(");
 		for(int k = 0; k < this.number_of_arguments(); k++) {
-			buffer.append(this.get_argument(k).generate_code(ast_style));
+			buffer.append(this.get_argument(k).generate_code());
 			if(k < this.number_of_arguments() - 1) {
 				buffer.append(", ");
 			}

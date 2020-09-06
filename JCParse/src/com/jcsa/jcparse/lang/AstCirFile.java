@@ -14,8 +14,6 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
-import com.jcsa.jcparse.lang.sym.SymNode;
-import com.jcsa.jcparse.lang.sym.SymParser;
 import com.jcsa.jcparse.lang.text.CText;
 import com.jcsa.jcparse.parse.CTranslate;
 
@@ -38,8 +36,6 @@ public class AstCirFile {
 	private CirTree cir_tree;
 	/** C-function calling graph **/
 	private CirFunctionCallGraph call_graph;
-	/** used to parse to generate symbolic expression **/
-	private SymParser sym_parser;
 	
 	/* constructor */
 	/**
@@ -59,7 +55,6 @@ public class AstCirFile {
 			this.ast_tree = CTranslate.parse(source_file, standard, template);
 			this.cir_tree = CTranslate.parse(this.ast_tree, template);
 			this.call_graph = this.cir_tree.get_function_call_graph();
-			this.sym_parser = new SymParser(this.template);
 		}
 	}
 	
@@ -219,22 +214,6 @@ public class AstCirFile {
 	 */
 	public CirFunction get_cir_main_function() throws Exception {
 		return this.cir_tree.get_function_call_graph().get_main_function();
-	}
-	/**
-	 * @param source
-	 * @return parse from the AST node
-	 * @throws Exception
-	 */
-	public SymNode sym_parse(AstNode source) throws Exception {
-		return this.sym_parser.parse(source);
-	}
-	/**
-	 * @param source
-	 * @return parse from the CIR node
-	 * @throws Exception
-	 */
-	public SymNode sym_parse(CirNode source) throws Exception {
-		return this.sym_parser.parse(source);
 	}
 	
 	/* factory method */
