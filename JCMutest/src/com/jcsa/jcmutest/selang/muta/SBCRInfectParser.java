@@ -2,7 +2,6 @@ package com.jcsa.jcmutest.selang.muta;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.selang.lang.desc.SedDescription;
-import com.jcsa.jcmutest.selang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.selang.util.SedFactory;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
@@ -46,8 +45,8 @@ public class SBCRInfectParser extends SedInfectParser {
 				}
 				
 				SedDescription constraint, init_error;
-				constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+				constraint = SedFactory.
+						condition_constraint(statement, Boolean.TRUE, true);
 				init_error = SedFactory.mut_statement(statement, next_statement);
 				infection.add_infection_pair(constraint, init_error);
 			}

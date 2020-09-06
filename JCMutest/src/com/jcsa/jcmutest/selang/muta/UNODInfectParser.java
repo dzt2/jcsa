@@ -33,16 +33,14 @@ public class UNODInfectParser extends SedInfectParser {
 			}
 			case delete_bitws_rsv:
 			{
-				constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+				constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 				init_error = SedFactory.
 						nev_expression(statement, expression, COperator.bit_not);
 				break;
 			}
 			case delete_logic_not:
 			{
-				constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+				constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 				init_error = SedFactory.
 						nev_expression(statement, expression, COperator.logic_not);
 				break;

@@ -21,8 +21,7 @@ public class UIODInfectParser extends SedInfectParser {
 	
 	private void delete_prev_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -34,8 +33,7 @@ public class UIODInfectParser extends SedInfectParser {
 	}
 	private void delete_prev_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -47,8 +45,7 @@ public class UIODInfectParser extends SedInfectParser {
 	}
 	private void delete_post_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -60,8 +57,7 @@ public class UIODInfectParser extends SedInfectParser {
 	}
 	private void delete_post_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);

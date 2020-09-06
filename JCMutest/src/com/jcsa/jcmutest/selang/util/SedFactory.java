@@ -388,7 +388,8 @@ public class SedFactory {
 		return new SedExecutionConstraint(statement, times);
 	}
 	public static SedConstraint condition_constraint(CirStatement statement, 
-			SedExpression condition, boolean assert_value) throws Exception {
+			Object expression, boolean assert_value) throws Exception {
+		SedExpression condition = (SedExpression) SedFactory.fetch(expression);
 		condition = SedFactory.get_condition(condition, assert_value);
 		return new SedConditionConstraint(statement, condition);
 	}

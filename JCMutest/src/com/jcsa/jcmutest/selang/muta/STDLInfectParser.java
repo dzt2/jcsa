@@ -7,7 +7,6 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.selang.lang.desc.SedDescription;
-import com.jcsa.jcmutest.selang.lang.expr.SedExpression;
 import com.jcsa.jcmutest.selang.util.SedFactory;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
@@ -48,8 +47,8 @@ public class STDLInfectParser extends SedInfectParser {
 			}
 		}
 		
-		SedDescription constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = 
+				SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		SedDescription init_error = SedFactory.conjunct(statement, init_errors);
 		infection.add_infection_pair(constraint, init_error);
 	}

@@ -25,8 +25,7 @@ public class UIORInfectParser extends SedInfectParser {
 	
 	private void prev_inc_to_prev_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -38,8 +37,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void prev_inc_to_post_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirExpression use_expression = cir_tree.get_cir_range(expression).get_result();
 		SedDescription init_error = SedFactory.app_expression(statement, use_expression, 
@@ -49,8 +47,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void prev_inc_to_post_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		List<SedDescription> init_errors = new ArrayList<SedDescription>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
@@ -69,8 +66,7 @@ public class UIORInfectParser extends SedInfectParser {
 	
 	private void prev_dec_to_prev_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -82,8 +78,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void prev_dec_to_post_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirExpression use_expression = cir_tree.get_cir_range(expression).get_result();
 		SedDescription init_error = SedFactory.app_expression(statement, use_expression, 
@@ -93,8 +88,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void prev_dec_to_post_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		List<SedDescription> init_errors = new ArrayList<SedDescription>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
@@ -113,8 +107,7 @@ public class UIORInfectParser extends SedInfectParser {
 	
 	private void post_inc_to_post_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -126,8 +119,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void post_inc_to_prev_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirExpression use_expression = cir_tree.get_cir_range(expression).get_result();
 		SedDescription init_error = SedFactory.app_expression(statement, use_expression, 
@@ -137,8 +129,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void post_inc_to_prev_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		List<SedDescription> init_errors = new ArrayList<SedDescription>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
@@ -157,8 +148,7 @@ public class UIORInfectParser extends SedInfectParser {
 	
 	private void post_dec_to_post_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().
 				get_cir_nodes(expression, CirIncreAssignStatement.class).get(0);
@@ -170,8 +160,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void post_dec_to_prev_dec(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		
 		CirExpression use_expression = cir_tree.get_cir_range(expression).get_result();
 		SedDescription init_error = SedFactory.app_expression(statement, use_expression, 
@@ -181,8 +170,7 @@ public class UIORInfectParser extends SedInfectParser {
 	}
 	private void post_dec_to_prev_inc(CirTree cir_tree, CirStatement statement, 
 			AstExpression expression, SedInfection infection) throws Exception {
-		SedDescription constraint = SedFactory.condition_constraint(
-				statement, (SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+		SedDescription constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 		List<SedDescription> init_errors = new ArrayList<SedDescription>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) cir_tree.get_localizer().

@@ -33,15 +33,13 @@ public class UNOIInfectParser extends SedInfectParser {
 			}
 			case insert_bitws_rsv:
 			{
-				constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+				constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 				init_error = SedFactory.nev_expression(statement, expression, COperator.bit_not);
 				break;
 			}
 			case insert_logic_not:
 			{
-				constraint = SedFactory.condition_constraint(statement, 
-						(SedExpression) SedFactory.fetch(Boolean.TRUE), true);
+				constraint = SedFactory.condition_constraint(statement, Boolean.TRUE, true);
 				init_error = SedFactory.nev_expression(statement, expression, COperator.logic_not);
 				break;
 			}
