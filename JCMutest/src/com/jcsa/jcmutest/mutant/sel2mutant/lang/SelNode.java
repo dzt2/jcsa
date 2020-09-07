@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sel2mutant;
+package com.jcsa.jcmutest.mutant.sel2mutant.lang;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -126,6 +126,12 @@ public abstract class SelNode {
 		else {
 			return false;
 		}
+	}
+	protected void add_child(SelNode child) throws IllegalArgumentException {
+		if(child == null)
+			throw new IllegalArgumentException("invalid child: null");
+		else
+			this.children.add(child);
 	}
 	
 }
