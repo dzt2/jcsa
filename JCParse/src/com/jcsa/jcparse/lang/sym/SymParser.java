@@ -52,6 +52,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
@@ -170,9 +171,28 @@ public class SymParser {
 		}
 		return SymFactory.call_expression(source.get_value_type(), function, arguments);
 	}
+	private CType find_pointed_type(CType data_type) throws Exception {
+		data_type = CTypeAnalyzer.get_value_type(data_type);
+		if(data_type instanceof CArrayType) {
+			return ((CArrayType) data_type).get_element_type();
+		}
+		else if(data_type instanceof CPointerType) {
+			return ((CPointerType) data_type).get_pointed_type();
+		}
+		else {
+			throw new IllegalArgumentException(data_type.generate_code());
+		}
+	}
 	private SymExpression parse_field_expression(AstFieldExpression source) throws Exception {
 		SymExpression body = this.parse_ast(source.get_body());
-		return SymFactory.field_expression(source.get_value_type(), body, source.get_field().get_name());
+		String name = source.get_field().get_name();
+		
+		if(source.get_operator().get_punctuator() == CPunctuator.arrow) {
+			CType type = this.find_pointed_type(body.get_data_type());
+			body = SymFactory.dereference(type, body);
+		}
+		
+		return SymFactory.field_expression(source.get_value_type(), body, name);
 	}
 	private SymExpression parse_initializer_body(AstInitializerBody source) throws Exception {
 		List<Object> elements = new ArrayList<Object>();

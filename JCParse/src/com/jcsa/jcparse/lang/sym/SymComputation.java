@@ -43,7 +43,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Double.valueOf(x + y));
@@ -70,7 +70,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Double.valueOf(x - y));
@@ -97,7 +97,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Double.valueOf(x * y));
@@ -124,7 +124,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Double.valueOf(x / y));
@@ -191,7 +191,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x > y));
@@ -218,7 +218,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x >= y));
@@ -245,7 +245,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x < y));
@@ -272,7 +272,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x <= y));
@@ -299,7 +299,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x == y));
@@ -326,7 +326,7 @@ public class SymComputation {
 			}
 		}
 		else {
-			double x = ((Double) rnumber).doubleValue();
+			double x = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long y = ((Long) rnumber).longValue();
 				return SymFactory.new_constant(Boolean.valueOf(x != y));

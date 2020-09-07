@@ -49,11 +49,11 @@ public class SymContext {
 	/**
 	 * @return the parent context or null
 	 */
-	public SymContext get_parent() { return this.parent; }
+	protected SymContext get_parent() { return this.parent; }
 	/**
 	 * @return the key that extends this context from its parent
 	 */
-	public Object get_key() { return this.key; }
+	protected Object get_key() { return this.key; }
 	/**
 	 * @param key
 	 * @return whether there is value in the context w.r.t. the key
@@ -101,21 +101,6 @@ public class SymContext {
 			return source;
 		}
 	}
-	/**
-	 * set the key-value in local-state-table
-	 * @param key
-	 * @param value
-	 * @throws Exception
-	 */
-	public void put(Object key, SymExpression value) throws Exception {
-		if(key == null)
-			throw new IllegalArgumentException("Invalid key");
-		else if(value == null)
-			throw new IllegalArgumentException("invalid value");
-		else {
-			this.ltable.put(key, value);
-		}
-	}
 	
 	/* setters */
 	protected SymContext get_child(Object key) {
@@ -137,6 +122,21 @@ public class SymContext {
 			throw new IllegalArgumentException("invalid invocate");
 		else 
 			this.invocate_set.add(invocate);
+	}
+	/**
+	 * set the key-value in local-state-table
+	 * @param key
+	 * @param value
+	 * @throws Exception
+	 */
+	public void put(Object key, SymExpression value) throws Exception {
+		if(key == null)
+			throw new IllegalArgumentException("Invalid key");
+		else if(value == null)
+			throw new IllegalArgumentException("invalid value");
+		else {
+			this.ltable.put(key, value);
+		}
 	}
 	
 }

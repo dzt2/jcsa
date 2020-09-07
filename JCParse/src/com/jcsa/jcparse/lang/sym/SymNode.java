@@ -136,6 +136,8 @@ public abstract class SymNode {
 	@Override
 	public boolean equals(Object obj) {
 		if(obj instanceof SymNode) {
+			if(obj == this)
+				return true;
 			return this.toString().equals(obj.toString());
 		}
 		else {

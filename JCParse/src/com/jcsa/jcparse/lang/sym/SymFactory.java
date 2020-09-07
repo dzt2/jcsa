@@ -97,7 +97,7 @@ public class SymFactory {
 	public static SymUnaryExpression logic_not(Object operand) throws Exception {
 		CType type = CBasicTypeImpl.bool_type;
 		SymUnaryExpression expression = new SymUnaryExpression(type);
-		expression.add_child(new SymOperator(COperator.negative));
+		expression.add_child(new SymOperator(COperator.logic_not));
 		expression.add_child(SymFactory.parse(operand));
 		return expression;
 	}

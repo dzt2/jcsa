@@ -530,12 +530,16 @@ public class AstCodeInstrumentor {
 		}
 	}
 	private void ins_initializer_body(AstInitializerBody node) throws Exception {
+		/*
 		this.buffer.append("{ ");
 		this.ins(node.get_initializer_list());
 		if(node.has_tail_comma()) {
 			this.buffer.append(", ");
 		}
 		this.buffer.append("}");
+		*/
+		/* TODO to avoid instrument in initializer elements */
+		this.gen(node);
 	}
 	private void ins_initializer_list(AstInitializerList node) throws Exception {
 		for(int k = 0; k < node.number_of_initializer(); k++) {

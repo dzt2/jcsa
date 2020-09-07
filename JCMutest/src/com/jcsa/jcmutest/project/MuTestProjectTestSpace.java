@@ -8,11 +8,12 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.BitSequence;
+import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.file.TestInputs;
-import com.jcsa.jcparse.test.inst.InstrumentalBuilder;
-import com.jcsa.jcparse.test.inst.InstrumentalPath;
+import com.jcsa.jcparse.test.inst.InstrumentReader;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
  * <code>
@@ -159,11 +160,18 @@ public class MuTestProjectTestSpace {
 	 * @return the path of instrumental test results or null if input is not executed before.
 	 * @throws Exception
 	 */
-	public InstrumentalPath read_instrumental_path(AstTree tree, TestInput input) throws Exception {
+	public List<InstrumentalLine> read_instrumental_lines(CRunTemplate 
+			sizeof_template, AstTree tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
 		if(instrumental_file.exists()) {
-			return InstrumentalBuilder.read(tree, instrumental_file);
+			InstrumentReader reader = new InstrumentReader(
+					sizeof_template, tree, instrumental_file);
+			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			
+			InstrumentalLine line;
+			while((line = reader.next()) != null) { lines.add(line); }
+			return lines;
 		}
 		else {
 			return null;	/* no instrumental results are found in */
