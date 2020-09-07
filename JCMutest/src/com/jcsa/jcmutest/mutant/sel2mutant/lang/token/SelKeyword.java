@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.token;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
 
 public class SelKeyword extends SelToken {
 	

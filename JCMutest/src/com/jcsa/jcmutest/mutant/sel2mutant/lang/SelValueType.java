@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sel2mutant;
+package com.jcsa.jcmutest.mutant.sel2mutant.lang;
 
 /**
  * The abstract type of data value of expressions in C programs.

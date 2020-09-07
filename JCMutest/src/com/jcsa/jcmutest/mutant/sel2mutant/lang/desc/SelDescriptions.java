@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.desc;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public abstract class SelDescriptions extends SelDescription {

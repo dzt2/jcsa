@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.cons;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
 import com.jcsa.jcmutest.mutant.sel2mutant.lang.token.SelExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymFactory;
