@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.value;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelValueType;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelValueType;
 import com.jcsa.jcmutest.mutant.sel2mutant.lang.desc.SelDescription;
 import com.jcsa.jcmutest.mutant.sel2mutant.lang.token.SelDataType;
 import com.jcsa.jcmutest.mutant.sel2mutant.lang.token.SelExpression;

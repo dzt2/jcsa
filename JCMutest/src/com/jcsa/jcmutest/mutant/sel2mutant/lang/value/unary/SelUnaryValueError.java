@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.value.unary;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
 import com.jcsa.jcmutest.mutant.sel2mutant.lang.value.SelTypedValueError;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;

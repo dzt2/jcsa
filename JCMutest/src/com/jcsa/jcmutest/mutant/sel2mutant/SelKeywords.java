@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sel2mutant.lang;
+package com.jcsa.jcmutest.mutant.sel2mutant;
 
 /**
  * The keywords in SEL language defines the type of constraints, state errors.

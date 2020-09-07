@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.value.binary;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelKeywords;
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelValueType;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelKeywords;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelValueType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymExpression;

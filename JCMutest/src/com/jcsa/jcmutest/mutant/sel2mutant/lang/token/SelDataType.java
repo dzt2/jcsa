@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sel2mutant.lang.token;
 
-import com.jcsa.jcmutest.mutant.sel2mutant.lang.SelValueType;
+import com.jcsa.jcmutest.mutant.sel2mutant.SelValueType;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
