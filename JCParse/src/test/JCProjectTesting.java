@@ -1,9 +1,11 @@
 package test;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.test.file.JCTestProjectConfig;
 import com.jcsa.jcparse.test.CommandUtil;
@@ -20,8 +22,8 @@ public class JCProjectTesting {
 	private static final File c_pre_process_mac_file = new File("config/linux.h");
 	private static final List<String> compile_parameters = new ArrayList<String>();
 	
-	private static final String prefix = "/home/dzt2/Development/Data/Code2/cfiles/";
-	private static final String postfix = "/home/dzt2/Development/Data/Code2/projects/";
+	private static final String prefix = "/home/dzt2/Development/Data/cfiles/";
+	private static final String postfix = "/home/dzt2/Development/Data/cprojects/";
 	
 	public static void main(String[] args) throws Exception {
 		compile_parameters.add("-lm");
@@ -29,8 +31,9 @@ public class JCProjectTesting {
 			if(cfile.getName().endsWith(".c")) {
 				try {
 					System.out.println("Create project at " + cfile.getAbsolutePath());
-					// create_project(cfile);
-					open_project(cfile);
+					JCTestProject project = create_project(cfile);
+					output_cir_code(project, new File("result/cir/" + project.get_name() + ".i"));
+					// open_project(cfile);
 				}
 				catch(Exception ex) {
 					ex.printStackTrace();
@@ -70,6 +73,13 @@ public class JCProjectTesting {
 		System.out.println("\t" + config.get_compile_parameters().toString());
 		
 		return project;
+	}
+	
+	protected static void output_cir_code(JCTestProject project, File output) throws Exception {
+		AstCirFile program = project.get_code_part().get_program(0);
+		FileWriter writer = new FileWriter(output);
+		writer.write(program.get_cir_tree().get_root().generate_code(true));
+		writer.close();
 	}
 	
 }

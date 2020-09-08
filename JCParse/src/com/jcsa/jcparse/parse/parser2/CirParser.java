@@ -1,5 +1,8 @@
 package com.jcsa.jcparse.parse.parser2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
@@ -428,7 +431,7 @@ public class CirParser {
 		else if(source instanceof AstFieldExpression)
 			return this.parse_field_expression((AstFieldExpression) source);
 		else if(source instanceof AstFunCallExpression)
-			return this.parse_fun_call_expression((AstFunCallExpression) source);
+			return this.parse_func_call_expression((AstFunCallExpression) source);
 		else if(source instanceof AstConstExpression)
 			return this.parse_const_expression((AstConstExpression) source);
 		else if(source instanceof AstParanthExpression)
@@ -1114,6 +1117,8 @@ public class CirParser {
 	 * @return
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
+	@Deprecated
 	private ACPSolution parse_fun_call_expression(AstFunCallExpression source) throws Exception {
 		/* 1. {F} */
 		ACPSolution solution = this.get_solution(source);
@@ -1134,6 +1139,85 @@ public class CirParser {
 		else {
 			arguments = this.cir_tree.new_argument_list(null);
 		}
+		
+		/* 3. (F) */
+		CirExpression function = fsolution.get_result();
+		CType ftype = source.get_function().get_value_type();
+		ftype = CTypeAnalyzer.get_value_type(ftype);
+		if(!(ftype instanceof CFunctionType)) {
+			if(ftype instanceof CArrayType) {
+				ftype = ((CArrayType) ftype).get_element_type();
+			}
+			else if(ftype instanceof CPointerType) {
+				ftype = ((CPointerType) ftype).get_pointed_type();
+			}
+			else throw new IllegalArgumentException("invalid type: " + ftype);
+			CFunctionType fun_type = (CFunctionType) ftype;
+			
+			CirDeferExpression fexpr = this.cir_tree.new_defer_expression(null, fun_type);
+			fexpr.set_address(function); function = fexpr;
+		}
+		
+		/* 4. (call (F) ((A1), (A2), ..., (An)) */
+		CirCallStatement call_statement = this.cir_tree.new_call_statement(source);
+		call_statement.set_function(function); call_statement.set_arguments(arguments);
+		solution.append(call_statement); 
+		
+		/* 5. (wait_assign $temporal as (wait (F))) */
+		function = (CirExpression) this.cir_tree.copy(function);
+		CirWaitExpression rvalue = this.cir_tree.new_wait_expression(source, source.get_value_type());
+		rvalue.set_function(function); 
+		CirImplicator lvalue = this.cir_tree.new_implicator(source, source.get_value_type());
+		CirWaitAssignStatement wait_statement = this.cir_tree.new_wait_assign_statement(source);
+		wait_statement.set_lvalue(lvalue); wait_statement.set_rvalue(rvalue); solution.append(wait_statement);
+		
+		/* 6. return $temporal */
+		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
+	}
+	/**
+	 * F(A1, A2, ..., An)	|== {F}; {A1}; {A2}; {An};
+	 * 						|==	P1 = A1; P2 = A2; ... Pn = An;
+	 * 						|== (call (F) ((A1), (A2), ..., (An))
+	 * 						|== (wait_assign $temporal as (wait (F)))
+	 * @param source
+	 * @return this is a more secure way to parse Cir-Code
+	 * @throws Exception
+	 */
+	private ACPSolution parse_func_call_expression(AstFunCallExpression source) throws Exception {
+		/* 1. {F} */
+		ACPSolution solution = this.get_solution(source);
+		ACPSolution fsolution = this.parse(source.get_function());
+		solution.append(fsolution);
+		
+		/* 2. {A1}; ... {An}; (A1, A2, ..., An) */
+		CirArgumentList arguments;
+		List<CirExpression> parameters = new ArrayList<CirExpression>();
+		if(source.has_argument_list()) {
+			AstArgumentList list = source.get_argument_list();
+			arguments = this.cir_tree.new_argument_list(list);
+			for(int k = 0; k < list.number_of_arguments(); k++) {
+				ACPSolution asolution = this.parse(list.get_argument(k));
+				solution.append(asolution);
+				
+				/* param_k := argument_k; */
+				CirImplicator parameter = this.cir_tree.new_implicator(list.
+						get_argument(k), list.get_argument(k).get_value_type());
+				CirSaveAssignStatement param_assign = this.
+						cir_tree.new_save_assign_statement(list.get_argument(k));
+				param_assign.set_lvalue(parameter); 
+				param_assign.set_rvalue(asolution.get_result());
+				solution.append(param_assign);
+				
+				/* save the copy of the parameter as for usage in argument-list */
+				parameters.add((CirExpression) this.cir_tree.copy(parameter));
+			}
+		}
+		else {
+			arguments = this.cir_tree.new_argument_list(null);
+		}
+		
+		/* register the kth argument in the list. */
+		for(CirExpression parameter : parameters) arguments.add_argument(parameter);
 		
 		/* 3. (F) */
 		CirExpression function = fsolution.get_result();

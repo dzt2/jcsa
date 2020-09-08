@@ -1,11 +1,14 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
+import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.inst.InstrumentalList;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
+import com.jcsa.jcparse.test.inst.InstrumentalUnit;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -73,14 +76,33 @@ public class JCTestProjectResult {
 	 * @return the instrumental lines from data file
 	 * @throws Exception
 	 */
-	public InstrumentalList load_instrumental_list(
+	public List<InstrumentalLine> load_instrumental_lines(
 			CRunTemplate sizeof_template,
 			AstTree ast_tree, TestInput input) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			return InstrumentalList.
-					parse(sizeof_template, ast_tree, instrumental_file);
+			return InstrumentalLine.
+					read(instrumental_file, ast_tree, sizeof_template);
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param sizeof_template
+	 * @param ast_tree
+	 * @param input
+	 * @return the instrumental lines from data file
+	 * @throws Exception
+	 */
+	public List<InstrumentalUnit> load_instrumental_units(
+			CRunTemplate sizeof_template, CirTree cir_tree,
+			AstTree ast_tree, TestInput input) throws Exception {
+		List<InstrumentalLine> lines = this.load_instrumental_lines(
+				sizeof_template, ast_tree, input);
+		if(lines != null) {
+			return InstrumentalUnit.parse(sizeof_template, cir_tree, lines);
 		}
 		else {
 			return null;

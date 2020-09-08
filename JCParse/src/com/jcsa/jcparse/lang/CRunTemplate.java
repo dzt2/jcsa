@@ -9,6 +9,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
@@ -24,6 +25,7 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 
 /**
@@ -299,5 +301,103 @@ public class CRunTemplate {
 		}
 		buffer.clear(); return buffer.array();
 	}
+	/**
+	 * @param type
+	 * @param bytes
+	 * @return
+	 * @throws Exception
+	 */
+	public Object generate_value(CType type, byte[] bytes) throws Exception {
+		type = CTypeAnalyzer.get_value_type(type);
+		ByteBuffer byte_buffer = ByteBuffer.wrap(bytes);
+		if(this.little_endian) {
+			byte_buffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		else {
+			byte_buffer.order(ByteOrder.BIG_ENDIAN);
+		}
+		byte_buffer.clear();
+		
+		if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_bool:
+			{
+				for(byte element : bytes) {
+					if(element != 0) {
+						return Boolean.TRUE;
+					}
+				}
+				return Boolean.FALSE;
+			}
+			case c_char:
+			case c_uchar:
+			{
+				return Character.valueOf(byte_buffer.getChar());
+			}
+			case c_short:
+			case c_ushort:
+			{
+				return Short.valueOf(byte_buffer.getShort());
+			}
+			case c_int:
+			case c_uint:
+			{
+				return Integer.valueOf(byte_buffer.getInt());
+			}
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:
+			{
+				return Long.valueOf(byte_buffer.getLong());
+			}
+			case c_float:
+			{
+				return Float.valueOf(byte_buffer.getFloat());
+			}
+			case c_double:
+			case c_ldouble:
+			{
+				return Double.valueOf(byte_buffer.getDouble());
+			}
+			case c_float_complex:
+			{
+				float x = byte_buffer.getFloat();
+				float y = byte_buffer.getFloat();
+				return new Complex(x, y);
+			}
+			case c_double_complex:
+			case c_ldouble_complex:
+			{
+				double x = byte_buffer.getDouble();
+				double y = byte_buffer.getDouble();
+				return new Complex(x, y);
+			}
+			case c_float_imaginary:
+			{
+				return new Complex(0, byte_buffer.getFloat());
+			}
+			case c_double_imaginary:
+			case c_ldouble_imaginary:
+			{
+				return new Complex(0, byte_buffer.getDouble());
+			}
+			default: 
+			{
+				return byte_buffer;
+			}
+			}
+		}
+		else if(type instanceof CPointerType) {
+			return Long.valueOf(byte_buffer.getLong());
+		}
+		else if(type instanceof CEnumType) {
+			return Integer.valueOf(byte_buffer.getInt());
+		}
+		else {
+			return byte_buffer;
+		}
+	}
+	
 	
 }
