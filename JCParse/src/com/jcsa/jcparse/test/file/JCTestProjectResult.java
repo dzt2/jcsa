@@ -1,14 +1,11 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.inst.InstrumentReader;
-import com.jcsa.jcparse.test.inst.InstrumentalLine;
+import com.jcsa.jcparse.test.inst.InstrumentalList;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -76,18 +73,14 @@ public class JCTestProjectResult {
 	 * @return the instrumental lines from data file
 	 * @throws Exception
 	 */
-	public List<InstrumentalLine> load_instrumental_lines(
+	public InstrumentalList load_instrumental_list(
 			CRunTemplate sizeof_template,
 			AstTree ast_tree, TestInput input) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
-			InstrumentReader reader = new InstrumentReader(
-					sizeof_template, ast_tree, instrumental_file);
-			InstrumentalLine line;
-			while((line = reader.next()) != null) lines.add(line);
-			return lines;
+			return InstrumentalList.
+					parse(sizeof_template, ast_tree, instrumental_file);
 		}
 		else {
 			return null;

@@ -278,6 +278,9 @@ public class CRunTemplate {
 			if(this.little_endian) {
 				bytes.order(ByteOrder.LITTLE_ENDIAN);
 			}
+			else {
+				bytes.order(ByteOrder.BIG_ENDIAN);
+			}
 			bytes.clear(); return bytes;
 		}
 	}
@@ -290,6 +293,9 @@ public class CRunTemplate {
 		ByteBuffer buffer = ByteBuffer.wrap(bytes);
 		if(this.little_endian) {
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		else {
+			buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 		buffer.clear(); return buffer.array();
 	}
