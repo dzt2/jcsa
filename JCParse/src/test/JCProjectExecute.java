@@ -42,7 +42,7 @@ public class JCProjectExecute {
 			}
 		}
 		*/
-		testing("profit");
+		testing("bubble_sort");
 	}
 	protected static void testing(String name) throws Exception {
 		compile_parameters.clear();
