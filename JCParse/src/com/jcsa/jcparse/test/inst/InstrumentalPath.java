@@ -11,11 +11,14 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 
 public class InstrumentalPath {
 	
@@ -114,62 +117,84 @@ public class InstrumentalPath {
 		while(source != target) {
 			if(!first)
 				sub_path.add(source);
+			first = false;
 			
-			if(source.get_ou_degree() == 0) {
-				break;
-			}
-			else if(source.get_statement() instanceof CirCallStatement
-					|| source.get_statement() instanceof CirEndStatement) {
-				break;	/* undecidable problem */
-			}
-			else if(source.get_ou_degree() == 1) {
+			CirStatement statement = source.get_statement();
+			if(statement instanceof CirAssignStatement
+				|| statement instanceof CirGotoStatement) {
 				source = source.get_ou_flow(0).get_target();
 			}
-			else if(source == last_node.get_execution()) {
-				CirStatement statement = source.get_statement();
-				
-				boolean decision;
-				if(statement instanceof CirIfStatement) {
-					decision = false;
+			else if(statement instanceof CirCallStatement) {
+				if(source.get_ou_flow(0).get_type() == CirExecutionFlowType.call_flow) {
+					source = source.get_ou_flow(0).get_target();
+				}
+				else {
+					if(target.get_graph().get_function() != source.get_graph().get_function()) {
+						break;
+					}
+					else {
+						source = source.get_ou_flow(0).get_target();
+					}
+				}
+			}
+			else if(statement instanceof CirEndStatement) {
+				break;
+			}
+			else if(statement instanceof CirTagStatement) {
+				source = source.get_ou_flow(0).get_target();
+			}
+			else if(statement instanceof CirCaseStatement) {
+				break;
+			}
+			else if(statement instanceof CirIfStatement) {
+				if(source == last_node.get_execution()) {
+					CirExpression condition = ((CirIfStatement) statement).get_condition();
+					boolean found = false, decision = false;
 					for(InstrumentalUnit unit : last_node.get_units()) {
-						if(unit.get_location() == 
-								((CirIfStatement) statement).get_condition()) {
-							decision = ((Boolean) unit.get_value()).booleanValue();
+						if(unit.get_location() == condition) {
+							byte[] bytes = unit.get_bytes();
+							for(byte element : bytes) {
+								if(element != 0) {
+									decision = true;
+								}
+							}
+							found = true;
 							break;
 						}
 					}
+					if(found) {
+						if(decision) {
+							for(CirExecutionFlow flow : source.get_ou_flows()) {
+								if(flow.get_type() == CirExecutionFlowType.true_flow) {
+									source = flow.get_target();
+									break;
+								}
+							}
+						}
+						else {
+							for(CirExecutionFlow flow : source.get_ou_flows()) {
+								if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+									source = flow.get_target();
+									break;
+								}
+							}
+						}
+					}
+					else {
+						break;
+					}
 				}
-				else if(statement instanceof CirCaseStatement) {
+				else {
 					break;
-				}
-				else {
-					throw new IllegalArgumentException(statement.generate_code(true));
-				}
-				
-				if(decision) {
-					for(CirExecutionFlow flow : source.get_ou_flows()) {
-						if(flow.get_type() == CirExecutionFlowType.true_flow) {
-							source = flow.get_target(); break;
-						}
-					}
-				}
-				else {
-					for(CirExecutionFlow flow : source.get_ou_flows()) {
-						if(flow.get_type() == CirExecutionFlowType.fals_flow) {
-							source = flow.get_target(); break;
-						}
-					}
 				}
 			}
 			else {
-				/*throw new IllegalArgumentException("Unable to control " + 
-						"at " + source.get_statement().generate_code(true));*/
-				break;
+				throw new IllegalArgumentException(statement.generate_code(true));
 			}
-			
-			first = false;
 		}
-		sub_path.remove(source);
+		
+		while(sub_path.contains(source))
+			sub_path.remove(source);
 		sub_path.remove(target);
 		return sub_path;
 	}
