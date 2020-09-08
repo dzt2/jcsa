@@ -9,6 +9,12 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class InstrumentalPath {
@@ -100,5 +106,113 @@ public class InstrumentalPath {
 	}
 	
 	/* complete path */
+	private List<CirExecution> complete_sub_path(CirExecution source, 
+			CirExecution target, List<CirExecution> sub_path) throws Exception {
+		sub_path.clear(); boolean first = true;
+		InstrumentalNode last_node = this.nodes.get(nodes.size() - 1);
+		
+		while(source != target) {
+			if(!first)
+				sub_path.add(source);
+			
+			if(source.get_ou_degree() == 0) {
+				break;
+			}
+			else if(source.get_statement() instanceof CirCallStatement
+					|| source.get_statement() instanceof CirEndStatement) {
+				break;	/* undecidable problem */
+			}
+			else if(source.get_ou_degree() == 1) {
+				source = source.get_ou_flow(0).get_target();
+			}
+			else if(source == last_node.get_execution()) {
+				CirStatement statement = source.get_statement();
+				
+				boolean decision;
+				if(statement instanceof CirIfStatement) {
+					decision = false;
+					for(InstrumentalUnit unit : last_node.get_units()) {
+						if(unit.get_location() == 
+								((CirIfStatement) statement).get_condition()) {
+							decision = ((Boolean) unit.get_value()).booleanValue();
+							break;
+						}
+					}
+				}
+				else if(statement instanceof CirCaseStatement) {
+					break;
+				}
+				else {
+					throw new IllegalArgumentException(statement.generate_code(true));
+				}
+				
+				if(decision) {
+					for(CirExecutionFlow flow : source.get_ou_flows()) {
+						if(flow.get_type() == CirExecutionFlowType.true_flow) {
+							source = flow.get_target(); break;
+						}
+					}
+				}
+				else {
+					for(CirExecutionFlow flow : source.get_ou_flows()) {
+						if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+							source = flow.get_target(); break;
+						}
+					}
+				}
+			}
+			else {
+				/*throw new IllegalArgumentException("Unable to control " + 
+						"at " + source.get_statement().generate_code(true));*/
+				break;
+			}
+			
+			first = false;
+		}
+		sub_path.remove(source);
+		sub_path.remove(target);
+		return sub_path;
+	}
+	private void generate_complete_path(List<InstrumentalUnit> units) throws Exception {
+		/* declarations */
+		CirExecution next_execution, prev_execution = null; nodes.clear();
+		List<InstrumentalUnit> buffer = new ArrayList<InstrumentalUnit>();
+		ArrayList<CirExecution> sub_path = new ArrayList<CirExecution>();
+		for(InstrumentalUnit unit : units) {
+			if(unit.get_type() == InstrumentalType.evaluate) {
+				next_execution = this.get_execution(unit);
+				if(prev_execution != next_execution) {
+					if(!buffer.isEmpty()) {
+						nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
+						/* complete the sub-path between them */
+						this.complete_sub_path(prev_execution, next_execution, sub_path);
+						for(CirExecution execution : sub_path) {
+							nodes.add(new InstrumentalNode(this, nodes.size(), execution, null));
+						}
+					}
+					prev_execution = next_execution;
+					buffer.clear();
+				}
+				buffer.add(unit);
+			}
+		}
+		if(!buffer.isEmpty()) {
+			nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
+		}
+	}
+	/**
+	 * generate the partial path (incomplete with all the nodes skiped) fetched
+	 * from the instrumental nodes
+	 * @param instrumental_file
+	 * @throws Exception
+	 */
+	public void set_complete_path(File instrumental_file) throws Exception {
+		if(instrumental_file == null || !instrumental_file.exists())
+			throw new IllegalArgumentException("Undefined: " + instrumental_file);
+		else {
+			List<InstrumentalLine> lines = InstrumentalLine.read(instrumental_file, ast_tree, template);
+			this.generate_complete_path(InstrumentalUnitParser.parse(template, cir_tree, lines));
+		}
+	}
 	
 }

@@ -90,5 +90,27 @@ public class JCTestProjectResult {
 			return null;
 		}
 	}
+	/**
+	 * @param sizeof_template
+	 * @param cir_tree
+	 * @param ast_tree
+	 * @param input
+	 * @return the complete path fetched from instrumental file
+	 * @throws Exception
+	 */
+	public InstrumentalPath load_complete_path(CRunTemplate sizeof_template, 
+			CirTree cir_tree, AstTree ast_tree, TestInput input) throws Exception {
+		File instrumental_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrumental_file.exists()) {
+			InstrumentalPath path = new InstrumentalPath(
+					sizeof_template, ast_tree, cir_tree);
+			path.set_complete_path(instrumental_file);
+			return path;
+		}
+		else {
+			return null;
+		}
+	}
 	
 }

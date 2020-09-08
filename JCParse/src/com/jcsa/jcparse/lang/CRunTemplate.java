@@ -398,6 +398,57 @@ public class CRunTemplate {
 			return byte_buffer;
 		}
 	}
-	
+	/**
+	 * @param type
+	 * @param value
+	 * @return the bytes encoding the value
+	 * @throws Exception
+	 */
+	public byte[] encode(CType type, Object value) throws Exception {
+		ByteBuffer byte_buffer;
+		if(value instanceof Boolean) {
+			byte_buffer = ByteBuffer.wrap(new byte[] { (byte) (((Boolean) value).booleanValue() ? 1 : 0) });
+		}
+		else if(value instanceof Character) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putChar(((Character) value).charValue());
+		}
+		else if(value instanceof Short) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putShort(((Short) value).shortValue());
+		}
+		else if(value instanceof Integer) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putInt(((Integer) value).intValue());
+		}
+		else if(value instanceof Long) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putLong(((Long) value).longValue());
+		}
+		else if(value instanceof Float) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putFloat(((Float) value).floatValue());
+		}
+		else if(value instanceof Double) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putDouble(((Double) value).doubleValue());
+		}
+		else if(value instanceof Complex) {
+			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
+			byte_buffer.putDouble(((Complex) value).get_x());
+			byte_buffer.putDouble(((Complex) value).get_y());
+		}
+		else {
+			byte_buffer = ByteBuffer.wrap((byte[]) (value));
+		}
+		if(this.little_endian) {
+			byte_buffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		else {
+			byte_buffer.order(ByteOrder.BIG_ENDIAN);
+		}
+		byte_buffer.clear();
+		return byte_buffer.array();
+	}
 	
 }

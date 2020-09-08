@@ -52,8 +52,10 @@ import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
+import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
@@ -205,6 +207,31 @@ class InstrumentalUnitParser {
 			throw new IllegalArgumentException(location.generate_code());
 		}
 	}
+	private byte[] arith_add_fix(CType type, byte[] bytes, int difference) throws Exception {
+		Object number = this.template.generate_value(type, bytes);
+		if(number instanceof Character) {
+			number = Character.valueOf((char) (((Character) number).charValue() + difference));
+		}
+		else if(number instanceof Short) {
+			number = Character.valueOf((char) (((Short) number).shortValue() + difference));
+		}
+		else if(number instanceof Integer) {
+			number = Integer.valueOf(((Integer) number).intValue() + difference);
+		}
+		else if(number instanceof Long) {
+			number = Long.valueOf(((Long) number).longValue() + difference);
+		}
+		else if(number instanceof Float) {
+			number = Float.valueOf(((Float) number).floatValue() + difference);
+		}
+		else if(number instanceof Double) {
+			number = Double.valueOf(((Double) number).doubleValue() + difference);
+		}
+		else {
+			throw new IllegalArgumentException(number.toString());
+		}
+		return this.template.encode(type, number);
+	}
 	private void local_parse_unary_expression(AstUnaryExpression
 			location, InstrumentalLine line) throws Exception {
 		if(location instanceof AstArithUnaryExpression
@@ -217,6 +244,17 @@ class InstrumentalUnitParser {
 		else if(location instanceof AstIncreUnaryExpression) {
 			CirIncreAssignStatement statement = (CirIncreAssignStatement) this.
 					get_cir_nodes(location, CirIncreAssignStatement.class).get(0);
+			
+			int difference;
+			switch(location.get_operator().get_operator()) {
+			case increment:	difference = -1; break;
+			case decrement:	difference = 1;  break;
+			default: throw new IllegalArgumentException(location.generate_code());
+			}
+			byte[] old_bytes = this.arith_add_fix(location.get_value_type(), line.get_value(), difference);
+			CirComputeExpression rvalue = (CirComputeExpression) statement.get_rvalue();
+			this.append_evaluate(rvalue.get_operand(0), old_bytes);
+			
 			this.append_evaluate(statement.get_rvalue(), line.get_value());
 			
 			CirExpression expression = get_cir_value(location);
