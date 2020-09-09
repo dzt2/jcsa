@@ -1,13 +1,19 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.apis.SecInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 public class CTRPInfectionParser extends SecInfectionParser {
 
@@ -46,8 +52,15 @@ public class CTRPInfectionParser extends SecInfectionParser {
 		
 		/* cir-code getters */
 		CirAssignStatement statement = (CirAssignStatement) this.statement;
-		CirExpression orig_expression = statement.get_rvalue();
+		CirExpression loperand = statement.get_rvalue();
+		AstExpression roperand = case_statement.get_expression();
+		SymExpression condition = SymFactory.equal_with(loperand, roperand);
 		
+		/* switch_condition == case_condition -> trap_statement(statement) */
+		SecConstraint constraint = 
+					SecFactory.assert_constraint(statement, condition, true);
+		SecDescription init_error = SecFactory.trap_statement(statement);
+		this.add_infection(constraint, init_error);
 	}
-
+	
 }
