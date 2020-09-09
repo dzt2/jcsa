@@ -1,11 +1,14 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -107,6 +110,27 @@ public abstract class SecInfectionParser {
 	 */
 	protected List<CirNode> get_cir_nodes(AstNode location, Class<?> type) throws Exception {
 		return this.cir_tree.get_localizer().get_cir_nodes(location, type);
+	}
+	/**
+	 * collect the statements within the location
+	 * @param location
+	 * @param statements
+	 * @throws Exception
+	 */
+	private void collect_statements_in(AstNode location, Set<CirStatement> statements) throws Exception {
+		AstCirPair range = this.cir_tree.
+				get_localizer().get_cir_range(location);
+		if(range != null && range.executional()) {
+			statements.add(range.get_beg_statement());
+			statements.add(range.get_end_statement());
+		}
+		for(int k = 0; k < location.number_of_children(); k++) {
+			this.collect_statements_in(location.get_child(k), statements);
+		}
+	}
+	protected Set<CirStatement> get_statements_in(AstNode location) throws Exception {
+		Set<CirStatement> statements = new HashSet<CirStatement>();
+		collect_statements_in(location, statements); return statements;
 	}
 	
 }
