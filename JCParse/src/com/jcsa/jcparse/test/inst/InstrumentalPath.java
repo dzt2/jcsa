@@ -52,7 +52,14 @@ public class InstrumentalPath {
 		return this.nodes;
 	}
 	
-	/* partial path */
+	/* basic methods */
+	private List<CirExecution> between_path = new ArrayList<CirExecution>();
+	// private Stack<CirExecution> call_stacks = new Stack<CirExecution>();
+	/**
+	 * @param unit
+	 * @return the execution node where the unit is defined
+	 * @throws Exception
+	 */
 	private CirExecution get_execution(InstrumentalUnit unit) throws Exception {
 		CirStatement statement;
 		switch(unit.get_type()) {
@@ -72,6 +79,17 @@ public class InstrumentalPath {
 		return statement.get_tree().get_localizer().get_execution(statement);
 	}
 	/**
+	 * add a new node w.r.t. the units in executional node in tail of the path
+	 * @param units
+	 * @throws Exception
+	 */
+	private void add_node(CirExecution execution, List<InstrumentalUnit> units) throws Exception {
+		/* add the node w.r.t. the execution with specified units among it to the path */
+		this.nodes.add(new InstrumentalNode(this, this.nodes.size(), execution, units));
+	}
+	
+	/* partial path */
+	/**
 	 * generate the partial path (incomplete with all the nodes skiped) fetched
 	 * from the instrumental nodes
 	 * @param instrumental_file
@@ -89,140 +107,100 @@ public class InstrumentalPath {
 		/* declarations */
 		CirExecution next_execution, prev_execution = null; nodes.clear();
 		List<InstrumentalUnit> buffer = new ArrayList<InstrumentalUnit>();
-		
 		for(InstrumentalUnit unit : units) {
-			if(unit.get_type() == InstrumentalType.evaluate) {
-				next_execution = this.get_execution(unit);
-				if(prev_execution != next_execution) {
-					if(!buffer.isEmpty()) {
-						nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
-					}
-					prev_execution = next_execution;
-					buffer.clear();
+			next_execution = this.get_execution(unit);
+			if(prev_execution != next_execution) {
+				if(!buffer.isEmpty()) {
+					this.add_node(prev_execution, buffer);
 				}
-				buffer.add(unit);
+				prev_execution = next_execution;
+				buffer.clear();
 			}
+			buffer.add(unit);
 		}
 		if(!buffer.isEmpty()) {
-			nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
+			this.add_node(prev_execution, buffer);
 		}
 	}
 	
 	/* complete path */
-	private List<CirExecution> complete_sub_path(CirExecution source, 
-			CirExecution target, List<CirExecution> sub_path) throws Exception {
-		sub_path.clear(); boolean first = true;
-		InstrumentalNode last_node = this.nodes.get(nodes.size() - 1);
+	/**
+	 * @param source
+	 * @param target
+	 * @return generate the path from source to target based on current instrumental path
+	 * @throws Exception
+	 */
+	private List<CirExecution> find_path_between(CirExecution source, CirExecution target) throws Exception {
+		this.between_path.clear();
 		
-		while(source != target) {
-			if(!first)
-				sub_path.add(source);
-			first = false;
-			
-			CirStatement statement = source.get_statement();
-			if(statement instanceof CirAssignStatement
-				|| statement instanceof CirGotoStatement) {
-				source = source.get_ou_flow(0).get_target();
+		CirExecution current = source;
+		while(current != target) {
+			if(current != source && current != target) 
+				this.between_path.add(current);
+			CirStatement statement = current.get_statement();
+			if(statement instanceof CirEndStatement) {
+				current = target;	/* undecidable in non-state analysis ==> may cause incomplete path */
+			}
+			else if(statement instanceof CirAssignStatement
+				|| statement instanceof CirGotoStatement
+				|| statement instanceof CirTagStatement) {
+				if(current.get_ou_degree() == 0) {
+					current = target;
+				}
+				else {
+					current = current.get_ou_flow(0).get_target();
+				}
 			}
 			else if(statement instanceof CirCallStatement) {
-				if(source.get_ou_flow(0).get_type() == CirExecutionFlowType.call_flow) {
-					source = source.get_ou_flow(0).get_target();
+				CirExecutionFlow flow = current.get_ou_flow(0);
+				if(flow.get_type() == CirExecutionFlowType.call_flow) {
+					current = flow.get_target();
+				}
+				else if(current.get_graph().get_function() == target.get_graph().get_function()) {
+					current = flow.get_target();
 				}
 				else {
-					if(target.get_graph().get_function() != source.get_graph().get_function()) {
-						break;
-					}
-					else {
-						source = source.get_ou_flow(0).get_target();
-					}
+					current = target;	/* undecidable for side-effect made by function pointers */
 				}
 			}
-			else if(statement instanceof CirEndStatement) {
-				break;
-			}
-			else if(statement instanceof CirTagStatement) {
-				source = source.get_ou_flow(0).get_target();
-			}
-			else if(statement instanceof CirCaseStatement) {
-				break;
-			}
-			else if(statement instanceof CirIfStatement) {
-				if(source == last_node.get_execution()) {
-					CirExpression condition = ((CirIfStatement) statement).get_condition();
-					boolean found = false, decision = false;
-					for(InstrumentalUnit unit : last_node.get_units()) {
-						if(unit.get_location() == condition) {
-							byte[] bytes = unit.get_bytes();
-							for(byte element : bytes) {
-								if(element != 0) {
-									decision = true;
-								}
-							}
-							found = true;
-							break;
-						}
-					}
-					if(found) {
-						if(decision) {
-							for(CirExecutionFlow flow : source.get_ou_flows()) {
-								if(flow.get_type() == CirExecutionFlowType.true_flow) {
-									source = flow.get_target();
-									break;
-								}
-							}
-						}
-						else {
-							for(CirExecutionFlow flow : source.get_ou_flows()) {
-								if(flow.get_type() == CirExecutionFlowType.fals_flow) {
-									source = flow.get_target();
-									break;
-								}
-							}
-						}
-					}
-					else {
-						break;
-					}
-				}
-				else {
-					break;
-				}
+			else if(statement instanceof CirCaseStatement
+					|| statement instanceof CirIfStatement) {
+				current = target;	/* undecidable in non-state analysis */
 			}
 			else {
 				throw new IllegalArgumentException(statement.generate_code(true));
 			}
 		}
 		
-		while(sub_path.contains(source))
-			sub_path.remove(source);
-		sub_path.remove(target);
-		return sub_path;
+		return this.between_path;
 	}
+	/**
+	 * generate the complete execution path from the sequence of instrumental units
+	 * @param units
+	 * @throws Exception
+	 */
 	private void generate_complete_path(List<InstrumentalUnit> units) throws Exception {
 		/* declarations */
 		CirExecution next_execution, prev_execution = null; nodes.clear();
 		List<InstrumentalUnit> buffer = new ArrayList<InstrumentalUnit>();
-		ArrayList<CirExecution> sub_path = new ArrayList<CirExecution>();
 		for(InstrumentalUnit unit : units) {
-			if(unit.get_type() == InstrumentalType.evaluate) {
-				next_execution = this.get_execution(unit);
-				if(prev_execution != next_execution) {
-					if(!buffer.isEmpty()) {
-						nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
-						/* complete the sub-path between them */
-						this.complete_sub_path(prev_execution, next_execution, sub_path);
-						for(CirExecution execution : sub_path) {
-							nodes.add(new InstrumentalNode(this, nodes.size(), execution, null));
-						}
+			next_execution = this.get_execution(unit);
+			if(prev_execution != next_execution) {
+				if(!buffer.isEmpty()) {
+					this.add_node(prev_execution, buffer);
+					/* complete the path from prev-execution to the next-execution */
+					List<CirExecution> path = find_path_between(prev_execution, next_execution);
+					for(CirExecution execution : path) {
+						this.add_node(execution, null);
 					}
-					prev_execution = next_execution;
-					buffer.clear();
 				}
-				buffer.add(unit);
+				prev_execution = next_execution;
+				buffer.clear();
 			}
+			buffer.add(unit);
 		}
 		if(!buffer.isEmpty()) {
-			nodes.add(new InstrumentalNode(this, nodes.size(), prev_execution, buffer));
+			this.add_node(prev_execution, buffer);
 		}
 	}
 	/**

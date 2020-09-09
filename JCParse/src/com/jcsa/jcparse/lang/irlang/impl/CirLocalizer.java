@@ -532,5 +532,14 @@ public class CirLocalizer {
 		return this.cir_tree.get_function_call_graph().get_function(
 				statement).get_flow_graph().get_execution(statement);
 	}
+	/**
+	 * @param statement
+	 * @return the wait-assign-statement correspond to the call-statement
+	 * @throws Exception
+	 */
+	public CirExecution get_return_point(CirCallStatement statement) throws Exception {
+		CirExecution call_execution = this.get_execution(statement);
+		return call_execution.get_graph().get_execution(call_execution.get_id() + 1);
+	}
 	
 }

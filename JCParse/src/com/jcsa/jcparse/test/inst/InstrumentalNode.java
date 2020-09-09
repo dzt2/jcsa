@@ -44,8 +44,7 @@ public class InstrumentalNode {
 			this.index = index;
 			this.execution = execution;
 			this.units = new ArrayList<InstrumentalUnit>();
-			CirStatement statement = execution.get_statement();
-			this.units.add(InstrumentalUnit.beg_stmt(statement));
+			/* ignore the beg-stmt and end-stmt of the execution */
 			if(units != null) {
 				for(InstrumentalUnit unit : units) {
 					if(unit.get_type() == InstrumentalType.evaluate) {
@@ -53,7 +52,6 @@ public class InstrumentalNode {
 					}
 				}
 			}
-			this.units.add(InstrumentalUnit.end_stmt(statement));
 		}
 	}
 	

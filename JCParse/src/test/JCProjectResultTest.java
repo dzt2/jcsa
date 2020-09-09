@@ -26,7 +26,7 @@ public class JCProjectResultTest {
 			JCTestProject project = get_project(file);
 			File ofile = new File(result_dir.getAbsolutePath() + "/" + file.getName() + ".txt");
 			FileWriter writer = new FileWriter(ofile);
-			for(int k = 0; k < 6; k++) {
+			for(int k = 0; k < 1; k++) {
 				int tid = Math.abs(random.nextInt()) % 
 						project.get_test_part().number_of_test_inputs();
 				//if(!print_partial_path(project, tid, writer)) k--;
@@ -59,7 +59,7 @@ public class JCProjectResultTest {
 						writer.write("\t\tUnits[" + (index++) + "] " + unit.get_type().toString());
 						if(unit.get_type() == InstrumentalType.evaluate) {
 							writer.write("::{" + unit.get_location().generate_code(true) + "}\n");
-							if(unit.has_bytes()) {
+							if(unit.has_value()) {
 								writer.write("\t\t\tValue: " + unit.toString() + "\n");
 							}
 						}
@@ -95,7 +95,7 @@ public class JCProjectResultTest {
 						writer.write("\t\tUnits[" + (index++) + "] " + unit.get_type().toString());
 						if(unit.get_type() == InstrumentalType.evaluate) {
 							writer.write("::{" + unit.get_location().generate_code(true) + "}\n");
-							if(unit.has_bytes()) {
+							if(unit.has_value()) {
 								writer.write("\t\t\tValue: " + unit.toString() + "\n");
 							}
 						}

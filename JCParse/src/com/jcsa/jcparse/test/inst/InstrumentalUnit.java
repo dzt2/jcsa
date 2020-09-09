@@ -21,8 +21,6 @@ public class InstrumentalUnit {
 	private InstrumentalType type;
 	/** the location where the token was injected **/
 	private CirNode location;
-	/** the value hold by the expression in path **/
-	private byte[] bytes;
 	/** the Java object as the value of the unit **/
 	private Object value;
 	/** see constructor methods as following **/
@@ -61,7 +59,6 @@ public class InstrumentalUnit {
 			InstrumentalUnit token = new InstrumentalUnit();
 			token.type = InstrumentalType.evaluate;
 			token.location = expression;
-			token.bytes = value;
 			token.value = template.generate_value(expression.get_data_type(), value);
 			return token;
 		}
@@ -77,13 +74,9 @@ public class InstrumentalUnit {
 	 */
 	public CirNode get_location() { return this.location; }
 	/**
-	 * @return whether the line contains value of some expression
+	 * @return whether the unit defines any value for its expression.
 	 */
-	public boolean has_bytes() { return this.bytes != null; }
-	/**
-	 * @return the bytes recording the value of expression or null
-	 */
-	public byte[] get_bytes() { return this.bytes; }
+	public boolean has_value() { return this.value != null; }
 	/**
 	 * @return Boolean|Character|Short|Integer|Long|Float|Double|Complex|byte[]
 	 */
