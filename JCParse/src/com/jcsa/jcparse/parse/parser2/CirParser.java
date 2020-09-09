@@ -1388,7 +1388,9 @@ public class CirParser {
 	 */
 	public ACPSolution parse_expression_statement(AstExpressionStatement source) throws Exception {
 		if(source.has_expression()) {
-			return this.parse(source.get_expression());
+			ACPSolution solution = this.get_solution(source);
+			solution.append(parse(source.get_expression()));
+			return solution;
 		}
 		else {
 			return this.get_solution(source);
@@ -1401,7 +1403,9 @@ public class CirParser {
 	 * @throws Exception
 	 */
 	private ACPSolution parse_declaration_statement(AstDeclarationStatement source) throws Exception {
-		return this.parse(source.get_declaration());
+		ACPSolution solution = this.get_solution(source);
+		solution.append(parse(source.get_declaration()));
+		return solution;
 	}
 	/**
 	 * {S1; S2; ... Sn}	|==	{S1}; {S2}; ... {Sn};

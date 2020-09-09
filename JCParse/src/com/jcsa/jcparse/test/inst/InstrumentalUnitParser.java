@@ -392,6 +392,16 @@ class InstrumentalUnitParser {
 	}
 	private void local_parse_declaration_statement(AstDeclarationStatement
 			location, InstrumentalLine line) throws Exception {
+		AstCirPair range = cir_tree.get_localizer().get_cir_range(location);
+		if(range != null && range.executional()) {
+			switch(line.get_type()) {
+			case beg_stmt:
+				this.append_beg_stmt(range.get_beg_statement()); break;
+			case end_stmt:
+				this.append_end_stmt(range.get_end_statement()); break;
+			default: throw new IllegalArgumentException(line.get_type().toString());
+			}
+		}
 	}
 	private void local_parse_compound_statement(AstCompoundStatement
 			location, InstrumentalLine line) throws Exception {
