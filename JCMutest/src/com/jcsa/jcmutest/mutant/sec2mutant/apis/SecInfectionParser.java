@@ -17,15 +17,9 @@ public abstract class SecInfectionParser {
 	
 	protected AstMutation mutation;
 	protected CirTree cir_tree;
+	protected CirStatement statement;
 	protected SecInfection infection;
-	protected SecInfectionParser(CirTree cir_tree) throws Exception {
-		if(cir_tree == null)
-			throw new IllegalArgumentException("Invalid cir_tree");
-		else {
-			this.mutation = null;
-			this.cir_tree = cir_tree;
-		}
-	}
+	protected SecInfectionParser() { }
 	
 	/**
 	 * @return the statement where the mutation is injected
@@ -54,8 +48,9 @@ public abstract class SecInfectionParser {
 			this.mutation = mutant.get_mutation();
 			this.infection = infection;
 			
-			CirStatement statement = this.get_location();
+			this.statement = this.get_location();
 			if(statement != null) {
+				this.infection.statement = statement;
 				this.generate_infections();
 			}
 			return infection;

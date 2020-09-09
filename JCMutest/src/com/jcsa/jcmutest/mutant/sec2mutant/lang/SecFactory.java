@@ -23,6 +23,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecUnyExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecAddStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecDelStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecTrpStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecChgValueError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecDecValueError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecExtValueError;
@@ -172,6 +173,9 @@ public class SecFactory {
 	public static SecStatementError set_statement(CirStatement 
 			orig_statement, CirStatement muta_statement) throws Exception {
 		return new SecAddStatementError(orig_statement, muta_statement);
+	}
+	public static SecStatementError trap_statement(CirStatement statement) throws Exception {
+		return new SecTrpStatementError(statement, statement);
 	}
 	
 	/* expression error */

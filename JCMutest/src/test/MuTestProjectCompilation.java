@@ -84,7 +84,7 @@ public class MuTestProjectCompilation {
 		File test_suite_file = new File(root_path + "tests/" + name + ".c.txt");
 		List<File> test_suite_files = new ArrayList<File>();
 		if(test_suite_file.exists()) test_suite_files.add(test_suite_file);
-		File inputs_directory = new File(root_path + "inputs/" + name);
+		File inputs_directory = new File(root_path + "v_inputs/" + name);
 		if(!inputs_directory.exists()) FileOperations.mkdir(inputs_directory);
 		project.set_inputs_directory(inputs_directory);
 		project.add_test_inputs(test_suite_files);
