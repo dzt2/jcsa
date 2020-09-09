@@ -154,6 +154,21 @@ public class CTypeAnalyzer {
 		}
 		else return false;
 	}
+	public static boolean is_complex(CType type) throws Exception {
+		if(type == null)
+			throw new IllegalArgumentException("invalid type: null");
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_float_complex:
+			case c_double_complex:
+			case c_ldouble_complex:	return true;
+			default: 				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
 	
 	public static AstExpression get_expression_of(AstExpression expr) throws Exception {
 		if(expr == null)

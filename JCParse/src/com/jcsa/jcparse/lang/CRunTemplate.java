@@ -304,7 +304,7 @@ public class CRunTemplate {
 	/**
 	 * @param type
 	 * @param bytes
-	 * @return
+	 * @return Boolean|Character|Short|Integer|Long|Float|Double|Complex|ByteBuffer
 	 * @throws Exception
 	 */
 	public Object generate_value(CType type, byte[] bytes) throws Exception {
@@ -406,6 +406,8 @@ public class CRunTemplate {
 	 */
 	public byte[] encode(CType type, Object value) throws Exception {
 		ByteBuffer byte_buffer;
+		type = CTypeAnalyzer.get_value_type(type);
+		
 		if(value instanceof Boolean) {
 			byte_buffer = ByteBuffer.wrap(new byte[] { (byte) (((Boolean) value).booleanValue() ? 1 : 0) });
 		}
@@ -435,8 +437,13 @@ public class CRunTemplate {
 		}
 		else if(value instanceof Complex) {
 			byte_buffer = ByteBuffer.allocate(this.sizeof(type));
-			byte_buffer.putDouble(((Complex) value).get_x());
-			byte_buffer.putDouble(((Complex) value).get_y());
+			if(CTypeAnalyzer.is_complex(type)) {
+				byte_buffer.putDouble(((Complex) value).get_x());
+				byte_buffer.putDouble(((Complex) value).get_y());
+			}
+			else {
+				byte_buffer.putDouble(((Complex) value).get_y());
+			}
 		}
 		else {
 			byte_buffer = ByteBuffer.wrap((byte[]) (value));
