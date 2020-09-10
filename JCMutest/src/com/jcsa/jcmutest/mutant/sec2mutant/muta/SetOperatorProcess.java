@@ -167,6 +167,7 @@ public abstract class SetOperatorProcess {
 	}
 	protected SymExpression sym_expression(COperator operator, Object operand) throws Exception {
 		switch(operator) {
+		case positive:	return SymFactory.parse(operand);
 		case negative:	return SymFactory.arith_neg(expression.get_data_type(), operand);
 		case bit_not:	return SymFactory.bitws_rsv(expression.get_data_type(), operand);
 		case logic_not:	return SymFactory.logic_not(operand);
