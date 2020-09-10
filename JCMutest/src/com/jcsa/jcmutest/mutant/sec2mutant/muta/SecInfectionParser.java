@@ -226,6 +226,33 @@ public abstract class SecInfectionParser {
 	protected SecDescription trap_statement(CirStatement statement) throws Exception {
 		return SecFactory.trap_statement(statement);
 	}
+	protected SecDescription add_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_add, operand);
+	}
+	protected SecDescription sub_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_sub, operand);
+	}
+	protected SecDescription mul_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_mul, operand);
+	}
+	protected SecDescription inc_reference(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.increment);
+	}
+	protected SecDescription dec_reference(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.decrement);
+	}
+	protected SecDescription neg_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.negative);
+	}
+	protected SecDescription rsv_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.bit_not);
+	}
+	protected SecDescription not_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.logic_not);
+	}
+	protected SecDescription set_expression(CirExpression orig_expression, Object muta_expression) throws Exception {
+		return SecFactory.set_expression(this.location, orig_expression, muta_expression);
+	}
 	
 	/* symbolic generation */
 	protected SymExpression sym_condition(COperator operator, Object loperand, Object roperand) throws Exception {
