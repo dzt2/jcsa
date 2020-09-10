@@ -27,7 +27,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean arith_sub() throws Exception {
 		/**
-		 * 	[y != 0] --> set_expr(x - y)
+		 * 	[y != 0] --> add_expr(expr, -, 2 * y)
 		 **/
 		SecConstraint constraint; SecDescription init_error;
 		constraint = this.get_constraint(this.sym_expression(
@@ -36,8 +36,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 			init_error = this.trap_statement();
 		}
 		else {
-			init_error = this.set_expression(this.sym_expression(
-					COperator.arith_sub, this.loperand, this.roperand));
+			init_error = this.sub_expression(this.sym_expression(
+					COperator.arith_mul, Integer.valueOf(2), roperand));
 		}
 		return this.add_infection(constraint, init_error);
 	}
