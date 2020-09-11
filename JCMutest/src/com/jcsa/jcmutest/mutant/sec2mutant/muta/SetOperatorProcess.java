@@ -195,5 +195,8 @@ public abstract class SetOperatorProcess {
 	protected boolean report_equivalence_mutation() throws Exception {
 		throw new UnsupportedOperationException("Equivalent mutation: " + this.infection.get_mutation());
 	}
+	protected SecDescription ins_expression(Object operand, COperator operator) throws Exception {
+		return SecFactory.ins_expression(statement, expression, operator, operand);
+	}
 	
 }
