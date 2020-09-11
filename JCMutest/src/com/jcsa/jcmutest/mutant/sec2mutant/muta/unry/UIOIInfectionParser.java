@@ -52,7 +52,6 @@ public class UIOIInfectionParser extends SecInfectionParser {
 		default: return false;
 		}
 		
-		
 		if(init_errors.isEmpty()) {
 			return false;
 		}
