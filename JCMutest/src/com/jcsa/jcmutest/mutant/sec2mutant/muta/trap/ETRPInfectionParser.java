@@ -8,7 +8,7 @@ public class ETRPInfectionParser extends SecInfectionParser {
 
 	@Override
 	protected CirStatement find_location(AstMutation mutation) throws Exception {
-		return this.get_end_statement(mutation.get_location());
+		return this.get_cir_expression(mutation.get_location()).statement_of();
 	}
 
 	@Override

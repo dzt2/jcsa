@@ -86,9 +86,11 @@ public abstract class SecInfectionParser {
 			if(this.location != null) {
 				infection.statement = location;
 				this.generate_infections(infection.statement, mutation);
+				return infection;
 			}
-			
-			/* 4. return final result */ return this.infection;
+			else {
+				throw new UnsupportedOperationException("Unable to reach");
+			}
 		}
 	}
 	
@@ -120,13 +122,23 @@ public abstract class SecInfectionParser {
 	 */
 	protected CirStatement get_beg_statement(AstNode location) throws Exception {
 		CirStatement statement = this.cir_tree.get_localizer().beg_statement(location);
-		if(statement == null && location instanceof AstExpression) {
-			CirExpression expression = this.get_cir_expression(location);
-			if(expression != null) {
-				return expression.statement_of();
+		if(statement == null) {
+			try {
+				CirExpression expression = this.get_cir_expression(location);
+				if(expression != null) {
+					return expression.statement_of();
+				}
+				else {
+					return this.get_cir_range(location).get_beg_statement();
+				}
+			}
+			catch(Exception ex) {
+				return this.get_cir_range(location).get_beg_statement();
 			}
 		}
-		return statement;
+		else {
+			return statement;
+		}
 	}
 	/**
 	 * @param location
@@ -136,13 +148,23 @@ public abstract class SecInfectionParser {
 	 */
 	protected CirStatement get_end_statement(AstNode location) throws Exception {
 		CirStatement statement = this.cir_tree.get_localizer().end_statement(location);
-		if(statement == null && location instanceof AstExpression) {
-			CirExpression expression = this.get_cir_expression(location);
-			if(expression != null && location instanceof AstExpression) {
-				return expression.statement_of();
+		if(statement == null) {
+			try {
+				CirExpression expression = this.get_cir_expression(location);
+				if(expression != null) {
+					return expression.statement_of();
+				}
+				else {
+					return this.get_cir_range(location).get_end_statement();
+				}
+			}
+			catch(Exception ex) {
+				return this.get_cir_range(location).get_end_statement();
 			}
 		}
-		return statement;
+		else {
+			return statement;
+		}
 	}
 	/**
 	 * @param location

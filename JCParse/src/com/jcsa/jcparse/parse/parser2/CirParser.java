@@ -1389,7 +1389,10 @@ public class CirParser {
 	public ACPSolution parse_expression_statement(AstExpressionStatement source) throws Exception {
 		if(source.has_expression()) {
 			ACPSolution solution = this.get_solution(source);
-			solution.append(parse(source.get_expression()));
+			ACPSolution esolution = parse(source.get_expression());
+			solution.append(esolution);
+			if(esolution.computational())
+				solution.set(esolution.get_result());
 			return solution;
 		}
 		else {

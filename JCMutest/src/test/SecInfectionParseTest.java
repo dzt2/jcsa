@@ -110,9 +110,9 @@ public class SecInfectionParseTest {
 		if(infection.has_infection_pairs()) {
 			for(int k = 0; k < infection.number_of_infection_pairs(); k++) {
 				SecDescription[] pairs = infection.get_infection_pair(k);
-				writer.write("Pair[" + k +"]:\t");
+				writer.write("\tPair[" + k +"]:\t\t");
 				writer.write(pairs[0].generate_code() + "\n");
-				writer.write("\t" + pairs[1].generate_code() + "\n");
+				writer.write("\t\t" + pairs[1].generate_code() + "\n");
 			}
 		}
 		else {
