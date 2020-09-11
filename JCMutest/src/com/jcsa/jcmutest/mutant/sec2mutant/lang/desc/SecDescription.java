@@ -12,11 +12,10 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  * 	SecNode																	<br>
  * 	SecDescription						{statement: SecStatement}			<br>
  * 	|--	SecConstraint					asserton(stmt, expr) === evaluator	<br>
- * 	|--	SecAbstractError													<br>
- * 	|--	SecConcreteError													<br>
+ * 	|--	SecStateError														<br>
  * 	|--	SecDescriptions														<br>
  * 	+----------------------------------------------------------------------+<br>
- * 	SecAbstractError														<br>
+ * 	SecStateError															<br>
  * 	|--	SecStatementError				{orig_stmt: SecStatement}			<br>
  * 	|--	|--	SecAddStatementError		add_stmt(orig_stmt)					<br>
  * 	|--	|--	SecDelStatementError		del_stmt(orig_stmt)					<br>
@@ -27,31 +26,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  * 	|--	|--	SecInsExpressionError		ins_expr(orig_expr, oprt, muta_expr)<br>
  * 	|--	|--	SecUnyExpressionError		uny_expr(orig_expr, oprt)			<br>
  * 	+----------------------------------------------------------------------+<br>
- * 	SecConcreteError					{orig_expr; type: SecType}			<br>
- * 	|--	SecUnaryValueError													<br>
- * 	|--	|--	SecChgValueError			chg_value[bool|char|sign...body]	<br>
- * 	|--	|--	SecNegValueError			neg_value[char|sign|usign|real]		<br>
- * 	|--	|--	SecRsvValueError			rsv_value[char|sign|usign]			<br>
- * 	|--	|--	SecIncValueError			inc_value[char|sign|usign|real|addr]<br>
- * 	|--	|--	SecDecValueError			dec_value[char|sign|usign|real|addr]<br>
- * 	|--	|--	SecExtValueError			ext_value[char|sign|usign|real]		<br>
- * 	|--	|--	SecShkValueError			shk_value[char|sign|usign|real]		<br>
- * 	|--	SecBinaryValueError				{muta_expr: SecExpression}			<br>
- * 	|--	|--	SecSetValueError			set_value[char|sign|usign|real|addr]<br>
- * 	|--	|--	SecAddValueError			add_value[char|sign|usign|real|addr]<br>
- * 	|--	|--	SecMulValueError			mul_value[char|sign|usign|real]		<br>
- * 	|--	|--	SecModValueError			mod_value[char|sign|usign]			<br>
- * 	|--	|--	SecAndValueError			and_value[char|sign|usign]			<br>
- * 	|--	|--	SecIorValueError			ior_value[char|sign|usign]			<br>
- * 	|--	|--	SecXorValueError			xor_value[char|sign|usign]			<br>
- * 	+----------------------------------------------------------------------+<br>
  * 	SecDescriptions						{descriptions: SecDescription+}		<br>
  * 	|--	SecConjunctDescriptions												<br>
  * 	|--	SecDisjunctDescriptions												<br>
  * 	+----------------------------------------------------------------------+<br>
  * </code>
  * @author yukimula
- *
  */
 public abstract class SecDescription extends SecNode {
 	

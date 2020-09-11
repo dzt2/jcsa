@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.model;
+package com.jcsa.jcmutest.mutant.sec2mutant.mod;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;

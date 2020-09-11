@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.model;
+package com.jcsa.jcmutest.mutant.sec2mutant.mod;
 
 import java.util.LinkedList;
 import java.util.List;

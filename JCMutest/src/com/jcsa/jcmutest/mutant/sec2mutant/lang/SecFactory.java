@@ -2,19 +2,12 @@ package com.jcsa.jcmutest.mutant.sec2mutant.lang;
 
 import java.util.Collection;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecAddValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecAndValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecBinaryValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecIorValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecModValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecMulValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecSetValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.biny.SecXorValueError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConjunctDescriptions;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescriptions;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDisjunctDescriptions;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecAddExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
@@ -24,14 +17,6 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecAddStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecDelStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecTrpStatementError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecChgValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecDecValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecExtValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecIncValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecNegValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecRsvValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecShkValueError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.unry.SecUnaryValueError;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -196,59 +181,6 @@ public class SecFactory {
 		return new SecUnyExpressionError(statement, orig_expression, operator);
 	}
 	
-	/* binary value error */
-	public static SecBinaryValueError set_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecSetValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError add_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecAddValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError mul_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecMulValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError mod_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecModValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError and_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecAndValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError ior_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecIorValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	public static SecBinaryValueError xor_value(CirStatement statement,
-			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecXorValueError(statement, orig_expression, SymFactory.parse(muta_expression));
-	}
-	
-	/* unary value error */
-	public static SecUnaryValueError chg_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecChgValueError(statement, expression);
-	}
-	public static SecUnaryValueError inc_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecIncValueError(statement, expression);
-	}
-	public static SecUnaryValueError dec_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecDecValueError(statement, expression);
-	}
-	public static SecUnaryValueError ext_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecExtValueError(statement, expression);
-	}
-	public static SecUnaryValueError shk_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecShkValueError(statement, expression);
-	}
-	public static SecUnaryValueError neg_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecNegValueError(statement, expression);
-	}
-	public static SecUnaryValueError rsv_value(CirStatement statement, CirExpression expression) throws Exception {
-		return new SecRsvValueError(statement, expression);
-	}
-	
 	/* composite descriptions */
 	public static SecDescriptions conjunct(CirStatement statement, Collection<SecDescription> descriptions) throws Exception {
 		if(descriptions == null || descriptions.size() < 1)
@@ -292,10 +224,7 @@ public class SecFactory {
 		}
 	}
 	public static boolean is_state_error(SecDescription state_error) {
-		if(state_error instanceof SecStatementError
-			|| state_error instanceof SecExpressionError
-			|| state_error instanceof SecBinaryValueError
-			|| state_error instanceof SecUnaryValueError) {
+		if(state_error instanceof SecStateError) {
 			return true;
 		}
 		else if(state_error instanceof SecDescriptions) {

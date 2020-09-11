@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.model;
+package com.jcsa.jcmutest.mutant.sec2mutant.mod;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -80,10 +80,11 @@ public class SecStateGraph {
 	public SecStateNode get_node(SecStateUnit unit) throws Exception {
 		if(unit == null)
 			throw new IllegalArgumentException("Invalid unit: null");
-		else if(this.nodes.containsKey(unit))
+		else {
+			if(!this.nodes.containsKey(unit)) 
+				this.nodes.put(unit, new SecStateNode(this, unit));
 			return this.nodes.get(unit);
-		else
-			throw new IllegalArgumentException("Undefined: " + unit);
+		}
 	}
 	/**
 	 * clear all the nodes and units within the graph.

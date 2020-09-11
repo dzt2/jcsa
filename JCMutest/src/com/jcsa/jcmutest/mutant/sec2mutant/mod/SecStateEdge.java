@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.model;
+package com.jcsa.jcmutest.mutant.sec2mutant.mod;
 
 /**
  * It presents the transition between symbolic state in graph.

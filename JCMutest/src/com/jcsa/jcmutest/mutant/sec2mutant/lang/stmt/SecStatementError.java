@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecAbstractDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
@@ -15,7 +15,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  * @author yukimula
  *
  */
-public abstract class SecStatementError extends SecAbstractDescription {
+public abstract class SecStatementError extends SecStateError {
 
 	public SecStatementError(CirStatement statement, SecKeywords 
 			keyword, CirStatement orig_statement) throws Exception {
