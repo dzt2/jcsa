@@ -26,7 +26,7 @@ public class MuTestProjectExecute {
 	private static final File instrument_head_file = new File("config/jcinst.h");
 	private static final File preprocess_macro_file = new File("config/linux.h");
 	private static final File mutation_head_file = new File("config/jcmutest.h");
-	private static final long max_timeout_seconds = 5;
+	private static final long max_timeout_seconds = 1;
 	
 	public static void main(String[] args) throws Exception {
 		testing("bi_search.c", 0, 0);
