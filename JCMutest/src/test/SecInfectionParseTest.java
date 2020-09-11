@@ -34,9 +34,11 @@ public class SecInfectionParseTest {
 	
 	public static void main(String[] args) throws Exception {
 		for(File cfile : new File(root_path + "cfiles").listFiles()) {
-			System.out.println("+-----------------------------------------+");
-			testing(cfile);
-			System.out.println("+-----------------------------------------+\n");
+			if(cfile.getName().endsWith(".c")) {
+				System.out.println("+-----------------------------------------+");
+				testing(cfile);
+				System.out.println("+-----------------------------------------+\n");
+			}
 		}
 	}
 	
@@ -110,7 +112,7 @@ public class SecInfectionParseTest {
 		if(infection.has_infection_pairs()) {
 			for(int k = 0; k < infection.number_of_infection_pairs(); k++) {
 				SecDescription[] pairs = infection.get_infection_pair(k);
-				writer.write("\tPair[" + k +"]:\t\t");
+				writer.write("\tPair[" + k +"]:\n\t\t");
 				writer.write(pairs[0].generate_code() + "\n");
 				writer.write("\t\t" + pairs[1].generate_code() + "\n");
 			}
