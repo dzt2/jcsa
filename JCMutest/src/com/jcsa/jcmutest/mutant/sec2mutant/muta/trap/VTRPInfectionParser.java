@@ -48,18 +48,18 @@ public class VTRPInfectionParser extends SecInfectionParser {
 							return SymFactory.new_constant(Integer.valueOf(enumerator.get_value()));
 						}
 						else {
-							throw new IllegalArgumentException("Undefined: " + name);
+							throw new UnsupportedOperationException("Undefined: " + name);
 						}
 					}
 					else {
-						throw new IllegalArgumentException("Undefined: " + name);
+						throw new UnsupportedOperationException("Undefined: " + name);
 					}
 				}
 				else {
 					location = location.get_parent();
 				}
 			}
-			throw new IllegalArgumentException("Not in definition block");
+			throw new UnsupportedOperationException("Not in definition block");
 		}
 		else {
 			return SymFactory.parse(parameter);

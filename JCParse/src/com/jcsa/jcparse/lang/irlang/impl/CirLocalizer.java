@@ -228,7 +228,7 @@ public class CirLocalizer {
 				|| location instanceof AstFieldExpression
 				|| location instanceof AstInitializerBody
 				|| location instanceof AstSizeofExpression) {
-				return range.get_result().statement_of();
+				return range.get_end_statement();
 			}
 			else if(location instanceof AstConstExpression) {
 				return this.get_beg_statement(
@@ -252,7 +252,7 @@ public class CirLocalizer {
 							location, CirIncreAssignStatement.class).get(0);
 				}
 				else {
-					return range.get_result().statement_of();
+					return range.get_end_statement();
 				}
 			}
 			else if(location instanceof AstPostfixExpression) {
@@ -272,7 +272,7 @@ public class CirLocalizer {
 							location, CirBinAssignStatement.class).get(0);
 				}
 				else {
-					return range.get_result().statement_of();
+					return range.get_end_statement();
 				}
 			}
 			else {
@@ -399,7 +399,7 @@ public class CirLocalizer {
 				|| location instanceof AstFieldExpression
 				|| location instanceof AstInitializerBody
 				|| location instanceof AstSizeofExpression) {
-				return range.get_result().statement_of();
+				return range.get_end_statement();
 			}
 			else if(location instanceof AstConstExpression) {
 				return this.get_end_statement(
@@ -423,7 +423,7 @@ public class CirLocalizer {
 							CirIncreAssignStatement.class).get(0);
 				}
 				else {
-					return range.get_result().statement_of();
+					return range.get_end_statement();
 				}
 			}
 			else if(location instanceof AstPostfixExpression) {
@@ -443,7 +443,7 @@ public class CirLocalizer {
 							location, CirBinAssignStatement.class).get(0);
 				}
 				else {
-					return range.get_result().statement_of();
+					return range.get_end_statement();
 				}
 			}
 			else {

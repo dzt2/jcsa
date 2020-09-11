@@ -115,6 +115,9 @@ public class SecInfectionParseTest {
 				writer.write("\t" + pairs[1].generate_code() + "\n");
 			}
 		}
+		else {
+			writer.write("\tPair[@NONE]\n");
+		}
 		writer.write("+--------------------------------------------------------+\n\n");
 	}
 	private static void output_mutation(Mutant mutant, FileWriter writer) throws Exception {
@@ -148,8 +151,8 @@ public class SecInfectionParseTest {
 				// System.out.println("\t==> Output: " + mutant.get_mutation());
 				output_infection(infection, writer);
 			}
-			catch(Exception ex) {
-				System.err.println("\t==> Error: " + mutant.get_mutation());
+			catch(UnsupportedOperationException ex) {
+				// System.err.println("\t==> Error: " + mutant.get_mutation());
 				error++;
 				output_mutation(mutant, writer2);
 			}

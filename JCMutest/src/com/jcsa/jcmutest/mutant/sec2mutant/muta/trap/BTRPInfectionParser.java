@@ -24,6 +24,7 @@ public class BTRPInfectionParser extends SecInfectionParser {
 		}
 		
 		CirExpression expression = this.get_cir_expression(mutation.get_location());
+		// System.out.println(mutation.get_location().get_location().line_of() + ": " + mutation.get_location().generate_code());
 		SecConstraint constraint = this.get_constraint(expression, value);
 		SecDescription init_error = this.trap_statement(statement);
 		this.add_infection(constraint, init_error);

@@ -21,7 +21,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.arith_add);
+					this.loperand, COperator.arith_add);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -35,7 +35,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.arith_sub);
+					this.loperand, COperator.arith_sub);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -49,7 +49,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.arith_mul);
+					this.loperand, COperator.arith_mul);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -70,7 +70,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 			constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 			init_error = this.ins_expression(
-					this.roperand, COperator.arith_div);
+					this.loperand, COperator.arith_div);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -91,7 +91,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 			constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 			init_error = this.ins_expression(
-					this.roperand, COperator.arith_mod);
+					this.loperand, COperator.arith_mod);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -105,7 +105,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.bit_and);
+					this.loperand, COperator.bit_and);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -119,7 +119,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.bit_or);
+					this.loperand, COperator.bit_or);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -133,7 +133,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.bit_xor);
+					this.loperand, COperator.bit_xor);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -147,7 +147,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.left_shift);
+					this.loperand, COperator.left_shift);
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -161,7 +161,7 @@ public class SetAssignProcess extends SetOperatorProcess {
 		}
 		else {
 			init_error = this.ins_expression(
-					this.roperand, COperator.righ_shift);
+					this.loperand, COperator.righ_shift);
 		}
 		return this.add_infection(constraint, init_error);
 	}

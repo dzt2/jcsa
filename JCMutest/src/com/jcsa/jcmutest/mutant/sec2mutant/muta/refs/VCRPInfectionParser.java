@@ -14,7 +14,7 @@ public class VCRPInfectionParser extends SecInfectionParser {
 
 	@Override
 	protected CirStatement find_location(AstMutation mutation) throws Exception {
-		return this.get_cir_expression(mutation.get_location()).statement_of();
+		return this.get_end_statement(mutation.get_location());
 	}
 
 	@Override

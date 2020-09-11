@@ -12,7 +12,9 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescriptions;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -79,13 +81,11 @@ public abstract class SecInfectionParser {
 			
 			/* 2. determine the seeded point */
 			this.location = this.find_location(this.mutation);
-			if(this.location == null) {
-				return infection;	/* unreachable mutation */
-			}
 			
-			/* 3. generate the infection module */
-			if(!this.generate_infections(this.location, this.mutation)) {
-				throw new IllegalArgumentException("Failed at " + this.mutation);
+			/* 3. generate the infection pairs */
+			if(this.location != null) {
+				infection.statement = location;
+				this.generate_infections(infection.statement, mutation);
 			}
 			
 			/* 4. return final result */ return this.infection;
@@ -107,6 +107,9 @@ public abstract class SecInfectionParser {
 	 * @throws Exception
 	 */
 	protected CirExpression get_cir_expression(AstNode location) throws Exception {
+		if(location instanceof AstExpression) {
+			location = CTypeAnalyzer.get_expression_of((AstExpression) location);
+		}
 		return this.cir_tree.get_localizer().get_cir_value(location);
 	}
 	/**
@@ -116,7 +119,14 @@ public abstract class SecInfectionParser {
 	 * @throws Exception
 	 */
 	protected CirStatement get_beg_statement(AstNode location) throws Exception {
-		return this.cir_tree.get_localizer().beg_statement(location);
+		CirStatement statement = this.cir_tree.get_localizer().beg_statement(location);
+		if(statement == null && location instanceof AstExpression) {
+			CirExpression expression = this.get_cir_expression(location);
+			if(expression != null) {
+				return expression.statement_of();
+			}
+		}
+		return statement;
 	}
 	/**
 	 * @param location
@@ -125,7 +135,14 @@ public abstract class SecInfectionParser {
 	 * @throws Exception
 	 */
 	protected CirStatement get_end_statement(AstNode location) throws Exception {
-		return this.cir_tree.get_localizer().end_statement(location);
+		CirStatement statement = this.cir_tree.get_localizer().end_statement(location);
+		if(statement == null && location instanceof AstExpression) {
+			CirExpression expression = this.get_cir_expression(location);
+			if(expression != null && location instanceof AstExpression) {
+				return expression.statement_of();
+			}
+		}
+		return statement;
 	}
 	/**
 	 * @param location
