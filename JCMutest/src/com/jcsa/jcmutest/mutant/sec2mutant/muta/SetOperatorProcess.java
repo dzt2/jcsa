@@ -141,6 +141,12 @@ public abstract class SetOperatorProcess {
 	protected SecDescription sub_expression(Object operand) throws Exception {
 		return SecFactory.add_expression(statement, expression, COperator.arith_sub, operand);
 	}
+	protected SymExpression sym_condition(Object expression, boolean value) throws Exception {
+		return SecFactory.get_condition(expression, value);
+	}
+	protected SymExpression sym_condition(Object expression) throws Exception {
+		return SecFactory.get_condition(expression, true);
+	}
 	protected SymExpression sym_expression(COperator operator, Object loperand, Object roperand) throws Exception {
 		CType type = this.expression.get_data_type();
 		switch(operator) {
@@ -182,6 +188,12 @@ public abstract class SetOperatorProcess {
 	}
 	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
 		return SecFactory.conjunct(statement, descriptions);
+	}
+	protected SecDescription uny_expression(COperator operator) throws Exception {
+		return SecFactory.uny_expression(statement, expression, operator);
+	}
+	protected boolean report_equivalence_mutation() throws Exception {
+		throw new UnsupportedOperationException("Equivalent mutation: " + this.infection.get_mutation());
 	}
 	
 }
