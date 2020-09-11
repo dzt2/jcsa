@@ -80,7 +80,7 @@ public abstract class SecInfectionParser {
 			/* 2. determine the seeded point */
 			this.location = this.find_location(this.mutation);
 			if(this.location == null) {
-				return null;	/* unreachable mutation */
+				return infection;	/* unreachable mutation */
 			}
 			
 			/* 3. generate the infection module */
