@@ -38,8 +38,6 @@ public class SymExpressionTest {
 	private static final File tests_dir = new File(root_path + "tests");
 	private static final File project_dir = new File(root_path + "cprojects");
 	
-	private static final SymEvaluator evaluator = new SymEvaluator();
-	
 	public static void main(String[] args) throws Exception {
 		for(File cfile : cfile_dir.listFiles()) {
 			if(cfile.getName().endsWith(".c")) {
@@ -130,21 +128,21 @@ public class SymExpressionTest {
 					SymExpression rvalue = SymFactory.parse(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t==> [1] " + lvalue.generate_code() + "\n");
 					writer.write("\t==> [2] " + rvalue.generate_code() + "\n");
-					lvalue = evaluator.evaluate(lvalue); 
-					rvalue = evaluator.evaluate(rvalue);
+					lvalue = SymEvaluator.evaluate_on(lvalue); 
+					rvalue = SymEvaluator.evaluate_on(rvalue);
 					writer.write("\t~~> [1] " + lvalue.generate_code() + "\n");
 					writer.write("\t~~> [2] " + rvalue.generate_code() + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymExpression value = SymFactory.parse(((CirIfStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code() + "\n");
-					value = evaluator.evaluate(value);
+					value = SymEvaluator.evaluate_on(value);
 					writer.write("\t~~> [1] " + value.generate_code() + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymExpression value = SymFactory.parse(((CirCaseStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code() + "\n");
-					value = evaluator.evaluate(value);
+					value = SymEvaluator.evaluate_on(value);
 					writer.write("\t~~> [1] " + value.generate_code() + "\n");
 				}
 			}

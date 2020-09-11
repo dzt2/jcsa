@@ -24,37 +24,9 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 public class SymEvaluator {
 	
 	/* definition */
-	private SymContext context;
-	public SymEvaluator() {
-		this.context = new SymContext();
-	}
-	
-	/* context operations */
-	/**
-	 * @return get the current context for evaluation
-	 */
-	public SymContext get_context() { return this.context; }
-	/**
-	 * create a child context when calling a new function
-	 * @param key
-	 */
-	public void push_context(Object key) {
-		this.context = this.context.get_child(key);
-	}
-	/**
-	 * recover to the parent context when return to caller
-	 * @param key
-	 * @throws Exception
-	 */
-	public void pop_context(Object key) throws Exception {
-		if(this.context.get_parent() == null)
-			throw new IllegalArgumentException("Root reached");
-		else if(this.context.get_key() != key)
-			throw new IllegalArgumentException("Not matched");
-		else {
-			this.context = this.context.get_parent();
-		}
-	}
+	private SymContexts context;
+	private SymEvaluator() { }
+	private static SymEvaluator evaluator = new SymEvaluator();
 	
 	/* evaluation methods */
 	/**
@@ -63,7 +35,10 @@ public class SymEvaluator {
 	 * @throws Exception
 	 */
 	private SymExpression get_solution(SymExpression source) throws Exception {
-		if(this.context.has(source)) {
+		if(context == null) {
+			return null;
+		}
+		else if(this.context.has(source)) {
 			return this.context.get(source);
 		}
 		else if(this.context.has(source.get_source())) {
@@ -82,7 +57,7 @@ public class SymEvaluator {
 	 * @return
 	 * @throws Exception
 	 */
-	public SymExpression evaluate(SymExpression source) throws Exception {
+	private SymExpression evaluate(SymExpression source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else {
@@ -118,6 +93,26 @@ public class SymEvaluator {
 			}
 		}
 	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return the result evaluated from the evaluator.
+	 * @throws Exception
+	 */
+	public static SymExpression evaluate_on(SymExpression source, SymContexts contexts) throws Exception {
+		evaluator.context = contexts;
+		return evaluator.evaluate(source);
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return the result evaluated from the evaluator without contextual information
+	 * @throws Exception
+	 */
+	public static SymExpression evaluate_on(SymExpression source) throws Exception {
+		evaluator.context = null;
+		return evaluator.evaluate(source);
+	}
 	
 	/* implementation methods */
 	private SymExpression eval_basic_expression(SymBasicExpression source) throws Exception {
@@ -132,7 +127,10 @@ public class SymEvaluator {
 		}
 		SymCallExpression target = SymFactory.call_expression(
 				source.get_data_type(), function, arguments);
-		return this.context.invocate(target);
+		if(this.context != null)
+			return this.context.invocate(target);
+		else
+			return target;
 	}
 	private SymExpression eval_field_expression(SymFieldExpression source) throws Exception {
 		SymExpression body = this.evaluate(source.get_body());
