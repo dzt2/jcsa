@@ -5,7 +5,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 
-public class SetNotEqualsOperator extends SetOperatorProcess {
+public class SetNotEqualsProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean to_assign() throws Exception {

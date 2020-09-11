@@ -40,7 +40,7 @@ public abstract class SecInfectionParser {
 	/** the statement where the mutation is seeded and executed **/
 	private CirStatement location;
 	/** the infection module being produced from this parser **/
-	private SecInfection infection;
+	protected SecInfection infection;
 	public SecInfectionParser() { }
 	
 	/* parsing interfaces */

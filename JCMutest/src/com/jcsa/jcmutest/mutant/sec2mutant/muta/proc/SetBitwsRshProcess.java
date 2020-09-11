@@ -9,7 +9,15 @@ public class SetBitwsRshProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		return this.unsupport_exception();
+		SecConstraint constraint; SecDescription init_error;
+		constraint = this.get_constraint(Boolean.TRUE);
+		if(this.compare_or_mutate) {
+			init_error = this.trap_statement();
+		}
+		else {
+			init_error = this.set_expression(this.roperand);
+		}
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override

@@ -1,12 +1,43 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXAInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXNInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OBXAInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OBXNInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OEXAInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OLXNInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.ORXNInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.refs.RTRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.refs.VBRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.refs.VCRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.refs.VRRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt.SBCRInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt.SGLRInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt.STDLInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt.SWDRInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.BTRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.CTRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.ETRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.STRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.TTRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.trap.VTRPInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.UIODInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.UIOIInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.UIORInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.UNODInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.UNOIInfectionParser;
+import com.jcsa.jcmutest.mutant.sec2mutant.muta.unry.VINCInfectionParser;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class SecInfection {
@@ -86,6 +117,81 @@ public class SecInfection {
 		else {
 			this.constraints.add(constraint);
 			this.init_errors.add(init_error);
+		}
+	}
+	
+	/* parsing module */
+	private static final Map<MutaClass, SecInfectionParser> 
+		parsers = new HashMap<MutaClass, SecInfectionParser>();
+	static {
+		parsers.put(MutaClass.BTRP, new BTRPInfectionParser());
+		parsers.put(MutaClass.CTRP, new CTRPInfectionParser());
+		parsers.put(MutaClass.ETRP, new ETRPInfectionParser());
+		parsers.put(MutaClass.STRP, new STRPInfectionParser());
+		parsers.put(MutaClass.TTRP, new TTRPInfectionParser());
+		parsers.put(MutaClass.VTRP, new VTRPInfectionParser());
+		
+		parsers.put(MutaClass.SBCR, new SBCRInfectionParser());
+		parsers.put(MutaClass.SWDR, new SWDRInfectionParser());
+		parsers.put(MutaClass.SGLR, new SGLRInfectionParser());
+		parsers.put(MutaClass.STDL, new STDLInfectionParser());
+		
+		parsers.put(MutaClass.UIOI, new UIOIInfectionParser());
+		parsers.put(MutaClass.UIOD, new UIODInfectionParser());
+		parsers.put(MutaClass.UIOR, new UIORInfectionParser());
+		parsers.put(MutaClass.VINC, new VINCInfectionParser());
+		parsers.put(MutaClass.UNOI, new UNOIInfectionParser());
+		parsers.put(MutaClass.UNOD, new UNODInfectionParser());
+		
+		parsers.put(MutaClass.VBRP, new VBRPInfectionParser());
+		parsers.put(MutaClass.VCRP, new VCRPInfectionParser());
+		parsers.put(MutaClass.VRRP, new VRRPInfectionParser());
+		parsers.put(MutaClass.RTRP, new RTRPInfectionParser());
+		
+		parsers.put(MutaClass.OAAN, new OAXNInfectionParser());
+		parsers.put(MutaClass.OABN, new OAXNInfectionParser());
+		parsers.put(MutaClass.OALN, new OAXNInfectionParser());
+		parsers.put(MutaClass.OARN, new OAXNInfectionParser());
+		
+		parsers.put(MutaClass.OBAN, new OBXNInfectionParser());
+		parsers.put(MutaClass.OBBN, new OBXNInfectionParser());
+		parsers.put(MutaClass.OBLN, new OBXNInfectionParser());
+		parsers.put(MutaClass.OBRN, new OBXNInfectionParser());
+		
+		parsers.put(MutaClass.OLAN, new OLXNInfectionParser());
+		parsers.put(MutaClass.OLBN, new OLXNInfectionParser());
+		parsers.put(MutaClass.OLLN, new OLXNInfectionParser());
+		parsers.put(MutaClass.OLRN, new OLXNInfectionParser());
+		
+		parsers.put(MutaClass.ORAN, new ORXNInfectionParser());
+		parsers.put(MutaClass.ORBN, new ORXNInfectionParser());
+		parsers.put(MutaClass.ORLN, new ORXNInfectionParser());
+		parsers.put(MutaClass.ORRN, new ORXNInfectionParser());
+		
+		parsers.put(MutaClass.OEAA, new OEXAInfectionParser());
+		parsers.put(MutaClass.OEBA, new OEXAInfectionParser());
+		
+		parsers.put(MutaClass.OAAA, new OAXAInfectionParser());
+		parsers.put(MutaClass.OABA, new OAXAInfectionParser());
+		parsers.put(MutaClass.OAEA, new OAXAInfectionParser());
+		
+		parsers.put(MutaClass.OBAA, new OBXAInfectionParser());
+		parsers.put(MutaClass.OBBA, new OBXAInfectionParser());
+		parsers.put(MutaClass.OBEA, new OBXAInfectionParser());
+	}
+	/**
+	 * @param cir_tree
+	 * @param mutant
+	 * @return the infection module of the mutant in CIR code
+	 * @throws Exception
+	 */
+	public static SecInfection parse(CirTree cir_tree, Mutant mutant) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		else if(mutant == null)
+			throw new IllegalArgumentException("Invalid mutation: null");
+		else {
+			return parsers.get(mutant.get_mutation().get_class()).parse(cir_tree, mutant);
 		}
 	}
 	

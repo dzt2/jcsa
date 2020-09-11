@@ -13,7 +13,16 @@ public class SetBitwsXorProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		return this.unsupport_exception();
+		SecConstraint constraint; SecDescription init_error;
+		constraint = this.get_constraint(this.sym_expression(
+				COperator.not_equals, this.loperand, Integer.valueOf(0)));
+		if(this.compare_or_mutate) {
+			init_error = this.trap_statement();
+		}
+		else {
+			init_error = this.set_expression(this.roperand);
+		}
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
