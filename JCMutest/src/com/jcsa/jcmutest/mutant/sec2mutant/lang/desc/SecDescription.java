@@ -5,6 +5,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecNode;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecKeyword;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymContexts;
 
 /**
  * <code>
@@ -62,8 +63,14 @@ public abstract class SecDescription extends SecNode {
 	 */
 	protected abstract String generate_content() throws Exception;
 	
+	/**
+	 * @return whether the descriptions are of all constraints
+	 */
 	public abstract boolean is_constraint();
 	
+	/**
+	 * @return whether the descriptions are of all state errors
+	 */
 	public abstract boolean is_state_error();
 	
 	/**
@@ -71,6 +78,22 @@ public abstract class SecDescription extends SecNode {
 	 */
 	public boolean is_consistent() {
 		return this.is_constraint() || this.is_state_error();
+	}
+	
+	/**
+	 * @param contexts
+	 * @return the description optimized based on the given contexts.
+	 * @throws Exception
+	 */
+	public abstract SecDescription optimize(SymContexts contexts) throws Exception;
+	
+	/**
+	 * @return the description optimized without contextual information
+	 *  	   which provides a purely static analysis approach.
+	 * @throws Exception
+	 */
+	public SecDescription optimize() throws Exception {
+		return this.optimize(null);
 	}
 	
 }

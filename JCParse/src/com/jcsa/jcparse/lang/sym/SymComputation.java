@@ -337,5 +337,14 @@ public class SymComputation {
 			}
 		}
 	}
+	public static boolean compare(SymConstant operand, long value) throws Exception {
+		Object number = operand.get_number();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() == value;
+		}
+		else {
+			return ((Double) number).doubleValue() == value;
+		}
+	}
 	
 }

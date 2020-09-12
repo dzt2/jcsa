@@ -14,6 +14,7 @@ public enum SecKeywords {
 	/** del_stmt(stmt) **/				del_stmt,
 	/** set_stmt(stmt, stmt) **/		set_stmt,
 	/** trp_stmt(stmt) **/				trp_stmt,
+	/** pas_stmt(stmt) **/				pas_stmt,
 	
 	/** set_expr(expr, expr) **/		set_expr,
 	/** add_expr(expr, oprt, expr) **/	add_expr,

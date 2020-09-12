@@ -579,7 +579,7 @@ public class SymEvaluator {
 	 */
 	private SymConstant[] get_constant_in_md(CType type, SymConstant lconstant, SymConstant rconstant) throws Exception {
 		type = CTypeAnalyzer.get_value_type(type);
-		if(CTypeAnalyzer.is_integer(type) || CTypeAnalyzer.is_pointer(type)) {
+		if(CTypeAnalyzer.is_boolean(type) || CTypeAnalyzer.is_integer(type) || CTypeAnalyzer.is_pointer(type)) {
 			long x = lconstant.get_long();
 			long y = rconstant.get_long();
 			/* compute the greatest common divisor */

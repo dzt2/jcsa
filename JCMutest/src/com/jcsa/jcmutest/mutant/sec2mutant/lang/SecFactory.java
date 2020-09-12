@@ -19,6 +19,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecSetReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecUnyReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecAddStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecDelStatementError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecPasStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecTrpStatementError;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -166,6 +167,9 @@ public class SecFactory {
 	public static SecStatementError trap_statement(CirStatement statement) throws Exception {
 		return new SecTrpStatementError(statement, statement);
 	}
+	public static SecStatementError pass_statement(CirStatement statement) throws Exception {
+		return new SecPasStatementError(statement, statement);
+	}
 	
 	/* expression error */
 	public static SecExpressionError set_expression(CirStatement statement,
@@ -178,7 +182,24 @@ public class SecFactory {
 	}
 	public static SecExpressionError ins_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator, Object operand) throws Exception {
-		return new SecInsExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
+		switch(operator) {
+		case arith_add:
+		case arith_mul:
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case logic_and:
+		case logic_or:
+			return new SecAddExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
+		case arith_sub:
+		case arith_div:
+		case arith_mod:
+		case left_shift:
+		case righ_shift:
+			return new SecInsExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
+		default: throw new IllegalArgumentException(operator.toString());
+		}
+		
 	}
 	public static SecExpressionError uny_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator) throws Exception {
@@ -205,7 +226,7 @@ public class SecFactory {
 	
 	/* composite descriptions */
 	public static SecDescriptions conjunct(CirStatement statement, Collection<SecDescription> descriptions) throws Exception {
-		if(descriptions == null || descriptions.size() < 1)
+		if(descriptions == null || descriptions.isEmpty())
 			throw new IllegalArgumentException("Invalid descriptions: null");
 		else {
 			SecDescriptions result = new SecConjunctDescriptions(statement);
@@ -216,7 +237,7 @@ public class SecFactory {
 		}
 	}
 	public static SecDescriptions disjunct(CirStatement statement, Collection<SecDescription> descriptions) throws Exception {
-		if(descriptions == null || descriptions.size() < 1)
+		if(descriptions == null || descriptions.isEmpty())
 			throw new IllegalArgumentException("Invalid descriptions: null");
 		else {
 			SecDescriptions result = new SecDisjunctDescriptions(statement);

@@ -13,7 +13,6 @@ public abstract class SecStateError extends SecDescription {
 	public boolean is_constraint() {
 		return false;
 	}
-
 	
 	@Override
 	public boolean is_state_error() {
