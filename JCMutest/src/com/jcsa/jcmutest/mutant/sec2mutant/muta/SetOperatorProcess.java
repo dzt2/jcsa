@@ -236,7 +236,7 @@ public abstract class SetOperatorProcess {
 			result = descriptions.iterator().next();
 		else
 			result = SecFactory.conjunct(statement, descriptions);
-		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+		if(result.is_consistent())
 			return result;
 		else
 			throw new IllegalArgumentException("Inconsisten: " + result);
@@ -254,7 +254,7 @@ public abstract class SetOperatorProcess {
 			result = descriptions.iterator().next();
 		else
 			result = SecFactory.disjunct(statement, descriptions);
-		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+		if(result.is_consistent())
 			return result;
 		else
 			throw new IllegalArgumentException("Inconsisten: " + result);

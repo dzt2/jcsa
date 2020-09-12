@@ -21,5 +21,17 @@ public class SecConstraint extends SecDescription {
 	protected String generate_content() throws Exception {
 		return "(" + this.get_condition().generate_code() + ")";
 	}
+
+	
+	@Override
+	public boolean is_constraint() {
+		return true;
+	}
+
+	
+	@Override
+	public boolean is_state_error() {
+		return false;
+	}
 	
 }

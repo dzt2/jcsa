@@ -8,7 +8,6 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXAInfectionParser;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXNInfectionParser;
@@ -110,9 +109,9 @@ public class SecInfection {
 	 */
 	protected void add_infection_pair(SecDescription constraint,
 			SecDescription init_error) throws Exception {
-		if(!SecFactory.is_constraint(constraint))
+		if(constraint == null || !constraint.is_constraint())
 			throw new IllegalArgumentException(constraint.generate_code());
-		else if(!SecFactory.is_state_error(init_error))
+		else if(init_error == null || !init_error.is_state_error())
 			throw new IllegalArgumentException(init_error.generate_code());
 		else {
 			this.constraints.add(constraint);

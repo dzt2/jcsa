@@ -7,7 +7,6 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescriptions;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDisjunctDescriptions;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecAddExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
@@ -225,42 +224,6 @@ public class SecFactory {
 				result.add_child(description);
 			}
 			return result;
-		}
-	}
-	
-	/* verification */
-	public static boolean is_constraint(SecDescription constraint) {
-		if(constraint instanceof SecConstraint) {
-			return true;
-		}
-		else if(constraint instanceof SecDescriptions) {
-			int n = ((SecDescriptions) constraint).number_of_descriptions();
-			for(int k = 0; k < n; k++) {
-				if(!is_constraint(((SecDescriptions) constraint).get_description(k))) {
-					return false;
-				}
-			}
-			return n > 0;
-		}
-		else {
-			return false;
-		}
-	}
-	public static boolean is_state_error(SecDescription state_error) {
-		if(state_error instanceof SecStateError) {
-			return true;
-		}
-		else if(state_error instanceof SecDescriptions) {
-			int n = ((SecDescriptions) state_error).number_of_descriptions();
-			for(int k = 0; k < n; k++) {
-				if(!is_state_error(((SecDescriptions) state_error).get_description(k))) {
-					return false;
-				}
-			}
-			return n > 0;
-		}
-		else {
-			return false;
 		}
 	}
 	

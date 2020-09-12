@@ -62,4 +62,15 @@ public abstract class SecDescription extends SecNode {
 	 */
 	protected abstract String generate_content() throws Exception;
 	
+	public abstract boolean is_constraint();
+	
+	public abstract boolean is_state_error();
+	
+	/**
+	 * @return whether the descriptions are of either state errors or constraints.
+	 */
+	public boolean is_consistent() {
+		return this.is_constraint() || this.is_state_error();
+	}
+	
 }

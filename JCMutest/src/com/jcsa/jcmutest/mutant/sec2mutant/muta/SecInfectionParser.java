@@ -455,7 +455,7 @@ public abstract class SecInfectionParser {
 			result = descriptions.iterator().next();
 		else
 			result = SecFactory.conjunct(this.location, descriptions);
-		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+		if(result.is_consistent())
 			return result;
 		else
 			throw new IllegalArgumentException("Inconsistent: " + result);
@@ -473,7 +473,7 @@ public abstract class SecInfectionParser {
 			result = descriptions.iterator().next();
 		else
 			result = SecFactory.disjunct(this.location, descriptions);
-		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+		if(result.is_consistent())
 			return result;
 		else
 			throw new IllegalArgumentException("Inconsistent: " + result);
