@@ -13,6 +13,7 @@ import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymContexts;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 public class SecAddReferenceError extends SecReferenceError {
 
@@ -90,13 +91,23 @@ public class SecAddReferenceError extends SecReferenceError {
 				get_orig_reference().get_expression().get_cir_source();
 		switch(operator) {
 		case arith_add:
-		case arith_sub:
 		{
 			if(this.compare_constant(operand, 0)) {
 				return SecFactory.pass_statement(statement);
 			}
 			else {
 				return SecFactory.add_reference(statement, orig_expression, operator, operand);
+			}
+		}
+		case arith_sub:
+		{
+			if(this.compare_constant(operand, 0)) {
+				return SecFactory.pass_statement(statement);
+			}
+			else {
+				operand = SymFactory.arith_neg(operand.get_data_type(), operand);
+				operand = SymEvaluator.evaluate_on(operand, contexts);
+				return SecFactory.add_reference(statement, orig_expression, COperator.arith_add, operand);
 			}
 		}
 		case arith_mul:
