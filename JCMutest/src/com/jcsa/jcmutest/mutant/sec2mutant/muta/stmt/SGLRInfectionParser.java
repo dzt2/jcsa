@@ -1,7 +1,6 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstGotoStatement;
@@ -35,7 +34,7 @@ public class SGLRInfectionParser extends SecInfectionParser {
 		CirStatement target = this.get_target(mutation);
 		this.add_infection(
 				this.get_constraint(Boolean.TRUE, true), 
-				SecFactory.set_statement(source, target));
+				this.set_statement(source, target));
 		return true;
 	}
 

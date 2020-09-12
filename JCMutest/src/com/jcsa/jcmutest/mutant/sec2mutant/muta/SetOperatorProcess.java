@@ -7,6 +7,7 @@ import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -122,31 +123,160 @@ public abstract class SetOperatorProcess {
 	protected abstract boolean equal_with()throws Exception;
 	protected abstract boolean not_equals()throws Exception;
 	
-	/* basic methods */
+	/* basic data operations */
+	/**
+	 * @param constraint
+	 * @param init_error
+	 * @return add the infection-pair of [constraint, init_error] into the module.
+	 * @throws Exception
+	 */
 	protected boolean add_infection(SecDescription constraint, SecDescription init_error) throws Exception {
 		this.infection.add_infection_pair(constraint, init_error); return true;
 	}
+	/**
+	 * @return trp_stmt(this.statement)
+	 * @throws Exception
+	 */
 	protected SecDescription trap_statement() throws Exception {
 		return SecFactory.trap_statement(this.statement);
 	}
-	protected SecDescription set_expression(Object muta_expression) throws Exception {
-		return SecFactory.set_expression(statement, expression, muta_expression);
-	}
+	/**
+	 * @param condition
+	 * @return assert_on(this.statement, condition, true).
+	 * @throws Exception
+	 */
 	protected SecConstraint get_constraint(Object condition) throws Exception {
 		return SecFactory.assert_constraint(statement, condition, true);
 	}
-	protected SecDescription add_expression(Object operand) throws Exception {
+	
+	/* exception handles */
+	/**
+	 * @return report that the mutation operator is not supported in current location
+	 * @throws Exception
+	 */
+	protected boolean unsupport_exception() throws Exception {
+		throw new UnsupportedOperationException("Unsupport: " + this.expression.generate_code(true));
+	}
+	/**
+	 * @return report the mutation as equivalence due to the analysis process
+	 * @throws Exception
+	 */
+	protected boolean report_equivalence_mutation() throws Exception {
+		throw new UnsupportedOperationException("Equivalent mutation: " + this.infection.get_mutation());
+	}
+	
+	
+	/* expression errors */
+	/**
+	 * @param muta_expression
+	 * @return set_expr(this.expression, muta_expression)
+	 * @throws Exception
+	 */
+	protected SecExpressionError set_expression(Object muta_expression) throws Exception {
+		return SecFactory.set_expression(statement, expression, muta_expression);
+	}
+	/**
+	 * @param operand
+	 * @return add_expr(this.expression, +, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError add_expression(Object operand) throws Exception {
 		return SecFactory.add_expression(statement, expression, COperator.arith_add, operand);
 	}
-	protected SecDescription sub_expression(Object operand) throws Exception {
+	/**
+	 * @param operand
+	 * @return add_expr(this.expression, -, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError sub_expression(Object operand) throws Exception {
 		return SecFactory.add_expression(statement, expression, COperator.arith_sub, operand);
 	}
+	/**
+	 * @return uny_expr(this.expression, -)
+	 * @throws Exception
+	 */
+	protected SecExpressionError neg_expression() throws Exception {
+		return SecFactory.uny_expression(statement, expression, COperator.negative);
+	}
+	/**
+	 * @return uny_expr(this.expression, ~)
+	 * @throws Exception
+	 */
+	protected SecExpressionError rsv_expression() throws Exception {
+		return SecFactory.uny_expression(statement, expression, COperator.bit_not);
+	}
+	/**
+	 * @return uny_expr(this.expression, !)
+	 * @throws Exception
+	 */
+	protected SecExpressionError not_expression() throws Exception {
+		return SecFactory.uny_expression(statement, expression, COperator.logic_not);
+	}
+	/**
+	 * @param operand
+	 * @param operator
+	 * @return ins_expr(orig_expr, operator, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError ins_expression(Object operand, COperator operator) throws Exception {
+		return SecFactory.ins_expression(statement, expression, operator, operand);
+	}
+	
+	/* composite descriptions */
+	/**
+	 * @param descriptions
+	 * @return conjunction of the descriptions
+	 * @throws Exception
+	 */
+	protected SecDescription conjunct(Collection<SecDescription> descriptions) throws Exception {
+		SecDescription result;
+		if(descriptions.isEmpty()) 
+			return null;
+		else if(descriptions.size() == 1)
+			result = descriptions.iterator().next();
+		else
+			result = SecFactory.conjunct(statement, descriptions);
+		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+			return result;
+		else
+			throw new IllegalArgumentException("Inconsisten: " + result);
+	}
+	/**
+	 * @param descriptions
+	 * @return disjunction of the descriptions
+	 * @throws Exception
+	 */
+	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
+		SecDescription result;
+		if(descriptions.isEmpty()) 
+			return null;
+		else if(descriptions.size() == 1)
+			result = descriptions.iterator().next();
+		else
+			result = SecFactory.disjunct(statement, descriptions);
+		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+			return result;
+		else
+			throw new IllegalArgumentException("Inconsisten: " + result);
+	}
+	
+	/* symbolic operations */
+	/**
+	 * @param expression
+	 * @param value
+	 * @return symbolic condition as expression == value
+	 * @throws Exception
+	 */
 	protected SymExpression sym_condition(Object expression, boolean value) throws Exception {
 		return SecFactory.get_condition(expression, value);
 	}
-	protected SymExpression sym_condition(Object expression) throws Exception {
-		return SecFactory.get_condition(expression, true);
-	}
+	/**
+	 * @param operator {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
+	 * @param loperand
+	 * @param roperand
+	 * @return the symbolic binary expression w.r.t. the loperand as well as roperand
+	 * @throws Exception
+	 */
 	protected SymExpression sym_expression(COperator operator, Object loperand, Object roperand) throws Exception {
 		CType type = this.expression.get_data_type();
 		switch(operator) {
@@ -171,6 +301,12 @@ public abstract class SetOperatorProcess {
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
+	/**
+	 * @param operator	{+, -, ~, !}
+	 * @param operand
+	 * @return the symbolic unary expression w.r.t. the operand
+	 * @throws Exception
+	 */
 	protected SymExpression sym_expression(COperator operator, Object operand) throws Exception {
 		switch(operator) {
 		case positive:	return SymFactory.parse(operand);
@@ -179,24 +315,6 @@ public abstract class SetOperatorProcess {
 		case logic_not:	return SymFactory.logic_not(operand);
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
-	}
-	protected boolean unsupport_exception() throws Exception {
-		throw new UnsupportedOperationException("Unsupport: " + this.expression.generate_code(true));
-	}
-	protected SecDescription conjunct(Collection<SecDescription> descriptions) throws Exception {
-		return SecFactory.conjunct(statement, descriptions);
-	}
-	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
-		return SecFactory.conjunct(statement, descriptions);
-	}
-	protected SecDescription uny_expression(COperator operator) throws Exception {
-		return SecFactory.uny_expression(statement, expression, operator);
-	}
-	protected boolean report_equivalence_mutation() throws Exception {
-		throw new UnsupportedOperationException("Equivalent mutation: " + this.infection.get_mutation());
-	}
-	protected SecDescription ins_expression(Object operand, COperator operator) throws Exception {
-		return SecFactory.ins_expression(statement, expression, operator, operand);
 	}
 	
 }

@@ -17,9 +17,7 @@ public class SecUnyExpressionError extends SecExpressionError {
 		switch(operator) {
 		case negative:
 		case bit_not:
-		case logic_not:
-		case increment:
-		case decrement:	break;
+		case logic_not: break;
 		default: throw new IllegalArgumentException(operator.toString());
 		}
 	}

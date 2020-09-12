@@ -13,6 +13,11 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecSetExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecUnyExpressionError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecAddReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecInsReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecSetReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecUnyReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecAddStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecDelStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
@@ -179,6 +184,24 @@ public class SecFactory {
 	public static SecExpressionError uny_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator) throws Exception {
 		return new SecUnyExpressionError(statement, orig_expression, operator);
+	}
+	
+	/* reference error */
+	public static SecReferenceError set_reference(CirStatement statement,
+			CirExpression orig_reference, Object muta_expression) throws Exception {
+		return new SecSetReferenceError(statement, orig_reference, SymFactory.parse(muta_expression));
+	}
+	public static SecReferenceError add_reference(CirStatement statement,
+			CirExpression orig_reference, COperator operator, Object operand) throws Exception {
+		return new SecAddReferenceError(statement, orig_reference, operator, SymFactory.parse(operand));
+	}
+	public static SecReferenceError ins_reference(CirStatement statement,
+			CirExpression orig_reference, COperator operator, Object operand) throws Exception {
+		return new SecInsReferenceError(statement, orig_reference, operator, SymFactory.parse(operand));
+	}
+	public static SecReferenceError uny_reference(CirStatement statement,
+			CirExpression orig_reference, COperator operator) throws Exception {
+		return new SecUnyReferenceError(statement, orig_reference, operator);
 	}
 	
 	/* composite descriptions */

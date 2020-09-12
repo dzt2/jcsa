@@ -1,11 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
@@ -14,7 +11,6 @@ import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 
 public class SWDRInfectionParser extends SecInfectionParser {
 
@@ -44,41 +40,27 @@ public class SWDRInfectionParser extends SecInfectionParser {
 		SecConstraint constraint = this.get_constraint(if_statement.get_condition(), false);
 		
 		/* initial errors by operator */
+		SecDescription init_error;
 		Set<CirStatement> statements = this.get_statements_in_body(mutation);
-		List<SecDescription> init_errors = new ArrayList<SecDescription>();
 		switch(mutation.get_operator()) {
 		case while_to_do_while:
 		{
-			for(CirStatement body_statement : statements) {
-				if(!(body_statement instanceof CirTagStatement)) {
-					init_errors.add(SecFactory.add_statement(body_statement));
-				}
-			}
-			break;
+			init_error = this.add_statements(statements); break;
 		}
 		case do_while_to_while:
 		{
-			for(CirStatement body_statement : statements) {
-				if(!(body_statement instanceof CirTagStatement)) {
-					init_errors.add(SecFactory.del_statement(body_statement));
-				}
-			}
-			break;
+			init_error = this.del_statements(statements); break;
 		}
 		default: throw new IllegalArgumentException(mutation.toString());
 		}
 		
 		/* add the infection-pair */
-		if(init_errors.isEmpty()) {
+		if(init_error == null) {
 			return false;
 		}
-		else if(init_errors.size() == 1) {
-			this.add_infection(constraint, init_errors.get(0));
-		}
 		else {
-			this.add_infection(constraint, this.conjunct(init_errors));
+			return this.add_infection(constraint, init_error);
 		}
-		return true;
 	}
 
 }

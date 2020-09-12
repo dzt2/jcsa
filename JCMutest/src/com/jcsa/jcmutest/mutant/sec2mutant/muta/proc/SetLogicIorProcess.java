@@ -52,8 +52,8 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 		SecConstraint constraint; SecDescription init_error;
 		SymExpression lcondition, rcondition, condition;
 		
-		lcondition = this.sym_condition(this.loperand);
-		rcondition = this.sym_condition(this.roperand);
+		lcondition = this.sym_condition(this.loperand, true);
+		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
@@ -135,8 +135,8 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 		SecConstraint constraint; SecDescription init_error;
 		SymExpression lcondition, rcondition, condition;
 		
-		lcondition = this.sym_condition(this.loperand);
-		rcondition = this.sym_condition(this.roperand);
+		lcondition = this.sym_condition(this.loperand, true);
+		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
@@ -226,8 +226,8 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 		SecConstraint constraint; SecDescription init_error;
 		SymExpression lcondition, rcondition, condition;
 		
-		lcondition = this.sym_condition(this.loperand);
-		rcondition = this.sym_condition(this.roperand);
+		lcondition = this.sym_condition(this.loperand, true);
+		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
@@ -275,7 +275,7 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 			init_error = this.trap_statement();
 		}
 		else {
-			init_error = this.uny_expression(COperator.logic_not);
+			init_error = this.not_expression();
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -309,7 +309,7 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 			init_error = this.trap_statement();
 		}
 		else {
-			init_error = this.uny_expression(COperator.logic_not);
+			init_error = this.not_expression();
 		}
 		return this.add_infection(constraint, init_error);
 	}
@@ -332,7 +332,7 @@ public class SetLogicIorProcess extends SetOperatorProcess {
 			init_error = this.trap_statement();
 		}
 		else {
-			init_error = this.uny_expression(COperator.logic_not);
+			init_error = this.not_expression();
 		}
 		return this.add_infection(constraint, init_error);
 	}

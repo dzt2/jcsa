@@ -34,6 +34,11 @@ import java.util.List;
  * 	|--	|--	SecAddExpressionError		add_expr(orig_expr, oprt, muta_expr)<br>
  * 	|--	|--	SecInsExpressionError		ins_expr(orig_expr, oprt, muta_expr)<br>
  * 	|--	|--	SecUnyExpressionError		uny_expr(orig_expr, oprt)			<br>
+ * 	|--	SecReferenceError				{orig_expr: SecExpression}			<br>
+ * 	|--	|--	SecSetReferenceError		set_refr(orig_expr, muta_expr)		<br>
+ * 	|--	|--	SecAddReferenceError		add_refr(orig_expr, oprt, muta_expr)<br>
+ * 	|--	|--	SecInsReferenceError		ins_refr(orig_expr, oprt, muta_expr)<br>
+ * 	|--	|--	SecUnyReferenceError		uny_expr(orig_expr, oprt)			<br>
  * 	+----------------------------------------------------------------------+<br>
  * 	SecDescriptions						{descriptions: SecDescription+}		<br>
  * 	|--	SecConjunctDescriptions												<br>

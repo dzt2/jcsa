@@ -20,6 +20,11 @@ public enum SecKeywords {
 	/** ins_expr(expr, oprt, expr) **/	ins_expr,
 	/** uny_expr(expr, oprt) **/		uny_expr,
 	
+	/** set_refr(expr, expr) **/		set_refr,
+	/** add_refr(expr, oprt, expr) **/	add_refr,
+	/** ins_refr(expr, oprt, expr) **/	ins_refr,
+	/** uny_refr(expr, oprt) **/		uny_refr,
+	
 	/** conjunct(desc+) **/				conjunct,
 	/** disjunct(desc+) **/				disjunct,
 	

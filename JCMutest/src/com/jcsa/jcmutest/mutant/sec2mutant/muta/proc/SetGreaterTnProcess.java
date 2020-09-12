@@ -26,7 +26,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						arith_add, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -59,7 +59,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						arith_mul, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -87,7 +87,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
 					arith_div, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 			return this.add_infection(constraint, init_error);
 		}
@@ -115,7 +115,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
 					arith_mod, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 			return this.add_infection(constraint, init_error);
 		}
@@ -131,7 +131,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						bit_and, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -147,7 +147,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						bit_or, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -180,7 +180,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						left_shift, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -196,7 +196,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						righ_shift, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -212,7 +212,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						logic_and, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);
@@ -228,7 +228,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		else {
 			condition = this.sym_expression(COperator.
 						logic_or, loperand, roperand);
-			condition = this.sym_condition(condition);
+			condition = this.sym_condition(condition, true);
 			init_error = this.set_expression(condition);
 		}
 		return this.add_infection(constraint, init_error);

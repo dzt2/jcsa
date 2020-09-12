@@ -74,7 +74,7 @@ public class CTRPInfectionParser extends SecInfectionParser {
 				break;
 			}
 		}
-		constraints.add(this.exec_constraint(true_execution.get_statement(), 1));
+		constraints.add(this.exe_constraint(true_execution.get_statement(), 1));
 		/* add infection */
 		SecDescription constraint = this.conjunct(constraints);
 		SecDescription init_error = this.trap_statement(statement);

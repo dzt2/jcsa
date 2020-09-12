@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -10,7 +11,9 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescriptions;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -21,6 +24,7 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
@@ -94,7 +98,7 @@ public abstract class SecInfectionParser {
 		}
 	}
 	
-	/* supporting methods */
+	/* cir-code processing methods */
 	/**
 	 * @param location
 	 * @return the range to which the location corresponds in CIR code
@@ -196,17 +200,23 @@ public abstract class SecInfectionParser {
 	protected CirNode get_cir_node(AstNode location, Class<?> cir_class) throws Exception {
 		return this.get_cir_node(location, cir_class, 0);
 	}
-	protected void add_infection(SecDescription constraint, SecDescription init_error) throws Exception {
+	/**
+	 * add the infection pair of [constraint, state_error] in the infection module
+	 * @param constraint
+	 * @param init_error
+	 * @throws Exception
+	 */
+	protected boolean add_infection(SecDescription constraint, SecDescription init_error) throws Exception {
 		this.infection.add_infection_pair(constraint, init_error);
+		return true;
 	}
+	/**
+	 * @param statement
+	 * @return the executional node w.r.t. the statement in CIR-code
+	 * @throws Exception
+	 */
 	protected CirExecution get_execution(CirStatement statement) throws Exception {
 		return this.cir_tree.get_localizer().get_execution(statement);
-	}
-	protected SecDescriptions conjunct(Collection<SecDescription> descriptions) throws Exception {
-		return SecFactory.conjunct(this.location, descriptions);
-	}
-	protected SecDescriptions disjunct(Collection<SecDescription> descriptions) throws Exception {
-		return SecFactory.conjunct(this.location, descriptions);
 	}
 	private void get_statements_in(AstNode location, Set<CirStatement> statements) throws Exception {
 		AstCirPair range = this.get_cir_range(location);
@@ -229,71 +239,14 @@ public abstract class SecInfectionParser {
 		return statements;
 	}
 	
-	/* generation methods */
-	/**
-	 * @param condition
-	 * @param value
-	 * @return assert(this.statement, condition, value)
-	 * @throws Exception
-	 */
-	protected SecConstraint get_constraint(CirStatement statement, Object condition, boolean value) throws Exception {
-		return SecFactory.assert_constraint(statement, condition, value);
-	}
-	/**
-	 * @param condition
-	 * @param value
-	 * @return assert(this.statement, condition, value)
-	 * @throws Exception
-	 */
-	protected SecConstraint get_constraint(Object condition, boolean value) throws Exception {
-		return SecFactory.assert_constraint(this.location, condition, value);
-	}
-	/**
-	 * @param statement
-	 * @param times
-	 * @return execute(statement, int)
-	 * @throws Exception
-	 */
-	protected SecConstraint exec_constraint(CirStatement statement, int times) throws Exception {
-		return SecFactory.execute_constraint(statement, times);
-	}
-	/**
-	 * @param statement
-	 * @return trap_statement(statement)
-	 * @throws Exception
-	 */
-	protected SecDescription trap_statement(CirStatement statement) throws Exception {
-		return SecFactory.trap_statement(statement);
-	}
-	protected SecDescription add_expression(CirExpression expression, Object operand) throws Exception {
-		return SecFactory.add_expression(location, expression, COperator.arith_add, operand);
-	}
-	protected SecDescription sub_expression(CirExpression expression, Object operand) throws Exception {
-		return SecFactory.add_expression(location, expression, COperator.arith_sub, operand);
-	}
-	protected SecDescription mul_expression(CirExpression expression, Object operand) throws Exception {
-		return SecFactory.add_expression(location, expression, COperator.arith_mul, operand);
-	}
-	protected SecDescription inc_reference(CirExpression expression) throws Exception {
-		return SecFactory.uny_expression(location, expression, COperator.increment);
-	}
-	protected SecDescription dec_reference(CirExpression expression) throws Exception {
-		return SecFactory.uny_expression(location, expression, COperator.decrement);
-	}
-	protected SecDescription neg_expression(CirExpression expression) throws Exception {
-		return SecFactory.uny_expression(location, expression, COperator.negative);
-	}
-	protected SecDescription rsv_expression(CirExpression expression) throws Exception {
-		return SecFactory.uny_expression(location, expression, COperator.bit_not);
-	}
-	protected SecDescription not_expression(CirExpression expression) throws Exception {
-		return SecFactory.uny_expression(location, expression, COperator.logic_not);
-	}
-	protected SecDescription set_expression(CirExpression orig_expression, Object muta_expression) throws Exception {
-		return SecFactory.set_expression(this.location, orig_expression, muta_expression);
-	}
-	
 	/* symbolic generation */
+	/**
+	 * @param operator {&&, ||, <, <=, >, >=, ==, !=}
+	 * @param loperand
+	 * @param roperand
+	 * @return create a symbolic condition using binary operator
+	 * @throws Exception
+	 */
 	protected SymExpression sym_condition(COperator operator, Object loperand, Object roperand) throws Exception {
 		switch(operator) {
 		case logic_and:		return SymFactory.logic_and(loperand, roperand);
@@ -307,6 +260,14 @@ public abstract class SecInfectionParser {
 		default: throw new IllegalArgumentException("invalid: " + operator);
 		}
 	}
+	/**
+	 * @param type
+	 * @param operator	{+, -, *, /, %, &, |, ^, <<, >>}
+	 * @param loperand
+	 * @param roperand
+	 * @return the symbolic expression using binary operator
+	 * @throws Exception
+	 */
 	protected SymExpression sym_expression(CType type, COperator operator, Object loperand, Object roperand) throws Exception {
 		switch(operator) {
 		case arith_add:		return SymFactory.arith_add(type, loperand, roperand);
@@ -321,6 +282,201 @@ public abstract class SecInfectionParser {
 		case righ_shift:	return SymFactory.bitws_rsh(type, loperand, roperand);
 		default: throw new IllegalArgumentException("Invalid: " + operator);
 		}
+	}
+	
+	/* constraint generation */
+	/**
+	 * @param condition
+	 * @param value
+	 * @return assert_on(this.location, condition, value)
+	 * @throws Exception
+	 */
+	protected SecConstraint get_constraint(Object condition, boolean value) throws Exception {
+		return SecFactory.assert_constraint(this.location, condition, value);
+	}
+	/**
+	 * @param statement
+	 * @param times
+	 * @return execute(statement, int)
+	 * @throws Exception
+	 */
+	protected SecConstraint exe_constraint(CirStatement statement, int times) throws Exception {
+		return SecFactory.execute_constraint(statement, times);
+	}
+	
+	/* statement error generation */
+	/**
+	 * @param statements
+	 * @return add_stmt(statement)*
+	 * @throws Exception
+	 */
+	protected SecDescription add_statements(Collection<CirStatement> statements) throws Exception {
+		List<SecDescription> descriptions = new ArrayList<SecDescription>();
+		for(CirStatement statement : statements) {
+			if(!(statement instanceof CirTagStatement)) {
+				descriptions.add(SecFactory.add_statement(statement));
+			}
+		}
+		if(descriptions.isEmpty())
+			return null;
+		else if(descriptions.size() == 1)
+			return descriptions.get(0);
+		else 
+			return SecFactory.conjunct(this.location, descriptions);
+	}
+	/**
+	 * @param statements
+	 * @return add_stmt(statement)*
+	 * @throws Exception
+	 */
+	protected SecDescription del_statements(Collection<CirStatement> statements) throws Exception {
+		List<SecDescription> descriptions = new ArrayList<SecDescription>();
+		for(CirStatement statement : statements) {
+			if(!(statement instanceof CirTagStatement)) {
+				descriptions.add(SecFactory.del_statement(statement));
+			}
+		}
+		if(descriptions.isEmpty())
+			return null;
+		else if(descriptions.size() == 1)
+			return descriptions.get(0);
+		else 
+			return SecFactory.conjunct(this.location, descriptions);
+	}
+	/**
+	 * @param source
+	 * @param target
+	 * @return set_stmt(source, target)
+	 * @throws Exception
+	 */
+	protected SecStatementError set_statement(CirStatement source, CirStatement target) throws Exception {
+		return SecFactory.set_statement(source, target);
+	}
+	/**
+	 * @param statement
+	 * @return trap_statement(statement)
+	 * @throws Exception
+	 */
+	protected SecDescription trap_statement(CirStatement statement) throws Exception {
+		return SecFactory.trap_statement(statement);
+	}
+	
+	/* expression error generation */
+	/**
+	 * @param orig_expression
+	 * @param muta_expression
+	 * @return set_expr(orig_expr, muta_expr)
+	 * @throws Exception
+	 */
+	protected SecExpressionError set_expression(CirExpression orig_expression, Object muta_expression) throws Exception {
+		return SecFactory.set_expression(this.location, orig_expression, muta_expression);
+	}
+	/**
+	 * @param expression
+	 * @return neg_expr(expr)
+	 * @throws Exception
+	 */
+	protected SecExpressionError neg_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.negative);
+	}
+	/**
+	 * @param expression
+	 * @return rsv_expr(expr)
+	 * @throws Exception
+	 */
+	protected SecExpressionError rsv_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.bit_not);
+	}
+	/**
+	 * @param expression
+	 * @return not_expr(expr)
+	 * @throws Exception
+	 */
+	protected SecExpressionError not_expression(CirExpression expression) throws Exception {
+		return SecFactory.uny_expression(location, expression, COperator.logic_not);
+	}
+	/**
+	 * @param expression
+	 * @param operand
+	 * @return add_expr(orig_expr, +, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError add_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_add, operand);
+	}
+	/**
+	 * @param expression
+	 * @param operand
+	 * @return add_expr(orig_expr, -, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError sub_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_sub, operand);
+	}
+	/**
+	 * @param expression
+	 * @param operand
+	 * @return add_expr(orig_expr, *, operand)
+	 * @throws Exception
+	 */
+	protected SecExpressionError mul_expression(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_expression(location, expression, COperator.arith_mul, operand);
+	}
+	
+	/* reference error generation */
+	/**
+	 * @param expression
+	 * @param operand
+	 * @return add_refr(old_refr, +, operand)
+	 * @throws Exception
+	 */
+	protected SecReferenceError add_reference(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_reference(this.location, expression, COperator.arith_add, operand);
+	}
+	/**
+	 * @param expression
+	 * @param operand
+	 * @return add_refr(old_refr, -, operand)
+	 * @throws Exception
+	 */
+	protected SecReferenceError sub_reference(CirExpression expression, Object operand) throws Exception {
+		return SecFactory.add_reference(this.location, expression, COperator.arith_sub, operand);
+	}
+	/**
+	 * @param descriptions
+	 * @return the conjunction of the descriptions
+	 * @throws Exception
+	 */
+	protected SecDescription conjunct(Collection<SecDescription> descriptions) throws Exception {
+		SecDescription result;
+		if(descriptions.isEmpty())
+			throw new IllegalArgumentException("No descriptions provided");
+		else if(descriptions.size() == 1)
+			result = descriptions.iterator().next();
+		else
+			result = SecFactory.conjunct(this.location, descriptions);
+		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+			return result;
+		else
+			throw new IllegalArgumentException("Inconsistent: " + result);
+	}
+	/**
+	 * @param descriptions
+	 * @return the disjunction of the descriptions
+	 * @throws Exception
+	 */
+	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
+		SecDescription result;
+		if(descriptions.isEmpty())
+			throw new IllegalArgumentException("No descriptions provided");
+		else if(descriptions.size() == 1)
+			result = descriptions.iterator().next();
+		else
+			result = SecFactory.disjunct(this.location, descriptions);
+		if(SecFactory.is_constraint(result) || SecFactory.is_state_error(result))
+			return result;
+		else
+			throw new IllegalArgumentException("Inconsistent: " + result);
 	}
 	
 }

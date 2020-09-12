@@ -50,7 +50,7 @@ public class TTRPInfectionParser extends SecInfectionParser {
 		/* 1. {if_statement.condition as true} */
 		constraints.add(this.get_constraint(if_statement.get_condition(), true));
 		/* 2. execute(true-statement, n) */
-		constraints.add(this.exec_constraint(true_statement, loop_times));
+		constraints.add(this.exe_constraint(true_statement, loop_times));
 		
 		/* 3. add the infection pair to module */
 		SecDescription constraint = this.conjunct(constraints);
