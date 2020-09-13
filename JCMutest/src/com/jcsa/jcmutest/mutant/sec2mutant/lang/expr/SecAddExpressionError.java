@@ -1,19 +1,12 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.lang.expr;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecExpression;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecOperator;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymComputation;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymContexts;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
 
 public class SecAddExpressionError extends SecExpressionError {
 
@@ -54,122 +47,6 @@ public class SecAddExpressionError extends SecExpressionError {
 		return "(" + this.get_orig_expression().generate_code() +
 				", " + this.get_operator().generate_code() + ", "
 				+ this.get_operand().generate_code() + ")";
-	}
-	
-	/**
-	 * @param operand
-	 * @param value
-	 * @return whether operand must-be equal with the value
-	 * @throws Exception
-	 */
-	private boolean compare_constant(SymExpression operand, boolean value) throws Exception {
-		if(operand instanceof SymConstant) {
-			return ((SymConstant) operand).get_bool() == value;
-		}
-		else {
-			return false;
-		}
-	}
-	
-	/**
-	 * @param operand
-	 * @param value
-	 * @return whether operand must-be equal with the value
-	 * @throws Exception
-	 */
-	private boolean compare_constant(SymExpression operand, long value) throws Exception {
-		if(operand instanceof SymConstant) {
-			return SymComputation.compare((SymConstant) operand, value);
-		}
-		else {
-			return false;
-		}
-	}
-	
-	@Override
-	public SecDescription optimize(SymContexts contexts) throws Exception {
-		SymExpression operand = SymEvaluator.evaluate_on(
-				this.get_operand().get_expression(), contexts);
-		COperator operator = this.get_operator().get_operator();
-		CirStatement statement = this.get_location().get_statement();
-		CirExpression orig_expression = this.
-				get_orig_expression().get_expression().get_cir_source();
-		switch(operator) {
-		case arith_add:
-		{
-			if(this.compare_constant(operand, 0)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		case arith_sub:
-		{
-			if(this.compare_constant(operand, 0)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				operand = SymFactory.arith_neg(operand.get_data_type(), operand);
-				operand = SymEvaluator.evaluate_on(operand, contexts);
-				return SecFactory.add_expression(statement, orig_expression, COperator.arith_add, operand);
-			}
-		}
-		case arith_mul:
-		case arith_div:
-		{
-			if(this.compare_constant(operand, 1)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		case arith_mod:
-		{
-			return SecFactory.add_expression(statement, orig_expression, operator, operand);
-		}
-		case bit_and:
-		{
-			if(this.compare_constant(operand, ~0L)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		case bit_or:
-		case bit_xor:
-		case left_shift:
-		case righ_shift:
-		{
-			if(this.compare_constant(operand, 0)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		case logic_and:
-		{
-			if(this.compare_constant(operand, true)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		case logic_or:
-		{
-			if(this.compare_constant(operand, false)) {
-				return SecFactory.pass_statement(statement);
-			}
-			else {
-				return SecFactory.add_expression(statement, orig_expression, operator, operand);
-			}
-		}
-		default: throw new IllegalArgumentException(operator.toString());
-		}
 	}
 	
 }

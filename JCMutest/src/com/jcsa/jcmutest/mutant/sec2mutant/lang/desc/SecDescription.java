@@ -82,18 +82,26 @@ public abstract class SecDescription extends SecNode {
 	
 	/**
 	 * @param contexts
-	 * @return the description optimized based on the given contexts.
+	 * @return the descriptions optimized and extended under the contextual scope
 	 * @throws Exception
 	 */
-	public abstract SecDescription optimize(SymContexts contexts) throws Exception;
+	public SecDescription optimize(SymContexts contexts) throws Exception {
+		if(!this.is_consistent())
+			throw new IllegalArgumentException("Inconsistent: " + this);
+		else
+			return SecEvaluator.evaluate(this, contexts);
+	}
 	
 	/**
-	 * @return the description optimized without contextual information
-	 *  	   which provides a purely static analysis approach.
+	 * @param contexts
+	 * @return the descriptions optimized and extended without contextual scope
 	 * @throws Exception
 	 */
 	public SecDescription optimize() throws Exception {
-		return this.optimize(null);
+		if(!this.is_consistent())
+			throw new IllegalArgumentException("Inconsistent: " + this);
+		else
+			return SecEvaluator.evaluate(this, null);
 	}
 	
 }

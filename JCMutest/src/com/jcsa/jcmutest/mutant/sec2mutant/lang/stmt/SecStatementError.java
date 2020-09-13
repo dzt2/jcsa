@@ -1,11 +1,9 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymContexts;
 
 /**
  * <code>
@@ -27,11 +25,6 @@ public abstract class SecStatementError extends SecStateError {
 	
 	public SecStatement get_orig_statement() {
 		return (SecStatement) this.get_child(2);
-	}
-	
-	@Override
-	public SecDescription optimize(SymContexts contexts) throws Exception {
-		return this;
 	}
 	
 }
