@@ -707,7 +707,10 @@ public class SecEvaluator {
 	}
 	private SecDescription eval_conjunct_errors(SecConjunctDescriptions source) throws Exception {
 		Set<SecDescription> descriptions = new HashSet<SecDescription>();
-		this.collect_descriptions(true, source, descriptions);
+		for(int k = 0; k < source.number_of_descriptions(); k++) {
+			this.collect_descriptions(true, 
+					this.eval(source.get_description(k)), descriptions);
+		}
 		CirStatement statement = source.get_location().get_statement();
 		if(descriptions.isEmpty()) {
 			return SecFactory.pass_statement(statement);
@@ -721,7 +724,10 @@ public class SecEvaluator {
 	}
 	private SecDescription eval_disjunct_errors(SecDisjunctDescriptions source) throws Exception {
 		Set<SecDescription> descriptions = new HashSet<SecDescription>();
-		this.collect_descriptions(false, source, descriptions);
+		for(int k = 0; k < source.number_of_descriptions(); k++) {
+			this.collect_descriptions(false, 
+					this.eval(source.get_description(k)), descriptions);
+		}
 		CirStatement statement = source.get_location().get_statement();
 		if(descriptions.isEmpty()) {
 			return SecFactory.pass_statement(statement);
