@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.mutant.sec2mutant.lang.cons;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecDescription;
-import com.jcsa.jcmutest.mutant.sec2mutant.util.SecOptimizer;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecOptimizer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymContexts;

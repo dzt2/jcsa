@@ -1,11 +1,10 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util;
+package com.jcsa.jcmutest.mutant.sec2mutant.lang;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConditionConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConjunctConstraints;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
@@ -388,6 +387,7 @@ public class SecOptimizer {
 		
 		/* 4. extend on add_expression when difference is constant */
 		difference = SymFactory.arith_sub(type.get_ctype(), muta_expression, orig_expression);
+		difference = this.sym_eval(difference);
 		if(difference instanceof SymConstant) {
 			switch(type.get_vtype()) {
 			case cchar:
@@ -578,6 +578,7 @@ public class SecOptimizer {
 		
 		/* 4. extend on add_expression when difference is constant */
 		difference = SymFactory.arith_sub(type.get_ctype(), muta_expression, orig_expression);
+		difference = this.sym_eval(difference);
 		if(difference instanceof SymConstant) {
 			switch(type.get_vtype()) {
 			case cchar:
