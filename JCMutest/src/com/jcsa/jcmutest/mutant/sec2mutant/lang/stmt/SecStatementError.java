@@ -1,8 +1,9 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecStatement;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
@@ -23,8 +24,16 @@ public abstract class SecStatementError extends SecStateError {
 		this.add_child(new SecStatement(orig_statement));
 	}
 	
+	/**
+	 * @return statement where fault is seeded
+	 */
 	public SecStatement get_orig_statement() {
 		return (SecStatement) this.get_child(2);
+	}
+
+	@Override
+	public CirNode get_cir_location() {
+		return this.get_orig_statement().get_statement();
 	}
 	
 }

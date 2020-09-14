@@ -13,9 +13,8 @@ import java.util.List;
  * 	SecNode																	<br>
  * 	|--	SecToken															<br>
  * 	|--	SecDescription					{statement: SecStatement}			<br>
- * 	|--	|--	SecConstraint				asserton(stmt, expr) === evaluator	<br>
- * 	|--	|--	SecStateError													<br>
- * 	|--	|--	SecDescriptions													<br>
+ * 	|--	|--	SecConstraint				{sym_condition: SymExpression}		<br>
+ * 	|--	|--	SecStateError				{cir_location: CirNode}				<br>
  * 	+----------------------------------------------------------------------+<br>
  * 	SecToken																<br>
  * 	|--	SecKeyword						{keyword: SecKeywords}				<br>
@@ -24,12 +23,17 @@ import java.util.List;
  * 	|--	SecExpression					{expression: SymExpression}			<br>
  * 	|--	SecStatement					{statement: CirStatement}			<br>
  * 	+----------------------------------------------------------------------+<br>
+ * 	SecConstraint															<br>
+ * 	|--	SecConditionConstraint			assert(statement, expression)		<br>
+ * 	|--	SecExecutionConstraint			execute(statement, expression)		<br>
+ * 	|--	SecConjunctConstraints			conjunct{constraint+}				<br>
+ * 	|--	SecDisjunctConstraints			disjunct{constraint+}				<br>
+ * 	+----------------------------------------------------------------------+<br>
  * 	SecStateError															<br>
  * 	|--	SecStatementError				{orig_stmt: SecStatement}			<br>
  * 	|--	|--	SecAddStatementError		add_stmt(orig_stmt)					<br>
  * 	|--	|--	SecDelStatementError		del_stmt(orig_stmt)					<br>
  * 	|--	|--	SecSetStatementError		set_stmt(orig_stmt, muta_stmt)		<br>
- * 	|--	|--	SecPasStatementError		pas_stmt(orig_stmt)					<br>
  * 	|--	SecExpressionError				{orig_expr: SecExpression}			<br>
  * 	|--	|--	SecSetExpressionError		set_expr(orig_expr, muta_expr)		<br>
  * 	|--	|--	SecAddExpressionError		add_expr(orig_expr, oprt, muta_expr)<br>
@@ -40,10 +44,9 @@ import java.util.List;
  * 	|--	|--	SecAddReferenceError		add_refr(orig_expr, oprt, muta_expr)<br>
  * 	|--	|--	SecInsReferenceError		ins_refr(orig_expr, oprt, muta_expr)<br>
  * 	|--	|--	SecUnyReferenceError		uny_expr(orig_expr, oprt)			<br>
- * 	+----------------------------------------------------------------------+<br>
- * 	SecDescriptions						{descriptions: SecDescription+}		<br>
- * 	|--	SecConjunctDescriptions												<br>
- * 	|--	SecDisjunctDescriptions												<br>
+ * 	|--	SecUniqueError														<br>
+ * 	|--	|--	SecTrapError				trap()								<br>
+ * 	|--	|--	SecNoneError				none()								<br>
  * 	+----------------------------------------------------------------------+<br>
  * </code>
  * <br>

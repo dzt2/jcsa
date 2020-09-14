@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.proc;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
@@ -17,7 +18,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		/**
 		 * [true] --> set_expr(B(x + y))
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -38,7 +40,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean arith_mul() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -58,7 +61,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		 * [y == 0] --> trap()
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -82,7 +86,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean arith_mod() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -106,7 +111,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_and() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -122,7 +128,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_ior() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -143,7 +150,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_lsh() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -159,7 +167,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_rsh() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -175,7 +184,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean logic_and() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -191,7 +201,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean logic_ior() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -210,7 +221,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		/**
 		 * x >= y --> not_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			condition = this.sym_expression(COperator.
 					greater_eq, loperand, roperand);
@@ -240,7 +252,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		/**
 		 * x > y --> set_true
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		condition = this.sym_expression(COperator.greater_tn, loperand, roperand);
 		constraint = this.get_constraint(condition);
 		if(this.compare_or_mutate) {
@@ -257,7 +270,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		/**
 		 * x >= y --> not_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			condition = this.sym_expression(COperator.
 					smaller_eq, loperand, roperand);
@@ -284,7 +298,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean smaller_eq() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		condition = this.sym_expression(COperator.smaller_tn, loperand, roperand);
 		constraint = this.get_constraint(condition);
 		if(this.compare_or_mutate) {
@@ -306,7 +321,8 @@ public class SetEqualWithProcess extends SetOperatorProcess {
 		/**
 		 * [true] --> not_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();

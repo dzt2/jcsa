@@ -1,8 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.refs;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -19,7 +19,7 @@ public class RTRPInfectionParser extends SecInfectionParser {
 
 	@Override
 	protected boolean generate_infections(CirStatement statement, AstMutation mutation) throws Exception {
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		CirExpression orig_expression = this.get_cir_expression(mutation.get_location());
 		SymExpression muta_expression = SymFactory.parse(mutation.get_parameter());
 		

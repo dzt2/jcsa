@@ -1,8 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.unry;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
@@ -22,7 +22,7 @@ public class UIODInfectionParser extends SecInfectionParser {
 		CirExpression expression = statement.get_rvalue();
 		
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		SecDescription init_error = this.sub_expression(expression, Integer.valueOf(1));
+		SecStateError init_error = this.sub_expression(expression, Integer.valueOf(1));
 		this.add_infection(constraint, init_error);
 		return true;
 	}
@@ -33,7 +33,7 @@ public class UIODInfectionParser extends SecInfectionParser {
 		CirExpression expression = statement.get_rvalue();
 		
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		SecDescription init_error = this.add_expression(expression, Integer.valueOf(1));
+		SecStateError init_error = this.add_expression(expression, Integer.valueOf(1));
 		this.add_infection(constraint, init_error);
 		return true;
 	}
@@ -44,7 +44,7 @@ public class UIODInfectionParser extends SecInfectionParser {
 		CirExpression expression = statement.get_rvalue();
 		
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		SecDescription init_error = this.sub_expression(expression, Integer.valueOf(1));
+		SecStateError init_error = this.sub_expression(expression, Integer.valueOf(1));
 		this.add_infection(constraint, init_error);
 		return true;
 	}
@@ -55,7 +55,7 @@ public class UIODInfectionParser extends SecInfectionParser {
 		CirExpression expression = statement.get_rvalue();
 		
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		SecDescription init_error = this.add_expression(expression, Integer.valueOf(1));
+		SecStateError init_error = this.add_expression(expression, Integer.valueOf(1));
 		this.add_infection(constraint, init_error);
 		return true;
 	}

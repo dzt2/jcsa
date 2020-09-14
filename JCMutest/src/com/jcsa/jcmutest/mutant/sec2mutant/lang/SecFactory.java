@@ -1,27 +1,27 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.lang;
 
-import java.util.Collection;
-
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConjunctDescriptions;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescriptions;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDisjunctDescriptions;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConditionConstraint;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConjunctConstraints;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecDisjunctConstraints;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecExecutionConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecAddExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecSetExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecUnyExpressionError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecAddReferenceError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecInsReferenceError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecReferenceError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecSetReferenceError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecUnyReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecAddReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecInsReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecSetReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecUnyReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecAddStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecDelStatementError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecPasStatementError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecSetStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecTrpStatementError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecNoneError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecTrapError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecUniqueError;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -89,40 +89,33 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
  */
 public class SecFactory {
 	
-	/* constraint */
+	/* symbolic expression methods */
 	/**
-	 * @param statement
-	 * @return the identifier that represents the pointer to the statement in state table for 
-	 * 		   coverage analysis of the testing.
-	 * @throws Exception
-	 */
-	public static SymExpression get_statement_pointer(CirStatement statement) throws Exception {
-		return SymFactory.new_identifier(CBasicTypeImpl.uint_type, "exec#" + statement.hashCode());
-	}
-	/**
-	 * @param operand
+	 * @param expression
 	 * @param value
-	 * @return boolean expression to assert the input operand as true or false
+	 * @return the symbolic condition of the expression as the given value
 	 * @throws Exception
 	 */
-	public static SymExpression get_condition(Object operand, boolean value) throws Exception {
-		SymExpression expression = SymFactory.parse(operand);
-		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+	public static SymExpression sym_condition(Object expression, boolean value) throws Exception {
+		SymExpression condition = SymFactory.parse(expression);
+		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) {
-				return expression;
+				return condition;
 			}
 			else {
-				return SymFactory.logic_not(expression);
+				return SymFactory.logic_not(condition);
 			}
 		}
-		else if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-			SymExpression zero = SymFactory.new_constant(Integer.valueOf(0));
+		else if(CTypeAnalyzer.is_integer(type) || 
+				CTypeAnalyzer.is_real(type) || 
+				CTypeAnalyzer.is_pointer(type)) {
+			SymExpression operand = SymFactory.new_constant(Integer.valueOf(0));
 			if(value) {
-				return SymFactory.not_equals(expression, zero);
+				return SymFactory.not_equals(condition, operand);
 			}
 			else {
-				return SymFactory.equal_with(expression, zero);
+				return SymFactory.equal_with(condition, operand);
 			}
 		}
 		else {
@@ -131,55 +124,142 @@ public class SecFactory {
 	}
 	/**
 	 * @param statement
-	 * @param condition
-	 * @param value
-	 * @return constraint that the condition is required to be true or false (value specified) at statement point.
+	 * @return symbolic identifier that describes the statement pointer
 	 * @throws Exception
 	 */
-	public static SecConstraint assert_constraint(CirStatement statement, Object condition, boolean value) throws Exception {
-		SymExpression expression = get_condition(condition, value);
-		return new SecConstraint(statement, expression);
+	public static SymExpression sym_statement(CirStatement statement) throws Exception {
+		String name = statement.get_tree().get_localizer().get_execution(statement).toString();
+		return SymFactory.new_identifier(CBasicTypeImpl.int_type, "@" + name);
+	}
+	
+	/* constraint constructions */
+	/**
+	 * @param statement
+	 * @param times
+	 * @return execute(statement, int) where statement is required to be executed
+	 * 		   for at least N loops where N > times.
+	 * @throws Exception
+	 */
+	public static SecConstraint execution_constraint(CirStatement statement, int times) throws Exception {
+		return new SecExecutionConstraint(statement, 
+				SymFactory.new_constant(Integer.valueOf(times)));
 	}
 	/**
 	 * @param statement
-	 * @param execute_times
-	 * @return the statement is required to be executed for at least N times (execute_times) during testing
+	 * @param condition
+	 * @param value
+	 * @return asserts(statement, condition-as-value)
 	 * @throws Exception
 	 */
-	public static SecConstraint execute_constraint(CirStatement statement, int execute_times) throws Exception {
-		if(execute_times < 0) execute_times = 0;
-		SymExpression expression = get_statement_pointer(statement);
-		expression = SymFactory.greater_eq(expression, SymFactory.parse(Integer.valueOf(execute_times)));
-		return new SecConstraint(statement, get_condition(expression, true));
+	public static SecConstraint condition_constraint(CirStatement 
+			statement, Object expression, boolean value) throws Exception {
+		SymExpression condition = sym_condition(expression, value);
+		return new SecConditionConstraint(statement, condition);
+	}
+	/**
+	 * @param statement
+	 * @param constraints
+	 * @return the conjunctions of the constraints as provided.
+	 * @throws Exception
+	 */
+	public static SecConstraint conjunct_constraints(CirStatement 
+			statement, Iterable<SecConstraint> constraints) throws Exception {
+		SecConjunctConstraints constraint = new SecConjunctConstraints(statement);
+		for(SecConstraint child : constraints) { constraint.add_child(child); }
+		if(constraint.number_of_constraints() == 0) {
+			throw new IllegalArgumentException("No constraint provided");
+		}
+		else if(constraint.number_of_constraints() == 1) {
+			return constraint.get_constraint(0);
+		}
+		else {
+			return constraint;
+		}
+	}
+	/**
+	 * @param statement
+	 * @param constraints
+	 * @return the disjunction of the constraints as provided.
+	 * @throws Exception
+	 */
+	public static SecConstraint disjunct_constraints(CirStatement 
+			statement, Iterable<SecConstraint> constraints) throws Exception {
+		SecDisjunctConstraints constraint = new SecDisjunctConstraints(statement);
+		for(SecConstraint child : constraints) { constraint.add_child(child); }
+		if(constraint.number_of_constraints() == 0) {
+			throw new IllegalArgumentException("No constraint provided");
+		}
+		else if(constraint.number_of_constraints() == 1) {
+			return constraint.get_constraint(0);
+		}
+		else {
+			return constraint;
+		}
 	}
 	
-	/* statement error */
+	/* statement error creation */
+	/**
+	 * @param statement
+	 * @return the statement is executed in testing even though it should NOT
+	 *         be executed in the original version of the program.
+	 * @throws Exception
+	 */
 	public static SecStatementError add_statement(CirStatement statement) throws Exception {
 		return new SecAddStatementError(statement, statement);
 	}
+	/**
+	 * @param statement
+	 * @return the statement is not executed in testing even though it should
+	 * 		   have been executed in original version of the program.
+	 * @throws Exception
+	 */
 	public static SecStatementError del_statement(CirStatement statement) throws Exception {
 		return new SecDelStatementError(statement, statement);
 	}
-	public static SecStatementError set_statement(CirStatement 
-			orig_statement, CirStatement muta_statement) throws Exception {
-		return new SecAddStatementError(orig_statement, muta_statement);
-	}
-	public static SecStatementError trap_statement(CirStatement statement) throws Exception {
-		return new SecTrpStatementError(statement, statement);
-	}
-	public static SecStatementError pass_statement(CirStatement statement) throws Exception {
-		return new SecPasStatementError(statement, statement);
+	/**
+	 * @param source
+	 * @param target
+	 * @return the target is executed following the execution of source even
+	 *  	   though it should NOT be in original program.
+	 * @throws Exception
+	 */
+	public static SecStatementError set_statement(CirStatement source, CirStatement target) throws Exception {
+		return new SecSetStatementError(source, source, target);
 	}
 	
-	/* expression error */
+	/* expression error creation */
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param muta_expression
+	 * @return orig_expr --> muta_expr
+	 * @throws Exception
+	 */
 	public static SecExpressionError set_expression(CirStatement statement,
 			CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new SecSetExpressionError(statement, orig_expression, SymFactory.parse(muta_expression));
+		return new SecSetExpressionError(
+				statement, orig_expression, SymFactory.parse(muta_expression));
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @param operand
+	 * @return orig_expr --> orig_expr operator operand
+	 * @throws Exception
+	 */
 	public static SecExpressionError add_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator, Object operand) throws Exception {
 		return new SecAddExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @param operand
+	 * @return orig_expr --> operand operator orig_expr
+	 * @throws Exception
+	 */
 	public static SecExpressionError ins_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator, Object operand) throws Exception {
 		switch(operator) {
@@ -188,64 +268,96 @@ public class SecFactory {
 		case bit_and:
 		case bit_or:
 		case bit_xor:
-		case logic_and:
-		case logic_or:
+		{
 			return new SecAddExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
+		}
 		case arith_sub:
 		case arith_div:
 		case arith_mod:
 		case left_shift:
 		case righ_shift:
+		{
 			return new SecInsExpressionError(statement, orig_expression, operator, SymFactory.parse(operand));
+		}
 		default: throw new IllegalArgumentException(operator.toString());
 		}
-		
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @return orig_expr --> operator(orig_expr)
+	 * @throws Exception
+	 */
 	public static SecExpressionError uny_expression(CirStatement statement,
 			CirExpression orig_expression, COperator operator) throws Exception {
 		return new SecUnyExpressionError(statement, orig_expression, operator);
 	}
 	
-	/* reference error */
+	/* reference error creation */
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param muta_expression
+	 * @return orig_expr --> muta_expr {as reference}
+	 * @throws Exception
+	 */
 	public static SecReferenceError set_reference(CirStatement statement,
-			CirExpression orig_reference, Object muta_expression) throws Exception {
-		return new SecSetReferenceError(statement, orig_reference, SymFactory.parse(muta_expression));
+			CirExpression orig_expression, Object muta_expression) throws Exception {
+		return new SecSetReferenceError(statement, orig_expression, SymFactory.parse(muta_expression));
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @param operand
+	 * @return orig_expr --> orig_expr operator operand {as reference}
+	 * @throws Exception
+	 */
 	public static SecReferenceError add_reference(CirStatement statement,
-			CirExpression orig_reference, COperator operator, Object operand) throws Exception {
-		return new SecAddReferenceError(statement, orig_reference, operator, SymFactory.parse(operand));
+			CirExpression orig_expression, COperator operator, Object operand) throws Exception {
+		return new SecAddReferenceError(statement, orig_expression, operator, SymFactory.parse(operand));
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @param operand
+	 * @return orig_expr --> operand operator orig_expr {as reference}
+	 * @throws Exception
+	 */
 	public static SecReferenceError ins_reference(CirStatement statement,
-			CirExpression orig_reference, COperator operator, Object operand) throws Exception {
-		return new SecInsReferenceError(statement, orig_reference, operator, SymFactory.parse(operand));
+			CirExpression orig_expression, COperator operator, Object operand) throws Exception {
+		return new SecInsReferenceError(statement, orig_expression, operator, SymFactory.parse(operand));
 	}
+	/**
+	 * @param statement
+	 * @param orig_expression
+	 * @param operator
+	 * @return orig_expr --> operator(orig_expr) {as reference}
+	 * @throws Exception
+	 */
 	public static SecReferenceError uny_reference(CirStatement statement,
-			CirExpression orig_reference, COperator operator) throws Exception {
-		return new SecUnyReferenceError(statement, orig_reference, operator);
+			CirExpression orig_expression, COperator operator) throws Exception {
+		return new SecUnyReferenceError(statement, orig_expression, operator);
 	}
 	
-	/* composite descriptions */
-	public static SecDescriptions conjunct(CirStatement statement, Collection<SecDescription> descriptions) throws Exception {
-		if(descriptions == null || descriptions.isEmpty())
-			throw new IllegalArgumentException("Invalid descriptions: null");
-		else {
-			SecDescriptions result = new SecConjunctDescriptions(statement);
-			for(SecDescription description : descriptions) {
-				result.add_child(description);
-			}
-			return result;
-		}
+	/* unique trap|none error */
+	/**
+	 * @param statement
+	 * @return trap()
+	 * @throws Exception
+	 */
+	public static SecUniqueError trap_error(CirStatement statement) throws Exception {
+		return new SecTrapError(statement);
 	}
-	public static SecDescriptions disjunct(CirStatement statement, Collection<SecDescription> descriptions) throws Exception {
-		if(descriptions == null || descriptions.isEmpty())
-			throw new IllegalArgumentException("Invalid descriptions: null");
-		else {
-			SecDescriptions result = new SecDisjunctDescriptions(statement);
-			for(SecDescription description : descriptions) {
-				result.add_child(description);
-			}
-			return result;
-		}
+	/**
+	 * @param statement
+	 * @return none()
+	 * @throws Exception
+	 */
+	public static SecUniqueError none_error(CirStatement statement) throws Exception {
+		return new SecNoneError(statement);
 	}
 	
 }

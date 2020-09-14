@@ -1,6 +1,5 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -9,11 +8,12 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.refs.SecReferenceError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecStatementError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecUniqueError;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -88,8 +88,8 @@ public abstract class SecInfectionParser {
 			
 			/* 3. generate the infection pairs */
 			if(this.location != null) {
-				infection.statement = location;
-				this.generate_infections(infection.statement, mutation);
+				infection.set_statement(this.location);
+				this.generate_infections(this.location, mutation);
 				return infection;
 			}
 			else {
@@ -206,7 +206,7 @@ public abstract class SecInfectionParser {
 	 * @param init_error
 	 * @throws Exception
 	 */
-	protected boolean add_infection(SecDescription constraint, SecDescription init_error) throws Exception {
+	protected boolean add_infection(SecConstraint constraint, SecStateError init_error) throws Exception {
 		this.infection.add_infection_pair(constraint, init_error);
 		return true;
 	}
@@ -292,7 +292,7 @@ public abstract class SecInfectionParser {
 	 * @throws Exception
 	 */
 	protected SecConstraint get_constraint(Object condition, boolean value) throws Exception {
-		return SecFactory.assert_constraint(this.location, condition, value);
+		return SecFactory.condition_constraint(this.location, condition, value);
 	}
 	/**
 	 * @param statement
@@ -301,7 +301,23 @@ public abstract class SecInfectionParser {
 	 * @throws Exception
 	 */
 	protected SecConstraint exe_constraint(CirStatement statement, int times) throws Exception {
-		return SecFactory.execute_constraint(statement, times);
+		return SecFactory.execution_constraint(statement, times);
+	}
+	/**
+	 * @param descriptions
+	 * @return the conjunction of the constraints
+	 * @throws Exception
+	 */
+	protected SecConstraint conjunct(Collection<SecConstraint> constraints) throws Exception {
+		return SecFactory.conjunct_constraints(this.location, constraints);
+	}
+	/**
+	 * @param descriptions
+	 * @return the disjunction of the constraints
+	 * @throws Exception
+	 */
+	protected SecConstraint disjunct(Collection<SecConstraint> constraints) throws Exception {
+		return SecFactory.disjunct_constraints(this.location, constraints);
 	}
 	
 	/* statement error generation */
@@ -310,38 +326,22 @@ public abstract class SecInfectionParser {
 	 * @return add_stmt(statement)*
 	 * @throws Exception
 	 */
-	protected SecDescription add_statements(Collection<CirStatement> statements) throws Exception {
-		List<SecDescription> descriptions = new ArrayList<SecDescription>();
-		for(CirStatement statement : statements) {
-			if(!(statement instanceof CirTagStatement)) {
-				descriptions.add(SecFactory.add_statement(statement));
-			}
-		}
-		if(descriptions.isEmpty())
-			return null;
-		else if(descriptions.size() == 1)
-			return descriptions.get(0);
-		else 
-			return SecFactory.conjunct(this.location, descriptions);
+	protected SecStatementError add_statement(CirStatement statement) throws Exception {
+		if(!(statement instanceof CirTagStatement))
+			return SecFactory.add_statement(statement);
+		else
+			throw new IllegalArgumentException(statement.generate_code(true));
 	}
 	/**
 	 * @param statements
 	 * @return add_stmt(statement)*
 	 * @throws Exception
 	 */
-	protected SecDescription del_statements(Collection<CirStatement> statements) throws Exception {
-		List<SecDescription> descriptions = new ArrayList<SecDescription>();
-		for(CirStatement statement : statements) {
-			if(!(statement instanceof CirTagStatement)) {
-				descriptions.add(SecFactory.del_statement(statement));
-			}
-		}
-		if(descriptions.isEmpty())
-			return null;
-		else if(descriptions.size() == 1)
-			return descriptions.get(0);
-		else 
-			return SecFactory.conjunct(this.location, descriptions);
+	protected SecStatementError del_statement(CirStatement statement) throws Exception {
+		if(!(statement instanceof CirTagStatement))
+			return SecFactory.del_statement(statement);
+		else
+			throw new IllegalArgumentException(statement.generate_code(true));
 	}
 	/**
 	 * @param source
@@ -352,13 +352,15 @@ public abstract class SecInfectionParser {
 	protected SecStatementError set_statement(CirStatement source, CirStatement target) throws Exception {
 		return SecFactory.set_statement(source, target);
 	}
+	
+	/* unique error generation */
 	/**
 	 * @param statement
 	 * @return trap_statement(statement)
 	 * @throws Exception
 	 */
-	protected SecDescription trap_statement(CirStatement statement) throws Exception {
-		return SecFactory.trap_statement(statement);
+	protected SecUniqueError trap_statement(CirStatement statement) throws Exception {
+		return SecFactory.trap_error(statement);
 	}
 	
 	/* expression error generation */
@@ -441,42 +443,6 @@ public abstract class SecInfectionParser {
 	 */
 	protected SecReferenceError sub_reference(CirExpression expression, Object operand) throws Exception {
 		return SecFactory.add_reference(this.location, expression, COperator.arith_sub, operand);
-	}
-	/**
-	 * @param descriptions
-	 * @return the conjunction of the descriptions
-	 * @throws Exception
-	 */
-	protected SecDescription conjunct(Collection<SecDescription> descriptions) throws Exception {
-		SecDescription result;
-		if(descriptions.isEmpty())
-			throw new IllegalArgumentException("No descriptions provided");
-		else if(descriptions.size() == 1)
-			result = descriptions.iterator().next();
-		else
-			result = SecFactory.conjunct(this.location, descriptions);
-		if(result.is_consistent())
-			return result;
-		else
-			throw new IllegalArgumentException("Inconsistent: " + result);
-	}
-	/**
-	 * @param descriptions
-	 * @return the disjunction of the descriptions
-	 * @throws Exception
-	 */
-	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
-		SecDescription result;
-		if(descriptions.isEmpty())
-			throw new IllegalArgumentException("No descriptions provided");
-		else if(descriptions.size() == 1)
-			result = descriptions.iterator().next();
-		else
-			result = SecFactory.disjunct(this.location, descriptions);
-		if(result.is_consistent())
-			return result;
-		else
-			throw new IllegalArgumentException("Inconsistent: " + result);
 	}
 	
 }

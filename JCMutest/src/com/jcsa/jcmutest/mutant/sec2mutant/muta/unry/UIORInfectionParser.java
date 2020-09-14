@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
@@ -24,14 +24,14 @@ public class UIORInfectionParser extends SecInfectionParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 					mutation.get_location(), CirIncreAssignStatement.class);
 		CirExpression inc_expression = inc_statement.get_rvalue();
-		SecDescription init_error = this.sub_expression(inc_expression, Integer.valueOf(2));
+		SecStateError init_error = this.sub_expression(inc_expression, Integer.valueOf(2));
 		this.add_infection(constraint, init_error); return true;
 	}
 	private boolean prev_inc_to_post_inc(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
 		CirExpression use_expression = this.get_cir_expression(mutation.get_location());
 		if(use_expression.statement_of() != null) {
-			SecDescription init_error = this.sub_expression(use_expression, Integer.valueOf(1));
+			SecStateError init_error = this.sub_expression(use_expression, Integer.valueOf(1));
 			this.add_infection(constraint, init_error);
 			return true;
 		}
@@ -41,7 +41,7 @@ public class UIORInfectionParser extends SecInfectionParser {
 	}
 	private boolean prev_inc_to_post_dec(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		List<SecDescription> init_errors = new ArrayList<SecDescription>();
+		List<SecStateError> init_errors = new ArrayList<SecStateError>();
 		
 		/* inc_expression */
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
@@ -55,16 +55,10 @@ public class UIORInfectionParser extends SecInfectionParser {
 			init_errors.add(this.sub_expression(use_expression, Integer.valueOf(1)));
 		}
 		
-		if(init_errors.isEmpty()) {
-			return false;
+		for(SecStateError init_error : init_errors) {
+			this.add_infection(constraint, init_error);
 		}
-		else if(init_errors.size() == 1) {
-			this.add_infection(constraint, init_errors.get(0));
-		}
-		else {
-			this.add_infection(constraint, this.conjunct(init_errors));
-		}
-		return true;
+		return !init_errors.isEmpty();
 	}
 	
 	private boolean prev_dec_to_prev_inc(AstMutation mutation) throws Exception {
@@ -72,14 +66,14 @@ public class UIORInfectionParser extends SecInfectionParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 					mutation.get_location(), CirIncreAssignStatement.class);
 		CirExpression inc_expression = inc_statement.get_rvalue();
-		SecDescription init_error = this.add_expression(inc_expression, Integer.valueOf(2));
+		SecStateError init_error = this.add_expression(inc_expression, Integer.valueOf(2));
 		this.add_infection(constraint, init_error); return true;
 	}
 	private boolean prev_dec_to_post_dec(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
 		CirExpression use_expression = this.get_cir_expression(mutation.get_location());
 		if(use_expression.statement_of() != null) {
-			SecDescription init_error = this.add_expression(use_expression, Integer.valueOf(1));
+			SecStateError init_error = this.add_expression(use_expression, Integer.valueOf(1));
 			this.add_infection(constraint, init_error);
 			return true;
 		}
@@ -89,7 +83,7 @@ public class UIORInfectionParser extends SecInfectionParser {
 	}
 	private boolean prev_dec_to_post_inc(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		List<SecDescription> init_errors = new ArrayList<SecDescription>();
+		List<SecStateError> init_errors = new ArrayList<SecStateError>();
 		
 		/* inc_expression */
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
@@ -103,16 +97,10 @@ public class UIORInfectionParser extends SecInfectionParser {
 			init_errors.add(this.add_expression(use_expression, Integer.valueOf(1)));
 		}
 		
-		if(init_errors.isEmpty()) {
-			return false;
+		for(SecStateError init_error : init_errors) {
+			this.add_infection(constraint, init_error);
 		}
-		else if(init_errors.size() == 1) {
-			this.add_infection(constraint, init_errors.get(0));
-		}
-		else {
-			this.add_infection(constraint, this.conjunct(init_errors));
-		}
-		return true;
+		return !init_errors.isEmpty();
 	}
 	
 	private boolean post_inc_to_post_dec(AstMutation mutation) throws Exception {
@@ -120,14 +108,14 @@ public class UIORInfectionParser extends SecInfectionParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 					mutation.get_location(), CirIncreAssignStatement.class);
 		CirExpression inc_expression = inc_statement.get_rvalue();
-		SecDescription init_error = this.sub_expression(inc_expression, Integer.valueOf(2));
+		SecStateError init_error = this.sub_expression(inc_expression, Integer.valueOf(2));
 		this.add_infection(constraint, init_error); return true;
 	}
 	private boolean post_inc_to_prev_inc(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
 		CirExpression use_expression = this.get_cir_expression(mutation.get_location());
 		if(use_expression.statement_of() != null) {
-			SecDescription init_error = this.add_expression(use_expression, Integer.valueOf(1));
+			SecStateError init_error = this.add_expression(use_expression, Integer.valueOf(1));
 			this.add_infection(constraint, init_error);
 			return true;
 		}
@@ -137,7 +125,7 @@ public class UIORInfectionParser extends SecInfectionParser {
 	}
 	private boolean post_inc_to_prev_dec(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		List<SecDescription> init_errors = new ArrayList<SecDescription>();
+		List<SecStateError> init_errors = new ArrayList<SecStateError>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 				mutation.get_location(), CirIncreAssignStatement.class);
@@ -149,16 +137,10 @@ public class UIORInfectionParser extends SecInfectionParser {
 			init_errors.add(this.sub_expression(use_expression, Integer.valueOf(1)));
 		}
 		
-		if(init_errors.isEmpty()) {
-			return false;
+		for(SecStateError init_error : init_errors) {
+			this.add_infection(constraint, init_error);
 		}
-		else if(init_errors.size() == 1) {
-			this.add_infection(constraint, init_errors.get(0));
-		}
-		else {
-			this.add_infection(constraint, this.conjunct(init_errors));
-		}
-		return true;
+		return !init_errors.isEmpty();
 	}
 	
 	private boolean post_dec_to_post_inc(AstMutation mutation) throws Exception {
@@ -166,14 +148,14 @@ public class UIORInfectionParser extends SecInfectionParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 					mutation.get_location(), CirIncreAssignStatement.class);
 		CirExpression inc_expression = inc_statement.get_rvalue();
-		SecDescription init_error = this.add_expression(inc_expression, Integer.valueOf(2));
+		SecStateError init_error = this.add_expression(inc_expression, Integer.valueOf(2));
 		this.add_infection(constraint, init_error); return true;
 	}
 	private boolean post_dec_to_prev_dec(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
 		CirExpression use_expression = this.get_cir_expression(mutation.get_location());
 		if(use_expression.statement_of() != null) {
-			SecDescription init_error = this.sub_expression(use_expression, Integer.valueOf(1));
+			SecStateError init_error = this.sub_expression(use_expression, Integer.valueOf(1));
 			this.add_infection(constraint, init_error);
 			return true;
 		}
@@ -183,7 +165,7 @@ public class UIORInfectionParser extends SecInfectionParser {
 	}
 	private boolean post_dec_to_prev_inc(AstMutation mutation) throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		List<SecDescription> init_errors = new ArrayList<SecDescription>();
+		List<SecStateError> init_errors = new ArrayList<SecStateError>();
 		
 		CirAssignStatement inc_statement = (CirAssignStatement) get_cir_node(
 				mutation.get_location(), CirIncreAssignStatement.class);
@@ -195,16 +177,10 @@ public class UIORInfectionParser extends SecInfectionParser {
 			init_errors.add(this.add_expression(use_expression, Integer.valueOf(1)));
 		}
 		
-		if(init_errors.isEmpty()) {
-			return false;
+		for(SecStateError init_error : init_errors) {
+			this.add_infection(constraint, init_error);
 		}
-		else if(init_errors.size() == 1) {
-			this.add_infection(constraint, init_errors.get(0));
-		}
-		else {
-			this.add_infection(constraint, this.conjunct(init_errors));
-		}
-		return true;
+		return !init_errors.isEmpty();
 	}
 	
 	@Override

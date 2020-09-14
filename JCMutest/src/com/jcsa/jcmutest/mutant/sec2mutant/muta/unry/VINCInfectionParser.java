@@ -1,8 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.unry;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -22,7 +22,7 @@ public class VINCInfectionParser extends SecInfectionParser {
 		SymExpression operand = SymFactory.new_constant(mutation.get_parameter());
 		
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
-		SecDescription init_error;
+		SecStateError init_error;
 		switch(mutation.get_operator()) {
 		case inc_constant:	init_error = this.add_expression(expression, operand); break;
 		case mul_constant:	init_error = this.mul_expression(expression, operand); break;

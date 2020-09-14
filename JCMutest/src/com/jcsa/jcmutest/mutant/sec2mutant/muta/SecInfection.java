@@ -8,7 +8,8 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXAInfectionParser;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OAXNInfectionParser;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.oprt.OBXAInfectionParser;
@@ -45,11 +46,9 @@ public class SecInfection {
 	/** the mutant on which the infection is needed **/
 	private Mutant mutant;
 	/** the statement that is executed iff. the mutant is reached **/
-	protected CirStatement statement;
-	/** constraints required for infecting the program state **/
-	private List<SecDescription> constraints;
-	/** the initial state errors caused when constraints are met **/
-	private List<SecDescription> init_errors;
+	private CirStatement statement;
+	/** the set of infection pairs in the module **/
+	private List<SecInfectPair> pairs;
 	
 	/* constructor */
 	/**
@@ -63,12 +62,11 @@ public class SecInfection {
 		else {
 			this.mutant = mutant;
 			this.statement = null;
-			this.constraints = new LinkedList<SecDescription>();
-			this.init_errors = new LinkedList<SecDescription>();
+			this.pairs = new LinkedList<SecInfectPair>();
 		}
 	}
 	
-	/* getters */
+	/* mutation-getters */
 	/**
 	 * @return the mutation on which the infection is required for killing it
 	 */
@@ -77,6 +75,8 @@ public class SecInfection {
 	 * @return the mutation on which the infection is required for killing it
 	 */
 	public AstMutation get_mutation() { return this.mutant.get_mutation(); }
+	
+	/* statement-getters */
 	/**
 	 * @return whether the statement where the fault is seeded exists
 	 */
@@ -85,37 +85,57 @@ public class SecInfection {
 	 * @return the statement where the fault is injected
 	 */
 	public CirStatement get_statement() { return this.statement; }
+	
+	/* infection-getters */
+	/**
+	 * @return whether the number of infection pairs are non-zeros
+	 */
+	public boolean has_infection_pairs() { return !this.pairs.isEmpty(); }
 	/**
 	 * @return the number of the infection pairs in the module
 	 */
-	public int number_of_infection_pairs() { return this.constraints.size(); }
+	public int number_of_infection_pairs() { return this.pairs.size(); }
 	/**
 	 * @param k
 	 * @return the kth infection pair as {constraint, state_error}
 	 * @throws IndexOutOfBoundsException
 	 */
-	public SecDescription[] get_infection_pair(int k) throws IndexOutOfBoundsException {
-		return new SecDescription[] { constraints.get(k), init_errors.get(k) };
+	public SecInfectPair get_infection_pair(int k) throws IndexOutOfBoundsException {
+		return this.pairs.get(k);
 	}
 	/**
-	 * @return whether the number of infection pairs are non-zeros
+	 * @return the set of infection pairs in the module
 	 */
-	public boolean has_infection_pairs() { return !this.constraints.isEmpty(); }
+	public Iterable<SecInfectPair> get_infection_pairs() {
+		return this.pairs;
+	}
+	
+	/* setters */
+	/**
+	 * set the statement where the fault is seeded
+	 * @param statement
+	 * @throws Exception
+	 */
+	protected void set_statement(CirStatement statement) throws Exception {
+		if(statement == null)
+			throw new IllegalArgumentException("Invalid statement");
+		else
+			this.statement = statement;
+	}
 	/**
 	 * add a infection-pair [constraint, init_error] in the module
 	 * @param constraint
 	 * @param init_error
 	 * @throws Exception
 	 */
-	protected void add_infection_pair(SecDescription constraint,
-			SecDescription init_error) throws Exception {
-		if(constraint == null || !constraint.is_constraint())
-			throw new IllegalArgumentException(constraint.generate_code());
-		else if(init_error == null || !init_error.is_state_error())
-			throw new IllegalArgumentException(init_error.generate_code());
+	protected void add_infection_pair(SecConstraint constraint,
+			SecStateError init_error) throws Exception {
+		if(constraint == null)
+			throw new IllegalArgumentException("Invalid constraint.");
+		else if(init_error == null)
+			throw new IllegalArgumentException("Invalid init_error.");
 		else {
-			this.constraints.add(constraint);
-			this.init_errors.add(init_error);
+			this.pairs.add(new SecInfectPair(constraint, init_error));
 		}
 	}
 	

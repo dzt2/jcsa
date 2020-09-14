@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.sec2mutant.muta.proc;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -16,7 +16,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.loperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -33,7 +33,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [x & y != 0]
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
 		
 		condition = sym_expression(COperator.bit_and, loperand, roperand);
 		condition = sym_expression(COperator.not_equals, condition, Integer.valueOf(0));
@@ -54,7 +54,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [y != 0]
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -72,8 +72,9 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
@@ -97,7 +98,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		 * 	[y == 0] --> trap_stmt()
 		 * 	[y != 0] --> set_expr(
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -123,7 +124,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		 * 	[y == 0] --> trap_stmt()
 		 * 	[y != 0] --> set_expr(
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -148,7 +149,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * 	[x != y]
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.loperand, this.roperand));
 		if(this.compare_or_mutate) {
@@ -171,7 +172,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [x & y != 0]
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
 		condition = this.sym_expression(COperator.bit_and, loperand, roperand);
 		condition = this.sym_expression(COperator.not_equals, condition, Integer.valueOf(0));
 		constraint = this.get_constraint(condition);
@@ -191,7 +192,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [y != 0]
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -209,7 +210,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [y != 0]
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -227,8 +228,9 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SecDescription constraint, init_error; SymExpression condition, operand;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition, operand;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		operand = SymFactory.new_constant(Integer.valueOf(0));
 		condition = this.sym_expression(COperator.not_equals, this.loperand, operand);
@@ -252,8 +254,9 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 		/**
 		 * [x != AnyBool || y != AnyBool]
 		 */
-		SecDescription constraint, init_error; SymExpression condition, operand;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition, operand;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		operand = SymFactory.
 				new_identifier(CBasicTypeImpl.bool_type, SymIdentifier.AnyBoolean);
@@ -275,7 +278,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	
 	protected boolean greater_tn() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -289,7 +292,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	@Override
 	protected boolean greater_eq() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -303,7 +306,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	@Override
 	protected boolean smaller_tn() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -317,7 +320,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	@Override
 	protected boolean smaller_eq() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -331,7 +334,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	@Override
 	protected boolean equal_with() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -345,7 +348,7 @@ public class SetBitwsIorProcess extends SetOperatorProcess {
 	@Override
 	protected boolean not_equals() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

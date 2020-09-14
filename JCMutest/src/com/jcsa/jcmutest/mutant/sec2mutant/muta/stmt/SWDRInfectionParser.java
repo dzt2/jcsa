@@ -3,14 +3,15 @@ package com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 
 public class SWDRInfectionParser extends SecInfectionParser {
 
@@ -40,27 +41,23 @@ public class SWDRInfectionParser extends SecInfectionParser {
 		SecConstraint constraint = this.get_constraint(if_statement.get_condition(), false);
 		
 		/* initial errors by operator */
-		SecDescription init_error;
 		Set<CirStatement> statements = this.get_statements_in_body(mutation);
-		switch(mutation.get_operator()) {
-		case while_to_do_while:
-		{
-			init_error = this.add_statements(statements); break;
+		int counter = 0;
+		for(CirStatement element : statements) {
+			if(!(element instanceof CirTagStatement)) {
+				if(mutation.get_operator() == MutaOperator.while_to_do_while) {
+					this.add_infection(constraint, this.add_statement(element));
+				}
+				else if(mutation.get_operator() == MutaOperator.do_while_to_while) {
+					this.add_infection(constraint, this.del_statement(element));
+				}
+				else {
+					throw new IllegalArgumentException(mutation.toString());
+				}
+				counter++;
+			}
 		}
-		case do_while_to_while:
-		{
-			init_error = this.del_statements(statements); break;
-		}
-		default: throw new IllegalArgumentException(mutation.toString());
-		}
-		
-		/* add the infection-pair */
-		if(init_error == null) {
-			return false;
-		}
-		else {
-			return this.add_infection(constraint, init_error);
-		}
+		return counter > 0;
 	}
 
 }

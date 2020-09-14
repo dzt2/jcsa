@@ -1,7 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.trap;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
@@ -69,7 +70,7 @@ public class VTRPInfectionParser extends SecInfectionParser {
 	@Override
 	protected boolean generate_infections(CirStatement statement, AstMutation mutation) throws Exception {
 		/* 0. declarations */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
 		CirExpression expression = this.get_cir_expression(mutation.get_location());
 		
 		/* 1. generate condition of constraint */

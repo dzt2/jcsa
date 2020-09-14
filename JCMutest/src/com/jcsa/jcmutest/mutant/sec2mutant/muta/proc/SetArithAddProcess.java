@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.sec2mutant.muta.proc;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -16,7 +16,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.loperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -38,7 +38,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[y != 0] --> add_expr(expr, -, 2 * y)
 		 **/
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -56,8 +56,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x * y)
 		 **/
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
@@ -80,7 +80,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		 * 	[y == 0] --> trap_stmt()
 		 * 	[y != 0] --> set_expr(x / y)
 		 **/
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -106,8 +106,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		 * 	[y == 0] --> trap_statement()
 		 * 	[x < -y || x > -2y] --> set_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition, operand;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; SymExpression condition, operand;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		if(this.compare_or_mutate) {
 			operand = this.sym_expression(COperator.negative, this.roperand);
 			condition = this.sym_expression(COperator.smaller_tn, this.loperand, operand);
@@ -145,8 +145,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x & y)
 		 **/
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
@@ -169,7 +169,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		 * 	[x & y != 0] --> set_expr(x | y)
 		 **/
 		SymExpression operand, condition;
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		
 		operand = this.sym_expression(COperator.bit_and, this.loperand, this.roperand);
 		condition = this.sym_expression(COperator.not_equals, operand, Integer.valueOf(0));
@@ -191,7 +191,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		 * 	[x & y != 0] --> set_expr(x ^ y)
 		 **/
 		SymExpression operand, condition;
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		
 		operand = this.sym_expression(COperator.bit_and, this.loperand, this.roperand);
 		condition = this.sym_expression(COperator.not_equals, operand, Integer.valueOf(0));
@@ -212,7 +212,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[y != 0] --> set_expr(x << y)
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -230,7 +230,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[y != 0] --> set_expr(x >> y)
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -248,8 +248,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x && y)
 		 **/
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
@@ -271,8 +271,8 @@ public class SetArithAddProcess extends SetOperatorProcess {
 		/**
 		 * 	[x != AnyBool || y != AnyBool]
 		 */
-		SecDescription constraint, init_error; SymExpression operand;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; SymExpression operand;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		operand = SymFactory.new_identifier(CBasicTypeImpl.bool_type, SymIdentifier.AnyBoolean);
 		constraints.add(get_constraint(sym_expression(COperator.not_equals, loperand, operand)));
@@ -291,7 +291,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean greater_tn() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -305,7 +305,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean greater_eq() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -319,7 +319,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean smaller_tn() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -333,7 +333,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean smaller_eq() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -347,7 +347,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean equal_with() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -361,7 +361,7 @@ public class SetArithAddProcess extends SetOperatorProcess {
 	@Override
 	protected boolean not_equals() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
-		SecDescription init_error;
+		SecStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

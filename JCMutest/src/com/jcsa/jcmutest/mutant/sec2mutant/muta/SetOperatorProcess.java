@@ -5,9 +5,10 @@ import java.util.Collection;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecExpressionError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecUniqueError;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -130,15 +131,15 @@ public abstract class SetOperatorProcess {
 	 * @return add the infection-pair of [constraint, init_error] into the module.
 	 * @throws Exception
 	 */
-	protected boolean add_infection(SecDescription constraint, SecDescription init_error) throws Exception {
+	protected boolean add_infection(SecConstraint constraint, SecStateError init_error) throws Exception {
 		this.infection.add_infection_pair(constraint, init_error); return true;
 	}
 	/**
 	 * @return trp_stmt(this.statement)
 	 * @throws Exception
 	 */
-	protected SecDescription trap_statement() throws Exception {
-		return SecFactory.trap_statement(this.statement);
+	protected SecUniqueError trap_statement() throws Exception {
+		return SecFactory.trap_error(this.statement);
 	}
 	/**
 	 * @param condition
@@ -146,7 +147,7 @@ public abstract class SetOperatorProcess {
 	 * @throws Exception
 	 */
 	protected SecConstraint get_constraint(Object condition) throws Exception {
-		return SecFactory.assert_constraint(statement, condition, true);
+		return SecFactory.condition_constraint(statement, condition, true);
 	}
 	
 	/* exception handles */
@@ -228,36 +229,16 @@ public abstract class SetOperatorProcess {
 	 * @return conjunction of the descriptions
 	 * @throws Exception
 	 */
-	protected SecDescription conjunct(Collection<SecDescription> descriptions) throws Exception {
-		SecDescription result;
-		if(descriptions.isEmpty()) 
-			return null;
-		else if(descriptions.size() == 1)
-			result = descriptions.iterator().next();
-		else
-			result = SecFactory.conjunct(statement, descriptions);
-		if(result.is_consistent())
-			return result;
-		else
-			throw new IllegalArgumentException("Inconsisten: " + result);
+	protected SecConstraint conjunct(Collection<SecConstraint> constraints) throws Exception {
+		return SecFactory.conjunct_constraints(statement, constraints);
 	}
 	/**
 	 * @param descriptions
 	 * @return disjunction of the descriptions
 	 * @throws Exception
 	 */
-	protected SecDescription disjunct(Collection<SecDescription> descriptions) throws Exception {
-		SecDescription result;
-		if(descriptions.isEmpty()) 
-			return null;
-		else if(descriptions.size() == 1)
-			result = descriptions.iterator().next();
-		else
-			result = SecFactory.disjunct(statement, descriptions);
-		if(result.is_consistent())
-			return result;
-		else
-			throw new IllegalArgumentException("Inconsisten: " + result);
+	protected SecConstraint disjunct(Collection<SecConstraint> constraints) throws Exception {
+		return SecFactory.disjunct_constraints(statement, constraints);
 	}
 	
 	/* symbolic operations */
@@ -268,7 +249,7 @@ public abstract class SetOperatorProcess {
 	 * @throws Exception
 	 */
 	protected SymExpression sym_condition(Object expression, boolean value) throws Exception {
-		return SecFactory.get_condition(expression, value);
+		return SecFactory.sym_condition(expression, value);
 	}
 	/**
 	 * @param operator {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}

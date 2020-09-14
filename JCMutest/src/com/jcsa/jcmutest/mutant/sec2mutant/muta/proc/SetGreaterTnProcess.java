@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.muta.proc;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
@@ -18,7 +18,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [true] --> set_expr(B(x + y))
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -37,7 +38,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [x < y] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.smaller_tn, this.loperand, this.roperand));
 		if(this.compare_or_mutate) {
@@ -51,7 +52,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean arith_mul() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -71,7 +73,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		 * [y == 0] --> trap()
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -99,7 +102,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		 * [y == 0] --> trap()
 		 * [y != 0] --> set_expr(B(x % y))
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -123,7 +127,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_and() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -139,7 +144,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_ior() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -158,7 +164,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [x < y] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.smaller_tn, this.loperand, this.roperand));
 		if(this.compare_or_mutate) {
@@ -172,7 +178,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_lsh() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -188,7 +195,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean bitws_rsh() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -204,7 +212,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean logic_and() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -220,7 +229,8 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 
 	@Override
 	protected boolean logic_ior() throws Exception {
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -244,7 +254,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [x == y] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.equal_with, this.loperand, this.roperand));
 		if(this.compare_or_mutate) {
@@ -262,7 +272,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		 * [x > y] --> set_false
 		 * [x < y] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, this.loperand, this.roperand));
@@ -287,7 +297,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [true] --> not_expr
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -314,7 +324,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		 * [x == y] --> set_true
 		 * [x > y] --> set_false
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.greater_eq, this.loperand, this.roperand));
@@ -341,7 +351,7 @@ public class SetGreaterTnProcess extends SetOperatorProcess {
 		/**
 		 * [x < y] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.smaller_tn, this.loperand, this.roperand));
 		if(this.compare_or_mutate) {

@@ -3,9 +3,10 @@ package com.jcsa.jcmutest.mutant.sec2mutant.muta.stmt;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 
 public class STDLInfectionParser extends SecInfectionParser {
 
@@ -17,14 +18,15 @@ public class STDLInfectionParser extends SecInfectionParser {
 	@Override
 	protected boolean generate_infections(CirStatement statement, AstMutation mutation) throws Exception {
 		Set<CirStatement> statements = this.get_statements_in(mutation.get_location());
-		SecDescription constraint = this.get_constraint(Boolean.TRUE, true), init_error;
-		init_error = this.del_statements(statements);
-		if(init_error == null) {
-			return false;
+		int counter = 0; 
+		SecConstraint constraint = this.get_constraint(Boolean.TRUE, true);
+		for(CirStatement element : statements) {
+			if(!(element instanceof CirTagStatement)) {
+				this.add_infection(constraint, this.del_statement(element));
+				counter++;
+			}
 		}
-		else {
-			return this.add_infection(constraint, init_error);
-		}
+		return counter > 0;
 	}
 
 }

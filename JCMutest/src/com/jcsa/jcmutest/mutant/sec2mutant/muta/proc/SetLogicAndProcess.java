@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.sec2mutant.muta.proc;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecConstraint;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SetOperatorProcess;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
@@ -21,7 +21,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -44,8 +44,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) || B(y)] --> set_true
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -72,7 +73,8 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [!B(y)] --> trap
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
 		condition = this.sym_condition(this.roperand, false);
 		constraint = this.get_constraint(condition);
 		init_error = this.trap_statement();
@@ -85,8 +87,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		 * [!B(y)] --> trap
 		 * [B(x)] --> set_false
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		if(this.compare_or_mutate) {
 			condition = this.sym_condition(this.loperand, true);
@@ -123,7 +126,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -146,8 +149,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -169,8 +173,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) && !B(y)]
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -192,7 +197,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x)]
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -213,7 +218,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -236,7 +241,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * 	[B(x)] --> not_expr
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -252,7 +257,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [!B(y)] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.roperand, false));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -268,7 +273,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(y)] --> not_expr
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.roperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -284,7 +289,7 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [!B(x)] --> set_true
 		 */
-		SecConstraint constraint; SecDescription init_error;
+		SecConstraint constraint; SecStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, false));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -300,8 +305,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [!B(x) && !B(y)] --> set_true
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_condition(this.loperand, false);
 		constraints.add(this.get_constraint(condition));
@@ -323,8 +329,9 @@ public class SetLogicAndProcess extends SetOperatorProcess {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		SecDescription constraint, init_error; SymExpression condition;
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		SecConstraint constraint; SecStateError init_error; 
+		SymExpression condition;
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));

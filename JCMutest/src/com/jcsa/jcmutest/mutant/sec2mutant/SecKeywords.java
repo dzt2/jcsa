@@ -8,25 +8,31 @@ package com.jcsa.jcmutest.mutant.sec2mutant;
  */
 public enum SecKeywords {
 	
-	/** assert_on(stmt, expr) **/		asserton,
+	/* constraint keywords */
+	/** execute(stmt, int) **/					execute,
+	/** asserts(stmt, expr) **/					asserts,
+	/** conjunct(constraint+) **/				conjunct,
+	/** disjunct(constraint+) **/				disjunct,
 	
-	/** add_stmt(stmt) **/				add_stmt,
-	/** del_stmt(stmt) **/				del_stmt,
-	/** set_stmt(stmt, stmt) **/		set_stmt,
-	/** trp_stmt(stmt) **/				trp_stmt,
-	/** pas_stmt(stmt) **/				pas_stmt,
+	/* statement error keywords */
+	/** add_statement(stmt) **/					add_statement,
+	/** del_statement(stmt) **/					del_statement,
+	/** set_statement(stmt, stmt) **/			set_statement,
 	
-	/** set_expr(expr, expr) **/		set_expr,
-	/** add_expr(expr, oprt, expr) **/	add_expr,
-	/** ins_expr(expr, oprt, expr) **/	ins_expr,
-	/** uny_expr(expr, oprt) **/		uny_expr,
+	/* expression error keywords */
+	/** set_expression(expr, expr) **/			set_expression,
+	/** add_expression(expr, oprt, expr) **/	add_expression,
+	/** ins_expression(expr, oprt, expr) **/	ins_expression,
+	/** uny_expression(expr, oprt) **/			uny_expression,
 	
-	/** set_refr(expr, expr) **/		set_refr,
-	/** add_refr(expr, oprt, expr) **/	add_refr,
-	/** ins_refr(expr, oprt, expr) **/	ins_refr,
-	/** uny_refr(expr, oprt) **/		uny_refr,
+	/* reference error keywords */
+	/** set_expression(expr, expr) **/			set_reference,
+	/** add_expression(expr, oprt, expr) **/	add_reference,
+	/** ins_expression(expr, oprt, expr) **/	ins_reference,
+	/** uny_expression(expr, oprt) **/			uny_reference,
 	
-	/** conjunct(desc+) **/				conjunct,
-	/** disjunct(desc+) **/				disjunct,
+	/* unique error keywords */
+	/** trap() **/								trap,
+	/** none() **/								none,
 	
 }

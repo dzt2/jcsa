@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.sec2mutant.lang.expr;
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecExpression;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecOperator;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.token.SecType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -10,29 +11,62 @@ import com.jcsa.jcparse.lang.sym.SymExpression;
 
 public class SecInsExpressionError extends SecExpressionError {
 
-	public SecInsExpressionError(CirStatement statement, 
-			CirExpression orig_expression, COperator
-			operator, SymExpression operand) throws Exception {
-		super(statement, SecKeywords.ins_expr, orig_expression);
-		this.add_child(new SecOperator(operator));
-		this.add_child(new SecExpression(operand));
+	public SecInsExpressionError(CirStatement statement, CirExpression 
+			orig_expression, COperator operator, SymExpression operand)
+			throws Exception {
+		super(statement, SecKeywords.ins_expression, orig_expression);
+		SecType type = this.get_orig_expression().get_type();
 		switch(operator) {
 		case arith_sub:
+		{
+			switch(type.get_vtype()) {
+			case cchar:
+			case csign:
+			case usign:
+			case creal:
+			case caddr:	break;
+			default: throw new IllegalArgumentException(type.generate_code());
+			}
+			break;
+		}
 		case arith_div:
+		{
+			switch(type.get_vtype()) {
+			case cchar:
+			case csign:
+			case usign:
+			case creal:	break;
+			default: throw new IllegalArgumentException(type.generate_code());
+			}
+			break;
+		}
 		case arith_mod:
 		case left_shift:
-		case righ_shift:	break;
+		case righ_shift:
+		{
+			switch(type.get_vtype()) {
+			case cchar:
+			case csign:
+			case usign: break;
+			default: throw new IllegalArgumentException(type.generate_code());
+			}
+			break;
+		}
 		default: throw new IllegalArgumentException(operator.toString());
 		}
+		this.add_child(new SecOperator(operator));
+		this.add_child(new SecExpression(operand));
 	}
 	
-	public SecOperator get_operator() {
-		return (SecOperator) this.get_child(3);
-	}
+	/**
+	 * @return {-, /, %, <<, >>}
+	 */
+	public SecOperator get_operator() { return (SecOperator) this.get_child(3); }
 	
-	public SecExpression get_operand() {
-		return (SecExpression) this.get_child(4);
-	}
+	/**
+	 * @return operand being added behind the original expression
+	 */
+	public SecExpression get_operand() { return (SecExpression) this.get_child(4); }
 	
 	@Override
 	protected String generate_content() throws Exception {
@@ -40,5 +74,4 @@ public class SecInsExpressionError extends SecExpressionError {
 				", " + this.get_operator().generate_code() + ", "
 				+ this.get_operand().generate_code() + ")";
 	}
-	
 }

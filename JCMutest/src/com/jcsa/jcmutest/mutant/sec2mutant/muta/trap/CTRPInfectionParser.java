@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sec2mutant.lang.desc.SecDescription;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectionParser;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
@@ -56,7 +57,7 @@ public class CTRPInfectionParser extends SecInfectionParser {
 	
 	@Override
 	protected boolean generate_infections(CirStatement statement, AstMutation mutation) throws Exception {
-		List<SecDescription> constraints = new ArrayList<SecDescription>();
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
 		/* case_statement.condition == case_statement.condition */
 		CirAssignStatement switch_statement = (CirAssignStatement) statement;
 		AstCaseStatement case_statement = this.get_case_statement(mutation);
@@ -76,8 +77,8 @@ public class CTRPInfectionParser extends SecInfectionParser {
 		}
 		constraints.add(this.exe_constraint(true_execution.get_statement(), 1));
 		/* add infection */
-		SecDescription constraint = this.conjunct(constraints);
-		SecDescription init_error = this.trap_statement(statement);
+		SecConstraint constraint = this.conjunct(constraints);
+		SecStateError init_error = this.trap_statement(statement);
 		this.add_infection(constraint, init_error); return true;
 	}
 
