@@ -12,6 +12,7 @@ import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfectPair;
 import com.jcsa.jcmutest.mutant.sec2mutant.muta.SecInfection;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -112,10 +113,14 @@ public class SecInfectionParseTest {
 		if(infection.has_infection_pairs()) {
 			for(int k = 0; k < infection.number_of_infection_pairs(); k++) {
 				SecInfectPair pair = infection.get_infection_pair(k);
-				writer.write("\tPair[" + k +"]:\n\t\t");
+				writer.write("\tPair[" + k +"]:\n");
 				/* optimized generation method */
-				writer.write(pair.get_constraint().optimize(null).generate_code() + "\n");
-				writer.write(pair.get_init_error().extend(null).toString() + "\n");
+				writer.write("\t\t" + pair.get_constraint().optimize(null).generate_code() + "\n");
+				writer.write("\t\t{\n");
+				for(SecStateError init_error : pair.get_init_error().extend(null)) {
+					writer.write("\t\t\t" + init_error.generate_code() + "\n");
+				}
+				writer.write("\t\t}\n");
 			}
 		}
 		else {
