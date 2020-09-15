@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util.apis.prop.impl;
+package com.jcsa.jcmutest.mutant.sec2mutant.util.apis.prop.uny;
 
 import java.util.Collection;
 
