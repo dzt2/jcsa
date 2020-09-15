@@ -17,7 +17,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.util.SecStateNode;
 public class SecInfectionBuild {
 	
 	/** singleton of the builder **/
-	public static final SecInfectionBuild builder = new SecInfectionBuild(); 
+	private static final SecInfectionBuild builder = new SecInfectionBuild(); 
 	
 	/** private constructor **/
 	private SecInfectionBuild() { }
@@ -28,7 +28,7 @@ public class SecInfectionBuild {
 	 * @param graph
 	 * @throws Exception
 	 */
-	public void build(SecStateGraph graph) throws Exception {
+	private void build_infection(SecStateGraph graph) throws Exception {
 		try {
 			SecInfection infection = SecInfection.parse(
 					graph.get_cir_tree(), graph.get_mutant());
@@ -45,6 +45,16 @@ public class SecInfectionBuild {
 		catch(UnsupportedOperationException ex) {
 			return;
 		}
+	}
+	
+	/**
+	 * build up the infection structure from reaching point to the initial
+	 * state errors linked with the constraints as required for infection.
+	 * @param graph
+	 * @throws Exception
+	 */
+	public static void build(SecStateGraph graph) throws Exception {
+		builder.build_infection(graph);
 	}
 	
 }

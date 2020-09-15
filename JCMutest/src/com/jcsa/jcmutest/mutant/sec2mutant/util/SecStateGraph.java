@@ -106,8 +106,9 @@ public class SecStateGraph {
 	 * @throws Exception
 	 */
 	public void initialize(CDependGraph dependence_graph) throws Exception {
-		this.clear(); SecInfectionBuild.builder.build(this);
-		SecPathFinder.finder.find_path(this, dependence_graph);
+		this.clear(); 
+		SecInfectionBuild.build(this);
+		SecPathFinder.find(this, dependence_graph);
 	}
 	
 }

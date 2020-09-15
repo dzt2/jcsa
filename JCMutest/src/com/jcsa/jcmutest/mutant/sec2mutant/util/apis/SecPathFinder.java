@@ -32,7 +32,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 public class SecPathFinder {
 	
 	/** the singleton of the path finder **/
-	public static final SecPathFinder finder = new SecPathFinder();
+	private static final SecPathFinder finder = new SecPathFinder();
 	
 	/** private constructor **/
 	private SecPathFinder() { }
@@ -187,7 +187,7 @@ public class SecPathFinder {
 	 * @param dependence_graph
 	 * @throws Exception
 	 */
-	public void find_path(SecStateGraph graph, CDependGraph dependence_graph) throws Exception {
+	private void find_path(SecStateGraph graph, CDependGraph dependence_graph) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
 		else if(dependence_graph == null)
@@ -197,6 +197,16 @@ public class SecPathFinder {
 			Map<CirInstanceNode, List<CirExecutionFlow>> paths = get_dominance_paths(statement, dependence_graph);
 			for(List<CirExecutionFlow> path : paths.values()) this.find_path(graph, path);
 		}
+	}
+	
+	/**
+	 * build the paths from entry to the faulty statement before it reaches the point.
+	 * @param graph
+	 * @param dependence_graph
+	 * @throws Exception
+	 */
+	public static void find(SecStateGraph graph, CDependGraph dependence_graph) throws Exception {
+		finder.find_path(graph, dependence_graph);
 	}
 	
 }
