@@ -12,9 +12,15 @@ public class SecInfectPair {
 	
 	private SecConstraint constraint;
 	private SecStateError init_error;
-	protected SecInfectPair(SecConstraint constraint, SecStateError init_error) { 
-		this.constraint = constraint;
-		this.init_error = init_error;
+	public SecInfectPair(SecConstraint constraint, SecStateError init_error) throws Exception { 
+		if(constraint == null)
+			throw new IllegalArgumentException("Invalid constraint");
+		else if(init_error == null)
+			throw new IllegalArgumentException("Invalid init-error");
+		else {
+			this.constraint = constraint;
+			this.init_error = init_error;
+		}
 	}
 	
 	/**
