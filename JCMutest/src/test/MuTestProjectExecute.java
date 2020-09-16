@@ -29,7 +29,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 	
 	public static void main(String[] args) throws Exception {
-		testing("bi_search.c", 0, 0);
+		testing("profit.c", 0, 0);
 	}
 	
 	private static String get_name(File cfile) {
