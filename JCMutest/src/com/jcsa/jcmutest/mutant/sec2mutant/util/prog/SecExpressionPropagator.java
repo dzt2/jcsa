@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util.apis.impl;
+package com.jcsa.jcmutest.mutant.sec2mutant.util.prog;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecAddReferenceError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.refer.SecInsReferenceError;

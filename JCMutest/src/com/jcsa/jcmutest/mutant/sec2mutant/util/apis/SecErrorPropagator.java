@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.util.apis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -173,6 +175,30 @@ public abstract class SecErrorPropagator {
 	 */
 	protected SecConstraint condition_constraint(Object condition, boolean value) throws Exception {
 		return SecFactory.condition_constraint(statement, condition, value);
+	}
+	/**
+	 * @param lcondition
+	 * @param rcondition
+	 * @return
+	 * @throws Exception
+	 */
+	protected SecConstraint conjunct_constraints(Object lcondition, Object rcondition) throws Exception {
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
+		constraints.add(this.condition_constraint(lcondition));
+		constraints.add(this.condition_constraint(rcondition));
+		return SecFactory.conjunct_constraints(statement, constraints);
+	}
+	/**
+	 * @param lcondition
+	 * @param rcondition
+	 * @return
+	 * @throws Exception
+	 */
+	protected SecConstraint disjunct_constraints(Object lcondition, Object rcondition) throws Exception {
+		List<SecConstraint> constraints = new ArrayList<SecConstraint>();
+		constraints.add(this.condition_constraint(lcondition));
+		constraints.add(this.condition_constraint(rcondition));
+		return SecFactory.disjunct_constraints(statement, constraints);
 	}
 	
 	/* error generations */

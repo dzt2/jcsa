@@ -1,9 +1,10 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util.apis.impl;
+package com.jcsa.jcmutest.mutant.sec2mutant.util.prog.uny;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecAddExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecSetExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecUnyExpressionError;
+import com.jcsa.jcmutest.mutant.sec2mutant.util.prog.SecExpressionPropagator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
