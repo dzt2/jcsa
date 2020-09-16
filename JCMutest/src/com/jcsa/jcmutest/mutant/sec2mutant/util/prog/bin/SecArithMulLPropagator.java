@@ -18,7 +18,7 @@ public class SecArithMulLPropagator extends SecExpressionPropagator {
 	protected void propagate_set_expression(SecSetExpressionError error) throws Exception {
 		CType type = this.target_expression().get_data_type();
 		SymExpression roperand = this.get_roperand();
-		SymExpression loperand = error.get_orig_expression().get_expression();
+		SymExpression loperand = error.get_muta_expression().get_expression();
 		SymExpression muta_expression = SymFactory.arith_mul(type, loperand, roperand);
 		SecConstraint constraint = this.condition_constraint(
 				SymFactory.not_equals(roperand, Integer.valueOf(0)));
