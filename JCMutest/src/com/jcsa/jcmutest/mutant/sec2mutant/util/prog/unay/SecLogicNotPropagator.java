@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util.prog.uny;
+package com.jcsa.jcmutest.mutant.sec2mutant.util.prog.unay;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecFactory;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;

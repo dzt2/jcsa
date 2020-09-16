@@ -1,6 +1,7 @@
-package com.jcsa.jcmutest.mutant.sec2mutant.util.prog.bin;
+package com.jcsa.jcmutest.mutant.sec2mutant.util.prog.bitws;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
+import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecAddExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecInsExpressionError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.expr.SecSetExpressionError;
@@ -11,16 +12,18 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 
-public class SecArithSubRPropagator extends SecExpressionPropagator {
-
+public class SecBitwsIorRPropagator extends SecExpressionPropagator {
+	
 	@Override
 	protected void propagate_set_expression(SecSetExpressionError error) throws Exception {
 		CType type = this.target_expression().get_data_type();
 		SymExpression loperand = this.get_loperand();
 		SymExpression roperand = error.get_muta_expression().get_expression();
-		SymExpression muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+		SymExpression muta_expression = SymFactory.bitws_ior(type, loperand, roperand);
 		SecStateError target_error = this.set_expression(muta_expression);
-		this.append_propagation_pair(this.condition_constraint(), target_error);
+		SecConstraint constraint = this.condition_constraint(
+				SymFactory.not_equals(loperand, Integer.valueOf(~0)));
+		this.append_propagation_pair(constraint, target_error);
 	}
 
 	@Override
@@ -35,74 +38,78 @@ public class SecArithSubRPropagator extends SecExpressionPropagator {
 		switch(operator) {
 		case arith_add:
 		{
-			target_error = this.add_expression(COperator.arith_sub, add_operand);
+			roperand = SymFactory.arith_add(type, ori_operand, add_operand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
+			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_sub:
 		{
-			target_error = this.add_expression(COperator.arith_add, add_operand);
+			roperand = SymFactory.arith_sub(type, ori_operand, add_operand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
+			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_mul:
 		{
 			roperand = SymFactory.arith_mul(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_div:
 		{
 			roperand = SymFactory.arith_div(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_mod:
 		{
 			roperand = SymFactory.arith_mod(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case bit_and:
 		{
 			roperand = SymFactory.bitws_and(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case bit_or:
 		{
-			roperand = SymFactory.bitws_ior(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
-			target_error = this.set_expression(muta_expression);
+			target_error = this.add_expression(COperator.bit_or, add_operand);
 			break;
 		}
 		case bit_xor:
 		{
 			roperand = SymFactory.bitws_xor(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case left_shift:
 		{
 			roperand = SymFactory.bitws_lsh(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case righ_shift:
 		{
 			roperand = SymFactory.bitws_rsh(type, ori_operand, add_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		default: throw new IllegalArgumentException(operator.toString());
 		}
 		
-		this.append_propagation_pair(this.condition_constraint(), target_error);
+		SecConstraint constraint = this.condition_constraint(
+				SymFactory.not_equals(loperand, Integer.valueOf(~0)));
+		this.append_propagation_pair(constraint, target_error);
 	}
 
 	@Override
@@ -115,82 +122,85 @@ public class SecArithSubRPropagator extends SecExpressionPropagator {
 		COperator operator = error.get_operator().get_operator();
 		
 		switch(operator) {
-		case arith_add:
 		case arith_sub:
 		{
-			roperand = SymFactory.arith_sub(type, add_operand, ori_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			roperand = SymFactory.arith_add(type, add_operand, ori_operand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_div:
 		{
 			roperand = SymFactory.arith_div(type, add_operand, ori_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case arith_mod:
 		{
 			roperand = SymFactory.arith_mod(type, add_operand, ori_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case left_shift:
 		{
 			roperand = SymFactory.bitws_lsh(type, add_operand, ori_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case righ_shift:
 		{
 			roperand = SymFactory.bitws_rsh(type, add_operand, ori_operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		default: throw new IllegalArgumentException(operator.toString());
 		}
 		
-		this.append_propagation_pair(this.condition_constraint(), target_error);
+		SecConstraint constraint = this.condition_constraint(
+				SymFactory.not_equals(loperand, Integer.valueOf(~0)));
+		this.append_propagation_pair(constraint, target_error);
 	}
 
 	@Override
 	protected void propagate_uny_expression(SecUnyExpressionError error) throws Exception {
 		CType type = this.target_expression().get_data_type();
-		COperator operator = error.get_operator().get_operator();
-		SymExpression operand = error.get_orig_expression().get_expression();
 		SymExpression loperand = this.get_loperand();
-		SymExpression muta_expression, roperand; SecStateError target_error;
+		SymExpression operand = error.get_orig_expression().get_expression();
+		SymExpression roperand, muta_expression; SecStateError target_error;
+		COperator operator = error.get_operator().get_operator();
 		
 		switch(operator) {
 		case negative:
 		{
 			roperand = SymFactory.arith_neg(type, operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case bit_not:
 		{
 			roperand = SymFactory.bitws_rsv(type, operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		case logic_not:
 		{
 			roperand = SymFactory.logic_not(operand);
-			muta_expression = SymFactory.arith_sub(type, loperand, roperand);
+			muta_expression = SymFactory.bitws_xor(type, loperand, roperand);
 			target_error = this.set_expression(muta_expression);
 			break;
 		}
 		default: throw new IllegalArgumentException(operator.toString());
 		}
 		
-		this.append_propagation_pair(this.condition_constraint(), target_error);
+		SecConstraint constraint = this.condition_constraint(
+				SymFactory.not_equals(loperand, Integer.valueOf(~0)));
+		this.append_propagation_pair(constraint, target_error);
 	}
 
 }
