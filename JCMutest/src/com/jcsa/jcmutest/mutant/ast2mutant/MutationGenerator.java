@@ -189,7 +189,7 @@ public abstract class MutationGenerator {
 				case c_double:
 				case c_ldouble:	// return true;
 						 /* only numeric expressions in valid contexts allowed */
-						 return this.is_valid_context((AstExpression) location);
+						 return this.is_valid_context(location);
 				default: return false;
 				}
 			}

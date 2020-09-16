@@ -62,6 +62,7 @@ public class VRRPInfectionParser extends SecInfectionParser {
 		}
 	}
 	
+	@Override
 	protected CirStatement find_location(AstMutation mutation) throws Exception {
 		return this.get_cir_expression(mutation.get_location()).statement_of();
 	}

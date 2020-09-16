@@ -236,6 +236,7 @@ public class SetArithModProcess extends SetOperatorProcess {
 		return this.add_infection(constraint, init_error);
 	}
 
+	@Override
 	protected boolean greater_tn() throws Exception {
 		SecConstraint constraint = this.get_constraint(Boolean.TRUE);
 		SecStateError init_error;

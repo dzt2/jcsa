@@ -6,13 +6,13 @@ import java.util.List;
 
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.parse.CTranslate;
+import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * It provides the data resource for analysis of source code of a c file in project
@@ -155,7 +155,7 @@ public class MuTestProjectCodeFile {
 		this.mutant_space = new MutantSpace(this.ast_tree, this.cir_tree);
 		
 		/* 2. update the instrumental code file */
-		String code = MutaCodeGeneration.instrument_code(ast_tree, this.
+		String code = CodeGeneration.instrument_code(ast_tree, this.
 				code_space.get_project().get_files().get_instrument_txt_file());
 		FileOperations.write(this.sfile, code);
 		

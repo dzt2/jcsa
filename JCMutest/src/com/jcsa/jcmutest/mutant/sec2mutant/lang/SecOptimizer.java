@@ -241,7 +241,7 @@ public class SecOptimizer {
 		Set<SecConstraint> new_constraints = new HashSet<SecConstraint>();
 		for(SecConstraint constraint : constraints) {
 			SecConstraint new_constraint = 
-					(SecConstraint) this.opt_constraint(constraint);
+					this.opt_constraint(constraint);
 			SymExpression condition = new_constraint.get_sym_condition();
 			if(condition instanceof SymConstant) {
 				if(((SymConstant) condition).get_bool()) {
@@ -283,7 +283,7 @@ public class SecOptimizer {
 		Set<SecConstraint> new_constraints = new HashSet<SecConstraint>();
 		for(SecConstraint constraint : constraints) {
 			SecConstraint new_constraint = 
-					(SecConstraint) this.opt_constraint(constraint);
+					this.opt_constraint(constraint);
 			SymExpression condition = new_constraint.get_sym_condition();
 			if(condition instanceof SymConstant) {
 				if(((SymConstant) condition).get_bool()) {
