@@ -49,5 +49,5 @@ public abstract class SecComputationPropagator extends SecErrorPropagator {
 
 	@Override
 	protected void uny_reference_error(SecUnyReferenceError error) throws Exception { /* no propagation */ }
-
+	
 }

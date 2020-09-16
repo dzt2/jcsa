@@ -270,6 +270,12 @@ public abstract class SecErrorPropagator {
 			throw new IllegalArgumentException(target_location.toString());
 		}
 	}
+	protected boolean is_left_operand() throws Exception {
+		return this.source_error.get_cir_location() == this.target_binary_expression().get_operand(0);
+	}
+	protected boolean is_right_operand() throws Exception {
+		return this.source_error.get_cir_location() == this.target_binary_expression().get_operand(1);
+	}
 	
 	/* constraint generation */
 	/**
