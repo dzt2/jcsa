@@ -10,6 +10,8 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecSetStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecNoneError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecTrapError;
 import com.jcsa.jcmutest.mutant.sec2mutant.util.apis.SecErrorPropagator;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 
 public abstract class SecExpressionPropagator extends SecErrorPropagator {
 
@@ -39,5 +41,21 @@ public abstract class SecExpressionPropagator extends SecErrorPropagator {
 
 	@Override
 	protected void propagate_uny_reference(SecUnyReferenceError error) throws Exception {}
-
+	
+	protected CirExpression get_loperand() throws Exception {
+		CirExpression expression = this.target_expression();
+		if(expression instanceof CirComputeExpression)
+			return ((CirComputeExpression) expression).get_operand(0);
+		else
+			throw new IllegalArgumentException(expression.generate_code(true));
+	}
+	
+	protected CirExpression get_roperand() throws Exception {
+		CirExpression expression = this.target_expression();
+		if(expression instanceof CirComputeExpression)
+			return ((CirComputeExpression) expression).get_operand(1);
+		else
+			throw new IllegalArgumentException(expression.generate_code(true));
+	}
+	
 }
