@@ -20,6 +20,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.stmt.SecSetStatementError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecNoneError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.uniq.SecTrapError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -251,6 +252,23 @@ public abstract class SecErrorPropagator {
 			return (CirReferExpression) this.target_location;
 		else
 			throw new IllegalArgumentException("Not a reference: " + this.target_location);
+	}
+	/**
+	 * @return the computational expression with binary operands
+	 * @throws Exception
+	 */
+	protected CirComputeExpression target_binary_expression() throws Exception {
+		if(this.target_location instanceof CirComputeExpression) {
+			if(((CirComputeExpression) this.target_location).number_of_operand() == 2) {
+				return (CirComputeExpression) this.target_location;
+			}
+			else {
+				throw new IllegalArgumentException(target_location.generate_code(true));
+			}
+		}
+		else {
+			throw new IllegalArgumentException(target_location.toString());
+		}
 	}
 	
 	/* constraint generation */
