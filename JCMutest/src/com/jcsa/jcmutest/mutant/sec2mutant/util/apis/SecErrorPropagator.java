@@ -150,6 +150,7 @@ public abstract class SecErrorPropagator {
 	protected CirReferExpression target_reference() throws Exception {
 		return (CirReferExpression) this.target_location;
 	}
+	protected CirStatement target_statement() { return this.statement; }
 	
 	/* constraint generators */
 	/**

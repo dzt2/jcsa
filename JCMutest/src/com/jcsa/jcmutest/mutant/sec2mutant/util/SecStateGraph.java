@@ -7,7 +7,6 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.util.apis.SecInfectionBuild;
-import com.jcsa.jcmutest.mutant.sec2mutant.util.apis.SecPathFinder;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 
@@ -107,8 +106,7 @@ public class SecStateGraph {
 	 */
 	public void initialize(CDependGraph dependence_graph) throws Exception {
 		this.clear(); 
-		SecInfectionBuild.build(this);
-		SecPathFinder.find(this, dependence_graph);
+		SecInfectionBuild.build(this, dependence_graph);
 	}
 	
 }
