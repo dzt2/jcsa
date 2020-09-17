@@ -91,7 +91,7 @@ public class SecStatementPropagators {
 			for(CDependEdge edge : depend_node.get_in_edges()) {
 				if(edge.get_type() == CDependType.predicate_depend) {
 					CDependPredicate predicate = (CDependPredicate) edge.get_element();
-					CirStatement statement = edge.get_target().get_statement();
+					CirStatement statement = edge.get_source().get_statement();
 					if(predicate.get_predicate_value()) {
 						branches.get(Boolean.TRUE).add(statement);
 					}
