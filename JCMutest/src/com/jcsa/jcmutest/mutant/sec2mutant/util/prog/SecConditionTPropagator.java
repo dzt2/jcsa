@@ -31,7 +31,7 @@ public class SecConditionTPropagator extends SecExpressionPropagator {
 		SymExpression ori_operand = error.get_orig_expression().get_expression();
 		SymExpression add_operand = error.get_operand().get_expression();
 		COperator operator = error.get_operator().get_operator();
-		CType type = this.target_reference().get_data_type();
+		CType type = ori_operand.get_data_type();
 		
 		SymExpression muta_expression; 
 		switch(operator) {
@@ -96,7 +96,7 @@ public class SecConditionTPropagator extends SecExpressionPropagator {
 		SymExpression ori_operand = error.get_orig_expression().get_expression();
 		SymExpression add_operand = error.get_operand().get_expression();
 		COperator operator = error.get_operator().get_operator();
-		CType type = this.target_reference().get_data_type();
+		CType type = ori_operand.get_data_type();
 		
 		SymExpression muta_expression; 
 		switch(operator) {
@@ -135,7 +135,7 @@ public class SecConditionTPropagator extends SecExpressionPropagator {
 	protected void propagate_uny_expression(SecUnyExpressionError error) throws Exception {
 		SymExpression operand = error.get_orig_expression().get_expression();
 		COperator operator = error.get_operator().get_operator();
-		CType type = this.target_reference().get_data_type();
+		CType type = operand.get_data_type();
 		
 		SymExpression muta_expression;
 		switch(operator) {

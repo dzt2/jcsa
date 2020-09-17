@@ -85,11 +85,13 @@ public class SecDefineUsePropagator extends SecErrorPropagator {
 				dominance_flows.addAll(path);
 			}
 			else {
+				Set<CirExecutionFlow> removes = new HashSet<CirExecutionFlow>();
 				for(CirExecutionFlow flow : dominance_flows) {
 					if(!path.contains(flow)) {
-						dominance_flows.remove(flow);
+						removes.add(flow);
 					}
 				}
+				dominance_flows.removeAll(removes);
 			}
 		}
 		

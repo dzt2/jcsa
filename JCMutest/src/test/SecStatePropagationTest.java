@@ -17,6 +17,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.util.SecStateEdge;
 import com.jcsa.jcmutest.mutant.sec2mutant.util.SecStateGraph;
 import com.jcsa.jcmutest.mutant.sec2mutant.util.SecStateNode;
 import com.jcsa.jcmutest.mutant.sec2mutant.util.prog.SecExpressionPropagators;
+import com.jcsa.jcmutest.mutant.sec2mutant.util.prog.SecStatementPropagators;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -111,8 +112,14 @@ public class SecStatePropagationTest {
 		SecStateGraph graph = new SecStateGraph(cir_tree, mutant);
 		graph.initialize(dependence_graph);
 		if(graph.has_reach_node()) {
+			List<SecStateNode> next_nodes = new ArrayList<SecStateNode>();
 			for(SecStateEdge edge : graph.get_reach_node().get_ou_edges()) {
-				SecExpressionPropagators.propagate(edge.get_target(), null);
+				next_nodes.addAll(SecExpressionPropagators.
+						propagate(edge.get_target(), null));
+			}
+			
+			for(SecStateNode next_node : next_nodes) {
+				SecStatementPropagators.propagate(next_node, dependence_graph);
 			}
 		}
 		return graph;
