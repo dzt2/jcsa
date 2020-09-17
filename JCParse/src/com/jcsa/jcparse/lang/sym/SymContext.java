@@ -139,4 +139,22 @@ public class SymContext {
 		}
 	}
 	
+	/* copy method */
+	@Override
+	public SymContext clone() {
+		SymContext new_context = new SymContext();
+		if(this.parent != null) {
+			new_context.parent = this.parent.clone();
+		}
+		else {
+			new_context.parent = null;
+		}
+		new_context.key = this.key;
+		new_context.invocate_set.addAll(this.invocate_set);
+		for(Object key : this.ltable.keySet()) {
+			SymExpression value = this.ltable.get(key);
+			new_context.ltable.put(key, value);
+		}
+		return new_context;
+	}
 }

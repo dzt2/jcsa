@@ -55,5 +55,10 @@ public class SymContexts {
 		return this.context.invocate(source);
 	}
 	
-	
+	@Override
+	public SymContexts clone() {
+		SymContexts new_contexts = new SymContexts();
+		new_contexts.context = this.context.clone();
+		return new_contexts;
+	}
 }
