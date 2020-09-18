@@ -1,5 +1,6 @@
 package com.jcsa.jcparse.lang.irlang.graph;
 
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 /**
@@ -112,9 +113,12 @@ public class CirExecutionPath {
 			this.target = flow.get_target();
 		}
 	}
-	
-	
-	
-	
+	/**
+	 * @return remove one last flow from the path and return to the user
+	 * @throws EmptyStackException
+	 */
+	public CirExecutionFlow pop() throws EmptyStackException {
+		return this.flows.pop();
+	}
 	
 }

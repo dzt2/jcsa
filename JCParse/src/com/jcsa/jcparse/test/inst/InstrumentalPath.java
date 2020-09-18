@@ -54,7 +54,6 @@ public class InstrumentalPath {
 	
 	/* basic methods */
 	private List<CirExecution> between_path = new ArrayList<CirExecution>();
-	// private Stack<CirExecution> call_stacks = new Stack<CirExecution>();
 	/**
 	 * @param unit
 	 * @return the execution node where the unit is defined
