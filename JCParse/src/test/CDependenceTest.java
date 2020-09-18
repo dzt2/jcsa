@@ -19,7 +19,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 public class CDependenceTest {
 	
-	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
+	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
 	protected static final String postfx = "result/dep/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	

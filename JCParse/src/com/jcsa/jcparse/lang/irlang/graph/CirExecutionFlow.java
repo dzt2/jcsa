@@ -62,4 +62,31 @@ public class CirExecutionFlow {
 	public boolean is_reachable() { 
 		return this.source.is_reachable() && this.target.is_reachable(); 
 	}
+	/**
+	 * @return A flow is valid if it belongs to the output flow of its source
+	 *  	   as well as an input flow of its target.
+	 */
+	public boolean is_valid_flow() {
+		for(CirExecutionFlow ou_flow : this.source.get_ou_flows()) {
+			if(ou_flow == this) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/* virtual constructor */
+	/**
+	 * @param type
+	 * @param source
+	 * @param target
+	 * @return create an invalid flow from source to target w.r.t. the type
+	 * 		   which was NOT linked to the entity of the execution nodes.
+	 * @throws Exception
+	 */
+	public static CirExecutionFlow invalid_flow(CirExecutionFlowType type,
+			CirExecution source, CirExecution target) throws Exception {
+		return new CirExecutionFlow(type, source, target);
+	}
+	
 }

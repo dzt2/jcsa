@@ -23,22 +23,21 @@ public class CirInstanceEdge extends CirInstance {
 		this.source = source; this.target = target;
 	}
 	/**
-	 * create a virtual edge from the source to the target with respect to
-	 * the program flow type it imagine with.
+	 * create an edge from the source to the target with respect to an
+	 * invalid execution flow that specified with its flow type.
 	 * @param source
 	 * @param target
 	 * @param context
-	 * @param element
+	 * @param flow_type
 	 * @throws Exception
 	 */
-	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target, 
-			Object context, CirExecutionFlowType element) throws Exception {
-		super(source.get_graph(), context, element);
+	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target,
+			Object context, CirExecutionFlowType flow_type) throws Exception {
+		super(source.get_graph(), context, CirExecutionFlow.invalid_flow(
+				flow_type, source.get_execution(), target.get_execution()));
 		this.source = source; this.target = target;
 	}
 	
-	@Override
-	public boolean is_virtual() { return this.get_element() instanceof CirExecutionFlowType; }
 	/**
 	 * get the program flow it represents
 	 * @return null if it is virtual
@@ -72,6 +71,11 @@ public class CirInstanceEdge extends CirInstance {
 	 */
 	public CirInstanceNode get_target() {
 		return this.target;
+	}
+
+	@Override
+	public boolean is_virtual() {
+		return !this.get_flow().is_valid_flow();
 	}
 	
 }
