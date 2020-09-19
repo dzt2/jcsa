@@ -27,8 +27,6 @@ import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 public class InstrumentalLine {
 	
 	/* definitions */
-	/** the type of the instrumental method **/
-	private InstrumentalType type;
 	/** the location where the instrumentation occurs **/
 	private AstNode location;
 	/** the value hold by the expression or boolean for statement | function **/
@@ -42,26 +40,18 @@ public class InstrumentalLine {
 	 * @param byte_buffer
 	 * @throws Exception
 	 */
-	protected InstrumentalLine(InstrumentalType type,
-			AstNode location, Object value) throws Exception {
-		if(type == null)
-			throw new IllegalArgumentException("Invalid type: null");
-		else if(location == null)
+	protected InstrumentalLine(AstNode location, Object value) throws Exception {
+		if(location == null)
 			throw new IllegalArgumentException("Invalid location: null");
 		else if(value == null)
 			throw new IllegalArgumentException("Invalid value: null");
 		else {
-			this.type = type;
 			this.location = location;
 			this.value = value;
 		}
 	}
 	
 	/* getters */
-	/**
-	 * @return the type of the instrumental point
-	 */
-	public InstrumentalType get_type() { return this.type; }
 	/**
 	 * @return the location where instrumentation is seeded
 	 */
@@ -108,14 +98,14 @@ public class InstrumentalLine {
 			
 			/* 4.1. generate the line from statement content */
 			if(location instanceof AstStatement) {
-				return new InstrumentalLine(InstrumentalType.statement, location, 
-						template.generate_value(CBasicTypeImpl.bool_type, content));
+				return new InstrumentalLine(location, template.
+						generate_value(CBasicTypeImpl.bool_type, content));
 			}
 			/* 4.2. generate the line from expression value */
 			else if(location instanceof AstExpression) {
 				content = template.cast_bytes(content);
 				CType type = ((AstExpression) location).get_value_type();
-				return new InstrumentalLine(InstrumentalType.expression, 
+				return new InstrumentalLine(
 						location, template.generate_value(type, content));
 			}
 			/* 4.3. otherwise, invalid case for instrumental file */

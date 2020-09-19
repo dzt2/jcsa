@@ -52,11 +52,10 @@ public class JCProjectResultTest {
 				writer.write("Parameters: " + input.get_parameter() + "\n");
 				int index = 0;
 				for(InstrumentalLine line : lines) {
-					writer.write("Line[" + (index++) + "]::" + line.get_type() + "\n");
 					AstNode location = line.get_location();
 					String class_name = location.getClass().getSimpleName();
 					class_name = class_name.substring(3, class_name.length() - 4).strip();
-					writer.write("\tLocation: " + class_name + "\n");
+					writer.write("Line[" + (index++) + "]::" + class_name + "\n");
 					String ast_code = location.generate_code();
 					if(ast_code.contains("\n")) {
 						ast_code = ast_code.substring(0, ast_code.indexOf('\n')).strip();
