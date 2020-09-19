@@ -431,7 +431,7 @@ public class CirParser {
 		else if(source instanceof AstFieldExpression)
 			return this.parse_field_expression((AstFieldExpression) source);
 		else if(source instanceof AstFunCallExpression)
-			return this.parse_func_call_expression((AstFunCallExpression) source);
+			return this.parse_fun_call_expression((AstFunCallExpression) source);
 		else if(source instanceof AstConstExpression)
 			return this.parse_const_expression((AstConstExpression) source);
 		else if(source instanceof AstParanthExpression)
@@ -1118,7 +1118,6 @@ public class CirParser {
 	 * @throws Exception
 	 */
 	@SuppressWarnings("unused")
-	@Deprecated
 	private ACPSolution parse_fun_call_expression(AstFunCallExpression source) throws Exception {
 		/* 1. {F} */
 		ACPSolution solution = this.get_solution(source);
@@ -1183,6 +1182,8 @@ public class CirParser {
 	 * @return this is a more secure way to parse Cir-Code
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
+	@Deprecated
 	private ACPSolution parse_func_call_expression(AstFunCallExpression source) throws Exception {
 		/* 1. {F} */
 		ACPSolution solution = this.get_solution(source);

@@ -62,9 +62,7 @@ public class JCProjectResultTest {
 						ast_code = ast_code.substring(0, ast_code.indexOf('\n')).strip();
 					}
 					writer.write("\tAt Line " + location.get_location().line_of() + ": " + ast_code + "\n");
-					if(line.has_value()) {
-						writer.write("\tValue: " + line.get_value().toString() + "\n");
-					}
+					writer.write("\tValue: " + line.get_value().toString() + "\n");
 					writer.write("\n");
 				}
 				writer.write("\n\n");
