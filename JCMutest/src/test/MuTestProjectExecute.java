@@ -99,7 +99,7 @@ public class MuTestProjectExecute {
 				tid, project.get_test_space().number_of_test_inputs());
 		
 		project.execute(mutants, tests);
-		project.execute_instrumental(tests);
+		// project.execute_instrumental(tests);
 	}
 	protected static void testing(String name, int mid, int tid) throws Exception {
 		File cfile = new File(root_path + "cfiles/" + name);
