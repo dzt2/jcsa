@@ -1,12 +1,12 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
+import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.inst.InstrumentalPath;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -68,45 +68,21 @@ public class JCTestProjectResult {
 			return null;
 		}
 	}
+	
+	/* instrumental loader */
 	/**
-	 * @param sizeof_template
-	 * @param cir_tree
+	 * @param template
 	 * @param ast_tree
 	 * @param input
-	 * @return the partial path fetched from instrumental file
+	 * @return the original instrumental lines read from data file
 	 * @throws Exception
 	 */
-	public InstrumentalPath load_partial_path(CRunTemplate sizeof_template, 
-			CirTree cir_tree, AstTree ast_tree, TestInput input) throws Exception {
+	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template, 
+			AstTree ast_tree, TestInput input) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			InstrumentalPath path = new InstrumentalPath(
-					sizeof_template, ast_tree, cir_tree);
-			path.set_partial_path(instrumental_file);
-			return path;
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param sizeof_template
-	 * @param cir_tree
-	 * @param ast_tree
-	 * @param input
-	 * @return the complete path fetched from instrumental file
-	 * @throws Exception
-	 */
-	public InstrumentalPath load_complete_path(CRunTemplate sizeof_template, 
-			CirTree cir_tree, AstTree ast_tree, TestInput input) throws Exception {
-		File instrumental_file = input.get_instrument_file(this.project.
-				get_project_files().get_instrument_output_directory());
-		if(instrumental_file.exists()) {
-			InstrumentalPath path = new InstrumentalPath(
-					sizeof_template, ast_tree, cir_tree);
-			path.set_complete_path(instrumental_file);
-			return path;
+			return InstrumentalLine.read_from(ast_tree, instrumental_file, template);
 		}
 		else {
 			return null;

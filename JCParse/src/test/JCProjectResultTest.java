@@ -2,16 +2,16 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.Random;
 
 import com.jcsa.jcparse.lang.AstCirFile;
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.inst.InstrumentalNode;
-import com.jcsa.jcparse.test.inst.InstrumentalPath;
-import com.jcsa.jcparse.test.inst.InstrumentalType;
-import com.jcsa.jcparse.test.inst.InstrumentalUnit;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
+
 
 public class JCProjectResultTest {
 	
@@ -29,8 +29,7 @@ public class JCProjectResultTest {
 			for(int k = 0; k < 1; k++) {
 				int tid = Math.abs(random.nextInt()) % 
 						project.get_test_part().number_of_test_inputs();
-				//if(!print_partial_path(project, tid, writer)) k--;
-				if(!print_complete_path(project, tid, writer)) k--;
+				if(!print_instrumental_lines(project, tid, writer)) k--;
 			}
 			writer.close();
 		}
@@ -42,72 +41,36 @@ public class JCProjectResultTest {
 		System.out.println("\t\t==> include " + project.get_test_part().get_test_inputs().number_of_inputs() + " test inputs.");
 		return project;
 	}
-	protected static boolean print_partial_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
+	protected static boolean print_instrumental_lines(JCTestProject project, int tid, FileWriter writer) throws Exception {
 		AstCirFile program = project.get_code_part().get_program(0);
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		try {
-			InstrumentalPath path = project.get_result_part().load_partial_path(program.
-					get_run_template(), program.get_cir_tree(), program.get_ast_tree(), input);
-			if(path != null) {
+			List<InstrumentalLine> lines = project.get_result_part().load_instrumental_lines(
+					program.get_run_template(), program.get_ast_tree(), input);
+			if(lines != null) {
 				writer.write("Instrument List of tests[" + tid + "]:\n");
 				writer.write("Parameters: " + input.get_parameter() + "\n");
-				for(InstrumentalNode node : path.get_nodes()) {
-					writer.write("\n[" + node.get_index() + "]\t" + node.get_execution() + "\n");
-					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
-					int index = 0;
-					for(InstrumentalUnit unit : node.get_units()) {
-						writer.write("\t\tUnits[" + (index++) + "] " + unit.get_type().toString());
-						if(unit.get_type() == InstrumentalType.evaluate) {
-							writer.write("::{" + unit.get_location().generate_code(true) + "}\n");
-							if(unit.has_value()) {
-								writer.write("\t\t\tValue: " + unit.toString() + "\n");
-							}
-						}
-						else {
-							writer.write("\n");
-						}
+				int index = 0;
+				for(InstrumentalLine line : lines) {
+					writer.write("Line[" + (index++) + "]::" + line.get_type() + "\n");
+					AstNode location = line.get_location();
+					String class_name = location.getClass().getSimpleName();
+					class_name = class_name.substring(3, class_name.length() - 4).strip();
+					writer.write("\tLocation: " + class_name + "\n");
+					String ast_code = location.generate_code();
+					if(ast_code.contains("\n")) {
+						ast_code = ast_code.substring(0, ast_code.indexOf('\n')).strip();
 					}
-				}
-				writer.write("\n\n");
-				writer.flush();
-				System.out.println("Load instrumental path for Test#" + tid);
-			}
-			return path != null;
-		}
-		catch(Exception ex) {
-			throw ex;
-		}
-	}
-	protected static boolean print_complete_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
-		AstCirFile program = project.get_code_part().get_program(0);
-		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
-		try {
-			InstrumentalPath path = project.get_result_part().load_complete_path(program.
-					get_run_template(), program.get_cir_tree(), program.get_ast_tree(), input);
-			if(path != null) {
-				writer.write("Instrument List of tests[" + tid + "]:\n");
-				writer.write("Parameters: " + input.get_parameter() + "\n");
-				for(InstrumentalNode node : path.get_nodes()) {
-					writer.write("\n[" + node.get_index() + "]\t" + node.get_execution() + "\n");
-					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
-					int index = 0;
-					for(InstrumentalUnit unit : node.get_units()) {
-						writer.write("\t\tUnits[" + (index++) + "] " + unit.get_type().toString());
-						if(unit.get_type() == InstrumentalType.evaluate) {
-							writer.write("::{" + unit.get_location().generate_code(true) + "}\n");
-							if(unit.has_value()) {
-								writer.write("\t\t\tValue: " + unit.toString() + "\n");
-							}
-						}
-						else {
-							writer.write("\n");
-						}
+					writer.write("\tAt Line " + location.get_location().line_of() + ": " + ast_code + "\n");
+					if(line.has_value()) {
+						writer.write("\tValue: " + line.get_value().toString() + "\n");
 					}
+					writer.write("\n");
 				}
 				writer.write("\n\n");
 				System.out.println("Load instrumental path for Test#" + tid);
 			}
-			return path != null;
+			return lines != null;
 		}
 		catch(Exception ex) {
 			throw ex;
