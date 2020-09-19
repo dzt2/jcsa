@@ -20,6 +20,8 @@ public class InstrumentalNode {
 	private int index;
 	/** the index of the node in its parent **/
 	private int child_index;
+	/** the location where the instrumentation occurs **/
+	private AstNode location;
 	/** the first and final line executed in the location **/
 	private InstrumentalLine[] lines;
 	/** the parent of the node or null if it is root **/
@@ -34,13 +36,17 @@ public class InstrumentalNode {
 	 * @param index
 	 * @throws Exception
 	 */
-	protected InstrumentalNode(InstrumentalTree tree, int index) throws Exception {
+	protected InstrumentalNode(InstrumentalTree tree, int index,
+			AstNode location) throws IllegalArgumentException {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
+		else if(location == null)
+			throw new IllegalArgumentException("Invalid location: null");
 		else {
 			this.tree = tree;
 			this.index = index;
 			this.child_index = -1;
+			this.location = location;
 			this.lines = new InstrumentalLine[2];
 			this.lines[0] = null;
 			this.lines[1] = null;
@@ -73,7 +79,7 @@ public class InstrumentalNode {
 	/**
 	 * @return the location where the node corresponds
 	 */
-	public AstNode get_location() { return this.lines[0].get_location(); }
+	public AstNode get_location() { return this.location; }
 	/**
 	 * @return the parent of the node or null if it is root
 	 */
