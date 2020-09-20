@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.inst.InstrumentalUnit;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 
 public class JCProjectResultTest {
@@ -45,13 +45,13 @@ public class JCProjectResultTest {
 		AstCirFile program = project.get_code_part().get_program(0);
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		try {
-			List<InstrumentalUnit> lines = project.get_result_part().load_instrumental_lines(
+			List<InstrumentalLine> lines = project.get_result_part().load_instrumental_lines(
 					program.get_run_template(), program.get_ast_tree(), input);
 			if(lines != null) {
 				writer.write("Instrument List of tests[" + tid + "]:\n");
 				writer.write("Parameters: " + input.get_parameter() + "\n");
 				int index = 0;
-				for(InstrumentalUnit line : lines) {
+				for(InstrumentalLine line : lines) {
 					AstNode location = line.get_location();
 					String class_name = location.getClass().getSimpleName();
 					class_name = class_name.substring(3, class_name.length() - 4).strip();
