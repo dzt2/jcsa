@@ -1117,7 +1117,6 @@ public class CirParser {
 	 * @return
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unused")
 	private ACPSolution parse_fun_call_expression(AstFunCallExpression source) throws Exception {
 		/* 1. {F} */
 		ACPSolution solution = this.get_solution(source);
