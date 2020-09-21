@@ -437,35 +437,47 @@ public class InstrumentalParse {
 	
 	/* tree node management */
 	/**
+	 * recover the tree node under which the parse is performed
+	 * @param node
+	 */
+	private void set_parent(InstrumentalNode node) {
+		this.curr_node = node;
+	}
+	/**
+	 * create a tree node as the child of current node and update it
 	 * @param location
-	 * @return create the instrumental node in the tree
+	 * @throws Exception
+	 */
+	private void add_child(AstNode location) throws Exception {
+		if(this.inst_tree != null) {
+			InstrumentalNode child = this.inst_tree.new_node(location);
+			if(this.curr_node != null) this.curr_node.add_child(child);
+			this.curr_node = child;
+		}
+		else
+			throw new IllegalArgumentException("No tree used");
+	}
+	/**
+	 * @param location
+	 * @return only create an isolated node w.r.t. location under the tree
 	 * @throws Exception
 	 */
 	private InstrumentalNode new_tree_node(AstNode location) throws Exception {
-		if(this.inst_tree == null)
-			throw new IllegalArgumentException("Invalid access: no tree");
-		else
+		if(this.inst_tree != null) 
 			return this.inst_tree.new_node(location);
+		else
+			throw new IllegalArgumentException("No tree used");
 	}
 	/**
-	 * generate a new node w.r.t. the location and add it to the current node
-	 * as its child, and finally set the current node as the child itself.
-	 * 
-	 * @param location
+	 * set the value hold by the tree node
+	 * @param value
 	 * @throws Exception
 	 */
-	private void push_tree(AstNode location) throws Exception {
-		InstrumentalNode child = this.new_tree_node(location);
-		if(this.curr_node != null) {
-			this.curr_node.add_child(child);
-		}
-	}
-	/**
-	 * remove the current node and set to its parent
-	 * @throws Exception
-	 */
-	private void pop_tree() throws Exception {
-		this.curr_node = this.curr_node.get_parent();
+	private void set_tree_value(Object value) throws Exception {
+		if(this.curr_node != null)
+			this.curr_node.get_unit().set_value(value);
+		else
+			throw new IllegalArgumentException("No tree node");
 	}
 	
 	/* parsing methods */
@@ -479,34 +491,42 @@ public class InstrumentalParse {
 	
 	/* expression part */
 	private void parse_id_expression(AstIdExpression location) throws Exception {
-		this.push_tree(location);
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
 		this.match_end(true);
-		this.pop_tree();
+		this.set_parent(node);
 	}
 	private void parse_constant(AstConstant location) throws Exception {
-		this.push_tree(location);
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
+		this.set_tree_value(location.get_constant().get_object());
 		this.match_end(true);
-		this.pop_tree();
+		this.set_parent(node);
 	}
 	private void parse_literal(AstLiteral location) throws Exception {
-		this.push_tree(location);
-		this.curr_node.get_unit().set_value(location.get_literal());
-		this.pop_tree();
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
+		this.set_tree_value(location.get_literal());
+		this.match_end(false);
+		this.set_parent(node);
 	}
 	private void parse_unary_expression(AstUnaryExpression location) throws Exception {
-		this.push_tree(location);
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
 		this.parse(location.get_operand());
 		this.match_end(true);
-		this.pop_tree();
+		this.set_parent(node);
 	}
 	private void parse_postfix_expression(AstPostfixExpression location) throws Exception {
-		this.push_tree(location);
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
 		this.parse(location.get_operand());
 		this.match_end(true);
-		this.pop_tree();
+		this.set_parent(node);
 	}
 	private void parse_binary_expression(AstBinaryExpression location) throws Exception {
-		this.push_tree(location);
+		InstrumentalNode node = this.curr_node;
+		this.add_child(location);
 		if(this.is_assign_expression(location)) {
 			this.parse(location.get_roperand());
 			this.parse(location.get_loperand());
@@ -516,45 +536,11 @@ public class InstrumentalParse {
 			this.parse(location.get_roperand());
 		}
 		this.match_end(true);
-		this.pop_tree();
+		this.set_parent(node);
 	}
-	private void parse_array_expression(AstArrayExpression location) throws Exception {
-		this.push_tree(location);
-		this.parse(location.get_array_expression());
-		this.parse(location.get_dimension_expression());
-		this.match_end(true);
-		this.pop_tree();
-	}
-	private void parse_cast_expression(AstCastExpression location) throws Exception {
-		this.push_tree(location);
-		this.parse(location.get_expression());
-		this.match_end(true);
-		this.pop_tree();
-	}
-	private void parse_comma_expression(AstCommaExpression location) throws Exception {
-		this.push_tree(location);
-		for(int k = 0; k < location.number_of_arguments(); k++) {
-			this.parse(location.get_expression(k));
-		}
-		this.match_end(true);
-		this.pop_tree();
-	}
-	private void parse_const_expression(AstConstExpression location) throws Exception {
-		this.parse(location.get_expression());
-	}
-	private void parse_paranth_expression(AstParanthExpression location) throws Exception {
-		this.parse(location.get_sub_expression());
-	}
-	private void parse_sizeof_expression(AstSizeofExpression location) throws Exception {
-		this.push_tree(location);
-		this.match_end(true);
-		this.pop_tree();
-	}
-	private void parse_field_expression(AstFieldExpression location) throws Exception {
-		this.push_tree(location);
-		this.parse(location.get_body());
-		this.pop_tree();
-	}
+	
+	
+	
 	
 	
 	

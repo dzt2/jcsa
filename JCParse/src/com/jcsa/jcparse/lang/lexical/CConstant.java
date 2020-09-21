@@ -210,7 +210,12 @@ public class CConstant {
 	public Double get_double() {
 		return (Double) data;
 	}
-
+	
+	/**
+	 * @return the Java-object to represent the data of the constant
+	 */
+	public Object get_object() { return this.data; }
+	
 	@Override
 	public String toString() {
 		if (data == null)
