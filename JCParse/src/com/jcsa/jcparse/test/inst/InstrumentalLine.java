@@ -1,7 +1,11 @@
 package com.jcsa.jcparse.test.inst;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -79,7 +83,14 @@ public class InstrumentalLine {
 		}
 		return true;
 	}
-	public static InstrumentalLine read(CRunTemplate template,
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param stream
+	 * @return read a line from instrumental file with time flag and data unit.
+	 * @throws Exception
+	 */
+	protected static InstrumentalLine read(CRunTemplate template,
 			AstTree ast_tree, InputStream stream) throws Exception {
 		if(template == null)
 			throw new IllegalArgumentException("Invalid template");
@@ -124,6 +135,30 @@ public class InstrumentalLine {
 			else {
 				throw new IllegalArgumentException("Unsupport: " + location);
 			}
+		}
+	}
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param instrumental_file
+	 * @return read all the lines from the entire instrumental file
+	 * @throws Exception
+	 */
+	public static List<InstrumentalLine> read(CRunTemplate template,
+			AstTree ast_tree, File instrumental_file) throws Exception {
+		if(template == null)
+			throw new IllegalArgumentException("Invalid template");
+		else if(ast_tree == null)
+			throw new IllegalArgumentException("Invalid ast_tree");
+		else if(instrumental_file == null)
+			throw new IllegalArgumentException("Invalid stream: null");
+		else {
+			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			FileInputStream stream = new FileInputStream(instrumental_file);
+			InstrumentalLine line;
+			while((line = read(template, ast_tree, stream)) != null) 
+				lines.add(line);
+			return lines;
 		}
 	}
 	

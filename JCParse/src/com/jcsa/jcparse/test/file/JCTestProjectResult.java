@@ -1,8 +1,6 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
@@ -84,13 +82,7 @@ public class JCTestProjectResult {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			FileInputStream stream = new FileInputStream(instrumental_file);
-			InstrumentalLine line;
-			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
-			while((line = InstrumentalLine.read(template, ast_tree, stream)) != null) {
-				lines.add(line);
-			}
-			return lines;
+			return InstrumentalLine.read(template, ast_tree, instrumental_file);
 		}
 		else {
 			return null;
