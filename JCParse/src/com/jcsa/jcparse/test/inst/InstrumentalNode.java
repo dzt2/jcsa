@@ -65,6 +65,10 @@ public class InstrumentalNode {
 	 */
 	public InstrumentalUnit get_unit() { return this.unit; }
 	/**
+	 * @return the location in which the instrumentation is injected
+	 */
+	public AstNode get_location() { return this.unit.get_location(); }
+	/**
 	 * @return whether the node is a root without parent
 	 */
 	public boolean is_root() { return this.parent == null; }

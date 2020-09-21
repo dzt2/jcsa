@@ -244,4 +244,36 @@ public class InstrumentalUnit {
 	 */
 	protected void set_value(Object value) { this.value = value; }
 	
+	/* value getters */
+	/**
+	 * @return get the boolean value of the value
+	 * @throws Exception
+	 */
+	public boolean get_bool() throws Exception {
+		if(this.value instanceof Boolean) {
+			return ((Boolean) value).booleanValue();
+		}
+		else if(value instanceof Character) {
+			return ((Character) value).charValue() != 0;
+		}
+		else if(value instanceof Short) {
+			return ((Short) value).shortValue() != 0;
+		}
+		else if(value instanceof Integer) {
+			return ((Integer) value).intValue() != 0;
+		}
+		else if(value instanceof Long) {
+			return ((Long) value).longValue() != 0L;
+		}
+		else if(value instanceof Float) {
+			return ((Float) value).floatValue() != 0.0f;
+		}
+		else if(value instanceof Double) {
+			return ((Double) value).doubleValue() != 0.0;
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + value);
+		}
+	}
+	
 }
