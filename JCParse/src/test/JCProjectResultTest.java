@@ -8,9 +8,9 @@ import java.util.Random;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.test.CommandUtil;
+import com.jcsa.jcparse.test.backup.InstrumentalLine;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 
 public class JCProjectResultTest {

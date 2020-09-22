@@ -6,7 +6,7 @@ import java.util.List;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.inst.InstrumentalLine;
+import com.jcsa.jcparse.test.backup.InstrumentalLine;
 
 /**
  * It provides the interfaces to fetch the results generated during the

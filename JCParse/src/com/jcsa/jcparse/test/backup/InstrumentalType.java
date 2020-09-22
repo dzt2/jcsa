@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.inst;
+package com.jcsa.jcparse.test.backup;
 
 /**
  * The type of instrumental location is one of the following:<br>

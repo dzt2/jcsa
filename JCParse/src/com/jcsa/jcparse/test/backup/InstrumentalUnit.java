@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.inst;
+package com.jcsa.jcparse.test.backup;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
