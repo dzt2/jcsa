@@ -8,10 +8,9 @@ import java.util.Random;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.backup.InstrumentalLine;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
-
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 public class JCProjectResultTest {
 	
@@ -52,20 +51,17 @@ public class JCProjectResultTest {
 				writer.write("Parameters: " + input.get_parameter() + "\n");
 				int index = 0;
 				for(InstrumentalLine line : lines) {
-					if(line.is_beg())
-						writer.write("Line[" + (index++) + "]::beg::" + line.get_type() + "\n");
-					else
-						writer.write("Line[" + (index++) + "]::end::" + line.get_type() + "\n");
 					AstNode location = line.get_location();
 					String class_name = location.getClass().getSimpleName();
 					class_name = class_name.substring(3, class_name.length() - 4).strip();
+					writer.write("Line[" + (index++) + "]: " + class_name + "\n");
+					
 					String ast_code = location.generate_code();
 					if(ast_code.contains("\n")) {
 						ast_code = ast_code.substring(0, ast_code.indexOf('\n')).strip();
 					}
-					writer.write("\t" + class_name + " at Line " + location.get_location().line_of() + ": " + ast_code + "\n");
-					if(line.has_value())
-						writer.write("\tValue: " + line.get_value().toString() + "\n");
+					writer.write("\t" + "at Line " + location.get_location().line_of() + ": " + ast_code + "\n");
+					writer.write("\tValue: " + line.get_value().toString() + "\n");
 					writer.write("\n");
 				}
 				writer.write("\n\n");

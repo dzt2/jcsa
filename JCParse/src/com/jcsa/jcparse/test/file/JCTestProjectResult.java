@@ -1,12 +1,15 @@
 package com.jcsa.jcparse.test.file;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.test.CommandUtil;
-import com.jcsa.jcparse.test.backup.InstrumentalLine;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -82,7 +85,13 @@ public class JCTestProjectResult {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			return InstrumentalLine.read(template, ast_tree, instrumental_file);
+			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			InputStream stream = new FileInputStream(instrumental_file);
+			InstrumentalLine line;
+			while((line = InstrumentalLine.read(template, ast_tree, stream)) != null) 
+				lines.add(line);
+			stream.close();
+			return lines;
 		}
 		else {
 			return null;
