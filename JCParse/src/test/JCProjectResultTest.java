@@ -54,14 +54,19 @@ public class JCProjectResultTest {
 					AstNode location = line.get_location();
 					String class_name = location.getClass().getSimpleName();
 					class_name = class_name.substring(3, class_name.length() - 4).strip();
-					writer.write("Line[" + (index++) + "]: " + class_name + "\n");
+					if(line.is_beg())
+						writer.write("Line[" + (index++) + "]:BEG:" + line.get_type() + "\n");
+					else
+						writer.write("Line[" + (index++) + "]:END:" + line.get_type() + "\n");
 					
 					String ast_code = location.generate_code();
 					if(ast_code.contains("\n")) {
 						ast_code = ast_code.substring(0, ast_code.indexOf('\n')).strip();
 					}
+					writer.write("\tclass-type: " + class_name + "\n");
 					writer.write("\t" + "at Line " + location.get_location().line_of() + ": " + ast_code + "\n");
-					writer.write("\tValue: " + line.get_value().toString() + "\n");
+					if(line.has_value())
+						writer.write("\tValue: " + line.get_value().toString() + "\n");
 					writer.write("\n");
 				}
 				writer.write("\n\n");
