@@ -842,13 +842,18 @@ public class InstrumentalLines {
 	 * @throws Exception
 	 */
 	private AstNode get_top_location(AstNode location) throws Exception {
-		AstNode child = location;
-		AstNode parent = child.get_parent();
-		while(parent instanceof AstExpression) {
-			child = parent;
-			parent = parent.get_parent();
+		if(location instanceof AstExpression) {
+			AstNode child = location;
+			AstNode parent = child.get_parent();
+			while(!(parent instanceof AstStatement)) {
+				child = parent;
+				parent = parent.get_parent();
+			}
+			return child;
 		}
-		return child;
+		else {
+			return location;
+		}
 	}
 	/**
 	 * @param line
@@ -871,20 +876,11 @@ public class InstrumentalLines {
 	private void parse_function_definition(AstFunctionDefinition location) throws Exception {
 		this.new_beg_line(location);
 		while(this.has_line()) {
-			AstNode next_location = this.get_top_location(this.curr_line.get_location());
-			
-			/* debug information */
 			/*
-			String next_code = next_location.generate_code();
-			String next_type = next_location.getClass().getSimpleName();
-			next_type = next_type.substring(3, next_type.length() - 4).strip();
-			if(next_code.contains("\n")) {
-				next_code = next_code.substring(0, next_code.indexOf('\n')).strip();
-			}
-			System.out.println("\t==> Parse on " + next_type + " at line " + 
-					next_location.get_location().line_of() + ": " + next_code);
+			System.out.println("\t\t--> " + 
+					this.curr_line.get_location().getClass().getSimpleName());
 			*/
-			
+			AstNode next_location = this.get_top_location(this.curr_line.get_location());
 			this.parse(next_location);
 			InstrumentalLine last_line = this.last_line();
 			if(this.is_end_of_function(last_line)) break;

@@ -42,7 +42,7 @@ public class JCProjectExecute {
 			}
 		}
 		*/
-		testing("insert_sort");
+		testing("check_date");
 	}
 	protected static void testing(String name) throws Exception {
 		compile_parameters.clear();
