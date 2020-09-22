@@ -40,12 +40,13 @@ public class JCProjectResultTest {
 		System.out.println("\t\t==> include " + project.get_test_part().get_test_inputs().number_of_inputs() + " test inputs.");
 		return project;
 	}
+	
 	protected static boolean print_instrumental_lines(JCTestProject project, int tid, FileWriter writer) throws Exception {
 		AstCirFile program = project.get_code_part().get_program(0);
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		try {
 			List<InstrumentalLine> lines = project.get_result_part().load_instrumental_lines(
-					program.get_run_template(), program.get_ast_tree(), input);
+					program.get_run_template(), program.get_ast_tree(), input, true);
 			if(lines != null) {
 				writer.write("Instrument List of tests[" + tid + "]:\n");
 				writer.write("Parameters: " + input.get_parameter() + "\n");

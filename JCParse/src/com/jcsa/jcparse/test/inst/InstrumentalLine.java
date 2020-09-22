@@ -22,6 +22,7 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPointUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftAssignExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
@@ -220,7 +221,8 @@ public class InstrumentalLine {
 	private boolean is_sequence(AstNode location) {
 		return location instanceof AstCommaExpression
 				|| location instanceof AstLiteral
-				|| location instanceof AstInitializerBody;
+				|| location instanceof AstInitializerBody
+				|| location instanceof AstArgumentList;
 	}
 	private boolean is_condition(AstNode location) {
 		AstNode[] parent_child = this.get_parent_child(location);
@@ -318,6 +320,14 @@ public class InstrumentalLine {
 			return InstrumentalType.expression;
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
+	}
+	
+	@Override
+	public String toString() {
+		if(this.flag)
+			return "end::" + this.location.getClass().getSimpleName() + "::" + this.value;
+		else
+			return "beg::" + this.location.getClass().getSimpleName() + "::" + this.value;
 	}
 	
 }

@@ -3,6 +3,7 @@ package com.jcsa.jcparse.test.inst;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
@@ -44,11 +45,16 @@ import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstContinueStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDeclarationStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDefaultStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstGotoStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstLabeledStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
@@ -134,6 +140,7 @@ public class InstrumentalLines {
 			this.close();
 			this.template = template;
 			this.ast_tree = ast_tree;
+			this.lines = new ArrayList<InstrumentalLine>();
 			this.stream = new FileInputStream(instrumental_file);
 			this.next_line();
 		}
@@ -158,7 +165,7 @@ public class InstrumentalLines {
 	 * @throws Exception
 	 */
 	private InstrumentalLine new_end_line(AstNode location) throws Exception {
-		InstrumentalLine line = new InstrumentalLine(false, location, null);
+		InstrumentalLine line = new InstrumentalLine(true, location, null);
 		this.lines.add(line);
 		return line;
 	}
@@ -175,6 +182,7 @@ public class InstrumentalLines {
 	 */
 	private boolean match_line(InstrumentalLine line, boolean forcely) throws Exception {
 		if(this.has_line()) {
+			// System.out.println("\t--> Match " + this.curr_line + " with " + line);
 			if(line.is_beg() == this.curr_line.is_beg()
 				&& line.get_location() == this.curr_line.get_location()) {
 				line.set_value(this.curr_line.get_value());
@@ -182,8 +190,11 @@ public class InstrumentalLines {
 				return true;
 			}
 			else if(forcely && this.is_instrumented(line.get_location())) {
-				throw new RuntimeException("Unable to match " + this.curr_line
-						+ "\n\twhen " + line + " is provided.");
+				throw new RuntimeException("Unable to match:\n"
+						+ "\tcurr_line: " + this.curr_line.toString() + 
+						"\t==> " + this.curr_line.get_location().generate_code()
+						+ "\n\tnew_line: " + line.toString() + "\t==> " + 
+						line.get_location().generate_code() + "\n");
 			}
 			else {
 				return false;
@@ -454,7 +465,38 @@ public class InstrumentalLines {
 			this.parse_init_declarator((AstInitDeclarator) location);
 		else if(location instanceof AstDeclarator)
 			this.parse_declarator((AstDeclarator) location);
-		/* TODO implement the parsing algorithm more precisely here... */
+		else if(location instanceof AstDeclarationStatement)
+			this.parse_declaration_statement((AstDeclarationStatement) location);
+		else if(location instanceof AstExpressionStatement)
+			this.parse_expression_statement((AstExpressionStatement) location);
+		else if(location instanceof AstGotoStatement)
+			this.parse_goto_statement((AstGotoStatement) location);
+		else if(location instanceof AstBreakStatement)
+			this.parse_break_statement((AstBreakStatement) location);
+		else if(location instanceof AstContinueStatement)
+			this.parse_continue_statement((AstContinueStatement) location);
+		else if(location instanceof AstReturnStatement)
+			this.parse_return_statement((AstReturnStatement) location);
+		else if(location instanceof AstLabeledStatement)
+			this.parse_labeled_statement((AstLabeledStatement) location);
+		else if(location instanceof AstCaseStatement)
+			this.parse_case_statement((AstCaseStatement) location);
+		else if(location instanceof AstDefaultStatement)
+			this.parse_default_statement((AstDefaultStatement) location);
+		else if(location instanceof AstIfStatement)
+			this.parse_if_statement((AstIfStatement) location);
+		else if(location instanceof AstSwitchStatement)
+			this.parse_switch_statement((AstSwitchStatement) location);
+		else if(location instanceof AstForStatement)
+			this.parse_for_statement((AstForStatement) location);
+		else if(location instanceof AstWhileStatement)
+			this.parse_while_statement((AstWhileStatement) location);
+		else if(location instanceof AstDoWhileStatement)
+			this.parse_do_while_statement((AstDoWhileStatement) location);
+		else if(location instanceof AstCompoundStatement)
+			this.parse_compound_statement((AstCompoundStatement) location);
+		else if(location instanceof AstFunctionDefinition)
+			this.parse_function_definition((AstFunctionDefinition) location);
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
 	}
@@ -592,10 +634,10 @@ public class InstrumentalLines {
 			this.parse(location.get_argument_list());
 		}
 		
-		/* TODO implement function calling part */
+		/* function calling part */
 		while(this.is_next_calling_point()) {
-			AstFunctionDefinition callee = 
-					(AstFunctionDefinition) this.curr_line.get_location();
+			AstFunctionDefinition callee = (AstFunctionDefinition) 
+					this.curr_line.get_location().get_parent();
 			this.parse(callee);
 		}
 		
@@ -660,9 +702,9 @@ public class InstrumentalLines {
 		this.new_end_line(location);
 	}
 	
-	/* statement package */
+	/* basic statements */
 	private void parse_declaration_statement(AstDeclarationStatement location) throws Exception {
-		this.match_line(this.new_beg_line(location), true);
+		this.match_line(this.new_beg_line(location), false);
 		this.parse(location.get_declaration());
 		this.match_line(this.new_end_line(location), false);
 	}
@@ -706,8 +748,188 @@ public class InstrumentalLines {
 		this.match_line(this.new_end_line(location), true);
 	}
 	
+	/* structure statement */
+	private void parse_if_statement(AstIfStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(this.curr_line.is_beg()) {
+				this.match_line(this.new_beg_line(location), true);
+				this.parse(location.get_condition());
+			}
+			else {
+				this.match_line(this.new_end_line(location), true);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
+	private void parse_switch_statement(AstSwitchStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(this.curr_line.is_beg()) {
+				this.match_line(this.new_beg_line(location), true);
+				this.parse(location.get_condition());
+			}
+			else {
+				this.match_line(this.new_end_line(location), true);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
+	private void parse_while_statement(AstWhileStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(this.curr_line.is_beg()) {
+				this.match_line(this.new_beg_line(location), true);
+			}
+			else {
+				this.match_line(this.new_end_line(location), true);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
+	private void parse_do_while_statement(AstDoWhileStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(this.curr_line.is_beg()) {
+				this.match_line(this.new_beg_line(location), true);
+			}
+			else {
+				this.match_line(this.new_end_line(location), true);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
+	private void parse_for_statement(AstForStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(this.curr_line.is_beg()) {
+				this.match_line(this.new_beg_line(location), true);
+			}
+			else {
+				this.match_line(this.new_end_line(location), true);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
+	private void parse_compound_statement(AstCompoundStatement location) throws Exception {
+		if(this.has_line() && this.curr_line.get_location() == location) {
+			if(location.get_parent() instanceof AstFunctionDefinition) {
+				if(this.curr_line.is_beg()) {
+					this.match_line(this.new_beg_line(location), true);
+				}
+				else {
+					this.match_line(this.new_end_line(location), true);
+				}
+			}
+			else {
+				this.next_line();	/* ignore local compound statement */
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid match location");
+		}
+	}
 	
+	/* linear sequence directions */
+	/**
+	 * @param location
+	 * @return reach the expression under the top statement
+	 * @throws Exception
+	 */
+	private AstNode get_top_location(AstNode location) throws Exception {
+		AstNode child = location;
+		AstNode parent = child.get_parent();
+		while(parent instanceof AstExpression) {
+			child = parent;
+			parent = parent.get_parent();
+		}
+		return child;
+	}
+	/**
+	 * @param line
+	 * @return whether the current line reaches the end of the function
+	 * @throws Exception
+	 */
+	private boolean is_end_of_function(InstrumentalLine line) throws Exception {
+		AstNode location = line.get_location();
+		if(location instanceof AstCompoundStatement && location.
+				get_parent() instanceof AstFunctionDefinition) {
+			return line.is_end();
+		}
+		else if(location instanceof AstReturnStatement) {
+			return line.is_end();
+		}
+		else {
+			return false;
+		}
+	}
+	private void parse_function_definition(AstFunctionDefinition location) throws Exception {
+		this.new_beg_line(location);
+		while(this.has_line()) {
+			AstNode next_location = this.get_top_location(this.curr_line.get_location());
+			
+			/* debug information */
+			/*
+			String next_code = next_location.generate_code();
+			String next_type = next_location.getClass().getSimpleName();
+			next_type = next_type.substring(3, next_type.length() - 4).strip();
+			if(next_code.contains("\n")) {
+				next_code = next_code.substring(0, next_code.indexOf('\n')).strip();
+			}
+			System.out.println("\t==> Parse on " + next_type + " at line " + 
+					next_location.get_location().line_of() + ": " + next_code);
+			*/
+			
+			this.parse(next_location);
+			InstrumentalLine last_line = this.last_line();
+			if(this.is_end_of_function(last_line)) break;
+		}
+		this.new_end_line(location);
+	}
 	
+	/* public interface */
+	public static List<InstrumentalLine> simple_lines(CRunTemplate template,
+			AstTree ast_tree, File instrumental_file) throws Exception {
+		if(template == null)
+			throw new IllegalArgumentException("Invalid template: null");
+		else if(ast_tree == null)
+			throw new IllegalArgumentException("Invalid ast_tree: null");
+		else if(instrumental_file == null || !instrumental_file.exists())
+			throw new IllegalArgumentException("Invalid instrumental file");
+		else {
+			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			InputStream stream = new FileInputStream(instrumental_file);
+			InstrumentalLine line;
+			while((line = InstrumentalLine.read(template, ast_tree, stream)) != null) {
+				lines.add(line);
+			}
+			stream.close();
+			return lines;
+		}
+	}
+	public static List<InstrumentalLine> complete_lines(CRunTemplate template,
+			AstTree ast_tree, File instrumental_file) throws Exception {
+		if(template == null)
+			throw new IllegalArgumentException("Invalid template: null");
+		else if(ast_tree == null)
+			throw new IllegalArgumentException("Invalid ast_tree: null");
+		else if(instrumental_file == null || !instrumental_file.exists())
+			throw new IllegalArgumentException("Invalid instrumental file");
+		else {
+			parser.start(template, ast_tree, instrumental_file);
+			if(parser.has_line()) {
+				AstFunctionDefinition main = (AstFunctionDefinition) 
+						parser.curr_line.get_location().get_parent();
+				parser.parse(main);
+			}
+			parser.close();
+			return parser.lines;
+		}
+	}
 	
-
 }
