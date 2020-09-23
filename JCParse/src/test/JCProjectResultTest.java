@@ -71,7 +71,7 @@ public class JCProjectResultTest {
 					writer.write("\n");
 				}
 				writer.write("\n\n");
-				System.out.println("Load instrumental path for Test#" + tid);
+				System.out.println("\t\tLoad path for Test#" + tid);
 			}
 			return lines != null;
 		}
