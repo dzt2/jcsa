@@ -5,9 +5,12 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.inst.InstrumentalLine;
 import com.jcsa.jcparse.test.inst.InstrumentalLines;
+import com.jcsa.jcparse.test.inst.InstrumentalNode;
+import com.jcsa.jcparse.test.inst.InstrumentalNodes;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -92,6 +95,26 @@ public class JCTestProjectResult {
 				return InstrumentalLines.simple_lines(
 						template, ast_tree, instrumental_file);
 			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param cir_tree
+	 * @param input
+	 * @return load the sequence of instrumental nodes in execution path
+	 * @throws Exception
+	 */
+	public List<InstrumentalNode> load_instrumental_nodes(CRunTemplate template,
+			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
+		File instrumental_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrumental_file.exists()) {
+			return InstrumentalNodes.get_nodes(template, 
+					ast_tree, cir_tree, instrumental_file);
 		}
 		else {
 			return null;

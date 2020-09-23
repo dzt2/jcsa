@@ -11,6 +11,8 @@ import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.inst.InstrumentalLine;
+import com.jcsa.jcparse.test.inst.InstrumentalNode;
+import com.jcsa.jcparse.test.inst.InstrumentalUnit;
 
 public class JCProjectResultTest {
 	
@@ -28,7 +30,8 @@ public class JCProjectResultTest {
 			for(int k = 0; k < 1; k++) {
 				int tid = Math.abs(random.nextInt()) % 
 						project.get_test_part().number_of_test_inputs();
-				if(!print_instrumental_lines(project, tid, writer)) k--;
+				// if(!print_instrumental_lines(project, tid, writer)) k--;
+				if(!print_instrumental_nodes(project, tid, writer)) k--;
 			}
 			writer.close();
 		}
@@ -74,6 +77,34 @@ public class JCProjectResultTest {
 				System.out.println("\t\tLoad path for Test#" + tid);
 			}
 			return lines != null;
+		}
+		catch(Exception ex) {
+			throw ex;
+		}
+	}
+	
+	protected static boolean print_instrumental_nodes(JCTestProject project, int tid, FileWriter writer) throws Exception {
+		AstCirFile program = project.get_code_part().get_program(0);
+		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
+		try {
+			List<InstrumentalNode> nodes = project.get_result_part().load_instrumental_nodes(
+					program.get_run_template(), program.get_ast_tree(), program.get_cir_tree(), input);
+			if(nodes != null) {
+				writer.write("Instrument Nodes of test[" + tid + "]:\n");
+				writer.write("Parameters: " + input.get_parameter() + "\n");
+				for(int index = 0; index < nodes.size(); index++) {
+					InstrumentalNode node = nodes.get(index);
+					writer.write("Node[" + index + "]::" + node.get_execution() + "\n");
+					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
+					for(InstrumentalUnit unit : node.get_units()) {
+						writer.write("\t--> " + unit.get_expression().generate_code(true) + " \tas " + unit.get_value() + "\n");
+					}
+					writer.write("\n");
+				}
+				writer.write("\n\n");
+				System.out.println("\t\tLoad path for Test#" + tid);
+			}
+			return nodes != null;
 		}
 		catch(Exception ex) {
 			throw ex;
