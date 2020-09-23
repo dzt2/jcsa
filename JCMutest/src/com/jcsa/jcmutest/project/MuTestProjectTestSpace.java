@@ -13,7 +13,10 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.file.TestInputs;
-import com.jcsa.jcparse.test.inst.InstrumentalPath;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
+import com.jcsa.jcparse.test.inst.InstrumentalLines;
+import com.jcsa.jcparse.test.inst.InstrumentalNode;
+import com.jcsa.jcparse.test.inst.InstrumentalNodes;
 
 /**
  * <code>
@@ -157,17 +160,34 @@ public class MuTestProjectTestSpace {
 	}
 	/**
 	 * @param input
-	 * @return the path of instrumental test results or null if input is not executed before.
+	 * @return the complete instrumental lines or null if input is not executed before.
 	 * @throws Exception
 	 */
-	public InstrumentalPath read_instrumental_lines(CRunTemplate template, 
+	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template, 
 			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
 		if(instrumental_file.exists()) {
-			InstrumentalPath path = new InstrumentalPath(template, ast_tree, cir_tree);
-			path.set_partial_path(instrumental_file);	/* TODO implement complete path */
-			return path;
+			return InstrumentalLines.complete_lines(template, ast_tree, instrumental_file);
+		}
+		else {
+			return null;	/* no instrumental results are found in */
+		}
+	}
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param cir_tree
+	 * @param input
+	 * @return the complete instrumental nodes or null if input is not executed before.
+	 * @throws Exception
+	 */
+	public List<InstrumentalNode> load_instrumental_nodes(CRunTemplate template, 
+			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
+		File instrumental_file = input.
+				get_instrument_file(this.get_instrumental_output_directory());
+		if(instrumental_file.exists()) {
+			return InstrumentalNodes.get_nodes(template, ast_tree, cir_tree, instrumental_file);
 		}
 		else {
 			return null;	/* no instrumental results are found in */
