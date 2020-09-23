@@ -5,8 +5,8 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecOptimizer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymContexts;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * <code>
@@ -43,7 +43,7 @@ public abstract class SecConstraint extends SecDescription {
 	 * @return the constraint optimized from this one using contextual data
 	 * @throws Exception
 	 */
-	public SecConstraint optimize(SymContexts contexts) throws Exception {
+	public SecConstraint optimize(CStateContexts contexts) throws Exception {
 		return SecOptimizer.optimize(this, contexts);
 	}
 	

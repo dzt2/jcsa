@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sec2mutant.util;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
-import com.jcsa.jcparse.lang.sym.SymContexts;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * It connects the state node in graph with specified constraint.
@@ -60,7 +60,7 @@ public class SecStateEdge {
 	 * @return the constraint optimized from original one under contexts
 	 * @throws Exception
 	 */
-	public SecConstraint get_constraint(SymContexts contexts) throws Exception {
+	public SecConstraint get_constraint(CStateContexts contexts) throws Exception {
 		return this.constraint.optimize(contexts);
 	}
 	/**

@@ -64,7 +64,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
-import com.jcsa.jcparse.lang.sym.SymContexts;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * It performs the static error propagations through expressions within
@@ -127,7 +127,7 @@ public class SecExpressionPropagators {
 	 * @return whether the error is a valid expression error w.r.t. the given contexts
 	 * @throws Exception
 	 */
-	private boolean verify_propagation(SecStateError error, SymContexts contexts) throws Exception {
+	private boolean verify_propagation(SecStateError error, CStateContexts contexts) throws Exception {
 		if(error instanceof SecExpressionError) {
 			for(SecStateError sub_error : error.extend(contexts)) {
 				if(sub_error instanceof SecUniqueError) {
@@ -146,7 +146,7 @@ public class SecExpressionPropagators {
 	 * @return generate the propagation edges from the source using syntax-directed algorithms
 	 * @throws Exception
 	 */
-	private Iterable<SecStateEdge> propagate_on(SecStateNode source, SymContexts contexts) throws Exception {
+	private Iterable<SecStateEdge> propagate_on(SecStateNode source, CStateContexts contexts) throws Exception {
 		if(source == null || !source.is_state_error())
 			throw new IllegalArgumentException("Invalid source as null");
 		else if(this.verify_propagation(source.get_state_error(), contexts)){
@@ -322,7 +322,7 @@ public class SecExpressionPropagators {
 	 * @return the leafs generated from the source in error propagation at the top of the statement brinks
 	 * @throws Exception
 	 */
-	private Collection<SecStateNode> propagete_from(SecStateNode source, SymContexts contexts) throws Exception {
+	private Collection<SecStateNode> propagete_from(SecStateNode source, CStateContexts contexts) throws Exception {
 		Queue<SecStateNode> queue = new LinkedList<SecStateNode>();
 		List<SecStateNode> leafs = new ArrayList<SecStateNode>();
 		queue.add(source);
@@ -346,7 +346,7 @@ public class SecExpressionPropagators {
 	 * @return the leafs generated from the source in error propagation at the top of the statement brinks
 	 * @throws Exception
 	 */
-	public static Collection<SecStateNode> propagate(SecStateNode source, SymContexts contexts) throws Exception {
+	public static Collection<SecStateNode> propagate(SecStateNode source, CStateContexts contexts) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source");
 		else 

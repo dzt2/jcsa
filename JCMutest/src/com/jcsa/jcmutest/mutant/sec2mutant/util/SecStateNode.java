@@ -6,7 +6,7 @@ import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecDescription;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecExecutionConstraint;
-import com.jcsa.jcparse.lang.sym.SymContexts;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * Each node in state graph is an execution-constraint or state-error.
@@ -78,7 +78,7 @@ public class SecStateNode {
 	 * @return the constraint optimized from the contexts or null
 	 * @throws Exception
 	 */
-	public SecConstraint get_constraint(SymContexts contexts) throws Exception {
+	public SecConstraint get_constraint(CStateContexts contexts) throws Exception {
 		SecConstraint constraint = this.get_constraint();
 		if(constraint != null)
 			constraint = constraint.optimize(contexts);
@@ -98,7 +98,7 @@ public class SecStateNode {
 	 * @return the state errors exteded from the source or null
 	 * @throws Exception
 	 */
-	public Iterable<SecStateError> get_state_errors(SymContexts contexts) throws Exception {
+	public Iterable<SecStateError> get_state_errors(CStateContexts contexts) throws Exception {
 		SecStateError state_error = this.get_state_error();
 		if(state_error == null) {
 			return null;

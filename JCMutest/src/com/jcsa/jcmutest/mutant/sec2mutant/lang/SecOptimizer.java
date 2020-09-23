@@ -28,10 +28,10 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymContexts;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * It is used to optimize the symbolic description (SecDescription), including:<br>
@@ -76,7 +76,7 @@ public class SecOptimizer {
 	
 	/* definitions */
 	/** it provides the contextual information to evaluate symbolic description **/
-	private SymContexts contexts;
+	private CStateContexts contexts;
 	/** private constructor for singleton mode **/
 	private SecOptimizer() { this.contexts = null; }
 	/** the singleton of the optimizer for evaluating the symbolic description **/
@@ -98,8 +98,7 @@ public class SecOptimizer {
 	 * @return the constraint optimized from source using contextual data
 	 * @throws Exception
 	 */
-	public static SecConstraint optimize(SecConstraint 
-			constraint, SymContexts contexts) throws Exception {
+	public static SecConstraint optimize(SecConstraint constraint, CStateContexts contexts) throws Exception {
 		optimizer.contexts = contexts;
 		return optimizer.opt_constraint(constraint);
 	}
@@ -109,7 +108,7 @@ public class SecOptimizer {
 	 * 		   equivalent with the source state error.
 	 * @throws Exception
 	 */
-	public static Iterable<SecStateError> extend(SecStateError source, SymContexts contexts) throws Exception {
+	public static Iterable<SecStateError> extend(SecStateError source, CStateContexts contexts) throws Exception {
 		optimizer.contexts = contexts;
 		optimizer.extension_records.clear();
 		optimizer.extensions.clear();

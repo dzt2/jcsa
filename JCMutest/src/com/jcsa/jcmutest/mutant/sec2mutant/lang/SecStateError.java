@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.mutant.sec2mutant.lang;
 
 import com.jcsa.jcmutest.mutant.sec2mutant.SecKeywords;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymContexts;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * <code>
@@ -42,7 +42,7 @@ public abstract class SecStateError extends SecDescription {
 	 * 		   equivalent with the source state error.
 	 * @throws Exception
 	 */
-	public Iterable<SecStateError> extend(SymContexts contexts) throws Exception {
+	public Iterable<SecStateError> extend(CStateContexts contexts) throws Exception {
 		return SecOptimizer.extend(this, contexts);
 	}
 	
