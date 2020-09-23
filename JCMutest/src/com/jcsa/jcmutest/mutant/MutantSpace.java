@@ -157,9 +157,9 @@ public class MutantSpace {
 				if(line.startsWith("#")) {
 					String[] items = line.strip().split(" ");
 					int id = Integer.parseInt(items[1].strip());
-					int cov_id = Integer.parseInt(items[1].strip());
-					int wek_id = Integer.parseInt(items[2].strip());
-					int str_id = Integer.parseInt(items[3].strip());
+					int cov_id = Integer.parseInt(items[2].strip());
+					int wek_id = Integer.parseInt(items[3].strip());
+					int str_id = Integer.parseInt(items[4].strip());
 					Mutant mutant = this.mutants.get(id);
 					Mutant cov_mutant = this.mutants.get(cov_id);
 					Mutant wek_mutant = this.mutants.get(wek_id);

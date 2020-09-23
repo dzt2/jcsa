@@ -65,7 +65,7 @@ public class MutaCodeGeneration extends CodeGeneration {
 		case coverage:	mutation = mutant.get_coverage_mutant().get_mutation();	break;
 		case weak:		mutation = mutant.get_weak_mutant().get_mutation();		break;
 		case strong:	mutation = mutant.get_strong_mutant().get_mutation(); 	break;
-		default: 		mutation = mutant.get_mutation(); 			break;
+		default: 		mutation = mutant.get_mutation(); 						break;
 		}
 		TextMutation text_mutation = MutationTextParsers.parse(mutation);
 		

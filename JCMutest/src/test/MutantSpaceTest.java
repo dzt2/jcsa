@@ -18,7 +18,7 @@ import com.jcsa.jcparse.lang.ClangStandard;
 
 public class MutantSpaceTest {
 	
-	protected static final String prefix = "/home/dzt2/Development/Data/Code/ifiles/";
+	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
 	protected static final String postfix = "result/mut/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	private static final Random random = new Random(System.currentTimeMillis());
