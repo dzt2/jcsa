@@ -124,47 +124,8 @@ public class SecStatePropagationTest {
 				}
 			}
 		}
-		catch(Exception ex) {
-			graph = null;
-		}
+		catch(Exception ex) { /* do nothing */ }
 		return graph;
-	}
-	private static void write_mutation(Mutant mutant, SecStateGraph graph, FileWriter writer) throws Exception {
-		AstMutation mutation = mutant.get_mutation();
-		AstNode location = mutation.get_location();
-		writer.write("Mutant#" + mutant.get_id() + "\n");
-		writer.write("Class: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = location.generate_code();
-		if(code.contains("\n")) {
-			code = code.substring(0, code.indexOf('\n'));
-		}
-		writer.write("Location#" + location.get_location().line_of() + ": " + code.strip() + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("Parameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		if(graph != null) {
-			/* state-graph information */
-			if(graph.has_reach_node()) {
-				Queue<SecStateNode> queue = new LinkedList<SecStateNode>();
-				queue.add(graph.get_reach_node());
-				writer.write("State-Graph\n");
-				writer.write("{\n");
-				while(!queue.isEmpty()) {
-					SecStateNode node = queue.poll();
-					writer.write("\tNode: " + node.toString() + "\n");
-					if(node.is_state_error())
-						writer.write("\t\tErrors: " + node.get_state_error().extend(null) + "\n");
-					for(SecStateEdge edge : node.get_ou_edges()) {
-						writer.write("\t\t==(" + edge.get_type() + ")==> " + edge.get_constraint().optimize(null) + "\n");
-						writer.write("\t\t\t==> " + edge.get_target() + "\n");
-						queue.add(edge.get_target());
-					}
-				}
-				writer.write("}\n");
-			}
-		}
-		writer.write("+------------------------------------------------------+\n\n");
 	}
 	private static void write_state_graph(SecStateGraph graph, FileWriter writer) throws Exception {
 		writer.write("+------------------------------------------------------+\n");
@@ -223,7 +184,7 @@ public class SecStatePropagationTest {
 				write_state_graph(sgraph, writer);
 			}
 			else {
-				write_mutation(mutant, sgraph, writer2);
+				write_state_graph(sgraph, writer2);
 				error++;
 			}
 			total++;
