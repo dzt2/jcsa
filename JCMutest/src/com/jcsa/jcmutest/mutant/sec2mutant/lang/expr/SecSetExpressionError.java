@@ -22,7 +22,8 @@ public class SecSetExpressionError extends SecExpressionError {
 		case creal:
 		case caddr:	
 		case cbody: break;
-		default: throw new IllegalArgumentException(type.generate_code());
+		default: throw new IllegalArgumentException(type.generate_code()
+				+ " at code: " + orig_expression.generate_code(true));
 		}
 	}
 	

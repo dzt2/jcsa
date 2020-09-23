@@ -111,18 +111,60 @@ public class SecStatePropagationTest {
 			CirTree cir_tree, Mutant mutant, CDependGraph dependence_graph) throws Exception {
 		SecStateGraph graph = new SecStateGraph(cir_tree, mutant);
 		graph.initialize(dependence_graph);
-		if(graph.has_reach_node()) {
-			List<SecStateNode> next_nodes = new ArrayList<SecStateNode>();
-			for(SecStateEdge edge : graph.get_reach_node().get_ou_edges()) {
-				next_nodes.addAll(SecExpressionPropagators.
-						propagate(edge.get_target(), null));
-			}
-			
-			for(SecStateNode next_node : next_nodes) {
-				SecStatementPropagators.propagate(next_node, dependence_graph);
+		try {
+			if(graph.has_reach_node()) {
+				List<SecStateNode> next_nodes = new ArrayList<SecStateNode>();
+				for(SecStateEdge edge : graph.get_reach_node().get_ou_edges()) {
+					next_nodes.addAll(SecExpressionPropagators.
+							propagate(edge.get_target(), null));
+				}
+				
+				for(SecStateNode next_node : next_nodes) {
+					SecStatementPropagators.propagate(next_node, dependence_graph);
+				}
 			}
 		}
+		catch(Exception ex) {
+			graph = null;
+		}
 		return graph;
+	}
+	private static void write_mutation(Mutant mutant, SecStateGraph graph, FileWriter writer) throws Exception {
+		AstMutation mutation = mutant.get_mutation();
+		AstNode location = mutation.get_location();
+		writer.write("Mutant#" + mutant.get_id() + "\n");
+		writer.write("Class: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
+		String code = location.generate_code();
+		if(code.contains("\n")) {
+			code = code.substring(0, code.indexOf('\n'));
+		}
+		writer.write("Location#" + location.get_location().line_of() + ": " + code.strip() + "\n");
+		if(mutation.has_parameter()) {
+			writer.write("Parameter: " + mutation.get_parameter() + "\n");
+		}
+		
+		if(graph != null) {
+			/* state-graph information */
+			if(graph.has_reach_node()) {
+				Queue<SecStateNode> queue = new LinkedList<SecStateNode>();
+				queue.add(graph.get_reach_node());
+				writer.write("State-Graph\n");
+				writer.write("{\n");
+				while(!queue.isEmpty()) {
+					SecStateNode node = queue.poll();
+					writer.write("\tNode: " + node.toString() + "\n");
+					if(node.is_state_error())
+						writer.write("\t\tErrors: " + node.get_state_error().extend(null) + "\n");
+					for(SecStateEdge edge : node.get_ou_edges()) {
+						writer.write("\t\t==(" + edge.get_type() + ")==> " + edge.get_constraint().optimize(null) + "\n");
+						writer.write("\t\t\t==> " + edge.get_target() + "\n");
+						queue.add(edge.get_target());
+					}
+				}
+				writer.write("}\n");
+			}
+		}
+		writer.write("+------------------------------------------------------+\n\n");
 	}
 	private static void write_state_graph(SecStateGraph graph, FileWriter writer) throws Exception {
 		writer.write("+------------------------------------------------------+\n");
@@ -177,11 +219,11 @@ public class SecStatePropagationTest {
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 			// System.out.println("\t\t==> Mutant#" + mutant.get_id());
 			SecStateGraph sgraph = state_error_graph(code_file.get_cir_tree(), mutant, dgraph);
-			if(sgraph.has_reach_node()) {
+			if(sgraph != null && sgraph.has_reach_node()) {
 				write_state_graph(sgraph, writer);
 			}
 			else {
-				write_state_graph(sgraph, writer2);
+				write_mutation(mutant, sgraph, writer2);
 				error++;
 			}
 			total++;
