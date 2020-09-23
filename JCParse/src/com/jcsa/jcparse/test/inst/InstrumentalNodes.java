@@ -61,12 +61,15 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirLogicExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirDefaultStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -200,7 +203,6 @@ public class InstrumentalNodes {
 	private void append(CirStatement statement) throws Exception {
 		CirExecution execution = this.get_cir_execution(statement);
 		InstrumentalNode node = new InstrumentalNode(execution);
-		this.nodes.add(node);
 		
 		Set<CirExpression> expressions = new HashSet<CirExpression>();
 		this.collect_expressions_in(statement, expressions);
@@ -214,6 +216,18 @@ public class InstrumentalNodes {
 				this.buffer.remove(expression);
 			}
 		}
+		
+		/* link the path between it and last one */
+		if(!this.nodes.isEmpty()) {
+			InstrumentalNode source = this.nodes.get(nodes.size() - 1);
+			InstrumentalNode target = node;
+			List<CirExecution> path = this.complete_path_between(source, target);
+			for(CirExecution curr_execution : path) {
+				InstrumentalNode curr = new InstrumentalNode(curr_execution);
+				this.nodes.add(curr);
+			}
+		}
+		this.nodes.add(node);
 	}
 	
 	/* context-sensitive translation */
@@ -724,5 +738,81 @@ public class InstrumentalNodes {
 			return parser.nodes;
 		}
 	}
+	
+	/* complete nodes in path */
+	private List<CirExecution> complete_path_between(
+			InstrumentalNode source_node,
+			InstrumentalNode target_node) throws Exception {
+		List<CirExecution> path = new ArrayList<CirExecution>();
+		CirExecution source_execution = source_node.get_execution();
+		CirExecution target_execution = target_node.get_execution();
+		CirExecution curr_execution = source_execution;
+		CirStatement target_statement = target_execution.get_statement();
+		
+		while(curr_execution != target_execution) {
+			if(curr_execution != source_execution && curr_execution != target_execution)
+				path.add(curr_execution);
+			
+			/* determine the next node being executed from curr_execution */
+			CirStatement statement = curr_execution.get_statement();
+			if(statement instanceof CirAssignStatement || statement instanceof CirGotoStatement) {
+				curr_execution = curr_execution.get_ou_flow(0).get_target();
+			}
+			else if(statement instanceof CirCallStatement) {
+				if(curr_execution.get_ou_flow(0).get_type() == CirExecutionFlowType.call_flow) {
+					curr_execution = curr_execution.get_ou_flow(0).get_target();
+				}
+				else {
+					curr_execution = target_execution;	/* annex to the target */
+				}
+			}
+			else if(statement instanceof CirIfStatement) {
+				InstrumentalUnit condition = source_node.get_unit(((CirIfStatement) statement).get_condition());
+				if(condition != null) {
+					if(condition.get_bool()) {
+						for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
+							if(flow.get_type() == CirExecutionFlowType.true_flow) {
+								curr_execution = flow.get_target();
+								break;
+							}
+						}
+					}
+					else {
+						for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
+							if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+								curr_execution = flow.get_target();
+								break;
+							}
+						}
+					}
+				}
+				else {
+					curr_execution = target_execution;	/* annex to the target */
+				}
+			}
+			else if(statement instanceof CirCaseStatement) {
+				if(statement == target_statement) {
+					curr_execution = target_execution;	/* annex to the target */
+				}
+				else {
+					for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
+						if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+							curr_execution = flow.get_target();
+							break;
+						}
+					}
+				}
+			}
+			else if(statement instanceof CirEndStatement) {
+				curr_execution = target_execution;	/* annex to the target */
+			}
+			else {
+				curr_execution = curr_execution.get_ou_flow(0).get_target();
+			}
+		}
+		
+		return path;
+	}
+	
 	
 }
