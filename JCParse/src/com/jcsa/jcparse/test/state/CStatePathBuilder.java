@@ -1,16 +1,10 @@
-package com.jcsa.jcparse.test.inst;
+package com.jcsa.jcparse.test.state;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
@@ -61,15 +55,12 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirLogicExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirDefaultStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -82,26 +73,25 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
- * It is used to generate instrumental nodes sequence for analysis on CIR code.
+ * It is used to construct the state-transition path.
  * 
  * @author yukimula
  *
  */
-public class InstrumentalNodes {
+public class CStatePathBuilder {
 	
 	/* definitions */
-	/** C-intermediate representation program **/
-	private CirTree cir_tree;
 	/** mapping from expression to its value **/
-	private Map<CirExpression, Object> buffer;
-	/** the sequence of instrumental nodes being generated **/
-	private List<InstrumentalNode> nodes;
+	private Map<CirExpression, Object> values;
+	/** the sequence of path being generated **/
+	private CStatePath path;
 	
-	/* singleton constructor */
-	private InstrumentalNodes() { }
-	private static final InstrumentalNodes parser = new InstrumentalNodes();
+	/* singleton mode */
+	private CStatePathBuilder() { }
+	private static final CStatePathBuilder builder = new CStatePathBuilder();
 	
 	/* cir-location algorithms */
 	/**
@@ -128,7 +118,7 @@ public class InstrumentalNodes {
 	 * @throws Exception
 	 */
 	private List<CirNode> get_cir_nodes(AstNode location, Class<?> type) throws Exception {
-		return this.cir_tree.get_cir_nodes(location, type);
+		return this.path.get_cir_tree().get_cir_nodes(location, type);
 	}
 	/**
 	 * @param expression
@@ -149,22 +139,6 @@ public class InstrumentalNodes {
 			return false;
 		}
 	}
-	/**
-	 * collect all the expressions under the location
-	 * @param location
-	 * @param expressions
-	 */
-	private void collect_expressions_in(CirNode location, Set<CirExpression> expressions) {
-		for(CirNode child : location.get_children()) {
-			this.collect_expressions_in(child, expressions);
-		}
-		if(location instanceof CirExpression) {
-			CirExpression expression = (CirExpression) location;
-			if(!this.is_left_reference(expression)) {
-				expressions.add(expression);
-			}
-		}
-	}
 	
 	/* buffer operation methods */
 	/**
@@ -176,7 +150,7 @@ public class InstrumentalNodes {
 		if(expression == null || expression.statement_of() == null)
 			return;
 		else if(!this.is_left_reference(expression))	/* ignore lvalue */
-			this.buffer.put(expression, value);
+			this.values.put(expression, value);
 	}
 	/**
 	 * record the expressions w.r.t. the location and their values in buffer
@@ -202,35 +176,15 @@ public class InstrumentalNodes {
 	 */
 	private void append(CirStatement statement) throws Exception {
 		CirExecution execution = this.get_cir_execution(statement);
-		InstrumentalNode node = new InstrumentalNode(execution);
-		
-		Set<CirExpression> expressions = new HashSet<CirExpression>();
-		this.collect_expressions_in(statement, expressions);
-		
-		for(CirExpression expression : expressions) {
-			if(this.buffer.containsKey(expression)) {
-				Object value = this.buffer.get(expression);
-				if(value != null) {
-					node.set_unit(expression, value);
-				}
-				this.buffer.remove(expression);
-			}
-		}
-		
-		/* link the path between it and last one */
-		if(!this.nodes.isEmpty()) {
-			InstrumentalNode source = this.nodes.get(nodes.size() - 1);
-			InstrumentalNode target = node;
-			List<CirExecution> path = this.complete_path_between(source, target);
-			for(CirExecution curr_execution : path) {
-				InstrumentalNode curr = new InstrumentalNode(curr_execution);
-				this.nodes.add(curr);
-			}
-		}
-		this.nodes.add(node);
+		this.path.append(execution, values);
 	}
 	
 	/* context-sensitive translation */
+	/**
+	 * generate statement node when the expression is an end of statement.
+	 * @param location
+	 * @throws Exception
+	 */
 	private void parse_follow(AstExpression location) throws Exception {
 		AstNode child = location;
 		AstNode parent = location.get_parent();
@@ -259,7 +213,7 @@ public class InstrumentalNodes {
 			if(((AstLogicBinaryExpression) parent).get_loperand() == child) {
 				CirAssignStatement statement1 = (CirAssignStatement) this.
 						get_cir_nodes(parent, CirSaveAssignStatement.class).get(0);
-				Object condition_value = this.buffer.get(statement1.get_rvalue());
+				Object condition_value = this.values.get(statement1.get_rvalue());
 				this.append(statement1);
 				
 				CirIfStatement statement2 = (CirIfStatement) this.
@@ -685,7 +639,8 @@ public class InstrumentalNodes {
 			AstFunctionDefinition location) throws Exception {
 		CirFunctionDefinition def = (CirFunctionDefinition) this.
 				get_cir_nodes(location, CirFunctionDefinition.class).get(0);
-		CirFunction function = this.cir_tree.get_function_call_graph().get_function(def);
+		CirFunction function = this.path.
+				get_cir_tree().get_function_call_graph().get_function(def);
 		if(line.is_beg()) {
 			this.append(function.get_flow_graph().get_entry().get_statement());
 		}
@@ -712,106 +667,29 @@ public class InstrumentalNodes {
 		else
 			return;
 	}
-	public static List<InstrumentalNode> get_nodes(CRunTemplate template,
-			AstTree ast_tree, CirTree cir_tree, File instrumental_file) throws Exception {
-		if(template == null)
-			throw new IllegalArgumentException("Invalid template: null");
-		else if(ast_tree == null)
-			throw new IllegalArgumentException("Invalid ast_tree: null");
+	/**
+	 * @param lines
+	 * @param cir_tree
+	 * @return generate the execution path parsed from the instrumental lines
+	 * @throws Exception
+	 */
+	protected static CStatePath get_path(Iterable<InstrumentalLine> lines,
+			CirTree cir_tree) throws Exception {
+		if(lines == null)
+			throw new IllegalArgumentException("Invalid lines: null");
 		else if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
-		else if(instrumental_file == null || !instrumental_file.exists())
-			throw new IllegalArgumentException("Invalid instrumental file");
 		else {
-			List<InstrumentalLine> lines = InstrumentalLines.
-					complete_lines(template, ast_tree, instrumental_file);
-			
-			parser.cir_tree = cir_tree;
-			parser.buffer = new HashMap<CirExpression, Object>();
-			parser.nodes = new ArrayList<InstrumentalNode>();
+			builder.values = new HashMap<CirExpression, Object>();
+			builder.path = new CStatePath(cir_tree);
 			
 			for(InstrumentalLine line : lines) {
-				parser.parse(line);
+				builder.parse(line);
 			}
 			
-			parser.buffer.clear();
-			return parser.nodes;
+			builder.values.clear();
+			return builder.path;
 		}
-	}
-	
-	/* complete nodes in path */
-	private List<CirExecution> complete_path_between(
-			InstrumentalNode source_node,
-			InstrumentalNode target_node) throws Exception {
-		List<CirExecution> path = new ArrayList<CirExecution>();
-		CirExecution source_execution = source_node.get_execution();
-		CirExecution target_execution = target_node.get_execution();
-		CirExecution curr_execution = source_execution;
-		CirStatement target_statement = target_execution.get_statement();
-		
-		while(curr_execution != target_execution) {
-			if(curr_execution != source_execution && curr_execution != target_execution)
-				path.add(curr_execution);
-			
-			/* determine the next node being executed from curr_execution */
-			CirStatement statement = curr_execution.get_statement();
-			if(statement instanceof CirAssignStatement || statement instanceof CirGotoStatement) {
-				curr_execution = curr_execution.get_ou_flow(0).get_target();
-			}
-			else if(statement instanceof CirCallStatement) {
-				if(curr_execution.get_ou_flow(0).get_type() == CirExecutionFlowType.call_flow) {
-					curr_execution = curr_execution.get_ou_flow(0).get_target();
-				}
-				else {
-					curr_execution = target_execution;	/* annex to the target */
-				}
-			}
-			else if(statement instanceof CirIfStatement) {
-				InstrumentalUnit condition = source_node.get_unit(((CirIfStatement) statement).get_condition());
-				if(condition != null) {
-					if(condition.get_bool()) {
-						for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
-							if(flow.get_type() == CirExecutionFlowType.true_flow) {
-								curr_execution = flow.get_target();
-								break;
-							}
-						}
-					}
-					else {
-						for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
-							if(flow.get_type() == CirExecutionFlowType.fals_flow) {
-								curr_execution = flow.get_target();
-								break;
-							}
-						}
-					}
-				}
-				else {
-					curr_execution = target_execution;	/* annex to the target */
-				}
-			}
-			else if(statement instanceof CirCaseStatement) {
-				if(statement == target_statement) {
-					curr_execution = target_execution;	/* annex to the target */
-				}
-				else {
-					for(CirExecutionFlow flow : curr_execution.get_ou_flows()) {
-						if(flow.get_type() == CirExecutionFlowType.fals_flow) {
-							curr_execution = flow.get_target();
-							break;
-						}
-					}
-				}
-			}
-			else if(statement instanceof CirEndStatement) {
-				curr_execution = target_execution;	/* annex to the target */
-			}
-			else {
-				curr_execution = curr_execution.get_ou_flow(0).get_target();
-			}
-		}
-		
-		return path;
 	}
 	
 }

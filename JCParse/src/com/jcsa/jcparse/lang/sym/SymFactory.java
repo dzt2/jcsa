@@ -4,6 +4,8 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -12,7 +14,8 @@ public class SymFactory {
 	/* data generator */
 	/**
 	 * @param source [bool|char|short|int|long|float|double|
-	 * 				  CConstant|AstNode|CirNode|SymExpression]
+	 * 				  CConstant|AstNode|CirNode|CirStatement
+	 * 				  |CirExecution|SymExpression]
 	 * @return SymExpression
 	 * @throws Exception
 	 */
@@ -24,6 +27,12 @@ public class SymFactory {
 		}
 		else if(source instanceof CirExpression) {
 			return SymParser.parse((CirExpression) source);
+		}
+		else if(source instanceof CirStatement) {
+			return SymFactory.sym_statement((CirStatement) source);
+		}
+		else if(source instanceof CirExecution) {
+			return SymFactory.sym_statement(((CirExecution) source).get_statement());
 		}
 		else if(source instanceof SymExpression) {
 			return ((SymExpression) source);
@@ -295,6 +304,15 @@ public class SymFactory {
 			list.add_child(SymFactory.parse(element));
 		}
 		return list;
+	}
+	/**
+	 * @param statement
+	 * @return symbolic identifier that describes the statement pointer
+	 * @throws Exception
+	 */
+	public static SymExpression sym_statement(CirStatement statement) throws Exception {
+		String name = statement.get_tree().get_localizer().get_execution(statement).toString();
+		return SymFactory.new_identifier(CBasicTypeImpl.int_type, "@" + name);
 	}
 	
 }

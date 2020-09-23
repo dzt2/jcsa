@@ -14,6 +14,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * It is used to evaluate the value of symbolic expression in a given context.
@@ -24,7 +25,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 public class SymEvaluator {
 	
 	/* definition */
-	private SymContexts context;
+	private CStateContexts context;
 	private SymEvaluator() { }
 	private static SymEvaluator evaluator = new SymEvaluator();
 	
@@ -39,13 +40,13 @@ public class SymEvaluator {
 			return null;
 		}
 		else if(this.context.has(source)) {
-			return this.context.get(source);
+			return SymFactory.parse(this.context.get(source));
 		}
 		else if(this.context.has(source.get_source())) {
-			return this.context.get(source.get_source());
+			return SymFactory.parse(this.context.get(source.get_source()));
 		}
 		else if(this.context.has(source.generate_code())) {
-			return this.context.get(source.generate_code());
+			return SymFactory.parse(this.context.get(source.generate_code()));
 		}
 		else {
 			return null;
@@ -99,7 +100,7 @@ public class SymEvaluator {
 	 * @return the result evaluated from the evaluator.
 	 * @throws Exception
 	 */
-	public static SymExpression evaluate_on(SymExpression source, SymContexts contexts) throws Exception {
+	public static SymExpression evaluate_on(SymExpression source, CStateContexts contexts) throws Exception {
 		evaluator.context = contexts;
 		return evaluator.evaluate(source);
 	}

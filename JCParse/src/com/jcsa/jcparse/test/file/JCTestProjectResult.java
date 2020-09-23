@@ -11,6 +11,7 @@ import com.jcsa.jcparse.test.inst.InstrumentalLine;
 import com.jcsa.jcparse.test.inst.InstrumentalLines;
 import com.jcsa.jcparse.test.inst.InstrumentalNode;
 import com.jcsa.jcparse.test.inst.InstrumentalNodes;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * It provides the interfaces to fetch the results generated during the
@@ -120,5 +121,24 @@ public class JCTestProjectResult {
 			return null;
 		}
 	}
-	
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param cir_tree
+	 * @param input
+	 * @return the state transition path parsed from instrumental path
+	 * @throws Exception
+	 */
+	public CStatePath load_instrumental_path(CRunTemplate template,
+			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
+		File instrumental_file = input.get_instrument_file(this.project.
+				get_project_files().get_instrument_output_directory());
+		if(instrumental_file.exists()) {
+			return CStatePath.get_path(template, ast_tree, cir_tree, instrumental_file);
+		}
+		else {
+			return null;
+		}
+	}
+	 
 }
