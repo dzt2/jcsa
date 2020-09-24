@@ -40,13 +40,13 @@ public class SymEvaluator {
 			return null;
 		}
 		else if(this.context.has(source)) {
-			return SymFactory.parse(this.context.get(source));
+			return this.context.get(source);
 		}
 		else if(this.context.has(source.get_source())) {
-			return SymFactory.parse(this.context.get(source.get_source()));
+			return this.context.get(source.get_source());
 		}
-		else if(this.context.has(source.generate_code())) {
-			return SymFactory.parse(this.context.get(source.generate_code()));
+		else if(this.context.has(source)) {
+			return this.context.get(source);
 		}
 		else {
 			return null;

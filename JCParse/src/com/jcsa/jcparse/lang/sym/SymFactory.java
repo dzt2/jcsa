@@ -14,31 +14,31 @@ public class SymFactory {
 	/* data generator */
 	/**
 	 * @param source [bool|char|short|int|long|float|double|
-	 * 				  CConstant|AstNode|CirNode|CirStatement
-	 * 				  |CirExecution|SymExpression]
+	 * 				  CConstant|AstExpression|CirExpression
+	 * 				  |CirStatement|CirExecution|SymExpression]
 	 * @return SymExpression
 	 * @throws Exception
 	 */
 	public static SymExpression parse(Object source) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
-		else if(source instanceof AstExpression) {
+		else if(source instanceof AstExpression) 
 			return SymParser.parse((AstExpression) source, null);
-		}
-		else if(source instanceof CirExpression) {
+		else if(source instanceof CirExpression) 
 			return SymParser.parse((CirExpression) source);
-		}
-		else if(source instanceof CirStatement) {
+		else if(source instanceof CirStatement) 
 			return SymFactory.sym_statement((CirStatement) source);
-		}
-		else if(source instanceof CirExecution) {
+		else if(source instanceof CirExecution) 
 			return SymFactory.sym_statement(((CirExecution) source).get_statement());
-		}
-		else if(source instanceof SymExpression) {
+		else if(source instanceof SymExpression) 
 			return ((SymExpression) source);
-		}
-		else
+		else if(source instanceof Boolean || source instanceof Character 
+				|| source instanceof Short || source instanceof Integer
+				|| source instanceof Long || source instanceof Float
+				|| source instanceof Double || source instanceof CConstant)
 			return SymFactory.new_constant(source);
+		else
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
 	}
 	
 	/* factory methods */

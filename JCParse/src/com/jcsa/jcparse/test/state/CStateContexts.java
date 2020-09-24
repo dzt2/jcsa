@@ -8,6 +8,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
+import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.lang.sym.SymInvocate;
@@ -63,14 +64,14 @@ public class CStateContexts {
 	 * @throws Exception
 	 */
 	public boolean has(Object key) throws Exception {
-		return this.context.get_value(key) != null;
+		return this.context.has_value(key);
 	}
 	/**
 	 * @param key {AstNode|CirNode|SymNode}
 	 * @return the value w.r.t. the key in the context
 	 * @throws Exception
 	 */
-	public Object get(Object key) throws Exception {
+	public SymExpression get(Object key) throws Exception {
 		return this.context.get_value(key);
 	}
 	/**
@@ -133,7 +134,7 @@ public class CStateContexts {
 			if(!this.has(key)) {
 				this.get_root_context().put_value(key, Integer.valueOf(1));
 			}
-			Integer counter = (Integer) this.get(key);
+			Integer counter = ((SymConstant) this.get(key)).get_int();
 			counter = Integer.valueOf(counter.intValue() + 1);
 			this.get_root_context().put_value(key, counter);
 			

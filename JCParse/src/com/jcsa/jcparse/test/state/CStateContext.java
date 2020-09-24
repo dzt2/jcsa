@@ -3,9 +3,13 @@ package com.jcsa.jcparse.test.state;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.irlang.CirNode;
-import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
+
 
 /**
  * It records the value holds by expressions evaluated during and by the statement
@@ -21,7 +25,7 @@ public class CStateContext {
 	/** the key for pushing and pop the context **/
 	private Object context_key;
 	/** mapping from string code of expressions to their values **/
-	private Map<String, Object> local_values;
+	private Map<String, SymExpression> local_values;
 	
 	/* constructor */
 	/**
@@ -31,7 +35,7 @@ public class CStateContext {
 	protected CStateContext(Object context_key) {
 		this.parent = null;
 		this.context_key = context_key;
-		this.local_values = new HashMap<String, Object>();
+		this.local_values = new HashMap<String, SymExpression>();
 	}
 	/**
 	 * create a child context under the parent
@@ -46,8 +50,32 @@ public class CStateContext {
 		else {
 			this.parent = parent;
 			this.context_key = context_key;
-			this.local_values = new HashMap<String, Object>();
+			this.local_values = new HashMap<String, SymExpression>();
 		}
+	}
+	
+	/* key-value methods */
+	/**
+	 * @param key {AstExpression|CirExpression|SymExpression|
+	 * 			   CirStatement|others are not allowed.}
+	 * @return 
+	 * @throws Exception
+	 */
+	public static String get_string_key(Object key) throws Exception {
+		if(key == null)
+			throw new IllegalArgumentException("Invalid key: null");
+		else if(key instanceof AstExpression)
+			return ((AstExpression) key).generate_code();
+		else if(key instanceof CirExpression)
+			return ((CirExpression) key).generate_code(false);
+		else if(key instanceof SymExpression)
+			return ((SymExpression) key).generate_code();
+		else if(key instanceof CirStatement)
+			return SymFactory.sym_statement((CirStatement) key).generate_code();
+		else if(key instanceof CirExecution)
+			return SymFactory.sym_statement(((CirExecution) key).get_statement()).generate_code();
+		else
+			throw new IllegalArgumentException("Unsupported: " + key.getClass().getSimpleName());
 	}
 	
 	/* getters */
@@ -63,54 +91,58 @@ public class CStateContext {
 	 * @return the key of the context used for push and pop
 	 */
 	public Object get_context_key() { return this.context_key; }
+	
+	/**
+	 * @param key {AstExpression|CirExpression|SymExpression|
+	 * 			   CirStatement|others are not allowed.}
+	 * @return true if the key corresponds to some value in 
+	 * 		   the context or its parent
+	 * @throws Exception
+	 */
+	public boolean has_value(Object key) throws Exception {
+		String string_key = get_string_key(key);
+		CStateContext context = this;
+		while(context != null) {
+			if(context.local_values.containsKey(string_key)) {
+				return true;
+			}
+		}
+		return false;
+	}
 	/**
 	 * @param key {AstNode|CirNode|SymNode|Any.toString()}
 	 * @return the value w.r.t. the key in the context
 	 * @throws Exception
 	 */
-	public Object get_value(Object key) throws Exception {
-		String skey;
-		if(key instanceof AstNode)
-			skey = ((AstNode) key).generate_code();
-		else if(key instanceof CirNode)
-			skey = ((CirNode) key).generate_code(false);
-		else if(key instanceof SymNode)
-			skey = ((SymNode) key).generate_code();
-		else
-			skey = key.toString();
-		
+	public SymExpression get_value(Object key) throws Exception {
+		String string_key = get_string_key(key);
 		CStateContext context = this;
 		while(context != null) {
-			if(context.local_values.containsKey(skey)) {
-				return context.local_values.get(skey);
-			}
-			else {
-				context = context.parent;
+			if(context.local_values.containsKey(string_key)) {
+				return context.local_values.get(string_key);
 			}
 		}
 		return null;
 	}
 	/**
 	 * set the value w.r.t. the key
-	 * @param key {AstNode|CirNode|SymNode|Any.toString()}
-	 * @param value
+	 * @param key {AstExpression|CirExpression|SymExpression|
+	 * 			   CirStatement|others are not allowed.}
+	 * @param value {Boolean|Character|Short|Integer|Long|Float
+	 * 				|Double|AstExpression|CirExpression|
+	 * 				|SymExpression|CirStatement|CirExecution
+	 * 				|CConstant}
 	 * @throws Exception
 	 */
 	public void put_value(Object key, Object value) throws Exception {
-		String skey;
-		if(key instanceof AstNode)
-			skey = ((AstNode) key).generate_code();
-		else if(key instanceof CirNode)
-			skey = ((CirNode) key).generate_code(false);
-		else if(key instanceof SymNode)
-			skey = ((SymNode) key).generate_code();
-		else
-			skey = key.toString();
-		this.local_values.put(skey, value);
+		String string_key = get_string_key(key);
+		SymExpression sym_value = SymFactory.parse(value);
+		this.local_values.put(string_key, sym_value);
 	}
 	
 	/* setters */
 	protected CStateContext new_child(Object context_key) throws Exception {
 		return new CStateContext(this, context_key);
 	}
+	
 }
