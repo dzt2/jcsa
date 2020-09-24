@@ -67,9 +67,9 @@ public class CStateContext {
 		else if(key instanceof AstExpression)
 			return ((AstExpression) key).generate_code();
 		else if(key instanceof CirExpression)
-			return ((CirExpression) key).generate_code(false);
+			return SymFactory.parse(key).generate_code();
 		else if(key instanceof SymExpression)
-			return ((SymExpression) key).generate_code();
+			return SymFactory.parse(key).generate_code();
 		else if(key instanceof CirStatement)
 			return SymFactory.sym_statement((CirStatement) key).generate_code();
 		else if(key instanceof CirExecution)

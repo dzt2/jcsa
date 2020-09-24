@@ -12,7 +12,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
-import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
@@ -163,91 +162,63 @@ public class CStateContexts {
 	
 	/* state update function */
 	/**
-	 * accumulate the local state in state node to the contexts scope
-	 * and update the values within the contextual scope.
+	 * accumulate the local state in the node to the contextual data scope,
+	 * including the value assigned to left-reference if complete is true.
 	 * @param node
+	 * @param complete 	true if the context is updated to the end of the node
+	 * 					or false if the context is updated before the node
 	 * @throws Exception
 	 */
-	public void accumulate(CStateNode node) throws Exception {
+	public void accumulate(CStateNode node, boolean complete) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node: null");
 		else {
-			/* update the state transition context */
+			/* 1. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
-			CirFunctionDefinition fun = statement.function_of();
+			CirFunctionDefinition def = statement.function_of();
 			if(statement instanceof CirBegStatement) {
-				this.push(fun);
+				this.push(def);
 			}
 			else if(statement instanceof CirEndStatement) {
-				this.pop(fun);
+				this.pop(def);
 			}
 			
-			/* accumulate the counter of the statement being executed */
-			SymExpression key = SymFactory.parse(node.get_execution());
-			if(!this.has(key)) {
-				this.get_root_context().put_value(key, Integer.valueOf(1));
-			}
-			int counter = ((SymConstant) this.get(key)).get_int(); counter++;
-			this.get_root_context().put_value(key, Integer.valueOf(counter));
-			
-			/* record the values hold by expressions */
+			/* 2. update the local state scope */
 			for(CStateUnit unit : node.get_units()) {
-				CirExpression expression = unit.get_expression();
-				SymExpression sym_expr = SymFactory.parse(expression);
-				if(unit.has_value()) {
-					Object value = unit.get_value();
-					if(value instanceof Boolean || value instanceof Character
-						|| value instanceof Short || value instanceof Integer
-						|| value instanceof Long || value instanceof Float
-						|| value instanceof Double) {
-						this.put(sym_expr, unit.get_value());
-					}
-				}
+				SymExpression source = unit.get_value();
+				SymExpression target = this.evaluate(source);
+				this.put(unit.get_expression(), target);
 			}
 			
-			/* update the value hold by left-reference */
-			if(statement instanceof CirAssignStatement) {
-				key = SymFactory.parse(((CirAssignStatement) statement).get_lvalue());
-				CStateUnit unit = node.get_unit(((CirAssignStatement) statement).get_rvalue());
-				if(unit.has_value()) {
-					Object value = unit.get_value();
-					if(value instanceof Boolean || value instanceof Character
-						|| value instanceof Short || value instanceof Integer
-						|| value instanceof Long || value instanceof Float
-						|| value instanceof Double) {
-						this.put(key, unit.get_value());
-					}
-				}
+			/* 3. update to the end of statement */
+			if(complete && statement instanceof CirAssignStatement) {
+				CirExpression lvalue = ((CirAssignStatement) statement).get_lvalue();
+				CirExpression rvalue = ((CirAssignStatement) statement).get_rvalue();
+				this.put(lvalue, this.evaluate(SymFactory.parse(rvalue))); 
 			}
 		}
 	}
 	/**
-	 * @param statement
-	 * @return generate the state node w.r.t. the statement in which the values
-	 * 		   hold by its expressions are evaluated using the current context.
-	 * 		   NOTE: the state in the contexts will not be updated by executing
-	 * 		   the given statement.
+	 * @param execution
+	 * @return the state node after executing the statement as given
 	 * @throws Exception
 	 */
 	public CStateNode generate(CirExecution execution) throws Exception {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution: null");
 		else {
-			/* 1. create the node w.r.t. the execution */
+			/* 1. declarations */
 			CStateNode node = new CStateNode(execution);
-			CirStatement statement = execution.get_statement();
-			Set<CirExpression> expressions = 
-						CirLocalizer.expressions_in(statement);
+			Set<CirExpression> expressions = CirLocalizer.
+					expressions_in(execution.get_statement());
 			
-			/* 2. update the value of expressions within the statement */
+			/* 2. perform symbolic evaluation to create node */
 			for(CirExpression expression : expressions) {
-				if(!CirLocalizer.is_left_reference(expression)) {
-					node.set_unit(expression, this.evaluate(
-								SymFactory.parse(execution)));
-				}
+				SymExpression sym_value = SymFactory.parse(expression);
+				node.set_unit(expression, this.evaluate(sym_value));
 			}
 			
-			/* 3. return the result state */	return node;
+			/* 3. return the state node */	return node;
 		}
 	}
 	

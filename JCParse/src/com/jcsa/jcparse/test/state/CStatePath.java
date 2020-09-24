@@ -104,7 +104,7 @@ public class CStatePath {
 	 * @param execution
 	 * @throws Exception
 	 */
-	public void append(CirExecution execution, Map<CirExpression, Object> values) throws Exception {
+	protected void append(CirExecution execution, Map<CirExpression, Object> values) throws Exception {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution: null");
 		else if(values == null)
