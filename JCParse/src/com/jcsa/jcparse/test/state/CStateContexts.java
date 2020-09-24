@@ -12,6 +12,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
+import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
@@ -196,6 +197,16 @@ public class CStateContexts {
 				CirExpression rvalue = ((CirAssignStatement) statement).get_rvalue();
 				this.put(lvalue, this.evaluate(SymFactory.parse(rvalue))); 
 			}
+			
+			/* 4. accumulate the statement as being executed */
+			SymExpression sexpr = SymFactory.sym_statement(statement);
+			SymExpression value = this.context.get_value(sexpr);
+			int counter = 0;
+			if(value != null) {
+				counter = ((SymConstant) value).get_int();
+			}
+			counter++;
+			this.context.put_value(sexpr, Integer.valueOf(counter));
 		}
 	}
 	/**

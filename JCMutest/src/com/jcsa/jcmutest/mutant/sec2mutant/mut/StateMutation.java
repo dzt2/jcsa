@@ -87,7 +87,7 @@ public class StateMutation {
 	 * set the final statement for checking faulty statement
 	 * @param execution
 	 */
-	protected void set_end_execution(CirExecution execution) {
+	public void set_end_execution(CirExecution execution) {
 		this.end_execution = execution;
 	}
 	/**
