@@ -9,6 +9,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.lang.sym.SymInvocate;
@@ -111,7 +112,8 @@ public class CStateContexts {
 	
 	/* state update function */
 	/**
-	 * update the state contexts when the statement in the node is executed
+	 * translate the state in contexts to another state by executing the
+	 * statement under the node.
 	 * @param node
 	 * @throws Exception
 	 */
@@ -134,17 +136,32 @@ public class CStateContexts {
 			if(!this.has(key)) {
 				this.get_root_context().put_value(key, Integer.valueOf(1));
 			}
-			Integer counter = ((SymConstant) this.get(key)).get_int();
-			counter = Integer.valueOf(counter.intValue() + 1);
-			this.get_root_context().put_value(key, counter);
+			int counter = ((SymConstant) this.get(key)).get_int(); counter++;
+			this.get_root_context().put_value(key, Integer.valueOf(counter));
 			
 			/* record the values hold by expressions */
 			for(CStateUnit unit : node.get_units()) {
 				CirExpression expression = unit.get_expression();
 				SymExpression sym_expr = SymFactory.parse(expression);
-				this.put(sym_expr, unit.get_value());
+				if(unit.has_value()) {
+					Object value = unit.get_value();
+					if(value instanceof Boolean || value instanceof Character
+						|| value instanceof Short || value instanceof Integer
+						|| value instanceof Long || value instanceof Float
+						|| value instanceof Double) {
+						this.put(sym_expr, unit.get_value());
+					}
+				}
 			}
 		}
+	}
+	/**
+	 * @param source
+	 * @return evaluate the input symbolic expression using the current context
+	 * @throws Exception
+	 */
+	public SymExpression evaluate(SymExpression source) throws Exception {
+		return SymEvaluator.evaluate_on(source, this);
 	}
 	
 }
