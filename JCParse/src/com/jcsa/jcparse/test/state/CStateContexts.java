@@ -27,7 +27,7 @@ public class CStateContexts {
 		this.context = new CStateContext(null);
 	}
 	
-	/* getters */
+	/* context operations */
 	/**
 	 * @return the root context in the scope
 	 */
@@ -64,22 +64,6 @@ public class CStateContexts {
 			throw new IllegalArgumentException("Unable to match");
 	}
 	/**
-	 * @param key
-	 * @return whether there is value w.r.t. the key in current context 
-	 * @throws Exception
-	 */
-	public boolean has(Object key) throws Exception {
-		return this.context.has_value(key);
-	}
-	/**
-	 * @param key {AstNode|CirNode|SymNode}
-	 * @return the value w.r.t. the key in the context
-	 * @throws Exception
-	 */
-	public SymExpression get(Object key) throws Exception {
-		return this.context.get_value(key);
-	}
-	/**
 	 * save the value w.r.t. the key in current context
 	 * @param key {AstNode|CirNode|SymNode}
 	 * @param value
@@ -100,6 +84,61 @@ public class CStateContexts {
 			throw new IllegalArgumentException("Invalid invocate: null");
 	}
 	/**
+	 * @return get the backup of the current contexts
+	 * @throws Exception
+	 */
+	public CStateContexts copy() throws Exception {
+		CStateContexts contexts = new CStateContexts();
+		
+		/* set invocation list and obtain the stack of contexts */
+		Stack<CStateContext> stack = new Stack<CStateContext>();
+		CStateContext old_context = this.context, new_context;
+		while(old_context != null) { 
+			stack.push(old_context); 
+			old_context = old_context.get_parent();
+		}
+		contexts.invocate_set.addAll(this.invocate_set);
+		
+		boolean first = true;
+		while(!stack.isEmpty()) {
+			/* generate new-context for copy */
+			old_context = stack.pop();
+			if(first) {
+				first = false;
+			}
+			else {
+				contexts.push(old_context.get_context_key());
+			}
+			new_context = contexts.context;
+			
+			/* clone the key-value pairs from old to new */
+			for(String key : old_context.local_values.keySet()) {
+				SymExpression value = old_context.local_values.get(key);
+				new_context.local_values.put(key, value);
+			}
+		}
+		
+		return contexts;
+	}
+	
+	/* data getters */
+	/**
+	 * @param key
+	 * @return whether there is value w.r.t. the key in current context 
+	 * @throws Exception
+	 */
+	public boolean has(Object key) throws Exception {
+		return this.context.has_value(key);
+	}
+	/**
+	 * @param key {AstNode|CirNode|SymNode}
+	 * @return the value w.r.t. the key in the context
+	 * @throws Exception
+	 */
+	public SymExpression get(Object key) throws Exception {
+		return this.context.get_value(key);
+	}
+	/**
 	 * @param source
 	 * @return symbolic result computed from the source using invocators
 	 * 		   or the source itself if it is impossible to interpret.
@@ -113,15 +152,23 @@ public class CStateContexts {
 		}
 		return source;
 	}
+	/**
+	 * @param source
+	 * @return evaluate the input symbolic expression using the current context
+	 * @throws Exception
+	 */
+	public SymExpression evaluate(SymExpression source) throws Exception {
+		return SymEvaluator.evaluate_on(source, this);
+	}
 	
 	/* state update function */
 	/**
-	 * translate the state in contexts to another state by executing the
-	 * statement under the node.
+	 * accumulate the local state in state node to the contexts scope
+	 * and update the values within the contextual scope.
 	 * @param node
 	 * @throws Exception
 	 */
-	public void update(CStateNode node) throws Exception {
+	public void accumulate(CStateNode node) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node: null");
 		else {
@@ -135,7 +182,7 @@ public class CStateContexts {
 				this.pop(fun);
 			}
 			
-			/* record the counter of the execution */
+			/* accumulate the counter of the statement being executed */
 			SymExpression key = SymFactory.parse(node.get_execution());
 			if(!this.has(key)) {
 				this.get_root_context().put_value(key, Integer.valueOf(1));
@@ -175,14 +222,6 @@ public class CStateContexts {
 		}
 	}
 	/**
-	 * @param source
-	 * @return evaluate the input symbolic expression using the current context
-	 * @throws Exception
-	 */
-	public SymExpression evaluate(SymExpression source) throws Exception {
-		return SymEvaluator.evaluate_on(source, this);
-	}
-	/**
 	 * @param statement
 	 * @return generate the state node w.r.t. the statement in which the values
 	 * 		   hold by its expressions are evaluated using the current context.
@@ -197,56 +236,19 @@ public class CStateContexts {
 			/* 1. create the node w.r.t. the execution */
 			CStateNode node = new CStateNode(execution);
 			CirStatement statement = execution.get_statement();
-			Set<CirExpression> expressions = CirLocalizer.expressions_in(statement);
+			Set<CirExpression> expressions = 
+						CirLocalizer.expressions_in(statement);
 			
 			/* 2. update the value of expressions within the statement */
 			for(CirExpression expression : expressions) {
 				if(!CirLocalizer.is_left_reference(expression)) {
-					SymExpression source = SymFactory.parse(expression);
-					SymExpression target = this.evaluate(source);
-					node.set_unit(expression, target);
+					node.set_unit(expression, this.evaluate(
+								SymFactory.parse(execution)));
 				}
 			}
 			
 			/* 3. return the result state */	return node;
 		}
-	}
-	/**
-	 * @return get the backup of the current contexts
-	 * @throws Exception
-	 */
-	public CStateContexts copy() throws Exception {
-		CStateContexts contexts = new CStateContexts();
-		
-		/* set invocation list and obtain the stack of contexts */
-		Stack<CStateContext> stack = new Stack<CStateContext>();
-		CStateContext old_context = this.context, new_context;
-		while(old_context != null) { 
-			stack.push(old_context); 
-			old_context = old_context.get_parent();
-		}
-		contexts.invocate_set.addAll(this.invocate_set);
-		
-		boolean first = true;
-		while(!stack.isEmpty()) {
-			/* generate new-context for copy */
-			old_context = stack.pop();
-			if(first) {
-				first = false;
-			}
-			else {
-				contexts.push(old_context.get_context_key());
-			}
-			new_context = contexts.context;
-			
-			/* clone the key-value pairs from old to new */
-			for(String key : old_context.local_values.keySet()) {
-				SymExpression value = old_context.local_values.get(key);
-				new_context.local_values.put(key, value);
-			}
-		}
-		
-		return contexts;
 	}
 	
 }

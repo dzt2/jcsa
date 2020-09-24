@@ -134,7 +134,7 @@ public class JCTestProjectResult {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			return CStatePath.get_path(template, ast_tree, cir_tree, instrumental_file);
+			return CStatePath.read_path(template, ast_tree, cir_tree, instrumental_file);
 		}
 		else {
 			return null;

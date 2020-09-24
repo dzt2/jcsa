@@ -44,7 +44,7 @@ public class CStatePath {
 	 * @param cir_tree
 	 * @throws Exception
 	 */
-	protected CStatePath(CirTree cir_tree) throws Exception {
+	public CStatePath(CirTree cir_tree) throws IllegalArgumentException {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else {
@@ -83,6 +83,8 @@ public class CStatePath {
 		else
 			return this.nodes.get(this.nodes.size() - 1);
 	}
+	
+	/* setters */
 	/**
 	 * append the node to the tail of the path
 	 * @param node
@@ -97,14 +99,12 @@ public class CStatePath {
 			this.nodes.add(node);
 		}
 	}
-	
-	/* setters */
 	/**
 	 * append the execution to the tail of the path
 	 * @param execution
 	 * @throws Exception
 	 */
-	protected void append(CirExecution execution, Map<CirExpression, Object> values) throws Exception {
+	public void append(CirExecution execution, Map<CirExpression, Object> values) throws Exception {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution: null");
 		else if(values == null)
@@ -130,7 +130,8 @@ public class CStatePath {
 			/* 3. complete the path from last-node to next-node */
 			if(!this.nodes.isEmpty()) {
 				CStateNode source_node = this.get_last_node();
-				List<CirExecution> path = complete_path_between(source_node, target_node);
+				List<CirExecution> path = 
+						complete_path_between(source_node, target_node);
 				for(CirExecution curr_execution : path) {
 					this.add_node(new CStateNode(curr_execution));
 				}
@@ -229,7 +230,7 @@ public class CStatePath {
 	 * @return the executional path generated from the instrumental file
 	 * @throws Exception
 	 */
-	public static CStatePath get_path(CRunTemplate template, AstTree ast_tree, 
+	public static CStatePath read_path(CRunTemplate template, AstTree ast_tree, 
 			CirTree cir_tree, File instrumental_file) throws Exception {
 		if(template == null)
 			throw new IllegalArgumentException("Invalid template: null");
