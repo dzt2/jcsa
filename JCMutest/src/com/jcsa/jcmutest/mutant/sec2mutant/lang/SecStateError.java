@@ -46,4 +46,8 @@ public abstract class SecStateError extends SecDescription {
 		return SecOptimizer.extend(this, contexts);
 	}
 	
+	public SecStateError optimize(CStateContexts contexts) throws Exception {
+		return SecOptimizer.optimize(this, contexts);
+	}
+	
 }

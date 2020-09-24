@@ -161,15 +161,15 @@ public class SecOptimizer {
 			SecExecutionConstraint source) throws Exception {
 		SymExpression condition = source.get_sym_condition();
 		condition = this.sym_eval(condition);
+		CirStatement statement = source.get_statement().get_statement();
 		if(condition instanceof SymConstant) {
-			CirStatement statement = source.get_statement().get_statement();
 			if(((SymConstant) condition).get_bool())
 				return SecFactory.condition_constraint(statement, Boolean.TRUE, true);
 			else
 				return SecFactory.condition_constraint(statement, Boolean.FALSE, true);
 		}
 		else {
-			return source;
+			return SecFactory.condition_constraint(statement, Boolean.FALSE, true);
 		}
 	}
 	/**
@@ -308,6 +308,316 @@ public class SecOptimizer {
 		else {
 			return SecFactory.disjunct_constraints(statement, new_constraints);
 		}
+	}
+	
+	/* state error optimization */
+	private SecStateError opt_statement_error(SecStatementError error, CStateContexts contexts) throws Exception {
+		return error;
+	}
+	private SecStateError opt_unique_error(SecUniqueError error, CStateContexts contexts) throws Exception {
+		return error;
+	}
+	private SecStateError opt_expression_error(SecExpressionError error, CStateContexts contexts) throws Exception {
+		/* original expression being mutated in testing */
+		SymExpression orig_expression = error.get_orig_expression().get_expression();
+		
+		/* set_expr(expression, expression) */
+		if(error instanceof SecSetExpressionError) {
+			SymExpression muta_expression = 
+					((SecSetExpressionError) error).get_muta_expression().get_expression();
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			if(muta_expression.equals(SymEvaluator.evaluate_on(orig_expression, contexts))) {
+				return SecFactory.none_error(error.get_statement().get_statement());
+			}
+			else {
+				return SecFactory.set_expression(error.get_statement().get_statement(), 
+						orig_expression.get_cir_source(), muta_expression);
+			}
+		}
+		/* add_expr(expr, oprt, expr) */
+		else if(error instanceof SecAddExpressionError) {
+			SymExpression loperand = error.get_orig_expression().get_expression();
+			SymExpression roperand = ((SecAddExpressionError) error).get_operand().get_expression();
+			roperand = SymEvaluator.evaluate_on(roperand, contexts);
+			COperator operator = ((SecAddExpressionError) error).get_operator().get_operator();
+			
+			SymExpression muta_expression;
+			switch(operator) {
+			case arith_div:
+			case arith_mod:
+			{
+				return SecFactory.trap_error(error.get_statement().get_statement());
+			}
+			case arith_add:
+				muta_expression = SymFactory.arith_add(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_sub:
+				muta_expression = SymFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_mul:
+				muta_expression = SymFactory.arith_mul(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_and:
+				muta_expression = SymFactory.bitws_and(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_or:
+				muta_expression = SymFactory.bitws_ior(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_xor:
+				muta_expression = SymFactory.bitws_xor(loperand.get_data_type(), loperand, roperand);
+				break;
+			case left_shift:
+				muta_expression = SymFactory.bitws_lsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case righ_shift:
+				muta_expression = SymFactory.bitws_rsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case logic_and:
+				muta_expression = SymFactory.logic_and(loperand, roperand);
+				break;
+			case logic_or:
+				muta_expression = SymFactory.logic_ior(loperand, roperand);
+				break;
+			default:
+				throw new IllegalArgumentException(operator.toString());
+			}
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			return this.opt_expression_error(SecFactory.set_expression(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else if(error instanceof SecInsExpressionError) {
+			SymExpression roperand = error.get_orig_expression().get_expression();
+			roperand = SymEvaluator.evaluate_on(roperand, contexts);
+			SymExpression loperand = ((SecInsExpressionError) error).get_operand().get_expression();
+			loperand = SymEvaluator.evaluate_on(loperand, contexts);
+			COperator operator = ((SecInsExpressionError) error).get_operator().get_operator();
+			
+			SymExpression muta_expression;
+			switch(operator) {
+			case arith_div:
+			case arith_mod:
+			{
+				return SecFactory.trap_error(error.get_statement().get_statement());
+			}
+			case arith_add:
+				muta_expression = SymFactory.arith_add(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_sub:
+				muta_expression = SymFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_mul:
+				muta_expression = SymFactory.arith_mul(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_and:
+				muta_expression = SymFactory.bitws_and(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_or:
+				muta_expression = SymFactory.bitws_ior(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_xor:
+				muta_expression = SymFactory.bitws_xor(loperand.get_data_type(), loperand, roperand);
+				break;
+			case left_shift:
+				muta_expression = SymFactory.bitws_lsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case righ_shift:
+				muta_expression = SymFactory.bitws_rsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case logic_and:
+				muta_expression = SymFactory.logic_and(loperand, roperand);
+				break;
+			case logic_or:
+				muta_expression = SymFactory.logic_ior(loperand, roperand);
+				break;
+			default:
+				throw new IllegalArgumentException(operator.toString());
+			}
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			return this.opt_expression_error(SecFactory.set_expression(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else if(error instanceof SecUnyExpressionError) {
+			SymExpression muta_expression;
+			COperator operator = ((SecUnyExpressionError) error).get_operator().get_operator();
+			switch(operator) {
+			case negative:
+				muta_expression = SymFactory.arith_neg(orig_expression.get_data_type(), orig_expression);
+				break;
+			case bit_not:
+				muta_expression = SymFactory.bitws_rsv(orig_expression.get_data_type(), orig_expression);
+				break;
+			case logic_not:
+				muta_expression = SymFactory.logic_not(orig_expression);
+				break;
+			default: throw new IllegalArgumentException(operator.toString());
+			}
+			return this.opt_expression_error(SecFactory.set_expression(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else {
+			throw new IllegalArgumentException(error.generate_code());
+		}
+	}
+	private SecStateError opt_reference_error(SecReferenceError error, CStateContexts contexts) throws Exception {
+		/* original expression being mutated in testing */
+		SymExpression orig_expression = error.get_orig_reference().get_expression();
+		
+		/* set_expr(expression, expression) */
+		if(error instanceof SecSetReferenceError) {
+			SymExpression muta_expression = 
+					((SecSetReferenceError) error).get_muta_expression().get_expression();
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			if(muta_expression.equals(SymEvaluator.evaluate_on(orig_expression, contexts))) {
+				return SecFactory.none_error(error.get_statement().get_statement());
+			}
+			else {
+				return SecFactory.set_reference(error.get_statement().get_statement(), 
+						orig_expression.get_cir_source(), muta_expression);
+			}
+		}
+		/* add_expr(expr, oprt, expr) */
+		else if(error instanceof SecAddReferenceError) {
+			SymExpression loperand = error.get_orig_reference().get_expression();
+			SymExpression roperand = ((SecAddReferenceError) error).get_operand().get_expression();
+			roperand = SymEvaluator.evaluate_on(roperand, contexts);
+			COperator operator = ((SecAddReferenceError) error).get_operator().get_operator();
+			
+			SymExpression muta_expression;
+			switch(operator) {
+			case arith_div:
+			case arith_mod:
+			{
+				return SecFactory.trap_error(error.get_statement().get_statement());
+			}
+			case arith_add:
+				muta_expression = SymFactory.arith_add(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_sub:
+				muta_expression = SymFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_mul:
+				muta_expression = SymFactory.arith_mul(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_and:
+				muta_expression = SymFactory.bitws_and(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_or:
+				muta_expression = SymFactory.bitws_ior(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_xor:
+				muta_expression = SymFactory.bitws_xor(loperand.get_data_type(), loperand, roperand);
+				break;
+			case left_shift:
+				muta_expression = SymFactory.bitws_lsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case righ_shift:
+				muta_expression = SymFactory.bitws_rsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case logic_and:
+				muta_expression = SymFactory.logic_and(loperand, roperand);
+				break;
+			case logic_or:
+				muta_expression = SymFactory.logic_ior(loperand, roperand);
+				break;
+			default:
+				throw new IllegalArgumentException(operator.toString());
+			}
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			return this.opt_reference_error(SecFactory.set_reference(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else if(error instanceof SecInsReferenceError) {
+			SymExpression roperand = error.get_orig_reference().get_expression();
+			roperand = SymEvaluator.evaluate_on(roperand, contexts);
+			SymExpression loperand = ((SecInsReferenceError) error).get_operand().get_expression();
+			loperand = SymEvaluator.evaluate_on(loperand, contexts);
+			COperator operator = ((SecInsReferenceError) error).get_operator().get_operator();
+			
+			SymExpression muta_expression;
+			switch(operator) {
+			case arith_div:
+			case arith_mod:
+			{
+				return SecFactory.trap_error(error.get_statement().get_statement());
+			}
+			case arith_add:
+				muta_expression = SymFactory.arith_add(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_sub:
+				muta_expression = SymFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+				break;
+			case arith_mul:
+				muta_expression = SymFactory.arith_mul(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_and:
+				muta_expression = SymFactory.bitws_and(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_or:
+				muta_expression = SymFactory.bitws_ior(loperand.get_data_type(), loperand, roperand);
+				break;
+			case bit_xor:
+				muta_expression = SymFactory.bitws_xor(loperand.get_data_type(), loperand, roperand);
+				break;
+			case left_shift:
+				muta_expression = SymFactory.bitws_lsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case righ_shift:
+				muta_expression = SymFactory.bitws_rsh(loperand.get_data_type(), loperand, roperand);
+				break;
+			case logic_and:
+				muta_expression = SymFactory.logic_and(loperand, roperand);
+				break;
+			case logic_or:
+				muta_expression = SymFactory.logic_ior(loperand, roperand);
+				break;
+			default:
+				throw new IllegalArgumentException(operator.toString());
+			}
+			muta_expression = SymEvaluator.evaluate_on(muta_expression, contexts);
+			return this.opt_reference_error(SecFactory.set_reference(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else if(error instanceof SecUnyReferenceError) {
+			SymExpression muta_expression;
+			COperator operator = ((SecUnyReferenceError) error).get_operator().get_operator();
+			switch(operator) {
+			case negative:
+				muta_expression = SymFactory.arith_neg(orig_expression.get_data_type(), orig_expression);
+				break;
+			case bit_not:
+				muta_expression = SymFactory.bitws_rsv(orig_expression.get_data_type(), orig_expression);
+				break;
+			case logic_not:
+				muta_expression = SymFactory.logic_not(orig_expression);
+				break;
+			default: throw new IllegalArgumentException(operator.toString());
+			}
+			return this.opt_reference_error(SecFactory.set_reference(
+					error.get_statement().get_statement(), 
+					orig_expression.get_cir_source(), muta_expression), contexts);
+		}
+		else {
+			throw new IllegalArgumentException(error.generate_code());
+		}
+	}
+	public static SecStateError optimize(SecStateError error, CStateContexts contexts) throws Exception {
+		if(error == null)
+			throw new IllegalArgumentException("Invalid error");
+		if(error instanceof SecStatementError)
+			return optimizer.opt_statement_error((SecStatementError) error, contexts);
+		else if(error instanceof SecExpressionError)
+			return optimizer.opt_expression_error((SecExpressionError) error, contexts);
+		else if(error instanceof SecReferenceError)
+			return optimizer.opt_reference_error((SecReferenceError) error, contexts);
+		else if(error instanceof SecUniqueError)
+			return optimizer.opt_unique_error((SecUniqueError) error, contexts);
+		else
+			throw new IllegalArgumentException(error.generate_code());
 	}
 	
 	/* state error extensions */

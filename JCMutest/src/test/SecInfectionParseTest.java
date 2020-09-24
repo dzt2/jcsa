@@ -116,6 +116,8 @@ public class SecInfectionParseTest {
 				writer.write("\tPair[" + k +"]:\n");
 				/* optimized generation method */
 				writer.write("\t\t" + pair.get_constraint().optimize(null).generate_code() + "\n");
+				writer.write("\t\t" + pair.get_init_error().generate_code() + "\n");
+				writer.write("\t\t" + pair.get_init_error().optimize(null).generate_code() + "\n");
 				writer.write("\t\t{\n");
 				for(SecStateError init_error : pair.get_init_error().extend(null)) {
 					writer.write("\t\t\t" + init_error.generate_code() + "\n");
