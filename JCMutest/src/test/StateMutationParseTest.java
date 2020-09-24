@@ -176,5 +176,4 @@ public class StateMutationParseTest {
 		writer.close(); writer.close();
 	}
 	
-	
 }
