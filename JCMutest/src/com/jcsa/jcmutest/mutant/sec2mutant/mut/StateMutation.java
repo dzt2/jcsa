@@ -6,6 +6,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.SecStateError;
 import com.jcsa.jcmutest.mutant.sec2mutant.lang.cons.SecConstraint;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
@@ -74,6 +75,10 @@ public class StateMutation {
 	 * @return the pairs of constraint-errors for infecting state
 	 */
 	public Iterable<StateErrorPair> get_pairs() { return this.pairs; }
+	/**
+	 * @return whether the pairs are of empty
+	 */
+	public boolean has_pairs() { return !this.pairs.isEmpty(); }
 	
 	/* setters */
 	/**
@@ -99,6 +104,24 @@ public class StateMutation {
 	protected void add_state_pair(SecConstraint constraint, 
 			SecStateError state_error) throws IllegalArgumentException {
 		this.pairs.add(new StateErrorPair(constraint, state_error));
+	}
+	
+	/* parser */
+	/**
+	 * @param cir_tree
+	 * @param mutant
+	 * @return parse the mutant into state-mutation
+	 * @throws Exception
+	 */
+	public static StateMutation parse(CirTree cir_tree, Mutant mutant) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		else if(mutant == null)
+			throw new IllegalArgumentException("Invalid mutation: null");
+		else {
+			return StateMutationParsers.parsers.get(
+					mutant.get_mutation().get_class()).parse(cir_tree, mutant);
+		}
 	}
 	
 }
