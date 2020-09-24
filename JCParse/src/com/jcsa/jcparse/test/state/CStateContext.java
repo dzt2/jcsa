@@ -25,7 +25,7 @@ public class CStateContext {
 	/** the key for pushing and pop the context **/
 	private Object context_key;
 	/** mapping from string code of expressions to their values **/
-	private Map<String, SymExpression> local_values;
+	protected Map<String, SymExpression> local_values;
 	
 	/* constructor */
 	/**

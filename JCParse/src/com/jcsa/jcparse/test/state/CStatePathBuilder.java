@@ -49,13 +49,12 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
-import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirArithExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirLogicExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
@@ -120,25 +119,6 @@ public class CStatePathBuilder {
 	private List<CirNode> get_cir_nodes(AstNode location, Class<?> type) throws Exception {
 		return this.path.get_cir_tree().get_cir_nodes(location, type);
 	}
-	/**
-	 * @param expression
-	 * @return whether the expression is a left-reference
-	 */ 
-	private boolean is_left_reference(CirExpression expression) {
-		CirNode parent = expression.get_parent();
-		if(parent instanceof CirAssignStatement) {
-			return ((CirAssignStatement) parent).get_lvalue() == expression;
-		}
-		else if(parent instanceof CirAddressExpression) {
-			return ((CirAddressExpression) parent).get_operand() == expression;
-		}
-		else if(parent instanceof CirFieldExpression) {
-			return ((CirFieldExpression) parent).get_body() == expression;
-		}
-		else {
-			return false;
-		}
-	}
 	
 	/* buffer operation methods */
 	/**
@@ -149,8 +129,8 @@ public class CStatePathBuilder {
 	private void put_expression(CirExpression expression, Object value) {
 		if(expression == null || expression.statement_of() == null)
 			return;
-		else if(!this.is_left_reference(expression))	/* ignore lvalue */
-			this.values.put(expression, value);
+		else if(!CirLocalizer.is_left_reference(expression))	
+			this.values.put(expression, value);	/* ignore lvalue in assignment */
 	}
 	/**
 	 * record the expressions w.r.t. the location and their values in buffer

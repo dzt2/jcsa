@@ -1,7 +1,9 @@
 package com.jcsa.jcparse.lang.irlang.impl;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
@@ -43,7 +45,9 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
@@ -540,6 +544,52 @@ public class CirLocalizer {
 	public CirExecution get_return_point(CirCallStatement statement) throws Exception {
 		CirExecution call_execution = this.get_execution(statement);
 		return call_execution.get_graph().get_execution(call_execution.get_id() + 1);
+	}
+	/**
+	 * collect all the expressions under the location
+	 * @param location
+	 * @param expressions
+	 */
+	private static void collect_expressions_in(CirNode location, Set<CirExpression> expressions) {
+		for(CirNode child : location.get_children()) {
+			collect_expressions_in(child, expressions);
+		}
+		if(location instanceof CirExpression) {
+			expressions.add((CirExpression) location);
+		}
+	}
+	/**
+	 * @param location
+	 * @return get the expressions in the location
+	 * @throws Exception
+	 */
+	public static Set<CirExpression> expressions_in(CirNode location) throws Exception {
+		if(location == null)
+			throw new IllegalArgumentException("Invalid location: null");
+		else {
+			Set<CirExpression> expressions = new HashSet<CirExpression>();
+			collect_expressions_in(location, expressions);
+			return expressions;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression is taken as a left-reference
+	 */
+	public static boolean is_left_reference(CirExpression expression) {
+		CirNode parent = expression.get_parent();
+		if(parent instanceof CirAssignStatement) {
+			return ((CirAssignStatement) parent).get_lvalue() == expression;
+		}
+		else if(parent instanceof CirAddressExpression) {
+			return ((CirAddressExpression) parent).get_operand() == expression;
+		}
+		else if(parent instanceof CirFieldExpression) {
+			return ((CirFieldExpression) parent).get_body() == expression;
+		}
+		else {
+			return false;
+		}
 	}
 	
 }

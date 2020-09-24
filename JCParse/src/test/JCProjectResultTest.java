@@ -129,7 +129,8 @@ public class JCProjectResultTest {
 					writer.write("Node[" + index + "]::" + node.get_execution() + "\n");
 					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
 					for(CStateUnit unit : node.get_units()) {
-						writer.write("\t--> " + unit.get_expression().generate_code(true) + " \tas " + unit.get_value() + "\n");
+						writer.write("\t--> " + unit.get_expression().generate_code(true) + 
+									 " \tas " + unit.get_value().generate_code() + "\n");
 					}
 					writer.write("\n");
 				}
@@ -137,26 +138,6 @@ public class JCProjectResultTest {
 				System.out.println("\t\tLoad path for Test#" + tid);
 			}
 			return path != null;
-			/*
-			List<InstrumentalNode> nodes = project.get_result_part().load_instrumental_nodes(
-					program.get_run_template(), program.get_ast_tree(), program.get_cir_tree(), input);
-			if(nodes != null) {
-				writer.write("Instrument Nodes of test[" + tid + "]:\n");
-				writer.write("Parameters: " + input.get_parameter() + "\n");
-				for(int index = 0; index < nodes.size(); index++) {
-					InstrumentalNode node = nodes.get(index);
-					writer.write("Node[" + index + "]::" + node.get_execution() + "\n");
-					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
-					for(InstrumentalUnit unit : node.get_units()) {
-						writer.write("\t--> " + unit.get_expression().generate_code(true) + " \tas " + unit.get_value() + "\n");
-					}
-					writer.write("\n");
-				}
-				writer.write("\n\n");
-				System.out.println("\t\tLoad path for Test#" + tid);
-			}
-			return nodes != null;
-			*/
 		}
 		catch(Exception ex) {
 			throw ex;

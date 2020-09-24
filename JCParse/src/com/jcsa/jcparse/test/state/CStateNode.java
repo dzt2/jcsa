@@ -6,6 +6,8 @@ import java.util.List;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 /**
  * Each node records the value hold by expressions after a statement being executed.
@@ -17,9 +19,9 @@ public class CStateNode {
 	
 	/* definitions */
 	/** the path in which the node is created **/
-	private CStatePath path;
+	protected CStatePath path;
 	/** the index of the state node in the path **/
-	private int index;
+	protected int index;
 	/** the execution of statement before which the state is recorded **/
 	private CirExecution execution;
 	/** the units record the value hold by the expressions after the
@@ -34,28 +36,22 @@ public class CStateNode {
 	 * @param execution
 	 * @throws Exception
 	 */
-	protected CStateNode(CStatePath path, int index, 
-			CirExecution execution) throws Exception {
-		if(path == null)
-			throw new IllegalArgumentException("Invalid path: null");
-		else if(execution == null)
+	protected CStateNode(CirExecution execution) throws Exception {
+		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution");
 		else {
-			this.path = path;
-			this.index = index;
+			this.path = null;
+			this.index = -1;
 			this.execution = execution;
 			this.units = new ArrayList<CStateUnit>();
 		}
 	}
-	/**
-	 * set the index of the node within the path
-	 * @param index
-	 */
-	protected void set_index(int index) {
-		this.index = index;
-	}
 	
 	/* getters */
+	/**
+	 * @return the node is isolated when it has not been added in the path
+	 */
+	public boolean is_isolated() { return this.path == null; }
 	/**
 	 * @return the path of state transition where the node is created
 	 */
@@ -110,6 +106,7 @@ public class CStateNode {
 		if(expression == null || expression.statement_of() != this.get_statement())
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		else {
+			/* 1. obtain the element w.r.t. expression */
 			CStateUnit element = null;
 			for(CStateUnit unit : this.units) {
 				if(unit.get_expression() == expression) {
@@ -118,19 +115,33 @@ public class CStateNode {
 				}
 			}
 			if(element == null) {
-				element = new CStateUnit(this, expression, value);
+				element = new CStateUnit(this, expression, null);
 				this.units.add(element);
 			}
-			else {
-				element.set_value(value);
+			
+			/* 2. generate the symbolic value of value */
+			SymExpression sym_value;
+			if(value instanceof Boolean || value instanceof Character
+				|| value instanceof Short || value instanceof Integer
+				|| value instanceof Long || value instanceof Float
+				|| value instanceof Double) {
+				sym_value = SymFactory.new_constant(value);
 			}
+			else {
+				sym_value = SymFactory.parse(expression);
+			}
+			
+			/* 3. record value */ element.set_value(sym_value);
 		}
 	}
 	/**
 	 * @return the node previous to this node or null;
 	 */
 	public CStateNode get_prev_node() {
-		if(index > 0) {
+		if(this.path == null) {
+			return null;
+		}
+		else if(index > 0) {
 			return this.path.get_node(this.index - 1);
 		}
 		else {
@@ -141,7 +152,10 @@ public class CStateNode {
 	 * @return the node next to this node or null
 	 */
 	public CStateNode get_next_node() {
-		if(index < this.path.size() - 1) {
+		if(this.path == null) {
+			return null;
+		}
+		else if(index < this.path.size() - 1) {
 			return this.path.get_node(this.index + 1);
 		}
 		else {

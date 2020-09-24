@@ -2,21 +2,18 @@ package com.jcsa.jcparse.test.state;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
-import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
-import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
+import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
@@ -86,6 +83,20 @@ public class CStatePath {
 		else
 			return this.nodes.get(this.nodes.size() - 1);
 	}
+	/**
+	 * append the node to the tail of the path
+	 * @param node
+	 * @throws Exception
+	 */
+	private void add_node(CStateNode node) throws Exception {
+		if(node == null || node.path != null)
+			throw new IllegalArgumentException("Invalid node: " + node);
+		else {
+			node.path = this;
+			node.index = this.nodes.size();
+			this.nodes.add(node);
+		}
+	}
 	
 	/* setters */
 	/**
@@ -100,14 +111,14 @@ public class CStatePath {
 			throw new IllegalArgumentException("Invalid values as null");
 		else {
 			/* 1. create the next node w.r.t. the execution in the path */
-			CStateNode target_node = new CStateNode(this, this.nodes.size(), execution);
+			CStateNode target_node = new CStateNode(execution);
 			CirStatement statement = execution.get_statement();
 			
 			/* 2. collect the expressions and update the values */
-			Set<CirExpression> expressions = new HashSet<CirExpression>();
-			this.collect_expressions_in(statement, expressions);
+			Set<CirExpression> expressions = CirLocalizer.expressions_in(statement);
 			for(CirExpression expression : expressions) {
-				if(values.containsKey(expression)) {
+				if(values.containsKey(expression) && 
+					!CirLocalizer.is_left_reference(expression)) {
 					Object value = values.get(expression);
 					if(value != null) {
 						target_node.set_unit(expression, value);
@@ -121,47 +132,12 @@ public class CStatePath {
 				CStateNode source_node = this.get_last_node();
 				List<CirExecution> path = complete_path_between(source_node, target_node);
 				for(CirExecution curr_execution : path) {
-					this.nodes.add(new CStateNode(this, this.nodes.size(), curr_execution));
+					this.add_node(new CStateNode(curr_execution));
 				}
 			}
 			
 			/* 4. append the node into the path */
-			target_node.set_index(this.nodes.size()); this.nodes.add(target_node);
-		}
-	}
-	/**
-	 * @param expression
-	 * @return whether the expression is a left-reference
-	 */ 
-	private boolean is_left_reference(CirExpression expression) {
-		CirNode parent = expression.get_parent();
-		if(parent instanceof CirAssignStatement) {
-			return ((CirAssignStatement) parent).get_lvalue() == expression;
-		}
-		else if(parent instanceof CirAddressExpression) {
-			return ((CirAddressExpression) parent).get_operand() == expression;
-		}
-		else if(parent instanceof CirFieldExpression) {
-			return ((CirFieldExpression) parent).get_body() == expression;
-		}
-		else {
-			return false;
-		}
-	}
-	/**
-	 * collect all the expressions under the location
-	 * @param location
-	 * @param expressions
-	 */
-	private void collect_expressions_in(CirNode location, Set<CirExpression> expressions) {
-		for(CirNode child : location.get_children()) {
-			this.collect_expressions_in(child, expressions);
-		}
-		if(location instanceof CirExpression) {
-			CirExpression expression = (CirExpression) location;
-			if(!this.is_left_reference(expression)) {
-				expressions.add(expression);
-			}
+			this.add_node(target_node);
 		}
 	}
 	/**

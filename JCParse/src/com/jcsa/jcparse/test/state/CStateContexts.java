@@ -1,8 +1,12 @@
 package com.jcsa.jcparse.test.state;
 
 import java.util.Set;
+import java.util.Stack;
 
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -153,6 +157,21 @@ public class CStateContexts {
 					}
 				}
 			}
+			
+			/* update the value hold by left-reference */
+			if(statement instanceof CirAssignStatement) {
+				key = SymFactory.parse(((CirAssignStatement) statement).get_lvalue());
+				CStateUnit unit = node.get_unit(((CirAssignStatement) statement).get_rvalue());
+				if(unit.has_value()) {
+					Object value = unit.get_value();
+					if(value instanceof Boolean || value instanceof Character
+						|| value instanceof Short || value instanceof Integer
+						|| value instanceof Long || value instanceof Float
+						|| value instanceof Double) {
+						this.put(key, unit.get_value());
+					}
+				}
+			}
 		}
 	}
 	/**
@@ -162,6 +181,72 @@ public class CStateContexts {
 	 */
 	public SymExpression evaluate(SymExpression source) throws Exception {
 		return SymEvaluator.evaluate_on(source, this);
+	}
+	/**
+	 * @param statement
+	 * @return generate the state node w.r.t. the statement in which the values
+	 * 		   hold by its expressions are evaluated using the current context.
+	 * 		   NOTE: the state in the contexts will not be updated by executing
+	 * 		   the given statement.
+	 * @throws Exception
+	 */
+	public CStateNode generate(CirExecution execution) throws Exception {
+		if(execution == null)
+			throw new IllegalArgumentException("Invalid execution: null");
+		else {
+			/* 1. create the node w.r.t. the execution */
+			CStateNode node = new CStateNode(execution);
+			CirStatement statement = execution.get_statement();
+			Set<CirExpression> expressions = CirLocalizer.expressions_in(statement);
+			
+			/* 2. update the value of expressions within the statement */
+			for(CirExpression expression : expressions) {
+				if(!CirLocalizer.is_left_reference(expression)) {
+					SymExpression source = SymFactory.parse(expression);
+					SymExpression target = this.evaluate(source);
+					node.set_unit(expression, target);
+				}
+			}
+			
+			/* 3. return the result state */	return node;
+		}
+	}
+	/**
+	 * @return get the backup of the current contexts
+	 * @throws Exception
+	 */
+	public CStateContexts copy() throws Exception {
+		CStateContexts contexts = new CStateContexts();
+		
+		/* set invocation list and obtain the stack of contexts */
+		Stack<CStateContext> stack = new Stack<CStateContext>();
+		CStateContext old_context = this.context, new_context;
+		while(old_context != null) { 
+			stack.push(old_context); 
+			old_context = old_context.get_parent();
+		}
+		contexts.invocate_set.addAll(this.invocate_set);
+		
+		boolean first = true;
+		while(!stack.isEmpty()) {
+			/* generate new-context for copy */
+			old_context = stack.pop();
+			if(first) {
+				first = false;
+			}
+			else {
+				contexts.push(old_context.get_context_key());
+			}
+			new_context = contexts.context;
+			
+			/* clone the key-value pairs from old to new */
+			for(String key : old_context.local_values.keySet()) {
+				SymExpression value = old_context.local_values.get(key);
+				new_context.local_values.put(key, value);
+			}
+		}
+		
+		return contexts;
 	}
 	
 }
