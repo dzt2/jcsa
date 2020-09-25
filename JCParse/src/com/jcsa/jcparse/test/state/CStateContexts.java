@@ -163,18 +163,27 @@ public class CStateContexts {
 	
 	/* state update function */
 	/**
-	 * accumulate the local state in the node to the contextual data scope,
-	 * including the value assigned to left-reference if complete is true.
-	 * @param node
-	 * @param complete 	true if the context is updated to the end of the node
-	 * 					or false if the context is updated before the node
+	 * accumulate the state on flow from node.prev_node --> node,
+	 * including assigning value of right-value in node.prev_node
+	 * and obtaining the input value of the node.
+	 * @param node for flow[node.prev_node --> node]
 	 * @throws Exception
 	 */
-	public void accumulate(CStateNode node, boolean complete) throws Exception {
+	public void accumulate(CStateNode node) throws Exception {
 		if(node == null)
-			throw new IllegalArgumentException("Invalid node: null");
+			throw new IllegalArgumentException("Invalid node");
 		else {
-			/* 1. update the scope at the border of function */
+			/* 1. update the left-reference in prev-assignment */
+			if(node.get_prev_node() != null) {
+				CirStatement prev_statement = node.get_prev_node().get_statement();
+				if(prev_statement instanceof CirAssignStatement) {
+					CirExpression lvalue = ((CirAssignStatement) prev_statement).get_lvalue();
+					CirExpression rvalue = ((CirAssignStatement) prev_statement).get_rvalue();
+					this.context.put_value(lvalue, this.evaluate(SymFactory.parse(rvalue)));
+				}
+			}
+			
+			/* 2. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
 			CirFunctionDefinition def = statement.function_of();
 			if(statement instanceof CirBegStatement) {
@@ -184,18 +193,11 @@ public class CStateContexts {
 				this.pop(def);
 			}
 			
-			/* 2. update the local state scope */
+			/* 3. update the local state in current scope */
 			for(CStateUnit unit : node.get_units()) {
 				SymExpression source = unit.get_value();
 				SymExpression target = this.evaluate(source);
 				this.put(unit.get_expression(), target);
-			}
-			
-			/* 3. update to the end of statement */
-			if(complete && statement instanceof CirAssignStatement) {
-				CirExpression lvalue = ((CirAssignStatement) statement).get_lvalue();
-				CirExpression rvalue = ((CirAssignStatement) statement).get_rvalue();
-				this.put(lvalue, this.evaluate(SymFactory.parse(rvalue))); 
 			}
 			
 			/* 4. accumulate the statement as being executed */
