@@ -1,7 +1,8 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.mutant.cir2mutant.error;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
@@ -62,6 +63,36 @@ public class CirConstraint {
 	public SymExpression get_condition(CStateContexts contexts) throws Exception {
 		return SymEvaluator.evaluate_on(this.condition, contexts);
 	}
+	/**
+	 * @return code that describes the constraint 
+	 * @throws Exception
+	 */
+	protected String generate_code() throws Exception {
+		CirExecution execution = statement.get_tree().
+				get_localizer().get_execution(statement);
+		return execution + "::(" + this.condition.generate_code() + ")";
+	}
+	@Override
+	public String toString() {
+		try {
+			return this.generate_code();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == this)
+			return true;
+		else if(obj instanceof CirConstraint)
+			return obj.toString().equals(this.toString());
+		else
+			return false;
+	}
 	
 	/* creator */
 	/**
@@ -72,7 +103,7 @@ public class CirConstraint {
 	 * 		   at the point of the specified statement.
 	 * @throws Exception
 	 */
-	public static CirConstraint new_constraint(CirStatement statement,
+	protected static CirConstraint new_constraint(CirStatement statement,
 				Object expression, boolean value) throws Exception {
 		SymExpression condition = SymFactory.parse(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());

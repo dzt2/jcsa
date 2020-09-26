@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.error;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
@@ -51,7 +51,9 @@ public abstract class CirStateError {
 	@Override
 	public String toString() {
 		try {
-			return this.generate_code();
+			CirExecution execution = this.statement.get_tree().
+					get_localizer().get_execution(statement);
+			return this.type + "::" + execution + "(" + this.generate_code() + ")";
 		} catch (Exception e) {
 			return null;
 		}

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.mutant.cir2mutant.error;
 
 /**
  * The type of state error defined on C-intermediate representation.
