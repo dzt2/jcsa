@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 /**
  * The mutation in C-intermediate representation code defines a constraint-error pair

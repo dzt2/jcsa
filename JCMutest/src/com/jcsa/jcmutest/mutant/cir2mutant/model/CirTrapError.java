@@ -1,5 +1,6 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**

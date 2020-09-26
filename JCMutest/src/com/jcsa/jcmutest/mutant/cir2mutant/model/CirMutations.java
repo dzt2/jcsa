@@ -1,10 +1,11 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
@@ -90,6 +91,15 @@ public class CirMutations {
 	
 	/* creators */
 	/**
+	 * verify whether the location belongs to the program under test
+	 * @param location
+	 * @throws Exception
+	 */
+	private void verify_location(CirNode location) throws Exception {
+		if(this.cir_tree != location.get_tree())
+			throw new RuntimeException("Unable to match the program");
+	}
+	/**
 	 * @param statement
 	 * @param expression
 	 * @param value
@@ -98,6 +108,7 @@ public class CirMutations {
 	 */
 	public CirConstraint expression_constraint(CirStatement statement,
 			Object expression, boolean value) throws Exception {
+		this.verify_location(statement);
 		SymExpression condition = SymFactory.parse(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
@@ -131,6 +142,7 @@ public class CirMutations {
 	 */
 	public CirConstraint statement_constraint(CirStatement statement, 
 			int minimal_times, int maximal_times) throws Exception {
+		this.verify_location(statement);
 		SymExpression stmt_id = SymFactory.sym_statement(statement);
 		SymExpression lcondition = SymFactory.
 				greater_eq(stmt_id, Integer.valueOf(minimal_times));
@@ -145,6 +157,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public CirStateError trap_error(CirStatement statement) throws Exception {
+		this.verify_location(statement);
 		return this.get_unique_state_error(new CirTrapError(statement));
 	}
 	/**
@@ -155,6 +168,7 @@ public class CirMutations {
 	 */
 	public CirStateError flow_error(CirExecutionFlow orig_flow, 
 			CirExecutionFlow muta_flow) throws Exception {
+		this.verify_location(orig_flow.get_source().get_statement());
 		return this.get_unique_state_error(new CirFlowError(orig_flow, muta_flow));
 	}
 	/**
@@ -165,6 +179,7 @@ public class CirMutations {
 	 */
 	public CirStateError expr_error(CirExpression expression,
 			SymExpression muta_value) throws Exception {
+		this.verify_location(expression);
 		return this.get_unique_state_error(new 
 				CirExpressionError(expression, muta_value));
 	}
@@ -176,6 +191,7 @@ public class CirMutations {
 	 */
 	public CirStateError refer_error(CirReferExpression reference,
 			SymExpression muta_value) throws Exception {
+		this.verify_location(reference);
 		return this.get_unique_state_error(new 
 				CirReferenceError(reference, muta_value));
 	}
