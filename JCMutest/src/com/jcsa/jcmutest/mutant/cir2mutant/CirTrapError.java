@@ -1,10 +1,11 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.error;
+package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
- * trap_error(statement) requires an exception being thrown at the statement
- * which forces the program being terminated.
+ * <code>trap_on(statement)</code>: an exception is thrown at the statement, and
+ * the program is forcedly terminated because the exception causes an unexpected 
+ * behavior of program under test.<br>
  * 
  * @author yukimula
  *
