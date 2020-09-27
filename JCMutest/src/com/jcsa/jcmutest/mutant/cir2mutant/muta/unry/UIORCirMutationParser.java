@@ -20,8 +20,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return (CirStatement) this.
-				get_cir_node(cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
+		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
 	
 	private void prev_inc_to_prev_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 

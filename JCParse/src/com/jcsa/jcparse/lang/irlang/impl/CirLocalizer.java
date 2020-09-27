@@ -382,7 +382,7 @@ public class CirLocalizer {
 			return this.beg_statement(parent);
 		}
 		else {
-			return null;
+			return statement;
 		}
 	}
 	/**
@@ -444,7 +444,7 @@ public class CirLocalizer {
 						|| location instanceof AstBitwiseAssignExpression
 						|| location instanceof AstShiftAssignExpression) {
 					return (CirStatement) this.get_cir_nodes(
-							location, CirBinAssignStatement.class).get(0);
+							location, CirAssignStatement.class).get(0);
 				}
 				else {
 					return range.get_end_statement();
@@ -524,7 +524,7 @@ public class CirLocalizer {
 			return this.end_statement(parent);
 		}
 		else {
-			return null;
+			return statement;
 		}
 	}
 	/**

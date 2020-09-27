@@ -3,8 +3,10 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -100,7 +102,9 @@ public class CirMutationParserTest {
 			int index = code.indexOf('\n');
 			code = code.substring(0, index).strip();
 		}
-		writer.write("Location[" + line + "]: " + location.generate_code() + "\n");
+		String ast_class = location.getClass().getSimpleName();
+		ast_class = ast_class.substring(3, ast_class.length() - 4).strip();
+		writer.write("Location[" + line + "]: " + location.generate_code() + " {" + ast_class + "}\n");
 		if(mutation.has_parameter())
 			writer.write("Parameter: " + mutation.get_parameter().toString() + "\n");
 		if(mutant.has_cir_mutations()) {
@@ -125,14 +129,23 @@ public class CirMutationParserTest {
 		MutantSpace mspace = code_file.get_mutant_space();
 		FileWriter writer = new FileWriter(new File(result_dir + cfile.getName() + ".txt"));
 		FileWriter writer2 = new FileWriter(new File(result_dir + cfile.getName() + ".err"));
-		int error = 0, total = 0, empty = 0;
+		FileWriter writer3 = new FileWriter(new File(result_dir + cfile.getName() + ".emp"));
+		int error = 0, total = 0; 
+		Map<MutaClass, Integer> empty_counter = new HashMap<MutaClass, Integer>();
 		for(Mutant mutant : mspace.get_mutants()) {
 			total++;
 			if(mutant.has_cir_mutations()) {
-				output_mutation(mutant, writer);
+				
 				if(!mutant.get_cir_mutations().iterator().hasNext()) {
-					// System.out.println("\t--> " + mutant.get_mutation());
-					empty++;
+					if(!empty_counter.containsKey(mutant.get_mutation().get_class())) {
+						empty_counter.put(mutant.get_mutation().get_class(), 0);
+					}
+					int counter = empty_counter.get(mutant.get_mutation().get_class());
+					empty_counter.put(mutant.get_mutation().get_class(), counter + 1);
+					output_mutation(mutant, writer3);
+				}
+				else {
+					output_mutation(mutant, writer);
 				}
 			}
 			else {
@@ -140,8 +153,14 @@ public class CirMutationParserTest {
 				error++;
 			}
 		}
-		System.out.println("Error-Rate: " + error + "/" + total + " {" + empty + "}");
-		writer.close(); writer.close();
+		System.out.println("Error-Rate: " + error + "/" + total);
+		System.out.print("\t{ ");
+		for(MutaClass mclass : empty_counter.keySet()) {
+			Integer counter = empty_counter.get(mclass);
+			System.out.print(mclass + ": " + counter + "; ");
+		}
+		System.out.println("}");
+		writer.close(); writer2.close(); writer3.close(); 
 	}
 	
 }
