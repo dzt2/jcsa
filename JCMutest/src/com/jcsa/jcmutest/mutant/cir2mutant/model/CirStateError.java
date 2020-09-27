@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.test.state.CStateContexts;
+
 
 /**
  * The state error in C-intermediate representation code defines the difference made
@@ -96,21 +96,6 @@ public abstract class CirStateError {
 			return this.toString().equals(obj.toString());
 		else
 			return false;
-	}
-	/**
-	 * @param contexts
-	 * @return the state error optimized from the contextual information
-	 * 		   or null if the state error is invalid.
-	 * @throws Exception
-	 */
-	public abstract CirStateError optimize(CStateContexts contexts) throws Exception;
-	/**
-	 * @return the state error optimized without contextual information
-	 * 		   or null if the state error is invalid.
-	 * @throws Exception
-	 */
-	public CirStateError optimize() throws Exception {
-		return this.optimize(null);
 	}
 	
 }

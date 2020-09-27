@@ -15,6 +15,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * It provides the interfaces to manage the mutations created in C-intermediate 
@@ -231,6 +232,23 @@ public class CirMutations {
 	 */
 	public Iterable<CirMutation> parse(AstMutation mutation) throws Exception {
 		return CirMutationParsers.parse(this, mutation);
+	}
+	/**
+	 * @param mutation
+	 * @return optimize the mutation by contextual information
+	 * @throws Exception
+	 */
+	public CirMutation optimize(CirMutation mutation, 
+			CStateContexts contexts) throws Exception {
+		if(mutation == null)
+			throw new IllegalArgumentException("Invalid mutation: null");
+		else {
+			mutation = mutation.optimize(contexts);
+			if(mutation != null) {
+				mutation = this.get_unique_mutation(mutation);
+			}
+			return mutation;
+		}
 	}
 	
 }
