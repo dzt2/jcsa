@@ -60,7 +60,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	private CirConstraint get_unique_constraint(CirConstraint constraint) throws Exception {
-		String key = constraint.generate_code();
+		String key = constraint.toString();
 		if(!this.constraints.containsKey(key)) {
 			this.constraints.put(key, constraint);
 		}
@@ -72,8 +72,11 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	private CirStateError get_unique_state_error(CirStateError state_error) throws Exception {
-		String key = state_error.generate_code();
-		if(!this.state_errors.containsKey(key)) {
+		String key = state_error.toString();
+		if(key == null) {
+			throw new RuntimeException("Unable to get key: " + state_error.generate_code());
+		}
+		else if(!this.state_errors.containsKey(key)) {
 			this.state_errors.put(key, state_error);
 		}
 		return this.state_errors.get(key);
@@ -84,7 +87,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	private CirMutation get_unique_mutation(CirMutation mutation) throws Exception {
-		String key = mutation.generate_code();
+		String key = mutation.toString();
 		if(!this.mutations.containsKey(key)) {
 			this.mutations.put(key, mutation);
 		}
@@ -196,6 +199,18 @@ public class CirMutations {
 		this.verify_location(reference);
 		return this.get_unique_state_error(new 
 				CirReferenceError(reference, muta_value));
+	}
+	/**
+	 * @param reference
+	 * @param muta_value
+	 * @return stat_error(reference, muta_value)
+	 * @throws Exception
+	 */
+	public CirStateError state_error(CirReferExpression reference,
+			SymExpression muta_value) throws Exception {
+		this.verify_location(reference);
+		return this.get_unique_state_error(new 
+				CirStateValueError(reference, muta_value));
 	}
 	/**
 	 * @param constraint

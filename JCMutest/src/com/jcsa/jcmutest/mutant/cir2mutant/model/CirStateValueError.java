@@ -5,33 +5,25 @@ import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 
-/**
- * <code>set_refer(reference, orig_val, muta_val)</code>: the reference used
- * in specified statement is replaced as another reference such as variables
- * being replaced during reference mutation.<br>
- * 
- * @author yukimula
- *
- */
-public class CirReferenceError extends CirStateError {
+public class CirStateValueError extends CirStateError {
 	
-	/* definitions */
 	/** the original value hold by the expression in testing **/
 	private SymExpression orig_val;
 	/** the mutation value that will replace the original one **/
 	private SymExpression muta_val;
 	/**
 	 * @param reference the reference of which state will be replaced
-	 * @param muta_val mutation variable that will replace the original one
+	 * @param muta_val mutation value that will replace the original state
 	 * @throws Exception
 	 */
-	protected CirReferenceError(CirReferExpression reference, SymExpression muta_val) throws Exception {
-		super(CirErrorType.refr_error, reference.statement_of());
-		if(muta_val == null)
+	protected CirStateValueError(CirReferExpression reference, 
+			SymExpression muta_value) throws Exception {
+		super(CirErrorType.stat_error, reference.statement_of());
+		if(muta_value == null)
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		else {
 			this.orig_val = SymFactory.parse(reference);
-			this.muta_val = muta_val;
+			this.muta_val = muta_value;
 		}
 	}
 	

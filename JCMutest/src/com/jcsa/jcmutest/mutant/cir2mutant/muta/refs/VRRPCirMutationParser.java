@@ -10,8 +10,13 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
 import com.jcsa.jcparse.lang.ctype.CEnumerator;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 import com.jcsa.jcparse.lang.scope.CInstance;
@@ -64,6 +69,22 @@ public class VRRPCirMutationParser extends CirMutationParser {
 		throw new IllegalArgumentException("Not in scope definition.");
 	}
 	
+	private boolean is_reference_context(CirExpression expression) throws Exception {
+		CirNode parent = expression.get_parent();
+		if(parent instanceof CirAssignStatement) {
+			return ((CirAssignStatement) parent).get_lvalue() == expression;
+		}
+		else if(parent instanceof CirFieldExpression) {
+			return ((CirFieldExpression) parent).get_body() == expression;
+		}
+		else if(parent instanceof CirAddressExpression) {
+			return ((CirAddressExpression) parent).get_operand() == expression;
+		}
+		else {
+			return false;
+		}
+	}
+	
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
@@ -72,7 +93,14 @@ public class VRRPCirMutationParser extends CirMutationParser {
 		
 		SymExpression condition = SymFactory.not_equals(expression, muta_value);
 		CirConstraint constraint = mutations.expression_constraint(statement, condition, true);
-		CirStateError state_error = mutations.expr_error(expression, muta_value);
+		
+		CirStateError state_error;
+		if(this.is_reference_context(expression)) {
+			state_error = mutations.refer_error((CirReferExpression) expression, muta_value);
+		}
+		else {
+			state_error = mutations.expr_error(expression, muta_value);
+		}
 		infections.put(state_error, constraint);
 	}
 	

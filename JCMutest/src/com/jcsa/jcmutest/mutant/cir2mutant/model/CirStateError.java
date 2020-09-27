@@ -20,8 +20,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  * 	3. <code>set_expr(expression, orig_val, muta_val)</code>: the value hold by that
  * 	   specified expression is replaced as the muta_val, which shall be orig_val.<br>
  * 	
- * 	4. <code>set_refer(reference, orig_val, muta_val)</code>: the value hold by that
- * 	   reference is replaced with the muta_val, of which value shall be orig_val.<br>
+ * 	4. <code>set_refer(reference, orig_val, muta_val)</code>: the reference used
+ * 	   in specified statement is replaced as another reference such as variables
+ * 	   being replaced during reference mutation.<br>
+ * 	
+ * 	5. <code>set_state(reference, orig_val, muta_val)</code>: the value hold by the
+ * 	   reference at the point is changed as specified one.<br>
  * 	
  * @author yukimula
  *

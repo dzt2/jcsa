@@ -32,26 +32,26 @@ public class UIOICirMutationParser extends CirMutationParser {
 		case insert_post_inc:
 		{
 			muta_expression = SymFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
-			infections.put(mutations.refer_error(reference, muta_expression), constraint);
+			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_post_dec:
 		{
 			muta_expression = SymFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
-			infections.put(mutations.refer_error(reference, muta_expression), constraint);
+			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_prev_inc:
 		{
 			muta_expression = SymFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
-			infections.put(mutations.refer_error(reference, muta_expression), constraint);
+			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			infections.put(mutations.expr_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_prev_dec:
 		{
 			muta_expression = SymFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
-			infections.put(mutations.refer_error(reference, muta_expression), constraint);
+			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			infections.put(mutations.expr_error(reference, muta_expression), constraint);
 			break;
 		}
