@@ -260,7 +260,7 @@ public class CirErrorPropagator {
 			SymExpression muta_operand) throws Exception {
 		SymExpression muta_value;
 		if(source_location == target_location.get_operand(0)) {
-			muta_value = SymFactory.arith_add(target_location.get_data_type(), 
+			muta_value = SymFactory.arith_sub(target_location.get_data_type(), 
 					muta_operand, target_location.get_operand(1));
 		}
 		else {
@@ -272,6 +272,50 @@ public class CirErrorPropagator {
 		CirStateError state_error = this.
 				cir_mutations.expr_error(target_location, muta_value);
 		this.propagations.put(state_error, constraint);
+	}
+	private void propagate_arith_mul(CirExpression source_location,
+			CirComputeExpression target_location, 
+			SymExpression muta_operand) throws Exception {
+		SymExpression muta_value; CirConstraint constraint;
+		if(source_location == target_location.get_operand(0)) {
+			constraint = this.cir_mutations.expression_constraint(statement, SymFactory.
+					not_equals(target_location.get_operand(1), Integer.valueOf(0)), true);
+			muta_value = SymFactory.arith_mul(target_location.get_data_type(), 
+					muta_operand, target_location.get_operand(1));
+		}
+		else {
+			constraint = this.cir_mutations.expression_constraint(statement, SymFactory.
+					not_equals(target_location.get_operand(0), Integer.valueOf(0)), true);
+			muta_value = SymFactory.arith_mul(target_location.get_data_type(), 
+					muta_operand, target_location.get_operand(0));
+		}
+		CirStateError state_error = this.
+				cir_mutations.expr_error(target_location, muta_value);
+		this.propagations.put(state_error, constraint);
+	}
+	private void propagate_arith_div(CirExpression source_location,
+			CirComputeExpression target_location, 
+			SymExpression muta_operand) throws Exception {
+		SymExpression muta_value; CirConstraint constraint; CirStateError state_error;
+		if(source_location == target_location.get_operand(0)) {
+			muta_value = SymFactory.arith_div(target_location.get_data_type(), 
+					muta_operand, target_location.get_operand(1));
+			constraint = this.cir_mutations.
+					expression_constraint(statement, Boolean.TRUE, true);
+			state_error = this.
+					cir_mutations.expr_error(target_location, muta_value);
+			this.propagations.put(state_error, constraint);
+		}
+		else {
+			constraint = this.cir_mutations.expression_constraint(statement, 
+					SymFactory.not_equals(target_location.get_data_type(), 
+							target_location.get_operand(0)), true);
+			muta_value = SymFactory.arith_div(target_location.get_data_type(), 
+					target_location.get_operand(1), muta_operand);
+			state_error = this.
+					cir_mutations.expr_error(target_location, muta_value);
+			this.propagations.put(state_error, constraint);
+		}
 	}
 	
 	
