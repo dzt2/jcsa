@@ -18,7 +18,8 @@ public class TTRPCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return this.get_end_statement(cir_tree, mutation.get_location());
+		return (CirStatement) this.get_cir_node(
+				cir_tree, mutation.get_location(), CirIfStatement.class);
 	}
 
 	@Override

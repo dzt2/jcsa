@@ -1,10 +1,10 @@
 package com.jcsa.jcmutest.mutant;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.backups.CirMutationParsers;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.CirMutation;
 
 /**
  * It provides the interface to manage the access to the mutation data
@@ -43,9 +43,19 @@ public class Mutant {
 			this.mutation = mutation;
 			this.versions = new Mutant[] { null, null, null };
 			try {
-				this.cir_mutations = CirMutationParsers.parse(space.get_cir_tree(), mutation);
+				this.cir_mutations = new ArrayList<CirMutation>();
+				Iterable<CirMutation> buffer = this.space.generate_cir_mutation(mutation);
+				for(CirMutation cir_mutation : buffer) this.cir_mutations.add(cir_mutation);
+			}
+			catch(UnsupportedOperationException ex) {
+				this.cir_mutations = null;
 			}
 			catch(Exception ex) {
+				/*
+				ex.printStackTrace();
+				this.cir_mutations = null;
+				*/
+				// ex.printStackTrace();
 				this.cir_mutations = null;
 			}
 		}
@@ -96,6 +106,6 @@ public class Mutant {
 	/**
 	 * @return the set of cir-mutations parsed from the AST location
 	 */
-	public List<CirMutation> get_cir_mutations() { return this.cir_mutations; }
+	public Iterable<CirMutation> get_cir_mutations() { return this.cir_mutations; }
 	
 }

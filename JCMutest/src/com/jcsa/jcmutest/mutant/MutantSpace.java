@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -27,6 +30,8 @@ public class MutantSpace {
 	private List<Mutant> mutants;
 	/** mapping from the mutation to its mutant **/
 	private Map<String, Mutant> index;
+	/** the library to construct cir-mutations **/
+	private CirMutations cir_mutations;
 	/**
 	 * create an empty space for mutants seeded in AST
 	 * @param ast_tree
@@ -42,6 +47,7 @@ public class MutantSpace {
 			this.cir_tree = cir_tree;
 			this.mutants = new ArrayList<Mutant>();
 			this.index = new HashMap<String, Mutant>();
+			this.cir_mutations = new CirMutations(cir_tree);
 		}
 	}
 	
@@ -207,6 +213,14 @@ public class MutantSpace {
 		}
 		
 		/* 4. the number of generated ones */	return mutants.size();
+	}
+	/**
+	 * @param mutation
+	 * @return the cir-mutation generated from the source
+	 * @throws Exception
+	 */
+	protected Iterable<CirMutation> generate_cir_mutation(AstMutation mutation) throws Exception {
+		return CirMutationParsers.parse(cir_mutations, mutation);
 	}
 	
 }

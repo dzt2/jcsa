@@ -105,7 +105,24 @@ public abstract class CirMutationParser {
 	 * @throws Exception
 	 */
 	protected CirStatement get_beg_statement(CirTree cir_tree, AstNode location) throws Exception {
-		return cir_tree.get_localizer().beg_statement(location);
+		CirStatement statement = cir_tree.get_localizer().beg_statement(location);
+		if(statement == null) {
+			try {
+				CirExpression expression = this.get_cir_expression(cir_tree, location);
+				if(expression != null) {
+					return expression.statement_of();
+				}
+				else {
+					return this.get_cir_range(cir_tree, location).get_beg_statement();
+				}
+			}
+			catch(Exception ex) {
+				return this.get_cir_range(cir_tree, location).get_beg_statement();
+			}
+		}
+		else {
+			return statement;
+		}
 	}
 	/**
 	 * @param cir_tree
@@ -114,11 +131,24 @@ public abstract class CirMutationParser {
 	 * @throws Exception
 	 */
 	protected CirStatement get_end_statement(CirTree cir_tree, AstNode location) throws Exception {
-		CirExpression expression = this.get_cir_expression(cir_tree, location);
-		if(expression != null && expression.statement_of() != null)
-			return expression.statement_of();
-		else
-			return cir_tree.get_localizer().end_statement(location);
+		CirStatement statement = cir_tree.get_localizer().end_statement(location);
+		if(statement == null) {
+			try {
+				CirExpression expression = this.get_cir_expression(cir_tree, location);
+				if(expression != null) {
+					return expression.statement_of();
+				}
+				else {
+					return this.get_cir_range(cir_tree, location).get_end_statement();
+				}
+			}
+			catch(Exception ex) {
+				return this.get_cir_range(cir_tree, location).get_end_statement();
+			}
+		}
+		else {
+			return statement;
+		}
 	}
 	/**
 	 * @param cir_tree
@@ -152,7 +182,5 @@ public abstract class CirMutationParser {
 				get_cir_nodes(cir_tree, location, cir_type);
 		return cir_nodes.get(cir_nodes.size() - 1);
 	}
-	
-	
 	
 }
