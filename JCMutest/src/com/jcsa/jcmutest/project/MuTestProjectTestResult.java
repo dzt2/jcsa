@@ -96,8 +96,18 @@ public class MuTestProjectTestResult {
 		else if(rfile.exists()) {
 			BufferedReader reader = new BufferedReader(new FileReader(rfile));
 			MuTestProjectTestResult result = new MuTestProjectTestResult(mutant, number_of_tests);
-			parse(result.exec_set, reader.readLine().strip());
-			parse(result.kill_set, reader.readLine().strip());
+			String line = reader.readLine();
+			if(line != null)
+				parse(result.exec_set, line.strip());
+			else {
+				reader.close(); return null;
+			}
+			line = reader.readLine();
+			if(line != null)
+				parse(result.kill_set, line.strip());
+			else {
+				reader.close(); return null;
+			}
 			reader.close();
 			return result;
 		}

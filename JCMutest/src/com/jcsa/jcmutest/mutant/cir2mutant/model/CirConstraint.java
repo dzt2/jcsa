@@ -2,7 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**
  * The constraint defines a condition that needs to be satisfied at some point
@@ -77,6 +79,23 @@ public class CirConstraint {
 			return this.toString().equals(obj.toString());
 		else
 			return false;
+	}
+	/**
+	 * @param contexts
+	 * @return the constraint optimized from the given contexts
+	 * @throws Exception
+	 */
+	public CirConstraint optimize(CStateContexts contexts) throws Exception {
+		SymExpression condition = 
+				SymEvaluator.evaluate_on(this.condition, contexts);
+		return new CirConstraint(this.get_statement(), condition);
+	}
+	/**
+	 * @return the constraint optimized without contextual information
+	 * @throws Exception
+	 */
+	public CirConstraint optimize() throws Exception {
+		return this.optimize(null);
 	}
 	
 }

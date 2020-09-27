@@ -2,8 +2,10 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 public class CirStateValueError extends CirStateError {
 	
@@ -46,6 +48,22 @@ public class CirStateValueError extends CirStateError {
 	@Override
 	protected String generate_code() throws Exception {
 		return this.orig_val.generate_code() + ", " + this.muta_val.generate_code();
+	}
+
+	
+	@Override
+	public CirStateError optimize(CStateContexts contexts) throws Exception {
+		SymExpression original_value = 
+				SymEvaluator.evaluate_on(this.orig_val, contexts);
+		SymExpression mutation_value = 
+				SymEvaluator.evaluate_on(this.muta_val, contexts);
+		
+		if(original_value.equals(mutation_value)) {
+			return null;
+		}
+		else {
+			return new CirStateValueError(this.get_reference(), mutation_value);
+		}
 	}
 	
 }
