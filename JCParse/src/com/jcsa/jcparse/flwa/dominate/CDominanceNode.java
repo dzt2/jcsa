@@ -1,5 +1,6 @@
 package com.jcsa.jcparse.flwa.dominate;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -136,6 +137,45 @@ public class CDominanceNode {
 			}
 			this.ou.add(node); node.in.add(this);
 		}
+	}
+	
+	/* path generator */
+	/**
+	 * @return the sequence of execution flows that lead to this node from others
+	 * 		   which include only the true_flow, fals_flow, call_flow, retr_flow.
+	 * @throws Exception
+	 */
+	public List<CirExecutionFlow> get_dominance_path() throws Exception {
+		List<CirExecutionFlow> edges = new ArrayList<CirExecutionFlow>();
+		CDominanceNode node = this;
+		
+		while(node != null) {
+			if(node.is_flow()) {
+				CirExecutionFlow flow = node.get_flow();
+				switch(flow.get_type()) {
+				case true_flow:
+				case fals_flow:
+				case call_flow:
+				case retr_flow:	edges.add(flow);
+				default: 		break;
+				}
+			}
+			
+			if(node.get_in_degree() > 0) {
+				node = node.get_in_node(0);
+			}
+			else {
+				node = null;
+			}
+		}
+		
+		for(int k = 0; k < edges.size() / 2; k++) {
+			CirExecutionFlow x = edges.get(k);
+			CirExecutionFlow y = edges.get(edges.size() - 1);
+			edges.set(k, y); edges.set(edges.size() - k - 1, x);
+		}
+		
+		return edges;
 	}
 	
 }

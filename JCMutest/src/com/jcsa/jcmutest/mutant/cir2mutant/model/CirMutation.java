@@ -1,5 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+
 /**
  * The mutation in C-intermediate representation code defines a constraint-error pair
  * in which the constraint is required to be satisfied during testing such that the
@@ -11,6 +13,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 public class CirMutation {
 	
 	/* definitions */
+	/** the statement where the mutation is expected to be reached **/
+	private CirStatement statement;
 	/** the constraint that needs to be satisfied for killing mutation **/
 	private CirConstraint constraint;
 	/** the state error that is expected to occur for killing mutation **/
@@ -20,19 +24,26 @@ public class CirMutation {
 	 * @param state_error that is expected to occur for killing mutation
 	 * @throws Exception
 	 */
-	protected CirMutation(CirConstraint constraint, 
+	protected CirMutation(CirStatement statement, CirConstraint constraint, 
 			CirStateError state_error) throws Exception {
-		if(constraint == null)
+		if(statement == null)
+			throw new IllegalArgumentException("Invalid statement: null");
+		else if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
 		else {
+			this.statement = statement;
 			this.constraint = constraint;
 			this.state_error = state_error;
 		}
 	}
 	
 	/* getters */
+	/**
+	 * @return create the statement where the mutation is reached
+	 */
+	public CirStatement get_statement() { return this.statement; }
 	/**
 	 * @return the constraint that needs to be satisfied for killing mutation
 	 */

@@ -65,7 +65,7 @@ public abstract class CirMutationParser {
 						get_cir_tree(), statement, mutation, infections);
 				for(CirStateError state_error : infections.keySet()) {
 					CirConstraint constraint = infections.get(state_error);
-					cir_mutations.add(mutations.new_mutation(constraint, state_error));
+					cir_mutations.add(mutations.new_mutation(statement, constraint, state_error));
 				}
 			}
 			return cir_mutations;

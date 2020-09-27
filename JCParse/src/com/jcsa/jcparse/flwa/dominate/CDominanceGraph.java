@@ -15,16 +15,24 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 public class CDominanceGraph {
 	
 	/* constructor */
+	private CirInstanceGraph instance_graph;
 	/** the mapping from the instance to the node that represents it **/
 	private Map<CirInstance, CDominanceNode> nodes;
 	/**
 	 * create an empty graph to represents the dominance relationship in C program.
 	 */
-	private CDominanceGraph() {
+	private CDominanceGraph(CirInstanceGraph instance_graph) {
+		this.instance_graph = instance_graph;
 		this.nodes = new HashMap<CirInstance, CDominanceNode>();
 	}
 	
 	/* getters */
+	/**
+	 * @return the executional instance graph
+	 */
+	public CirInstanceGraph get_instance_graph() {
+		return this.instance_graph;
+	}
 	/**
 	 * get the number of nodes in the graph
 	 * @return
@@ -82,7 +90,7 @@ public class CDominanceGraph {
 	 * @throws Exception
 	 */
 	public static CDominanceGraph forward_dominance_graph(CirInstanceGraph input) throws Exception {
-		CDominanceGraph output = new CDominanceGraph();
+		CDominanceGraph output = new CDominanceGraph(input);
 		CDominanceBuilder.builder.build(input, true, output);
 		return output;
 	}
@@ -93,7 +101,7 @@ public class CDominanceGraph {
 	 * @throws Exception
 	 */
 	public static CDominanceGraph backward_dominance_graph(CirInstanceGraph input) throws Exception {
-		CDominanceGraph output = new CDominanceGraph();
+		CDominanceGraph output = new CDominanceGraph(input);
 		CDominanceBuilder.builder.build(input, false, output);
 		return output;
 	}

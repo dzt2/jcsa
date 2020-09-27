@@ -96,6 +96,10 @@ public class MutantSpace {
 			return this.index.get(mutation.toString());
 		}
 	}
+	/**
+	 * @return the library to preserve cir-mutations being created
+	 */
+	public CirMutations get_cir_mutations() { return this.cir_mutations; }
 	
 	/* setters */
 	/**

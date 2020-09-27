@@ -12,15 +12,23 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.CirPathConstraints;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
+import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
 public class CirMutationParserTest {
@@ -91,7 +99,15 @@ public class CirMutationParserTest {
 		return project;
 		
 	}
-	private static void output_mutation(Mutant mutant, FileWriter writer) throws Exception {
+	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
+		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
+		return CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1);
+	}
+	private static CDominanceGraph generate(CirInstanceGraph graph) throws Exception {
+		return CDominanceGraph.forward_dominance_graph(graph);
+	}
+	private static void output_mutation(Mutant mutant, FileWriter writer, CDominanceGraph dominance_graph) throws Exception {
 		AstMutation mutation = mutant.get_mutation();
 		writer.write("Mutant#" + mutant.get_id() + "::" + 
 				mutation.get_class() + "::" + mutation.get_operator() + "\n");
@@ -116,6 +132,14 @@ public class CirMutationParserTest {
 				writer.write("\tStateError: ");
 				writer.write(cir_mutation.get_state_error().toString());
 				writer.write("\n");
+				
+				Set<CirConstraint> path_constraints = CirPathConstraints.common_path_constraints(
+						dominance_graph, cir_mutation.get_statement(), mutant.get_space().get_cir_mutations());
+				writer.write("\tPath: { ");
+				for(CirConstraint constraint : path_constraints) {
+					writer.write(constraint.toString() + "; ");
+				}
+				writer.write("}\n");
 			}
 			writer.write("+------------------------------------------------+\n");
 		}
@@ -126,6 +150,8 @@ public class CirMutationParserTest {
 		System.out.println("Create project: " + cfile.getName());
 		
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_file(cfile);
+		CDominanceGraph dominance_graph = generate(translate(code_file.get_cir_tree()));
+		
 		MutantSpace mspace = code_file.get_mutant_space();
 		FileWriter writer = new FileWriter(new File(result_dir + cfile.getName() + ".txt"));
 		FileWriter writer2 = new FileWriter(new File(result_dir + cfile.getName() + ".err"));
@@ -142,14 +168,14 @@ public class CirMutationParserTest {
 					}
 					int counter = empty_counter.get(mutant.get_mutation().get_class());
 					empty_counter.put(mutant.get_mutation().get_class(), counter + 1);
-					output_mutation(mutant, writer3);
+					output_mutation(mutant, writer3, dominance_graph);
 				}
 				else {
-					output_mutation(mutant, writer);
+					output_mutation(mutant, writer, dominance_graph);
 				}
 			}
 			else {
-				output_mutation(mutant, writer2);
+				output_mutation(mutant, writer2, dominance_graph);
 				error++;
 			}
 		}
