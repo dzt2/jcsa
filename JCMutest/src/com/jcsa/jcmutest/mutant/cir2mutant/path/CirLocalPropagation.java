@@ -174,8 +174,7 @@ public class CirLocalPropagation {
 					
 					for(CirStateError target_error : propagations.keySet()) {
 						CirConstraint constraint = propagations.get(target_error);
-						CirMutation new_mutation = cir_mutations.new_mutation(
-								state_error.get_statement(), constraint, target_error);
+						CirMutation new_mutation = cir_mutations.new_mutation(constraint, target_error);
 						new_mutation = cir_mutations.optimize(new_mutation, contexts);
 						if(new_mutation != null) { results.add(new_mutation); }
 					}

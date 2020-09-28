@@ -20,8 +20,6 @@ import com.jcsa.jcparse.test.state.CStateContexts;
 public class CirMutation {
 	
 	/* definitions */
-	/** the statement where the mutation is expected to be reached **/
-	private CirStatement statement;
 	/** the constraint that needs to be satisfied for killing mutation **/
 	private CirConstraint constraint;
 	/** the state error that is expected to occur for killing mutation **/
@@ -31,16 +29,13 @@ public class CirMutation {
 	 * @param state_error that is expected to occur for killing mutation
 	 * @throws Exception
 	 */
-	protected CirMutation(CirStatement statement, CirConstraint constraint, 
+	protected CirMutation(CirConstraint constraint, 
 			CirStateError state_error) throws Exception {
-		if(statement == null)
-			throw new IllegalArgumentException("Invalid statement: null");
-		else if(constraint == null)
+		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
 		else {
-			this.statement = statement;
 			this.constraint = constraint;
 			this.state_error = state_error;
 		}
@@ -50,7 +45,7 @@ public class CirMutation {
 	/**
 	 * @return create the statement where the mutation is reached
 	 */
-	public CirStatement get_statement() { return this.statement; }
+	public CirStatement get_statement() { return this.state_error.get_statement(); }
 	/**
 	 * @return the constraint that needs to be satisfied for killing mutation
 	 */
@@ -170,7 +165,7 @@ public class CirMutation {
 		if(constraint != null) {
 			CirStateError state_error = this.optimize(this.state_error, contexts);
 			if(state_error != null) {
-				return new CirMutation(this.statement, constraint, state_error);
+				return new CirMutation(constraint, state_error);
 			}
 			else {
 				return null;

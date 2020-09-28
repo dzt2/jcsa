@@ -250,9 +250,9 @@ public class CirMutations {
 	 * @return the mutation as constraint-error pair in testing
 	 * @throws Exception
 	 */
-	public CirMutation new_mutation(CirStatement statement, CirConstraint constraint, 
+	public CirMutation new_mutation(CirConstraint constraint, 
 			CirStateError state_error) throws Exception {
-		return this.get_unique_mutation(new CirMutation(statement, constraint, state_error));
+		return this.get_unique_mutation(new CirMutation(constraint, state_error));
 	}
 	
 	/* parsers */
