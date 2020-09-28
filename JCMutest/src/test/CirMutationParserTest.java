@@ -14,6 +14,7 @@ import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.CirPathConstraints;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -124,26 +125,29 @@ public class CirMutationParserTest {
 		if(mutation.has_parameter())
 			writer.write("Parameter: " + mutation.get_parameter().toString() + "\n");
 		if(mutant.has_cir_mutations()) {
+			CirMutations cir_mutations = mutant.get_space().get_cir_mutations();
 			writer.write("+------------------------------------------------+\n");
+			int index = 0;
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-				writer.write("\tConstraint: ");
-				writer.write(cir_mutation.get_constraint().toString());
-				writer.write("\n");
-				writer.write("\tStateError: ");
-				writer.write(cir_mutation.get_state_error().toString());
-				writer.write("\n");
+				writer.write("\tCir-Mutation[" + (index++) + "]: " + cir_mutation + "\n");
 				
 				Set<CirConstraint> path_constraints = CirPathConstraints.common_path_constraints(
 						dominance_graph, cir_mutation.get_statement(), mutant.get_space().get_cir_mutations());
-				writer.write("\tPath: { ");
+				writer.write("\t\tPath: { ");
 				for(CirConstraint constraint : path_constraints) {
 					writer.write(constraint.toString() + "; ");
 				}
 				writer.write("}\n");
+				
+				Iterable<CirMutation> next_mutations = cir_mutations.propagate_in(cir_mutation, null);
+				for(CirMutation next_mutation : next_mutations) {
+					writer.write("\t\t" + next_mutation.toString() + "\n");
+				}
 			}
 			writer.write("+------------------------------------------------+\n");
 		}
 		writer.write("\n");
+		// System.out.println("\t\t--> " + mutant.get_mutation().toString());
 	}
 	protected static void testing(File cfile) throws Exception {
 		MuTestProject project = get_project(cfile);

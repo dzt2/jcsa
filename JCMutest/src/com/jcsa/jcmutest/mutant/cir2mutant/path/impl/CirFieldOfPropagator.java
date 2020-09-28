@@ -41,7 +41,7 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 				state_error = cir_mutations.expr_error(target, muta_value);
 			}
 			else if(error instanceof CirReferenceError) {
-				muta_operand = ((CirExpressionError) error).get_mutation_value();
+				muta_operand = ((CirReferenceError) error).get_mutation_value();
 				muta_value = SymFactory.field_expression(target.get_data_type(), 
 						muta_operand, target.get_field().get_name());
 				state_error = cir_mutations.refer_error(target, muta_value);

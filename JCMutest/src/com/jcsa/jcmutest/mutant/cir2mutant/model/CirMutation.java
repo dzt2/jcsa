@@ -59,21 +59,9 @@ public class CirMutation {
 	 * @return the state error that is expected to occur for killing mutation
 	 */
 	public CirStateError get_state_error() { return this.state_error; }
-	/**
-	 * @return generate the code that describes the unique mutation
-	 * @throws Exception
-	 */
-	protected String generate_code() throws Exception {
-		return this.constraint.get_condition() + " ==> " + this.state_error.generate_code();
-	}
 	@Override
 	public String toString() { 
-		try {
-			return this.generate_code();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		return this.constraint.toString() + " ==> " + this.state_error.toString();
 	}
 	@Override
 	public int hashCode() {
@@ -143,8 +131,8 @@ public class CirMutation {
 		}
 		else if(state_error instanceof CirReferenceError) {
 			CirReferExpression reference = ((CirReferenceError) state_error).get_reference();
-			SymExpression orig_val = ((CirExpressionError) state_error).get_original_value();
-			SymExpression muta_val = ((CirExpressionError) state_error).get_mutation_value();
+			SymExpression orig_val = ((CirReferenceError) state_error).get_original_value();
+			SymExpression muta_val = ((CirReferenceError) state_error).get_mutation_value();
 			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
 			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
 			if(orig_val.equals(muta_val)) {
@@ -156,8 +144,8 @@ public class CirMutation {
 		}
 		else if(state_error instanceof CirStateValueError) {
 			CirReferExpression reference = ((CirStateValueError) state_error).get_reference();
-			SymExpression orig_val = ((CirExpressionError) state_error).get_original_value();
-			SymExpression muta_val = ((CirExpressionError) state_error).get_mutation_value();
+			SymExpression orig_val = ((CirStateValueError) state_error).get_original_value();
+			SymExpression muta_val = ((CirStateValueError) state_error).get_mutation_value();
 			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
 			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
 			if(orig_val.equals(muta_val)) {

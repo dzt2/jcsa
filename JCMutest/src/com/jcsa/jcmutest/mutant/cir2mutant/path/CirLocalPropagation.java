@@ -164,13 +164,13 @@ public class CirLocalPropagation {
 					else if(target_location instanceof CirAssignStatement) {
 						propagator = propagators.get(COperator.assign);
 					}
-					else {
-						throw new IllegalArgumentException(target_location.generate_code(true));
-					}
+					else { /* ignore the propagation */ propagator = null; }
 					
 					propagations.clear();
-					propagator.propagate(cir_mutations, 
-							state_error, source_location, target_location, propagations);
+					if(propagator != null) {
+						propagator.propagate(cir_mutations, 
+								state_error, source_location, target_location, propagations);
+					}
 					
 					for(CirStateError target_error : propagations.keySet()) {
 						CirConstraint constraint = propagations.get(target_error);
@@ -193,10 +193,10 @@ public class CirLocalPropagation {
 	 * 		   within the range of one statement.
 	 * @throws Exception
 	 */
-	public static Set<CirMutation> propagate_within(CirMutations cir_mutations,
+	public static Iterable<CirMutation> propagate_within(CirMutations cir_mutations,
 			CirMutation mutation, CStateContexts contexts) throws Exception {
 		Queue<CirMutation> queue = new LinkedList<CirMutation>();
-		HashSet<CirMutation> results = new HashSet<CirMutation>();
+		Set<CirMutation> results = new HashSet<CirMutation>();
 		
 		queue.add(mutation);
 		while(!queue.isEmpty()) {

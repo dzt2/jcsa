@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.CirLocalPropagation;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
@@ -279,6 +280,15 @@ public class CirMutations {
 			}
 			return mutation;
 		}
+	}
+	/**
+	 * @param mutation
+	 * @param contexts
+	 * @return
+	 * @throws Exception
+	 */
+	public Iterable<CirMutation> propagate_in(CirMutation mutation, CStateContexts contexts) throws Exception {
+		return CirLocalPropagation.propagate_within(this, mutation, contexts);
 	}
 	
 }
