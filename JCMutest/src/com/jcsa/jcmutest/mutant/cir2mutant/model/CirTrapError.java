@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**
@@ -21,6 +22,11 @@ public class CirTrapError extends CirStateError {
 	@Override
 	protected String generate_code() throws Exception {
 		return "";
+	}
+
+	@Override
+	public boolean is_valid(CStateContexts contexts) throws Exception {
+		return true;
 	}
 	
 }

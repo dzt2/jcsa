@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**
@@ -97,5 +98,10 @@ public abstract class CirStateError {
 		else
 			return false;
 	}
+	/**
+	 * @return whether the error is valid under the contexts as given
+	 * @throws Exception
+	 */
+	public abstract boolean is_valid(CStateContexts contexts) throws Exception;
 	
 }

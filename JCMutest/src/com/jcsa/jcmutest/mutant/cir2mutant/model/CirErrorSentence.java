@@ -392,6 +392,12 @@ public class CirErrorSentence {
 		sentence.words.add(CirErrorWord.trap_err);
 		return sentence;
 	}
+	/**
+	 * @param error
+	 * @param contexts
+	 * @return sentence to describe the error under contexts or null if it is invalid
+	 * @throws Exception
+	 */
 	public static CirErrorSentence parse(CirStateError error, CStateContexts contexts) throws Exception {
 		if(error == null)
 			return null;

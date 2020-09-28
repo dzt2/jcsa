@@ -2,7 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**
@@ -58,6 +60,12 @@ public class CirReferenceError extends CirStateError {
 		return this.reference.generate_code(false) + ", " + 
 				this.orig_val.generate_code() + ", " + 
 				this.muta_val.generate_code();
+	}
+	@Override
+	public boolean is_valid(CStateContexts contexts) throws Exception {
+		SymExpression orig_value = SymEvaluator.evaluate_on(this.orig_val, contexts);
+		SymExpression muta_value = SymEvaluator.evaluate_on(this.muta_val, contexts);
+		return !orig_value.equals(muta_value);
 	}
 	
 }

@@ -2,9 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.test.state.CStateContexts;
@@ -83,11 +81,6 @@ public class CirMutation {
 				CStateContexts contexts) throws Exception {
 		SymExpression condition = SymEvaluator.
 				evaluate_on(constraint.get_condition(), contexts);
-		if(condition instanceof SymConstant) {
-			if(!((SymConstant) condition).get_bool()) {
-				return null;
-			}
-		}
 		return new CirConstraint(constraint.get_statement(), condition);
 	}
 	/**
@@ -102,14 +95,7 @@ public class CirMutation {
 			return state_error;
 		}
 		else if(state_error instanceof CirFlowError) {
-			CirExecutionFlow orig_flow = ((CirFlowError) state_error).get_original_flow();
-			CirExecutionFlow muta_flow = ((CirFlowError) state_error).get_mutation_flow();
-			if(orig_flow.get_target() == muta_flow.get_target()) {
-				return null;
-			}
-			else {
-				return state_error;
-			}
+			return state_error;
 		}
 		else if(state_error instanceof CirExpressionError) {
 			CirExpression expression = ((CirExpressionError) state_error).get_expression();
@@ -117,12 +103,7 @@ public class CirMutation {
 			SymExpression muta_val = ((CirExpressionError) state_error).get_mutation_value();
 			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
 			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			if(orig_val.equals(muta_val)) {
-				return null;
-			}
-			else {
-				return new CirExpressionError(expression, orig_val, muta_val);
-			}
+			return new CirExpressionError(expression, orig_val, muta_val);
 		}
 		else if(state_error instanceof CirReferenceError) {
 			CirReferExpression reference = ((CirReferenceError) state_error).get_reference();
@@ -130,12 +111,7 @@ public class CirMutation {
 			SymExpression muta_val = ((CirReferenceError) state_error).get_mutation_value();
 			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
 			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			if(orig_val.equals(muta_val)) {
-				return null;
-			}
-			else {
-				return new CirReferenceError(reference, orig_val, muta_val);
-			}
+			return new CirReferenceError(reference, orig_val, muta_val);
 		}
 		else if(state_error instanceof CirStateValueError) {
 			CirReferExpression reference = ((CirStateValueError) state_error).get_reference();
@@ -143,12 +119,7 @@ public class CirMutation {
 			SymExpression muta_val = ((CirStateValueError) state_error).get_mutation_value();
 			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
 			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			if(orig_val.equals(muta_val)) {
-				return null;
-			}
-			else {
-				return new CirStateValueError(reference, orig_val, muta_val);
-			}
+			return new CirStateValueError(reference, orig_val, muta_val);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid state_error: " + state_error);
@@ -162,18 +133,17 @@ public class CirMutation {
 	 */
 	protected CirMutation optimize(CStateContexts contexts) throws Exception {
 		CirConstraint constraint = this.optimize(this.constraint, contexts);
-		if(constraint != null) {
-			CirStateError state_error = this.optimize(this.state_error, contexts);
-			if(state_error != null) {
-				return new CirMutation(constraint, state_error);
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
+		CirStateError state_error = this.optimize(this.state_error, contexts);
+		return new CirMutation(constraint, state_error);
+	}
+	/**
+	 * @param contexts
+	 * @return whether the mutation is valid under the contexts
+	 * @throws Exception
+	 */
+	public boolean is_valid(CStateContexts contexts) throws Exception {
+		return this.constraint.satisfiable(contexts)
+				&& this.state_error.is_valid(contexts);
 	}
 	
 }

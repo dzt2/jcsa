@@ -121,7 +121,9 @@ public class CirLocalPropagation {
 			List<CirMutation> results = new ArrayList<CirMutation>();
 			CirStateError state_error = mutation.get_state_error();
 			
-			if(cir_mutations.optimize(mutation, contexts) != null) {
+			if(mutation.is_valid(contexts)) {
+				mutation = cir_mutations.optimize(mutation, contexts);
+				
 				CirNode source_location, target_location;
 				if(state_error instanceof CirExpressionError) {
 					source_location = ((CirExpressionError) state_error).get_expression();
@@ -177,7 +179,7 @@ public class CirLocalPropagation {
 						CirConstraint constraint = propagations.get(target_error);
 						CirMutation new_mutation = cir_mutations.new_mutation(constraint, target_error);
 						new_mutation = cir_mutations.optimize(new_mutation, contexts);
-						if(new_mutation != null) { results.add(new_mutation); }
+						if(new_mutation.is_valid(contexts)) { results.add(new_mutation); }
 					}
 				}
 			}
@@ -210,7 +212,7 @@ public class CirLocalPropagation {
 			
 			/* record the results */
 			mutation = cir_mutations.optimize(mutation, contexts);
-			if(mutation != null) results.add(mutation);
+			if(mutation.is_valid(contexts)) results.add(mutation);
 		}
 		
 		return results;

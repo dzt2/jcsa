@@ -131,10 +131,19 @@ public class CirMutationGenerateTest {
 			int index = 0;
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
 				writer.write("\tCir-Mutation[" + (index++) + "]: " + cir_mutation + "\n");
-				writer.write("\tCir-Errors: " + CirErrorSentence.parse(cir_mutation.get_state_error(), null) + "\n");
+				CirErrorSentence cir_sentence = CirErrorSentence.parse(cir_mutation.get_state_error(), null);
+				if(cir_sentence != null)
+					writer.write("\tCir-Errors: " + cir_sentence + "\n");
+				else
+					writer.write("\tCir-Errors: No Error in This Location\n");
 				for(CirMutation err_mutation : errors.get(cir_mutation)) {
 					writer.write("\t\tGeneration: " + err_mutation.toString() + "\n");
-					writer.write("\t\t==> Words: " + CirErrorSentence.parse(err_mutation.get_state_error(), null) + "\n");
+					
+					CirErrorSentence err_sentence = CirErrorSentence.parse(err_mutation.get_state_error(), null);
+					if(err_sentence != null)
+						writer.write("\t\t==> Error_Words: " + err_sentence + "\n");
+					else
+						writer.write("\t\t==> Error_Words: No Error in This Location\n");
 				}
 			}
 			writer.write("+------------------------------------------------+\n");
