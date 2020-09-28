@@ -1,5 +1,6 @@
 package com.jcsa.jcparse.test.state;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
@@ -25,6 +26,7 @@ public class CStateContexts {
 	private Set<SymInvocate> invocate_set;
 	public CStateContexts() {
 		this.context = new CStateContext(null);
+		this.invocate_set = new HashSet<SymInvocate>();
 	}
 	
 	/* context operations */
@@ -179,9 +181,12 @@ public class CStateContexts {
 				if(prev_statement instanceof CirAssignStatement) {
 					CirExpression lvalue = ((CirAssignStatement) prev_statement).get_lvalue();
 					CirExpression rvalue = ((CirAssignStatement) prev_statement).get_rvalue();
-					this.context.put_value(lvalue, this.evaluate(SymFactory.parse(rvalue)));
+					if(node.get_prev_node().has_unit(rvalue)) {
+						this.context.put_value(lvalue, node.get_prev_node().get_unit(rvalue).get_value());
+					}
 				}
 			}
+			//System.out.println("\t\t==> STEP-1");
 			
 			/* 2. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
@@ -192,6 +197,7 @@ public class CStateContexts {
 			else if(statement instanceof CirEndStatement) {
 				this.pop(def);
 			}
+			//System.out.println("\t\t==> STEP-2");
 			
 			/* 3. update the local state in current scope */
 			for(CStateUnit unit : node.get_units()) {
@@ -199,6 +205,7 @@ public class CStateContexts {
 				SymExpression target = this.evaluate(source);
 				this.put(unit.get_expression(), target);
 			}
+			//System.out.println("\t\t==> STEP-3");
 			
 			/* 4. accumulate the statement as being executed */
 			SymExpression sexpr = SymFactory.sym_statement(statement);
@@ -209,6 +216,7 @@ public class CStateContexts {
 			}
 			counter++;
 			this.context.put_value(sexpr, Integer.valueOf(counter));
+			//System.out.println("\t\t==> STEP-4");
 		}
 	}
 	/**

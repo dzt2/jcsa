@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -110,7 +111,7 @@ public class CirLocalPropagation {
 	}
 	
 	/* local propagation algorithms */
-	public static Iterable<CirMutation> propagate(CirMutations cir_mutations,
+	public static Collection<CirMutation> propagate(CirMutations cir_mutations,
 			CirMutation mutation, CStateContexts contexts) throws Exception {
 		if(cir_mutations == null)
 			throw new IllegalArgumentException("Invalid cir_mutations");
@@ -192,19 +193,24 @@ public class CirLocalPropagation {
 	 * 		   within the range of one statement.
 	 * @throws Exception
 	 */
-	public static Iterable<CirMutation> propagate_within(CirMutations cir_mutations,
+	public static Collection<CirMutation> propagate_within(CirMutations cir_mutations,
 			CirMutation mutation, CStateContexts contexts) throws Exception {
 		Queue<CirMutation> queue = new LinkedList<CirMutation>();
 		Set<CirMutation> results = new HashSet<CirMutation>();
 		
 		queue.add(mutation);
 		while(!queue.isEmpty()) {
-			mutation = queue.poll(); results.add(mutation);
+			/* get the next generation */
+			mutation = queue.poll(); 
 			Iterable<CirMutation> next_mutations = 
 					propagate(cir_mutations, mutation, contexts);
 			for(CirMutation next_mutation : next_mutations) {
 				queue.add(next_mutation);
 			}
+			
+			/* record the results */
+			mutation = cir_mutations.optimize(mutation, contexts);
+			if(mutation != null) results.add(mutation);
 		}
 		
 		return results;

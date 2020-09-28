@@ -69,7 +69,7 @@ public class CStateContext {
 		else if(key instanceof CirExpression)
 			return SymFactory.parse(key).generate_code();
 		else if(key instanceof SymExpression)
-			return SymFactory.parse(key).generate_code();
+			return ((SymExpression) key).generate_code();
 		else if(key instanceof CirStatement)
 			return SymFactory.sym_statement((CirStatement) key).generate_code();
 		else if(key instanceof CirExecution)
@@ -106,6 +106,9 @@ public class CStateContext {
 			if(context.local_values.containsKey(string_key)) {
 				return true;
 			}
+			else {
+				context = context.parent;
+			}
 		}
 		return false;
 	}
@@ -120,6 +123,9 @@ public class CStateContext {
 		while(context != null) {
 			if(context.local_values.containsKey(string_key)) {
 				return context.local_values.get(string_key);
+			}
+			else {
+				context = context.parent;
 			}
 		}
 		return null;

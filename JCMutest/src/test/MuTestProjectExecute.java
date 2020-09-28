@@ -29,7 +29,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 	
 	public static void main(String[] args) throws Exception {
-		testing("profit.c", 0, 0);
+		testing("profit.c", 0, 0, false, true);
 	}
 	
 	private static String get_name(File cfile) {
@@ -48,7 +48,7 @@ public class MuTestProjectExecute {
 	}
 	private static MuTestProject get_project(File cfile) throws Exception {
 		String name = get_name(cfile);
-		File root = new File(root_path + "projects/" + name);
+		File root = new File(root_path + "rprojects/" + name);
 		
 		if(!root.exists()) {
 			MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
@@ -86,7 +86,8 @@ public class MuTestProjectExecute {
 		}
 		
 	}
-	private static void execute_project(MuTestProject project, File cfile, int mid, int tid) throws Exception {
+	private static void execute_project(MuTestProject project, File cfile, int mid, 
+			int tid, boolean test_mutation, boolean test_instrumentation) throws Exception {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_file(cfile);
 		
 		List<Mutant> mutants = new ArrayList<Mutant>();
@@ -98,14 +99,17 @@ public class MuTestProjectExecute {
 		Collection<TestInput> tests = project.get_test_space().get_test_inputs(
 				tid, project.get_test_space().number_of_test_inputs());
 		
-		project.execute(mutants, tests);
-		project.execute_instrumental(tests);
+		if(test_mutation) 
+			project.execute(mutants, tests);
+		if(test_instrumentation)
+			project.execute_instrumental(tests);
 	}
-	protected static void testing(String name, int mid, int tid) throws Exception {
+	protected static void testing(String name, int mid, int tid, 
+			boolean test_mutation, boolean test_instrumentation) throws Exception {
 		File cfile = new File(root_path + "cfiles/" + name);
 		MuTestProject project = get_project(cfile);
 		System.out.println("Generate project for " + name);
-		execute_project(project, cfile, mid, tid);
+		execute_project(project, cfile, mid, tid, test_mutation, test_instrumentation);
 	}
 	
 }

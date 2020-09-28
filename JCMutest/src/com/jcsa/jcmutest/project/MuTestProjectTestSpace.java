@@ -17,6 +17,7 @@ import com.jcsa.jcparse.test.inst.InstrumentalLine;
 import com.jcsa.jcparse.test.inst.InstrumentalLines;
 import com.jcsa.jcparse.test.inst.InstrumentalNode;
 import com.jcsa.jcparse.test.inst.InstrumentalNodes;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * <code>
@@ -188,6 +189,25 @@ public class MuTestProjectTestSpace {
 				get_instrument_file(this.get_instrumental_output_directory());
 		if(instrumental_file.exists()) {
 			return InstrumentalNodes.get_nodes(template, ast_tree, cir_tree, instrumental_file);
+		}
+		else {
+			return null;	/* no instrumental results are found in */
+		}
+	}
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param cir_tree
+	 * @param input
+	 * @return 
+	 * @throws Exception
+	 */
+	public CStatePath load_instrumental_path(CRunTemplate template, 
+			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
+		File instrumental_file = input.
+				get_instrument_file(this.get_instrumental_output_directory());
+		if(instrumental_file.exists()) {
+			return CStatePath.read_path(template, ast_tree, cir_tree, instrumental_file);
 		}
 		else {
 			return null;	/* no instrumental results are found in */

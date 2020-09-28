@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -254,6 +255,12 @@ public class CirMutations {
 			CirStateError state_error) throws Exception {
 		return this.get_unique_mutation(new CirMutation(constraint, state_error));
 	}
+	/**
+	 * @return the set of mutations being created under the library.
+	 */
+	public Iterable<CirMutation> get_mutations() {
+		return this.mutations.values();
+	}
 	
 	/* parsers */
 	/**
@@ -287,7 +294,7 @@ public class CirMutations {
 	 * @return
 	 * @throws Exception
 	 */
-	public Iterable<CirMutation> propagate_in(CirMutation mutation, CStateContexts contexts) throws Exception {
+	public Collection<CirMutation> propagate_in(CirMutation mutation, CStateContexts contexts) throws Exception {
 		return CirLocalPropagation.propagate_within(this, mutation, contexts);
 	}
 	

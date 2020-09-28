@@ -165,7 +165,6 @@ public class CirMutationParserTest {
 		for(Mutant mutant : mspace.get_mutants()) {
 			total++;
 			if(mutant.has_cir_mutations()) {
-				
 				if(!mutant.get_cir_mutations().iterator().hasNext()) {
 					if(!empty_counter.containsKey(mutant.get_mutation().get_class())) {
 						empty_counter.put(mutant.get_mutation().get_class(), 0);
