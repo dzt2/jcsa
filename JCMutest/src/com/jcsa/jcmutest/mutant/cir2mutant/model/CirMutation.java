@@ -121,7 +121,7 @@ public class CirMutation {
 				return null;
 			}
 			else {
-				return new CirExpressionError(expression, muta_val);
+				return new CirExpressionError(expression, orig_val, muta_val);
 			}
 		}
 		else if(state_error instanceof CirReferenceError) {
@@ -134,7 +134,7 @@ public class CirMutation {
 				return null;
 			}
 			else {
-				return new CirReferenceError(reference, muta_val);
+				return new CirReferenceError(reference, orig_val, muta_val);
 			}
 		}
 		else if(state_error instanceof CirStateValueError) {
@@ -147,7 +147,7 @@ public class CirMutation {
 				return null;
 			}
 			else {
-				return new CirStateValueError(reference, muta_val);
+				return new CirStateValueError(reference, orig_val, muta_val);
 			}
 		}
 		else {

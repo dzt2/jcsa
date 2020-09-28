@@ -3,7 +3,6 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
 
 
 /**
@@ -17,6 +16,8 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirReferenceError extends CirStateError {
 	
 	/* definitions */
+	/** the reference of which referred will be mutated **/
+	private CirReferExpression reference;
 	/** the original value hold by the expression in testing **/
 	private SymExpression orig_val;
 	/** the mutation value that will replace the original one **/
@@ -26,12 +27,14 @@ public class CirReferenceError extends CirStateError {
 	 * @param muta_val mutation variable that will replace the original one
 	 * @throws Exception
 	 */
-	protected CirReferenceError(CirReferExpression reference, SymExpression muta_val) throws Exception {
+	protected CirReferenceError(CirReferExpression reference, 
+			SymExpression orig_val, SymExpression muta_val) throws Exception {
 		super(CirErrorType.refr_error, reference.statement_of());
 		if(muta_val == null)
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		else {
-			this.orig_val = SymFactory.parse(reference);
+			this.reference = reference;
+			this.orig_val = orig_val;
 			this.muta_val = muta_val;
 		}
 	}
@@ -40,9 +43,7 @@ public class CirReferenceError extends CirStateError {
 	/**
 	 * @return the reference of which state will be mutated
 	 */
-	public CirReferExpression get_reference() {
-		return (CirReferExpression) this.orig_val.get_cir_source();
-	}
+	public CirReferExpression get_reference() { return this.reference; }
 	/**
 	 * @return the original reference used by the point
 	 */
@@ -54,7 +55,9 @@ public class CirReferenceError extends CirStateError {
 
 	@Override
 	protected String generate_code() throws Exception {
-		return this.orig_val.generate_code() + ", " + this.muta_val.generate_code();
+		return this.reference.generate_code(false) + ", " + 
+				this.orig_val.generate_code() + ", " + 
+				this.muta_val.generate_code();
 	}
 	
 }

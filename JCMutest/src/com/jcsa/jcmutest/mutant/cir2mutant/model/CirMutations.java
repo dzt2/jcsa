@@ -218,8 +218,8 @@ public class CirMutations {
 	public CirStateError expr_error(CirExpression expression,
 			SymExpression muta_value) throws Exception {
 		this.verify_location(expression);
-		return this.get_unique_state_error(new 
-				CirExpressionError(expression, muta_value));
+		return this.get_unique_state_error(new CirExpressionError(
+				expression, SymFactory.parse(expression), muta_value));
 	}
 	/**
 	 * @param reference
@@ -230,8 +230,8 @@ public class CirMutations {
 	public CirStateError refer_error(CirReferExpression reference,
 			SymExpression muta_value) throws Exception {
 		this.verify_location(reference);
-		return this.get_unique_state_error(new 
-				CirReferenceError(reference, muta_value));
+		return this.get_unique_state_error(new CirReferenceError(
+				reference, SymFactory.parse(reference), muta_value));
 	}
 	/**
 	 * @param reference
@@ -242,8 +242,8 @@ public class CirMutations {
 	public CirStateError state_error(CirReferExpression reference,
 			SymExpression muta_value) throws Exception {
 		this.verify_location(reference);
-		return this.get_unique_state_error(new 
-				CirStateValueError(reference, muta_value));
+		return this.get_unique_state_error(new CirStateValueError(
+				reference, SymFactory.parse(reference), muta_value));
 	}
 	/**
 	 * @param constraint

@@ -3,7 +3,6 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
 
 
 /**
@@ -16,6 +15,8 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirExpressionError extends CirStateError {
 	
 	/* definitions */
+	/** the expression in which the state error will occur **/
+	private CirExpression expression;
 	/** the original value hold by the expression in testing **/
 	private SymExpression orig_val;
 	/** the mutation value that will replace the original one **/
@@ -26,12 +27,13 @@ public class CirExpressionError extends CirStateError {
 	 * @throws Exception
 	 */
 	protected CirExpressionError(CirExpression expression, 
-			SymExpression muta_val) throws Exception {
+			SymExpression orig_val, SymExpression muta_val) throws Exception {
 		super(CirErrorType.expr_error, expression.statement_of());
 		if(muta_val == null)
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		else {
-			this.orig_val = SymFactory.parse(expression);
+			this.expression = expression;
+			this.orig_val = orig_val;
 			this.muta_val = muta_val;
 		}
 	}
@@ -40,7 +42,7 @@ public class CirExpressionError extends CirStateError {
 	/**
 	 * @return the expression of which value will be mutated
 	 */
-	public CirExpression get_expression() { return this.orig_val.get_cir_source(); }
+	public CirExpression get_expression() { return this.expression; }
 	/**
 	 * @return the original value hold by the expression in testing
 	 */
@@ -52,7 +54,9 @@ public class CirExpressionError extends CirStateError {
 
 	@Override
 	protected String generate_code() throws Exception {
-		return this.orig_val.generate_code() + ", " + this.muta_val.generate_code();
+		return this.expression.generate_code(false) + ", " + 
+				this.orig_val.generate_code() + ", " + 
+				this.muta_val.generate_code();
 	}
 	
 }

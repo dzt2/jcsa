@@ -102,7 +102,7 @@ public class CirMutationGenerateTest {
 		writer.write("Mutant#" + mutant.get_id() + "::" + 
 				mutation.get_class() + "::" + mutation.get_operator() + "\n");
 		AstNode location = mutant.get_mutation().get_location();
-		int line = location.get_location().line_of();
+		int line = location.get_location().line_of() + 1;
 		String code = location.generate_code();
 		if(code.contains("\n")) {
 			int index = code.indexOf('\n');
