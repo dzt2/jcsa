@@ -20,7 +20,7 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
  * @author yukimula
  *
  */
-public class CirDefererencePropagator implements CirErrorPropagator {
+public class CirDereferencePropagator implements CirErrorPropagator {
 	
 	@Override
 	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,

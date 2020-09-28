@@ -106,6 +106,36 @@ public class CirMutations {
 			throw new RuntimeException("Unable to match the program");
 	}
 	/**
+	 * @param expression
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public SymExpression condition_of(Object expression, boolean value) throws Exception {
+		SymExpression condition = SymFactory.parse(expression);
+		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
+		if(CTypeAnalyzer.is_boolean(type)) {
+			if(value) { }
+			else {
+				condition = SymFactory.logic_not(condition);
+			}
+		}
+		else if(CTypeAnalyzer.is_integer(type) 
+				|| CTypeAnalyzer.is_real(type)
+				|| CTypeAnalyzer.is_pointer(type)) {
+			if(value) {
+				condition = SymFactory.not_equals(condition, Integer.valueOf(0));
+			}
+			else {
+				condition = SymFactory.equal_with(condition, Integer.valueOf(0));
+			}
+		}
+		else {
+			throw new IllegalArgumentException(type.generate_code());
+		}
+		return condition;
+	}
+	/**
 	 * @param statement
 	 * @param expression
 	 * @param value
