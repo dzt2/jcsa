@@ -18,6 +18,7 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
+import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
@@ -37,17 +38,8 @@ public class CirMutationGenerateTest {
 	private static final String result_dir = "result/cir2/";
 	
 	public static void main(String[] args) throws Exception {
-		/*
-		for(File cfile : new File(root_path + "cfiles").listFiles()) {
-			if(cfile.getName().endsWith(".c")) {
-				System.out.println("+-----------------------------------------+");
-				testing(cfile);
-				System.out.println("+-----------------------------------------+\n");
-			}
-		}
-		*/
 		String name = "profit.c";
-		testing(new File(root_path + "cfiles/" + name), 16);
+		testing(new File(root_path + "cfiles/" + name), 500);
 	}
 	
 	private static String get_name(File cfile) {
@@ -102,7 +94,7 @@ public class CirMutationGenerateTest {
 			return new MuTestProject(root, MuCommandUtil.linux_util);
 		}
 	}
-	private static void output_mutation(Mutant mutant, FileWriter writer, 
+	private static void output_mutation(MuTestProject project, Mutant mutant, FileWriter writer, 
 			Map<CirMutation, Collection<CirMutation>> errors) throws Exception {
 		/* AST mutation information */
 		AstMutation mutation = mutant.get_mutation();
@@ -120,6 +112,17 @@ public class CirMutationGenerateTest {
 		writer.write("Location[" + line + "]: " + location.generate_code() + " {" + ast_class + "}\n");
 		if(mutation.has_parameter())
 			writer.write("Parameter: " + mutation.get_parameter().toString() + "\n");
+		
+		MuTestProjectTestResult result = project.get_test_space().get_test_result(mutant);
+		if(result == null) {
+			writer.write("Result: not-executed\n");
+		}
+		else if(result.get_kill_set().degree() == 0){
+			writer.write("Result: not killed by any\n");
+		}
+		else {
+			writer.write("Result: killed by " + result.get_kill_set().degree() + " tests\n");
+		}
 		
 		/* CIR mutation information */
 		if(mutant.has_cir_mutations()) {
@@ -150,7 +153,7 @@ public class CirMutationGenerateTest {
 					error++;
 				}
 				else {
-					output_mutation(mutant, writer, errors);
+					output_mutation(project, mutant, writer, errors);
 				}
 			}
 			else {
@@ -201,7 +204,7 @@ public class CirMutationGenerateTest {
 					error++;
 				}
 				else {
-					output_mutation(mutant, writer, errors);
+					output_mutation(project, mutant, writer, errors);
 				}
 			}
 			else {
