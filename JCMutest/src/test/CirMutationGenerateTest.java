@@ -12,6 +12,7 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.model.CirErrorSentence;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.CirStateErrorAnalyzer;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -130,9 +131,10 @@ public class CirMutationGenerateTest {
 			int index = 0;
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
 				writer.write("\tCir-Mutation[" + (index++) + "]: " + cir_mutation + "\n");
-				
+				writer.write("\tCir-Errors: " + CirErrorSentence.parse(cir_mutation.get_state_error(), null) + "\n");
 				for(CirMutation err_mutation : errors.get(cir_mutation)) {
-					writer.write("\t\t" + err_mutation.toString() + "\n");
+					writer.write("\t\tGeneration: " + err_mutation.toString() + "\n");
+					writer.write("\t\t==> Words: " + CirErrorSentence.parse(err_mutation.get_state_error(), null) + "\n");
 				}
 			}
 			writer.write("+------------------------------------------------+\n");
