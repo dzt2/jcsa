@@ -40,7 +40,7 @@ public class CirMutationGenerateTest {
 	
 	public static void main(String[] args) throws Exception {
 		String name = "profit.c";
-		testing(new File(root_path + "cfiles/" + name), 500);
+		testing(new File(root_path + "cfiles/" + name), 3000);
 	}
 	
 	private static String get_name(File cfile) {
