@@ -152,20 +152,10 @@ public class CirMutationGraphTest {
 				writer.write("==> Load " + state_path.size() + " state nodes from.\n");
 				for(CirMutationDetection detector : detectors) {
 					writer.write("\t+---------------------------------------------+\n");
-					Map<CirMutationNode, Map<CirDetectionLevel, Integer>> 
-							results = detector.detection_analysis(state_path);
+					Map<CirMutationNode, CirDetectionLevel> results = detector.detection_analysis(state_path);
 					for(CirMutationNode mutation_node : results.keySet()) {
-						Map<CirDetectionLevel, Integer> counter = results.get(mutation_node);
-						writer.write("\t");
-						if(counter.get(CirDetectionLevel.not_executed) != 0) {
-							writer.write("Not-Executed:\t");
-						}
-						else {
-							writer.write("[ ");
-							writer.write(counter.get(CirDetectionLevel.not_satisfied) + ", ");
-							writer.write(counter.get(CirDetectionLevel.non_influence) + ", ");
-							writer.write(counter.get(CirDetectionLevel.pass_mutation) + "]:\t");
-						}
+						CirDetectionLevel result = results.get(mutation_node);
+						writer.write("\t" + result.toString() + ":\t");
 						writer.write(mutation_node.get_mutation().toString() + "\n");
 					}
 					writer.write("\t+---------------------------------------------+\n");

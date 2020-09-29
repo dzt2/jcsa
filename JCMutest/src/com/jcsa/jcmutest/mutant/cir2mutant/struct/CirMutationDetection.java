@@ -124,30 +124,51 @@ public class CirMutationDetection {
 		}
 	}
 	/**
+	 * @param levels
+	 * @return summarize the detection level
+	 */
+	private CirDetectionLevel get_summary(Collection<CirDetectionLevel> levels) {
+		if(levels.isEmpty()) {
+			return CirDetectionLevel.not_executed;
+		}
+		else {
+			int constraint_counter = 0, state_error_counter = 0, mutation_counter = 0;
+			for(CirDetectionLevel level : levels) {
+				switch(level) {
+				case not_satisfied:	constraint_counter++;	break;
+				case non_influence:	state_error_counter++;	break;
+				case pass_mutation:	mutation_counter++;		break;
+				default:			break;
+				}
+			}
+			
+			if(constraint_counter > state_error_counter) {
+				if(constraint_counter > mutation_counter) {
+					return CirDetectionLevel.not_satisfied;
+				}
+				else {
+					return CirDetectionLevel.pass_mutation;
+				}
+			}
+			else if(state_error_counter > mutation_counter) {
+				return CirDetectionLevel.non_influence;
+			}
+			else {
+				return CirDetectionLevel.pass_mutation;
+			}
+		}
+	}
+	/**
 	 * @return mapping from mutation to the detection summary result {maps from detection level to their counter in testing,
 	 * 		   each of which refers to one execution of the faulty statement during analysis}
 	 * @throws Exception
 	 */
-	private Map<CirMutationNode, Map<CirDetectionLevel, Integer>> get_summary() throws Exception {
-		Map<CirMutationNode, Map<CirDetectionLevel, Integer>> summary = 
-				new HashMap<CirMutationNode, Map<CirDetectionLevel, Integer>>();
+	private Map<CirMutationNode, CirDetectionLevel> get_summary() throws Exception {
+		Map<CirMutationNode, CirDetectionLevel> summary = new HashMap<CirMutationNode, CirDetectionLevel>();
 		
 		for(CirMutationNode mutation_node : this.detections.keySet()) {
 			Collection<CirDetectionLevel> levels = this.detections.get(mutation_node);
-			
-			Map<CirDetectionLevel, Integer> counter = new HashMap<CirDetectionLevel, Integer>();
-			counter.put(CirDetectionLevel.not_executed,  Integer.valueOf(0));
-			counter.put(CirDetectionLevel.not_satisfied, Integer.valueOf(0));
-			counter.put(CirDetectionLevel.non_influence, Integer.valueOf(0));
-			counter.put(CirDetectionLevel.pass_mutation, Integer.valueOf(0));
-			
-			if(levels.isEmpty()) {
-				counter.put(CirDetectionLevel.not_executed, counter.get(CirDetectionLevel.not_executed) + 1);
-			}
-			else {
-				for(CirDetectionLevel level : levels) counter.put(level, counter.get(level) + 1);
-			}
-			summary.put(mutation_node, counter);
+			summary.put(mutation_node, this.get_summary(levels));
 		}
 		
 		return summary;
@@ -157,7 +178,7 @@ public class CirMutationDetection {
 	 * @return counter of detection level for each execution of the faulty statement during testing
 	 * @throws Exception
 	 */
-	public Map<CirMutationNode, Map<CirDetectionLevel, Integer>> detection_analysis(CStatePath state_path) throws Exception {
+	public Map<CirMutationNode, CirDetectionLevel> detection_analysis(CStatePath state_path) throws Exception {
 		this.initialize();
 		if(state_path == null) {
 			this.update_no_path();
