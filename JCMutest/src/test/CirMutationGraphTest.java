@@ -156,6 +156,7 @@ public class CirMutationGraphTest {
 							results = detector.detection_analysis(state_path);
 					for(CirMutationNode mutation_node : results.keySet()) {
 						Map<CirDetectionLevel, Integer> counter = results.get(mutation_node);
+						writer.write("\t");
 						if(counter.get(CirDetectionLevel.not_executed) != 0) {
 							writer.write("Not-Executed:\t");
 						}
