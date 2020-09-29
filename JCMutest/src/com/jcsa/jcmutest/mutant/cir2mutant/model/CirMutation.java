@@ -1,11 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.test.state.CStateContexts;
+
 
 /**
  * The mutation in C-intermediate representation code defines a constraint-error pair
@@ -69,81 +65,12 @@ public class CirMutation {
 		else
 			return false;
 	}
-	
-	/* optimize */
 	/**
-	 * @param constraint
-	 * @param contexts
-	 * @return optimize the constraint under the contextual information
-	 * @throws Exception
+	 * @return the mutation is able to be detected iff. its constraint is
+	 * 		   satisfiable and state error is influence-able.
 	 */
-	private CirConstraint optimize(CirConstraint constraint, 
-				CStateContexts contexts) throws Exception {
-		SymExpression condition = SymEvaluator.
-				evaluate_on(constraint.get_condition(), contexts);
-		return new CirConstraint(constraint.get_statement(), condition);
-	}
-	/**
-	 * @param state_error
-	 * @param contexts
-	 * @return optimize the state error under the contextual information
-	 * @throws Exception
-	 */
-	private CirStateError optimize(CirStateError state_error,
-			CStateContexts contexts) throws Exception {
-		if(state_error instanceof CirTrapError) {
-			return state_error;
-		}
-		else if(state_error instanceof CirFlowError) {
-			return state_error;
-		}
-		else if(state_error instanceof CirExpressionError) {
-			CirExpression expression = ((CirExpressionError) state_error).get_expression();
-			SymExpression orig_val = ((CirExpressionError) state_error).get_original_value();
-			SymExpression muta_val = ((CirExpressionError) state_error).get_mutation_value();
-			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
-			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			return new CirExpressionError(expression, orig_val, muta_val);
-		}
-		else if(state_error instanceof CirReferenceError) {
-			CirReferExpression reference = ((CirReferenceError) state_error).get_reference();
-			SymExpression orig_val = ((CirReferenceError) state_error).get_original_value();
-			SymExpression muta_val = ((CirReferenceError) state_error).get_mutation_value();
-			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
-			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			return new CirReferenceError(reference, orig_val, muta_val);
-		}
-		else if(state_error instanceof CirStateValueError) {
-			CirReferExpression reference = ((CirStateValueError) state_error).get_reference();
-			SymExpression orig_val = ((CirStateValueError) state_error).get_original_value();
-			SymExpression muta_val = ((CirStateValueError) state_error).get_mutation_value();
-			orig_val = SymEvaluator.evaluate_on(orig_val, contexts);
-			muta_val = SymEvaluator.evaluate_on(muta_val, contexts);
-			return new CirStateValueError(reference, orig_val, muta_val);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid state_error: " + state_error);
-		}
-	}
-	/**
-	 * @param contexts
-	 * @return optimized version of the mutation under contextual
-	 * 		   information or null if the mutation is invalid.
-	 * @throws Exception
-	 */
-	protected CirMutation optimize(CStateContexts contexts) throws Exception {
-		CirConstraint constraint = this.optimize(this.constraint, contexts);
-		CirStateError state_error = this.optimize(this.state_error, contexts);
-		return new CirMutation(constraint, state_error);
-	}
-	/**
-	 * @param contexts
-	 * @return whether the mutation is valid under the contexts
-	 * @throws Exception
-	 */
-	public boolean is_valid(CStateContexts contexts) throws Exception {
-		return this.constraint.satisfiable(contexts)
-				&& this.state_error.is_valid(contexts);
+	public boolean detectable() {
+		return this.constraint.satisfiable() && this.state_error.influencable();
 	}
 	
 }

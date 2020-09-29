@@ -15,6 +15,7 @@ import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.CirLocalPropagation;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.CirPathConstraints;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
@@ -139,7 +140,8 @@ public class CirMutationParserTest {
 				}
 				writer.write("}\n");
 				
-				Iterable<CirMutation> next_mutations = cir_mutations.propagate_in(cir_mutation, null);
+				Iterable<CirMutation> next_mutations = CirLocalPropagation.
+								local_propagate(cir_mutations, cir_mutation);
 				for(CirMutation next_mutation : next_mutations) {
 					writer.write("\t\t" + next_mutation.toString() + "\n");
 				}

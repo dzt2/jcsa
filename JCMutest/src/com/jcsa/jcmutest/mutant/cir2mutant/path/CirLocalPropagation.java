@@ -56,7 +56,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.test.state.CStateContexts;
+
 
 /**
  * It implements the error propagation within one statement.
@@ -110,111 +110,104 @@ public class CirLocalPropagation {
 		propagators.put(COperator.arith_mod_assign, new CirArgumentListPropagator());
 	}
 	
-	/* local propagation algorithms */
-	public static Collection<CirMutation> propagate(CirMutations cir_mutations,
-			CirMutation mutation, CStateContexts contexts) throws Exception {
+	/**
+	 * @param cir_mutations
+	 * @param source_mutation
+	 * @return the set of cir-mutations propagated from the source mutation
+	 * @throws Exception
+	 */
+	private static Collection<CirMutation> propagate_one(CirMutations 
+			cir_mutations, CirMutation source_mutation) throws Exception {
 		if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations");
-		else if(mutation == null)
-			throw new IllegalArgumentException("Invalid mutation: null");
+			throw new IllegalArgumentException("Invalid cir_mutations: null");
+		else if(source_mutation == null)
+			throw new IllegalArgumentException("Invalid source_mutation: null");
 		else {
+			/* declarations */
 			List<CirMutation> results = new ArrayList<CirMutation>();
-			CirStateError state_error = mutation.get_state_error();
+			CirStateError state_error = source_mutation.get_state_error();
+			CirNode source_location, target_location; 
+			CirErrorPropagator propagator;
 			
-			if(mutation.is_valid(contexts)) {
-				mutation = cir_mutations.optimize(mutation, contexts);
-				
-				CirNode source_location, target_location;
-				if(state_error instanceof CirExpressionError) {
-					source_location = ((CirExpressionError) state_error).get_expression();
-				}
-				else if(state_error instanceof CirReferenceError) {
-					source_location = ((CirReferenceError) state_error).get_reference();
-				}
-				else {
-					source_location = null; target_location = null;
-				}
-				
-				if(source_location != null) {
-					target_location = source_location.get_parent();
-					
-					CirErrorPropagator propagator;
-					if(target_location instanceof CirDeferExpression) {
-						propagator = propagators.get(COperator.dereference);
-					}
-					else if(target_location instanceof CirFieldExpression) {
-						propagator = propagators.get(COperator.arith_mul_assign);
-					}
-					else if(target_location instanceof CirAddressExpression) {
-						propagator = propagators.get(COperator.address_of);
-					}
-					else if(target_location instanceof CirCastExpression) {
-						propagator = propagators.get(COperator.arith_add_assign);
-					}
-					else if(target_location instanceof CirComputeExpression) {
-						propagator = propagators.get(
-								((CirComputeExpression) target_location).get_operator());
-					}
-					else if(target_location instanceof CirInitializerBody) {
-						propagator = propagators.get(COperator.arith_sub_assign);
-					}
-					else if(target_location instanceof CirWaitExpression) {
-						propagator = propagators.get(COperator.arith_div_assign);
-					}
-					else if(target_location instanceof CirArgumentList) {
-						propagator = propagators.get(COperator.arith_mod_assign);
-					}
-					else if(target_location instanceof CirAssignStatement) {
-						propagator = propagators.get(COperator.assign);
-					}
-					else { /* ignore the propagation */ propagator = null; }
-					
-					propagations.clear();
-					if(propagator != null) {
-						propagator.propagate(cir_mutations, 
-								state_error, source_location, target_location, propagations);
-					}
-					
-					for(CirStateError target_error : propagations.keySet()) {
-						CirConstraint constraint = propagations.get(target_error);
-						CirMutation new_mutation = cir_mutations.new_mutation(constraint, target_error);
-						new_mutation = cir_mutations.optimize(new_mutation, contexts);
-						if(new_mutation.is_valid(contexts)) { results.add(new_mutation); }
-					}
-				}
+			/* determine the next location for propagation to occur */
+			if(state_error instanceof CirExpressionError) {
+				source_location = ((CirExpressionError) state_error).get_expression();
+			}
+			else if(state_error instanceof CirReferenceError) {
+				source_location = ((CirReferenceError) state_error).get_reference();
+			}
+			else {
+				source_location = null; target_location = null; return results;
+			}
+			target_location = source_location.get_parent();
+			
+			/* obtain the error propagator algorithm for analysis */
+			if(target_location instanceof CirDeferExpression) {
+				propagator = propagators.get(COperator.dereference);
+			}
+			else if(target_location instanceof CirFieldExpression) {
+				propagator = propagators.get(COperator.arith_mul_assign);
+			}
+			else if(target_location instanceof CirAddressExpression) {
+				propagator = propagators.get(COperator.address_of);
+			}
+			else if(target_location instanceof CirCastExpression) {
+				propagator = propagators.get(COperator.arith_add_assign);
+			}
+			else if(target_location instanceof CirComputeExpression) {
+				propagator = propagators.get(
+						((CirComputeExpression) target_location).get_operator());
+			}
+			else if(target_location instanceof CirInitializerBody) {
+				propagator = propagators.get(COperator.arith_sub_assign);
+			}
+			else if(target_location instanceof CirWaitExpression) {
+				propagator = propagators.get(COperator.arith_div_assign);
+			}
+			else if(target_location instanceof CirArgumentList) {
+				propagator = propagators.get(COperator.arith_mod_assign);
+			}
+			else if(target_location instanceof CirAssignStatement) {
+				propagator = propagators.get(COperator.assign);
+			}
+			else { /* ignore the propagation */ propagator = null; }
+			
+			/* apply the algorithm to generate error propagation */
+			propagations.clear();
+			if(propagator != null) {
+				propagator.propagate(cir_mutations, 
+						state_error, source_location, target_location, propagations);
 			}
 			
+			/* generate the next generation of state errors */
+			for(CirStateError target_error : propagations.keySet()) {
+				CirConstraint constraint = propagations.get(target_error);
+				results.add(cir_mutations.new_mutation(constraint, target_error));
+			}
 			return results;
 		}
 	}
+	
 	/**
 	 * @param cir_mutations
-	 * @param mutation
-	 * @param contexts
-	 * @return generate the set of state errors propagated from the source mutation
-	 * 		   within the range of one statement.
+	 * @param source_mutation
+	 * @return It generates a complete set of state errors propagated from the source
+	 * 		   mutation in the local statement.
 	 * @throws Exception
 	 */
-	public static Collection<CirMutation> propagate_within(CirMutations cir_mutations,
-			CirMutation mutation, CStateContexts contexts) throws Exception {
+	public static Set<CirMutation> local_propagate(CirMutations
+			cir_mutations, CirMutation source_mutation) throws Exception {
 		Queue<CirMutation> queue = new LinkedList<CirMutation>();
 		Set<CirMutation> results = new HashSet<CirMutation>();
-		
-		queue.add(mutation);
+		queue.add(source_mutation); CirMutation cir_mutation;
 		while(!queue.isEmpty()) {
-			/* get the next generation */
-			mutation = queue.poll(); 
-			Iterable<CirMutation> next_mutations = 
-					propagate(cir_mutations, mutation, contexts);
-			for(CirMutation next_mutation : next_mutations) {
-				queue.add(next_mutation);
-			}
+			/* get the next mutation for analysis */
+			cir_mutation = queue.poll(); results.add(cir_mutation);
 			
-			/* record the results */
-			mutation = cir_mutations.optimize(mutation, contexts);
-			if(mutation.is_valid(contexts)) results.add(mutation);
+			/* append the next generation into the queue */
+			Iterable<CirMutation> next_mutations = propagate_one(cir_mutations, cir_mutation);
+			for(CirMutation next_mutation : next_mutations) { queue.add(next_mutation); }
 		}
-		
 		return results;
 	}
 	

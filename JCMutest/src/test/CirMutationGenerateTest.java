@@ -12,7 +12,6 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirErrorSentence;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.CirStateErrorAnalyzer;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -95,8 +94,19 @@ public class CirMutationGenerateTest {
 			return new MuTestProject(root, MuCommandUtil.linux_util);
 		}
 	}
+	private static Collection<CirMutation> collect_in(List<Collection<CirMutation>> mutations) {
+		Set<CirMutation> all_mutations = new HashSet<CirMutation>();
+		for(Collection<CirMutation> local_mutations : mutations) {
+			for(CirMutation mutation : local_mutations) {
+				all_mutations.add(mutation);
+			}
+		}
+		return all_mutations;
+	}
 	private static void output_mutation(MuTestProject project, Mutant mutant, FileWriter writer, 
-			Map<CirMutation, Collection<CirMutation>> errors) throws Exception {
+			Map<CirMutation, List<Collection<CirMutation>>> errors, TestInput input) throws Exception {
+		writer.write("+================================================+\n");
+		
 		/* AST mutation information */
 		AstMutation mutation = mutant.get_mutation();
 		writer.write("Mutant#" + mutant.get_id() + "::" + 
@@ -114,47 +124,61 @@ public class CirMutationGenerateTest {
 		if(mutation.has_parameter())
 			writer.write("Parameter: " + mutation.get_parameter().toString() + "\n");
 		
+		/* test result analysis: not executed, unkillable */
 		MuTestProjectTestResult result = project.get_test_space().get_test_result(mutant);
 		if(result == null) {
-			writer.write("Result: not-executed\n");
+			writer.write("Result: not executed yet\n");
 		}
 		else if(result.get_kill_set().degree() == 0){
-			writer.write("Result: not killed by any\n");
+			writer.write("Result: not killed by any tests.\n");
+		}
+		else if(input == null) {
+			writer.write("Result: killed by " + result.get_kill_set().degree() + " tests.\n");
+		}
+		else if(result.get_kill_set().get(input.get_id())) {
+			writer.write("Result: killed by test#" + input.get_id() + "\n");
 		}
 		else {
-			writer.write("Result: killed by " + result.get_kill_set().degree() + " tests\n");
+			writer.write("Result: not killed by test#" + input.get_id() + "\n");
 		}
 		
 		/* CIR mutation information */
 		if(mutant.has_cir_mutations()) {
 			writer.write("+------------------------------------------------+\n");
 			int index = 0;
-			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-				writer.write("\tCir-Mutation[" + (index++) + "]: " + cir_mutation + "\n");
-				CirErrorSentence cir_sentence = CirErrorSentence.parse(cir_mutation.get_state_error(), null);
-				if(cir_sentence != null)
-					writer.write("\tCir-Errors: " + cir_sentence + "\n");
-				else
-					writer.write("\tCir-Errors: No Error in This Location\n");
-				for(CirMutation err_mutation : errors.get(cir_mutation)) {
-					writer.write("\t\tGeneration: " + err_mutation.toString() + "\n");
-					
-					CirErrorSentence err_sentence = CirErrorSentence.parse(err_mutation.get_state_error(), null);
-					if(err_sentence != null)
-						writer.write("\t\t==> Error_Words: " + err_sentence + "\n");
-					else
-						writer.write("\t\t==> Error_Words: No Error in This Location\n");
+			for(CirMutation init_mutation : mutant.get_cir_mutations()) {
+				writer.write("\n\tCir-Mutation[" + (index++) + "]\n");
+				writer.write("\t{\n");
+				{
+					Collection<CirMutation> all_mutations = collect_in(errors.get(init_mutation));
+					for(CirMutation cir_mutation : all_mutations) {
+						writer.write("\t\t");
+						if(cir_mutation.get_constraint().satisfiable()) {
+							if(cir_mutation.get_state_error().influencable()) {
+								writer.write("Pass Cir-Mutation: " + cir_mutation.get_state_error());
+							}
+							else {
+								writer.write("Invalid State-Error: " + cir_mutation.get_state_error());
+							}
+						}
+						else {
+							writer.write("Invalid Constraint: " + cir_mutation.get_constraint());
+						}
+						writer.write("\n");
+					}
 				}
+				writer.write("\t}\n");
 			}
-			writer.write("+------------------------------------------------+\n");
+			writer.write("\n+------------------------------------------------+\n");
 		}
+		writer.write("+================================================+\n");
 		writer.write("\n");
 	}
 	private static void generate_without_context(MuTestProject project) throws Exception {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		MutantSpace mspace = code_file.get_mutant_space();
 		FileWriter writer = new FileWriter(new File(result_dir + project.get_name() + ".x.txt"));
-		Map<CirMutation, Collection<CirMutation>> errors = CirStateErrorAnalyzer.solve_errors(mspace.get_cir_mutations());
+		Map<CirMutation, List<Collection<CirMutation>>> errors = CirStateErrorAnalyzer.analyze(mspace.get_cir_mutations());
 		
 		int error = 0, total = 0;
 		for(Mutant mutant : mspace.get_mutants()) {
@@ -164,7 +188,7 @@ public class CirMutationGenerateTest {
 					error++;
 				}
 				else {
-					output_mutation(project, mutant, writer, errors);
+					output_mutation(project, mutant, writer, errors, null);
 				}
 			}
 			else {
@@ -202,12 +226,14 @@ public class CirMutationGenerateTest {
 		else
 			System.out.println("\tUsing context-sensitive for generation analysis\n\t==> with " + state_path.size() + " nodes.");
 		
-		Map<CirMutation, Collection<CirMutation>> errors = 
-				CirStateErrorAnalyzer.solve_errors(mutant_space.get_cir_mutations(), state_path);
+		Map<CirMutation, List<Collection<CirMutation>>> errors = 
+				CirStateErrorAnalyzer.analyze(mutant_space.get_cir_mutations(), state_path);
 		System.out.println("\tObtain state error data generated from " + errors.size() + " cir-mutations");
 		
 		FileWriter writer = new FileWriter(new File(result_dir + project.get_name() + ".x.txt"));
 		int error = 0, total = 0;
+		writer.write("Apply Test#" + input.get_id() + " on Program.\n");
+		writer.write("Parameters: " + input.get_parameter() + "\n\n");
 		for(Mutant mutant : mutant_space.get_mutants()) {
 			total++;
 			if(mutant.has_cir_mutations()) {
@@ -215,7 +241,7 @@ public class CirMutationGenerateTest {
 					error++;
 				}
 				else {
-					output_mutation(project, mutant, writer, errors);
+					output_mutation(project, mutant, writer, errors, input);
 				}
 			}
 			else {
