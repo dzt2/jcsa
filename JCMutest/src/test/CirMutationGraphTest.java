@@ -44,7 +44,7 @@ public class CirMutationGraphTest {
 	private static final String result_dir = "result/cir2/";
 	
 	public static void main(String[] args) throws Exception {
-		String name = "profit.c";
+		String name = "bi_search.c";
 		testing(new File(root_path + "cfiles/" + name), 1000);
 	}
 	
