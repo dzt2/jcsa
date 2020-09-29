@@ -12,7 +12,9 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirMutationDetector;
+import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirDetectionLevel;
+import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirMutationDetection;
+import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirMutationNode;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -43,7 +45,7 @@ public class CirMutationGraphTest {
 	
 	public static void main(String[] args) throws Exception {
 		String name = "profit.c";
-		testing(new File(root_path + "cfiles/" + name), 3000);
+		testing(new File(root_path + "cfiles/" + name), 1000);
 	}
 	
 	private static String get_name(File cfile) {
@@ -106,17 +108,17 @@ public class CirMutationGraphTest {
 	private static CDominanceGraph generate(CirInstanceGraph graph) throws Exception {
 		return CDominanceGraph.forward_dominance_graph(graph);
 	}
-	private static Collection<CirMutationDetector> get_detectors(
+	private static Collection<CirMutationDetection> get_detectors(
 			Mutant mutant, CDominanceGraph dominance_graph) throws Exception {
-		List<CirMutationDetector> detectors = new ArrayList<CirMutationDetector>();
+		List<CirMutationDetection> detectors = new ArrayList<CirMutationDetection>();
 		for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-			detectors.add(CirMutationDetector.new_detector(mutant.get_space().
+			detectors.add(CirMutationDetection.new_detector(mutant.get_space().
 					get_cir_mutations(), cir_mutation, dominance_graph));
 		}
 		return detectors;
 	}
 	private static void output_mutation(MuTestProject project, Mutant mutant, 
-			Collection<CirMutationDetector> detectors, File output) throws Exception {
+			Collection<CirMutationDetection> detectors, File output) throws Exception {
 		FileWriter writer = new FileWriter(output);
 		AstMutation mutation = mutant.get_mutation();
 		AstNode location = mutation.get_location();
@@ -148,16 +150,22 @@ public class CirMutationGraphTest {
 							input);
 			if(state_path != null) {
 				writer.write("==> Load " + state_path.size() + " state nodes from.\n");
-				for(CirMutationDetector detector : detectors) {
+				for(CirMutationDetection detector : detectors) {
 					writer.write("\t+---------------------------------------------+\n");
-					Map<CirMutation, int[]> results = detector.detect_in(state_path);
-					for(CirMutation cir_mutation : results.keySet()) {
-						int[] result = results.get(cir_mutation);
-						writer.write("\t[ ");
-						for(int value : result) writer.write(value + ", ");
-						writer.write("]:\t");
-						writer.write(cir_mutation.toString());
-						writer.write("\n");
+					Map<CirMutationNode, Map<CirDetectionLevel, Integer>> 
+							results = detector.detection_analysis(state_path);
+					for(CirMutationNode mutation_node : results.keySet()) {
+						Map<CirDetectionLevel, Integer> counter = results.get(mutation_node);
+						if(counter.get(CirDetectionLevel.not_executed) != 0) {
+							writer.write("Not-Executed:\t");
+						}
+						else {
+							writer.write("[ ");
+							writer.write(counter.get(CirDetectionLevel.not_satisfied) + ", ");
+							writer.write(counter.get(CirDetectionLevel.non_influence) + ", ");
+							writer.write(counter.get(CirDetectionLevel.pass_mutation) + "]:\t");
+						}
+						writer.write(mutation_node.get_mutation().toString() + "\n");
 					}
 					writer.write("\t+---------------------------------------------+\n");
 				}
@@ -181,7 +189,7 @@ public class CirMutationGraphTest {
 		Mutant mutant = code_file.get_mutant_space().get_mutant(mid);
 		CirInstanceGraph instance_graph = translate(code_file.get_cir_tree());
 		CDominanceGraph dominance_graph = generate(instance_graph);
-		Collection<CirMutationDetector> detectors = get_detectors(mutant, dominance_graph);
+		Collection<CirMutationDetection> detectors = get_detectors(mutant, dominance_graph);
 		File output = new File(result_dir + project.get_name() + "." + mutant.get_id() + ".txt");
 		System.out.println("\tFind mutant: " + mutant.get_mutation());
 		System.out.println("\tObtain " + detectors.size() + " detectors in");

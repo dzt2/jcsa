@@ -15,59 +15,56 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It is used to detect the cir-mutation error propagation via CirMutationGraph
- * generated from one single cir-mutation of some mutant.
+ * It provides interfaces to detect whether a mutant can be killed
+ * by a specific test input, and the reasons to interpret why that
+ * mutant is not killed by that test.
  * 
  * @author yukimula
  *
  */
-public class CirMutationDetector {
+public class CirMutationDetection {
 	
-	/** the target mutation is not reached during testing **/
-	public static final char UnreachedMutation = 'r';
-	/** the current state cannot satisfy the target constraint **/
-	public static final char InvalidConstraint = 'c';
-	/** the current state cannot infect the target state error **/
-	public static final char InvalidStateError = 'e';
-	/** the current state can satisfy the constraint and infect
-	 * 	a target state error as given in the target mutation. **/
-	public static final char ObservedMutation = 'p';
-	
+	/* definitions */
 	/** the graph of which mutations will be analyzed **/
 	private CirMutationGraph mutation_graph;
 	/** mapping from statement to the nodes in that statement,
 	 * 	which inform the system to analyze these nodes when the
 	 * 	state flow reaches the target statement in testing. **/
 	private Map<CirStatement, Collection<CirMutationNode>> nodes;
-	/** mapping from each node under analysis  **/
-	private Map<CirMutationNode, List<Character>> execute_records;
+	/** mapping from each node to their detection levels **/
+	private Map<CirMutationNode, List<CirDetectionLevel>> detections;
 	
 	/* constructor */
-	private CirMutationDetector(CirMutationGraph mutation_graph) throws Exception {
+	/**
+	 * construct the detection machine for analyzing the state error graph
+	 * @param mutation_graph
+	 * @throws Exception
+	 */
+	private CirMutationDetection(CirMutationGraph mutation_graph) throws Exception {
 		if(mutation_graph == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else {
 			this.mutation_graph = mutation_graph;
 			this.nodes = new HashMap<CirStatement, Collection<CirMutationNode>>();
-			this.execute_records = new HashMap<CirMutationNode, List<Character>>();
+			this.detections = new HashMap<CirMutationNode, List<CirDetectionLevel>>();
 			for(CirMutationNode node : this.mutation_graph.get_nodes()) {
 				CirStatement statement = node.get_statement();
 				if(!this.nodes.containsKey(statement)) {
 					this.nodes.put(statement, new ArrayList<CirMutationNode>());
 				}
 				this.nodes.get(statement).add(node);
-				this.execute_records.put(node, new ArrayList<Character>());
+				this.detections.put(node, new ArrayList<CirDetectionLevel>());
 			}
 		}
 	}
 	
-	/* initializer */
+	/* state update algorithms */
 	/**
-	 * It clears the old records and build for new ones. 
+	 * It clears the old records in detection maps.
 	 */
 	private void initialize() {
-		for(CirMutationNode node : this.execute_records.keySet()) {
-			this.execute_records.get(node).clear();
+		for(CirMutationNode node : this.detections.keySet()) {
+			this.detections.get(node).clear();
 		}
 	}
 	/**
@@ -84,14 +81,14 @@ public class CirMutationDetector {
 			for(CirMutationNode local_node : local_nodes) {
 				if(local_node.validate_constraint(contexts)) {
 					if(local_node.validate_state_error(contexts)) {
-						this.execute_records.get(local_node).add(ObservedMutation);
+						this.detections.get(local_node).add(CirDetectionLevel.pass_mutation);
 					}
 					else {
-						this.execute_records.get(local_node).add(InvalidStateError);
+						this.detections.get(local_node).add(CirDetectionLevel.non_influence);
 					}
 				}
 				else {
-					this.execute_records.get(local_node).add(InvalidConstraint);
+					this.detections.get(local_node).add(CirDetectionLevel.not_satisfied);
 				}
 			}
 		}
@@ -112,52 +109,55 @@ public class CirMutationDetector {
 	 * @throws Exception
 	 */
 	private void update_no_path() throws Exception {
-		for(CirMutationNode node : this.execute_records.keySet()) {
+		for(CirMutationNode node : this.detections.keySet()) {
 			if(node.validate_constraint(null)) {
 				if(node.validate_state_error(null)) {
-					this.execute_records.get(node).add(ObservedMutation);
+					this.detections.get(node).add(CirDetectionLevel.pass_mutation);
 				}
 				else {
-					this.execute_records.get(node).add(InvalidStateError);
+					this.detections.get(node).add(CirDetectionLevel.non_influence);
 				}
 			}
 			else {
-				this.execute_records.get(node).add(InvalidConstraint);
+				this.detections.get(node).add(CirDetectionLevel.not_satisfied);
 			}
 		}
 	}
 	/**
-	 * @return int[4] := { unreached, invalid_constraint, invalid_state_error, pass_mutation }
-	 */
-	private Map<CirMutation, int[]> get_summary_result() {
-		Map<CirMutation, int[]> summary = new HashMap<CirMutation, int[]>();
-		for(CirMutationNode node : this.execute_records.keySet()) {
-			List<Character> list = this.execute_records.get(node);
-			int[] result = new int[] { 0, 0, 0, 0 };
-			if(list.isEmpty()) {
-				result[0]++;
-			}
-			else {
-				for(Character value : list) {
-					switch(value) {
-					case InvalidConstraint:		result[1]++;	break;
-					case InvalidStateError:		result[2]++;	break;
-					case ObservedMutation:		result[3]++;	break;
-					default: 									break;
-					}
-				}
-			}
-			summary.put(node.get_mutation(), result);
-		}
-		return summary;
-	}
-	
-	/**
-	 * @param state_path
-	 * @return check the validity of each constraint and errors for killing the mutation.
+	 * @return mapping from mutation to the detection summary result {maps from detection level to their counter in testing,
+	 * 		   each of which refers to one execution of the faulty statement during analysis}
 	 * @throws Exception
 	 */
-	public Map<CirMutation, int[]> detect_in(CStatePath state_path) throws Exception {
+	private Map<CirMutationNode, Map<CirDetectionLevel, Integer>> get_summary() throws Exception {
+		Map<CirMutationNode, Map<CirDetectionLevel, Integer>> summary = 
+				new HashMap<CirMutationNode, Map<CirDetectionLevel, Integer>>();
+		
+		for(CirMutationNode mutation_node : this.detections.keySet()) {
+			Collection<CirDetectionLevel> levels = this.detections.get(mutation_node);
+			
+			Map<CirDetectionLevel, Integer> counter = new HashMap<CirDetectionLevel, Integer>();
+			counter.put(CirDetectionLevel.not_executed,  Integer.valueOf(0));
+			counter.put(CirDetectionLevel.not_satisfied, Integer.valueOf(0));
+			counter.put(CirDetectionLevel.non_influence, Integer.valueOf(0));
+			counter.put(CirDetectionLevel.pass_mutation, Integer.valueOf(0));
+			
+			if(levels.isEmpty()) {
+				counter.put(CirDetectionLevel.not_executed, counter.get(CirDetectionLevel.not_executed) + 1);
+			}
+			else {
+				for(CirDetectionLevel level : levels) counter.put(level, counter.get(level) + 1);
+			}
+			summary.put(mutation_node, counter);
+		}
+		
+		return summary;
+	}
+	/**
+	 * @param state_path
+	 * @return counter of detection level for each execution of the faulty statement during testing
+	 * @throws Exception
+	 */
+	public Map<CirMutationNode, Map<CirDetectionLevel, Integer>> detection_analysis(CStatePath state_path) throws Exception {
 		this.initialize();
 		if(state_path == null) {
 			this.update_no_path();
@@ -165,35 +165,32 @@ public class CirMutationDetector {
 		else {
 			this.update_path(state_path);
 		}
-		return this.get_summary_result();
+		return this.get_summary();
 	}
 	
 	/* factory methods */
 	/**
-	 * create the detection analyzer for error propagation analysis for target mutation
 	 * @param cir_mutations
 	 * @param cir_mutation
 	 * @param dominance_graph
-	 * @return
+	 * @return create the detection analyzer w.r.t. the cir-mutation graph with path constraints 
 	 * @throws Exception
 	 */
-	public static CirMutationDetector new_detector(CirMutations cir_mutations, 
+	public static CirMutationDetection new_detector(CirMutations cir_mutations, 
 			CirMutation cir_mutation, CDominanceGraph dominance_graph) throws Exception {
 		CirMutationGraph graph = CirMutationGraph.parse(cir_mutations, cir_mutation, dominance_graph);
-		return new CirMutationDetector(graph);
+		return new CirMutationDetection(graph);
 	}
 	/**
-	 * create the detection analyzer for error propagation analysis for target mutation
 	 * @param cir_mutations
 	 * @param cir_mutation
-	 * @param dominance_graph
-	 * @return
+	 * @return create the detection analyzer w.r.t. the cir-mutation graph without path constraints 
 	 * @throws Exception
 	 */
-	public static CirMutationDetector new_detector(CirMutations cir_mutations, 
+	public static CirMutationDetection new_detector(CirMutations cir_mutations,
 			CirMutation cir_mutation) throws Exception {
-		CirMutationGraph graph = CirMutationGraph.parse(cir_mutations, cir_mutation, null);
-		return new CirMutationDetector(graph);
+		CirMutationGraph graph = CirMutationGraph.parse(cir_mutations, cir_mutation);
+		return new CirMutationDetection(graph);
 	}
 	
 }
