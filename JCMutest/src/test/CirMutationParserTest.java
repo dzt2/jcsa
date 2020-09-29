@@ -15,8 +15,7 @@ import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirLocalPropagation;
-import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirPathConstraints;
+import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirMutationUtils;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -132,7 +131,7 @@ public class CirMutationParserTest {
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
 				writer.write("\tCir-Mutation[" + (index++) + "]: " + cir_mutation + "\n");
 				
-				Set<CirConstraint> path_constraints = CirPathConstraints.common_path_constraints(
+				Set<CirConstraint> path_constraints = CirMutationUtils.common_path_constraints(
 						dominance_graph, cir_mutation.get_statement(), mutant.get_space().get_cir_mutations());
 				writer.write("\t\tPath: { ");
 				for(CirConstraint constraint : path_constraints) {
@@ -140,7 +139,7 @@ public class CirMutationParserTest {
 				}
 				writer.write("}\n");
 				
-				Iterable<CirMutation> next_mutations = CirLocalPropagation.
+				Iterable<CirMutation> next_mutations = CirMutationUtils.
 								local_propagate(cir_mutations, cir_mutation);
 				for(CirMutation next_mutation : next_mutations) {
 					writer.write("\t\t" + next_mutation.toString() + "\n");

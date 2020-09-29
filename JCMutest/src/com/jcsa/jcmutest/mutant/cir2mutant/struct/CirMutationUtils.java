@@ -45,27 +45,203 @@ import com.jcsa.jcmutest.mutant.cir2mutant.struct.propagate.CirSmallerEqPropagat
 import com.jcsa.jcmutest.mutant.cir2mutant.struct.propagate.CirSmallerTnPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.struct.propagate.CirTypeCastPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.struct.propagate.CirWaitValuePropagator;
+import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
+import com.jcsa.jcparse.flwa.dominate.CDominanceNode;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
-
 /**
- * It implements the error propagation within one statement.
+ * It is used to construct the structural representation of state
+ * error propagation graph.
  * 
  * @author yukimula
  *
  */
-public class CirLocalPropagation {
+public class CirMutationUtils {
 	
+	/* definitions */
+	/** the graph being built upon **/
+	private CirMutationGraph graph;
+	/** private constructor for singleton **/
+	private CirMutationUtils() { }
+	/** singleton for building mutation graph **/
+	protected static final CirMutationUtils builder = new CirMutationUtils();
+	
+	/* constructing methods */
+	/**
+	 * set the graph for being built upon
+	 * @param graph
+	 */
+	private void set_graph(CirMutationGraph graph) {
+		this.graph = graph;
+	}
+	/**
+	 * generate the path constraints for reaching the root mutation in current graph
+	 * @param dominance_graph
+	 * @throws Exception
+	 */
+	private void set_path_constraints(CDominanceGraph dominance_graph) throws Exception {
+		CirStatement statement = this.graph.get_root_mutation().get_statement();
+		Collection<CirConstraint> path_constraints = common_path_constraints(
+					dominance_graph, statement, this.graph.get_cir_mutations());
+		this.graph.path_constraints.clear();
+		this.graph.path_constraints.addAll(path_constraints);
+	}
+	/**
+	 * generate the local propagation from root node to those in the same statement
+	 * @throws Exception
+	 */
+	private void set_local_propagation() throws Exception {
+		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+		Set<CirMutationNode> records = new HashSet<CirMutationNode>();
+		queue.add(this.graph.get_root_node()); 
+		records.add(this.graph.get_root_node());
+		
+		CirMutationNode source, target;
+		while(!queue.isEmpty()) {
+			source = queue.poll();
+			Iterable<CirMutation> next_mutations = propagate_one(
+					this.graph.get_cir_mutations(), source.get_mutation());
+			for(CirMutation next_mutation : next_mutations) {
+				target = this.graph.new_node(next_mutation);
+				if(!records.contains(target)) {
+					source.link_with(CirMutationFlow.inner_link, target);
+					queue.add(target); records.add(target);
+				}
+			}
+		}
+	}
+	/**
+	 * build up an empty graph with path constraints and local propagations
+	 * @param graph
+	 * @param dominance_graph used for path constraints or null if no such information used
+	 * @throws Exception
+	 */
+	protected static void build_graph(CirMutationGraph graph, CDominanceGraph dominance_graph) throws Exception {
+		builder.set_graph(graph);
+		if(dominance_graph != null)
+			builder.set_path_constraints(dominance_graph);
+		builder.set_local_propagation();
+	}
+	
+	/* path constraints methods */
+	/**
+	 * @param dominance_graph
+	 * @param instance
+	 * @return the constraints for reaching the instance of target statement
+	 * @throws Exception
+	 */
+	public static List<CirConstraint> path_constraints(
+			CDominanceGraph dominance_graph, CirInstanceNode instance,
+			CirMutations cir_mutations) throws Exception {
+		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		if(dominance_graph.has_node(instance)) {
+			CDominanceNode dominance_node = dominance_graph.get_node(instance);
+			List<CirExecutionFlow> flows = dominance_node.get_dominance_path();
+			for(CirExecutionFlow flow : flows) {
+				switch(flow.get_type()) {
+				case true_flow:
+				{
+					CirStatement if_statement = flow.get_source().get_statement();
+					CirExpression condition;
+					if(if_statement instanceof CirIfStatement) {
+						condition = ((CirIfStatement) if_statement).get_condition();
+					}
+					else if(if_statement instanceof CirCaseStatement) {
+						condition = ((CirCaseStatement) if_statement).get_condition();
+					}
+					else {
+						throw new IllegalArgumentException(if_statement.generate_code(true));
+					}
+					constraints.add(cir_mutations.expression_constraint(if_statement, condition, true));
+					break;
+				}
+				case fals_flow:
+				{
+					CirStatement if_statement = flow.get_source().get_statement();
+					CirExpression condition;
+					if(if_statement instanceof CirIfStatement) {
+						condition = ((CirIfStatement) if_statement).get_condition();
+					}
+					else if(if_statement instanceof CirCaseStatement) {
+						condition = ((CirCaseStatement) if_statement).get_condition();
+					}
+					else {
+						throw new IllegalArgumentException(if_statement.generate_code(true));
+					}
+					constraints.add(cir_mutations.expression_constraint(if_statement, condition, false));
+					break;
+				}
+				case call_flow:
+				{
+					CirStatement call_statement = flow.get_source().get_statement();
+					constraints.add(cir_mutations.expression_constraint(call_statement, Boolean.TRUE, true));
+					break;
+				}
+				case retr_flow:
+				{
+					CirStatement wait_statement = flow.get_target().get_statement();
+					constraints.add(cir_mutations.expression_constraint(wait_statement, Boolean.TRUE, true));
+					break;
+				}
+				default: break;
+				}
+			}
+		}
+		return constraints;
+	}
+	
+	/**
+	 * @param dominance_graph
+	 * @param statement
+	 * @param cir_mutations
+	 * @return common constraints shared between different paths leading to the statement
+	 * @throws Exception
+	 */
+	public static Set<CirConstraint> common_path_constraints(CDominanceGraph dominance_graph,
+			CirStatement statement, CirMutations cir_mutations) throws Exception {
+		Set<CirConstraint> common_constraints = new HashSet<CirConstraint>(); boolean first = true;
+		CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+		Set<CirConstraint> removed_constraints = new HashSet<CirConstraint>();
+		
+		if(dominance_graph.get_instance_graph().has_instances_of(execution)) {
+			for(CirInstanceNode instance : dominance_graph.get_instance_graph().get_instances_of(execution)) {
+				List<CirConstraint> constraints = path_constraints(dominance_graph, instance, cir_mutations);
+				if(first) {
+					first = false;
+					common_constraints.addAll(constraints);
+				}
+				else {
+					removed_constraints.clear();
+					for(CirConstraint constraint : common_constraints) {
+						if(!constraints.contains(constraint)) {
+							removed_constraints.add(constraint);
+						}
+					}
+					common_constraints.removeAll(removed_constraints);
+				}
+			}
+		}
+		return common_constraints;
+	}
+	
+	/* local propagations */
 	/* propagation */
 	private static final Map<COperator, CirErrorPropagator> 
 		propagators = new HashMap<COperator, CirErrorPropagator>();
@@ -116,7 +292,7 @@ public class CirLocalPropagation {
 	 * @return the set of cir-mutations propagated from the source mutation
 	 * @throws Exception
 	 */
-	private static Collection<CirMutation> propagate_one(CirMutations 
+	public static Collection<CirMutation> propagate_one(CirMutations 
 			cir_mutations, CirMutation source_mutation) throws Exception {
 		if(cir_mutations == null)
 			throw new IllegalArgumentException("Invalid cir_mutations: null");
@@ -210,5 +386,6 @@ public class CirLocalPropagation {
 		}
 		return results;
 	}
+	
 	
 }

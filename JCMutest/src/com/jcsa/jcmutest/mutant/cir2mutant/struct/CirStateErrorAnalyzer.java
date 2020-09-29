@@ -44,7 +44,7 @@ public class CirStateErrorAnalyzer {
 			}
 			this.source_mutations.get(statement).add(source_mutation);
 			
-			Collection<CirMutation> all_mutations = CirLocalPropagation.
+			Collection<CirMutation> all_mutations = CirMutationUtils.
 						local_propagate(this.cir_mutations, source_mutation);
 			all_mutations = new ArrayList<CirMutation>(all_mutations);
 			this.abstract_mutations.put(source_mutation, all_mutations);

@@ -8,6 +8,7 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
+import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
 
 /**
  * It provides the graphical structural model to describe the detection
@@ -26,7 +27,7 @@ public class CirMutationGraph {
 	/** mutation used as the root to generate the graph **/
 	private CirMutation root_mutation;
 	/** constraints required for reaching the root mutation **/
-	private List<CirConstraint> path_constraints;
+	protected List<CirConstraint> path_constraints;
 	/** mapping from each mutation to their unique node **/
 	private Map<CirMutation, CirMutationNode> nodes;
 	
@@ -37,7 +38,7 @@ public class CirMutationGraph {
 	 * @param root_mutation
 	 * @throws Exception
 	 */
-	public CirMutationGraph(CirMutations cir_mutations, CirMutation root_mutation) throws Exception {
+	private CirMutationGraph(CirMutations cir_mutations, CirMutation root_mutation) throws Exception {
 		if(cir_mutations == null)
 			throw new IllegalArgumentException("Invalid cir_mutations: null");
 		else if(root_mutation == null)
@@ -47,6 +48,7 @@ public class CirMutationGraph {
 			this.root_mutation = this.get_unique_mutation(root_mutation);
 			this.path_constraints = new ArrayList<CirConstraint>();
 			this.nodes = new HashMap<CirMutation, CirMutationNode>();
+			this.new_node(this.root_mutation);
 		}
 	}
 	/**
@@ -107,6 +109,35 @@ public class CirMutationGraph {
 			this.nodes.put(cir_mutation, new CirMutationNode(this, cir_mutation));
 		}
 		return this.nodes.get(cir_mutation);
+	}
+	
+	/**
+	 * construct a mutation graph with local propagation and path constraints
+	 * @param cir_mutations
+	 * @param cir_mutation
+	 * @param dominance_graph
+	 * @return
+	 * @throws Exception
+	 */
+	public static CirMutationGraph parse(CirMutations cir_mutations,
+			CirMutation cir_mutation, CDominanceGraph dominance_graph) throws Exception {
+		CirMutationGraph graph = new CirMutationGraph(cir_mutations, cir_mutation);
+		CirMutationUtils.build_graph(graph, dominance_graph);
+		return graph;
+	}
+	/**
+	 * construct a mutation graph with local propagation and path constraints
+	 * @param cir_mutations
+	 * @param cir_mutation
+	 * @param dominance_graph
+	 * @return
+	 * @throws Exception
+	 */
+	public static CirMutationGraph parse(CirMutations cir_mutations,
+			CirMutation cir_mutation) throws Exception {
+		CirMutationGraph graph = new CirMutationGraph(cir_mutations, cir_mutation);
+		CirMutationUtils.build_graph(graph, null);
+		return graph;
 	}
 	
 }
