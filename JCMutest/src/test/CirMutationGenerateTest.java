@@ -13,7 +13,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.CirStateErrorAnalyzer;
+import com.jcsa.jcmutest.mutant.cir2mutant.struct.CirStateErrorAnalyzer;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
