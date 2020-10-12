@@ -306,24 +306,39 @@ public class CirMutations {
 			CirExpression expression = ((CirExpressionError) state_error).get_expression();
 			SymExpression orig_value = ((CirExpressionError) state_error).get_original_value();
 			SymExpression muta_value = ((CirExpressionError) state_error).get_mutation_value();
-			orig_value = this.evaluate(orig_value, contexts); 
-			muta_value = this.evaluate(muta_value, contexts);
+			try {
+				orig_value = this.evaluate(orig_value, contexts); 
+				muta_value = this.evaluate(muta_value, contexts);
+			}
+			catch(ArithmeticException ex) {
+				return get_unique_state_error(new CirTrapError(state_error.get_statement()));
+			}
 			return get_unique_state_error(new CirExpressionError(expression, orig_value, muta_value));
 		}
 		else if(state_error instanceof CirReferenceError) {
 			CirReferExpression reference = ((CirReferenceError) state_error).get_reference();
 			SymExpression orig_value = ((CirReferenceError) state_error).get_original_value();
 			SymExpression muta_value = ((CirReferenceError) state_error).get_mutation_value();
-			orig_value = this.evaluate(orig_value, contexts); 
-			muta_value = this.evaluate(muta_value, contexts);
+			try {
+				orig_value = this.evaluate(orig_value, contexts); 
+				muta_value = this.evaluate(muta_value, contexts);
+			}
+			catch(ArithmeticException ex) {
+				return get_unique_state_error(new CirTrapError(state_error.get_statement()));
+			}
 			return get_unique_state_error(new CirReferenceError(reference, orig_value, muta_value));
 		}
 		else if(state_error instanceof CirStateValueError) {
 			CirReferExpression reference = ((CirStateValueError) state_error).get_reference();
 			SymExpression orig_value = ((CirStateValueError) state_error).get_original_value();
 			SymExpression muta_value = ((CirStateValueError) state_error).get_mutation_value();
-			orig_value = this.evaluate(orig_value, contexts); 
-			muta_value = this.evaluate(muta_value, contexts);
+			try {
+				orig_value = this.evaluate(orig_value, contexts); 
+				muta_value = this.evaluate(muta_value, contexts);
+			}
+			catch(ArithmeticException ex) {
+				return get_unique_state_error(new CirTrapError(state_error.get_statement()));
+			}
 			return get_unique_state_error(new CirStateValueError(reference, orig_value, muta_value));
 		}
 		else {

@@ -72,8 +72,10 @@ public class CirMutationTrees {
 	public static CirMutationTrees new_trees(CirTree cir_tree, Mutant 
 			mutant, CDominanceGraph dominance_graph) throws Exception {
 		CirMutationTrees trees = new CirMutationTrees(cir_tree, mutant);
-		for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-			trees.trees.add(new CirMutationTree(trees, cir_mutation, dominance_graph));
+		if(mutant.has_cir_mutations()) {
+			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
+				trees.trees.add(new CirMutationTree(trees, cir_mutation, dominance_graph));
+			}
 		}
 		return trees;
 	}

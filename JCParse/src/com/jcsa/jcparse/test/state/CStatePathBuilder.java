@@ -197,7 +197,7 @@ public class CStatePathBuilder {
 				this.append(statement1);
 				
 				CirIfStatement statement2 = (CirIfStatement) this.
-						get_cir_nodes(location, CirIfStatement.class).get(0);
+						get_cir_nodes(parent, CirIfStatement.class).get(0);
 				if(((AstLogicBinaryExpression) parent).get_operator().get_operator() == COperator.logic_and) {
 					this.put_expression(statement2.get_condition(), condition_value);
 				}
@@ -228,24 +228,24 @@ public class CStatePathBuilder {
 			}
 			else if(((AstLogicBinaryExpression) parent).get_roperand() == child) {
 				CirAssignStatement statement = (CirAssignStatement) this.
-						get_cir_nodes(location, CirSaveAssignStatement.class).get(1);
+						get_cir_nodes(parent, CirSaveAssignStatement.class).get(1);
 				this.append(statement);
 			}
 		}
 		else if(parent instanceof AstConditionalExpression) {
 			if(((AstConditionalExpression) parent).get_condition() == child) {
 				CirStatement statement = (CirStatement) this.
-						get_cir_nodes(location, CirIfStatement.class).get(0);
+						get_cir_nodes(parent, CirIfStatement.class).get(0);
 				this.append(statement);
 			}
 			else if(((AstConditionalExpression) parent).get_true_branch() == child) {
 				CirStatement statement = (CirStatement) this.
-						get_cir_nodes(location, CirSaveAssignStatement.class).get(0);
+						get_cir_nodes(parent, CirSaveAssignStatement.class).get(0);
 				this.append(statement);
 			}
 			else if(((AstConditionalExpression) parent).get_false_branch() == child) {
 				CirStatement statement = (CirStatement) this.
-						get_cir_nodes(location, CirSaveAssignStatement.class).get(1);
+						get_cir_nodes(parent, CirSaveAssignStatement.class).get(1);
 				this.append(statement);
 			}
 		}

@@ -20,6 +20,7 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
+import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
@@ -297,8 +298,8 @@ public class CirMutationTreeTest {
 	 * @param dominance_graph
 	 * @throws Exception
 	 */
-	private static void output_mutant(Mutant mutant, CStatePath path, FileWriter writer,
-			CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
+	private static void output_mutant(MuTestProject project, Mutant mutant, CStatePath path, int tid,
+			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
 		Map<CirMutationTreeNode, List<CirDetectionLevel>> results = trees.analyze(path);
@@ -329,6 +330,25 @@ public class CirMutationTreeTest {
 				new_line(writer, tabs);
 				writer.write("Parameter: ");
 				writer.write(mutation.get_parameter().toString());
+			}
+			
+			MuTestProjectTestResult tresult = project.get_test_space().get_test_result(mutant);
+			new_line(writer, tabs);
+			writer.write("Result: ");
+			if(tresult == null) {
+				writer.write("Not_Executed");
+			}
+			else if(tresult.get_exec_set().get(tid)){
+				writer.write("Executed_");
+				if(tresult.get_kill_set().get(tid)) {
+					writer.write("Killed");
+				}
+				else {
+					writer.write("Alived");
+				}
+			}
+			else {
+				writer.write("Not_Executed");
 			}
 			
 			tabs++;
@@ -364,19 +384,10 @@ public class CirMutationTreeTest {
 		
 		/* generation */
 		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
-			output_mutant(mutant, path, writer, cfile.get_cir_tree(), dominance_graph);
+			output_mutant(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dominance_graph);
 			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
 		}
 		writer.close();
-		/*
-		Document doc = new Document(new Element("ROOT"));
-		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
-			doc.getRootElement().addContent(generate_mutant(mutant, path, cfile.get_cir_tree(), dominance_graph));
-			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
-		}
-		XMLOutputter outputter = new XMLOutputter();
-		outputter.output(doc, new FileOutputStream(output));
-		*/
 	}
 	
 	/* testing method */
@@ -390,7 +401,7 @@ public class CirMutationTreeTest {
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
-		String name = "profit";
+		String name = "triangle";
 		int tid = 697;
 		testing(name, tid);
 	}
