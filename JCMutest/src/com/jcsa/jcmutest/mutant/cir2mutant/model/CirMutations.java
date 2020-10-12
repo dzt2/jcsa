@@ -3,8 +3,6 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -260,16 +258,6 @@ public class CirMutations {
 	 */
 	public Iterable<CirMutation> get_mutations() {
 		return this.mutations.values();
-	}
-	
-	/* parsers */
-	/**
-	 * @param mutation
-	 * @return Obtain the cir-mutations w.r.t. the mutation
-	 * @throws Exception
-	 */
-	public Iterable<CirMutation> parse(AstMutation mutation) throws Exception {
-		return CirMutationParsers.parse(this, mutation);
 	}
 	
 	/* optimizer */
