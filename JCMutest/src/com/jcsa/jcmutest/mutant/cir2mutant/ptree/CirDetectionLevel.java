@@ -8,15 +8,18 @@ package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
  */
 public enum CirDetectionLevel {
 	
-	not_reached,					/* 					==> False 	*/
+	not_reachable,			/* {}			|--> False(statement) */
 	
-	not_satisfied,					/* [False, False]	==> False 	*/
+	not_satisfied,			/* [False, Any]	|--> False(constraint) */
 	
-	satisfiable_not_infected,		/* [?, False]		==> False 	*/
-	satisfiable_infectable,			/* [?, ?] 			==> ? 		*/
+	not_infected,			/* [Any, False]	|--> False(state_error) */
 	
-	satisfied_not_infected,			/* [True, False]	==>	False 	*/
-	satisfied_infectable,			/* [True, ?]		==> ? 		*/
-	satisfied_infected,				/* [True, True] 	==> True 	*/
+	infected,				/* [True, True]	|--> True(mutation?) */
+	
+	prev_infectable,		/* [True, Null]	|--> Unknown(state_error) */
+	
+	post_infectable,		/* [Null, True]	|--> Unknown(constraint) */
+	
+	part_infectable,		/* [True, True]	|--> Unknown(mutation) */
 	
 }

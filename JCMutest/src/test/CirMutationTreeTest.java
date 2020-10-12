@@ -598,7 +598,7 @@ public class CirMutationTreeTest {
 		System.out.println("1. Get mutation project for " + project.get_name());
 		
 		output_details(project, tid);
-		//output_levels(project, tid);
+		output_levels(project, tid);
 		//output_level(project, tid);
 		System.out.println("2. Output the mutation information to XML.");
 		System.out.println();

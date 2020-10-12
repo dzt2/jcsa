@@ -129,30 +129,30 @@ public class CirMutationTrees {
 	 */
 	private CirDetectionLevel get_result_at(CirMutationTreeNode 
 				node, CStateContexts contexts) throws Exception {
-		CirMutation mutation = node.get_cir_mutation();
+		CirMutation mutation = this.
+				cir_mutations.optimize(node.get_cir_mutation(), contexts);
 		Boolean cons_valid = mutation.get_constraint().validate(contexts);
 		Boolean error_valid = mutation.get_state_error().validate(contexts);
-		
 		if(cons_valid == null) {
 			if(error_valid == null) {
-				return CirDetectionLevel.satisfiable_infectable;
+				return CirDetectionLevel.part_infectable;
 			}
 			else if(error_valid.booleanValue()) {
-				return CirDetectionLevel.satisfiable_infectable;
+				return CirDetectionLevel.post_infectable;
 			}
 			else {
-				return CirDetectionLevel.satisfiable_not_infected;
+				return CirDetectionLevel.not_infected;
 			}
 		}
 		else if(cons_valid.booleanValue()) {
 			if(error_valid == null) {
-				return CirDetectionLevel.satisfied_infectable;
+				return CirDetectionLevel.prev_infectable;
 			}
 			else if(error_valid.booleanValue()) {
-				return CirDetectionLevel.satisfied_infected;
+				return CirDetectionLevel.infected;
 			}
 			else {
-				return CirDetectionLevel.satisfied_not_infected;
+				return CirDetectionLevel.post_infectable;
 			}
 		}
 		else {
@@ -201,7 +201,7 @@ public class CirMutationTrees {
 		/* 4. set empty results as not_reached */
 		for(CirMutationTreeNode tree_node : results.keySet()) {
 			if(results.get(tree_node).isEmpty()) {
-				results.get(tree_node).add(CirDetectionLevel.not_reached);
+				results.get(tree_node).add(CirDetectionLevel.not_reachable);
 			}
 		}
 		
@@ -213,51 +213,67 @@ public class CirMutationTrees {
 	 * @throws Exception
 	 */
 	private CirDetectionLevel get_summary_of(Iterable<CirDetectionLevel> levels) throws Exception {
-		int satisfied_counter = 0, non_satified_counter = 0, satisfiable_counter = 0;
-		int influenced_counter = 0, non_influenced_counter = 0, influencable_counter = 0;
+		CirDetectionLevel result = CirDetectionLevel.not_reachable;
+		
 		for(CirDetectionLevel level : levels) {
 			switch(level) {
-			case not_satisfied: 			non_satified_counter++;	non_influenced_counter++; 	break;
-			case satisfiable_not_infected:	satisfiable_counter++;	non_influenced_counter++; 	break;
-			case satisfiable_infectable:	satisfiable_counter++;	influencable_counter++;	 	break;
-			case satisfied_not_infected:	satisfied_counter++;	non_influenced_counter++; 	break;
-			case satisfied_infectable:		satisfied_counter++;	influencable_counter++;	 	break;
-			case satisfied_infected:		satisfied_counter++;	influenced_counter++; 		break;
-			default: 																			break;
+			case not_satisfied:
+			{
+				if(result == CirDetectionLevel.not_reachable
+					|| result == CirDetectionLevel.not_satisfied) {
+					result = level;
+				}
+				break;
+			}
+			case not_infected:
+			{
+				if(result == CirDetectionLevel.not_reachable
+					|| result == CirDetectionLevel.not_satisfied
+					|| result == CirDetectionLevel.not_infected) {
+					result = level;
+				}
+				break;
+			}
+			case part_infectable:
+			{
+				if(result == CirDetectionLevel.not_reachable
+					|| result == CirDetectionLevel.not_satisfied
+					|| result == CirDetectionLevel.not_infected
+					|| result == CirDetectionLevel.part_infectable) {
+					result = level;
+				}
+				break;
+			}
+			case prev_infectable:
+			{
+				if(result == CirDetectionLevel.not_reachable
+					|| result == CirDetectionLevel.not_satisfied
+					|| result == CirDetectionLevel.not_infected
+					|| result == CirDetectionLevel.part_infectable) {
+					result = level;
+				}
+				break;
+			}
+			case post_infectable:
+			{
+				if(result == CirDetectionLevel.not_reachable
+					|| result == CirDetectionLevel.not_satisfied
+					|| result == CirDetectionLevel.not_infected
+					|| result == CirDetectionLevel.part_infectable) {
+					result = level;
+				}
+				break;
+			}
+			case infected:
+			{
+				result = level;
+				break;
+			}
+			default: break;
 			}
 		}
 		
-		if(influenced_counter > 0) {
-			return CirDetectionLevel.satisfied_infected;
-		}
-		else if(influencable_counter > 0) {
-			if(satisfied_counter > 0) {
-				return CirDetectionLevel.satisfied_infectable;
-			}
-			else if(satisfiable_counter > 0) {
-				return CirDetectionLevel.satisfiable_infectable;
-			}
-			else {
-				throw new IllegalArgumentException("Impossible case occurs.");
-			}
-		}
-		else if(non_influenced_counter > 0) {
-			if(satisfied_counter > 0) {
-				return CirDetectionLevel.satisfied_not_infected;
-			}
-			else if(satisfiable_counter > 0) {
-				return CirDetectionLevel.satisfiable_not_infected;
-			}
-			else if(non_satified_counter > 0) {
-				return CirDetectionLevel.not_satisfied;
-			}
-			else {
-				throw new IllegalArgumentException("Impossible case occurs.");
-			}
-		}
-		else {
-			return CirDetectionLevel.not_reached;
-		}
+		return result;
 	}
 	/**
 	 * @param path
