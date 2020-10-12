@@ -9,6 +9,13 @@ package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 public enum CirDetectionLevel {
 	not_reached,
 	not_satisfied,
-	not_infected,
-	infected,
+	
+	satisfiable_not_infected,
+	satisfiable_infectable,
+	satisfiable_infected,
+	
+	satisfied_not_infected,
+	satisfied_infectable,
+	satisfied_infected,
+	
 }

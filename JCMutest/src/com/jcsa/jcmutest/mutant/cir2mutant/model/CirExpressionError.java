@@ -2,7 +2,10 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**
@@ -60,8 +63,18 @@ public class CirExpressionError extends CirStateError {
 	}
 
 	@Override
-	public boolean influencable() {
-		return !this.orig_val.equals(this.muta_val);
+	public Boolean validate(CStateContexts contexts) throws Exception {
+		SymExpression orig_value = SymEvaluator.evaluate_on(orig_val, contexts);
+		SymExpression muta_value = SymEvaluator.evaluate_on(muta_val, contexts);
+		if(orig_value.equals(muta_value))
+			return Boolean.FALSE;
+		else if(orig_value instanceof SymConstant
+				&& muta_value instanceof SymConstant) {
+			return Boolean.TRUE;
+		}
+		else {
+			return null;	/* undecidable */
+		}
 	}
 	
 }

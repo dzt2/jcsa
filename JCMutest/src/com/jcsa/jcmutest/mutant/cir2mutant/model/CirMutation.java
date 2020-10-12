@@ -65,12 +65,5 @@ public class CirMutation {
 		else
 			return false;
 	}
-	/**
-	 * @return the mutation is able to be detected iff. its constraint is
-	 * 		   satisfiable and state error is influence-able.
-	 */
-	public boolean detectable() {
-		return this.constraint.satisfiable() && this.state_error.influencable();
-	}
 	
 }

@@ -3,7 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.model;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**
@@ -83,14 +85,21 @@ public class CirConstraint {
 	
 	/* verifier */
 	/**
-	 * @return whether the constraint is satisfiable
+	 * @param contexts
+	 * @return Boolean.TRUE  iff. the constraint must be satisfied.
+	 * 		   Boolean.FALSE iff. the constraint must be invalid.
+	 * 		   Boolean.Null	 iff. the value of constraint is undecidable.
+	 * 		  	--> under the state contexts as given
+	 * @throws Exception
 	 */
-	public boolean satisfiable() {
-		if(this.condition instanceof SymConstant) {
-			return ((SymConstant) this.condition).get_bool();
+	public Boolean validate(CStateContexts contexts) throws Exception {
+		SymExpression expression = SymEvaluator.
+				evaluate_on(this.condition, contexts);
+		if(expression instanceof SymConstant) {
+			return ((SymConstant) expression).get_bool();
 		}
 		else {
-			return true;
+			return null;	/* Undecidable */
 		}
 	}
 	

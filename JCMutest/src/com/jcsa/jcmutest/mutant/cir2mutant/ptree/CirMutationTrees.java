@@ -89,13 +89,30 @@ public class CirMutationTrees {
 	 */
 	private CirDetectionLevel get_result_at(CirMutationTreeNode 
 				node, CStateContexts contexts) throws Exception {
-		CirMutation mutation = node.optimize_by(contexts);
-		if(mutation.get_constraint().satisfiable()) {
-			if(mutation.get_state_error().influencable()) {
-				return CirDetectionLevel.infected;
+		CirMutation mutation = node.get_cir_mutation();
+		Boolean cons_valid = mutation.get_constraint().validate(contexts);
+		Boolean error_valid = mutation.get_state_error().validate(contexts);
+		
+		if(cons_valid == null) {
+			if(error_valid == null) {
+				return CirDetectionLevel.satisfiable_infectable;
+			}
+			else if(error_valid.booleanValue()) {
+				return CirDetectionLevel.satisfiable_infected;
 			}
 			else {
-				return CirDetectionLevel.not_infected;
+				return CirDetectionLevel.satisfiable_not_infected;
+			}
+		}
+		else if(cons_valid.booleanValue()) {
+			if(error_valid == null) {
+				return CirDetectionLevel.satisfied_infectable;
+			}
+			else if(error_valid.booleanValue()) {
+				return CirDetectionLevel.satisfied_infected;
+			}
+			else {
+				return CirDetectionLevel.satisfied_not_infected;
 			}
 		}
 		else {
@@ -150,8 +167,5 @@ public class CirMutationTrees {
 		
 		/* 5. end of all */	return results;
 	}
-	
-	
-	
 	
 }
