@@ -1,16 +1,10 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
-import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.test.state.CStateContexts;
+
 
 /**
  * CirMutation propagation tree.
@@ -58,12 +52,6 @@ public class CirMutationTree {
 	 */
 	public CirMutationTrees get_trees() { return this.trees; }
 	/**
-	 * @return the statement where the error propagation starts
-	 */
-	public CirStatement get_cir_statement() { 
-		return this.root_node.get_cir_mutation().get_statement();
-	}
-	/**
 	 * @return the mutation that defines the root node in the tree
 	 */
 	public CirMutation get_root_mutation() { return this.root_node.get_cir_mutation(); }
@@ -75,25 +63,5 @@ public class CirMutationTree {
 	 * @return constraints required for reaching the faulty statement of the root
 	 */
 	public Iterable<CirConstraint> get_path_constraints() { return this.path_constraints; }
-	
-	/* implication */
-	/**
-	 * @param contexts
-	 * @return mapping from each node to the concrete interpretation of the mutation at the contexts
-	 * @throws Exception
-	 */
-	public Map<CirMutationTreeNode, CirMutation> interpret(CStateContexts contexts) throws Exception {
-		Map<CirMutationTreeNode, CirMutation> results = new HashMap<CirMutationTreeNode, CirMutation>();
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(this.root_node);
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode node = queue.poll();
-			for(CirMutationTreeNode child : node.get_children()) {
-				queue.add(child);
-			}
-			results.put(node, node.optimize_by(contexts));
-		}
-		return results;
-	}
 	
 }

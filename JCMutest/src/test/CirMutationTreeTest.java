@@ -1,22 +1,17 @@
 package test;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.output.XMLOutputter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirDetectionLevel;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
@@ -35,7 +30,6 @@ import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
@@ -113,6 +107,7 @@ public class CirMutationTreeTest {
 	}
 	
 	/* mutation output methods */
+	/*
 	private static String normalize_text(String text) {
 		StringBuilder buffer = new StringBuilder();
 		for(int k = 0; k < text.length(); k++) {
@@ -210,6 +205,144 @@ public class CirMutationTreeTest {
 		mutant_element.addContent(generate_trees(trees, path));
 		return mutant_element;
 	}
+	*/
+	
+	/**
+	 * @param text
+	 * @return the normalized text without spaces and \n
+	 */
+	private static String normalize_text(String text) {
+		StringBuilder buffer = new StringBuilder();
+		for(int k = 0; k < text.length(); k++) {
+			char ch = text.charAt(k);
+			if(Character.isWhitespace(ch)) {
+				ch = ' ';
+			}
+			buffer.append(ch);
+		}
+		return buffer.toString();
+	}
+	/**
+	 * put N tabs before line
+	 * @param writer
+	 * @param tabs
+	 * @throws Exception
+	 */
+	private static void new_line(FileWriter writer, int tabs) throws Exception {
+		writer.write("\n");
+		for(int k = 0; k < tabs; k++) writer.write("\t");
+	}
+	/**
+	 * @param tree_node
+	 * @param writer
+	 * @param tabs
+	 * @throws Exception
+	 */
+	private static void output_tree_node(CirMutationTreeNode tree_node, 
+			Iterable<CirDetectionLevel> results, FileWriter writer, int tabs) throws Exception {
+		new_line(writer, tabs);
+		writer.write("[TreeNode]");
+		tabs++;
+		{
+			new_line(writer, tabs);
+			writer.write("Statement: ");
+			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
+			new_line(writer, tabs);
+			writer.write("Constraint: ");
+			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
+			new_line(writer, tabs);
+			writer.write("StateError: ");
+			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
+			new_line(writer, tabs);
+			writer.write("Detections: ");
+			for(CirDetectionLevel result : results) {
+				writer.write(result.toString() + "; ");
+			}
+		}
+		tabs--;
+		new_line(writer, tabs);
+		writer.write("[TreeNode]");
+	}
+	/**
+	 * @param tree
+	 * @param results
+	 * @param writer
+	 * @param tabs
+	 * @throws Exception
+	 */
+	private static void output_tree(CirMutationTree tree, 
+			Map<CirMutationTreeNode, List<CirDetectionLevel>> results, 
+			FileWriter writer, int tabs) throws Exception {
+		new_line(writer, tabs);
+		writer.write("[Tree]");
+		
+		tabs++;
+		{
+			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+			queue.add(tree.get_root());
+			while(!queue.isEmpty()) {
+				CirMutationTreeNode tree_node = queue.poll();
+				output_tree_node(tree_node, results.get(tree_node), writer, tabs);
+			}
+		}
+		tabs--;
+		
+		new_line(writer, tabs);
+		writer.write("[Tree]");
+	}
+	/**
+	 * @param mutant
+	 * @param writer
+	 * @param cir_tree
+	 * @param dominance_graph
+	 * @throws Exception
+	 */
+	private static void output_mutant(Mutant mutant, CStatePath path, FileWriter writer,
+			CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
+		/* getters */
+		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
+		Map<CirMutationTreeNode, List<CirDetectionLevel>> results = trees.analyze(path);
+		
+		int tabs = 0;
+		new_line(writer, tabs);
+		writer.write("[Mutant]");
+		
+		//tabs++;
+		{
+			AstMutation mutation = mutant.get_mutation();
+			AstNode location = mutation.get_location();
+			int line = location.get_location().line_of() + 1;
+			
+			new_line(writer, tabs);
+			writer.write("Class: ");
+			writer.write(mutation.get_class() + "::" + mutation.get_operator());
+			
+			new_line(writer, tabs);
+			writer.write("Line#" + line + ": ");
+			String code = normalize_text(location.generate_code());
+			if(code.length() > 512) {
+				code = code.substring(0, 512);
+			}
+			writer.write(code);
+			
+			if(mutation.has_parameter()) {
+				new_line(writer, tabs);
+				writer.write("Parameter: ");
+				writer.write(mutation.get_parameter().toString());
+			}
+			
+			tabs++;
+			for(CirMutationTree tree : trees.get_trees()) {
+				output_tree(tree, results, writer, tabs);
+			}
+			tabs--;
+		}
+		//tabs--;
+		
+		new_line(writer, tabs);
+		writer.write("[Mutant]");
+		new_line(writer, tabs);
+	}
 	private static void output(MuTestProject project, int test_id) throws Exception {
 		/* declarations */
 		TestInput test = project.get_test_space().get_test_space().get_input(test_id);
@@ -221,14 +354,21 @@ public class CirMutationTreeTest {
 		/* output file */
 		String output_name;
 		if(path == null) {
-			output_name = result_dir + project.get_name() + ".xml";
+			output_name = result_dir + project.get_name() + ".txt";
 		}
 		else {
-			output_name = result_dir + project.get_name() + "." + test_id + ".xml";
+			output_name = result_dir + project.get_name() + "." + test_id + ".txt";
 		}
-		File output = new File(output_name);
+		FileWriter writer = new FileWriter(new File(output_name));
+		writer.write("Test: " + test.get_parameter() + "\n\n");
 		
 		/* generation */
+		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
+			output_mutant(mutant, path, writer, cfile.get_cir_tree(), dominance_graph);
+			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
+		}
+		writer.close();
+		/*
 		Document doc = new Document(new Element("ROOT"));
 		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
 			doc.getRootElement().addContent(generate_mutant(mutant, path, cfile.get_cir_tree(), dominance_graph));
@@ -236,6 +376,7 @@ public class CirMutationTreeTest {
 		}
 		XMLOutputter outputter = new XMLOutputter();
 		outputter.output(doc, new FileOutputStream(output));
+		*/
 	}
 	
 	/* testing method */
