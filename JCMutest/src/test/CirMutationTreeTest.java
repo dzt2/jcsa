@@ -107,107 +107,7 @@ public class CirMutationTreeTest {
 		return CDominanceGraph.forward_dominance_graph(graph);
 	}
 	
-	/* mutation output methods */
-	/*
-	private static String normalize_text(String text) {
-		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < text.length(); k++) {
-			char ch = text.charAt(k);
-			switch(ch) {
-			case '<':	buffer.append("[SMT]"); break;
-			case '>':	buffer.append("[GRT]"); break;
-			//case '/':	buffer.append("[DIV]");	break;
-			//case '%':	buffer.append("[MOD]");	break;
-			case '\\':	buffer.append("[NDV]"); break;
-			case '\n':	buffer.append(" "); break;
-			case '\t':	buffer.append(" "); break;
-			case '\r':	buffer.append(" "); break;
-			case '\'':	buffer.append("[SRF]"); break;
-			case '\"':	buffer.append("[REF]"); break;
-			//case '@':	buffer.append("[ATU]"); break;
-			//case '#':	buffer.append("[HED]"); break;
-			//case '$':	buffer.append("[MON]"); break;
-			//case '^':	buffer.append("[XOR]"); break;
-			//case '&':	buffer.append("[BAN]"); break;
-			//case '*':	buffer.append("[MUL]"); break;
-			//case '~':	buffer.append("[RSV]"); break;
-			//case '!':	buffer.append("[NOT]"); break;
-			default:	buffer.append(ch);	break;
-			}
-		}
-		return buffer.toString();
-	}
-	private static Element generate_mutation(CirMutation mutation, Iterable<CirDetectionLevel> results) throws Exception {
-		Element element = new Element("CirMutation");
-		
-		CirStatement statement = mutation.get_statement();
-		CirConstraint constraint = mutation.get_constraint();
-		CirStateError state_error = mutation.get_state_error();
-		
-		element.setAttribute("STMT", normalize_text(statement.get_tree().get_localizer().get_execution(statement).toString()));
-		Element cons_element = new Element("Constraint");
-		cons_element.setText(normalize_text(constraint.get_condition().generate_code()));
-		element.addContent(cons_element);
-		Element error_element = new Element("StateError");
-		error_element.setText(normalize_text(state_error.toString()));
-		element.addContent(error_element);
-		
-		Element child = new Element("DetectionResults");
-		int index = 0;
-		for(CirDetectionLevel result : results) {
-			child.setAttribute("R" + (index++) + "", normalize_text(result.toString()));
-		}
-		element.addContent(child);
-		
-		return element;
-	}
-	private static Element generate_tree_node(CirMutationTreeNode node, 
-			Map<CirMutationTreeNode, List<CirDetectionLevel>> results) throws Exception {
-		Element element = new Element("CirMutationTreeNode");
-		if(node.get_flow_type() != null)
-			element.setAttribute("FLOW", normalize_text(node.get_flow_type().toString()));
-		element.addContent(generate_mutation(node.get_cir_mutation(), results.get(node)));
-		for(CirMutationTreeNode child : node.get_children()) {
-			element.addContent(generate_tree_node(child, results));
-		}
-		return element;
-	}
-	private static Element generate_trees(CirMutationTrees trees, CStatePath path) throws Exception {
-		Element trees_element = new Element("CirMutationTrees");
-		Map<CirMutationTreeNode, List<CirDetectionLevel>> results = trees.analyze(path);
-		for(CirMutationTree tree : trees.get_trees()) {
-			Element tree_element = new Element("CirMutationTree");
-			tree_element.addContent(generate_tree_node(tree.get_root(), results));
-			trees_element.addContent(tree_element);
-		}
-		return trees_element;
-	}
-	private static Element generate_mutant(Mutant mutant, CStatePath path, CirTree cir_tree,
-			CDominanceGraph dominance_graph) throws Exception {
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Element mutant_element = new Element("Mutant");
-		AstMutation mutation = mutant.get_mutation();
-		
-		mutant_element.setAttribute("MID", "" + mutant.get_id());
-		mutant_element.setAttribute("CLASS", mutation.get_class() + "::" + mutation.get_operator());
-		
-		AstNode location = mutation.get_location();
-		int line = location.get_location().line_of() + 1;
-		String code = location.generate_code();
-		code = normalize_text(code.strip()).strip();
-		
-		mutant_element.setAttribute("LINE", "" + line);
-		Element code_element = new Element("CODE");
-		code_element.setText(code);
-		
-		if(mutation.has_parameter())
-			mutant_element.setAttribute("PARAM", normalize_text(mutation.get_parameter().toString()));
-		
-		mutant_element.addContent(generate_trees(trees, path));
-		return mutant_element;
-	}
-	*/
-	
+	/* generation methods */
 	/**
 	 * @param text
 	 * @return the normalized text without spaces and \n
@@ -284,6 +184,9 @@ public class CirMutationTreeTest {
 			while(!queue.isEmpty()) {
 				CirMutationTreeNode tree_node = queue.poll();
 				output_tree_node(tree_node, results.get(tree_node), writer, tabs);
+				for(CirMutationTreeNode child : tree_node.get_children()) {
+					queue.add(child);
+				}
 			}
 		}
 		tabs--;
@@ -401,8 +304,8 @@ public class CirMutationTreeTest {
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
-		String name = "triangle";
-		int tid = 697;
+		String name = "profit";
+		int tid = 4697;
 		testing(name, tid);
 	}
 	
