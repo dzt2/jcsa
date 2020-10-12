@@ -12,7 +12,6 @@ public enum CirDetectionLevel {
 	
 	satisfiable_not_infected,
 	satisfiable_infectable,
-	satisfiable_infected,
 	
 	satisfied_not_infected,
 	satisfied_infectable,
