@@ -604,8 +604,8 @@ public class CirMutationTreeTest {
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
-		String name = "profit";
-		int tid = 4697;
+		String name = "triangle";
+		int tid = 1000;
 		testing(name, tid);
 	}
 	

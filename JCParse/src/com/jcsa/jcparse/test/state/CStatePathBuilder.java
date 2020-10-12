@@ -416,10 +416,11 @@ public class CStatePathBuilder {
 				this.append(statement);
 			}
 			else if(location instanceof AstLogicBinaryExpression) {
-				this.put_expressions(location, line.get_value());
+				/* this.put_expressions(location, line.get_value()); */
 				CirStatement statement = (CirStatement) this.
 						get_cir_nodes(location, CirIfEndStatement.class).get(0);
 				this.append(statement);
+				this.put_expressions(location, line.get_value());
 			}
 			else {
 				this.put_expressions(location, line.get_value());

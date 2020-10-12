@@ -138,7 +138,7 @@ public class CirMutationTrees {
 				return CirDetectionLevel.satisfiable_infectable;
 			}
 			else if(error_valid.booleanValue()) {
-				return CirDetectionLevel.satisfied_infected;
+				return CirDetectionLevel.satisfiable_infectable;
 			}
 			else {
 				return CirDetectionLevel.satisfiable_not_infected;
