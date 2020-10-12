@@ -189,22 +189,6 @@ public class CirMutationTreeUtils {
 		}
 		return common_constraints;
 	}
-	/**
-	 * generate the root nodes in the tree w.r.t. each initial cir-mutation
-	 * @throws Exception
-	 */
-	public void build_roots(CDominanceGraph dominance_graph) throws Exception {
-		CirMutations cir_mutations = this.tree.get_cir_mutations(); this.tree.clear();
-		Iterable<CirMutation> init_mutations = this.tree.get_initial_cir_mutations();
-		for(CirMutation init_mutation : init_mutations) {
-			CirStatement statement = init_mutation.get_statement();
-			Set<CirConstraint> path_constraints = common_path_constraints(
-									dominance_graph, statement, cir_mutations);
-			CirMutationTreeNode root = new CirMutationTreeNode(this.tree, this.tree.get_cir_mutations().
-					new_mutation(init_mutation.get_constraint(), init_mutation.get_state_error()));
-			this.tree.roots.put(root, path_constraints);
-		}
-	}
 	
 	/* error propagation module */
 	private static final Map<COperator, CirErrorPropagator> propagators = new HashMap<COperator, CirErrorPropagator>();
@@ -362,18 +346,16 @@ public class CirMutationTreeUtils {
 	 * @throws Exception
 	 */
 	public void build_trees() throws Exception {
-		for(CirMutationTreeNode root : this.tree.get_roots()) {
-			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-			queue.add(root);
-			while(!queue.isEmpty()) {
-				CirMutationTreeNode source = queue.poll();
-				Map<CirMutation, CirMutationFlowType> target_mutations = propagate_one(
-						this.tree.get_cir_mutations(), source.get_cir_mutation());
-				for(CirMutation target_mutation : target_mutations.keySet()) {
-					CirMutationFlowType flow_type = target_mutations.get(target_mutation);
-					CirMutationTreeNode target = source.new_child(flow_type, target_mutation);
-					queue.add(target);
-				}
+		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		queue.add(this.tree.get_root());
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode source = queue.poll();
+			Map<CirMutation, CirMutationFlowType> target_mutations = propagate_one(
+					this.tree.get_trees().get_cir_mutations(), source.get_cir_mutation());
+			for(CirMutation target_mutation : target_mutations.keySet()) {
+				CirMutationFlowType flow_type = target_mutations.get(target_mutation);
+				CirMutationTreeNode target = source.new_child(flow_type, target_mutation);
+				queue.add(target);
 			}
 		}
 	}

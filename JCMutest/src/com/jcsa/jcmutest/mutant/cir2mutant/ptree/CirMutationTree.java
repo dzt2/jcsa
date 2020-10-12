@@ -1,16 +1,10 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
-import com.jcsa.jcparse.lang.irlang.CirTree;
 
 /**
  * CirMutation propagation tree.
@@ -21,12 +15,12 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 public class CirMutationTree {
 	
 	/* definitions */
-	/** new library used to create mutations for nodes in the tree **/
-	private CirMutations cir_mutations;
-	/** the mutant used to create the propagation tree in cir-code **/
-	private Mutant mutant;
-	/** roots as well as the path constraints for reaching them **/
-	protected Map<CirMutationTreeNode, Set<CirConstraint>> roots;
+	/** trees where the tree belongs to **/
+	private CirMutationTrees trees;
+	/** constraints for reaching the root of the sub-tree **/
+	private Set<CirConstraint> path_constraints;
+	/** the root node of this tree **/
+	private CirMutationTreeNode root_node;
 	
 	/* constructor */
 	/**
@@ -34,79 +28,40 @@ public class CirMutationTree {
 	 * @param mutant
 	 * @throws Exception
 	 */
-	private CirMutationTree(CirTree cir_tree, Mutant mutant) throws Exception {
-		if(cir_tree == null)
-			throw new IllegalArgumentException("Invalid cir_tree: null");
-		else if(mutant == null)
-			throw new IllegalArgumentException("Invalid mutant as null");
+	protected CirMutationTree(CirMutationTrees trees, CirMutation 
+			cir_mutation, CDominanceGraph dominance_graph) throws Exception {
+		if(trees == null)
+			throw new IllegalArgumentException("Invalid trees: null");
+		else if(cir_mutation == null)
+			throw new IllegalArgumentException("Invalid cir_mutation");
+		else if(dominance_graph == null)
+			throw new IllegalArgumentException("Invalid dominance_graph");
 		else {
-			this.cir_mutations = new CirMutations(cir_tree);
-			this.mutant = mutant;
-			this.roots = new HashMap<CirMutationTreeNode, Set<CirConstraint>>();
+			this.trees = trees;
+			this.path_constraints = CirMutationTreeUtils.common_path_constraints(
+					dominance_graph, cir_mutation.get_statement(), trees.get_cir_mutations());
+			this.root_node = new CirMutationTreeNode(this, cir_mutation);
+			CirMutationTreeUtils.utils.set_tree(this);
+			CirMutationTreeUtils.utils.build_trees();
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return new library used to create mutations for node in this tree
+	 * @return the set of trees where it is created
 	 */
-	public CirMutations get_cir_mutations() { return this.cir_mutations; }
+	public CirMutationTrees get_trees() { return this.trees; }
 	/**
-	 * @return the mutant used to create the propagation tree in cir-code
+	 * @return the mutation that defines the root node in the tree
 	 */
-	public Mutant get_mutant() { return this.mutant; }
+	public CirMutation get_root_mutation() { return this.root_node.get_cir_mutation(); }
 	/**
-	 * @return the mutation seeded in abstract syntax tree for this model
+	 * @return the root node of the tree
 	 */
-	public AstMutation get_ast_mutation() { return this.mutant.get_mutation(); }
+	public CirMutationTreeNode get_root() { return this.root_node; }
 	/**
-	 * @return the initial cir-mutations directly caused by executing the
-	 * 		   faulty statement.
+	 * @return constraints required for reaching the faulty statement of the root
 	 */
-	public Iterable<CirMutation> get_initial_cir_mutations() {
-		return this.mutant.get_cir_mutations();
-	}
-	/**
-	 * @return the root nodes in the tree as one of the initial cir-mutation of the mutant
-	 */
-	public Iterable<CirMutationTreeNode> get_roots() { return this.roots.keySet(); }
-	/**
-	 * @param node
-	 * @return the path constraints for reaching the root of the tree node as given
-	 * @throws Exception
-	 */
-	public Set<CirConstraint> get_path_constraint(CirMutationTreeNode node) throws Exception {
-		if(node == null || node.get_tree() != this)
-			throw new IllegalArgumentException("Undefined tree: " + node);
-		else {
-			return this.roots.get(node.get_root());
-		}
-	}
-	/**
-	 * remove all the nodes from the tree
-	 */
-	protected void clear() {
-		for(CirMutationTreeNode root : this.get_roots()) {
-			root.delete();
-		}
-		this.roots.clear();
-	}
-	
-	/* parser */
-	/**
-	 * @param cir_tree
-	 * @param mutant
-	 * @param dominance_graph
-	 * @return parse from the mutant and cir-tree to generate propagation tree.
-	 * @throws Exception
-	 */
-	public static CirMutationTree parse(CirTree cir_tree, Mutant mutant, 
-			CDominanceGraph dominance_graph) throws Exception {
-		CirMutationTree tree = new CirMutationTree(cir_tree, mutant);
-		CirMutationTreeUtils.utils.set_tree(tree);
-		CirMutationTreeUtils.utils.build_roots(dominance_graph);
-		CirMutationTreeUtils.utils.build_trees();
-		return tree;
-	}
+	public Iterable<CirConstraint> get_path_constraints() { return this.path_constraints; }
 	
 }

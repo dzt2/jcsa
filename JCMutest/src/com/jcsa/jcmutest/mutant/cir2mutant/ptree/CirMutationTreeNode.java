@@ -136,7 +136,8 @@ public class CirMutationTreeNode {
 	 * @throws Exception
 	 */
 	public CirMutation optimize_by(CStateContexts contexts) throws Exception {
-		return this.tree.get_cir_mutations().optimize(this.cir_mutation, contexts);
+		return this.tree.get_trees().get_cir_mutations().
+					optimize(this.cir_mutation, contexts);
 	}
 	
 	/* setters */
