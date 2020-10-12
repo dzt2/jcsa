@@ -1,7 +1,6 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.struct;
+package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -68,80 +67,30 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
- * It is used to construct the structural representation of state
- * error propagation graph.
+ * Used to implement the construction of mutation propagation tree.
  * 
  * @author yukimula
  *
  */
-public class CirMutationUtils {
+public class CirMutationTreeUtils {
 	
-	/* definitions */
 	/** the graph being built upon **/
-	private CirMutationGraph graph;
+	private CirMutationTree tree;
 	/** private constructor for singleton **/
-	private CirMutationUtils() { }
-	/** singleton for building mutation graph **/
-	protected static final CirMutationUtils builder = new CirMutationUtils();
+	private CirMutationTreeUtils() { }
+	/** singleton instance **/
+	protected static final CirMutationTreeUtils utils = new CirMutationTreeUtils();
 	
-	/* constructing methods */
+	/* input methods */
 	/**
-	 * set the graph for being built upon
-	 * @param graph
+	 * set the propagation tree for constructed
+	 * @param tree
 	 */
-	private void set_graph(CirMutationGraph graph) {
-		this.graph = graph;
-	}
-	/**
-	 * generate the path constraints for reaching the root mutation in current graph
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	private void set_path_constraints(CDominanceGraph dominance_graph) throws Exception {
-		CirStatement statement = this.graph.get_root_mutation().get_statement();
-		Collection<CirConstraint> path_constraints = common_path_constraints(
-					dominance_graph, statement, this.graph.get_cir_mutations());
-		this.graph.path_constraints.clear();
-		this.graph.path_constraints.addAll(path_constraints);
-	}
-	/**
-	 * generate the local propagation from root node to those in the same statement
-	 * @throws Exception
-	 */
-	private void set_local_propagation() throws Exception {
-		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
-		Set<CirMutationNode> records = new HashSet<CirMutationNode>();
-		queue.add(this.graph.get_root_node()); 
-		records.add(this.graph.get_root_node());
-		
-		CirMutationNode source, target;
-		while(!queue.isEmpty()) {
-			source = queue.poll();
-			Iterable<CirMutation> next_mutations = propagate_one(
-					this.graph.get_cir_mutations(), source.get_mutation());
-			for(CirMutation next_mutation : next_mutations) {
-				target = this.graph.new_node(next_mutation);
-				if(!records.contains(target)) {
-					source.link_with(CirMutationFlow.inner_link, target);
-					queue.add(target); records.add(target);
-				}
-			}
-		}
-	}
-	/**
-	 * build up an empty graph with path constraints and local propagations
-	 * @param graph
-	 * @param dominance_graph used for path constraints or null if no such information used
-	 * @throws Exception
-	 */
-	protected static void build_graph(CirMutationGraph graph, CDominanceGraph dominance_graph) throws Exception {
-		builder.set_graph(graph);
-		if(dominance_graph != null)
-			builder.set_path_constraints(dominance_graph);
-		builder.set_local_propagation();
+	public void set_tree(CirMutationTree tree) {
+		this.tree = tree;
 	}
 	
-	/* path constraints methods */
+	/* path constraint generation */
 	/**
 	 * @param dominance_graph
 	 * @param instance
@@ -207,7 +156,6 @@ public class CirMutationUtils {
 		}
 		return constraints;
 	}
-	
 	/**
 	 * @param dominance_graph
 	 * @param statement
@@ -241,13 +189,26 @@ public class CirMutationUtils {
 		}
 		return common_constraints;
 	}
+	/**
+	 * generate the root nodes in the tree w.r.t. each initial cir-mutation
+	 * @throws Exception
+	 */
+	public void build_roots(CDominanceGraph dominance_graph) throws Exception {
+		CirMutations cir_mutations = this.tree.get_cir_mutations(); this.tree.clear();
+		Iterable<CirMutation> init_mutations = this.tree.get_initial_cir_mutations();
+		for(CirMutation init_mutation : init_mutations) {
+			CirStatement statement = init_mutation.get_statement();
+			Set<CirConstraint> path_constraints = common_path_constraints(
+									dominance_graph, statement, cir_mutations);
+			CirMutationTreeNode root = new CirMutationTreeNode(this.tree, this.tree.get_cir_mutations().
+					new_mutation(init_mutation.get_constraint(), init_mutation.get_state_error()));
+			this.tree.roots.put(root, path_constraints);
+		}
+	}
 	
-	/* local propagations */
-	/* propagation */
-	private static final Map<COperator, CirErrorPropagator> 
-		propagators = new HashMap<COperator, CirErrorPropagator>();
-	private static final Map<CirStateError, CirConstraint> 
-		propagations = new HashMap<CirStateError, CirConstraint>();	
+	/* error propagation module */
+	private static final Map<COperator, CirErrorPropagator> propagators = new HashMap<COperator, CirErrorPropagator>();
+	private static final Map<CirStateError, CirConstraint> propagations = new HashMap<CirStateError, CirConstraint>();	
 	static {
 		propagators.put(COperator.negative, 	new CirArithNegPropagator());
 		propagators.put(COperator.bit_not, 		new CirBitwsRsvPropagator());
@@ -285,14 +246,13 @@ public class CirMutationUtils {
 		propagators.put(COperator.arith_div_assign, new CirWaitValuePropagator());
 		propagators.put(COperator.arith_mod_assign, new CirArgumentListPropagator());
 	}
-	
 	/**
 	 * @param cir_mutations
 	 * @param source_mutation
 	 * @return the set of cir-mutations propagated from the source mutation
 	 * @throws Exception
 	 */
-	public static Collection<CirMutation> propagate_one(CirMutations 
+	public static Map<CirMutation, CirMutationFlowType> propagate_one(CirMutations 
 			cir_mutations, CirMutation source_mutation) throws Exception {
 		if(cir_mutations == null)
 			throw new IllegalArgumentException("Invalid cir_mutations: null");
@@ -300,10 +260,10 @@ public class CirMutationUtils {
 			throw new IllegalArgumentException("Invalid source_mutation: null");
 		else {
 			/* declarations */
-			List<CirMutation> results = new ArrayList<CirMutation>();
+			Map<CirMutation, CirMutationFlowType> results = new HashMap<CirMutation, CirMutationFlowType>();
 			CirStateError state_error = source_mutation.get_state_error();
 			CirNode source_location, target_location; 
-			CirErrorPropagator propagator;
+			CirErrorPropagator propagator; CirMutationFlowType flow_type;
 			
 			/* determine the next location for propagation to occur */
 			if(state_error instanceof CirExpressionError) {
@@ -320,33 +280,45 @@ public class CirMutationUtils {
 			/* obtain the error propagator algorithm for analysis */
 			if(target_location instanceof CirDeferExpression) {
 				propagator = propagators.get(COperator.dereference);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirFieldExpression) {
 				propagator = propagators.get(COperator.arith_mul_assign);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirAddressExpression) {
 				propagator = propagators.get(COperator.address_of);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirCastExpression) {
 				propagator = propagators.get(COperator.arith_add_assign);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirComputeExpression) {
 				propagator = propagators.get(
 						((CirComputeExpression) target_location).get_operator());
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirInitializerBody) {
 				propagator = propagators.get(COperator.arith_sub_assign);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirWaitExpression) {
 				propagator = propagators.get(COperator.arith_div_assign);
+				flow_type = CirMutationFlowType.operand_parent;
 			}
 			else if(target_location instanceof CirArgumentList) {
 				propagator = propagators.get(COperator.arith_mod_assign);
+				flow_type = CirMutationFlowType.argument_retr;
 			}
 			else if(target_location instanceof CirAssignStatement) {
 				propagator = propagators.get(COperator.assign);
+				if(((CirAssignStatement) target_location).get_lvalue() == source_location)
+					flow_type = CirMutationFlowType.lvalue_lstate;
+				else
+					flow_type = CirMutationFlowType.rvalue_lstate;
 			}
-			else { /* ignore the propagation */ propagator = null; }
+			else { /* ignore the propagation */ propagator = null; flow_type = null; }
 			
 			/* apply the algorithm to generate error propagation */
 			propagations.clear();
@@ -358,12 +330,11 @@ public class CirMutationUtils {
 			/* generate the next generation of state errors */
 			for(CirStateError target_error : propagations.keySet()) {
 				CirConstraint constraint = propagations.get(target_error);
-				results.add(cir_mutations.new_mutation(constraint, target_error));
+				results.put(cir_mutations.new_mutation(constraint, target_error), flow_type);
 			}
 			return results;
 		}
 	}
-	
 	/**
 	 * @param cir_mutations
 	 * @param source_mutation
@@ -381,11 +352,30 @@ public class CirMutationUtils {
 			cir_mutation = queue.poll(); results.add(cir_mutation);
 			
 			/* append the next generation into the queue */
-			Iterable<CirMutation> next_mutations = propagate_one(cir_mutations, cir_mutation);
-			for(CirMutation next_mutation : next_mutations) { queue.add(next_mutation); }
+			Map<CirMutation, CirMutationFlowType> next_mutations = propagate_one(cir_mutations, cir_mutation);
+			for(CirMutation next_mutation : next_mutations.keySet()) { queue.add(next_mutation); }
 		}
 		return results;
 	}
-	
+	/**
+	 * build the error propagation trees
+	 * @throws Exception
+	 */
+	public void build_trees() throws Exception {
+		for(CirMutationTreeNode root : this.tree.get_roots()) {
+			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+			queue.add(root);
+			while(!queue.isEmpty()) {
+				CirMutationTreeNode source = queue.poll();
+				Map<CirMutation, CirMutationFlowType> target_mutations = propagate_one(
+						this.tree.get_cir_mutations(), source.get_cir_mutation());
+				for(CirMutation target_mutation : target_mutations.keySet()) {
+					CirMutationFlowType flow_type = target_mutations.get(target_mutation);
+					CirMutationTreeNode target = source.new_child(flow_type, target_mutation);
+					queue.add(target);
+				}
+			}
+		}
+	}
 	
 }
