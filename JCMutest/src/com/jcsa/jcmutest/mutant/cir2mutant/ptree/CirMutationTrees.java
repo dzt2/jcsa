@@ -127,16 +127,13 @@ public class CirMutationTrees {
 	 * @return the detection level as the analysis result of the tree-node
 	 * @throws Exception
 	 */
-	private CirDetectionStatus get_status_at(CirMutationTreeNode 
+	private CirMutationStatus get_status_at(CirMutationTreeNode 
 				node, CStateContexts contexts) throws Exception {
-		CirMutation mutation = this.
+		CirMutation conc_mutation = this.
 				cir_mutations.optimize(node.get_cir_mutation(), contexts);
-		Boolean reachable = Boolean.TRUE;
-		Boolean satisfiable = mutation.get_constraint().validate(contexts);
-		Boolean influencable = mutation.get_state_error().validate(contexts);
-		CirDetectionStatus status = new CirDetectionStatus(mutation);
-		status.set(reachable, satisfiable, influencable); 
-		status.generate_concrete_words(mutation);
+		CirMutationStatus status = 
+				new CirMutationStatus(node.get_cir_mutation());
+		status.append_concrete_mutation(conc_mutation);
 		return status;
 	}
 	/**
@@ -144,10 +141,10 @@ public class CirMutationTrees {
 	 * @return mapping from tree node to the detection level of each occurrence
 	 * @throws Exception
 	 */
-	public Map<CirMutationTreeNode, List<CirDetectionStatus>> analyze(CStatePath path) throws Exception {
+	public Map<CirMutationTreeNode, List<CirMutationStatus>> analyze(CStatePath path) throws Exception {
 		/* 1. initialization */
-		Map<CirMutationTreeNode, List<CirDetectionStatus>> results = 
-				new HashMap<CirMutationTreeNode, List<CirDetectionStatus>>();
+		Map<CirMutationTreeNode, List<CirMutationStatus>> results = 
+				new HashMap<CirMutationTreeNode, List<CirMutationStatus>>();
 		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
 		for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
 		while(!queue.isEmpty()) {
@@ -155,7 +152,7 @@ public class CirMutationTrees {
 			for(CirMutationTreeNode child : node.get_children()) {
 				queue.add(child);
 			}
-			results.put(node, new ArrayList<CirDetectionStatus>());
+			results.put(node, new ArrayList<CirMutationStatus>());
 		}
 		
 		/* 2. path-insensitive */
@@ -178,74 +175,18 @@ public class CirMutationTrees {
 			}
 		}
 		
-		/* 4. set empty results as not_reached */
-		for(CirMutationTreeNode tree_node : results.keySet()) {
-			if(results.get(tree_node).isEmpty()) {
-				CirDetectionStatus status = 
-						new CirDetectionStatus(tree_node.get_cir_mutation());
-				status.set(Boolean.FALSE, null, null);
-				results.get(tree_node).add(status);
-			}
-		}
-		
-		/* 5. end of all */	return results;
-	}
-	/**
-	 * @param levels
-	 * @return the summarized result of the detection levels as given
-	 * @throws Exception
-	 */
-	private CirDetectionStatus get_summary_of(CirMutationTreeNode tree_node, 
-				Iterable<CirDetectionStatus> status_list) throws Exception {
-		CirDetectionStatus result = new CirDetectionStatus(tree_node.get_cir_mutation());
-		Boolean reachable = Boolean.FALSE, satisfiable = null, influencable = null;
-		
-		for(CirDetectionStatus status : status_list) {
-			reachable = Boolean.TRUE;	/* set as reached */
-			
-			/* determine whether the constraint was satisfied in testing */
-			if(satisfiable == null) {
-				satisfiable = status.get_satisfiable();
-			}
-			else if(!status.unknown_satisfied()) {
-				satisfiable = satisfiable || status.get_satisfiable();
-			}
-			else if(!satisfiable.booleanValue()) {
-				satisfiable = null;
-			}
-			else {
-				satisfiable = Boolean.TRUE;
-			}
-			
-			/* determine whether the state error was infected in testing */
-			if(influencable == null) {
-				influencable = status.get_influencable();
-			}
-			else if(!status.unknown_infected()) {
-				influencable = influencable || status.get_influencable();
-			}
-			else if(!influencable.booleanValue()) {
-				influencable = null;
-			}
-			else {
-				influencable = Boolean.TRUE;
-			}
-			
-			result.append_concrete_words(status);	/* record the feature words */
-		}
-		
-		result.set(reachable, satisfiable, influencable);
-		return result;
+		/* 4. end of all */	return results;
 	}
 	/**
 	 * @param path
 	 * @return mapping from each tree node to the maximal detection level it occurs
 	 * @throws Exception
 	 */
-	public Map<CirMutationTreeNode, CirDetectionStatus> summarize(CStatePath path) throws Exception {
+	public Map<CirMutationTreeNode, CirMutationStatus> summarize(CStatePath path) throws Exception {
+		Map<CirMutationTreeNode, CirMutationStatus> results = 
+				new HashMap<CirMutationTreeNode, CirMutationStatus>();
+		
 		/* 1. initialization */
-		Map<CirMutationTreeNode, List<CirDetectionStatus>> results = 
-				new HashMap<CirMutationTreeNode, List<CirDetectionStatus>>();
 		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
 		for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
 		while(!queue.isEmpty()) {
@@ -253,16 +194,16 @@ public class CirMutationTrees {
 			for(CirMutationTreeNode child : node.get_children()) {
 				queue.add(child);
 			}
-			results.put(node, new ArrayList<CirDetectionStatus>());
+			results.put(node, new CirMutationStatus(node.get_cir_mutation()));
 		}
 		
-		/* 2. path-insensitive */
+		/* 2. path insensitive */
 		if(path == null) {
 			for(CirMutationTreeNode tree_node : results.keySet()) {
-				results.get(tree_node).add(this.get_status_at(tree_node, null));
+				results.get(tree_node).append_concrete_mutation(this.
+						cir_mutations.optimize(tree_node.get_cir_mutation(), null));
 			}
 		}
-		
 		/* 3. path sensitive */
 		else {
 			CStateContexts contexts = new CStateContexts();
@@ -270,19 +211,14 @@ public class CirMutationTrees {
 				contexts.accumulate(state_node);
 				for(CirMutationTreeNode tree_node : results.keySet()) {
 					if(tree_node.get_cir_mutation().get_statement() == state_node.get_statement()) {
-						results.get(tree_node).add(this.get_status_at(tree_node, contexts));
+						results.get(tree_node).append_concrete_mutation(
+								this.cir_mutations.optimize(tree_node.get_cir_mutation(), contexts));
 					}
 				}
 			}
 		}
 		
-		/* 4. construct the summary result */
-		Map<CirMutationTreeNode, CirDetectionStatus> summary = 
-				new HashMap<CirMutationTreeNode, CirDetectionStatus>();
-		for(CirMutationTreeNode tree_node : results.keySet()) {
-			summary.put(tree_node, this.get_summary_of(tree_node, results.get(tree_node)));
-		}
-		return summary;
+		/* 4. end of all */	return results;
 	}
 	
 }

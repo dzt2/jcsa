@@ -13,7 +13,7 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirDetectionStatus;
+import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
@@ -144,7 +144,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_levels(CirMutationTreeNode tree_node, 
-			Iterable<CirDetectionStatus> results, FileWriter writer, int tabs) throws Exception {
+			List<CirMutationStatus> results, FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[TreeNode]");
 		tabs++;
@@ -154,26 +154,41 @@ public class CirMutationTreeTest {
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
 			new_line(writer, tabs);
 			writer.write("--> ");
-			for(CirDetectionStatus result : results) {
-				writer.write(result.get_reachable() + "; ");
-			}
+			writer.write(results.size() + " times");
 			
 			new_line(writer, tabs);
 			writer.write("Constraint: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
 			new_line(writer, tabs);
 			writer.write("--> ");
-			for(CirDetectionStatus result : results) {
-				writer.write(result.get_satisfiable() + "; ");
+			for(CirMutationStatus result : results) {
+				if(result.get_constraint_acceptions() > 0) {
+					writer.write("Satisfied; ");
+				}
+				else if(result.get_constraint_rejections() > 0) {
+					writer.write("Not_Satisfied; ");
+				}
+				else {
+					writer.write("Unknown_Satisfied; ");
+				}
 			}
 			
 			new_line(writer, tabs);
 			writer.write("StateError: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
-			for(CirDetectionStatus result : results) {
+			for(CirMutationStatus result : results) {
 				new_line(writer, tabs);
 				writer.write("--> ");
-				writer.write(result.get_influencable() + ": ");
+				if(result.get_state_error_acceptions() > 0) {
+					writer.write("Infetected");
+				}
+				else if(result.get_state_error_rejections() > 0) {
+					writer.write("Not_Infected");
+				}
+				else {
+					writer.write("Unknown_Infected");
+				}
+				writer.write(": ");
 				for(CirStateErrorWord word : result.get_error_words()) {
 					writer.write(word.toString() + "; ");
 				}
@@ -191,7 +206,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_levels(CirMutationTree tree, 
-			Map<CirMutationTreeNode, List<CirDetectionStatus>> results, 
+			Map<CirMutationTreeNode, List<CirMutationStatus>> results, 
 			FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[Tree]");
@@ -224,7 +239,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirDetectionStatus>> results = trees.analyze(path);
+		Map<CirMutationTreeNode, List<CirMutationStatus>> results = trees.analyze(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
@@ -318,7 +333,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTreeNode tree_node, 
-			CirDetectionStatus level, FileWriter writer, int tabs) throws Exception {
+			CirMutationStatus level, FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[TreeNode]");
 		tabs++;
@@ -327,20 +342,21 @@ public class CirMutationTreeTest {
 			writer.write("Statement: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
 			new_line(writer, tabs);
-			writer.write("--> " + level.get_reachable() + "; ");
+			writer.write("--> " + level.get_execution_times() + " times.");
 			
 			new_line(writer, tabs);
 			writer.write("Constraint: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
 			new_line(writer, tabs);
-			writer.write("--> " + level.get_satisfiable() + "; ");
+			writer.write("--> " + level.get_constraint_acceptions() + " accepted & " + 
+						level.get_constraint_rejections() + " rejected.");
 			
 			new_line(writer, tabs);
 			writer.write("StateError: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
 			new_line(writer, tabs);
 			writer.write("--> ");
-			writer.write(level.get_influencable() + ": ");
+			writer.write(level.get_state_error_acceptions() + " accepted & " + level.get_state_error_rejections() + " rejected: ");
 			for(CirStateErrorWord word : level.get_error_words()) {
 				writer.write(word.toString() + "; ");
 			}
@@ -357,7 +373,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTree tree, 
-			Map<CirMutationTreeNode, CirDetectionStatus> results, 
+			Map<CirMutationTreeNode, CirMutationStatus> results, 
 			FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[Tree]");
@@ -383,7 +399,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, CirDetectionStatus> results = trees.summarize(path);
+		Map<CirMutationTreeNode, CirMutationStatus> results = trees.summarize(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
