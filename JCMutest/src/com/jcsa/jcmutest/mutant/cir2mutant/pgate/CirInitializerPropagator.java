@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;

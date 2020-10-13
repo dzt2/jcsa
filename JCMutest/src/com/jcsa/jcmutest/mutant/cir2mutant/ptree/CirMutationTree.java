@@ -1,8 +1,9 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
 import java.util.Set;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
+
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
 
 

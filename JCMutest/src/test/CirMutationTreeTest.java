@@ -12,11 +12,12 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirDetectionLevel;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirDetectionStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
+import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -143,7 +144,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_levels(CirMutationTreeNode tree_node, 
-			Iterable<CirDetectionLevel> results, FileWriter writer, int tabs) throws Exception {
+			Iterable<CirDetectionStatus> results, FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[TreeNode]");
 		tabs++;
@@ -152,15 +153,30 @@ public class CirMutationTreeTest {
 			writer.write("Statement: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
 			new_line(writer, tabs);
+			writer.write("--> ");
+			for(CirDetectionStatus result : results) {
+				writer.write(result.get_reachable() + "; ");
+			}
+			
+			new_line(writer, tabs);
 			writer.write("Constraint: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
 			new_line(writer, tabs);
+			writer.write("--> ");
+			for(CirDetectionStatus result : results) {
+				writer.write(result.get_satisfiable() + "; ");
+			}
+			
+			new_line(writer, tabs);
 			writer.write("StateError: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
-			new_line(writer, tabs);
-			writer.write("Detections: ");
-			for(CirDetectionLevel result : results) {
-				writer.write(result.toString() + "; ");
+			for(CirDetectionStatus result : results) {
+				new_line(writer, tabs);
+				writer.write("--> ");
+				writer.write(result.get_influencable() + ": ");
+				for(CirStateErrorWord word : result.get_error_words()) {
+					writer.write(word.toString() + "; ");
+				}
 			}
 		}
 		tabs--;
@@ -175,7 +191,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_levels(CirMutationTree tree, 
-			Map<CirMutationTreeNode, List<CirDetectionLevel>> results, 
+			Map<CirMutationTreeNode, List<CirDetectionStatus>> results, 
 			FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[Tree]");
@@ -208,13 +224,12 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirDetectionLevel>> results = trees.analyze(path);
+		Map<CirMutationTreeNode, List<CirDetectionStatus>> results = trees.analyze(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
 		
-		//tabs++;
 		{
 			AstMutation mutation = mutant.get_mutation();
 			AstNode location = mutation.get_location();
@@ -263,7 +278,6 @@ public class CirMutationTreeTest {
 			}
 			tabs--;
 		}
-		//tabs--;
 		
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
@@ -304,7 +318,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTreeNode tree_node, 
-			CirDetectionLevel level, FileWriter writer, int tabs) throws Exception {
+			CirDetectionStatus level, FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[TreeNode]");
 		tabs++;
@@ -313,13 +327,23 @@ public class CirMutationTreeTest {
 			writer.write("Statement: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
 			new_line(writer, tabs);
+			writer.write("--> " + level.get_reachable() + "; ");
+			
+			new_line(writer, tabs);
 			writer.write("Constraint: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
+			new_line(writer, tabs);
+			writer.write("--> " + level.get_satisfiable() + "; ");
+			
 			new_line(writer, tabs);
 			writer.write("StateError: ");
 			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
 			new_line(writer, tabs);
-			writer.write("Detection: " + level);
+			writer.write("--> ");
+			writer.write(level.get_influencable() + ": ");
+			for(CirStateErrorWord word : level.get_error_words()) {
+				writer.write(word.toString() + "; ");
+			}
 		}
 		tabs--;
 		new_line(writer, tabs);
@@ -333,7 +357,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTree tree, 
-			Map<CirMutationTreeNode, CirDetectionLevel> results, 
+			Map<CirMutationTreeNode, CirDetectionStatus> results, 
 			FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[Tree]");
@@ -359,7 +383,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, CirDetectionLevel> results = trees.summarize(path);
+		Map<CirMutationTreeNode, CirDetectionStatus> results = trees.summarize(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
@@ -599,13 +623,14 @@ public class CirMutationTreeTest {
 		
 		output_details(project, tid);
 		output_levels(project, tid);
-		//output_level(project, tid);
+		output_level(project, tid);
+		
 		System.out.println("2. Output the mutation information to XML.");
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
-		String name = "triangle";
-		int tid = 1000;
+		String name = "bi_search";
+		int tid = 64;
 		testing(name, tid);
 	}
 	

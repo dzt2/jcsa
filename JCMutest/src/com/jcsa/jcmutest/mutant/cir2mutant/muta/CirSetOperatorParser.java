@@ -3,9 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.Collection;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcparse.lang.ctype.CType;

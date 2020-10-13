@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.model;
+package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;

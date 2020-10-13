@@ -2,7 +2,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
 import java.util.LinkedList;
 import java.util.List;
-import com.jcsa.jcmutest.mutant.cir2mutant.model.CirMutation;
+
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcparse.test.state.CStateContexts;
 
 /**

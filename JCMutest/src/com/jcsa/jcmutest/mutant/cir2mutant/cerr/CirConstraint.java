@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.model;
+package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
