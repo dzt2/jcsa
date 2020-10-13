@@ -257,25 +257,25 @@ public class CirDetectionStatus {
 					long y = ((Long) rnumber).longValue();
 					/* add words */
 					if(x > y) 
-						this.error_words.add(CirStateErrorWord.inc_value);
-					else if(x < y)
 						this.error_words.add(CirStateErrorWord.dec_value);
+					else if(x < y)
+						this.error_words.add(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
-						this.error_words.add(CirStateErrorWord.ext_value);
-					else if(Math.abs(x) < Math.abs(y))
 						this.error_words.add(CirStateErrorWord.shk_value);
+					else if(Math.abs(x) < Math.abs(y))
+						this.error_words.add(CirStateErrorWord.ext_value);
 				}
 				else {
 					double y = ((Double) rnumber).doubleValue();
 					/* add words */
 					if(x > y) 
-						this.error_words.add(CirStateErrorWord.inc_value);
-					else if(x < y)
 						this.error_words.add(CirStateErrorWord.dec_value);
+					else if(x < y)
+						this.error_words.add(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
-						this.error_words.add(CirStateErrorWord.ext_value);
-					else if(Math.abs(x) < Math.abs(y))
 						this.error_words.add(CirStateErrorWord.shk_value);
+					else if(Math.abs(x) < Math.abs(y))
+						this.error_words.add(CirStateErrorWord.ext_value);
 				}
 			}
 			else {
@@ -284,25 +284,25 @@ public class CirDetectionStatus {
 					long y = ((Long) rnumber).longValue();
 					/* add words */
 					if(x > y) 
-						this.error_words.add(CirStateErrorWord.inc_value);
-					else if(x < y)
 						this.error_words.add(CirStateErrorWord.dec_value);
+					else if(x < y)
+						this.error_words.add(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
-						this.error_words.add(CirStateErrorWord.ext_value);
-					else if(Math.abs(x) < Math.abs(y))
 						this.error_words.add(CirStateErrorWord.shk_value);
+					else if(Math.abs(x) < Math.abs(y))
+						this.error_words.add(CirStateErrorWord.ext_value);
 				}
 				else {
 					double y = ((Double) rnumber).doubleValue();
 					/* add words */
 					if(x > y) 
-						this.error_words.add(CirStateErrorWord.inc_value);
-					else if(x < y)
 						this.error_words.add(CirStateErrorWord.dec_value);
+					else if(x < y)
+						this.error_words.add(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
-						this.error_words.add(CirStateErrorWord.ext_value);
-					else if(Math.abs(x) < Math.abs(y))
 						this.error_words.add(CirStateErrorWord.shk_value);
+					else if(Math.abs(x) < Math.abs(y))
+						this.error_words.add(CirStateErrorWord.ext_value);
 				}
 			}
 		}
