@@ -239,7 +239,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirMutationStatus>> results = trees.analyze(path);
+		Map<CirMutationTreeNode, List<CirMutationStatus>> results = trees.abs_interpret(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
@@ -399,7 +399,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, CirMutationStatus> results = trees.summarize(path);
+		Map<CirMutationTreeNode, CirMutationStatus> results = trees.sum_interpret(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
@@ -543,7 +543,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirMutation>> results = trees.interpret(path);
+		Map<CirMutationTreeNode, List<CirMutation>> results = trees.con_interpret(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);

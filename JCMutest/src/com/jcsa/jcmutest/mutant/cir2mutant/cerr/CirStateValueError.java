@@ -65,7 +65,7 @@ public class CirStateValueError extends CirStateError {
 			return Boolean.TRUE;
 		}
 		else {
-			return Boolean.TRUE;
+			return null;	/* undecidable */
 		}
 	}
 	

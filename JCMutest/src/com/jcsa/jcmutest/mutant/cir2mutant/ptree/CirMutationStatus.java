@@ -324,29 +324,44 @@ public class CirMutationStatus {
 	protected void append_concrete_mutation(CirMutation conc_mutation) throws Exception {
 		/* 1. increase the execution times */ this.execution_times++;
 		
-		/* 2. increase the constraint times */
+		/* 2. determine the satisfiable and infection counters */
 		Boolean satisfiable = conc_mutation.get_constraint().validate(null);
-		if(satisfiable != null) {
-			if(satisfiable.booleanValue()) {
-				this.acceptions_of_constraints++;
+		Boolean infectable = conc_mutation.get_state_error().validate(null);
+		if(satisfiable == null) {
+			if(infectable == null) { 
+				/* (Null, Null) */ 
+			}
+			else if(infectable.booleanValue()) {
+				/* (Null, True) --> (Null, Null) */
 			}
 			else {
-				this.rejections_of_constraints++;
-			}
-		}
-		
-		/* 3. increase the state error times */
-		Boolean is_infected = conc_mutation.get_state_error().validate(null);
-		if(is_infected != null) {
-			if(is_infected.booleanValue()) {
-				this.acceptions_of_state_errors++;
-			}
-			else {
+				/* (Null, False) */
 				this.rejections_of_state_errors++;
 			}
 		}
+		else if(satisfiable.booleanValue()) {
+			if(infectable == null) {
+				/* (True, Null) */
+				this.acceptions_of_constraints++;
+			}
+			else if(infectable.booleanValue()) {
+				/* (True, True) */
+				this.acceptions_of_constraints++;
+				this.acceptions_of_state_errors++;
+			}
+			else {
+				/* (True, False) */
+				this.acceptions_of_constraints++;
+				this.rejections_of_state_errors++;
+			}
+		}
+		else {
+			/* (False, Any?) --> (False, False) */
+			this.rejections_of_constraints++;
+			this.rejections_of_state_errors++;
+		}
 		
-		/* 4. record the feature words for concrete error */
+		/* 3. record the feature words for concrete error */
 		this.append_error_words(conc_mutation.get_state_error());
 	}
 	
