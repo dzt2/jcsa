@@ -74,6 +74,8 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public class CirMutationTreeUtils {
 	
+	/** the unique ID for assign on tree node **/
+	protected static int tree_node_id = 0;
 	/** the graph being built upon **/
 	private CirMutationTree tree;
 	/** private constructor for singleton **/
@@ -354,7 +356,7 @@ public class CirMutationTreeUtils {
 					this.tree.get_trees().get_cir_mutations(), source.get_cir_mutation());
 			for(CirMutation target_mutation : target_mutations.keySet()) {
 				CirMutationFlowType flow_type = target_mutations.get(target_mutation);
-				CirMutationTreeNode target = source.new_child(flow_type, target_mutation);
+				CirMutationTreeNode target = source.new_child(flow_type, target_mutation, tree_node_id++);
 				queue.add(target);
 			}
 		}

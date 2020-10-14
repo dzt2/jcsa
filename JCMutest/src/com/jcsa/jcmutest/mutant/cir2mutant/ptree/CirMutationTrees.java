@@ -70,10 +70,12 @@ public class CirMutationTrees {
 	 */
 	public static CirMutationTrees new_trees(CirTree cir_tree, Mutant 
 			mutant, CDominanceGraph dominance_graph) throws Exception {
+		CirMutationTreeUtils.tree_node_id = 0;
 		CirMutationTrees trees = new CirMutationTrees(cir_tree, mutant);
 		if(mutant.has_cir_mutations()) {
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-				trees.trees.add(new CirMutationTree(trees, cir_mutation, dominance_graph));
+				trees.trees.add(new CirMutationTree(trees, CirMutationTreeUtils.
+								tree_node_id++, cir_mutation, dominance_graph));
 			}
 		}
 		return trees;
@@ -108,11 +110,9 @@ public class CirMutationTrees {
 			CStateContexts contexts = new CStateContexts();
 			for(CStateNode state_node : path.get_nodes()) {
 				contexts.accumulate(state_node);
-				for(CirMutationTreeNode tree_node : results.keySet()) {
-					if(tree_node.get_cir_mutation().get_statement() == state_node.get_statement()) {
-						CirMutation conc_mutation = 
-								this.cir_mutations.optimize(tree_node.get_cir_mutation(), contexts);
-						results.get(tree_node).add(conc_mutation);
+				for(CirMutationTree tree : this.trees) {
+					if(tree.get_root_mutation().get_statement() == state_node.get_statement()) {
+						tree.execute_and_update(state_node.get_statement(), contexts, results);
 					}
 				}
 			}
@@ -134,31 +134,20 @@ public class CirMutationTrees {
 			/* 1. initialization */
 			Map<CirMutationTreeNode, List<CirMutationStatus>> results = 
 					new HashMap<CirMutationTreeNode, List<CirMutationStatus>>();
-			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-			for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
-			while(!queue.isEmpty()) {
-				CirMutationTreeNode tree_node = queue.poll();
-				for(CirMutationTreeNode child : tree_node.get_children()) {
-					queue.add(child);
-				}
-				results.put(tree_node, new LinkedList<CirMutationStatus>());
-			}
+			Map<CirMutationTreeNode, List<CirMutation>> conc_results = this.con_interpret(path);
 			
-			/* 2. accumulate the state on path and concrete mutation */
-			CStateContexts contexts = new CStateContexts();
-			for(CStateNode state_node : path.get_nodes()) {
-				contexts.accumulate(state_node);
-				for(CirMutationTreeNode tree_node : results.keySet()) {
-					if(tree_node.get_cir_mutation().get_statement() == state_node.get_statement()) {
-						CirMutation conc_mutation = 
-								this.cir_mutations.optimize(tree_node.get_cir_mutation(), contexts);
-						CirMutationStatus status = new CirMutationStatus(tree_node.get_cir_mutation());
-						status.append_concrete_mutation(conc_mutation); results.get(tree_node).add(status);
-					}
+			/* 2. translation */
+			for(CirMutationTreeNode tree_node : conc_results.keySet()) {
+				List<CirMutation> conc_mutations = conc_results.get(tree_node);
+				List<CirMutationStatus> statuses = new ArrayList<CirMutationStatus>();
+				for(CirMutation conc_mutation : conc_mutations) {
+					CirMutationStatus status = new CirMutationStatus(tree_node.get_cir_mutation());
+					status.append_concrete_mutation(conc_mutation);
+					statuses.add(status);
 				}
+				results.put(tree_node, statuses);
 			}
-			
-			/* 3. end of all */	return results;
+			return results;
 		}
 	}
 	/**
@@ -174,31 +163,22 @@ public class CirMutationTrees {
 			/* 1. initialization */
 			Map<CirMutationTreeNode, CirMutationStatus> results = 
 					new HashMap<CirMutationTreeNode, CirMutationStatus>();
-			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-			for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
-			while(!queue.isEmpty()) {
-				CirMutationTreeNode tree_node = queue.poll();
-				for(CirMutationTreeNode child : tree_node.get_children()) {
-					queue.add(child);
-				}
-				results.put(tree_node, new CirMutationStatus(tree_node.get_cir_mutation()));
-			}
+			Map<CirMutationTreeNode, List<CirMutation>> conc_results = this.con_interpret(path);
 			
-			/* 2. accumulate the state on path and concrete mutation */
-			CStateContexts contexts = new CStateContexts();
-			for(CStateNode state_node : path.get_nodes()) {
-				contexts.accumulate(state_node);
-				for(CirMutationTreeNode tree_node : results.keySet()) {
-					if(tree_node.get_cir_mutation().get_statement() == state_node.get_statement()) {
-						CirMutation conc_mutation = 
-								this.cir_mutations.optimize(tree_node.get_cir_mutation(), contexts);
-						results.get(tree_node).append_concrete_mutation(conc_mutation);
-					}
+			/* 2. translation */
+			for(CirMutationTreeNode tree_node : conc_results.keySet()) {
+				List<CirMutation> conc_mutations = conc_results.get(tree_node);
+				CirMutationStatus status = new CirMutationStatus(tree_node.get_cir_mutation());
+				for(CirMutation conc_mutation : conc_mutations) {
+					status.append_concrete_mutation(conc_mutation);
 				}
+				results.put(tree_node, status);
 			}
 			
 			/* 3. end of all */	return results;
 		}
 	}
+	
+	/* analysis methods */
 	
 }

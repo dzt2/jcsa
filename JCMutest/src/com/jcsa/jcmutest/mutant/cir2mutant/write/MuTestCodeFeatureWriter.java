@@ -3,6 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.write;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.MutantSpace;
+import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -29,16 +32,19 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
+import com.jcsa.jcparse.test.file.TestInput;
+import com.jcsa.jcparse.test.file.TestInputs;
 
 /**
- * Used to write information of source code, AstTree, CirTree and CirFunctionCallGraph
- * on file for python scripts to read and translation.
+ * Used to write feature information of source code, AstTree, CirTree, CirFunctionCallGraph,
+ * source mutation in AST and test input on file for python scripts to read and translation.
  * 
  * @author yukimula
  *
  */
-public class MuTestCodeWrite {
+public class MuTestCodeFeatureWriter {
 	
+	/* basic methods */
 	/**
 	 * encode the parameter into standard form and write to the file stream
 	 * @param parameter
@@ -49,22 +55,25 @@ public class MuTestCodeWrite {
 		writer.write(MuTestWritingUtils.encode(parameter));
 	}
 	
+	/* source code */
 	/**
 	 * write the code in ifile to tfile for reading
 	 * @param ifile
 	 * @param tfile
 	 * @throws Exception
 	 */
-	protected static void write_source_code(File ifile, File tfile) throws Exception {
+	private static void write_source_code(File ifile, File tfile) throws Exception {
 		if(ifile == null || !ifile.exists())
 			throw new IllegalArgumentException("Invalid ifile: null");
 		else if(tfile == null)
 			throw new IllegalArgumentException("Invalid tfile: null");
 		else {
 			FileOperations.copy(ifile, tfile);
+			System.out.println("\t--> Write " + tfile.getName());
 		}
 	}
 	
+	/* abstract syntax tree */
 	/**
 	 * id type beg_index end_index type token [children]
 	 * @param ast_node
@@ -127,14 +136,13 @@ public class MuTestCodeWrite {
 		}
 		writer.write(" ]");
 	}
-	
 	/**
 	 * write the abstract syntax tree to the tfile
 	 * @param ast_tree
 	 * @param tdir
 	 * @throws Exception
 	 */
-	protected static void write_ast_tree(AstTree ast_tree, File tfile) throws Exception {
+	private static void write_ast_tree(AstTree ast_tree, File tfile) throws Exception {
 		if(ast_tree == null)
 			throw new IllegalArgumentException("Invalid ast_tree: null");
 		else if(tfile == null)
@@ -147,9 +155,11 @@ public class MuTestCodeWrite {
 				writer.write("\n");
 			}
 			writer.close();
+			System.out.println("\t--> Write " + tfile.getName());
 		}
 	}
 	
+	/* C-intermediate representation */
 	/**
 	 * id type ast_source type token children
 	 * @param cir_node
@@ -211,14 +221,13 @@ public class MuTestCodeWrite {
 		}
 		writer.write(" ]");
 	}
-	
 	/**
 	 * write the C-intermediate representation to target file
 	 * @param cir_tree
 	 * @param tfile
 	 * @throws Exception
 	 */
-	protected static void write_cir_tree(CirTree cir_tree, File tfile) throws Exception {
+	private static void write_cir_tree(CirTree cir_tree, File tfile) throws Exception {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid ast_tree: null");
 		else if(tfile == null)
@@ -231,9 +240,11 @@ public class MuTestCodeWrite {
 				writer.write("\n");
 			}
 			writer.close();
+			System.out.println("\t--> Write " + tfile.getName());
 		}
 	}
 	
+	/* C function call and flow graph */
 	/**
 	 * [ type source target ]
 	 * @param flow
@@ -247,7 +258,6 @@ public class MuTestCodeWrite {
 		writer.write(" " + flow.get_target());
 		writer.write(" ]");
 	}
-	
 	/**
 	 * id cir_stmt
 	 * @param execution
@@ -258,7 +268,6 @@ public class MuTestCodeWrite {
 		writer.write(execution.toString() + "\t");
 		writer.write(execution.get_statement().get_node_id());
 	}
-	
 	/**
 	 * [call_execution, wait_execution]
 	 * @param call
@@ -271,7 +280,6 @@ public class MuTestCodeWrite {
 		writer.write(" " + call.get_wait_execution());
 		writer.write(" ]");
 	}
-	
 	/**
 	 * #Func name
 	 * {#Exec exe_id cir_statement}+
@@ -305,16 +313,15 @@ public class MuTestCodeWrite {
 			writer.write("\n");
 		}
 		
-		writer.write("#EndFunc\n\n");
+		writer.write("#EndFunc\n");
 	}
-	
 	/**
 	 * write the function call graph of program into tfile
 	 * @param graph
 	 * @param tfile
 	 * @throws Exception
 	 */
-	protected static void write_function_call_graph(CirFunctionCallGraph graph, File tfile) throws Exception {
+	private static void write_function_call_graph(CirFunctionCallGraph graph, File tfile) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
 		else if(tfile == null)
@@ -323,11 +330,85 @@ public class MuTestCodeWrite {
 			FileWriter writer = new FileWriter(tfile);
 			for(CirFunction function : graph.get_functions()) {
 				write_function(function, writer);
+				writer.write("\n");
 			}
 			writer.close();
+			System.out.println("\t--> Write " + tfile.getName());
 		}
 	}
 	
+	/* test input writer */
+	/**
+	 * id: parameter
+	 * @param input
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void write_test_input(TestInput input, FileWriter writer) throws Exception {
+		writer.write(input.get_id() + ": ");
+		writer.write(input.get_parameter().strip());
+	}
+	/**
+	 * write the test inputs in space to the file
+	 * @param space
+	 * @param tfile
+	 * @throws Exception
+	 */
+	private static void write_test_inputs(TestInputs space, File tfile) throws Exception {
+		if(space == null)
+			throw new IllegalArgumentException("Invalid space: null");
+		else if(tfile == null)
+			throw new IllegalArgumentException("Invalid tfile: null");
+		else {
+			FileWriter writer = new FileWriter(tfile);
+			for(TestInput input : space.get_inputs()) {
+				write_test_input(input, writer);
+				writer.write("\n");
+			}
+			writer.close();
+			System.out.println("\t--> Write " + tfile.getName());
+		}
+	}
+	
+	/* source mutation */
+	/**
+	 * id class operator location parameter
+	 * @param mutant
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void write_mutant(Mutant mutant, FileWriter writer) throws Exception {
+		writer.write(mutant.get_id() + "\t");
+		AstMutation mutation = mutant.get_mutation();
+		writer.write(mutation.get_class() + "\t");
+		writer.write(mutation.get_operator() + "\t");
+		write_parameter(mutation.get_location(), writer);
+		writer.write("\t");
+		write_parameter(mutation.get_parameter(), writer);
+	}
+	/**
+	 * write the source mutants in space to the file
+	 * @param mspace
+	 * @param writer
+	 * @throws Exception
+	 */
+	private static void write_mutants(MutantSpace space, File tfile) throws Exception {
+		if(space == null)
+			throw new IllegalArgumentException("Invalid space: null");
+		else if(tfile == null)
+			throw new IllegalArgumentException("Invalid tfile: null");
+		else {
+			FileWriter writer = new FileWriter(tfile);
+			for(Mutant mutant : space.get_mutants()) {
+				write_mutant(mutant, writer);
+				writer.write("\n");
+			}
+			writer.close();
+			System.out.println("\t--> Write " + tfile.getName());
+		}
+	}
+	
+	/* output methods */
 	/**
 	 * write source code, abstract syntax tree, C-intermediate representation
 	 * and the function call graph (as well as control flow graph) to the files
@@ -352,6 +433,10 @@ public class MuTestCodeWrite {
 					new File(tdir.getAbsolutePath() + "/" + name + ".cir"));
 			write_function_call_graph(code_file.get_cir_tree().get_function_call_graph(),
 					new File(tdir.getAbsolutePath() + "/" + name + ".flw"));
+			write_test_inputs(code_file.get_code_space().get_project().get_test_space().get_test_space(),
+					new File(tdir.getAbsolutePath() + "/" + name + ".tes"));
+			write_mutants(code_file.get_mutant_space(),
+					new File(tdir.getAbsolutePath() + "/" + name + ".mut"));
 		}
 	}
 	

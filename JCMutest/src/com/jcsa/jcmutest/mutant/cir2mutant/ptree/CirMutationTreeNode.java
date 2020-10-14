@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcparse.test.state.CStateContexts;
@@ -18,6 +19,8 @@ public class CirMutationTreeNode {
 	/* definitions */
 	/** the tree where this node is created and belongs to **/
 	private CirMutationTree tree;
+	/** integer ID of the tree node within the tree(s) **/
+	private int tree_node_id;
 	/** the mutation that the node represents **/
 	private CirMutation cir_mutation;
 	/** the parent node of this node or null if it's root **/
@@ -36,7 +39,7 @@ public class CirMutationTreeNode {
 	 * @param cir_mutation
 	 * @throws Exception
 	 */
-	protected CirMutationTreeNode(CirMutationTree tree, CirMutation cir_mutation) throws IllegalArgumentException {
+	protected CirMutationTreeNode(CirMutationTree tree, int tid, CirMutation cir_mutation) throws IllegalArgumentException {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
 		else if(cir_mutation == null)
@@ -44,6 +47,7 @@ public class CirMutationTreeNode {
 		else {
 			this.tree = tree;
 			this.cir_mutation = cir_mutation;
+			this.tree_node_id = tid;
 			this.parent = null;
 			this.children = new LinkedList<CirMutationTreeNode>();
 			this.child_index = -1;
@@ -56,7 +60,7 @@ public class CirMutationTreeNode {
 	 * @param cir_mutation
 	 * @throws IllegalArgumentException
 	 */
-	private CirMutationTreeNode(CirMutationTreeNode parent, CirMutation cir_mutation, 
+	private CirMutationTreeNode(CirMutationTreeNode parent, int tid, CirMutation cir_mutation, 
 			CirMutationFlowType flow_type) throws IllegalArgumentException {
 		if(parent == null)
 			throw new IllegalArgumentException("No parent specified");
@@ -67,6 +71,7 @@ public class CirMutationTreeNode {
 		else {
 			this.tree = parent.tree;
 			this.cir_mutation = cir_mutation;
+			this.tree_node_id = tid;
 			this.parent = parent;
 			this.children = new LinkedList<CirMutationTreeNode>();
 			this.child_index = parent.children.size();
@@ -79,6 +84,10 @@ public class CirMutationTreeNode {
 	 * @return the tree where this node is created and belongs to
 	 */
 	public CirMutationTree get_tree() { return this.tree; }
+	/**
+	 * @return the unique ID of the tree node within the tree(s)
+	 */
+	public int get_tree_node_id() { return this.tree_node_id; }
 	/**
 	 * @return the mutation that the node represents
 	 */
@@ -131,15 +140,6 @@ public class CirMutationTreeNode {
 		}
 		return root;
 	}
-	/**
-	 * @param contexts
-	 * @return the mutation optimized under the given contexts
-	 * @throws Exception
-	 */
-	public CirMutation optimize_by(CStateContexts contexts) throws Exception {
-		return this.tree.get_trees().get_cir_mutations().
-					optimize(this.cir_mutation, contexts);
-	}
 	
 	/* setters */
 	/**
@@ -148,7 +148,8 @@ public class CirMutationTreeNode {
 	 * @return link this node to its child w.r.t. the given mutation and specified flow-type
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationTreeNode new_child(CirMutationFlowType flow_type, CirMutation cir_mutation) throws IllegalArgumentException {
+	protected CirMutationTreeNode new_child(CirMutationFlowType flow_type, 
+			CirMutation cir_mutation, int tid) throws IllegalArgumentException {
 		if(cir_mutation == null)
 			throw new IllegalArgumentException("Invalid cir_mutation");
 		else {
@@ -158,7 +159,8 @@ public class CirMutationTreeNode {
 						return child;
 				}
 			}
-			CirMutationTreeNode child = new CirMutationTreeNode(this, cir_mutation, flow_type);
+			CirMutationTreeNode child = new CirMutationTreeNode(
+					this, tid, cir_mutation, flow_type);
 			this.children.add(child);
 			return child;
 		}
@@ -179,6 +181,38 @@ public class CirMutationTreeNode {
 		}
 		this.parent = null;
 		this.children = null;
+	}
+	
+	/* analysis methods */
+	/**
+	 * @param contexts
+	 * @return the mutation optimized under the given contexts
+	 * @throws Exception
+	 */
+	private CirMutation optimize_by(CStateContexts contexts) throws Exception {
+		return this.tree.get_trees().get_cir_mutations().
+					optimize(this.cir_mutation, contexts);
+	}
+	/**
+	 * execute the cir-mutation against the given state contexts and update the concrete mutation in the result table
+	 * @param contexts
+	 * @param results mapping from each tree node to their concrete mutation or none if the mutation is not reached
+	 * 		  in case that the parent of the mutation's tree node failed to pass state error.
+	 * @throws Exception
+	 */
+	protected void execute_and_update(CStateContexts contexts, Map<CirMutationTreeNode, CirMutation> results) throws Exception {
+		CirMutation conc_mutation = this.optimize_by(contexts);
+		Boolean satisfiable = conc_mutation.get_constraint().validate(null);
+		Boolean infectable = conc_mutation.get_state_error().validate(null);
+		results.put(this, conc_mutation);
+		
+		if(satisfiable == null || satisfiable.booleanValue()) {
+			if(infectable == null || infectable.booleanValue()) {
+				for(CirMutationTreeNode child : this.children) {
+					child.execute_and_update(contexts, results);
+				}
+			}
+		}
 	}
 	
 }
