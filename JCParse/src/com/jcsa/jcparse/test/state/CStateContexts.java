@@ -6,12 +6,12 @@ import java.util.Stack;
 
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymEvaluator;
@@ -62,8 +62,10 @@ public class CStateContexts {
 			throw new IllegalArgumentException("Empty stack");
 		else if(this.context.get_context_key() == context_key)
 			this.context = this.context.get_parent();
+		/*
 		else
 			throw new IllegalArgumentException("Unable to match");
+		*/
 	}
 	/**
 	 * save the value w.r.t. the key in current context
@@ -190,7 +192,8 @@ public class CStateContexts {
 			
 			/* 2. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
-			CirFunctionDefinition def = statement.function_of();
+			CirFunction def = statement.get_tree().get_localizer().
+					get_execution(statement).get_graph().get_function();
 			if(statement instanceof CirBegStatement) {
 				this.push(def);
 			}

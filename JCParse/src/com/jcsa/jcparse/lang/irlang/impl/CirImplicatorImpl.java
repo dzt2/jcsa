@@ -23,10 +23,10 @@ public class CirImplicatorImpl extends CirExpressionImpl implements CirImplicato
 	@Override
 	public String get_name() { 
 		if(name == null)
-			return "#" + this.get_ast_source().hashCode(); 
+			return "#" + this.get_ast_source().get_key(); 
 		else return name;
 	}
 	@Override
-	public String get_unique_name() { return "#" + this.get_ast_source().hashCode(); }
+	public String get_unique_name() { return "#" + this.get_ast_source().get_key(); }
 	
 }

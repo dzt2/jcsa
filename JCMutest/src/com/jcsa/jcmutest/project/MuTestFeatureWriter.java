@@ -320,34 +320,38 @@ public class MuTestFeatureWriter {
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_sym_node(SymNode node) throws Exception {
+	private void write_sym_node(AstTree ast_tree, SymNode node) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node: null");
 		else if(node instanceof SymIdentifier) {
 			/* 1. get the simplified name of identifier */
 			String name = ((SymIdentifier) node).get_name();
-			int index = name.indexOf('@');
-			if(index >= 0)
-				name = name.substring(0, index).strip();
+			int index = name.indexOf('#'); String prev, post;
+			if(index >= 0) {
+				prev = name.substring(0, index).strip();
+				post = name.substring(index + 1).strip();
+			}
+			else {
+				prev = name; post = "";
+			}
 			
 			/* 2. generate the ast-code when name is implicator */
-			if(name.isBlank()) {
-				AstNode source = ((SymIdentifier) node).get_ast_source();
-				if(source == null && node.has_source())
-					source = ((SymIdentifier) node).get_cir_source().get_ast_source();
-				
-				if(source == null) {
-					writer.write(((SymIdentifier) node).get_name());
+			if(prev.isEmpty()) {
+				int ast_key = Integer.parseInt(post);
+				AstNode source = ast_tree.get_node(ast_key);
+				String code = source.generate_code();
+				for(int k = 0; k < code.length(); k++) {
+					char ch = code.charAt(k);
+					if(Character.isWhitespace(ch))
+						ch = ' ';
+					writer.write(ch);
 				}
-				else {
-					String code = source.generate_code();
-					for(int k = 0; k < code.length(); k++) {
-						char ch = code.charAt(k);
-						if(Character.isWhitespace(ch))
-							ch = ' ';
-						writer.write(ch);
-					}
-				}
+			}
+			else if(prev.equals("return")) {
+				writer.write(name);
+			}
+			else {
+				writer.write(prev);
 			}
 		}
 		else if(node instanceof SymConstant) {
@@ -357,32 +361,32 @@ public class MuTestFeatureWriter {
 			writer.write("@Literal");
 		}
 		else if(node instanceof SymUnaryExpression) {
-			this.write_sym_node(((SymUnaryExpression) node).get_operator());
+			this.write_sym_node(ast_tree, ((SymUnaryExpression) node).get_operator());
 			writer.write("(");
-			this.write_sym_node(((SymUnaryExpression) node).get_operand());
+			this.write_sym_node(ast_tree, ((SymUnaryExpression) node).get_operand());
 			writer.write(")");
 		}
 		else if(node instanceof SymBinaryExpression) {
 			writer.write("(");
-			this.write_sym_node(((SymBinaryExpression) node).get_loperand());
+			this.write_sym_node(ast_tree, ((SymBinaryExpression) node).get_loperand());
 			writer.write(") ");
-			this.write_sym_node(((SymBinaryExpression) node).get_operator());
+			this.write_sym_node(ast_tree, ((SymBinaryExpression) node).get_operator());
 			writer.write(" (");
-			this.write_sym_node(((SymBinaryExpression) node).get_roperand());
+			this.write_sym_node(ast_tree, ((SymBinaryExpression) node).get_roperand());
 			writer.write(")");
 		}
 		else if(node instanceof SymOperator) {
 			writer.write(node.generate_code());
 		}
 		else if(node instanceof SymCallExpression) {
-			this.write_sym_node(((SymCallExpression) node).get_function());
-			this.write_sym_node(((SymCallExpression) node).get_argument_list());
+			this.write_sym_node(ast_tree, ((SymCallExpression) node).get_function());
+			this.write_sym_node(ast_tree, ((SymCallExpression) node).get_argument_list());
 		}
 		else if(node instanceof SymArgumentList) {
 			SymArgumentList list = (SymArgumentList) node;
 			writer.write("(");
 			for(int k = 0; k < list.number_of_arguments(); k++) {
-				this.write_sym_node(list.get_argument(k));
+				this.write_sym_node(ast_tree, list.get_argument(k));
 				if(k < list.number_of_arguments() - 1) {
 					writer.write(", ");
 				}
@@ -391,9 +395,9 @@ public class MuTestFeatureWriter {
 		}
 		else if(node instanceof SymFieldExpression) {
 			writer.write("(");
-			this.write_sym_node(((SymFieldExpression) node).get_body());
+			this.write_sym_node(ast_tree, ((SymFieldExpression) node).get_body());
 			writer.write(").");
-			this.write_sym_node(((SymFieldExpression) node).get_field());
+			this.write_sym_node(ast_tree, ((SymFieldExpression) node).get_field());
 		}
 		else if(node instanceof SymField) {
 			writer.write(((SymField) node).get_name());
@@ -402,7 +406,7 @@ public class MuTestFeatureWriter {
 			writer.write("{");
 			SymInitializerList list = (SymInitializerList) node;
 			for(int k = 0; k < list.number_of_elements(); k++) {
-				this.write_sym_node(list.get_element(k));
+				this.write_sym_node(ast_tree, list.get_element(k));
 				if(k < list.number_of_elements() - 1) {
 					writer.write(", ");
 				}
@@ -420,9 +424,9 @@ public class MuTestFeatureWriter {
 	 * @param constraint
 	 * @throws Exception
 	 */
-	private void write_constraint(CirConstraint constraint) throws Exception {
+	private void write_constraint(AstTree ast_tree, CirConstraint constraint) throws Exception {
 		writer.write(constraint.get_execution() + ":(");
-		this.write_sym_node(constraint.get_condition());
+		this.write_sym_node(ast_tree, constraint.get_condition());
 		writer.write(")");
 	}
 	/**
@@ -434,7 +438,7 @@ public class MuTestFeatureWriter {
 	 * @param state_error
 	 * @throws Exception
 	 */
-	private void write_state_error(CirStateError state_error) throws Exception {
+	private void write_state_error(AstTree ast_tree, CirStateError state_error) throws Exception {
 		if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
 		else {
@@ -452,27 +456,27 @@ public class MuTestFeatureWriter {
 				writer.write("expr(");
 				this.write_element(((CirExpressionError) state_error).get_expression());
 				writer.write(", ");
-				this.write_sym_node(((CirExpressionError) state_error).get_original_value());
+				this.write_sym_node(ast_tree, ((CirExpressionError) state_error).get_original_value());
 				writer.write(", ");
-				this.write_sym_node(((CirExpressionError) state_error).get_mutation_value());
+				this.write_sym_node(ast_tree, ((CirExpressionError) state_error).get_mutation_value());
 				writer.write(")");
 			}
 			else if(state_error instanceof CirReferenceError) {
 				writer.write("refr(");
 				this.write_element(((CirReferenceError) state_error).get_reference());
 				writer.write(", ");
-				this.write_sym_node(((CirReferenceError) state_error).get_original_value());
+				this.write_sym_node(ast_tree, ((CirReferenceError) state_error).get_original_value());
 				writer.write(", ");
-				this.write_sym_node(((CirReferenceError) state_error).get_mutation_value());
+				this.write_sym_node(ast_tree, ((CirReferenceError) state_error).get_mutation_value());
 				writer.write(")");
 			}
 			else if(state_error instanceof CirStateValueError) {
 				writer.write("stat(");
 				this.write_element(((CirStateValueError) state_error).get_reference());
 				writer.write(", ");
-				this.write_sym_node(((CirStateValueError) state_error).get_original_value());
+				this.write_sym_node(ast_tree, ((CirStateValueError) state_error).get_original_value());
 				writer.write(", ");
-				this.write_sym_node(((CirStateValueError) state_error).get_mutation_value());
+				this.write_sym_node(ast_tree, ((CirStateValueError) state_error).get_mutation_value());
 				writer.write(")");
 			}
 			else {
@@ -783,13 +787,13 @@ public class MuTestFeatureWriter {
 	 * @param tree_node
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_tree_node(CirMutationTreeNode tree_node) throws Exception {
+	private void write_cir_mutation_tree_node(AstTree ast_tree, CirMutationTreeNode tree_node) throws Exception {
 		writer.write("#node");
 		writer.write("\t" + tree_node.get_tree_node_id());
 		writer.write("\t");
-		this.write_constraint(tree_node.get_cir_mutation().get_constraint());
+		this.write_constraint(ast_tree, tree_node.get_cir_mutation().get_constraint());
 		writer.write("\t");
-		this.write_state_error(tree_node.get_cir_mutation().get_state_error());
+		this.write_state_error(ast_tree, tree_node.get_cir_mutation().get_state_error());
 		writer.write("\t");
 		writer.write("[");
 		for(CirMutationTreeNode child : tree_node.get_children()) {
@@ -807,7 +811,7 @@ public class MuTestFeatureWriter {
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_tree(CirMutationTree tree) throws Exception {
+	private void write_cir_mutation_tree(AstTree ast_tree, CirMutationTree tree) throws Exception {
 		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
 		queue.add(tree.get_root());
 		writer.write("\t#BegTree\n");
@@ -815,7 +819,7 @@ public class MuTestFeatureWriter {
 		writer.write("\t\t#path");
 		for(CirConstraint constraint : tree.get_path_constraints()) {
 			writer.write("\t");
-			this.write_constraint(constraint);
+			this.write_constraint(ast_tree, constraint);
 		}
 		writer.write("\n");
 		
@@ -825,7 +829,7 @@ public class MuTestFeatureWriter {
 				queue.add(child);
 			}
 			writer.write("\t\t");
-			this.write_cir_mutation_tree_node(tree_node);
+			this.write_cir_mutation_tree_node(ast_tree, tree_node);
 			writer.write("\n");
 		}
 		
@@ -844,11 +848,11 @@ public class MuTestFeatureWriter {
 	 * @param trees
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_trees(CirMutationTrees trees) throws Exception {
+	private void write_cir_mutation_trees(AstTree ast_tree, CirMutationTrees trees) throws Exception {
 		writer.write("#BegTrees\n");
 		writer.write("\t#muta\t" + trees.get_mutant().get_id() + "\n");
 		for(CirMutationTree tree : trees.get_trees()) {
-			this.write_cir_mutation_tree(tree);
+			this.write_cir_mutation_tree(ast_tree, tree);
 		}
 		writer.write("#EndTrees\n");
 	}
@@ -865,7 +869,7 @@ public class MuTestFeatureWriter {
 		for(Mutant mutant : space.get_mutant_space().get_mutants()) {
 			CirMutationTrees trees = CirMutationTrees.new_trees(
 					space.get_cir_tree(), mutant, dominance_graph);
-			this.write_cir_mutation_trees(trees);
+			this.write_cir_mutation_trees(space.get_ast_tree(), trees);
 			writer.write("\n");
 		}
 		this.close_writer();
