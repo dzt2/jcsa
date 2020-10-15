@@ -1,8 +1,9 @@
-package com.jcsa.jcmutest.mutant.cir2mutant;
+package com.jcsa.jcmutest.project;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -13,13 +14,12 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
+import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
+import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.project.MuTestProject;
-import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
-import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
@@ -74,6 +74,7 @@ import com.jcsa.jcparse.lang.sym.SymNode;
 import com.jcsa.jcparse.lang.sym.SymOperator;
 import com.jcsa.jcparse.lang.sym.SymUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 
 /**
@@ -730,7 +731,7 @@ public class MuTestFeatureWriter {
 		writer.write(input.get_parameter());
 	}
 	/**
-	 * write the test inputs in space to xxx.tst in directory
+	 * write the test inputs in space to xxx.tst in directorycbuf
 	 * @param space
 	 * @param cfile
 	 * @param directory
@@ -899,6 +900,91 @@ public class MuTestFeatureWriter {
 			this.write_test_inputs(tspace, cfile, directory);
 			this.write_mutants(cspace, cfile, directory);
 			this.write_mutant_feature_trees(cspace, cfile, directory, dominance_graph);
+			
+			for(TestInput input : tspace.get_test_inputs()) {
+				this.write_test_results(cspace, input, cfile, directory, dominance_graph);
+			}
+		}
+	}
+	
+	/* results writing methods */
+	/**
+	 * 	#BegResult
+	 * 		#result mid tid {0(alive); 1(killed); 2(unknown)}
+	 * 		#status tree_id exec_times reject_cons accept_cons reject_stat
+	 * 				accept_stat [ error_word* ]
+	 * 	#EndResult
+	 * @param trees
+	 * @param input
+	 * @param result
+	 * @param status
+	 * @throws Exception
+	 */
+	private void write_test_result(CirMutationTrees trees, TestInput input, 
+			MuTestProjectTestResult result, CStatePath path) throws Exception {
+		Map<CirMutationTreeNode, CirMutationStatus> statuses = trees.sum_interpret(path);
+		writer.write("#BegResult\n");
+		
+		writer.write("\t#result");
+		writer.write("\t" + trees.get_mutant().get_id());
+		writer.write("\t" + input.get_id());
+		int rid;
+		if(result != null && result.get_exec_set().get(input.get_id())) {
+			if(result.get_kill_set().get(input.get_id())) {
+				rid = 1;
+			}
+			else {
+				rid = 0;
+			}
+		}
+		else {
+			rid = 2;
+		}
+		writer.write("\t" + rid);
+		writer.write("\n");
+		
+		for(CirMutationTreeNode tree_node : statuses.keySet()) {
+			CirMutationStatus status = statuses.get(tree_node);
+			writer.write("\t#status");
+			writer.write("\t" + status.get_execution_times());
+			writer.write("\t" + status.get_constraint_rejections());
+			writer.write("\t" + status.get_constraint_acceptions());
+			writer.write("\t" + status.get_state_error_rejections());
+			writer.write("\t" + status.get_state_error_acceptions());
+			writer.write("\t[");
+			for(CirStateErrorWord word : status.get_error_words()) {
+				writer.write(" " + word);
+			}
+			writer.write(" ]");
+			writer.write("\n");
+		}
+		
+		writer.write("#EndResult\n");
+	}
+	/**
+	 * write the results of mutants against the specified test to xxx.tid.res in directory
+	 * @param space
+	 * @param input
+	 * @param cfile
+	 * @param dominance_graph
+	 * @throws Exception
+	 */
+	private void write_test_results(MuTestProjectCodeFile space, TestInput input, 
+				File cfile, File directory, CDominanceGraph dominance_graph) throws Exception {
+		CStatePath path = space.get_code_space().get_project().get_test_space().
+						load_instrumental_path(space.get_sizeof_template(), 
+						space.get_ast_tree(), space.get_cir_tree(), input);
+		if(path != null) {	/* to avoid analysis on test without path */
+			this.open_writer(this.get_output_file(directory, cfile, "." + input.get_id() + ".res"));
+			for(Mutant mutant : space.get_mutant_space().get_mutants()) {
+				MuTestProjectTestResult result = space.get_code_space().
+						get_project().get_test_space().get_test_result(mutant);
+				CirMutationTrees trees = CirMutationTrees.new_trees(
+						space.get_cir_tree(), mutant, dominance_graph);
+				this.write_test_result(trees, input, result, path);
+				writer.write("\n");
+			}
+			this.close_writer();
 		}
 	}
 	

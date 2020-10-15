@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.MuTestFeatureWriter;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.project.MuTestFeatureWriter;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -39,10 +39,9 @@ public class MuTestProjectFeatureWrite {
 	private static final String result_dir = "result/features/";
 	
 	public static void main(String[] args) throws Exception {
-		for(File cfile : new File(root_path + "cfiles/").listFiles()) {
-			if(cfile.getName().endsWith(".c")) {
-				testing(cfile);
-			}
+		for(File rfile : new File(root_path + "rprojects/").listFiles()) {
+			File cfile = new File(root_path + "cfiles/" + rfile.getName() + ".c");
+			testing(cfile);
 		}
 	}
 	
@@ -63,7 +62,7 @@ public class MuTestProjectFeatureWrite {
 	}
 	private static MuTestProject get_project(File cfile) throws Exception {
 		String name = get_name(cfile);
-		File root = new File(root_path + "mprojects/" + name);
+		File root = new File(root_path + "rprojects/" + name);
 		if(!root.exists()) {
 			MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
 			
