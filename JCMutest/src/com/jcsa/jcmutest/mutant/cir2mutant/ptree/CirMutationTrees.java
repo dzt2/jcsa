@@ -141,7 +141,7 @@ public class CirMutationTrees {
 				List<CirMutation> conc_mutations = conc_results.get(tree_node);
 				List<CirMutationStatus> statuses = new ArrayList<CirMutationStatus>();
 				for(CirMutation conc_mutation : conc_mutations) {
-					CirMutationStatus status = new CirMutationStatus(tree_node.get_cir_mutation());
+					CirMutationStatus status = new CirMutationStatus(tree_node);
 					status.append_concrete_mutation(conc_mutation);
 					statuses.add(status);
 				}
@@ -168,7 +168,7 @@ public class CirMutationTrees {
 			/* 2. translation */
 			for(CirMutationTreeNode tree_node : conc_results.keySet()) {
 				List<CirMutation> conc_mutations = conc_results.get(tree_node);
-				CirMutationStatus status = new CirMutationStatus(tree_node.get_cir_mutation());
+				CirMutationStatus status = new CirMutationStatus(tree_node);
 				for(CirMutation conc_mutation : conc_mutations) {
 					status.append_concrete_mutation(conc_mutation);
 				}
@@ -180,5 +180,44 @@ public class CirMutationTrees {
 	}
 	
 	/* analysis methods */
+	/**
+	 * @param path
+	 * @return mapping from tree node of cir-mutation in the mutant under test
+	 * 		   to the sequence of concrete mutation evaluated in no-context.
+	 * @throws Exception
+	 */
+	public Map<CirMutationTreeNode, CirMutation> con_interpret() throws Exception {
+		Map<CirMutationTreeNode, CirMutation> results = 
+				new HashMap<CirMutationTreeNode, CirMutation>();
+		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode tree_node = queue.poll();
+			for(CirMutationTreeNode child : tree_node.get_children()) {
+				queue.add(child);
+			}
+			results.put(tree_node, this.cir_mutations.
+					optimize(tree_node.get_cir_mutation(), null));
+		}
+		return results;
+	}
+	/**
+	 * @param path
+	 * @return mapping from tree node of cir-mutation in the mutant under test
+	 * 		   to the status of concrete mutations generated without contexts.
+	 * @throws Exception
+	 */
+	public Map<CirMutationTreeNode, CirMutationStatus> abs_interpret() throws Exception {
+		Map<CirMutationTreeNode, CirMutation> conc_results = this.con_interpret();
+		Map<CirMutationTreeNode, CirMutationStatus> results = 
+				new HashMap<CirMutationTreeNode, CirMutationStatus>();
+		for(CirMutationTreeNode tree_node : conc_results.keySet()) {
+			CirMutation conc_mutation = conc_results.get(tree_node);
+			CirMutationStatus status = new CirMutationStatus(tree_node);
+			status.append_concrete_mutation(conc_mutation);
+			results.put(tree_node, status);
+		}
+		return results;
+	}
 	
 }

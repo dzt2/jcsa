@@ -36,7 +36,7 @@ public class MuTestProjectFeatureWrite {
 	private static final File preprocess_macro_file = new File("config/linux.h");
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 5;
-	private static final String result_dir = "result/features/";
+	private static final String result_dir = root_path + "features/";
 	
 	public static void main(String[] args) throws Exception {
 		for(File rfile : new File(root_path + "rprojects/").listFiles()) {

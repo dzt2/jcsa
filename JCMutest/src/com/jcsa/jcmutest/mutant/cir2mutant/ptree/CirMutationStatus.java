@@ -17,7 +17,9 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 /**
  * It records the information about the execution of each CirMutation during
@@ -30,7 +32,7 @@ public class CirMutationStatus {
 	
 	/* definitions */
 	/** the mutation in C-intermediate code being tested **/
-	private CirMutation cir_mutation;
+	private CirMutationTreeNode tree_node;
 	/** the times that the faulty statement was executed **/
 	private int execution_times;
 	/** the times that the constraints are not satisfied **/
@@ -50,11 +52,11 @@ public class CirMutationStatus {
 	 * @param cir_mutation
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationStatus(CirMutation cir_mutation) throws IllegalArgumentException {
-		if(cir_mutation == null)
-			throw new IllegalArgumentException("Invalid cir_mutation as null");
+	protected CirMutationStatus(CirMutationTreeNode tree_node) throws IllegalArgumentException {
+		if(tree_node == null)
+			throw new IllegalArgumentException("Invalid tree_node as null");
 		else {
-			this.cir_mutation = cir_mutation;
+			this.tree_node = tree_node;
 			this.execution_times = 0;
 			this.rejections_of_constraints = 0;
 			this.acceptions_of_constraints = 0;
@@ -68,7 +70,7 @@ public class CirMutationStatus {
 	/**
 	 * @return the mutation in C-intermediate code being tested
 	 */
-	public CirMutation get_cir_mutation() { return this.cir_mutation; }
+	public CirMutationTreeNode get_tree_node() { return this.tree_node; }
 	/**
 	 * @return whether the faulty statement is executed during testing
 	 */
@@ -227,10 +229,6 @@ public class CirMutationStatus {
 				if(rnumber instanceof Long) {
 					long y = ((Long) rnumber).longValue();
 					/* add words */
-					if(x > y) 
-						this.append_error_word(CirStateErrorWord.dec_value);
-					else if(x < y)
-						this.append_error_word(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
 						this.append_error_word(CirStateErrorWord.shk_value);
 					else if(Math.abs(x) < Math.abs(y))
@@ -239,10 +237,6 @@ public class CirMutationStatus {
 				else {
 					double y = ((Double) rnumber).doubleValue();
 					/* add words */
-					if(x > y) 
-						this.append_error_word(CirStateErrorWord.dec_value);
-					else if(x < y)
-						this.append_error_word(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
 						this.append_error_word(CirStateErrorWord.shk_value);
 					else if(Math.abs(x) < Math.abs(y))
@@ -250,14 +244,10 @@ public class CirMutationStatus {
 				}
 			}
 			else {
-				double x = ((Double) rnumber).doubleValue();
+				double x = ((Double) lnumber).doubleValue();
 				if(rnumber instanceof Long) {
 					long y = ((Long) rnumber).longValue();
 					/* add words */
-					if(x > y) 
-						this.append_error_word(CirStateErrorWord.dec_value);
-					else if(x < y)
-						this.append_error_word(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
 						this.append_error_word(CirStateErrorWord.shk_value);
 					else if(Math.abs(x) < Math.abs(y))
@@ -266,14 +256,33 @@ public class CirMutationStatus {
 				else {
 					double y = ((Double) rnumber).doubleValue();
 					/* add words */
-					if(x > y) 
-						this.append_error_word(CirStateErrorWord.dec_value);
-					else if(x < y)
-						this.append_error_word(CirStateErrorWord.inc_value);
 					if(Math.abs(x) > Math.abs(y))
 						this.append_error_word(CirStateErrorWord.shk_value);
 					else if(Math.abs(x) < Math.abs(y))
 						this.append_error_word(CirStateErrorWord.ext_value);
+				}
+			}
+		}
+		
+		if(this.is_numeric_error(location) || this.is_address_error(location)) {
+			SymExpression difference = SymFactory.
+					arith_sub(location.get_data_type(), muta_value, orig_value);
+			difference = SymEvaluator.evaluate_on(difference, null);
+			if(difference instanceof SymConstant) {
+				Object number = ((SymConstant) difference).get_number();
+				if(number instanceof Long) {
+					long x = ((Long) number).longValue();
+					if(x > 0)
+						this.append_error_word(CirStateErrorWord.inc_value);
+					else if(x < 0)
+						this.append_error_word(CirStateErrorWord.dec_value);
+				}
+				else {
+					double x = ((Double) number).doubleValue();
+					if(x > 0)
+						this.append_error_word(CirStateErrorWord.inc_value);
+					else if(x < 0)
+						this.append_error_word(CirStateErrorWord.dec_value);
 				}
 			}
 		}
