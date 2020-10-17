@@ -25,7 +25,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Python" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.folding" />
   </component>
   <component name="RunManager" selected="Python.code">
     <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -109,10 +109,10 @@
       <screen x="72" y="27" width="1294" height="741" />
     </state>
     <state width="1270" height="172" key="GridCell.Tab.0.right/72.27.1294.741@72.27.1294.741" timestamp="1602844391070" />
-    <state x="216" y="31" width="1022" height="737" key="SettingsEditor" timestamp="1602862867430">
+    <state x="216" y="31" width="1022" height="737" key="SettingsEditor" timestamp="1602949556328">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
-    <state x="216" y="31" width="1022" height="737" key="SettingsEditor/72.27.1294.741@72.27.1294.741" timestamp="1602862867430" />
+    <state x="216" y="31" width="1022" height="737" key="SettingsEditor/72.27.1294.741@72.27.1294.741" timestamp="1602949556328" />
     <state x="444" y="289" width="540" height="223" key="vcs.readOnlyHandler.ReadOnlyStatusDialog" timestamp="1602843976226">
       <screen x="72" y="27" width="1294" height="741" />
     </state>

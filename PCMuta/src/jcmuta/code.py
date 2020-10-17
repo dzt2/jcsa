@@ -633,7 +633,9 @@ class CirFunctionCallGraph:
 						node_dict.clear()
 					elif items[0].strip() == "#exec":
 						func_name, exec_id = CirFunctionCallGraph.__extract_execution_id__(items[1].strip())
-						statement = program.cir_tree.nodes[int(items[2].strip())]
+						cir_node_id = base.CToken.parse(items[2].strip()).token_value
+						cir_node_id: int
+						statement = program.cir_tree.nodes[cir_node_id]
 						execution = CirExecution(function, exec_id, statement)
 						node_dict[execution.get_id()] = execution
 
@@ -732,7 +734,7 @@ class MutantSpace:
 	def __init__(self, program: CProgram, mutant_file_path: str):
 		"""
 		:param program:
-		:param mutant_file_path: xxx.muta to generate mutations in program
+		:param mutant_file_path: xxx.mut to generate mutations in program
 		"""
 		self.program = program
 		self.mutants = list()
