@@ -807,9 +807,9 @@ public class MuTestFeatureWriter {
 	}
 	/**
 	 * 	#BegNode
-	 * 		tree_node_id [ child_node_id* ]
 	 * 		#BegCons ... #EndCons
 	 * 		#BegError ... #EndError
+	 * 		#ID tree_node_id [ child_node_id* ]
 	 * 	#EndNode
 	 * 	
 	 * 	@param ast_tree
@@ -818,18 +818,18 @@ public class MuTestFeatureWriter {
 	 */
 	private void write_cir_mutation_tree_node(AstTree ast_tree, CirMutationTreeNode tree_node) throws Exception {
 		writer.write("\t\t#BegNode\n");
-		writer.write("\t\t\t" + tree_node.get_tree_node_id());
-		writer.write("\t[");
-		for(CirMutationTreeNode child : tree_node.get_children()) {
-			writer.write(" " + child.get_tree_node_id());
-		}
-		writer.write(" ]\n");
 		writer.write("\t\t\t");
 		this.write_constraint(ast_tree, tree_node.get_cir_mutation().get_constraint());
 		writer.write("\n");
 		writer.write("\t\t\t");
 		this.write_state_error(ast_tree, tree_node.get_cir_mutation().get_state_error());
 		writer.write("\n");
+		writer.write("\t\t\t#ID\t" + tree_node.get_tree_node_id());
+		writer.write("\t[");
+		for(CirMutationTreeNode child : tree_node.get_children()) {
+			writer.write(" " + child.get_tree_node_id());
+		}
+		writer.write(" ]\n");
 		writer.write("\t\t#EndNode\n");
 	}
 	/**
