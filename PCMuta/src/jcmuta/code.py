@@ -20,7 +20,7 @@ class CProgram:
 		self.cir_tree = CirTree(self, os.path.join(directory_path, name + ".cir"))
 		self.function_call_graph = CirFunctionCallGraph(self, os.path.join(directory_path, name + ".flw"))
 		self.test_space = TestSpace(self, os.path.join(directory_path, name + ".tst"))
-		self.mutant_space = MutantSpace(self, os.path.join(directory_path, name + ".mut"))
+		self.mutant_space = MutantSpace(self, os.path.join(directory_path, name + ".mut"), os.path.join(directory_path, name + ".tre"), os.path.join(directory_path, name + ".lab"))
 		return
 
 
@@ -691,6 +691,8 @@ class Mutant:
 		self.mutation_operator = mutation_operator
 		self.location = location
 		self.parameter = parameter
+		self.features = None
+		self.labels = None
 		return
 
 	def get_space(self):
@@ -729,13 +731,21 @@ class Mutant:
 		"""
 		return self.parameter
 
+	def get_features(self):
+		self.features: MutantFeatures
+		return self.features
+
+	def get_labels(self):
+		return self.labels
+
 
 class MutantSpace:
-	def __init__(self, program: CProgram, mutant_file_path: str):
+	def __init__(self, program: CProgram, mutant_file_path: str, feature_file_path: str, labels_file_path: str):
 		"""
 		:param program:
 		:param mutant_file_path: xxx.mut to generate mutations in program
 		"""
+		''' 1. create mutants in the program '''
 		self.program = program
 		self.mutants = list()
 		mutants_dict = dict()
@@ -755,6 +765,26 @@ class MutantSpace:
 					mutants_dict[mutant_id] = mutant
 		for k in range(0, len(mutants_dict)):
 			self.mutants.append(mutants_dict[k])
+
+		''' 2. create mutation features and labels '''
+		with open(feature_file_path, 'r') as reader:
+			features_lines = list()
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					if line.startswith("#BegTrees"):
+						features_lines.clear()
+					features_lines.append(line)
+					if line.startswith("#EndTrees"):
+						features = MutantFeatures(self, features_lines)
+						features.mutant.features = features
+		with open(labels_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mutant = self.mutants[int(items[0].strip())]
+					mutant.labels = items[1].strip()
 		return
 
 	def get_program(self):
@@ -820,6 +850,290 @@ class TestSpace:
 		return self.tests[test_id]
 
 
-# TODO implement the features and labels
+class CirConstraint:
+	def __init__(self, execution: CirExecution, condition: str):
+		self.execution = execution
+		self.condition = condition
+		return
+
+	def get_execution(self):
+		"""
+		:return: the execution node where the constraint is evaluated
+		"""
+		return self.execution
+
+	def get_statement(self):
+		return self.execution.get_statement()
+
+	def get_condition(self):
+		"""
+		:return: code of symbolic condition being evaluated at this point
+		"""
+		return self.condition
+
+	@staticmethod
+	def parse(program: CProgram, line: str):
+		"""
+		:param program:
+		:param line: #BegCons execution condition #EndCons
+		:return: constraint being evaluated
+		"""
+		items = line.strip().split('\t')
+		execution = program.function_call_graph.get_execution_of(items[1].strip())
+		condition = items[2].strip()
+		return CirConstraint(execution, condition)
 
 
+class CirStateError:
+	"""
+	[error_type, execution, location, parameters]
+	"""
+	def __init__(self, error_type: str, execution: CirExecution, location: CirNode):
+		"""
+		:param error_type: type of the state error
+		:param execution: the execution node where the state error occurs
+		:param location: the location where the state error was performed
+		"""
+		self.error_type = error_type
+		self.execution = execution
+		self.location = location
+		self.parameters = list()
+		return
+
+	def get_error_type(self):
+		"""
+		:return: the type of the state error
+		"""
+		return self.error_type
+
+	def get_execution(self):
+		"""
+		:return: the execution node where the state error occurs
+		"""
+		return self.execution
+
+	def get_location(self):
+		"""
+		:return: the location where the state error was performed
+		"""
+		return self.location
+
+	def get_parameters(self):
+		"""
+		:return: parameters used to refine the state error as following:
+
+		flow_error [orig_target_execution muta_target_execution]
+		trap_error []
+		expr_error [orig_sym_expression muta_sym_expression]
+		refr_error [orig_sym_expression muta_sym_expression]
+		stat_error [orig_sym_expression muta_sym_expression]
+		"""
+		return self.parameters
+
+	@staticmethod
+	def parse(program: CProgram, line: str):
+		"""
+		:param program:
+		:param line: #BegError error_type execution location parameter* #EndError
+		:return: state error expected to be caused during testing
+		"""
+		items = line.strip().split('\t')
+		error_type = items[1].strip()
+		execution = program.function_call_graph.get_execution_of(items[2].strip())
+		location_id = base.CToken.parse(items[3].strip()).token_value
+		location_id: int
+		location = program.cir_tree.nodes[location_id]
+		state_error = CirStateError(error_type, execution, location)
+		for k in range(4, len(items) - 1):
+			state_error.parameters.append(items[k].strip())
+		if error_type == "flow_error":
+			new_parameters = list()
+			for parameter in state_error.parameters:
+				new_parameter = program.function_call_graph.get_execution_of(parameter)
+				new_parameters.append(new_parameter)
+			state_error.parameters = new_parameters
+		return state_error
+
+
+class CirMutationTreeNode:
+	"""
+	[constraint, state_error, tree, parent, children]
+	"""
+	def __init__(self, tree, constraint: CirConstraint, state_error: CirStateError):
+		"""
+		:param tree: where the tree node is created
+		:param constraint: the constraint required for causing state error
+		:param state_error: the state error expected to infect the program
+		"""
+		tree: CirMutationTree
+		self.tree = tree
+		self.constraint = constraint
+		self.state_error = state_error
+		self.parent = None
+		self.children = list()
+		return
+
+	def get_tree(self):
+		return self.tree
+
+	def get_constraint(self):
+		return self.constraint
+
+	def get_state_error(self):
+		return self.state_error
+
+	def get_parent(self):
+		self.parent: CirMutationTreeNode
+		return self.parent
+
+	def get_children(self):
+		return self.children
+
+	def add_child(self, child):
+		child: CirMutationTreeNode
+		child.parent = self
+		self.children.append(child)
+		return
+
+	def is_root(self):
+		return self.parent is None
+
+	def is_leaf(self):
+		return len(self.children) == 0
+
+
+class CirMutationTree:
+	"""
+	path_constraints; trees
+	"""
+	def __init__(self, features):
+		features: MutantFeatures
+		self.features = features
+		self.path_constraints = list()
+		self.root = None
+		return
+
+	def get_features(self):
+		return self.features
+
+	def get_path_constraints(self):
+		return self.path_constraints
+
+	def get_root(self):
+		"""
+		:return: root node of the tree
+		"""
+		self.root: CirMutationTreeNode
+		return self.root
+
+	@staticmethod
+	def parse(features, lines: list):
+		"""
+		:param features:
+		:param lines:
+				#BegTree
+					#BegPath
+						#BegCons ... #EndCons
+						...
+						#BegCons ... #EndCons
+					#EndPath
+					#BegNode
+						#BegCons ... #EndCons
+						#BegError ... #EndError
+						#ID parent children
+					#EndNode
+				#EndTree
+		:return:
+		"""
+		features: MutantFeatures
+		buffer_lines = list()
+		tree = CirMutationTree(features)
+		program = features.mutant.space.program
+		tree_node_dict, children_dict = dict(), dict()
+
+		''' create tree nodes and initialize path constraints '''
+		for line in lines:
+			line: str
+			line = line.strip()
+			if line.startswith("#BegPath") or line.startswith("BegNode"):
+				buffer_lines.clear()
+			elif line.startswith("#EndPath"):
+				for const_line in buffer_lines:
+					tree.path_constraints.append(CirConstraint.parse(program, const_line))
+			elif line.startswith("#EndNode"):
+				constraint, state_error, node_id, children_id_list = None, None, None, list()
+				for node_line in buffer_lines:
+					node_line: str
+					node_line = node_line.strip()
+					if node_line.startswith("#BegCons"):
+						constraint = CirConstraint.parse(program, node_line)
+					elif node_line.startswith("#BegError"):
+						state_error = CirStateError.parse(program, node_line)
+					elif node_line.startswith("#ID"):
+						items = node_line.split('\t')
+						node_id = int(items[1].strip())
+						children_items = items[2].strip().split(' ')
+						for k in range(1, len(children_items) - 1):
+							children_id_list.append(int(children_items[k].strip()))
+				tree_node = CirMutationTreeNode(tree, constraint, state_error)
+				tree_node_dict[node_id] = tree_node
+				children_dict[node_id] = children_id_list
+			elif len(line) > 0:
+				buffer_lines.append(line.strip())
+
+		''' connect tree nodes and set root node for tree '''
+		for parent_id, children_id_list in children_dict.items():
+			parent = tree_node_dict[parent_id]
+			for child_id in children_id_list:
+				child = tree_node_dict[child_id]
+				parent.add_child(child)
+		for tree_node in tree_node_dict.values():
+			while not tree_node.is_root():
+				tree_node = tree_node.get_parent()
+			tree.root = tree_node
+			break
+		return tree
+
+
+class MutantFeatures:
+	def __init__(self, mutant_space: MutantSpace, lines: list):
+		"""
+		:param mutant_space:
+		:param lines:
+			#BegTrees
+				#mutant id
+				#BegTree ... #EndTree
+			#EndTrees
+		"""
+		self.mutant = None
+		self.trees = list()
+		tree_lines = list()
+		for line in lines:
+			line: str
+			line = line.strip()
+			if line.startswith("#mutant"):
+				items = line.split('\t')
+				self.mutant = mutant_space.mutants[int(items[1].strip())]
+			else:
+				if line.startswith("#BegTree"):
+					tree_lines.clear()
+				tree_lines.append(line.strip())
+				if line.startswith("#EndTree"):
+					tree = CirMutationTree.parse(self, tree_lines)
+					self.trees.append(tree)
+		return
+
+	def get_mutant(self):
+		self.mutant: Mutant
+		return self.mutant
+
+	def get_trees(self):
+		return self.trees
+
+
+if __name__ == "__main__":
+	directory_path = "/home/dzt2/Development/Data/features"
+	for file_name in os.listdir(directory_path):
+		c_directory_path = os.path.join(directory_path, file_name)
+		program = CProgram(c_directory_path, file_name)
+		print("Read", len(program.mutant_space.get_mutants()), "mutations from", file_name)

@@ -6,7 +6,7 @@ It defines the simplified model to describe the basic element in C program, incl
 import enum
 
 
-class CTokenType(enum):
+class CTokenType(enum.Enum):
 	boolean = 0
 	character = 1
 	integer = 2
