@@ -420,64 +420,69 @@ public class MuTestFeatureWriter {
 			throw new IllegalArgumentException(node.generate_code());
 	}
 	/**
-	 * execution:(condition)
+	 * #BegCons execution condition #EndCons
 	 * @param constraint
 	 * @throws Exception
 	 */
 	private void write_constraint(AstTree ast_tree, CirConstraint constraint) throws Exception {
-		writer.write(constraint.get_execution() + ":(");
+		writer.write("#BegCons");
+		writer.write("\t" + constraint.get_execution() + "\t");
 		this.write_sym_node(ast_tree, constraint.get_condition());
-		writer.write(")");
+		writer.write("\t#EndCons");
 	}
 	/**
-	 * 	execution:flow(orig_target, muta_target)
-	 * 	execution:trap()
-	 * 	execution:expr(location, orig_value, muta_value)
-	 * 	execution:refr(location, orig_value, muta_value)
-	 * 	execution:stat(location, orig_value, muta_value)
-	 * @param state_error
-	 * @throws Exception
+	 * 	#BegError error_type execution location parameter* #EndError
+	 * 	as:
+	 * 	#BegError trap_error execution statement #EndError
+	 * 	#BegError flow_error execution statement orig_target muta_target #EndError
+	 * 	#BegError expr_error execution expression orig_value muta_value #EndError
+	 * 	#BegError refr_error execution reference  orig_value muta_value #EndError
+	 * 	#BegError stat_error execution reference  orig_value muta_value #EndError
+	 * 	
+	 * 	@param state_error
+	 * 	@throws Exception
 	 */
 	private void write_state_error(AstTree ast_tree, CirStateError state_error) throws Exception {
 		if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
 		else {
-			writer.write(state_error.get_execution() + ":");
+			writer.write("#BegError");
+			writer.write("\t" + state_error.get_type());
+			writer.write("\t" + state_error.get_execution());
+			
 			if(state_error instanceof CirFlowError) {
-				writer.write("flow(");
-				writer.write(((CirFlowError) state_error).get_original_flow().get_target() + ", ");
-				writer.write(((CirFlowError) state_error).get_mutation_flow().get_target() + "");
-				writer.write(")");
+				writer.write("\t");
+				this.write_element(state_error.get_statement());
+				writer.write("\t" + ((CirFlowError) state_error).get_original_flow().get_target());
+				writer.write("\t" + ((CirFlowError) state_error).get_mutation_flow().get_target());
 			}
 			else if(state_error instanceof CirTrapError) {
-				writer.write("trap()");
+				writer.write("\t");
+				this.write_element(state_error.get_statement());
 			}
 			else if(state_error instanceof CirExpressionError) {
-				writer.write("expr(");
+				writer.write("\t");
 				this.write_element(((CirExpressionError) state_error).get_expression());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirExpressionError) state_error).get_original_value());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirExpressionError) state_error).get_mutation_value());
-				writer.write(")");
 			}
 			else if(state_error instanceof CirReferenceError) {
-				writer.write("refr(");
+				writer.write("\t");
 				this.write_element(((CirReferenceError) state_error).get_reference());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirReferenceError) state_error).get_original_value());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirReferenceError) state_error).get_mutation_value());
-				writer.write(")");
 			}
 			else if(state_error instanceof CirStateValueError) {
-				writer.write("stat(");
+				writer.write("\t");
 				this.write_element(((CirStateValueError) state_error).get_reference());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirStateValueError) state_error).get_original_value());
-				writer.write(", ");
+				writer.write("\t");
 				this.write_sym_node(ast_tree, ((CirStateValueError) state_error).get_mutation_value());
-				writer.write(")");
 			}
 			else {
 				throw new IllegalArgumentException(state_error.toString());
@@ -783,77 +788,98 @@ public class MuTestFeatureWriter {
 	
 	/* feature and label generators */
 	/**
-	 * #node tree_id constraint state_error [children] as abstract feature of mutation
-	 * 
-	 * @param tree_node
+	 * Write the labels of each mutant against each test case.
+	 * @param space
+	 * @param cfile
+	 * @param directory
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_tree_node(AstTree ast_tree, 
-			CirMutationTreeNode tree_node) throws Exception {
-		writer.write("#node");
-		writer.write("\t" + tree_node.get_tree_node_id());
-		writer.write("\t");
-		this.write_constraint(ast_tree, tree_node.get_cir_mutation().get_constraint());
-		writer.write("\t");
-		this.write_state_error(ast_tree, tree_node.get_cir_mutation().get_state_error());
-		writer.write("\t");
-		writer.write("[");
+	private void write_mutants_labels(MuTestProjectCodeFile space, File cfile, File directory) throws Exception {
+		this.open_writer(this.get_output_file(directory, cfile, ".lab"));
+		MuTestProjectTestSpace tspace = space.get_code_space().get_project().get_test_space();
+		for(Mutant mutant : space.get_mutant_space().get_mutants()) {
+			MuTestProjectTestResult result = tspace.get_test_result(mutant);
+			if(result != null) {
+				writer.write(mutant.get_id() + "\t" + result.get_kill_set().toString() + "\n");
+			}
+		}
+		this.close_writer();
+	}
+	/**
+	 * 	#BegNode
+	 * 		tree_node_id [ child_node_id* ]
+	 * 		#BegCons ... #EndCons
+	 * 		#BegError ... #EndError
+	 * 	#EndNode
+	 * 	
+	 * 	@param ast_tree
+	 * 	@param tree_node
+	 * 	@throws Exception
+	 */
+	private void write_cir_mutation_tree_node(AstTree ast_tree, CirMutationTreeNode tree_node) throws Exception {
+		writer.write("\t\t#BegNode\n");
+		writer.write("\t\t\t" + tree_node.get_tree_node_id());
+		writer.write("\t[");
 		for(CirMutationTreeNode child : tree_node.get_children()) {
 			writer.write(" " + child.get_tree_node_id());
 		}
-		writer.write(" ]");
+		writer.write(" ]\n");
+		writer.write("\t\t\t");
+		this.write_constraint(ast_tree, tree_node.get_cir_mutation().get_constraint());
+		writer.write("\n");
+		writer.write("\t\t\t");
+		this.write_state_error(ast_tree, tree_node.get_cir_mutation().get_state_error());
+		writer.write("\n");
+		writer.write("\t\t#EndNode\n");
 	}
 	/**
 	 * 	#BegTree
-	 * 		#path	C1 C2 C3 ... Cn
-	 * 		#node	id constraint state_error [children]
-	 * 		#node
-	 * 		......
+	 * 		#BegPath
+	 * 			#BegCons ... #EndCons
+	 * 		#EndPath
+	 * 		#BegNode ... #EndNode
 	 * 	#EndTree
-	 * 	
-	 * 	@param ast_tree
-	 * 	@param tree
-	 * 	@throws Exception
+	 * @param ast_tree
+	 * @param tree
+	 * @throws Exception
 	 */
-	private void write_cir_mutation_tree(AstTree ast_tree,
-			CirMutationTree tree) throws Exception {
+	private void write_cir_mutation_tree(AstTree ast_tree, CirMutationTree tree) throws Exception {
 		writer.write("\t#BegTree\n");
 		
-		writer.write("\t\t#path");
+		writer.write("\t\t#BegPath\n");
 		for(CirConstraint constraint : tree.get_path_constraints()) {
-			writer.write("\t");
+			writer.write("\t\t\t");
 			this.write_constraint(ast_tree, constraint);
+			writer.write("\n");
 		}
-		writer.write("\n");
+		writer.write("\t\t#EndPath\n");
 		
 		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
 		queue.add(tree.get_root());
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode tree_node = queue.poll();
-			for(CirMutationTreeNode child : tree_node.get_children()) 
+			for(CirMutationTreeNode child : tree_node.get_children()) {
 				queue.add(child);
-			writer.write("\t\t");
+			}
 			this.write_cir_mutation_tree_node(ast_tree, tree_node);
-			writer.write("\n");
 		}
 		
 		writer.write("\t#EndTree\n");
 	}
 	/**
 	 * 	#BegTrees
-	 * 		#mutant mid
-	 * 		#BegTree ... #EndTree
-	 * 		...
+	 * 		#mutant mutant_id
 	 * 		#BegTree ... #EndTree
 	 * 	#EndTrees
-	 * @param mutant
-	 * @param dominance_graph
+	 * @param ast_tree
+	 * @param trees
 	 * @throws Exception
 	 */
 	private void write_cir_mutation_trees(Mutant mutant, CDominanceGraph dominance_graph) throws Exception {
 		AstTree ast_tree = mutant.get_space().get_ast_tree();
 		CirTree cir_tree = mutant.get_space().get_cir_tree();
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
+		
 		writer.write("#BegTrees\n");
 		writer.write("\t#mutant\t" + mutant.get_id() + "\n");
 		for(CirMutationTree tree : trees.get_trees()) {
@@ -862,33 +888,21 @@ public class MuTestFeatureWriter {
 		writer.write("#EndTrees\n");
 	}
 	/**
-	 * write the abstract features of cir-mutation of each mutant into xxx.tre file in directory
-	 * 
+	 * write the abstract features of each mutant to xxx.tre file in directory
 	 * @param space
 	 * @param cfile
 	 * @param directory
 	 * @throws Exception
 	 */
-	private void write_features_and_labels(MuTestProjectCodeFile space, File 
-			cfile, File directory, CDominanceGraph dominance_graph) throws Exception {
+	private void write_cir_mutation_features(MuTestProjectCodeFile space, File cfile,
+			File directory, CDominanceGraph dominance_graph) throws Exception {
 		this.open_writer(this.get_output_file(directory, cfile, ".tre"));
+		
 		for(Mutant mutant : space.get_mutant_space().get_mutants()) {
 			this.write_cir_mutation_trees(mutant, dominance_graph);
 			writer.write("\n");
 		}
-		this.close_writer();
 		
-		this.open_writer(this.get_output_file(directory, cfile, ".lab"));
-		for(Mutant mutant : space.get_mutant_space().get_mutants()) {
-			/* mutant score_list */
-			writer.write(mutant.get_id() + "\t");
-			MuTestProjectTestResult result = space.get_code_space().
-					get_project().get_test_space().get_test_result(mutant);
-			if(result != null) {
-				writer.write(result.get_kill_set().toString());
-			}
-			writer.write("\n");
-		}
 		this.close_writer();
 	}
 	
@@ -1025,7 +1039,8 @@ public class MuTestFeatureWriter {
 			this.write_function_call_graph(cspace.get_cir_tree().get_function_call_graph(), cfile, directory);
 			this.write_test_inputs(tspace, cfile, directory);
 			this.write_mutants(cspace, cfile, directory);
-			this.write_features_and_labels(cspace, cfile, directory, dominance_graph);
+			this.write_cir_mutation_features(cspace, cfile, directory, dominance_graph);
+			this.write_mutants_labels(cspace, cfile, directory);
 			this.write_static_mutants_status(cspace, cfile, directory, dominance_graph);
 			/*
 			for(TestInput test : tspace.get_test_inputs()) {
