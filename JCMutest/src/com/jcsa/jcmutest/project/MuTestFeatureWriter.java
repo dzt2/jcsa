@@ -248,7 +248,7 @@ public class MuTestFeatureWriter {
 	 */
 	private void write_type(CType type) throws Exception { 
 		if(type == null)
-			this.write_element(null);
+			writer.write("");
 		else if(type instanceof CBasicType) {
 			switch(((CBasicType) type).get_tag()) {
 			case c_void:				writer.write("void"); break;
@@ -984,7 +984,7 @@ public class MuTestFeatureWriter {
 	 * @param dominance_graph
 	 * @throws Exception
 	 */
-	private void write_dynamic_mutants_status(MuTestProjectCodeFile space, TestInput test, 
+	protected void write_dynamic_mutants_status(MuTestProjectCodeFile space, TestInput test, 
 			File cfile, File directory, CDominanceGraph dominance_graph) throws Exception {
 		CStatePath path = space.get_code_space().get_project().get_test_space().load_instrumental_path(
 				space.get_sizeof_template(), space.get_ast_tree(), space.get_cir_tree(), test);
@@ -1027,9 +1027,11 @@ public class MuTestFeatureWriter {
 			this.write_mutants(cspace, cfile, directory);
 			this.write_features_and_labels(cspace, cfile, directory, dominance_graph);
 			this.write_static_mutants_status(cspace, cfile, directory, dominance_graph);
+			/*
 			for(TestInput test : tspace.get_test_inputs()) {
 				this.write_dynamic_mutants_status(cspace, test, cfile, directory, dominance_graph);
 			}
+			*/
 		}
 	}
 	
