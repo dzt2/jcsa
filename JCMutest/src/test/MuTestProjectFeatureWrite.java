@@ -113,7 +113,7 @@ public class MuTestProjectFeatureWrite {
 		if(!directory.exists()) directory.mkdir();
 		
 		MuTestFeatureWriter writer = new MuTestFeatureWriter();
-		writer.write_features(project, cfile, directory, dominance_graph);
+		writer.write_features(project, cfile, directory, dominance_graph, false);
 	}
 	protected static void testing(File cfile) throws Exception {
 		MuTestProject project = get_project(cfile);
