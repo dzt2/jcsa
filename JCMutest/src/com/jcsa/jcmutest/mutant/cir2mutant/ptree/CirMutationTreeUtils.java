@@ -362,4 +362,66 @@ public class CirMutationTreeUtils {
 		}
 	}
 	
+	/* feature selection methods */
+	/**
+	 * select the constraints or state errors that are of consideration to interpret why the mutation is killed or not.
+	 * @param trees
+	 * @param status_results
+	 * @return mapping from CirConstraint | CirStateError to whether it is satisfied (true), not satisfied (false) or unknown (null)
+	 * @throws Exception
+	 */
+	public static Map<Object, Boolean> select_features(CirMutationTrees trees, 
+				Iterable<CirMutationStatus> status_results) throws Exception {
+		if(trees == null)
+			throw new IllegalArgumentException("Invalid trees: null");
+		else if(status_results == null)
+			throw new IllegalArgumentException("Invalid status_results");
+		else {
+			Map<Object, Boolean> features = new HashMap<Object, Boolean>();
+			for(CirMutationStatus status : status_results) {
+				/* 0. get the tree node and its tree as being described */
+				CirMutationTreeNode tree_node = status.get_tree_node();
+				CirMutationTree tree = tree_node.get_tree();
+				CirMutation mutation = tree_node.get_cir_mutation();
+				
+				/* 1. tag the path constraints for faulty statements */
+				if(tree_node.is_root()) {
+					for(CirConstraint constraint : tree.get_path_constraints()) {
+						features.put(constraint, Boolean.valueOf(status.is_executed()));
+					}
+				}
+				
+				/* 2. determine invalid or valid constraints */
+				if(status.is_executed()) {
+					/* constraint analysis */
+					if(status.get_constraint_acceptions() > 0) {
+						features.put(mutation.get_constraint(), Boolean.TRUE);
+					}
+					else if(status.get_constraint_rejections() > 0) {
+						features.put(mutation.get_constraint(), Boolean.FALSE);
+					}
+					else {
+						features.put(mutation.get_constraint(), null);
+					}
+					
+					/* state error analysis */
+					if(status.get_state_error_acceptions() > 0) {
+						features.put(mutation.get_state_error(), Boolean.TRUE);
+					}
+					else if(status.get_state_error_rejections() > 0) {
+						features.put(mutation.get_state_error(), Boolean.FALSE);
+					}
+					else {
+						features.put(mutation.get_state_error(), null);
+					}
+				}
+				else {
+					features.put(mutation.get_constraint(), null);
+					features.put(mutation.get_state_error(), null);
+				}
+			}
+			return features;
+		}
+	}
+	
 }

@@ -136,195 +136,6 @@ public class CirMutationTreeTest {
 		for(int k = 0; k < tabs; k++) writer.write("\t");
 	}
 	
-	/* detection levels */
-	/**
-	 * @param tree_node
-	 * @param writer
-	 * @param tabs
-	 * @throws Exception
-	 */
-	private static void output_levels(CirMutationTreeNode tree_node, 
-			List<CirMutationStatus> results, FileWriter writer, int tabs) throws Exception {
-		new_line(writer, tabs);
-		writer.write("[TreeNode]");
-		tabs++;
-		{
-			new_line(writer, tabs);
-			writer.write("Statement: ");
-			writer.write(normalize_text(tree_node.get_cir_mutation().get_statement().generate_code(true)));
-			new_line(writer, tabs);
-			writer.write("--> ");
-			writer.write(results.size() + " times");
-			
-			new_line(writer, tabs);
-			writer.write("Constraint: ");
-			writer.write(normalize_text(tree_node.get_cir_mutation().get_constraint().toString()));
-			new_line(writer, tabs);
-			writer.write("--> ");
-			for(CirMutationStatus result : results) {
-				if(result.get_constraint_acceptions() > 0) {
-					writer.write("Satisfied; ");
-				}
-				else if(result.get_constraint_rejections() > 0) {
-					writer.write("Not_Satisfied; ");
-				}
-				else {
-					writer.write("Unknown_Satisfied; ");
-				}
-			}
-			
-			new_line(writer, tabs);
-			writer.write("StateError: ");
-			writer.write(normalize_text(tree_node.get_cir_mutation().get_state_error().toString()));
-			for(CirMutationStatus result : results) {
-				new_line(writer, tabs);
-				writer.write("--> ");
-				if(result.get_state_error_acceptions() > 0) {
-					writer.write("Infetected");
-				}
-				else if(result.get_state_error_rejections() > 0) {
-					writer.write("Not_Infected");
-				}
-				else {
-					writer.write("Unknown_Infected");
-				}
-				writer.write(": ");
-				for(CirStateErrorWord word : result.get_error_words()) {
-					writer.write(word.toString() + "; ");
-				}
-			}
-		}
-		tabs--;
-		new_line(writer, tabs);
-		writer.write("[TreeNode]");
-	}
-	/**
-	 * @param tree
-	 * @param results
-	 * @param writer
-	 * @param tabs
-	 * @throws Exception
-	 */
-	private static void output_levels(CirMutationTree tree, 
-			Map<CirMutationTreeNode, List<CirMutationStatus>> results, 
-			FileWriter writer, int tabs) throws Exception {
-		new_line(writer, tabs);
-		writer.write("[Tree]");
-		
-		tabs++;
-		{
-			Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-			queue.add(tree.get_root());
-			while(!queue.isEmpty()) {
-				CirMutationTreeNode tree_node = queue.poll();
-				output_levels(tree_node, results.get(tree_node), writer, tabs);
-				for(CirMutationTreeNode child : tree_node.get_children()) {
-					queue.add(child);
-				}
-			}
-		}
-		tabs--;
-		
-		new_line(writer, tabs);
-		writer.write("[Tree]");
-	}
-	/**
-	 * @param mutant
-	 * @param writer
-	 * @param cir_tree
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	private static void output_levels(MuTestProject project, Mutant mutant, CStatePath path, int tid,
-			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
-		/* getters */
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirMutationStatus>> results = trees.abs_interpret(path);
-		
-		int tabs = 0;
-		new_line(writer, tabs);
-		writer.write("[Mutant]");
-		
-		{
-			AstMutation mutation = mutant.get_mutation();
-			AstNode location = mutation.get_location();
-			int line = location.get_location().line_of() + 1;
-			
-			new_line(writer, tabs);
-			writer.write("Class: ");
-			writer.write(mutation.get_class() + "::" + mutation.get_operator());
-			
-			new_line(writer, tabs);
-			writer.write("Line#" + line + ": ");
-			String code = normalize_text(location.generate_code());
-			if(code.length() > 512) {
-				code = code.substring(0, 512);
-			}
-			writer.write(code);
-			
-			if(mutation.has_parameter()) {
-				new_line(writer, tabs);
-				writer.write("Parameter: ");
-				writer.write(mutation.get_parameter().toString());
-			}
-			
-			MuTestProjectTestResult tresult = project.get_test_space().get_test_result(mutant);
-			new_line(writer, tabs);
-			writer.write("Result: ");
-			if(tresult == null) {
-				writer.write("Not_Executed");
-			}
-			else if(tresult.get_exec_set().get(tid)){
-				writer.write("Executed_");
-				if(tresult.get_kill_set().get(tid)) {
-					writer.write("Killed");
-				}
-				else {
-					writer.write("Alived");
-				}
-			}
-			else {
-				writer.write("Not_Executed");
-			}
-			
-			tabs++;
-			for(CirMutationTree tree : trees.get_trees()) {
-				output_levels(tree, results, writer, tabs);
-			}
-			tabs--;
-		}
-		
-		new_line(writer, tabs);
-		writer.write("[Mutant]");
-		new_line(writer, tabs);
-	}
-	protected static void output_levels(MuTestProject project, int test_id) throws Exception {
-		/* declarations */
-		TestInput test = project.get_test_space().get_test_space().get_input(test_id);
-		MuTestProjectCodeFile cfile = project.get_code_space().get_code_files().iterator().next();
-		CStatePath path = project.get_test_space().load_instrumental_path(
-				cfile.get_sizeof_template(), cfile.get_ast_tree(), cfile.get_cir_tree(), test);
-		CDominanceGraph dominance_graph = generate(translate(cfile.get_cir_tree()));
-		
-		/* output file */
-		String output_name;
-		if(path == null) {
-			output_name = result_dir + project.get_name() + ".lev";
-		}
-		else {
-			output_name = result_dir + project.get_name() + "." + test_id + ".lev";
-		}
-		FileWriter writer = new FileWriter(new File(output_name));
-		writer.write("Test: " + test.get_parameter() + "\n\n");
-		
-		/* generation */
-		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
-			output_levels(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dominance_graph);
-			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
-		}
-		writer.close();
-	}
-	
 	/* detection summary */
 	/**
 	 * @param tree_node
@@ -399,7 +210,7 @@ public class CirMutationTreeTest {
 			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
 		/* getters */
 		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, CirMutationStatus> results = trees.sum_interpret(path);
+		Map<CirMutationTreeNode, CirMutationStatus> results = trees.abs_interpret(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
@@ -638,7 +449,7 @@ public class CirMutationTreeTest {
 		System.out.println("1. Get mutation project for " + project.get_name());
 		
 		output_details(project, tid);
-		output_levels(project, tid);
+		// output_levels(project, tid);
 		output_level(project, tid);
 		
 		System.out.println("2. Output the mutation information to XML.");

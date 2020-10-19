@@ -81,12 +81,11 @@ public class CirMutationTrees {
 		return trees;
 	}
 	
-	/* analysis methods */
+	/* concrete state interpretation */
 	/**
-	 * @param path
-	 * @return mapping from tree node of cir-mutation in the mutant under test
-	 * 		   to the sequence of concrete mutation evaluated for each time of
-	 * 		   the faulty statement during execution.
+	 * @param path the execution path of the program being executed during testing
+	 * @return mapping from cir-mutation tree node to the concrete mutations generated from
+	 *  	   the state contexts obtained during testing process.
 	 * @throws Exception
 	 */
 	public Map<CirMutationTreeNode, List<CirMutation>> con_interpret(CStatePath path) throws Exception {
@@ -121,42 +120,34 @@ public class CirMutationTrees {
 		}
 	}
 	/**
-	 * @param path
-	 * @return mapping from tree node of cir-mutation in the mutant under test
-	 * 		   to the sequence of status for concrete mutation for each time of
-	 * 		   the faulty statement during execution.
+	 * @return mapping from cir-mutation tree node to the concrete mutation generated from
+	 *  	   the static analysis without using execution path information.
 	 * @throws Exception
 	 */
-	public Map<CirMutationTreeNode, List<CirMutationStatus>> abs_interpret(CStatePath path) throws Exception {
-		if(path == null) 
-			throw new IllegalArgumentException("Invalid path: null");
-		else {
-			/* 1. initialization */
-			Map<CirMutationTreeNode, List<CirMutationStatus>> results = 
-					new HashMap<CirMutationTreeNode, List<CirMutationStatus>>();
-			Map<CirMutationTreeNode, List<CirMutation>> conc_results = this.con_interpret(path);
-			
-			/* 2. translation */
-			for(CirMutationTreeNode tree_node : conc_results.keySet()) {
-				List<CirMutation> conc_mutations = conc_results.get(tree_node);
-				List<CirMutationStatus> statuses = new ArrayList<CirMutationStatus>();
-				for(CirMutation conc_mutation : conc_mutations) {
-					CirMutationStatus status = new CirMutationStatus(tree_node);
-					status.append_concrete_mutation(conc_mutation);
-					statuses.add(status);
-				}
-				results.put(tree_node, statuses);
+	public Map<CirMutationTreeNode, CirMutation> con_interpret() throws Exception {
+		Map<CirMutationTreeNode, CirMutation> results = 
+				new HashMap<CirMutationTreeNode, CirMutation>();
+		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode tree_node = queue.poll();
+			for(CirMutationTreeNode child : tree_node.get_children()) {
+				queue.add(child);
 			}
-			return results;
+			results.put(tree_node, this.cir_mutations.
+					optimize(tree_node.get_cir_mutation(), null));
 		}
+		return results;
 	}
+	
+	/* abstract state interpretation */
 	/**
-	 * @param path
-	 * @return mapping from tree node of cir-mutation in the mutant under test
-	 * 		   to the status of concrete mutations generated during testing.
+	 * @param path the execution path of the program being executed during testing
+	 * @return mapping from cir-mutation tree node to the abstract mutation state generated
+	 * 		   from the state contexts obtained during testing process.
 	 * @throws Exception
 	 */
-	public Map<CirMutationTreeNode, CirMutationStatus> sum_interpret(CStatePath path) throws Exception {
+	public Map<CirMutationTreeNode, CirMutationStatus> abs_interpret(CStatePath path) throws Exception {
 		if(path == null) 
 			throw new IllegalArgumentException("Invalid path: null");
 		else {
@@ -178,33 +169,8 @@ public class CirMutationTrees {
 			/* 3. end of all */	return results;
 		}
 	}
-	
-	/* analysis methods */
 	/**
-	 * @param path
-	 * @return mapping from tree node of cir-mutation in the mutant under test
-	 * 		   to the sequence of concrete mutation evaluated in no-context.
-	 * @throws Exception
-	 */
-	public Map<CirMutationTreeNode, CirMutation> con_interpret() throws Exception {
-		Map<CirMutationTreeNode, CirMutation> results = 
-				new HashMap<CirMutationTreeNode, CirMutation>();
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		for(CirMutationTree tree : this.trees) { queue.add(tree.get_root()); }
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode tree_node = queue.poll();
-			for(CirMutationTreeNode child : tree_node.get_children()) {
-				queue.add(child);
-			}
-			results.put(tree_node, this.cir_mutations.
-					optimize(tree_node.get_cir_mutation(), null));
-		}
-		return results;
-	}
-	/**
-	 * @param path
-	 * @return mapping from tree node of cir-mutation in the mutant under test
-	 * 		   to the status of concrete mutations generated without contexts.
+	 * @return 
 	 * @throws Exception
 	 */
 	public Map<CirMutationTreeNode, CirMutationStatus> abs_interpret() throws Exception {

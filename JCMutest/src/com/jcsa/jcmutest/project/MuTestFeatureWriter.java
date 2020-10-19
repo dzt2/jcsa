@@ -2,7 +2,6 @@ package com.jcsa.jcmutest.project;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -14,11 +13,9 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
@@ -74,7 +71,6 @@ import com.jcsa.jcparse.lang.sym.SymNode;
 import com.jcsa.jcparse.lang.sym.SymOperator;
 import com.jcsa.jcparse.lang.sym.SymUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.state.CStatePath;
 
 
 /**
@@ -171,7 +167,6 @@ public class MuTestFeatureWriter {
 	 */
 	private void close_writer() throws Exception {
 		if(this.writer != null) {
-			/* TODO for debugging */
 			System.out.println("\t--> Write on " + this.output_file.getName());
 			this.writer.close();
 			this.writer = null;
@@ -906,111 +901,6 @@ public class MuTestFeatureWriter {
 		this.close_writer();
 	}
 	
-	/* status generation methods */
-	/**
-	 * #status tree_id et rc ac re ae [ word* ]
-	 * @param status
-	 * @throws Exception
-	 */
-	private void write_cir_mutation_status(CirMutationStatus status) throws Exception {
-		writer.write("#status");
-		writer.write("\t" + status.get_tree_node().get_tree_node_id());
-		writer.write("\t" + status.get_execution_times());
-		writer.write("\t" + status.get_constraint_rejections());
-		writer.write("\t" + status.get_constraint_acceptions());
-		writer.write("\t" + status.get_state_error_rejections());
-		writer.write("\t" + status.get_state_error_acceptions());
-		writer.write("\t[");
-		for(CirStateErrorWord word : status.get_error_words()) {
-			writer.write(" " + word.toString());
-		}
-		writer.write(" ]");
-	}
-	/**
-	 * write the mutation status generated from non-context based analysis:
-	 * 	#BegStatus
-	 * 		#mutant mid
-	 * 		#status tree_id et rc ac re ae [ word* ]
-	 * 		...
-	 * 		#status tree_id et rc ac re ae [ word* ]
-	 * 	#EndStatus
-	 * @param mutant
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	private void write_static_mutation_status(Mutant mutant, CDominanceGraph dominance_graph) throws Exception {
-		CirTree cir_tree = mutant.get_space().get_cir_tree();
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Collection<CirMutationStatus> statuses = trees.abs_interpret().values();
-		
-		writer.write("#BegStatus\n");
-		writer.write("\t#mutant\t" + mutant.get_id() + "\n");
-		for(CirMutationStatus status : statuses) {
-			writer.write("\t");
-			this.write_cir_mutation_status(status);
-			writer.write("\n");
-		}
-		writer.write("#EndStatus\n");
-	}
-	/**
-	 * write the mutation status generated from context-based analysis
-	 * @param mutant
-	 * @param path
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	private void write_dynamic_mutation_status(Mutant mutant, CStatePath path, CDominanceGraph dominance_graph) throws Exception {
-		CirTree cir_tree = mutant.get_space().get_cir_tree();
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Collection<CirMutationStatus> statuses = trees.sum_interpret(path).values();
-		
-		writer.write("#BegStatus\n");
-		writer.write("\t#mutant\t" + mutant.get_id() + "\n");
-		for(CirMutationStatus status : statuses) {
-			writer.write("\t");
-			this.write_cir_mutation_status(status);
-			writer.write("\n");
-		}
-		writer.write("#EndStatus\n");
-	}
-	/**
-	 * write mutation status for static analysis without using path information
-	 * @param space
-	 * @param cfile
-	 * @param directory
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	private void write_static_mutants_status(MuTestProjectCodeFile space, File 
-			cfile, File directory, CDominanceGraph dominance_graph) throws Exception {
-		this.open_writer(this.get_output_file(directory, cfile, ".x.sta"));
-		for(Mutant mutant : space.get_mutant_space().get_mutants()) {
-			this.write_static_mutation_status(mutant, dominance_graph);
-		}
-		this.close_writer();
-	}
-	/**
-	 * write mutation status generated from dynamic analysis using path information
-	 * @param space
-	 * @param test
-	 * @param cfile
-	 * @param directory
-	 * @param dominance_graph
-	 * @throws Exception
-	 */
-	protected void write_dynamic_mutants_status(MuTestProjectCodeFile space, TestInput test, 
-			File cfile, File directory, CDominanceGraph dominance_graph) throws Exception {
-		CStatePath path = space.get_code_space().get_project().get_test_space().load_instrumental_path(
-				space.get_sizeof_template(), space.get_ast_tree(), space.get_cir_tree(), test);
-		if(path != null) {
-			this.open_writer(this.get_output_file(directory, cfile, "." + test.get_id() + ".sta"));
-			for(Mutant mutant : space.get_mutant_space().get_mutants()) {
-				this.write_dynamic_mutation_status(mutant, path, dominance_graph);
-			}
-			this.close_writer();
-		}
-	}
-	
 	/* feature generation method */
 	/**
 	 * write the feature information to files in the directory
@@ -1041,8 +931,8 @@ public class MuTestFeatureWriter {
 			this.write_mutants(cspace, cfile, directory);
 			this.write_cir_mutation_features(cspace, cfile, directory, dominance_graph);
 			this.write_mutants_labels(cspace, cfile, directory);
-			this.write_static_mutants_status(cspace, cfile, directory, dominance_graph);
 			/*
+			this.write_static_mutants_status(cspace, cfile, directory, dominance_graph);
 			for(TestInput test : tspace.get_test_inputs()) {
 				this.write_dynamic_mutants_status(cspace, test, cfile, directory, dominance_graph);
 			}
