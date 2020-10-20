@@ -117,7 +117,7 @@ public class CirMutationStatus {
 	public Iterable<CirStateErrorWord> get_error_words() { return this.error_words; } 
 	
 	/* setters */
-	private boolean is_boolean_error(CirExpression location) throws Exception {
+	private static boolean is_boolean_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
 		type = CTypeAnalyzer.get_value_type(type);
 		if(CTypeAnalyzer.is_boolean(type)) {
@@ -136,12 +136,12 @@ public class CirMutationStatus {
 			}
 		}
 	}
-	private boolean is_numeric_error(CirExpression location) throws Exception {
+	private static boolean is_numeric_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
 		type = CTypeAnalyzer.get_value_type(type);
 		return CTypeAnalyzer.is_number(type);
 	}
-	private boolean is_address_error(CirExpression location) throws Exception {
+	private static boolean is_address_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
 		type = CTypeAnalyzer.get_value_type(type);
 		return CTypeAnalyzer.is_pointer(type);
@@ -163,7 +163,7 @@ public class CirMutationStatus {
 	 */
 	private void append_error_words(CirExpression location, 
 			SymExpression orig_value, SymExpression muta_value) throws Exception {
-		if(this.is_boolean_error(location)) {
+		if(is_boolean_error(location)) {
 			this.append_error_word(CirStateErrorWord.not_bool);
 			if(muta_value instanceof SymConstant) {
 				if(((SymConstant) muta_value).get_bool()) {
@@ -174,7 +174,7 @@ public class CirMutationStatus {
 				}
 			}
 		}
-		else if(this.is_numeric_error(location)) {
+		else if(is_numeric_error(location)) {
 			this.append_error_word(CirStateErrorWord.chg_numb);
 			if(muta_value instanceof SymConstant) {
 				Object number = ((SymConstant) muta_value).get_number();
@@ -204,7 +204,7 @@ public class CirMutationStatus {
 				}
 			}
 		}
-		else if(this.is_address_error(location)) {
+		else if(is_address_error(location)) {
 			this.append_error_word(CirStateErrorWord.chg_addr);
 			if(muta_value instanceof SymConstant) {
 				long number = ((SymConstant) muta_value).get_long();
@@ -264,7 +264,7 @@ public class CirMutationStatus {
 			}
 		}
 		
-		if(this.is_numeric_error(location) || this.is_address_error(location)) {
+		if(is_numeric_error(location) || is_address_error(location)) {
 			SymExpression difference = SymFactory.
 					arith_sub(location.get_data_type(), muta_value, orig_value);
 			difference = SymEvaluator.evaluate_on(difference, null);
@@ -372,6 +372,25 @@ public class CirMutationStatus {
 		
 		/* 3. record the feature words for concrete error */
 		this.append_error_words(conc_mutation.get_state_error());
+	}
+	/**
+	 * accumulate the counters in status to this one
+	 * @param status
+	 * @throws Exception
+	 */
+	public void accumulate_mutation_status(CirMutationStatus status) throws Exception {
+		if(status.tree_node != this.tree_node)
+			throw new IllegalArgumentException("Tree-Node conflicted.");
+		else {
+			this.execution_times += status.execution_times;
+			this.acceptions_of_constraints += status.acceptions_of_constraints;
+			this.acceptions_of_state_errors += status.acceptions_of_state_errors;
+			this.rejections_of_constraints += status.rejections_of_state_errors;
+			this.rejections_of_state_errors += status.rejections_of_state_errors;
+			for(CirStateErrorWord word : status.error_words) {
+				this.append_error_word(word);
+			}
+		}
 	}
 	
 }
