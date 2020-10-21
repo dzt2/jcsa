@@ -431,7 +431,7 @@ class CirExecution:
 	"""
 	Each node in execution flow graph refers to a statement in C-intermediate representation.
 	"""
-	def __init__(self, function, statement: CirNode):
+	def __init__(self, function, exec_id: int, statement: CirNode):
 		"""
 		create an isolated node in execution flow graph of the function
 		:param function:
@@ -439,6 +439,7 @@ class CirExecution:
 		"""
 		function: CirFunction
 		self.function = function
+		self.exec_id = exec_id
 		self.statement = statement
 		self.in_flows = list()
 		self.ou_flows = list()
@@ -479,6 +480,9 @@ class CirExecution:
 		self.ou_flows.append(flow)
 		target.in_flows.append(flow)
 		return flow
+
+	def __str__(self):
+		return self.function.name + "[" + str(self.exec_id) + "]"
 
 
 class CirFunction:
@@ -622,7 +626,7 @@ class CirFunctionCallGraph:
 						name, eid = CirFunctionCallGraph.__extract_function_and_id__(items[1].strip())
 						cir_node_id = base.CToken.parse(items[2].strip()).token_value
 						statement = self.program.cir_tree.cir_nodes[cir_node_id]
-						executions_dict[eid] = CirExecution(function, statement)
+						executions_dict[eid] = CirExecution(function, eid, statement)
 		''' 2. create function calls and execution flows '''
 		with open(flw_file_path, 'r') as reader:
 			for line in reader:
