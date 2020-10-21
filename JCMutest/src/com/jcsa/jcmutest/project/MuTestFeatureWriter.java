@@ -35,6 +35,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstOperator;
+import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -43,6 +44,7 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -650,6 +652,9 @@ public class MuTestFeatureWriter {
 			if(prev.isEmpty()) {
 				int ast_key = Integer.parseInt(post);
 				AstNode source = ast_tree.get_node(ast_key);
+				if(source instanceof AstSwitchStatement) {
+					source = CTypeAnalyzer.get_expression_of(((AstSwitchStatement) source).get_condition());
+				}
 				String code = source.generate_code();
 				for(int k = 0; k < code.length(); k++) {
 					char ch = code.charAt(k);
