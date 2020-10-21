@@ -99,7 +99,7 @@ class MutationFeaturesCorpus:
 def classify_mutations(mutations):
 	"""
 	:param mutations:
-	:return: killed, alive, predict_label
+	:return: killed, alive, unknown, predict_label
 	"""
 	killed, alive, unknown, label = 0, 0, 0, -1
 	for mutation in mutations:
@@ -116,7 +116,7 @@ def classify_mutations(mutations):
 		label = 0
 	else:
 		label = -1
-	return killed, alive, label
+	return killed, alive, unknown, label
 
 
 class MutationFeaturesEvaluator:
@@ -421,13 +421,12 @@ class MutationFeaturePatternMiner:
 		return self.__get_unique_pattern__(child_pattern)
 
 	def __solve__(self, parent_pattern: MutationFeaturePattern, mutations, feature_words):
+		parent_pattern = self.__get_unique_pattern__(parent_pattern)
 		if parent_pattern not in self.solutions:
-			parent_pattern = self.__get_unique_pattern__(parent_pattern)
 			parent_mutations = parent_pattern.filter_mutations(mutations)
-			print("\t\t==>", str(parent_pattern))
-			killed, alive, label = classify_mutations(parent_mutations)
+			killed, alive, unknown, label = classify_mutations(parent_mutations)
 			self.solutions[parent_pattern] = parent_mutations
-			if killed == 0 or alive == 0:
+			if (killed == 0) or (alive == 0):
 				return      # deterministic for further matching
 			for feature_word in feature_words:
 				if feature_word not in parent_pattern.feature_words:
@@ -470,10 +469,10 @@ def mutation_feature_pattern_mine(root_directory: str, post_directory: str):
 		solutions = miner.solve(c_project.muta_space)
 		print("Complete pattern mining with", len(solutions), "patterns being counted")
 		with open(pattern_file_path, 'w') as writer:
-			writer.write("\tLabel\tKilled\tAlive\tType\tLocation\tWords\n")
+			writer.write("\tLabel\tKilled\tAlive\tType\tLocation\tWords\tLine\tCode\n")
 			for pattern, mutations in solutions.items():
 				pattern: MutationFeaturePattern
-				killed, alive, label = classify_mutations(mutations)
+				killed, alive, unknown, label = classify_mutations(mutations)
 				writer.write("@Pattern")
 				if label == 1:
 					writer.write("\tKilled")
@@ -485,6 +484,10 @@ def mutation_feature_pattern_mine(root_directory: str, post_directory: str):
 				writer.write("\t" + pattern.feature_type)
 				writer.write("\t" + str(pattern.location))
 				writer.write("\t" + str(pattern.feature_words))
+				ast_node = pattern.location.get_ast_source()
+				if ast_node is not None:
+					writer.write("\t" + str(ast_node.get_line_of() + 1))
+					writer.write("\t\"" + ast_node.get_code(True) + "\"")
 				writer.write("\n")
 		print("Output", len(solutions), "patterns to", pattern_file_path)
 		print()
