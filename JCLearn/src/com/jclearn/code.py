@@ -103,7 +103,7 @@ class AstNode:
 	"""
 	abstract syntax tree node as [tree, class_name, beg_index, end_index, parent, children, data_type, token]
 	"""
-	def __init__(self, tree, class_name: str, beg_index: int, end_index: int, data_type: base.CToken, token: base.CToken):
+	def __init__(self, tree, ast_node_id: int, class_name: str, beg_index: int, end_index: int, data_type: base.CToken, token: base.CToken):
 		"""
 		create an isolated node in abstract syntactic tree.
 		:param tree: abstract syntactic tree
@@ -115,6 +115,7 @@ class AstNode:
 		"""
 		tree: AstTree
 		self.tree = tree
+		self.ast_node_id = ast_node_id
 		self.class_name = class_name
 		self.beg_index = beg_index
 		self.end_index = end_index
@@ -129,6 +130,9 @@ class AstNode:
 		:return: abstract syntactic tree
 		"""
 		return self.tree
+
+	def get_ast_node_id(self):
+		return self.ast_node_id
 
 	def get_class_name(self):
 		"""
@@ -189,6 +193,9 @@ class AstNode:
 		self.children.append(child)
 		return
 
+	def __str__(self):
+		return self.class_name + "[" + str(self.ast_node_id) + "]"
+
 
 class AstTree:
 	"""
@@ -234,7 +241,7 @@ class AstTree:
 					end_index = int(items[3].strip())
 					data_type = base.CToken.get_data_type(items[4].strip())
 					ast_token = base.CToken.parse(items[5].strip())
-					ast_node = AstNode(self, class_name, beg_index, end_index, data_type, ast_token)
+					ast_node = AstNode(self, ast_node_id, class_name, beg_index, end_index, data_type, ast_token)
 					ast_nodes_dict[ast_node_id] = ast_node
 		''' 2. create the abstract syntactic edges '''
 		for ast_node_id in range(0, len(ast_nodes_dict)):
@@ -258,7 +265,7 @@ class CirNode:
 	C-intermediate representation tree node as:
 		[tree, class_name, ast_source, parent, children, data_type, cir_token]
 	"""
-	def __init__(self, tree, class_name: str, ast_source: AstNode, data_type: base.CToken, cir_token: base.CToken):
+	def __init__(self, tree, cir_node_id: int, class_name: str, ast_source: AstNode, data_type: base.CToken, cir_token: base.CToken):
 		"""
 		:param tree: C-intermediate representation code tree
 		:param class_name: the name of the C-intermediate representation code
@@ -268,6 +275,7 @@ class CirNode:
 		"""
 		tree: CirTree
 		self.tree = tree
+		self.cir_node_id = cir_node_id
 		self.class_name = class_name
 		self.ast_source = ast_source
 		self.data_type = data_type
@@ -281,6 +289,9 @@ class CirNode:
 		:return: C-intermediate representation code tree
 		"""
 		return self.tree
+
+	def get_cir_node_id(self):
+		return self.cir_node_id
 
 	def get_class_name(self):
 		"""
@@ -337,6 +348,9 @@ class CirNode:
 		self.children.append(child)
 		return
 
+	def __str__(self):
+		return self.class_name + "[" + str(self.cir_node_id) + "]"
+
 
 class CirTree:
 	"""
@@ -380,7 +394,7 @@ class CirTree:
 						ast_source = None
 					data_type = base.CToken.get_data_type(items[3].strip())
 					cir_token = base.CToken.parse(items[4].strip())
-					cir_node = CirNode(self, class_name, ast_source, data_type, cir_token)
+					cir_node = CirNode(self, cir_node_id, class_name, ast_source, data_type, cir_token)
 					cir_nodes_dict[cir_node_id] = cir_node
 		''' 2. create the edges in C-intermediate representation tree '''
 		for cir_node_id in range(0, len(cir_nodes_dict)):
@@ -450,6 +464,9 @@ class CirExecution:
 		:return: the function of the node
 		"""
 		return self.function
+
+	def get_execution_id(self):
+		return self.exec_id
 
 	def get_statement(self):
 		"""

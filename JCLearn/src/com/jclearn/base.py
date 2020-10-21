@@ -24,6 +24,9 @@ class CTokenType(enum.Enum):
 	SymNode = 12
 	CType = 13
 
+	def __str__(self):
+		return str(self.name)
+
 
 class CToken:
 	def __init__(self, token_type: CTokenType, token_value):
@@ -83,4 +86,7 @@ class CToken:
 			return CToken(CTokenType(CTokenType.CType), word)
 		else:
 			return CToken(CTokenType(CTokenType.nullptr), None)
+
+	def __str__(self):
+		return str(self.token_value)
 

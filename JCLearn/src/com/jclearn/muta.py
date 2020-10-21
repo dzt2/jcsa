@@ -21,14 +21,18 @@ class TestCase:
 	"""
 	test case defines the parameter used to execute program
 	"""
-	def __init__(self, space, parameter: str):
+	def __init__(self, space, test_id: int, parameter: str):
 		space: TestSpace
 		self.space = space
+		self.test_id = test_id
 		self.parameter = parameter
 		return
 
 	def get_space(self):
 		return self.space
+
+	def get_test_id(self):
+		return self.test_id
 
 	def get_parameter(self):
 		return self.parameter
@@ -46,7 +50,7 @@ class TestSpace:
 					index = line.find(':')
 					test_id = int(line[0: index].strip())
 					parameter = line[index + 1:].strip()
-					test_case = TestCase(self, parameter)
+					test_case = TestCase(self, test_id, parameter)
 					test_cases_dict[test_id] = test_case
 		for test_id in range(0, len(test_cases_dict)):
 			self.test_cases.append(test_cases_dict[test_id])
@@ -67,7 +71,7 @@ class Mutation:
 	Mutation seeded in abstract syntactic tree is defined as:
 	[space, muta_class, muta_operator, location, parameter] | {features, label}
 	"""
-	def __init__(self, space, muta_class: str, muta_operator: str, location: ccode.AstNode, parameter: base.CToken):
+	def __init__(self, space, mutation_id: int, muta_class: str, muta_operator: str, location: ccode.AstNode, parameter: base.CToken):
 		"""
 		:param space: mutation space where the mutant is created
 		:param muta_class: the class of mutation operator
@@ -77,6 +81,7 @@ class Mutation:
 		"""
 		space: MutantSpace
 		self.space = space
+		self.mutation_id = mutation_id
 		self.muta_class = muta_class
 		self.muta_operator = muta_operator
 		self.location = location
@@ -90,6 +95,9 @@ class Mutation:
 		:return: mutation space where the mutant is created
 		"""
 		return self.space
+
+	def get_mutation_id(self):
+		return self.mutation_id
 
 	def get_muta_class(self):
 		"""
@@ -176,7 +184,7 @@ class MutantSpace:
 					ast_node_id: int
 					location = self.project.program.ast_tree.ast_nodes[ast_node_id]
 					parameter = base.CToken.parse(items[4].strip())
-					mutation = Mutation(self, muta_class, muta_operator, location, parameter)
+					mutation = Mutation(self, mutant_id, muta_class, muta_operator, location, parameter)
 					mutants_dict[mutant_id] = mutation
 		for mutant_id in range(0, len(mutants_dict)):
 			self.mutations.append(mutants_dict[mutant_id])
@@ -226,7 +234,10 @@ class MutationFeature:
 		self.parameter = items[5].strip()
 		self.words = list()
 		for k in range(6, len(items)):
-			self.words.append(items[k].strip())
+			word = items[k].strip()
+			if len(word) > 0 and word not in self.words:
+				self.words.append(items[k].strip())
+		self.words.sort()
 		return
 
 	def get_features(self):
@@ -274,7 +285,7 @@ def output_mutation_features(mspace: MutantSpace, output_file_path):
 			writer.write("#Mutation\n")
 			writer.write("\tOperator: " + mutation.muta_class + "<" + mutation.muta_operator + ">\n")
 			writer.write("\tLocation: " + mutation.location.class_name + " at line " + str(mutation.location.get_line_of()))
-			writer.write("\tCode: ")
+			writer.write("\n\tCode: ")
 			code = mutation.location.get_code()
 			trim_code = ""
 			for ch in code:
@@ -293,8 +304,7 @@ def output_mutation_features(mspace: MutantSpace, output_file_path):
 				else:
 					writer.write("\tUnknown")
 				writer.write("\t" + str(feature.execution))
-				for word in feature.words:
-					writer.write("\t" + word)
+				writer.write("\t" + feature.parameter)
 				writer.write("\n")
 			writer.write("\n")
 	return
