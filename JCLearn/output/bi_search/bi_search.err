@@ -1,0 +1,3 @@
+	58	ORRN::cmp_operator	RelationExpression[2319]	not_equals	0 --> 1	['#cons:288:(k) > (argc):-1', '#cons:288:true:1', '#cons:495:(argc) > (1):1', '#cons:503:true:1', '#trap:288:trapping:-1']
+	637	ORRN::cmp_operator	RelationExpression[3441]	not_equals	0 --> 1	['#cons:407:(beg) <= (end):1', '#cons:424:!((*((list) + (mid))) < (value)):1', '#cons:441:(*((list) + (mid))) < (value):-1', '#cons:441:true:1', '#cons:495:(argc) > (1):1', '#cons:507:true:1', '#cons:542:true:1', '#trap:441:trapping:-1']
+	1457	ORRN::cmp_operator	RelationExpression[2043]	not_equals	0 --> 1	['#cons:495:(argc) < (1):-1', '#cons:495:true:1', '#trap:495:trapping:-1']
