@@ -140,11 +140,20 @@ class AstNode:
 		"""
 		return self.class_name
 
-	def get_code(self):
+	def get_code(self, strip=False):
 		"""
 		:return: the code to which the node corresponds
 		"""
-		return self.tree.program.source_code.text[self.beg_index: self.end_index]
+		code = self.tree.program.source_code.text[self.beg_index: self.end_index]
+		if strip:
+			new_code = ""
+			for ch in code:
+				if ch.isspace():
+					new_code += ' '
+				else:
+					new_code += ch
+			return new_code
+		return code
 
 	def get_line_of(self):
 		"""
