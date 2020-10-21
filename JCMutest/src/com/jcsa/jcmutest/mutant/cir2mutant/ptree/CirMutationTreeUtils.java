@@ -155,6 +155,7 @@ public class CirMutationTreeUtils {
 				default: break;
 				}
 			}
+			constraints.add(cir_mutations.expression_constraint(instance.get_execution().get_statement(), Boolean.TRUE, true));
 		}
 		return constraints;
 	}
@@ -189,6 +190,7 @@ public class CirMutationTreeUtils {
 				}
 			}
 		}
+		common_constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
 		return common_constraints;
 	}
 	
