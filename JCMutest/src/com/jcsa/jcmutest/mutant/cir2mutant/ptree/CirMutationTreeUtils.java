@@ -417,10 +417,12 @@ public class CirMutationTreeUtils {
 						features.put(mutation.get_state_error(), null);
 					}
 				}
+				/*
 				else {
 					features.put(mutation.get_constraint(), null);
 					features.put(mutation.get_state_error(), null);
 				}
+				*/
 			}
 			return features;
 		}
