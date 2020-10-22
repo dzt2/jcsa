@@ -630,7 +630,7 @@ public class MuTestFeatureWriter {
 	}
 	/**
 	 * write the code that describes the node into word
-	 * @param node
+	 * @param node 
 	 * @throws Exception
 	 */
 	private void write_sym_node(AstTree ast_tree, SymNode node) throws Exception {

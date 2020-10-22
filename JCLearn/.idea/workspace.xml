@@ -26,7 +26,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
   </component>
-  <component name="RunManager" selected="Python.mine">
+  <component name="RunManager" selected="Python.muta">
     <configuration name="code" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="JCLearn" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -113,8 +113,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.mine" />
         <item itemvalue="Python.muta" />
+        <item itemvalue="Python.mine" />
         <item itemvalue="Python.code" />
       </list>
     </recent_temporary>
@@ -135,22 +135,22 @@
       <screen x="72" y="27" width="1294" height="741" />
     </state>
     <state x="355" y="190" width="717" height="422" key="#com.intellij.fileTypes.FileTypeChooser/72.27.1294.741@72.27.1294.741" timestamp="1603267939906" />
-    <state width="1271" height="176" key="GridCell.Tab.0.bottom" timestamp="1603294401634">
+    <state width="1271" height="175" key="GridCell.Tab.0.bottom" timestamp="1603356693514">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
-    <state width="1271" height="176" key="GridCell.Tab.0.bottom/72.27.1294.741@72.27.1294.741" timestamp="1603294401634" />
-    <state width="1271" height="176" key="GridCell.Tab.0.center" timestamp="1603294401632">
+    <state width="1271" height="175" key="GridCell.Tab.0.bottom/72.27.1294.741@72.27.1294.741" timestamp="1603356693514" />
+    <state width="1271" height="175" key="GridCell.Tab.0.center" timestamp="1603356693513">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
-    <state width="1271" height="176" key="GridCell.Tab.0.center/72.27.1294.741@72.27.1294.741" timestamp="1603294401632" />
-    <state width="1271" height="176" key="GridCell.Tab.0.left" timestamp="1603294401631">
+    <state width="1271" height="175" key="GridCell.Tab.0.center/72.27.1294.741@72.27.1294.741" timestamp="1603356693513" />
+    <state width="1271" height="175" key="GridCell.Tab.0.left" timestamp="1603356693512">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
-    <state width="1271" height="176" key="GridCell.Tab.0.left/72.27.1294.741@72.27.1294.741" timestamp="1603294401631" />
-    <state width="1271" height="176" key="GridCell.Tab.0.right" timestamp="1603294401633">
+    <state width="1271" height="175" key="GridCell.Tab.0.left/72.27.1294.741@72.27.1294.741" timestamp="1603356693512" />
+    <state width="1271" height="175" key="GridCell.Tab.0.right" timestamp="1603356693513">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
-    <state width="1271" height="176" key="GridCell.Tab.0.right/72.27.1294.741@72.27.1294.741" timestamp="1603294401633" />
+    <state width="1271" height="175" key="GridCell.Tab.0.right/72.27.1294.741@72.27.1294.741" timestamp="1603356693513" />
     <state x="382" y="89" width="672" height="678" key="search.everywhere.popup" timestamp="1603270378504">
       <screen x="72" y="27" width="1294" height="741" />
     </state>
