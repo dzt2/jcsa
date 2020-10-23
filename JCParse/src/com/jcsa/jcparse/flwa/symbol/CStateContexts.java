@@ -1,23 +1,22 @@
-package com.jcsa.jcparse.test.state;
+package com.jcsa.jcparse.flwa.symbol;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.irlang.impl.CirLocalizer;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.lang.sym.SymInvocate;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStateUnit;
 
 public class CStateContexts {
 	
@@ -188,7 +187,6 @@ public class CStateContexts {
 					}
 				}
 			}
-			//System.out.println("\t\t==> STEP-1");
 			
 			/* 2. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
@@ -200,7 +198,6 @@ public class CStateContexts {
 			else if(statement instanceof CirEndStatement) {
 				this.pop(def);
 			}
-			//System.out.println("\t\t==> STEP-2");
 			
 			/* 3. update the local state in current scope */
 			for(CStateUnit unit : node.get_units()) {
@@ -208,7 +205,6 @@ public class CStateContexts {
 				SymExpression target = this.evaluate(source);
 				this.put(unit.get_expression(), target);
 			}
-			//System.out.println("\t\t==> STEP-3");
 			
 			/* 4. accumulate the statement as being executed */
 			SymExpression sexpr = SymFactory.sym_statement(statement);
@@ -219,30 +215,6 @@ public class CStateContexts {
 			}
 			counter++;
 			this.context.put_value(sexpr, Integer.valueOf(counter));
-			//System.out.println("\t\t==> STEP-4");
-		}
-	}
-	/**
-	 * @param execution
-	 * @return the state node after executing the statement as given
-	 * @throws Exception
-	 */
-	public CStateNode generate(CirExecution execution) throws Exception {
-		if(execution == null)
-			throw new IllegalArgumentException("Invalid execution: null");
-		else {
-			/* 1. declarations */
-			CStateNode node = new CStateNode(execution);
-			Set<CirExpression> expressions = CirLocalizer.
-					expressions_in(execution.get_statement());
-			
-			/* 2. perform symbolic evaluation to create node */
-			for(CirExpression expression : expressions) {
-				SymExpression sym_value = SymFactory.parse(expression);
-				node.set_unit(expression, this.evaluate(sym_value));
-			}
-			
-			/* 3. return the state node */	return node;
 		}
 	}
 	

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.test.state;
+package com.jcsa.jcparse.flwa.symbol;
 
 import java.util.HashMap;
 import java.util.Map;

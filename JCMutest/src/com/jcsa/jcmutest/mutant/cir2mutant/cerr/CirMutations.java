@@ -3,6 +3,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
+import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -11,10 +13,8 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
-import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**

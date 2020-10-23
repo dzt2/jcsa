@@ -8,8 +8,8 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**

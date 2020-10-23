@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.sym;
+package com.jcsa.jcparse.flwa.symbol;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +14,16 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.test.state.CStateContexts;
+import com.jcsa.jcparse.lang.sym.SymArgumentList;
+import com.jcsa.jcparse.lang.sym.SymBasicExpression;
+import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
+import com.jcsa.jcparse.lang.sym.SymCallExpression;
+import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.sym.SymFieldExpression;
+import com.jcsa.jcparse.lang.sym.SymInitializerList;
+import com.jcsa.jcparse.lang.sym.SymUnaryExpression;
 
 /**
  * It is used to evaluate the value of symbolic expression in a given context.

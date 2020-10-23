@@ -3,9 +3,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
-import com.jcsa.jcparse.test.state.CStateContexts;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 
 /**
  * The node in mutation propagation tree represents a state error

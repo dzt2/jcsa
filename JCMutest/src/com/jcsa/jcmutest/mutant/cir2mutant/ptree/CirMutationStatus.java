@@ -10,6 +10,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
+import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -17,7 +18,6 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 

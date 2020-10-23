@@ -1,4 +1,7 @@
-package com.jcsa.jcparse.lang.sym;
+package com.jcsa.jcparse.flwa.symbol;
+
+import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 /**
  * It provides computation on the symbolic expressions.

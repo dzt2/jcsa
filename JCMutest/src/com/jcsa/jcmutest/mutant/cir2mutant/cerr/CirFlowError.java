@@ -1,8 +1,8 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**

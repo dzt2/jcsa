@@ -11,8 +11,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.CirTree;
-import com.jcsa.jcparse.test.state.CStateContexts;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 

@@ -1,11 +1,11 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
+import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymEvaluator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.test.state.CStateContexts;
 
 
 /**

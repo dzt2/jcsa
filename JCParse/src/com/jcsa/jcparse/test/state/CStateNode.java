@@ -37,7 +37,7 @@ public class CStateNode {
 	 * @param execution
 	 * @throws Exception
 	 */
-	public CStateNode(CirExecution execution) throws IllegalArgumentException {
+	protected CStateNode(CirExecution execution) throws IllegalArgumentException {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution");
 		else {
