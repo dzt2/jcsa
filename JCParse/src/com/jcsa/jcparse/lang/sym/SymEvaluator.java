@@ -317,7 +317,7 @@ public class SymEvaluator {
 			else {
 				throw new IllegalArgumentException(data_type.generate_code());
 			}
-			return new SymConstant(data_type, constant);
+			return SymFactory.new_constant(constant);
 		}
 		else {
 			return SymFactory.type_cast(data_type, operand);

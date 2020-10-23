@@ -37,7 +37,7 @@ public class CStateNode {
 	 * @param execution
 	 * @throws Exception
 	 */
-	protected CStateNode(CirExecution execution) throws IllegalArgumentException {
+	public CStateNode(CirExecution execution) throws IllegalArgumentException {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution");
 		else {
@@ -103,7 +103,7 @@ public class CStateNode {
 	 * @param value
 	 * @throws Exception
 	 */
-	protected void set_unit(CirExpression expression, Object value) throws Exception {
+	public void set_unit(CirExpression expression, Object value) throws Exception {
 		if(expression == null || expression.statement_of() != this.get_statement())
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		else {

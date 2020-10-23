@@ -150,7 +150,7 @@ public abstract class SymNode {
 	 * set the source of the SymNode
 	 * @param source
 	 */
-	protected void set_source(Object source) { this.source = source; }
+	public void set_source(Object source) { this.source = source; }
 	/**
 	 * @return the isolated copy of this node
 	 * @throws Exception
