@@ -8,6 +8,7 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.BitSequence;
+import com.jcsa.jcparse.flwa.symbol.SymStateNode;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -211,6 +212,28 @@ public class MuTestProjectTestSpace {
 		}
 		else {
 			return null;	/* no instrumental results are found in */
+		}
+	}
+	/**
+	 * @param code_file
+	 * @param input
+	 * @return load the symbolic state path generated from the concrete evaluation
+	 * @throws Exception
+	 */
+	public List<SymStateNode> load_concrete_symbolic_path(
+			MuTestProjectCodeFile code_file, TestInput input) throws Exception {
+		if(code_file == null)
+			throw new IllegalArgumentException("Invalid code_file: null");
+		else {
+			CStatePath state_path = this.load_instrumental_path(
+					code_file.get_sizeof_template(), 
+					code_file.get_ast_tree(), code_file.get_cir_tree(), input);
+			if(state_path != null) {
+				return SymStateNode.generate(state_path);
+			}
+			else {
+				return null;
+			}
 		}
 	}
 	

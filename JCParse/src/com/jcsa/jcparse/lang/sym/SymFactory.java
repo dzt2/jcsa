@@ -2,6 +2,7 @@ package com.jcsa.jcparse.lang.sym;
 
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -313,6 +314,29 @@ public class SymFactory {
 	public static SymExpression sym_statement(CirStatement statement) throws Exception {
 		String name = statement.get_tree().get_localizer().get_execution(statement).toString();
 		return SymFactory.new_identifier(CBasicTypeImpl.int_type, "@" + name);
+	}
+	public static SymExpression sym_condition(Object expression, boolean value) throws Exception {
+		SymExpression condition = parse(expression);
+		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
+		if(CTypeAnalyzer.is_boolean(type)) {
+			if(value) {
+				return condition;
+			}
+			else {
+				return SymFactory.logic_not(condition);
+			}
+		}
+		else if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+			if(value) {
+				return SymFactory.not_equals(condition, Integer.valueOf(0));
+			}
+			else {
+				return SymFactory.equal_with(condition, Integer.valueOf(0));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + type.generate_code());
+		}
 	}
 	
 }
