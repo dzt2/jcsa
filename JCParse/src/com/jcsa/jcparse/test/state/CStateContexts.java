@@ -43,7 +43,7 @@ public class CStateContexts {
 	/**
 	 * @return the current context being evaluated
 	 */
-	public CStateContext get_context() { return this.context; }
+	public CStateContext get_context() { return this.context; } 
 	/**
 	 * push the new child context w.r.t. the key
 	 * @param context_key
