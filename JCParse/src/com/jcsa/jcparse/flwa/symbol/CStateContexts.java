@@ -217,5 +217,49 @@ public class CStateContexts {
 			this.context.put_value(sexpr, Integer.valueOf(counter));
 		}
 	}
+	/**
+	 * accumulate the symbolic valuation in node to this contexts 
+	 * @param node
+	 * @throws Exception
+	 */
+	public void accumulate(SymStateNode node) throws Exception {
+		if(node == null)
+			throw new IllegalArgumentException("Invalid node");
+		else {
+			/* 1. update the state contexts stack */
+			CirStatement statement = node.get_statement();
+			CirFunction def = statement.get_tree().get_localizer().
+					get_execution(statement).get_graph().get_function();
+			if(statement instanceof CirBegStatement) {
+				this.push(def);
+			}
+			else if(statement instanceof CirEndStatement) {
+				this.pop(def);
+			}
+			
+			/* 2. update the local state valuations */
+			for(SymStateUnit unit : node.get_state_units()) {
+				SymExpression source = unit.get_value();
+				SymExpression target = this.evaluate(source);
+				this.put(unit.get_location(), target);
+			}
+			if(statement instanceof CirAssignStatement) {
+				CirExpression lvalue = ((CirAssignStatement) statement).get_lvalue();
+				CirExpression rvalue = ((CirAssignStatement) statement).get_rvalue();
+				SymExpression right_sym_value = node.get_unit(rvalue).get_value();
+				this.context.put_value(lvalue, right_sym_value);
+			}
+			
+			/* 3. accumulate the statement counters */
+			SymExpression sexpr = SymFactory.sym_statement(statement);
+			SymExpression value = this.context.get_value(sexpr);
+			int counter = 0;
+			if(value != null) {
+				counter = ((SymConstant) value).get_int();
+			}
+			counter++;
+			this.context.put_value(sexpr, Integer.valueOf(counter));
+		}
+	}
 	
 }
