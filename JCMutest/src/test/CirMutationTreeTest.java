@@ -14,10 +14,11 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationStatus;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationGraph;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationResult;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
@@ -27,8 +28,7 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
-import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
-import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -46,6 +46,7 @@ public class CirMutationTreeTest {
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 5;
 	private static final String result_dir = "result/ctree/";
+	private static final int maximal_distance = 2;
 	
 	/* project getters */
 	private static String get_name(File cfile) {
@@ -105,9 +106,6 @@ public class CirMutationTreeTest {
 		return CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1);
 	}
-	private static CDominanceGraph generate(CirInstanceGraph graph) throws Exception {
-		return CDominanceGraph.forward_dominance_graph(graph);
-	}
 	
 	/* generation methods */
 	/**
@@ -144,7 +142,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTreeNode tree_node, 
-			CirMutationStatus level, FileWriter writer, int tabs) throws Exception {
+			CirMutationResult level, FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[TreeNode]");
 		tabs++;
@@ -184,7 +182,7 @@ public class CirMutationTreeTest {
 	 * @throws Exception
 	 */
 	private static void output_level(CirMutationTree tree, 
-			Map<CirMutationTreeNode, CirMutationStatus> results, 
+			Map<CirMutationTreeNode, CirMutationResult> results, 
 			FileWriter writer, int tabs) throws Exception {
 		new_line(writer, tabs);
 		writer.write("[Tree]");
@@ -207,16 +205,15 @@ public class CirMutationTreeTest {
 		writer.write("[Tree]");
 	}
 	private static void output_level(MuTestProject project, Mutant mutant, CStatePath path, int tid,
-			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
+			FileWriter writer, CirTree cir_tree, CDependGraph dependence_graph, int maximal_distance) throws Exception {
 		/* getters */
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, CirMutationStatus> results = trees.abs_interpret(path);
+		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
+		Map<CirMutationTreeNode, CirMutationResult> results = graph.abs_evaluate(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
 		
-		//tabs++;
 		{
 			AstMutation mutation = mutant.get_mutation();
 			AstNode location = mutation.get_location();
@@ -260,12 +257,11 @@ public class CirMutationTreeTest {
 			}
 			
 			tabs++;
-			for(CirMutationTree tree : trees.get_trees()) {
-				output_level(tree, results, writer, tabs);
+			for(CirMutationNode node : graph.get_nodes()) {
+				output_level(node.get_tree(), results, writer, tabs);
 			}
 			tabs--;
 		}
-		//tabs--;
 		
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
@@ -277,7 +273,7 @@ public class CirMutationTreeTest {
 		MuTestProjectCodeFile cfile = project.get_code_space().get_code_files().iterator().next();
 		CStatePath path = project.get_test_space().load_instrumental_path(
 				cfile.get_sizeof_template(), cfile.get_ast_tree(), cfile.get_cir_tree(), test);
-		CDominanceGraph dominance_graph = generate(translate(cfile.get_cir_tree()));
+		CDependGraph dependence_graph = CDependGraph.graph(translate(cfile.get_cir_tree()));
 		
 		/* output file */
 		String output_name;
@@ -292,7 +288,7 @@ public class CirMutationTreeTest {
 		
 		/* generation */
 		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
-			output_level(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dominance_graph);
+			output_level(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dependence_graph, maximal_distance);
 			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
 		}
 		writer.close();
@@ -351,16 +347,15 @@ public class CirMutationTreeTest {
 		writer.write("[Tree]");
 	}
 	private static void output_details(MuTestProject project, Mutant mutant, CStatePath path, int tid,
-			FileWriter writer, CirTree cir_tree, CDominanceGraph dominance_graph) throws Exception {
+			FileWriter writer, CirTree cir_tree, CDependGraph dependence_graph, int maximal_distance) throws Exception {
 		/* getters */
-		CirMutationTrees trees = CirMutationTrees.new_trees(cir_tree, mutant, dominance_graph);
-		Map<CirMutationTreeNode, List<CirMutation>> results = trees.con_interpret(path);
+		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
+		Map<CirMutationTreeNode, List<CirMutation>> results = graph.con_evaluate(path);
 		
 		int tabs = 0;
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
 		
-		//tabs++;
 		{
 			AstMutation mutation = mutant.get_mutation();
 			AstNode location = mutation.get_location();
@@ -404,12 +399,11 @@ public class CirMutationTreeTest {
 			}
 			
 			tabs++;
-			for(CirMutationTree tree : trees.get_trees()) {
-				output_details(tree, results, writer, tabs);
+			for(CirMutationNode node : graph.get_nodes()) {
+				output_details(node.get_tree(), results, writer, tabs);
 			}
 			tabs--;
 		}
-		//tabs--;
 		
 		new_line(writer, tabs);
 		writer.write("[Mutant]");
@@ -421,7 +415,7 @@ public class CirMutationTreeTest {
 		MuTestProjectCodeFile cfile = project.get_code_space().get_code_files().iterator().next();
 		CStatePath path = project.get_test_space().load_instrumental_path(
 				cfile.get_sizeof_template(), cfile.get_ast_tree(), cfile.get_cir_tree(), test);
-		CDominanceGraph dominance_graph = generate(translate(cfile.get_cir_tree()));
+		CDependGraph dependence_graph = CDependGraph.graph(translate(cfile.get_cir_tree()));
 		
 		/* output file */
 		String output_name;
@@ -436,7 +430,7 @@ public class CirMutationTreeTest {
 		
 		/* generation */
 		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
-			output_details(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dominance_graph);
+			output_details(project, mutant, path, test_id, writer, cfile.get_cir_tree(), dependence_graph, maximal_distance);
 			System.out.println("\t==> Complete mutant [" + mutant.get_id() + "/" + cfile.get_mutant_space().size() + "]");
 		}
 		writer.close();
@@ -449,7 +443,6 @@ public class CirMutationTreeTest {
 		System.out.println("1. Get mutation project for " + project.get_name());
 		
 		output_details(project, tid);
-		// output_levels(project, tid);
 		output_level(project, tid);
 		
 		System.out.println("2. Output the mutation information to XML.");

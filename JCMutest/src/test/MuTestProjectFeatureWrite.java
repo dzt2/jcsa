@@ -15,8 +15,7 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
-import com.jcsa.jcparse.flwa.dominate.CDominanceGraph;
-import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
@@ -37,6 +36,7 @@ public class MuTestProjectFeatureWrite {
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 5;
 	private static final String result_dir = root_path + "features/";
+	private static final int maximal_distance = 2;
 	
 	public static void main(String[] args) throws Exception {
 		for(File rfile : new File(root_path + "rprojects/").listFiles()) {
@@ -103,17 +103,15 @@ public class MuTestProjectFeatureWrite {
 		return CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1);
 	}
-	private static CDominanceGraph generate(CirInstanceGraph graph) throws Exception {
-		return CDominanceGraph.forward_dominance_graph(graph);
-	}
 	private static void write_features(MuTestProject project, File cfile) throws Exception {
 		MuTestProjectCodeFile cspace = project.get_code_space().get_code_file(cfile);
-		CDominanceGraph dominance_graph = generate(translate(cspace.get_cir_tree()));
+		CDependGraph dependence_graph = CDependGraph.graph(translate(cspace.get_cir_tree()));
 		File directory = new File(result_dir + project.get_name());
 		if(!directory.exists()) directory.mkdir();
 		
 		MuTestFeatureWriter writer = new MuTestFeatureWriter();
-		writer.write_features(project, cfile, directory, dominance_graph, false, false);
+		writer.write_features(project, cfile, directory, 
+				dependence_graph, false, false, maximal_distance);
 	}
 	protected static void testing(File cfile) throws Exception {
 		MuTestProject project = get_project(cfile);

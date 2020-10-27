@@ -15,6 +15,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationFlow;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationResult;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.pgate.CirAddressOfPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.pgate.CirArgumentListPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.pgate.CirArithAddPropagator;
@@ -620,6 +622,57 @@ public class CirMutationUtils {
 			
 			return results;
 		}
+	}
+	
+	/* feature selection algorithms */
+	/**
+	 * @param mutation_result_map
+	 * @return mapping from constraint or state error to whether they are satisfied (null as unknown)
+	 * @throws Exception
+	 */
+	public static Map<Object, Boolean> select_features(Map<CirMutationTreeNode, CirMutationResult> mutation_result_map) throws Exception {
+		Map<Object, Boolean> results = new HashMap<Object, Boolean>();
+		
+		for(CirMutationTreeNode tree_node : mutation_result_map.keySet()) {
+			/* 1. get the test result summary of the tree node */
+			CirMutationResult tree_node_result = mutation_result_map.get(tree_node);
+			
+			/* 2. determine the path constraints for reaching the statement */
+			if(tree_node.is_root()) {
+				boolean reached = tree_node_result.is_executed();
+				for(CirConstraint constraint : tree_node.get_tree().
+						get_statement_node().get_path_constraints()) {
+					results.put(constraint, Boolean.valueOf(reached));
+				}
+			}
+			
+			/* 3. determine the satisfiability of constraint & state-error */
+			if(tree_node_result.is_executed()) {
+				CirConstraint constraint = tree_node.get_cir_mutation().get_constraint();
+				if(tree_node_result.get_constraint_acceptions() > 0) {
+					results.put(constraint, Boolean.TRUE);
+				}
+				else if(tree_node_result.get_constraint_rejections() > 0) {
+					results.put(constraint, Boolean.FALSE);
+				}
+				else {
+					results.put(constraint, null);
+				}
+				
+				CirStateError state_error = tree_node.get_cir_mutation().get_state_error();
+				if(tree_node_result.get_state_error_acceptions() > 0) {
+					results.put(state_error, Boolean.TRUE);
+				}
+				else if(tree_node_result.get_state_error_ignorances() > 0) {
+					results.put(state_error, Boolean.FALSE);
+				}
+				else {
+					results.put(state_error, null);
+				}
+			}
+		}
+		
+		return results;
 	}
 	
 }
