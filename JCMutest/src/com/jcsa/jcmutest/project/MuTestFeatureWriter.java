@@ -852,6 +852,7 @@ public class MuTestFeatureWriter {
 					break;
 				}
 			}
+			writer.write("\t");
 			this.write_feature_word(ast_tree, feature, feature_valid_map.get(feature), status);
 			writer.write("\n");
 		}
@@ -898,6 +899,7 @@ public class MuTestFeatureWriter {
 					break;
 				}
 			}
+			writer.write("\t");
 			this.write_feature_word(ast_tree, feature, feature_valid_map.get(feature), status);
 			writer.write("\n");
 		}
@@ -1035,6 +1037,7 @@ public class MuTestFeatureWriter {
 						break;
 					}
 				}
+				writer.write("\t");
 				this.write_feature_word(ast_tree, feature, feature_label_map.get(feature), status);
 				writer.write("\n");
 			}
