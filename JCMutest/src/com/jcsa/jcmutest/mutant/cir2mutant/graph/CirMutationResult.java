@@ -113,7 +113,10 @@ public class CirMutationResult {
 	/* setters */
 	private static boolean is_boolean_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
-		type = CTypeAnalyzer.get_value_type(type);
+		if(type != null)
+			type = CTypeAnalyzer.get_value_type(type);
+		else
+			return false;
 		if(CTypeAnalyzer.is_boolean(type)) {
 			return true;
 		}
@@ -132,12 +135,18 @@ public class CirMutationResult {
 	}
 	private static boolean is_numeric_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
-		type = CTypeAnalyzer.get_value_type(type);
+		if(type != null)
+			type = CTypeAnalyzer.get_value_type(type);
+		else
+			return false;
 		return CTypeAnalyzer.is_number(type);
 	}
 	private static boolean is_address_error(CirExpression location) throws Exception {
 		CType type = location.get_data_type();
-		type = CTypeAnalyzer.get_value_type(type);
+		if(type != null)
+			type = CTypeAnalyzer.get_value_type(type);
+		else
+			return false;
 		return CTypeAnalyzer.is_pointer(type);
 	}
 	private void append_error_word(CirStateErrorWord word) throws IllegalArgumentException {

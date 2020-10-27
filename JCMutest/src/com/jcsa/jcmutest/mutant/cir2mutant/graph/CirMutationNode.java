@@ -141,7 +141,7 @@ public class CirMutationNode {
 	 * @return mapping from each tree node to its concrete mutation or null if the node is not reached
 	 * @throws Exception
 	 */
-	public Map<CirMutationTreeNode, CirMutation> evaluate(CStateContexts contexts) throws Exception {
+	protected Map<CirMutationTreeNode, CirMutation> con_evaluate(CStateContexts contexts) throws Exception {
 		Map<CirMutationTreeNode, CirMutation> results = new HashMap<CirMutationTreeNode, CirMutation>();
 		CirMutations cir_mutations = this.graph.get_cir_mutations();
 		
@@ -167,6 +167,22 @@ public class CirMutationNode {
 			}
 		}
 		
+		return results;
+	}
+	/**
+	 * @param contexts
+	 * @return mapping from each tree node to its abstract result or null if the node is not reached
+	 * @throws Exception
+	 */
+	protected Map<CirMutationTreeNode, CirMutationResult> abs_evaluate(CStateContexts contexts) throws Exception {
+		Map<CirMutationTreeNode, CirMutation> con_results = this.con_evaluate(contexts);
+		Map<CirMutationTreeNode, CirMutationResult> results = new HashMap<CirMutationTreeNode, CirMutationResult>();
+		for(CirMutationTreeNode tree_node : con_results.keySet()) {
+			CirMutation con_mutation = con_results.get(tree_node);
+			CirMutationResult result = new CirMutationResult(tree_node);
+			result.append_concrete_mutation(con_mutation);
+			results.put(tree_node, result);
+		}
 		return results;
 	}
 	
