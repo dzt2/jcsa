@@ -794,7 +794,7 @@ def generate_best_pattern_of_mutations(root_directory: str, post_directory: str)
 						killed, alive, unknown, label, alive_rate = classify_and_count_mutations(pattern_mutation_dict[best_pattern])
 						writer.write("\t" + str(killed) + "\t" + str(alive) + "\t" + str(int(alive_rate * 100)) + "%")
 					writer.write("\n")
-		print("2. Write best patterns for alive mutations to", mutation_file_path)
+		print("3. Write best patterns for alive mutations to", mutation_file_path)
 	return
 
 
