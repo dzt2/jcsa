@@ -12,6 +12,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
@@ -51,15 +52,18 @@ public class CirMutationGraphTest {
 	private static final File preprocess_macro_file = new File("config/linux.h");
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 5;
-	private static final int maximal_distance = 0;
+	private static final int maximal_distance = 2;
 	private static final String result_dir = "result/graphs/";
 	
 	public static void main(String[] args) throws Exception {
+		/*
 		for(File cfile : new File(root_path + "cfiles").listFiles()) {
 			if(cfile.getName().endsWith(".c")) {
 				testing(cfile);
 			}
 		}
+		*/
+		testing("profit", 1997);
 	}
 	
 	private static String get_name(File cfile) {
@@ -114,6 +118,13 @@ public class CirMutationGraphTest {
 			
 			return project;
 		}
+	}
+	private static MuTestProject get_project(String name) throws Exception {
+		File root = new File(root_path + "rprojects/" + name);
+		if(root.exists())
+			return new MuTestProject(root, MuCommandUtil.linux_util);
+		else
+			throw new IllegalArgumentException("Undefined: " + name);
 	}
 	
 	/* original feature model */
@@ -392,6 +403,7 @@ public class CirMutationGraphTest {
 		
 		if(test_path != null) {
 			FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
+			writer.write("Test#" + tid + ": " + test_case.get_parameter() + "\n\n");
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				System.out.println("\t==> " + mutant.toString());
 				write_mutant_and_con_evaluations_in_contexts(mutant, dependence_graph, test_path, writer);
@@ -453,6 +465,11 @@ public class CirMutationGraphTest {
 			writer.write("#cons_accp = " + result.get_constraint_acceptions() + "; ");
 			writer.write("#stat_rejc = " + result.get_state_error_rejections() + "; ");
 			writer.write("#stat_accp = " + result.get_state_error_acceptions() + "; ");
+			writer.write("\n");
+			writer.write("\t\t\t==> #word: ");
+			for(CirStateErrorWord word : result.get_error_words()) {
+				writer.write(word.toString() + "; ");
+			}
 			writer.write("\n");
 		}
 		
@@ -530,8 +547,8 @@ public class CirMutationGraphTest {
 		}
 		writer.close();
 	}
-	private static void write_mutant_and_abs_evaluations_in_contexts(
-			Mutant mutant, CDependGraph dependence_graph, CStatePath state_path, FileWriter writer) throws Exception {
+	private static void write_mutant_and_abs_evaluations_in_contexts(Mutant mutant, 
+			CDependGraph dependence_graph, CStatePath state_path, FileWriter writer) throws Exception {
 		writer.write("#beg_mutant\n");
 		
 		AstMutation mutation = mutant.get_mutation();
@@ -572,6 +589,7 @@ public class CirMutationGraphTest {
 		
 		if(test_path != null) {
 			FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
+			writer.write("Test#" + tid + ": " + test_case.get_parameter() + "\n\n");
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				System.out.println("\t==> " + mutant.toString());
 				write_mutant_and_abs_evaluations_in_contexts(mutant, dependence_graph, test_path, writer);
@@ -584,14 +602,19 @@ public class CirMutationGraphTest {
 		}
 	}
 	
-	
 	/* testing method */
 	protected static void testing(File cfile) throws Exception {
 		MuTestProject project = new_project(cfile);
 		System.out.println("Testing on " + project.get_name());
-		//write_mutants(project);
+		// write_mutants(project);
 		// write_mutants_and_con_evaluations_in_non_contexts(project);
 		write_mutants_and_abs_evaluations_in_non_contexts(project);
+	}
+	protected static void testing(String name, int tid) throws Exception {
+		MuTestProject project = get_project(name);
+		System.out.println("Testing on " + project.get_name());
+		write_mutants_and_con_evaluations_in_non_contexts(project, tid);
+		// write_mutants_and_abs_evaluations_in_non_contexts(project, tid);
 	}
 	
 }
