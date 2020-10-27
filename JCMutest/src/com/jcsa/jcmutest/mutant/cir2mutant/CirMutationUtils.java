@@ -119,9 +119,11 @@ public class CirMutationUtils {
 						}
 						/* (wait_statement, True, true) --> as reaching statement */
 						else if(edge.get_type() == CDependType.stmt_exit_depend) {
-							next = edge.get_target();
-							CirStatement statement = next.get_statement();
-							constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
+							if(prev != edge.get_target()) {
+								next = edge.get_target();
+								CirStatement statement = next.get_statement();
+								constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
+							}
 						}
 						/* (call_statement, True, true) --> as reaching statement */
 						else if(edge.get_type() == CDependType.stmt_call_depend) {

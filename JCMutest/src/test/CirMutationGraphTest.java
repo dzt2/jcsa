@@ -46,7 +46,7 @@ public class CirMutationGraphTest {
 	private static final File preprocess_macro_file = new File("config/linux.h");
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 5;
-	private static final int maximal_distance = 1;
+	private static final int maximal_distance = 2;
 	private static final String result_dir = "result/graphs/";
 	
 	public static void main(String[] args) throws Exception {
@@ -75,7 +75,7 @@ public class CirMutationGraphTest {
 		String name = get_name(cfile);
 		File root = new File(root_path + "mprojects/" + name);
 		
-		if(!root.exists()) {
+		if(root.exists()) {
 			return new MuTestProject(root, MuCommandUtil.linux_util);
 		}
 		else {

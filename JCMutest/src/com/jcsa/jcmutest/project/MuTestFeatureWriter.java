@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
@@ -20,7 +21,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
+package com.jcsa.jcmutest.mutant.cir2mutant;
 
 /**
  * The word is used to describe the feature hold by each concrete state error.

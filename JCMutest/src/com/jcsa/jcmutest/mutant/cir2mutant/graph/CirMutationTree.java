@@ -69,7 +69,8 @@ public class CirMutationTree {
 			for(CirMutationTreeNode child : tree_node.get_children()) {
 				queue.add(child);
 			}
-			this.leafs.add(tree_node);
+			if(tree_node.is_leaf())
+				this.leafs.add(tree_node);
 		}
 	}
 	/**

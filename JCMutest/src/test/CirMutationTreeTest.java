@@ -12,12 +12,12 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirMutationTrees;
-import com.jcsa.jcmutest.mutant.cir2mutant.ptree.CirStateErrorWord;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;

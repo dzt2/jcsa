@@ -24,7 +24,7 @@ public class CirMutationEdge {
 		if(type == null)
 			throw new IllegalArgumentException("Invalid type: null");
 		else if(source == null || !source.is_leaf())
-			throw new IllegalArgumentException("Invalid source: null");
+			throw new IllegalArgumentException("Invalid source: " + source.get_cir_mutation().get_state_error());
 		else if(target == null || !target.is_root())
 			throw new IllegalArgumentException("Invalid target: null");
 		else {

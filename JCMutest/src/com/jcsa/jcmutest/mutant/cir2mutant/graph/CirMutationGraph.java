@@ -124,6 +124,7 @@ public class CirMutationGraph {
 					this.connect(results.get(child_mutation), leaf, child.get_tree().get_root());
 					this.build_propagation(child, dependence_graph, distance - 1);
 				}
+				
 			}
 		}
 	}

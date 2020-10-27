@@ -1,8 +1,10 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.graph;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -11,6 +13,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
@@ -130,6 +133,41 @@ public class CirMutationNode {
 			/* 3. update the tree leafs in the statement node */
 			this.tree.update_leafs();
 		}
+	}
+	
+	/* analyzers */
+	/**
+	 * @param contexts
+	 * @return mapping from each tree node to its concrete mutation or null if the node is not reached
+	 * @throws Exception
+	 */
+	public Map<CirMutationTreeNode, CirMutation> evaluate(CStateContexts contexts) throws Exception {
+		Map<CirMutationTreeNode, CirMutation> results = new HashMap<CirMutationTreeNode, CirMutation>();
+		CirMutations cir_mutations = this.graph.get_cir_mutations();
+		
+		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		queue.add(this.tree.get_root());
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode tree_node = queue.poll();
+			CirMutation con_mutation = cir_mutations.optimize(tree_node.get_cir_mutation(), contexts);
+			results.put(tree_node, con_mutation);
+			
+			Boolean constraint_validate = con_mutation.get_constraint().validate(null);
+			Boolean state_error_validate = con_mutation.get_state_error().validate(null);
+			if(constraint_validate != null && !constraint_validate.booleanValue()) {
+				continue;
+			}
+			else if(state_error_validate != null && !state_error_validate.booleanValue()) {
+				continue;
+			}
+			else {
+				for(CirMutationTreeNode child : tree_node.get_children()) {
+					queue.add(child);
+				}
+			}
+		}
+		
+		return results;
 	}
 	
 }

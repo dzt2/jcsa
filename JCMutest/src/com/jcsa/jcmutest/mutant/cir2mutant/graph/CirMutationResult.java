@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.ptree;
+package com.jcsa.jcmutest.mutant.cir2mutant.graph;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,14 +22,7 @@ import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 
-/**
- * It records the information about the execution of each CirMutation during
- * its mutant is executed against each test input.
- * 
- * @author yukimula
- *
- */
-public class CirMutationStatus {
+public class CirMutationResult {
 	
 	/* definitions */
 	/** the mutation in C-intermediate code being tested **/
@@ -53,7 +46,7 @@ public class CirMutationStatus {
 	 * @param cir_mutation
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationStatus(CirMutationTreeNode tree_node) throws IllegalArgumentException {
+	protected CirMutationResult(CirMutationTreeNode tree_node) throws IllegalArgumentException {
 		if(tree_node == null)
 			throw new IllegalArgumentException("Invalid tree_node as null");
 		else {
@@ -379,7 +372,7 @@ public class CirMutationStatus {
 	 * @param status
 	 * @throws Exception
 	 */
-	public void accumulate_mutation_status(CirMutationStatus status) throws Exception {
+	public void accumulate_mutation_status(CirMutationResult status) throws Exception {
 		if(status.tree_node != this.tree_node)
 			throw new IllegalArgumentException("Tree-Node conflicted.");
 		else {
@@ -393,5 +386,6 @@ public class CirMutationStatus {
 			}
 		}
 	}
+	
 	
 }
