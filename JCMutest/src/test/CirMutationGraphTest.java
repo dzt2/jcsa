@@ -56,14 +56,12 @@ public class CirMutationGraphTest {
 	private static final String result_dir = "result/graphs/";
 	
 	public static void main(String[] args) throws Exception {
-		/*
 		for(File cfile : new File(root_path + "cfiles").listFiles()) {
 			if(cfile.getName().endsWith(".c")) {
 				testing(cfile);
 			}
 		}
-		*/
-		testing("profit", 1997);
+		//testing("profit", 1997);
 	}
 	
 	private static String get_name(File cfile) {

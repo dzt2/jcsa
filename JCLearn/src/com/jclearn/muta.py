@@ -800,7 +800,7 @@ def generate_best_pattern_of_mutations(root_directory: str, post_directory: str)
 
 if __name__ == "__main__":
 	root_dir = "/home/dzt2/Development/Data/features/"
-	post_dir = "/home/dzt2/Development/Code/GitProject/jcsa/JCLearn/output"
+	post_dir = "/home/dzt2/Development/Data/results/"
 	generate_best_pattern_of_mutations(root_dir, post_dir)
 	generate_and_write_alive_patterns(root_dir, post_dir)
 

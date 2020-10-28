@@ -94,7 +94,13 @@ public class CirMutationNode {
 	 * @return the error propagation edges from this node to others
 	 */
 	public Iterable<CirMutationEdge> get_ou_edges() { return this.ou_edges; }
+	/**
+	 * @return the root node contains no edges from others
+	 */
 	public boolean is_root() { return this.in_edges.isEmpty(); }
+	/**
+	 * @return the leaf node contains no edges to others
+	 */
 	public boolean is_leaf() { return this.ou_edges.isEmpty(); }
 	
 	/* setters */
@@ -141,7 +147,7 @@ public class CirMutationNode {
 	 * @return mapping from each tree node to its concrete mutation or null if the node is not reached
 	 * @throws Exception
 	 */
-	protected Map<CirMutationTreeNode, CirMutation> con_evaluate(CStateContexts contexts) throws Exception {
+	public Map<CirMutationTreeNode, CirMutation> con_evaluate(CStateContexts contexts) throws Exception {
 		Map<CirMutationTreeNode, CirMutation> results = new HashMap<CirMutationTreeNode, CirMutation>();
 		CirMutations cir_mutations = this.graph.get_cir_mutations();
 		
@@ -174,7 +180,7 @@ public class CirMutationNode {
 	 * @return mapping from each tree node to its abstract result or null if the node is not reached
 	 * @throws Exception
 	 */
-	protected Map<CirMutationTreeNode, CirMutationResult> abs_evaluate(CStateContexts contexts) throws Exception {
+	public Map<CirMutationTreeNode, CirMutationResult> abs_evaluate(CStateContexts contexts) throws Exception {
 		Map<CirMutationTreeNode, CirMutation> con_results = this.con_evaluate(contexts);
 		Map<CirMutationTreeNode, CirMutationResult> results = new HashMap<CirMutationTreeNode, CirMutationResult>();
 		for(CirMutationTreeNode tree_node : con_results.keySet()) {

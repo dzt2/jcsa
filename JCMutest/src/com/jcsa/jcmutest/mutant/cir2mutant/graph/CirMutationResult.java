@@ -46,7 +46,7 @@ public class CirMutationResult {
 	 * @param cir_mutation
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationResult(CirMutationTreeNode tree_node) throws IllegalArgumentException {
+	public CirMutationResult(CirMutationTreeNode tree_node) throws IllegalArgumentException {
 		if(tree_node == null)
 			throw new IllegalArgumentException("Invalid tree_node as null");
 		else {
@@ -333,7 +333,7 @@ public class CirMutationResult {
 	 * @param conc_mutation
 	 * @throws Exception
 	 */
-	protected void append_concrete_mutation(CirMutation conc_mutation) throws Exception {
+	public void append_concrete_mutation(CirMutation conc_mutation) throws Exception {
 		/* 1. increase the execution times */ this.execution_times++;
 		
 		/* 2. determine the satisfiable and infection counters */

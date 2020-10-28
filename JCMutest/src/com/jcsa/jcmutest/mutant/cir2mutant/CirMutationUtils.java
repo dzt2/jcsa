@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
@@ -14,7 +15,10 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationFlow;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationGraph;
+import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationResult;
 import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.pgate.CirAddressOfPropagator;
@@ -55,6 +59,7 @@ import com.jcsa.jcparse.flwa.depend.CDependReference;
 import com.jcsa.jcparse.flwa.depend.CDependType;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
@@ -75,6 +80,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * It implements the algorithms to build up the error propagation tree and graph.
@@ -121,11 +128,12 @@ public class CirMutationUtils {
 						}
 						/* (wait_statement, True, true) --> as reaching statement */
 						else if(edge.get_type() == CDependType.stmt_exit_depend) {
-							if(prev != edge.get_target()) {
-								next = edge.get_target();
-								CirStatement statement = next.get_statement();
-								constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
-							}
+							CirInstanceNode wait_instance = edge.get_target().get_instance();
+							CirInstanceNode prev_instance = wait_instance.get_in_edge(0).get_source();
+							next = dependence_graph.get_node(prev_instance);
+							
+							CirStatement statement = wait_instance.get_execution().get_statement();
+							constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
 						}
 						/* (call_statement, True, true) --> as reaching statement */
 						else if(edge.get_type() == CDependType.stmt_call_depend) {
@@ -184,6 +192,7 @@ public class CirMutationUtils {
 				}
 			}
 			
+			common_constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
 			return common_constraints;
 		}
 	}
@@ -673,6 +682,318 @@ public class CirMutationUtils {
 		}
 		
 		return results;
+	}
+	
+	/* mutation graph evaluations */
+	/**
+	 * @param mutation_graph
+	 * @return the set of tree nodes created in the trees from the mutation graph
+	 * @throws Exception
+	 */
+	private static Set<CirMutationTreeNode> collect_tree_nodes_in(CirMutationGraph mutation_graph) throws Exception {
+		Set<CirMutationTreeNode> tree_nodes = new HashSet<CirMutationTreeNode>();
+		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		for(CirMutationNode mutation_node : mutation_graph.get_nodes()) {
+			queue.clear();
+			queue.add(mutation_node.get_tree().get_root());
+			while(!queue.isEmpty()) {
+				CirMutationTreeNode tree_node = queue.poll();
+				for(CirMutationTreeNode child : tree_node.get_children()) {
+					queue.add(child);
+				}
+				tree_nodes.add(tree_node);
+			}
+		}
+		return tree_nodes;
+	}
+	/**
+	 * @param parent the parent node from which the state error is propagated
+	 * @param contexts the state contexts preserve the valuation of variables 
+	 * @param concrete_evaluation_results mapping from tree-node to the concrete mutations
+	 * @return perform the concrete evaluation on tree nodes in parent and get the children that are accessible.
+	 * @throws Exception
+	 */
+	private static Iterable<CirMutationEdge> con_evaluate(CirMutationNode parent, CStateContexts contexts,
+			Map<CirMutationTreeNode, List<CirMutation>> concrete_evaluation_results) throws Exception {
+		/* 1. declarations */
+		Map<CirMutationTreeNode, CirMutation> local_results;
+		List<CirMutationEdge> children_edges = new LinkedList<CirMutationEdge>();
+		
+		/* 2. concrete evaluation on tree node */
+		local_results = parent.con_evaluate(contexts);
+		for(CirMutationTreeNode tree_node : local_results.keySet()) {
+			CirMutation con_mutation = local_results.get(tree_node);
+			concrete_evaluation_results.get(tree_node).add(con_mutation);
+		}
+		
+		/* 3. determine the edges that are accessible from the parent */
+		for(CirMutationEdge edge : parent.get_ou_edges()) {
+			CirMutationTreeNode node = edge.get_source();
+			if(local_results.containsKey(node)) {
+				CirMutation con_mutation = local_results.get(node);
+				Boolean validate1 = con_mutation.get_constraint().validate(null);
+				Boolean validate2 = con_mutation.get_state_error().validate(null);
+				if(validate1 != null && !validate1.booleanValue()) {
+					continue;
+				}
+				else if(validate2 != null && !validate2.booleanValue()) {
+					continue;
+				}
+				else {
+					children_edges.add(edge);
+				}
+			}
+		}
+		
+		/* 4. the edges from the parent to accessible children */	
+		return children_edges;
+	}
+	/**
+	 * 
+	 * @param parent the parent node from which the state error is propagated
+	 * @param contexts the state contexts preserve the valuation of variables 
+	 * @param abstract_evaluation_results mapping from tree-node to the abstract mutation result
+	 * @return perform the abstract evaluation on tree nodes in parent and get the children that are accessible.
+	 * @throws Exception
+	 */
+	private static Iterable<CirMutationEdge> abs_evaluate(CirMutationNode parent, CStateContexts contexts,
+			Map<CirMutationTreeNode, CirMutationResult> abstract_evaluation_results) throws Exception {
+		/* 1. declarations */
+		Map<CirMutationTreeNode, CirMutation> local_results;
+		List<CirMutationEdge> children_edges = new LinkedList<CirMutationEdge>();
+		
+		/* 2. concrete evaluation on tree node */
+		local_results = parent.con_evaluate(contexts);
+		for(CirMutationTreeNode tree_node : local_results.keySet()) {
+			CirMutation con_mutation = local_results.get(tree_node);
+			abstract_evaluation_results.get(tree_node).append_concrete_mutation(con_mutation);
+		}
+		
+		/* 3. determine the edges that are accessible from the parent */
+		for(CirMutationEdge edge : parent.get_ou_edges()) {
+			CirMutationTreeNode node = edge.get_source();
+			if(local_results.containsKey(node)) {
+				CirMutation con_mutation = local_results.get(node);
+				Boolean validate1 = con_mutation.get_constraint().validate(null);
+				Boolean validate2 = con_mutation.get_state_error().validate(null);
+				if(validate1 != null && !validate1.booleanValue()) {
+					continue;
+				}
+				else if(validate2 != null && !validate2.booleanValue()) {
+					continue;
+				}
+				else {
+					children_edges.add(edge);
+				}
+			}
+		}
+		
+		/* 4. the edges from the parent to accessible children */	
+		return children_edges;
+	}
+	/**
+	 * @param mutation_graph
+	 * @return concrete evaluations on tree nodes in graph with non-contextual analysis
+	 * @throws Exception
+	 */
+	public static Map<CirMutationTreeNode, List<CirMutation>> con_evaluate(CirMutationGraph mutation_graph) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation-graph: null");
+		else {
+			/* 1. initialize the concrete evaluation map */
+			Set<CirMutationTreeNode> tree_nodes = collect_tree_nodes_in(mutation_graph);
+			Map<CirMutationTreeNode, List<CirMutation>> concrete_evaluation_results = 
+								new HashMap<CirMutationTreeNode, List<CirMutation>>();
+			for(CirMutationTreeNode tree_node : tree_nodes) 
+				concrete_evaluation_results.put(tree_node, new LinkedList<CirMutation>());
+			
+			/* 2. perform the concrete evaluation on each node from the roots */
+			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+			for(CirMutationNode root_node : mutation_graph.get_roots()) {
+				queue.clear();
+				queue.add(root_node);
+				while(!queue.isEmpty()) {
+					CirMutationNode parent = queue.poll();
+					Iterable<CirMutationEdge> children_edges = con_evaluate(parent, null, concrete_evaluation_results);
+					for(CirMutationEdge child_edge : children_edges) {
+						queue.add(child_edge.get_target().get_tree().get_statement_node());
+					}
+				}
+			}
+			
+			/* 3. return the concrete evaluation results */ 	return concrete_evaluation_results;
+		}
+	}
+	/**
+	 * @param mutation_graph
+	 * @return abstract evaluation on the tree nodes in mutation graph using non-contextual way
+	 * @throws Exception
+	 */
+	public static Map<CirMutationTreeNode, CirMutationResult> abs_evaluate(CirMutationGraph mutation_graph) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation-graph: null");
+		else {
+			/* 1. initialize the abstract evaluation map */
+			Set<CirMutationTreeNode> tree_nodes = collect_tree_nodes_in(mutation_graph);
+			Map<CirMutationTreeNode, CirMutationResult> abstract_evaluation_results = 
+								new HashMap<CirMutationTreeNode, CirMutationResult>();
+			for(CirMutationTreeNode tree_node : tree_nodes) 
+				abstract_evaluation_results.put(tree_node, new CirMutationResult(tree_node));
+			
+			/* 2. perform the abstract evaluation on each node from the roots */
+			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+			for(CirMutationNode root_node : mutation_graph.get_roots()) {
+				queue.clear();
+				queue.add(root_node);
+				while(!queue.isEmpty()) {
+					CirMutationNode parent = queue.poll();
+					Iterable<CirMutationEdge> children_edges = abs_evaluate(parent, null, abstract_evaluation_results);
+					for(CirMutationEdge child_edge : children_edges) {
+						queue.add(child_edge.get_target().get_tree().get_statement_node());
+					}
+				}
+			}
+			
+			/* 3. return the abstract evaluation results */ 	return abstract_evaluation_results;
+		}
+	}
+	/**
+	 * @param candidates
+	 * @param statement
+	 * @return the set of mutation nodes that match the given statement in the candidates
+	 */
+	private static Set<CirMutationNode> match_mutation_nodes(Set<CirMutationNode> candidates, CirStatement statement) {
+		Set<CirMutationNode> selected_candidates = new HashSet<CirMutationNode>();
+		for(CirMutationNode candidate : candidates) {
+			if(candidate.get_statement() == statement) {
+				selected_candidates.add(candidate);
+			}
+		}
+		return selected_candidates;
+	}
+	/**
+	 * @param mutation_graph
+	 * @param state_path
+	 * @return concrete evaluations on tree nodes in graph with context-sensitive approach
+	 * @throws Exception 
+	 */
+	public static Map<CirMutationTreeNode, List<CirMutation>> con_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation-graph: null");
+		else if(state_path == null)
+			throw new IllegalArgumentException("Invalid state path as null");
+		else {
+			/* 1. initialize the concrete evaluation map */
+			Set<CirMutationTreeNode> tree_nodes = collect_tree_nodes_in(mutation_graph);
+			Map<CirMutationTreeNode, List<CirMutation>> concrete_evaluation_results = 
+								new HashMap<CirMutationTreeNode, List<CirMutation>>();
+			for(CirMutationTreeNode tree_node : tree_nodes) 
+				concrete_evaluation_results.put(tree_node, new LinkedList<CirMutation>());
+			
+			/* 2. establish candidates set for updating program state */
+			CStateContexts contexts = new CStateContexts();
+			Set<CirMutationNode> root_candidates = new HashSet<CirMutationNode>();
+			for(CirMutationNode root : mutation_graph.get_roots()) root_candidates.add(root);
+			Set<CirMutationNode> candidates = new HashSet<CirMutationNode>(), matches;
+			Set<CirMutationNode> appended_candidates = new HashSet<CirMutationNode>();
+			Set<CirMutationNode> removed_candidates = new HashSet<CirMutationNode>();
+			
+			/* 3. perform the concrete evaluation on state path as given */
+			for(CStateNode state_node : state_path.get_nodes()) {
+				/* 3.A. obtain the current statement and update state */
+				CirStatement statement = state_node.get_statement();
+				contexts.accumulate(state_node);
+				
+				/* 3.B. when the entry is reached, restart the evaluation */
+				matches = match_mutation_nodes(root_candidates, statement);
+				if(!matches.isEmpty()) {
+					candidates.clear();
+					candidates.addAll(root_candidates);
+				}
+				
+				/* 3.C. perform concrete evaluations on selected nodes */
+				matches = match_mutation_nodes(candidates, statement);
+				if(!matches.isEmpty()) {
+					removed_candidates.clear(); appended_candidates.clear();
+					
+					for(CirMutationNode candidate : matches) {
+						Iterable<CirMutationEdge> children_edges = con_evaluate(
+								candidate, contexts, concrete_evaluation_results);
+						removed_candidates.add(candidate);
+						for(CirMutationEdge child_edge : children_edges) {
+							appended_candidates.add(child_edge.get_target().get_tree().get_statement_node());
+						}
+					}
+					
+					candidates.removeAll(removed_candidates);
+					candidates.addAll(appended_candidates);
+				}
+			}
+			
+			/* 4. return concrete evaluation results */	return concrete_evaluation_results;
+		}
+	}
+	/**
+	 * @param mutation_graph
+	 * @param state_path
+	 * @return abstract evaluations on tree nodes in graph with context-sensitive approach
+	 * @throws Exception
+	 */
+	public static Map<CirMutationTreeNode, CirMutationResult> abs_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation-graph: null");
+		else if(state_path == null)
+			throw new IllegalArgumentException("Invalid state path as null");
+		else {
+			/* 1. initialize the concrete evaluation map */
+			Set<CirMutationTreeNode> tree_nodes = collect_tree_nodes_in(mutation_graph);
+			Map<CirMutationTreeNode, CirMutationResult> abstract_evaluation_results = 
+								new HashMap<CirMutationTreeNode, CirMutationResult>();
+			for(CirMutationTreeNode tree_node : tree_nodes) 
+				abstract_evaluation_results.put(tree_node, new CirMutationResult(tree_node));
+			
+			/* 2. establish candidates set for updating program state */
+			CStateContexts contexts = new CStateContexts();
+			Set<CirMutationNode> root_candidates = new HashSet<CirMutationNode>();
+			for(CirMutationNode root : mutation_graph.get_roots()) root_candidates.add(root);
+			Set<CirMutationNode> candidates = new HashSet<CirMutationNode>(), matches;
+			Set<CirMutationNode> appended_candidates = new HashSet<CirMutationNode>();
+			Set<CirMutationNode> removed_candidates = new HashSet<CirMutationNode>();
+			
+			/* 3. perform the concrete evaluation on state path as given */
+			for(CStateNode state_node : state_path.get_nodes()) {
+				/* 3.A. obtain the current statement and update state */
+				CirStatement statement = state_node.get_statement();
+				contexts.accumulate(state_node);
+				
+				/* 3.B. when the entry is reached, restart the evaluation */
+				matches = match_mutation_nodes(root_candidates, statement);
+				if(!matches.isEmpty()) {
+					candidates.clear();
+					candidates.addAll(root_candidates);
+				}
+				
+				/* 3.C. perform concrete evaluations on selected nodes */
+				matches = match_mutation_nodes(candidates, statement);
+				if(!matches.isEmpty()) {
+					removed_candidates.clear(); appended_candidates.clear();
+					
+					for(CirMutationNode candidate : matches) {
+						Iterable<CirMutationEdge> children_edges = abs_evaluate(
+								candidate, contexts, abstract_evaluation_results);
+						removed_candidates.add(candidate);
+						for(CirMutationEdge child_edge : children_edges) {
+							appended_candidates.add(child_edge.get_target().get_tree().get_statement_node());
+						}
+					}
+					
+					candidates.removeAll(removed_candidates);
+					candidates.addAll(appended_candidates);
+				}
+			}
+			
+			/* 4. return concrete evaluation results */	return abstract_evaluation_results;
+		}
 	}
 	
 }
