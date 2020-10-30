@@ -977,13 +977,23 @@ public class MuTestFeatureWriter {
 				load_instrumental_path(code_file.get_sizeof_template(), 
 						code_file.get_ast_tree(), code_file.get_cir_tree(), test_case);
 		if(test_path != null) {
-			this.open_writer(this.get_output_file(directory, cfile, ".dfl" + test_case.get_id()));
+			this.open_writer(this.get_output_file(directory, cfile, ".dfl"));
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				this.write_dynamic_mutation_features_and_label(code_file, mutant, test_case, test_path, dependence_graph, maximal_distance);
 				writer.write("\n");
 			}
 			this.close_writer();
 		}
+	}
+	private int get_label_in_test_cases(MuTestProjectTestResult result, Collection<TestInput> test_cases) throws Exception {
+		boolean killed = false;
+		for(TestInput test_case : test_cases) {
+			if(result != null && result.get_kill_set().get(test_case.get_id())) {
+				killed = true;
+				break;
+			}
+		}
+		return this.get_label_code(killed);
 	}
 	/**
 	 * write the accumulated status results of each mutation to xxx.afl
@@ -994,7 +1004,8 @@ public class MuTestFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_accumulated_mutants_features_and_labels(MuTestProjectCodeFile code_file,
-			File directory, File cfile, CDependGraph dependence_graph, int maximal_distance) throws Exception {
+			File directory, File cfile, Collection<TestInput> test_cases,
+			CDependGraph dependence_graph, int maximal_distance) throws Exception {
 		/* 1. initialization */
 		AstTree ast_tree = code_file.get_ast_tree();
 		CirTree cir_tree = code_file.get_cir_tree();
@@ -1011,13 +1022,14 @@ public class MuTestFeatureWriter {
 					new HashMap<CirMutationTreeNode, CirMutationResult>();
 			
 			for(CirMutationNode node : mutation_graph.get_nodes()) {
+				queue.clear();
 				queue.add(node.get_tree().get_root());
 				while(!queue.isEmpty()) {
 					CirMutationTreeNode tree_node = queue.poll();
 					for(CirMutationTreeNode child : tree_node.get_children()) {
 						queue.add(child);
 					}
-					mutant_status_map.put(tree_node, null);
+					mutant_status_map.put(tree_node, new CirMutationResult(tree_node));
 				}
 			}
 			
@@ -1026,7 +1038,7 @@ public class MuTestFeatureWriter {
 		
 		/* 2. accumulations */
 		MuTestProject project = code_file.get_code_space().get_project();
-		for(TestInput test_case : project.get_test_space().get_test_inputs()) {
+		for(TestInput test_case : test_cases) {
 			CStatePath test_path = project.get_test_space().load_instrumental_path(
 					code_file.get_sizeof_template(), ast_tree, cir_tree, test_case);
 			if(test_path != null) {
@@ -1058,11 +1070,7 @@ public class MuTestFeatureWriter {
 			Map<Object, Boolean> feature_label_map = CirMutationUtils.select_features(accumulate_map);
 			MuTestProjectTestResult test_result = 
 					code_file.get_code_space().get_project().get_test_space().get_test_result(mutant);
-			int label;
-			if(test_result == null)
-				label = this.get_label_code(null);
-			else
-				label = this.get_label_code(test_result.get_kill_set().degree() != 0);
+			int label = this.get_label_in_test_cases(test_result, test_cases);
 			
 			/* 2. write features & labels of mutant to the file */
 			writer.write("#BegMutation\n");
@@ -1087,15 +1095,19 @@ public class MuTestFeatureWriter {
 	
 	/* feature generation method */
 	/**
-	 * write the feature information to files in the directory
+	 * write the features to xxx.slf, xxx.dfl, xxx.afl
 	 * @param project
 	 * @param cfile
 	 * @param directory
+	 * @param dependence_graph
+	 * @param test_case
+	 * @param test_cases
+	 * @param max_distance
 	 * @throws Exception
 	 */
 	public void write_features(MuTestProject project, File cfile, File directory, 
-			CDependGraph dependence_graph, boolean write_dynamic_features, 
-			boolean write_accumulate_features, int max_distance) throws Exception {
+			CDependGraph dependence_graph, TestInput test_case, 
+			Collection<TestInput> test_cases, int max_distance) throws Exception {
 		if(project == null)
 			throw new IllegalArgumentException("Invalid project: null");
 		else if(cfile == null)
@@ -1113,17 +1125,12 @@ public class MuTestFeatureWriter {
 			this.write_function_call_graph(cspace.get_cir_tree().get_function_call_graph(), cfile, directory);
 			this.write_test_inputs(tspace, cfile, directory);
 			this.write_mutants(cspace, cfile, directory);
+			
 			this.write_static_mutants_features_and_labels(cspace, directory, cfile, dependence_graph, max_distance);
-			
-			if(write_dynamic_features) {
-				for(TestInput test_case : tspace.get_test_inputs()) {
-					this.write_dynamic_mutants_features_and_labels(cspace, directory, cfile, test_case, dependence_graph, max_distance);
-				}
-			}
-			
-			if(write_accumulate_features) {
-				this.write_accumulated_mutants_features_and_labels(cspace, directory, cfile, dependence_graph, max_distance);
-			}
+			if(test_case != null)
+				this.write_dynamic_mutants_features_and_labels(cspace, directory, cfile, test_case, dependence_graph, max_distance);
+			if(test_cases != null && !test_cases.isEmpty())
+				this.write_accumulated_mutants_features_and_labels(cspace, directory, cfile, test_cases, dependence_graph, max_distance);
 		}
 	}
 	
