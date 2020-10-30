@@ -34,7 +34,7 @@ import com.jcsa.jcparse.test.file.TestInput;
  */
 public class MuTestProjectFeatureWrite {
 	
-	private static final String root_path = "/home/dzt2/Development/Data/";
+	private static final String root_path = "/home/dzt2/Development/Data/"; 
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
 	private static final File instrument_head_file = new File("config/jcinst.h");
 	private static final File preprocess_macro_file = new File("config/linux.h");
