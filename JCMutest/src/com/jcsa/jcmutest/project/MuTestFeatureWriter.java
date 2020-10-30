@@ -2,8 +2,11 @@ package com.jcsa.jcmutest.project;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
@@ -68,6 +71,8 @@ import com.jcsa.jcparse.lang.sym.SymArgumentList;
 import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.lang.sym.SymField;
 import com.jcsa.jcparse.lang.sym.SymFieldExpression;
 import com.jcsa.jcparse.lang.sym.SymIdentifier;
@@ -736,6 +741,34 @@ public class MuTestFeatureWriter {
 			throw new IllegalArgumentException(node.generate_code());
 	}
 	/**
+	 * collect all the conditions in expression as conjunctions.
+	 * @param expression
+	 * @param conditions
+	 * @throws Exception
+	 */
+	private void get_sym_conditions(SymExpression expression, Collection<SymExpression> conditions) throws Exception {
+		if(expression instanceof SymBinaryExpression) {
+			if(expression instanceof SymConstant) {
+				if(((SymConstant) expression).get_bool()) {
+					/* ignore the true-condition */
+				}
+				else {
+					conditions.add(SymFactory.parse(Boolean.FALSE));
+				}
+			}
+			else if(((SymBinaryExpression) expression).get_operator().get_operator() == COperator.logic_and) {
+				this.get_sym_conditions(((SymBinaryExpression) expression).get_loperand(), conditions);
+				this.get_sym_conditions(((SymBinaryExpression) expression).get_roperand(), conditions);
+			}
+			else {
+				conditions.add(expression);
+			}
+		}
+		else {
+			conditions.add(expression);
+		}
+	}
+	/**
 	 * #word label type execution location parameter word*
 	 * @param ast_tree
 	 * @param feature
@@ -754,8 +787,13 @@ public class MuTestFeatureWriter {
 			writer.write("\t" + constraint.get_execution());
 			writer.write("\t");
 			this.write_element(constraint.get_statement());
-			writer.write("\t");
-			this.write_sym_node(ast_tree, constraint.get_condition());
+			
+			List<SymExpression> conditions = new ArrayList<SymExpression>();
+			this.get_sym_conditions(((CirConstraint) feature).get_condition(), conditions);
+			for(SymExpression condition : conditions) {
+				writer.write("\t");
+				this.write_sym_node(ast_tree, condition);
+			}
 		}
 		/* #flow execution statement target_execution */
 		else if(feature instanceof CirFlowError) {
