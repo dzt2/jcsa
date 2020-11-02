@@ -791,6 +791,7 @@ public class MuTestFeatureWriter {
 			this.get_sym_conditions(((CirConstraint) feature).get_condition(), conditions);
 			for(SymExpression condition : conditions) {
 				writer.write("\t");
+				/*condition = SymEvaluator.evaluate_on(condition);*/
 				this.write_sym_node(ast_tree, condition);
 			}
 		}
