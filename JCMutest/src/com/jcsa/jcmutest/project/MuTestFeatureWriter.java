@@ -17,7 +17,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
 import com.jcsa.jcmutest.mutant.cir2mutant.graph.CirMutationGraph;
@@ -780,7 +779,7 @@ public class MuTestFeatureWriter {
 		int label = this.get_label_code(result);
 		writer.write("#word\t" + label);
 		
-		/* #cons execution statement condition */
+		/* #cons execution statement condition+ */
 		if(feature instanceof CirConstraint) {
 			CirConstraint constraint = (CirConstraint) feature;
 			writer.write("\t#cons");
@@ -804,7 +803,7 @@ public class MuTestFeatureWriter {
 			this.write_element(state_error.get_statement());
 			writer.write("\t" + state_error.get_mutation_flow().get_target());
 		}
-		/* #trap execution statement word* */
+		/* #trap execution statement */
 		else if(feature instanceof CirTrapError) {
 			CirTrapError state_error = (CirTrapError) feature;
 			writer.write("\t#trap");
@@ -812,7 +811,7 @@ public class MuTestFeatureWriter {
 			writer.write("\t");
 			this.write_element(state_error.get_statement());
 		}
-		/* #expr execution expression muta_value word* */
+		/* #expr execution expression muta_value word+ */
 		else if(feature instanceof CirExpressionError) {
 			CirExpressionError state_error = (CirExpressionError) feature;
 			writer.write("\t#expr");
@@ -822,7 +821,7 @@ public class MuTestFeatureWriter {
 			writer.write("\t");
 			this.write_sym_node(ast_tree, state_error.get_mutation_value());
 		}
-		/* #refr execution expression muta_value word* */
+		/* #refr execution expression muta_value word+ */
 		else if(feature instanceof CirReferenceError) {
 			CirReferenceError state_error = (CirReferenceError) feature;
 			writer.write("\t#refr");
@@ -832,7 +831,7 @@ public class MuTestFeatureWriter {
 			writer.write("\t");
 			this.write_sym_node(ast_tree, state_error.get_mutation_value());
 		}
-		/* #stat execution expression muta_value word* */
+		/* #stat execution expression muta_value word+ */
 		else if(feature instanceof CirStateValueError) {
 			CirStateValueError state_error = (CirStateValueError) feature;
 			writer.write("\t#stat");
@@ -846,9 +845,13 @@ public class MuTestFeatureWriter {
 			throw new IllegalArgumentException(feature.toString());
 		}
 		
-		if(feature instanceof CirStateError && status != null) {
-			for(CirStateErrorWord word : status.get_error_words()) {
-				writer.write("\t" + word.toString());
+		if(status != null) {
+			if(feature instanceof CirExpressionError
+				|| feature instanceof CirReferenceError
+				|| feature instanceof CirStateValueError) {
+				for(CirStateErrorWord word : status.get_error_words()) {
+					writer.write("\t" + word.toString());
+				}
 			}
 		}
  	}

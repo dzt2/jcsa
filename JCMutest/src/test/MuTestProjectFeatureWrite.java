@@ -45,13 +45,12 @@ public class MuTestProjectFeatureWrite {
 	private static final Random random = new Random(System.currentTimeMillis() * 769);
 	
 	public static void main(String[] args) throws Exception {
-		/*
 		for(File rfile : new File(root_path + "rprojects/").listFiles()) {
 			File cfile = new File(root_path + "cfiles/" + rfile.getName() + ".c");
 			testing(cfile);
 		}
-		*/
-		testing(new File(root_path + "cfiles/is_prime.c"));
+		
+		/* testing(new File(root_path + "cfiles/is_prime.c")); */
 	}
 	
 	/* project getters */

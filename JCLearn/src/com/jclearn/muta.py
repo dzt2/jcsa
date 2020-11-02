@@ -290,7 +290,12 @@ class MutationConditions:
 				if len(parameter) > 0:
 					condition.parameters.append(parameter)
 			condition.parameters.sort()
-			return condition
+			key = str(condition)
+			if key not in self.conditions:
+				self.conditions[key] = condition
+			unique_condition = self.conditions[key]
+			unique_condition: MutationCondition
+			return unique_condition
 		return None
 
 	def load_features_and_labels(self, fet_file_path: str):
