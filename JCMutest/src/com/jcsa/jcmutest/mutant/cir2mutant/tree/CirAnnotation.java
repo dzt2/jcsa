@@ -45,7 +45,8 @@ public class CirAnnotation {
 			case covr_stmt:
 			case eval_stmt:
 			case add_stmt:
-			case del_stmt:	break;
+			case del_stmt:	
+			case trap_stmt: break;
 			default: throw new IllegalArgumentException("Invalid type: " + type);
 			}
 			CirStatement statement = (CirStatement) location;

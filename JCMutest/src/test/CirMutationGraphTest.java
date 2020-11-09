@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationStatus;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -32,19 +34,35 @@ public class CirMutationGraphTest {
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
+	private static void output_mutation_status(CirMutationStatus status, FileWriter writer) throws Exception {
+		writer.write("[" + status.get_execution_times() + ", " + status.get_acception_times() + ", " + status.get_rejection_times() + "]::");
+		writer.write("[ ");
+		for(CirAnnotation annotation : status.get_annotations()) {
+			writer.write(annotation.get_type() + "; ");
+		}
+		writer.write("]");
+	}
 	private static void output_mutation_edge(CirMutationEdge edge, FileWriter writer) throws Exception {
+		edge.append_status(null);
+		
 		writer.write("\t\t==> " + edge.get_type());
 		writer.write("\t" + edge.get_target().hashCode());
 		writer.write("\t" + edge.get_constraint().toString());
+		writer.write("\t");
+		output_mutation_status(edge.get_status(), writer);
 		writer.write("\n");
 	}
 	private static void output_mutation_node(CirMutationNode node, FileWriter writer) throws Exception {
+		node.append_status(null);
+		
 		writer.write("\tnode[" + node.hashCode() + "]");
 		writer.write("\t" + node.get_type());
 		writer.write("\t" + node.get_execution());
 		if(node.has_state_error()) {
 			writer.write("\t" + node.get_state_error());
 		}
+		writer.write("\t");
+		output_mutation_status(node.get_status(), writer);
 		writer.write("\n");
 		
 		for(CirMutationEdge edge : node.get_ou_edges()) {

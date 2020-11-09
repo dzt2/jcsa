@@ -48,6 +48,7 @@ public class CirMutationNode {
 			this.type = type;
 			this.execution = execution;
 			this.state_error = state_error;
+			this.status = new CirMutationStatus();
 			this.in_edges = new LinkedList<CirMutationEdge>();
 			this.ou_edges = new LinkedList<CirMutationEdge>();
 		}
@@ -111,13 +112,13 @@ public class CirMutationNode {
 	/**
 	 * clear the records in status of the error in this node
 	 */
-	protected void reset_status() { this.status.clear(); }
+	public void reset_status() { this.status.clear(); }
 	/**
 	 * append the record in the status of this node
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected void append_status(CStateContexts contexts) throws Exception {
+	public void append_status(CStateContexts contexts) throws Exception {
 		if(this.state_error != null)
 			this.status.append(state_error, contexts);
 		else

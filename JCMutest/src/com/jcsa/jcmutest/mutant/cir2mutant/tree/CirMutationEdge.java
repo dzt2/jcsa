@@ -69,13 +69,13 @@ public class CirMutationEdge {
 	/**
 	 * clear the status records in the edge constraint
 	 */
-	protected void reset_status() { this.status.clear(); }
+	public void reset_status() { this.status.clear(); }
 	/**
 	 * append the records to the status of the edge constraint
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected void append_status(CStateContexts contexts) throws Exception {
+	public void append_status(CStateContexts contexts) throws Exception {
 		this.status.append(this.constraint, contexts);
 	}
 	
