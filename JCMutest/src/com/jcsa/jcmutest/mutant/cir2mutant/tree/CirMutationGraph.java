@@ -69,13 +69,9 @@ public class CirMutationGraph {
 	 */
 	public CirMutationNode get_start_node() { return this.nodes.get(0); }
 	/**
-	 * @return terminal node that represents program failure
+	 * @return node that represents the mutation is killed and failure is caused
 	 */
-	public CirMutationNode get_failure_node() { return this.nodes.get(1); }
-	/**
-	 * @return terminal node that represents mutation surviving from tests
-	 */
-	public CirMutationNode get_survive_node() { return this.nodes.get(2); }
+	public CirMutationNode get_final_node() { return this.nodes.get(1); }
 	/**
 	 * @return the nodes created in this graph
 	 */
@@ -101,9 +97,8 @@ public class CirMutationGraph {
 		CirFunction main_function = fgraph.get_main_function();
 		CirExecution main_entry = main_function.get_flow_graph().get_entry();
 		CirExecution main_exit = main_function.get_flow_graph().get_exit();
-		this.nodes.add(new CirMutationNode(this, CirMutationNodeType.startit, main_entry, null));
-		this.nodes.add(new CirMutationNode(this, CirMutationNodeType.failure, main_exit, null));
-		this.nodes.add(new CirMutationNode(this, CirMutationNodeType.survive, main_exit, null));
+		this.nodes.add(this.execution_node(main_entry));
+		this.nodes.add(this.execution_node(main_exit));
 	}
 	/**
 	 * @param execution
@@ -127,6 +122,17 @@ public class CirMutationGraph {
 		this.nodes.add(node);
 		return node;
 	}
+	/**
+	 * clear the status in the nodes and edges in the graph
+	 */
+	protected void reset_status() {
+		for(CirMutationNode node : this.nodes) {
+			node.reset_status();
+			for(CirMutationEdge edge : node.get_ou_edges()) {
+				edge.reset_status();
+			}
+		}
+	}
 	
 	/* building methods */
 	/**
@@ -136,7 +142,7 @@ public class CirMutationGraph {
 	 */
 	private Collection<CirMutationNode> build_prefix_paths(CDependGraph dependence_graph) throws Exception {
 		this.clear_graph();
-		List<CirMutationNode> leafs = new ArrayList<CirMutationNode>();
+		this.seeded_nodes.clear();
 		
 		if(this.mutant.has_cir_mutations()) {
 			Map<CirExecution, List<CirMutation>> reaching_map = new HashMap<CirExecution, List<CirMutation>>();
@@ -156,14 +162,6 @@ public class CirMutationGraph {
 				for(CirConstraint constraint : path_constraints) {
 					true_next = this.execution_node(constraint.get_execution());
 					prev.link_to(CirMutationEdgeType.path_flow, true_next, constraint);
-					
-					/*
-					CirConstraint neg_constraint = cir_mutations.expression_constraint(
-							constraint.get_statement(), constraint.get_condition(), false);
-					fals_next = this.get_survive_node();
-					prev.link_to(CirMutationEdgeType.term_flow, fals_next, neg_constraint);
-					*/
-					
 					prev = true_next;
 				}
 				
@@ -172,14 +170,12 @@ public class CirMutationGraph {
 					CirStateError state_error = cir_mutation.get_state_error();
 					CirMutationNode error_node = this.infection_node(state_error);
 					prev.link_to(CirMutationEdgeType.gena_flow, error_node, constraint);
-					leafs.add(error_node);
+					this.seeded_nodes.add(error_node);
 				}
 			}
 		}
 		
-		this.seeded_nodes.clear();
-		this.seeded_nodes.addAll(leafs);
-		return leafs;
+		return this.seeded_nodes;
 	}
 	public static CirMutationGraph new_graph(Mutant mutant, CDependGraph dependence_graph, int maximal_distance) throws Exception {
 		CirMutationGraph graph = new CirMutationGraph(mutant);
@@ -215,8 +211,8 @@ public class CirMutationGraph {
 			}
 			else if(prev.get_state_error() instanceof CirFlowError
 					|| prev.get_state_error() instanceof CirTrapError) {
-				prev.link_to(CirMutationEdgeType.term_flow, this.get_failure_node(), cir_mutations.
-						expression_constraint(this.get_failure_node().get_statement(), Boolean.TRUE, true));
+				prev.link_to(CirMutationEdgeType.path_flow, this.get_final_node(), cir_mutations.
+						expression_constraint(this.get_final_node().get_statement(), Boolean.TRUE, true));
 			}
 		}
 		

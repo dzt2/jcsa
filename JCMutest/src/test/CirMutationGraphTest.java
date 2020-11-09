@@ -9,6 +9,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationStatus;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationUtils;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -43,7 +44,7 @@ public class CirMutationGraphTest {
 		writer.write("]");
 	}
 	private static void output_mutation_edge(CirMutationEdge edge, FileWriter writer) throws Exception {
-		edge.append_status(null);
+		// edge.append_status(null);
 		
 		writer.write("\t\t==> " + edge.get_type());
 		writer.write("\t" + edge.get_target().hashCode());
@@ -53,7 +54,7 @@ public class CirMutationGraphTest {
 		writer.write("\n");
 	}
 	private static void output_mutation_node(CirMutationNode node, FileWriter writer) throws Exception {
-		node.append_status(null);
+		// node.append_status(null);
 		
 		writer.write("\tnode[" + node.hashCode() + "]");
 		writer.write("\t" + node.get_type());
@@ -110,6 +111,7 @@ public class CirMutationGraphTest {
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 			System.out.println("\t--> " + mutant.toString());
 			CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
+			CirMutationUtils.utils.static_evaluate(graph);
 			output_mutation_graph(graph, writer);
 			writer.write("\n");
 		}

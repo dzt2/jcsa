@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
@@ -53,6 +55,7 @@ import com.jcsa.jcparse.flwa.depend.CDependReference;
 import com.jcsa.jcparse.flwa.depend.CDependType;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
+import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
@@ -70,6 +73,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * Used to build the path and propagation flows in graph.
@@ -612,7 +617,224 @@ public class CirMutationUtils {
 		return use_expressions;
 	}
 	
-	/* TODO evaluation methods on cir-mutation graph */
-	
+	/* evaluation methods on cir-mutation graph */
+	/**
+	 * collect the node and edges to the target before it in the graph
+	 * @param node
+	 * @param nodes
+	 * @param edges
+	 */
+	private void collect_prefix_set(CirMutationNode target, Set<CirMutationNode> nodes, Set<CirMutationEdge> edges) {
+		if(!nodes.contains(target)) {
+			nodes.add(target);
+			for(CirMutationEdge edge : target.get_in_edges()) {
+				edges.add(edge);
+				this.collect_prefix_set(edge.get_source(), nodes, edges);
+			}
+		}
+	}
+	/**
+	 * update the status in reach-ability analysis, excluding the initial error part for infection 
+	 * @param mutation_graph
+	 * @param state_path
+	 * @throws Exception
+	 */
+	private void prev_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+		/* 1. collect the prefix part of the graph */
+		Set<CirMutationNode> prefix_nodes = new HashSet<CirMutationNode>();
+		Set<CirMutationEdge> prefix_edges = new HashSet<CirMutationEdge>();
+		for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
+			this.collect_prefix_set(seeded_node, prefix_nodes, prefix_edges);
+		}
+		
+		/* 2. remove the initial error nodes and edges from the set */
+		for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
+			prefix_nodes.remove(seeded_node);
+			for(CirMutationEdge edge : seeded_node.get_in_edges()) {
+				prefix_edges.remove(edge);
+			}
+		}
+		
+		/* 3. build the map from execution to the edges and nodes */
+		Map<CirExecution, List<Object>> solutions = new HashMap<CirExecution, List<Object>>();
+		for(CirMutationNode node : prefix_nodes) {
+			CirExecution execution = node.get_execution();
+			if(!solutions.containsKey(execution)) {
+				solutions.put(execution, new LinkedList<Object>());
+			}
+			solutions.get(execution).add(node);
+		}
+		for(CirMutationEdge edge : prefix_edges) {
+			CirExecution execution = edge.get_constraint().get_execution();
+			if(!solutions.containsKey(execution)) {
+				solutions.put(execution, new LinkedList<Object>());
+			}
+			solutions.get(execution).add(edge);
+		}
+		
+		/* 4. perform reach-ability analysis on path by one iteration */
+		CStateContexts contexts = new CStateContexts();
+		for(CStateNode state_node : state_path.get_nodes()) {
+			contexts.accumulate(state_node);
+			
+			CirExecution execution = state_node.get_execution();
+			if(solutions.containsKey(execution)) {
+				for(Object subject : solutions.get(execution)) {
+					if(subject instanceof CirMutationNode) {
+						((CirMutationNode) subject).append_status(contexts);
+					}
+					else if(subject instanceof CirMutationEdge) {
+						((CirMutationEdge) subject).append_status(contexts);
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * collect the nodes in the local graph (with their prefix input edge)
+	 * @param root the root node in the graph as entry
+	 * @param local_graph to preserve the nodes in local graph
+	 * @param next_roots the roots as the entry of the next block graph
+	 * @throws Exception
+	 */
+	private void evaluate_local_graph(CirMutationNode root, Set<CirMutationNode> next_roots, CStateContexts contexts) throws Exception {
+		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+		next_roots.clear(); queue.add(root); Boolean result;
+		
+		while(!queue.isEmpty()) {
+			CirMutationNode node = queue.poll();
+			
+			result = null;
+			for(CirMutationEdge edge : node.get_in_edges()) {
+				result = edge.append_status(contexts);
+				if(result != null) break;
+			}
+			if(result != null && !result.booleanValue()) continue;
+			
+			result = node.append_status(contexts);
+			if(result != null && !result.booleanValue()) continue;
+			
+			for(CirMutationEdge edge : node.get_ou_edges()) {
+				if(edge.get_source().get_execution() == edge.get_target().get_execution()) {
+					queue.add(edge.get_target());
+				}
+				else if(edge.get_type() == CirMutationEdgeType.gate_flow) {
+					queue.add(edge.get_target());
+				}
+				else {
+					next_roots.add(edge.get_target());
+				}
+			}
+		}
+	}
+	/**
+	 * perform the dynamic analysis on seeded node of initial infected state error
+	 * @param seeded_node
+	 * @param state_path
+	 * @throws Exception
+	 */
+	private void post_evaluate(CirMutationNode seeded_node, CStatePath state_path) throws Exception {
+		CStateContexts contexts = new CStateContexts();
+		Set<CirMutationNode> candidates = new HashSet<CirMutationNode>();
+		Set<CirMutationNode> remove_set = new HashSet<CirMutationNode>();
+		Set<CirMutationNode> next_roots = new HashSet<CirMutationNode>();
+		
+		for(CStateNode state_node : state_path.get_nodes()) {
+			CirExecution execution = state_node.get_execution();
+			contexts.accumulate(state_node);
+			
+			if(execution == seeded_node.get_execution()) {
+				candidates.clear();
+				candidates.add(seeded_node);
+			}
+			
+			remove_set.clear();
+			for(CirMutationNode candidate : candidates) {
+				if(candidate.get_execution() == execution) {
+					remove_set.add(candidate);
+				}
+			}
+			candidates.removeAll(remove_set);
+			
+			for(CirMutationNode candidate : remove_set) {
+				this.evaluate_local_graph(candidate, next_roots, contexts);
+				candidates.addAll(next_roots);
+			}
+		}
+	}
+	private boolean reachable(CirMutationNode node) {
+		for(CirMutationEdge edge : node.get_in_edges()) {
+			if(edge.get_source().get_status().get_execution_times() > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	/**
+	 * perform dynamic evaluation on the mutation feature graph
+	 * @param mutation_graph
+	 * @param state_path
+	 * @throws Exception
+	 */
+	public void dynamic_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph: null");
+		else if(state_path == null)
+			throw new IllegalArgumentException("Invalid state_path as null");
+		else {
+			mutation_graph.reset_status();
+			this.prev_evaluate(mutation_graph, state_path);
+			for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
+				if(this.reachable(seeded_node)) {
+					this.post_evaluate(seeded_node, state_path);
+				}
+			}
+		}
+	}
+	public void static_evaluate(CirMutationGraph mutation_graph) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph as null");
+		else {
+			mutation_graph.reset_status();
+			
+			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+			queue.add(mutation_graph.get_start_node()); Boolean result;
+			
+			while(!queue.isEmpty()) {
+				CirMutationNode node = queue.poll();
+				result = node.append_status(null);
+				if(result != null && !result.booleanValue()) continue;
+				
+				for(CirMutationEdge edge : node.get_ou_edges()) {
+					result = edge.append_status(null);
+					if(result == null || result.booleanValue()) {
+						queue.add(edge.get_target());
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * @param mutation_graph
+	 * @return the nodes as the terminal of the reaching range
+	 * @throws Exception
+	 */
+	public Collection<CirMutationNode> get_terminal_roots(CirMutationGraph mutation_graph) throws Exception {
+		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+		Set<CirMutationNode> unreached_nodes = new HashSet<CirMutationNode>();
+		queue.add(mutation_graph.get_start_node());
+		
+		while(!queue.isEmpty()) {
+			CirMutationNode node = queue.poll(); int counter = 0;
+			if(node.get_status().get_execution_times() > 0) {
+				for(CirMutationEdge edge : node.get_ou_edges()) {
+					queue.add(edge.get_target()); counter++;
+				}
+			}
+			if(counter == 0) unreached_nodes.add(node);
+		}
+		
+		return unreached_nodes;
+	}
 	
 }
