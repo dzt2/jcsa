@@ -2,617 +2,106 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.__backup__.CirMutationGraph;
-import com.jcsa.jcmutest.mutant.cir2mutant.__backup__.CirMutationNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.__backup__.CirMutationResult;
-import com.jcsa.jcmutest.mutant.cir2mutant.__backup__.CirMutationTreeNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.__backup__.CirStateErrorWord;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationNode;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
-import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
-import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
-import com.jcsa.jcparse.lang.ClangStandard;
-import com.jcsa.jcparse.lang.irlang.CirTree;
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.test.cmd.CCompiler;
-import com.jcsa.jcparse.test.file.TestInput;
-import com.jcsa.jcparse.test.state.CStatePath;
 
 public class CirMutationGraphTest {
 	
-	private static final String root_path = "/home/dzt2/Development/Data/";
-	private static final File sizeof_template_file = new File("config/cruntime.txt");
-	private static final File instrument_head_file = new File("config/jcinst.h");
-	private static final File preprocess_macro_file = new File("config/linux.h");
-	private static final File mutation_head_file = new File("config/jcmutest.h");
-	private static final long max_timeout_seconds = 5;
-	private static final int maximal_distance = 2;
-	private static final String result_dir = "result/graphs/";
+	private static final String root_path = "/home/dzt2/Development/Data/mprojects/";
+	private static final String result_dir = "result/trees/";
+	private static final int maximal_distance = 3;
 	
 	public static void main(String[] args) throws Exception {
-		for(File cfile : new File(root_path + "cfiles").listFiles()) {
-			if(cfile.getName().endsWith(".c")) {
-				testing(cfile);
-			}
+		for(File root : new File(root_path).listFiles()) {
+			testing(root);
 		}
-		//testing("profit", 1997);
 	}
 	
-	private static String get_name(File cfile) {
-		int index = cfile.getName().lastIndexOf('.');
-		return cfile.getName().substring(0, index).strip();
+	private static MuTestProject get_project(File root) throws Exception {
+		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
-	private static Iterable<MutaClass> get_classes() {
-		Set<MutaClass> classes = new HashSet<MutaClass>();
-		classes.addAll(MutationGenerators.trapping_classes());
-		classes.addAll(MutationGenerators.unary_classes());
-		classes.addAll(MutationGenerators.statement_classes());
-		classes.addAll(MutationGenerators.operator_classes());
-		classes.addAll(MutationGenerators.assign_classes());
-		classes.addAll(MutationGenerators.reference_classes());
-		return classes;
-	}
-	private static MuTestProject new_project(File cfile) throws Exception {
-		String name = get_name(cfile);
-		File root = new File(root_path + "mprojects/" + name);
-		
-		if(root.exists()) {
-			return new MuTestProject(root, MuCommandUtil.linux_util);
-		}
-		else {
-			MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
-			
-			/* set configuration data */
-			List<String> parameters = new ArrayList<String>();
-			parameters.add("-lm");
-			project.set_config(CCompiler.clang, ClangStandard.gnu_c89, 
-					parameters, sizeof_template_file, instrument_head_file, 
-					preprocess_macro_file, mutation_head_file, max_timeout_seconds);
-			
-			/* input the code files */
-			List<File> cfiles = new ArrayList<File>();
-			List<File> hfiles = new ArrayList<File>();
-			List<File> lfiles = new ArrayList<File>();
-			cfiles.add(cfile);
-			project.set_cfiles(cfiles, hfiles, lfiles);
-			
-			/* input the test inputs */
-			File test_suite_file = new File(root_path + "tests/" + name + ".c.txt");
-			List<File> test_suite_files = new ArrayList<File>();
-			if(test_suite_file.exists()) test_suite_files.add(test_suite_file);
-			File inputs_directory = new File(root_path + "v_inputs/" + name);
-			if(!inputs_directory.exists()) FileOperations.mkdir(inputs_directory);
-			project.set_inputs_directory(inputs_directory);
-			project.add_test_inputs(test_suite_files);
-			
-			/* generate mutations */
-			project.generate_mutants(get_classes());
-			
-			return project;
-		}
-	}
-	private static MuTestProject get_project(String name) throws Exception {
-		File root = new File(root_path + "rprojects/" + name);
-		if(root.exists())
-			return new MuTestProject(root, MuCommandUtil.linux_util);
-		else
-			throw new IllegalArgumentException("Undefined: " + name);
-	}
-	
-	/* original feature model */
-	private static void write_mutation_tree_node(CirMutationTreeNode tree_node, FileWriter writer) throws Exception {
-		CirConstraint constraint = tree_node.get_cir_mutation().get_constraint();
-		CirStateError state_error = tree_node.get_cir_mutation().get_state_error();
-		
-		writer.write("\t\t#beg_node\n");
-		writer.write("\t\t\t#const");
-		writer.write("\t" + constraint.get_execution());
-		writer.write("\t" + constraint.get_condition().generate_code());
+	private static void output_mutation_edge(CirMutationEdge edge, FileWriter writer) throws Exception {
+		writer.write("\t\t==> " + edge.get_type());
+		writer.write("\t" + edge.get_target().hashCode());
+		writer.write("\t" + edge.get_constraint().toString());
 		writer.write("\n");
-		writer.write("\t\t\t#error");
-		writer.write("\t" + state_error.get_type());
-		writer.write("\t" + state_error.get_execution());
-		if(state_error instanceof CirTrapError) { }
-		else if(state_error instanceof CirFlowError) {
-			writer.write("\t" + ((CirFlowError) state_error).get_mutation_flow().get_target());
-		}
-		else if(state_error instanceof CirExpressionError) {
-			CirExpression source = ((CirExpressionError) state_error).get_expression();
-			SymExpression target = ((CirExpressionError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirReferenceError) {
-			CirExpression source = ((CirReferenceError) state_error).get_reference();
-			SymExpression target = ((CirReferenceError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirStateValueError) {
-			CirExpression source = ((CirStateValueError) state_error).get_reference();
-			SymExpression target = ((CirStateValueError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else {
-			throw new IllegalArgumentException(state_error.toString());
+	}
+	private static void output_mutation_node(CirMutationNode node, FileWriter writer) throws Exception {
+		writer.write("\tnode[" + node.hashCode() + "]");
+		writer.write("\t" + node.get_type());
+		writer.write("\t" + node.get_execution());
+		if(node.has_state_error()) {
+			writer.write("\t" + node.get_state_error());
 		}
 		writer.write("\n");
-		writer.write("\t\t#end_node\n");
-	}
-	private static void write_mutation_node(CirMutationNode node, FileWriter writer) throws Exception {
-		writer.write("\t#beg_tree\n");
 		
-		if(node.is_root()) {
-			writer.write("\t\t#beg_path\n");
-			for(CirConstraint constraint : node.get_path_constraints()) {
-				writer.write("\t\t\t#const");
-				writer.write("\t" + constraint.get_execution());
-				writer.write("\t" + constraint.get_condition().generate_code());
-				writer.write("\n");
-			}
-			writer.write("\t\t#end_path\n");
+		for(CirMutationEdge edge : node.get_ou_edges()) {
+			output_mutation_edge(edge, writer);
 		}
-		
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(node.get_tree().get_root());
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode tree_node = queue.poll();
-			for(CirMutationTreeNode child : tree_node.get_children()) {
-				queue.add(child);
-			}
-			write_mutation_tree_node(tree_node, writer);
-		}
-		
-		writer.write("\t#end_tree\n");
 	}
-	private static void write_mutant(Mutant mutant, CDependGraph dependence_graph, FileWriter writer) throws Exception {
-		writer.write("#beg_mutant\n");
-		
-		AstMutation mutation = mutant.get_mutation();
-		writer.write("\tOperator: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = mutation.get_location().generate_code(); 
+	private static String get_code(AstNode location, int length) throws Exception {
+		String code = location.generate_code();
 		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < code.length() && buffer.length() < 64; k++) {
+		for(int k = 0; k < code.length() && k < length; k++) {
 			char ch = code.charAt(k);
-			if(Character.isWhitespace(ch)) ch = ' ';
+			if(Character.isWhitespace(ch)) {
+				ch = ' ';
+			}
 			buffer.append(ch);
 		}
-		code = buffer.toString();
-		int line = mutation.get_location().get_location().line_of() + 1;
-		writer.write("\tLocation: \"" + code + "\" at line " + line + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("\tParameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-		for(CirMutationNode node : graph.get_nodes()) {
-			write_mutation_node(node, writer);
-		}
-		
-		writer.write("#end_mutant\n");
+		return buffer.toString();
 	}
-	protected static void write_mutants(MuTestProject project) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		CirTree cir_tree = code_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph instance_graph = CirCallContextInstanceGraph.
-							graph(root_function, CirFunctionCallPathType.unique_path, -1);
-		CDependGraph dependence_graph = CDependGraph.graph(instance_graph);
+	private static void output_mutation_graph(CirMutationGraph graph, FileWriter writer) throws Exception {
+		Mutant mutant = graph.get_mutant();
+		AstMutation mutation = mutant.get_mutation();
+		writer.write("#BEG\t" + mutant.get_id() + "\n");
+		writer.write("\tClass: " + mutation.get_class() + "::" + mutation.get_operator() + "\n");
+		AstNode location = mutation.get_location();
+		String code = get_code(location, 64);
+		int line = location.get_location().line_of();
+		writer.write("\tLine[" + line + "]: \"" + code + "\"\n");
+		if(mutation.has_parameter()) {
+			writer.write("\tParam: " + mutation.get_parameter() + "\n");
+		}
 		
-		FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
+		for(CirMutationNode node : graph.get_nodes()) {
+			output_mutation_node(node, writer);
+		}
+		
+		writer.write("#END\n");
+	}
+	private static void output(MuTestProject project, File output) throws Exception {
+		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
+		CirFunction root_function = code_file.get_cir_tree().get_function_call_graph().get_main_function();
+		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1));
+		
+		FileWriter writer = new FileWriter(output);
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-			System.out.println("\t==> " + mutant.toString());
-			write_mutant(mutant, dependence_graph, writer);
+			System.out.println("\t--> " + mutant.toString());
+			CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
+			output_mutation_graph(graph, writer);
 			writer.write("\n");
 		}
 		writer.close();
 	}
-	
-	/* concrete evaluations */
-	private static void write_mutation_tree_node_and_con_evaluations(CirMutationTreeNode tree_node, 
-			FileWriter writer, Map<CirMutationTreeNode, List<CirMutation>> con_results) throws Exception {
-		CirConstraint constraint = tree_node.get_cir_mutation().get_constraint();
-		CirStateError state_error = tree_node.get_cir_mutation().get_state_error();
-		
-		writer.write("\t\t#beg_node\n");
-		writer.write("\t\t\t#const");
-		writer.write("\t" + constraint.get_execution());
-		writer.write("\t" + constraint.get_condition().generate_code());
-		writer.write("\n");
-		writer.write("\t\t\t#error");
-		writer.write("\t" + state_error.get_type());
-		writer.write("\t" + state_error.get_execution());
-		if(state_error instanceof CirTrapError) { }
-		else if(state_error instanceof CirFlowError) {
-			writer.write("\t" + ((CirFlowError) state_error).get_mutation_flow().get_target());
-		}
-		else if(state_error instanceof CirExpressionError) {
-			CirExpression source = ((CirExpressionError) state_error).get_expression();
-			SymExpression target = ((CirExpressionError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirReferenceError) {
-			CirExpression source = ((CirReferenceError) state_error).get_reference();
-			SymExpression target = ((CirReferenceError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirStateValueError) {
-			CirExpression source = ((CirStateValueError) state_error).get_reference();
-			SymExpression target = ((CirStateValueError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else {
-			throw new IllegalArgumentException(state_error.toString());
-		}
-		writer.write("\n");
-		
-		if(con_results.containsKey(tree_node)) {
-			List<CirMutation> con_mutations = con_results.get(tree_node);
-			for(CirMutation con_mutation : con_mutations) {
-				writer.write("\t\t\t==> #conc\t");
-				writer.write(con_mutation.toString());
-				writer.write("\n");
-			}
-		}
-		
-		writer.write("\t\t#end_node\n");
-	}
-	private static void write_mutation_node_and_con_evaluations(CirMutationNode node, FileWriter writer, 
-			Map<CirMutationTreeNode, List<CirMutation>> con_results) throws Exception {
-		writer.write("\t#beg_tree\n");
-		
-		if(node.is_root()) {
-			writer.write("\t\t#beg_path\n");
-			for(CirConstraint constraint : node.get_path_constraints()) {
-				writer.write("\t\t\t#const");
-				writer.write("\t" + constraint.get_execution());
-				writer.write("\t" + constraint.get_condition().generate_code());
-				writer.write("\n");
-			}
-			writer.write("\t\t#end_path\n");
-		}
-		
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(node.get_tree().get_root());
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode tree_node = queue.poll();
-			for(CirMutationTreeNode child : tree_node.get_children()) {
-				queue.add(child);
-			}
-			write_mutation_tree_node_and_con_evaluations(tree_node, writer, con_results);
-		}
-		
-		writer.write("\t#end_tree\n");
-	}
-	private static void write_mutant_and_con_evaluations_in_non_contexts(
-			Mutant mutant, CDependGraph dependence_graph, FileWriter writer) throws Exception {
-		writer.write("#beg_mutant\n");
-		
-		AstMutation mutation = mutant.get_mutation();
-		writer.write("\tOperator: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = mutation.get_location().generate_code(); 
-		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < code.length() && buffer.length() < 64; k++) {
-			char ch = code.charAt(k);
-			if(Character.isWhitespace(ch)) ch = ' ';
-			buffer.append(ch);
-		}
-		code = buffer.toString();
-		int line = mutation.get_location().get_location().line_of() + 1;
-		writer.write("\tLocation: \"" + code + "\" at line " + line + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("\tParameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-		Map<CirMutationTreeNode, List<CirMutation>> con_results = graph.con_evaluate();
-		
-		for(CirMutationNode node : graph.get_nodes()) {
-			write_mutation_node_and_con_evaluations(node, writer, con_results);
-		}
-		
-		writer.write("#end_mutant\n");
-	}
-	protected static void write_mutants_and_con_evaluations_in_non_contexts(MuTestProject project) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		CirTree cir_tree = code_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph instance_graph = CirCallContextInstanceGraph.
-							graph(root_function, CirFunctionCallPathType.unique_path, -1);
-		CDependGraph dependence_graph = CDependGraph.graph(instance_graph);
-		
-		FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
-		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-			System.out.println("\t==> " + mutant.toString());
-			write_mutant_and_con_evaluations_in_non_contexts(mutant, dependence_graph, writer);
-			writer.write("\n");
-		}
-		writer.close();
-	}
-	private static void write_mutant_and_con_evaluations_in_contexts(
-			Mutant mutant, CDependGraph dependence_graph, CStatePath state_path, FileWriter writer) throws Exception {
-		writer.write("#beg_mutant\n");
-		
-		AstMutation mutation = mutant.get_mutation();
-		writer.write("\tOperator: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = mutation.get_location().generate_code(); 
-		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < code.length() && buffer.length() < 64; k++) {
-			char ch = code.charAt(k);
-			if(Character.isWhitespace(ch)) ch = ' ';
-			buffer.append(ch);
-		}
-		code = buffer.toString();
-		int line = mutation.get_location().get_location().line_of() + 1;
-		writer.write("\tLocation: \"" + code + "\" at line " + line + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("\tParameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-		Map<CirMutationTreeNode, List<CirMutation>> con_results = graph.con_evaluate(state_path);
-		
-		for(CirMutationNode node : graph.get_nodes()) {
-			write_mutation_node_and_con_evaluations(node, writer, con_results);
-		}
-		
-		writer.write("#end_mutant\n");
-	}
-	protected static void write_mutants_and_con_evaluations_in_non_contexts(MuTestProject project, int tid) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		CirTree cir_tree = code_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph instance_graph = CirCallContextInstanceGraph.
-							graph(root_function, CirFunctionCallPathType.unique_path, -1);
-		CDependGraph dependence_graph = CDependGraph.graph(instance_graph);
-		TestInput test_case = project.get_test_space().get_test_space().get_input(tid);
-		CStatePath test_path = project.get_test_space().load_instrumental_path(
-				code_file.get_sizeof_template(), code_file.get_ast_tree(), cir_tree, test_case);
-		
-		if(test_path != null) {
-			FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
-			writer.write("Test#" + tid + ": " + test_case.get_parameter() + "\n\n");
-			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-				System.out.println("\t==> " + mutant.toString());
-				write_mutant_and_con_evaluations_in_contexts(mutant, dependence_graph, test_path, writer);
-				writer.write("\n");
-			}
-			writer.close();
-		}
-		else {
-			System.out.println("\t==> No test path is found for " + test_case);
-		}
-	}
-	
-	/* abstract evaluations */
-	private static void write_mutation_tree_node_and_abs_evaluations(CirMutationTreeNode tree_node, 
-			FileWriter writer, Map<CirMutationTreeNode, CirMutationResult> abs_results) throws Exception {
-		CirConstraint constraint = tree_node.get_cir_mutation().get_constraint();
-		CirStateError state_error = tree_node.get_cir_mutation().get_state_error();
-		
-		writer.write("\t\t#beg_node\n");
-		writer.write("\t\t\t#const");
-		writer.write("\t" + constraint.get_execution());
-		writer.write("\t" + constraint.get_condition().generate_code());
-		writer.write("\n");
-		writer.write("\t\t\t#error");
-		writer.write("\t" + state_error.get_type());
-		writer.write("\t" + state_error.get_execution());
-		if(state_error instanceof CirTrapError) { }
-		else if(state_error instanceof CirFlowError) {
-			writer.write("\t" + ((CirFlowError) state_error).get_mutation_flow().get_target());
-		}
-		else if(state_error instanceof CirExpressionError) {
-			CirExpression source = ((CirExpressionError) state_error).get_expression();
-			SymExpression target = ((CirExpressionError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirReferenceError) {
-			CirExpression source = ((CirReferenceError) state_error).get_reference();
-			SymExpression target = ((CirReferenceError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else if(state_error instanceof CirStateValueError) {
-			CirExpression source = ((CirStateValueError) state_error).get_reference();
-			SymExpression target = ((CirStateValueError) state_error).get_mutation_value();
-			writer.write("\t" + source.generate_code(true));
-			writer.write("\t" + target.generate_code());
-		}
-		else {
-			throw new IllegalArgumentException(state_error.toString());
-		}
-		writer.write("\n");
-		
-		if(abs_results.containsKey(tree_node)) {
-			CirMutationResult result = abs_results.get(tree_node);
-			writer.write("\t\t\t==> #rest: ");
-			writer.write("#exec = " + result.get_execution_times() + "; ");
-			writer.write("#cons_rejc = " + result.get_constraint_rejections() + "; ");
-			writer.write("#cons_accp = " + result.get_constraint_acceptions() + "; ");
-			writer.write("#stat_rejc = " + result.get_state_error_rejections() + "; ");
-			writer.write("#stat_accp = " + result.get_state_error_acceptions() + "; ");
-			writer.write("\n");
-			writer.write("\t\t\t==> #word: ");
-			for(CirStateErrorWord word : result.get_error_words()) {
-				writer.write(word.toString() + "; ");
-			}
-			writer.write("\n");
-		}
-		
-		writer.write("\t\t#end_node\n");
-	}
-	private static void write_mutation_node_and_abs_evaluations(CirMutationNode node, FileWriter writer, 
-			Map<CirMutationTreeNode, CirMutationResult> abs_results) throws Exception {
-		writer.write("\t#beg_tree\n");
-		
-		if(node.is_root()) {
-			writer.write("\t\t#beg_path\n");
-			for(CirConstraint constraint : node.get_path_constraints()) {
-				writer.write("\t\t\t#const");
-				writer.write("\t" + constraint.get_execution());
-				writer.write("\t" + constraint.get_condition().generate_code());
-				writer.write("\n");
-			}
-			writer.write("\t\t#end_path\n");
-		}
-		
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(node.get_tree().get_root());
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode tree_node = queue.poll();
-			for(CirMutationTreeNode child : tree_node.get_children()) {
-				queue.add(child);
-			}
-			write_mutation_tree_node_and_abs_evaluations(tree_node, writer, abs_results);
-		}
-		
-		writer.write("\t#end_tree\n");
-	}
-	private static void write_mutant_and_abs_evaluations_in_non_contexts(
-			Mutant mutant, CDependGraph dependence_graph, FileWriter writer) throws Exception {
-		writer.write("#beg_mutant\n");
-		
-		AstMutation mutation = mutant.get_mutation();
-		writer.write("\tOperator: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = mutation.get_location().generate_code(); 
-		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < code.length() && buffer.length() < 64; k++) {
-			char ch = code.charAt(k);
-			if(Character.isWhitespace(ch)) ch = ' ';
-			buffer.append(ch);
-		}
-		code = buffer.toString();
-		int line = mutation.get_location().get_location().line_of() + 1;
-		writer.write("\tLocation: \"" + code + "\" at line " + line + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("\tParameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-		Map<CirMutationTreeNode, CirMutationResult> abs_results = graph.abs_evaluate();
-		
-		for(CirMutationNode node : graph.get_nodes()) {
-			write_mutation_node_and_abs_evaluations(node, writer, abs_results);
-		}
-		
-		writer.write("#end_mutant\n");
-	}
-	protected static void write_mutants_and_abs_evaluations_in_non_contexts(MuTestProject project) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		CirTree cir_tree = code_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph instance_graph = CirCallContextInstanceGraph.
-							graph(root_function, CirFunctionCallPathType.unique_path, -1);
-		CDependGraph dependence_graph = CDependGraph.graph(instance_graph);
-		
-		FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
-		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-			System.out.println("\t==> " + mutant.toString());
-			write_mutant_and_abs_evaluations_in_non_contexts(mutant, dependence_graph, writer);
-			writer.write("\n");
-		}
-		writer.close();
-	}
-	private static void write_mutant_and_abs_evaluations_in_contexts(Mutant mutant, 
-			CDependGraph dependence_graph, CStatePath state_path, FileWriter writer) throws Exception {
-		writer.write("#beg_mutant\n");
-		
-		AstMutation mutation = mutant.get_mutation();
-		writer.write("\tOperator: " + mutation.get_class() + "@" + mutation.get_operator() + "\n");
-		String code = mutation.get_location().generate_code(); 
-		StringBuilder buffer = new StringBuilder();
-		for(int k = 0; k < code.length() && buffer.length() < 64; k++) {
-			char ch = code.charAt(k);
-			if(Character.isWhitespace(ch)) ch = ' ';
-			buffer.append(ch);
-		}
-		code = buffer.toString();
-		int line = mutation.get_location().get_location().line_of() + 1;
-		writer.write("\tLocation: \"" + code + "\" at line " + line + "\n");
-		if(mutation.has_parameter()) {
-			writer.write("\tParameter: " + mutation.get_parameter() + "\n");
-		}
-		
-		CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-		Map<CirMutationTreeNode, CirMutationResult> abs_results = graph.abs_evaluate(state_path);
-		
-		for(CirMutationNode node : graph.get_nodes()) {
-			write_mutation_node_and_abs_evaluations(node, writer, abs_results);
-		}
-		
-		writer.write("#end_mutant\n");
-	}
-	protected static void write_mutants_and_abs_evaluations_in_non_contexts(MuTestProject project, int tid) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		CirTree cir_tree = code_file.get_cir_tree();
-		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		CirInstanceGraph instance_graph = CirCallContextInstanceGraph.
-							graph(root_function, CirFunctionCallPathType.unique_path, -1);
-		CDependGraph dependence_graph = CDependGraph.graph(instance_graph);
-		TestInput test_case = project.get_test_space().get_test_space().get_input(tid);
-		CStatePath test_path = project.get_test_space().load_instrumental_path(
-				code_file.get_sizeof_template(), code_file.get_ast_tree(), cir_tree, test_case);
-		
-		if(test_path != null) {
-			FileWriter writer = new FileWriter(result_dir + code_file.get_cfile().getName() + ".txt");
-			writer.write("Test#" + tid + ": " + test_case.get_parameter() + "\n\n");
-			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-				System.out.println("\t==> " + mutant.toString());
-				write_mutant_and_abs_evaluations_in_contexts(mutant, dependence_graph, test_path, writer);
-				writer.write("\n");
-			}
-			writer.close();
-		}
-		else {
-			System.out.println("\t==> No test path is found for " + test_case);
-		}
-	}
-	
-	/* testing method */
-	protected static void testing(File cfile) throws Exception {
-		MuTestProject project = new_project(cfile);
-		System.out.println("Testing on " + project.get_name());
-		// write_mutants(project);
-		// write_mutants_and_con_evaluations_in_non_contexts(project);
-		write_mutants_and_abs_evaluations_in_non_contexts(project);
-	}
-	protected static void testing(String name, int tid) throws Exception {
-		MuTestProject project = get_project(name);
-		System.out.println("Testing on " + project.get_name());
-		write_mutants_and_con_evaluations_in_non_contexts(project, tid);
-		// write_mutants_and_abs_evaluations_in_non_contexts(project, tid);
+	protected static void testing(File root) throws Exception {
+		System.out.println("Testing on " + root.getName());
+		MuTestProject project = get_project(root);
+		output(project, new File(result_dir + root.getName() + ".txt"));
+		System.out.println();
 	}
 	
 }
