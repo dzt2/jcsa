@@ -28,5 +28,5 @@ public class CirTrapError extends CirStateError {
 	public Boolean validate(CStateContexts contexts) throws Exception {
 		return true;
 	}
-	
+
 }
