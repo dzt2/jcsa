@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -118,11 +119,15 @@ public class CirMutationNode {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	public void append_status(CStateContexts contexts) throws Exception {
-		if(this.state_error != null)
-			this.status.append(state_error, contexts);
+	public Boolean append_status(CStateContexts contexts) throws Exception {
+		if(this.state_error != null) {
+			CirMutations cir_mutations = this.graph.get_cir_mutations();
+			CirStateError state_error = cir_mutations.optimize(this.state_error, contexts);
+			return this.status.append(state_error);
+		}
 		else
-			this.status.append();
+			return this.status.append();
+		
 	}
 	/**
 	 * link this node to the target w.r.t. the constraint and return the new linking edge

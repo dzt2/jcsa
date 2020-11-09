@@ -1,11 +1,11 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 
 /**
  * It records the status of the constraint or state-error under analysis.
@@ -24,6 +24,8 @@ public class CirMutationStatus {
 	private int rejection_times;
 	/** the annotations to describe the subject for each of its execution **/
 	private Set<CirAnnotation> annotations;
+	/** the sequence of concrete values of subject recorded in the status **/
+	private List<Object> concrete_values;
 	
 	/* definitions */
 	/**
@@ -34,6 +36,7 @@ public class CirMutationStatus {
 		this.acception_times = 0;
 		this.rejection_times = 0;
 		this.annotations = new HashSet<CirAnnotation>();
+		this.concrete_values = new ArrayList<Object>();
 	}
 	
 	/* getters */
@@ -53,6 +56,10 @@ public class CirMutationStatus {
 	 * @return the annotations to describe the subject for each of its execution
 	 */
 	public Iterable<CirAnnotation> get_annotations() { return this.annotations; }
+	/**
+	 * @return either CirConstraint* or CirStateError*
+	 */
+	public Iterable<Object> get_concrete_values() { return this.concrete_values; }
 	
 	/* setters */
 	/**
@@ -65,15 +72,14 @@ public class CirMutationStatus {
 		this.annotations.clear();
 	}
 	/**
-	 * append the state for evaluating the constraint
 	 * @param constraint
-	 * @param contexts
+	 * @return append the concrete constraint to the status
 	 * @throws Exception
 	 */
-	protected void append(CirConstraint constraint, CStateContexts contexts) throws Exception {
-		this.annotations.addAll(CirAnnotations.annotations(constraint, contexts));
+	protected Boolean append(CirConstraint constraint) throws Exception {
+		this.annotations.addAll(CirAnnotations.annotations(constraint, null));
 		this.execution_times++;
-		Boolean result = constraint.validate(contexts);
+		Boolean result = constraint.validate(null);
 		if(result != null) {
 			if(result.booleanValue()) {
 				this.acception_times++;
@@ -82,6 +88,8 @@ public class CirMutationStatus {
 				this.rejection_times++;
 			}
 		}
+		this.concrete_values.add(constraint);
+		return result;
 	}
 	/**
 	 * append the state for evaluating the state-error
@@ -89,10 +97,10 @@ public class CirMutationStatus {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected void append(CirStateError state_error, CStateContexts contexts) throws Exception { 
-		this.annotations.addAll(CirAnnotations.annotations(state_error, contexts));
+	protected Boolean append(CirStateError state_error) throws Exception { 
+		this.annotations.addAll(CirAnnotations.annotations(state_error, null));
 		this.execution_times++;
-		Boolean result = state_error.validate(contexts);
+		Boolean result = state_error.validate(null);
 		if(result != null) {
 			if(result.booleanValue()) {
 				this.acception_times++;
@@ -101,12 +109,15 @@ public class CirMutationStatus {
 				this.rejection_times++;
 			}
 		}
+		this.concrete_values.add(state_error);
+		return result;
 	}
 	/**
 	 * append the state without any subject being described
 	 */
-	protected void append() {
+	protected Boolean append() {
 		this.execution_times++;
+		return Boolean.TRUE;
 	}
 	
 }

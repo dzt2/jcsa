@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 
 public class CirMutationEdge {
@@ -75,8 +76,10 @@ public class CirMutationEdge {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	public void append_status(CStateContexts contexts) throws Exception {
-		this.status.append(this.constraint, contexts);
+	public Boolean append_status(CStateContexts contexts) throws Exception {
+		CirMutations cir_mutations = this.source.get_graph().get_cir_mutations();
+		CirConstraint constraint = cir_mutations.optimize(this.constraint, contexts);
+		return this.status.append(constraint);
 	}
 	
 }

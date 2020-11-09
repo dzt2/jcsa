@@ -35,6 +35,7 @@ public class CirMutationGraph {
 	private CirMutations cir_mutations;
 	private Mutant mutant;
 	private List<CirMutationNode> nodes;
+	private List<CirMutationNode> seeded_nodes;
 	private CirMutationGraph(Mutant mutant) throws Exception {
 		if(mutant == null)
 			throw new IllegalArgumentException("Invalid mutant: null");
@@ -42,6 +43,7 @@ public class CirMutationGraph {
 			this.mutant = mutant;
 			this.cir_mutations = new CirMutations(mutant.get_space().get_cir_tree());
 			this.nodes = new ArrayList<CirMutationNode>();
+			this.seeded_nodes = new ArrayList<CirMutationNode>();
 		}
 	}
 	
@@ -78,6 +80,10 @@ public class CirMutationGraph {
 	 * @return the nodes created in this graph
 	 */
 	public Iterable<CirMutationNode> get_nodes() { return this.nodes; }
+	/**
+	 * @return nodes as the initial seed for infecting program state at faulty statement
+	 */
+	public Iterable<CirMutationNode> get_seeded_nodes() { return this.seeded_nodes; }
 	
 	/* node creators */
 	/**
@@ -89,6 +95,7 @@ public class CirMutationGraph {
 			node.delete();
 		}
 		this.nodes.clear();
+		this.seeded_nodes.clear();
 		
 		CirFunctionCallGraph fgraph = this.get_cir_tree().get_function_call_graph();
 		CirFunction main_function = fgraph.get_main_function();
@@ -142,19 +149,20 @@ public class CirMutationGraph {
 				reaching_map.get(execution).add(cir_mutation);
 			}
 			
-			
 			for(CirExecution execution : reaching_map.keySet()) {
 				List<CirConstraint> path_constraints = CirMutationUtils.utils.
 						get_path_constraints(cir_mutations, dependence_graph, execution);
-				CirMutationNode prev = this.get_start_node(), true_next, fals_next;
+				CirMutationNode prev = this.get_start_node(), true_next;
 				for(CirConstraint constraint : path_constraints) {
 					true_next = this.execution_node(constraint.get_execution());
-					fals_next = this.get_survive_node();
 					prev.link_to(CirMutationEdgeType.path_flow, true_next, constraint);
 					
+					/*
 					CirConstraint neg_constraint = cir_mutations.expression_constraint(
 							constraint.get_statement(), constraint.get_condition(), false);
+					fals_next = this.get_survive_node();
 					prev.link_to(CirMutationEdgeType.term_flow, fals_next, neg_constraint);
+					*/
 					
 					prev = true_next;
 				}
@@ -169,6 +177,8 @@ public class CirMutationGraph {
 			}
 		}
 		
+		this.seeded_nodes.clear();
+		this.seeded_nodes.addAll(leafs);
 		return leafs;
 	}
 	public static CirMutationGraph new_graph(Mutant mutant, CDependGraph dependence_graph, int maximal_distance) throws Exception {
@@ -191,20 +201,22 @@ public class CirMutationGraph {
 		queue.add(root);
 		while(!queue.isEmpty()) {
 			CirMutationNode prev = queue.poll();
+			
 			Collection<CirMutation> next_mutations = CirMutationUtils.utils.
 					local_propagate(cir_mutations, prev.get_state_error());
 			for(CirMutation next_mutation : next_mutations) {
 				CirMutationNode next = this.infection_node(next_mutation.get_state_error());
-				prev.link_to(CirMutationEdgeType.gate_flow, next, next_mutation.get_constraint());
-				if(next.get_state_error() instanceof CirStateValueError) {
-					leafs.add(next);
-				}
-				else if(next.get_state_error() instanceof CirFlowError
-						|| next.get_state_error() instanceof CirTrapError) {
-					next.link_to(CirMutationEdgeType.term_flow, this.get_failure_node(), cir_mutations.
-							expression_constraint(this.get_failure_node().get_statement(), Boolean.TRUE, true));
-				}
 				queue.add(next);
+				prev.link_to(CirMutationEdgeType.gate_flow, next, next_mutation.get_constraint());
+			}
+			
+			if(prev.get_state_error() instanceof CirStateValueError) {
+				leafs.add(prev);
+			}
+			else if(prev.get_state_error() instanceof CirFlowError
+					|| prev.get_state_error() instanceof CirTrapError) {
+				prev.link_to(CirMutationEdgeType.term_flow, this.get_failure_node(), cir_mutations.
+						expression_constraint(this.get_failure_node().get_statement(), Boolean.TRUE, true));
 			}
 		}
 		
@@ -264,6 +276,8 @@ public class CirMutationGraph {
 				CirStateError next_error = cir_mutations.expr_error(use_expression, mutation_value);
 				next = this.infection_node(next_error);
 				prev.link_to(CirMutationEdgeType.gena_flow, next, cir_mutations.expression_constraint(use_statement, Boolean.TRUE, true));
+				
+				targets.add(next);
 			}
 		}
 		
