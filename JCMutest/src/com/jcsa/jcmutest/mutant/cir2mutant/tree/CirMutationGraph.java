@@ -10,19 +10,23 @@ import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymExpression;
 
 
 public class CirMutationGraph {
@@ -206,19 +210,83 @@ public class CirMutationGraph {
 		
 		return leafs;
 	}
+	/**
+	 * @param source
+	 * @return the error on data-define propagation directly from source
+	 * @throws Exception
+	 */
+	private Collection<CirMutationNode> build_on(CDependGraph dependence_graph, CirMutationNode source) throws Exception {
+		CirExpression def_expression; SymExpression mutation_value;
+		CirStateError state_error = source.get_state_error();
+		if(state_error instanceof CirExpressionError) {
+			def_expression = ((CirExpressionError) state_error).get_expression();
+			mutation_value = ((CirExpressionError) state_error).get_mutation_value();
+		}
+		else if(state_error instanceof CirReferenceError) {
+			def_expression = ((CirReferenceError) state_error).get_reference();
+			mutation_value = ((CirReferenceError) state_error).get_mutation_value();
+		}
+		else if(state_error instanceof CirStateValueError) {
+			def_expression = ((CirStateValueError) state_error).get_reference();
+			mutation_value = ((CirStateValueError) state_error).get_mutation_value();
+		}
+		else {
+			def_expression = null;
+			mutation_value = null;
+		}
+		
+		List<CirMutationNode> targets = new ArrayList<CirMutationNode>();
+		
+		if(def_expression != null) {
+			CirExecution source_execution = source.get_execution();
+			
+			Collection<CirExpression> use_expressions = CirMutationUtils.utils.
+					find_use_expressions(dependence_graph, def_expression);
+			
+			for(CirExpression use_expression : use_expressions) {
+				CirStatement use_statement = use_expression.statement_of();
+				CirExecution target_execution = use_statement.get_tree().get_localizer().get_execution(use_statement);
+				
+				List<CirConstraint> constraints = CirMutationUtils.utils.get_path_constraints(cir_mutations, source_execution, target_execution);
+				CirMutationNode prev = source, next; boolean first = true;
+				for(CirConstraint constraint : constraints) {
+					next = this.execution_node(constraint.get_execution());
+					if(first) {
+						first = false;
+						prev.link_to(CirMutationEdgeType.actv_flow, next, constraint);
+					}
+					else {
+						prev.link_to(CirMutationEdgeType.path_flow, next, constraint);
+					}
+					prev = next;
+				}
+				
+				CirStateError next_error = cir_mutations.expr_error(use_expression, mutation_value);
+				next = this.infection_node(next_error);
+				prev.link_to(CirMutationEdgeType.gena_flow, next, cir_mutations.expression_constraint(use_statement, Boolean.TRUE, true));
+			}
+		}
+		
+		return targets;
+	}
+	/**
+	 * build the graph from the source node with the maximal distance as given.
+	 * @param source
+	 * @param dependence_graph
+	 * @param distance
+	 * @throws Exception
+	 */
 	private void build_from(CirMutationNode source, CDependGraph 
 			dependence_graph, int distance) throws Exception {
 		Collection<CirMutationNode> targets = this.build_in(source);
 		if(distance > 0) {
 			for(CirMutationNode target : targets) {
-				/* TODO perform data-propagation */
-				Collection<CirMutationNode> next_targets = new ArrayList<CirMutationNode>();
+				Collection<CirMutationNode> next_targets = this.build_on(dependence_graph, target);
 				for(CirMutationNode next_target : next_targets) {
 					this.build_from(next_target, dependence_graph, distance - 1);
 				}
 			}
 		}
 	}
-	
 	
 }

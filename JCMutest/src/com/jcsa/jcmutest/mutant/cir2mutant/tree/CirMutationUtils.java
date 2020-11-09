@@ -28,6 +28,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsAndPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsIorPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsLshPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRshPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRsvPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsXorPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirDereferencePropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirEqualWithPropagator;
@@ -48,6 +49,7 @@ import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.flwa.depend.CDependNode;
 import com.jcsa.jcparse.flwa.depend.CDependPredicate;
+import com.jcsa.jcparse.flwa.depend.CDependReference;
 import com.jcsa.jcparse.flwa.depend.CDependType;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
@@ -89,6 +91,7 @@ public class CirMutationUtils {
 		propagators.put(COperator.arith_mod, new CirArithModPropagator());
 		propagators.put(COperator.negative, new CirArithNegPropagator());
 		
+		propagators.put(COperator.bit_not, new CirBitwsRsvPropagator());
 		propagators.put(COperator.bit_and, new CirBitwsAndPropagator());
 		propagators.put(COperator.bit_or, new CirBitwsIorPropagator());
 		propagators.put(COperator.bit_xor, new CirBitwsXorPropagator());
@@ -169,6 +172,38 @@ public class CirMutationUtils {
 			this.find_path_between(target, flow, new Stack<CirExecutionFlow>(), accumulate_paths);
 		}
 		return accumulate_paths;
+	}
+	/**
+	 * @param source
+	 * @param target
+	 * @return the execution flows that must occur between any path from source to target
+	 * @throws Exception
+	 */
+	public List<CirExecutionFlow> find_must_paths_between(CirExecution source, CirExecution target) throws Exception {
+		Collection<List<CirExecutionFlow>> paths = this.find_paths_between(source, target);
+		Set<CirExecutionFlow> removed_flows = new HashSet<CirExecutionFlow>();
+		
+		List<CirExecutionFlow> common_path = new ArrayList<CirExecutionFlow>();
+		boolean first = true;
+		for(List<CirExecutionFlow> path : paths) {
+			if(first) {
+				first = false;
+				common_path.addAll(path);
+			}
+			else {
+				removed_flows.clear();
+				for(CirExecutionFlow flow : common_path) {
+					if(!path.contains(flow)) {
+						removed_flows.add(flow);
+					}
+				}
+				for(CirExecutionFlow flow : removed_flows) {
+					common_path.remove(flow);
+				}
+			}
+		}
+		
+		return common_path;
 	}
 	
 	/* path generation by dependence analysis */
@@ -388,8 +423,78 @@ public class CirMutationUtils {
 			}
 		}
 	}
+	/**
+	 * @param cir_mutations
+	 * @param source
+	 * @param target
+	 * @return path constraints required from source to target
+	 * @throws Exception
+	 */
+	public List<CirConstraint> get_path_constraints(CirMutations cir_mutations, CirExecution source, CirExecution target) throws Exception {
+		List<CirExecutionFlow> common_path = this.find_must_paths_between(source, target);
+		
+		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		constraints.add(cir_mutations.expression_constraint(source.get_statement(), Boolean.TRUE, true));
+		for(CirExecutionFlow flow : common_path) {
+			switch(flow.get_type()) {
+			case true_flow:
+			{
+				CirStatement if_statement = flow.get_source().get_statement();
+				CirExpression condition;
+				if(if_statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) if_statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) if_statement).get_condition();
+				}
+				constraints.add(cir_mutations.expression_constraint(if_statement, condition, true));
+				break;
+			}
+			case fals_flow:
+			{
+				CirStatement if_statement = flow.get_source().get_statement();
+				CirExpression condition;
+				if(if_statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) if_statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) if_statement).get_condition();
+				}
+				constraints.add(cir_mutations.expression_constraint(if_statement, condition, false));
+				break;
+			}
+			case call_flow:
+			{
+				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
+				break;
+			}
+			case retr_flow:
+			{
+				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
+				break;
+			}
+			case skip_flow:
+			{
+				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
+				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
+				break;
+			}
+			default: break;
+			}
+		}
+		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
+		
+		return constraints;
+	}
 	
 	/* local propagation */
+	/**
+	 * @param cir_mutations
+	 * @param source_error
+	 * @return the set of cir-mutations directly generated from the source error
+	 *         in the same statement as given.
+	 * @throws Exception
+	 */
 	public Collection<CirMutation> local_propagate(CirMutations cir_mutations, 
 			CirStateError source_error) throws Exception {
 		List<CirMutation> next_mutations = new ArrayList<CirMutation>();
@@ -466,7 +571,45 @@ public class CirMutationUtils {
 		return next_mutations;
 	}
 	
-	
-	
+	/* implement use-define analysis here... */
+	/**
+	 * @param dependence_graph
+	 * @param def_expression
+	 * @return the set of use expressions used after the definition point
+	 * @throws Exception 
+	 */
+	public Collection<CirExpression> find_use_expressions(
+			CDependGraph dependence_graph, CirExpression def_expression) throws Exception {
+		Set<CirExpression> use_expressions = new HashSet<CirExpression>();
+		
+		CirStatement statement = def_expression.statement_of();
+		CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+		if(dependence_graph != null) {
+			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
+			if(instance_graph.has_instances_of(execution)) {
+				for(CirInstanceNode instance : instance_graph.get_instances_of(execution)) {
+					if(dependence_graph.has_node(instance)) {
+						CDependNode source = dependence_graph.get_node(instance);
+						for(CDependEdge edge : source.get_in_edges()) {
+							switch(edge.get_type()) {
+							case use_defin_depend:
+							case param_arg_depend:
+							case wait_retr_depend:
+							{
+								CDependReference element = (CDependReference) edge.get_element();
+								if(element.get_def() == def_expression) {
+									use_expressions.add(element.get_use());
+								}
+							}
+							default: break;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		return use_expressions;
+	}
 	
 }
