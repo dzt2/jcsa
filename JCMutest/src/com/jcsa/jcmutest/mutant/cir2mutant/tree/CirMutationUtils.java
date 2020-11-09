@@ -821,20 +821,24 @@ public class CirMutationUtils {
 	 */
 	public Collection<CirMutationNode> get_terminal_roots(CirMutationGraph mutation_graph) throws Exception {
 		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
-		Set<CirMutationNode> unreached_nodes = new HashSet<CirMutationNode>();
+		Set<CirMutationNode> terminals = new HashSet<CirMutationNode>();
 		queue.add(mutation_graph.get_start_node());
 		
 		while(!queue.isEmpty()) {
 			CirMutationNode node = queue.poll(); int counter = 0;
-			if(node.get_status().get_execution_times() > 0) {
+			if(node.get_status().get_execution_times() != node.get_status().get_rejection_times()) {
 				for(CirMutationEdge edge : node.get_ou_edges()) {
-					queue.add(edge.get_target()); counter++;
+					if(edge.get_status().get_execution_times() != edge.get_status().get_rejection_times()) {
+						queue.add(edge.get_target()); counter++;
+					}
 				}
 			}
-			if(counter == 0) unreached_nodes.add(node);
+			if(counter == 0) {
+				terminals.add(node);
+			}
 		}
 		
-		return unreached_nodes;
+		return terminals;
 	}
 	
 }
