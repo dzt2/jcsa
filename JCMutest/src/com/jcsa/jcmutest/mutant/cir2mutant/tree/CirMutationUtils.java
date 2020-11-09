@@ -2,13 +2,48 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAddressOfPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArgumentListPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithAddPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithDivPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithModPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithMulPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithNegPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithSubPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAssignPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsAndPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsIorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsLshPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRshPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsXorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirDereferencePropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirEqualWithPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirErrorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirFieldOfPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterEqPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterTnPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirInitializerPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicAndPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicIorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicNotPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirNotEqualsPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerEqPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerTnPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirTypeCastPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirWaitValuePropagator;
 import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.flwa.depend.CDependNode;
@@ -16,12 +51,23 @@ import com.jcsa.jcparse.flwa.depend.CDependPredicate;
 import com.jcsa.jcparse.flwa.depend.CDependType;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
+import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * Used to build the path and propagation flows in graph.
@@ -32,7 +78,44 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 public class CirMutationUtils {
 	
 	/* singleton mode */
-	private CirMutationUtils() {}
+	private Map<COperator, CirErrorPropagator> propagators;
+	private CirMutationUtils() {
+		propagators = new HashMap<COperator, CirErrorPropagator>();
+		
+		propagators.put(COperator.arith_add, new CirArithAddPropagator());
+		propagators.put(COperator.arith_sub, new CirArithSubPropagator());
+		propagators.put(COperator.arith_mul, new CirArithMulPropagator());
+		propagators.put(COperator.arith_div, new CirArithDivPropagator());
+		propagators.put(COperator.arith_mod, new CirArithModPropagator());
+		propagators.put(COperator.negative, new CirArithNegPropagator());
+		
+		propagators.put(COperator.bit_and, new CirBitwsAndPropagator());
+		propagators.put(COperator.bit_or, new CirBitwsIorPropagator());
+		propagators.put(COperator.bit_xor, new CirBitwsXorPropagator());
+		propagators.put(COperator.left_shift, new CirBitwsLshPropagator());
+		propagators.put(COperator.righ_shift, new CirBitwsRshPropagator());
+		
+		propagators.put(COperator.assign, new CirAssignPropagator());
+		propagators.put(COperator.address_of, new CirAddressOfPropagator());
+		propagators.put(COperator.dereference, new CirDereferencePropagator());
+		
+		propagators.put(COperator.greater_eq, new CirGreaterEqPropagator());
+		propagators.put(COperator.greater_tn, new CirGreaterTnPropagator());
+		propagators.put(COperator.smaller_eq, new CirSmallerEqPropagator());
+		propagators.put(COperator.smaller_tn, new CirSmallerTnPropagator());
+		propagators.put(COperator.equal_with, new CirEqualWithPropagator());
+		propagators.put(COperator.not_equals, new CirNotEqualsPropagator());
+		
+		propagators.put(COperator.logic_and, new CirLogicAndPropagator());
+		propagators.put(COperator.logic_or, new CirLogicIorPropagator());
+		propagators.put(COperator.logic_not, new CirLogicNotPropagator());
+		
+		propagators.put(COperator.arith_add_assign, new CirFieldOfPropagator());
+		propagators.put(COperator.arith_sub_assign, new CirTypeCastPropagator());
+		propagators.put(COperator.arith_mul_assign, new CirInitializerPropagator());
+		propagators.put(COperator.arith_div_assign, new CirArgumentListPropagator());
+		propagators.put(COperator.arith_mod_assign, new CirWaitValuePropagator());
+	}
 	public static final CirMutationUtils utils = new CirMutationUtils();
 	
 	/* path finder between two execution nodes */
@@ -306,8 +389,82 @@ public class CirMutationUtils {
 		}
 	}
 	
-	/* prefix-generation */
-	
+	/* local propagation */
+	public Collection<CirMutation> local_propagate(CirMutations cir_mutations, 
+			CirStateError source_error) throws Exception {
+		List<CirMutation> next_mutations = new ArrayList<CirMutation>();
+		
+		CirExpression location;
+		if(source_error instanceof CirExpressionError) {
+			location = ((CirExpressionError) source_error).get_expression();
+		}
+		else if(source_error instanceof CirReferenceError) {
+			location = ((CirReferenceError) source_error).get_reference();
+		}
+		else {
+			location = null;
+		}
+		
+		if(location != null) {
+			CirNode parent = location.get_parent();
+			Map<CirStateError, CirConstraint> propagations = new HashMap<CirStateError, CirConstraint>();
+			
+			if(parent instanceof CirDeferExpression) {
+				this.propagators.get(COperator.dereference).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirFieldExpression) {
+				this.propagators.get(COperator.arith_add_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirAddressExpression) {
+				this.propagators.get(COperator.address_of).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirCastExpression) {
+				this.propagators.get(COperator.arith_sub_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirInitializerBody) {
+				this.propagators.get(COperator.arith_mul_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirWaitExpression) {
+				this.propagators.get(COperator.arith_mod_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirComputeExpression) {
+				this.propagators.get(((CirComputeExpression) parent).get_operator()).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirArgumentList) {
+				this.propagators.get(COperator.arith_div_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirIfStatement
+					|| parent instanceof CirCaseStatement) {
+				CirStatement statement = (CirStatement) parent;
+				CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+				CirExecutionFlow true_flow = execution.get_ou_flow(0);
+				CirExecutionFlow fals_flow = execution.get_ou_flow(1);
+				
+				CirExpression condition;
+				if(statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) statement).get_condition();
+				}
+				
+				propagations.put(cir_mutations.flow_error(true_flow, fals_flow), 
+						cir_mutations.expression_constraint(statement, condition, true));
+				propagations.put(cir_mutations.flow_error(fals_flow, true_flow), 
+						cir_mutations.expression_constraint(statement, condition, false));
+			}
+			else if(parent instanceof CirAssignStatement) {
+				propagators.get(COperator.assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			
+			for(CirStateError next_error : propagations.keySet()) {
+				CirConstraint constraint = propagations.get(next_error);
+				next_mutations.add(cir_mutations.new_mutation(constraint, next_error));
+			}
+		}
+		
+		return next_mutations;
+	}
 	
 	
 	

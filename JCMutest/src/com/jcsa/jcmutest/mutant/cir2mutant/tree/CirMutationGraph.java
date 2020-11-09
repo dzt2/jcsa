@@ -6,12 +6,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -165,8 +169,56 @@ public class CirMutationGraph {
 	}
 	public static CirMutationGraph new_graph(Mutant mutant, CDependGraph dependence_graph, int maximal_distance) throws Exception {
 		CirMutationGraph graph = new CirMutationGraph(mutant);
-		graph.build_prefix_paths(dependence_graph);
+		Collection<CirMutationNode> roots = graph.build_prefix_paths(dependence_graph);
+		for(CirMutationNode root : roots) {
+			graph.build_from(root, dependence_graph, maximal_distance);
+		}
 		return graph;
 	}
+	/**
+	 * @param root
+	 * @return the leafs that are state-error and can be propagated to next.
+	 * @throws Exception
+	 */
+	private Collection<CirMutationNode> build_in(CirMutationNode root) throws Exception {
+		List<CirMutationNode> leafs = new ArrayList<CirMutationNode>();
+		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+		
+		queue.add(root);
+		while(!queue.isEmpty()) {
+			CirMutationNode prev = queue.poll();
+			Collection<CirMutation> next_mutations = CirMutationUtils.utils.
+					local_propagate(cir_mutations, prev.get_state_error());
+			for(CirMutation next_mutation : next_mutations) {
+				CirMutationNode next = this.infection_node(next_mutation.get_state_error());
+				prev.link_to(CirMutationEdgeType.gate_flow, next, next_mutation.get_constraint());
+				if(next.get_state_error() instanceof CirStateValueError) {
+					leafs.add(next);
+				}
+				else if(next.get_state_error() instanceof CirFlowError
+						|| next.get_state_error() instanceof CirTrapError) {
+					next.link_to(CirMutationEdgeType.term_flow, this.get_failure_node(), cir_mutations.
+							expression_constraint(this.get_failure_node().get_statement(), Boolean.TRUE, true));
+				}
+				queue.add(next);
+			}
+		}
+		
+		return leafs;
+	}
+	private void build_from(CirMutationNode source, CDependGraph 
+			dependence_graph, int distance) throws Exception {
+		Collection<CirMutationNode> targets = this.build_in(source);
+		if(distance > 0) {
+			for(CirMutationNode target : targets) {
+				/* TODO perform data-propagation */
+				Collection<CirMutationNode> next_targets = new ArrayList<CirMutationNode>();
+				for(CirMutationNode next_target : next_targets) {
+					this.build_from(next_target, dependence_graph, distance - 1);
+				}
+			}
+		}
+	}
+	
 	
 }
