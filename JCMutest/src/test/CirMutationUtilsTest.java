@@ -362,7 +362,7 @@ public class CirMutationUtilsTest {
 				MuTestProjectTestResult result = tspace.get_test_result(mutant);
 				if(result == null)
 					writer.write("#result\tunknown\n");
-				else if(result.get_kill_set().degree() > 0)
+				else if(result.get_kill_set().get(test_id))
 					writer.write("#result\tkilled\n");
 				else
 					writer.write("#result\tsurvive\n");
