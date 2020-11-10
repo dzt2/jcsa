@@ -34,6 +34,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
@@ -366,11 +367,11 @@ public class CirMutationUtilsTest {
 	private static boolean write_project(MuTestProjectCodeFile code_file, CDependGraph dependence_graph, int test_id) throws Exception {
 		File output = new File(result_dir + code_file.get_cfile().getName() + "." + test_id + ".txt");
 		MuTestProjectTestSpace tspace = code_file.get_code_space().get_project().get_test_space();
+		TestInput test_case = tspace.get_test_space().get_input(test_id);
 		CStatePath state_path = tspace.load_instrumental_path(
 				code_file.get_sizeof_template(), 
 				code_file.get_ast_tree(), 
-				code_file.get_cir_tree(), 
-				tspace.get_test_space().get_input(test_id));
+				code_file.get_cir_tree(), test_case);
 		
 		if(state_path != null) {
 			FileWriter writer = new FileWriter(output);
@@ -388,7 +389,7 @@ public class CirMutationUtilsTest {
 				else
 					bool_result = Boolean.FALSE;
 				
-				writer.write("Test#" + test_id + ": " + tspace.get_test_space().get_input(test_id).get_parameter() + "\n");
+				writer.write("Test#" + test_case.get_id() + ": " + test_case.get_parameter() + "\n");
 				write_mutation_graph(writer, graph, bool_result);
 				write_new_line(writer);
 			}
