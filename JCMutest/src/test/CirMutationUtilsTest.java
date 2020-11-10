@@ -198,6 +198,18 @@ public class CirMutationUtilsTest {
 	private static String mutation_node_key(CirMutationNode node) {
 		return node.get_type() + "[" + node.hashCode() + "]";
 	}
+	private static void write_mutation_status(FileWriter writer, CirMutationStatus status) throws Exception {
+		writer.write("[" + status.get_execution_times() + ", " + status.
+				get_acception_times() + ", " + status.get_rejection_times() + "]");
+		writer.write(".{ ");
+		for(CirAnnotation annotation : status.get_annotations()) {
+			if(annotation.get_parameter() != null)
+				writer.write(annotation.get_type() + ":" + annotation.get_parameter() + "; ");
+			else
+				writer.write(annotation.get_type() + "; ");
+		}
+		writer.write("}");
+	}
 	/**
 	 * #flow target_identifier constraint
 	 * @param writer
@@ -211,6 +223,8 @@ public class CirMutationUtilsTest {
 		writer.write("\t" + mutation_node_key(edge.get_target()));
 		writer.write("\t");
 		write_constraint(writer, edge.get_constraint());
+		writer.write("\t");
+		write_mutation_status(writer, edge.get_status());
 		write_new_line(writer);
 	}
 	/**
@@ -241,11 +255,8 @@ public class CirMutationUtilsTest {
 			write_new_line(writer);
 			
 			write_new_head(writer, tabs + 1);
-			writer.write("#note\t[ ");
-			for(CirAnnotation annotation : node.get_status().get_annotations()) {
-				writer.write(annotation.get_type() + "; ");
-			}
-			writer.write("]");
+			writer.write("#note\t");
+			write_mutation_status(writer, node.get_status());
 			write_new_line(writer);
 		}
 		

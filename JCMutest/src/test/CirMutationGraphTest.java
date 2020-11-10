@@ -41,7 +41,11 @@ public class CirMutationGraphTest {
 		for(CirAnnotation annotation : status.get_annotations()) {
 			writer.write(annotation.get_type() + "; ");
 		}
-		writer.write("]");
+		writer.write("].{ ");
+		for(CirAnnotation annotation : status.get_annotations()) {
+			writer.write(annotation.get_type() + "; ");
+		}
+		writer.write("}");
 	}
 	private static void output_mutation_edge(CirMutationEdge edge, FileWriter writer) throws Exception {
 		// edge.append_status(null);
