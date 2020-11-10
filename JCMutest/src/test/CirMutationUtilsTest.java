@@ -47,7 +47,7 @@ public class CirMutationUtilsTest {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/";
 	private static final String result_dir = "result/graphs/";
-	private static final int maximal_distance = 3;
+	private static final int maximal_distance = 1;
 	private static final int maximal_length = 128;
 	private static final Random random = new Random(System.currentTimeMillis());
 	public static void main(String[] args) throws Exception {
@@ -377,6 +377,7 @@ public class CirMutationUtilsTest {
 				else
 					bool_result = Boolean.FALSE;
 				
+				writer.write("Test#" + test_id + ": " + tspace.get_test_space().get_input(test_id).get_parameter() + "\n");
 				write_mutation_graph(writer, graph, bool_result);
 				write_new_line(writer);
 			}

@@ -67,6 +67,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
@@ -213,22 +214,18 @@ public class CirMutationUtils {
 	
 	/* path generation by dependence analysis */
 	/**
-	 * @param cir_mutations
 	 * @param dependence_graph
 	 * @param instance
-	 * @return generate the constraints on path that can reach the instance of the target node
+	 * @return the dominance path that reaches the instance of target statement from entry
 	 * @throws Exception
 	 */
-	private List<CirConstraint> generate_path_constraints(CirMutations cir_mutations,
-			CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
+	private List<CirExecutionFlow> get_dominance_path(CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
 		if(dependence_graph == null)
 			throw new IllegalArgumentException("Invalid dependence_graph: null");
-		else if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations as null");
 		else if(instance == null)
 			throw new IllegalArgumentException("Invalid instance as null");
 		else {
-			List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+			List<CirExecutionFlow> path = new ArrayList<CirExecutionFlow>();
 			
 			if(dependence_graph.has_node(instance)) {
 				CDependNode prev_node = dependence_graph.get_node(instance);
@@ -238,9 +235,21 @@ public class CirMutationUtils {
 						if(edge.get_type() == CDependType.predicate_depend) {
 							CDependPredicate element = (CDependPredicate) edge.get_element();
 							CirStatement statement = element.get_condition().statement_of();
-							CirExpression expression = element.get_condition();
 							boolean value = element.get_predicate_value();
-							constraints.add(cir_mutations.expression_constraint(statement, expression, value));
+							CirExecution if_execution = statement.get_tree().get_localizer().get_execution(statement);
+							for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
+								if(value && flow.get_type() == CirExecutionFlowType.true_flow) {
+									if(!path.contains(flow)) {
+										path.add(flow); break;
+									}
+								}
+								else if(!value && flow.get_type() == CirExecutionFlowType.fals_flow) {
+									if(!path.contains(flow)) {
+										path.add(flow); break;
+									}
+								}
+							}
+							
 							next_node = edge.get_target();
 							break;
 						}
@@ -248,13 +257,18 @@ public class CirMutationUtils {
 							CirInstanceNode wait_instance = edge.get_target().get_instance();
 							CirInstanceNode exit_instance = wait_instance.get_in_edge(0).get_source();
 							next_node = dependence_graph.get_node(exit_instance);
-							constraints.add(cir_mutations.expression_constraint(wait_instance.
-									get_execution().get_statement(), Boolean.TRUE, true));
+							CirExecutionFlow flow = wait_instance.get_execution().get_in_flow(0);
+							if(!path.contains(flow)) {
+								path.add(flow);
+							}
 							break;
 						}
 						else if(edge.get_type() == CDependType.stmt_call_depend) {
 							next_node = edge.get_target();
-							constraints.add(cir_mutations.expression_constraint(next_node.get_statement(), Boolean.TRUE, true));
+							CirExecutionFlow flow = next_node.get_execution().get_ou_flow(0);
+							if(!path.contains(flow)) {
+								path.add(flow);
+							}
 							break;
 						}
 					}
@@ -262,60 +276,54 @@ public class CirMutationUtils {
 				}
 			}
 			
-			for(int k = 0; k < constraints.size() / 2; k++) {
-				CirConstraint x = constraints.get(k);
-				CirConstraint y = constraints.get(constraints.size() - k - 1);
-				constraints.set(k, y);
-				constraints.set(constraints.size() - k - 1, x);
+			for(int k = 0; k < path.size() / 2; k++) {
+				CirExecutionFlow x = path.get(k);
+				CirExecutionFlow y = path.get(path.size() - k - 1);
+				path.set(k, y);
+				path.set(path.size() - k - 1, x);
 			}
-			
-			return constraints;
+			return path;
 		}
 	}
 	/**
-	 * @param cir_mutations
 	 * @param dependence_graph
 	 * @param execution
-	 * @return the path constraints for reaching the execution on dominance relationship
+	 * @return the common dominance path to the execution from entry
 	 * @throws Exception
 	 */
-	private List<CirConstraint> generate_path_constraints(CirMutations cir_mutations,
-			CDependGraph dependence_graph, CirExecution execution) throws Exception {
+	private List<CirExecutionFlow> get_dominance_path(CDependGraph dependence_graph, CirExecution execution) throws Exception {
 		if(dependence_graph == null)
 			throw new IllegalArgumentException("Invalid dependence_graph: null");
-		else if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations as null");
 		else if(execution == null)
 			throw new IllegalArgumentException("Invalid execution as null");
 		else {
-			List<CirConstraint> common_constraints = new ArrayList<CirConstraint>();
-			Set<CirConstraint> removed_constraints = new HashSet<CirConstraint>();
+			List<CirExecutionFlow> common_path = new ArrayList<CirExecutionFlow>();
+			Set<CirExecutionFlow> removed_path = new HashSet<CirExecutionFlow>();
 			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
 			
 			if(instance_graph.has_instances_of(execution)) {
 				boolean first = true;
 				for(CirInstanceNode instance : instance_graph.get_instances_of(execution)) {
-					List<CirConstraint> constraints = this.generate_path_constraints(cir_mutations, dependence_graph, instance);
+					List<CirExecutionFlow> path = this.get_dominance_path(dependence_graph, instance);
 					if(first) {
 						first = false;
-						common_constraints.addAll(constraints);
+						common_path.addAll(path);
 					}
 					else {
-						removed_constraints.clear();
-						for(CirConstraint constraint : common_constraints) {
-							if(constraints.contains(constraint)) {
-								removed_constraints.add(constraint);
+						removed_path.clear();
+						for(CirExecutionFlow flow : path) {
+							if(!common_path.contains(flow)) {
+								removed_path.add(flow);
 							}
 						}
-						for(CirConstraint constraint : removed_constraints) {
-							common_constraints.remove(constraint);
+						for(CirExecutionFlow flow : removed_path) {
+							common_path.remove(flow);
 						}
 					}
 				}
 			}
 			
-			common_constraints.add(cir_mutations.expression_constraint(execution.get_statement(), Boolean.TRUE, true));
-			return common_constraints;
+			return common_path;
 		}
 	}
 	/**
@@ -405,6 +413,58 @@ public class CirMutationUtils {
 	}
 	/**
 	 * @param cir_mutations
+	 * @param dependence_graph
+	 * @param execution
+	 * @return the constraints for reaching the execution node using dependence graph
+	 * @throws Exception
+	 */
+	private List<CirConstraint> generate_path_constraints(CirMutations cir_mutations, 
+			CDependGraph dependence_graph, CirExecution execution) throws Exception {
+		if(dependence_graph == null)
+			throw new IllegalArgumentException("Invalid dependence_graph: null");
+		else if(execution == null)
+			throw new IllegalArgumentException("Invalid execution as null");
+		else {
+			List<CirExecutionFlow> path = this.get_dominance_path(dependence_graph, execution);
+			List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+			
+			for(CirExecutionFlow flow : path) {
+				if(flow.get_type() == CirExecutionFlowType.true_flow) {
+					CirStatement statement = flow.get_source().get_statement();
+					CirExpression condition;
+					if(statement instanceof CirIfStatement) {
+						condition = ((CirIfStatement) statement).get_condition();
+					}
+					else {
+						condition = ((CirCaseStatement) statement).get_condition();
+					}
+					constraints.add(cir_mutations.expression_constraint(statement, condition, true));
+				}
+				else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+					CirStatement statement = flow.get_source().get_statement();
+					CirExpression condition;
+					if(statement instanceof CirIfStatement) {
+						condition = ((CirIfStatement) statement).get_condition();
+					}
+					else {
+						condition = ((CirCaseStatement) statement).get_condition();
+					}
+					constraints.add(cir_mutations.expression_constraint(statement, condition, false));
+				}
+				else if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+					constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
+				}
+				else {
+					constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
+				}
+			}
+			constraints.add(cir_mutations.expression_constraint(execution.get_statement(), Boolean.TRUE, true));
+			
+			return constraints;
+		}
+	}
+	/**
+	 * @param cir_mutations
 	 * @param dependence_graph can be null
 	 * @param execution
 	 * @return path constraints for reaching the execution node
@@ -468,11 +528,6 @@ public class CirMutationUtils {
 				constraints.add(cir_mutations.expression_constraint(if_statement, condition, false));
 				break;
 			}
-			case call_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				break;
-			}
 			case retr_flow:
 			{
 				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
@@ -484,7 +539,11 @@ public class CirMutationUtils {
 				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
 				break;
 			}
-			default: break;
+			default: 
+			{
+				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
+				break;
+			}
 			}
 		}
 		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
