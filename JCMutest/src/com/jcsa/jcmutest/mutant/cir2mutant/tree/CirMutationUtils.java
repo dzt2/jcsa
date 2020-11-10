@@ -328,6 +328,47 @@ public class CirMutationUtils {
 	}
 	/**
 	 * @param cir_mutations
+	 * @param path
+	 * @return the path constraints generated from path as given
+	 * @throws Exception
+	 */
+	private void generate_path_constraints(CirMutations cir_mutations, 
+			List<CirExecutionFlow> path, List<CirConstraint> constraints) throws Exception {
+		for(CirExecutionFlow flow : path) {
+			if(flow.get_type() == CirExecutionFlowType.true_flow) {
+				CirStatement statement = flow.get_source().get_statement();
+				CirExpression condition;
+				if(statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) statement).get_condition();
+				}
+				constraints.add(cir_mutations.expression_constraint(statement, condition, true));
+			}
+			else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+				CirStatement statement = flow.get_source().get_statement();
+				CirExpression condition;
+				if(statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) statement).get_condition();
+				}
+				constraints.add(cir_mutations.expression_constraint(statement, condition, false));
+			}
+			else if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+				CirStatement statement = flow.get_target().get_statement();
+				constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
+			}
+			else {
+				CirStatement statement = flow.get_source().get_statement();
+				constraints.add(cir_mutations.expression_constraint(statement, Boolean.TRUE, true));
+			}
+		}
+	}
+	/**
+	 * @param cir_mutations
 	 * @param execution
 	 * @return the path constraints for reaching the execution without dependence relationship
 	 * @throws Exception
@@ -360,53 +401,7 @@ public class CirMutationUtils {
 		
 		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
 		constraints.add(cir_mutations.expression_constraint(source.get_statement(), Boolean.TRUE, true));
-		for(CirExecutionFlow flow : common_path) {
-			switch(flow.get_type()) {
-			case true_flow:
-			{
-				CirStatement if_statement = flow.get_source().get_statement();
-				CirExpression condition;
-				if(if_statement instanceof CirIfStatement) {
-					condition = ((CirIfStatement) if_statement).get_condition();
-				}
-				else {
-					condition = ((CirCaseStatement) if_statement).get_condition();
-				}
-				constraints.add(cir_mutations.expression_constraint(if_statement, condition, true));
-				break;
-			}
-			case fals_flow:
-			{
-				CirStatement if_statement = flow.get_source().get_statement();
-				CirExpression condition;
-				if(if_statement instanceof CirIfStatement) {
-					condition = ((CirIfStatement) if_statement).get_condition();
-				}
-				else {
-					condition = ((CirCaseStatement) if_statement).get_condition();
-				}
-				constraints.add(cir_mutations.expression_constraint(if_statement, condition, false));
-				break;
-			}
-			case call_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			case retr_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			case skip_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			default: break;
-			}
-		}
+		this.generate_path_constraints(cir_mutations, common_path, constraints);
 		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
 		
 		return constraints;
@@ -427,39 +422,8 @@ public class CirMutationUtils {
 		else {
 			List<CirExecutionFlow> path = this.get_dominance_path(dependence_graph, execution);
 			List<CirConstraint> constraints = new ArrayList<CirConstraint>();
-			
-			for(CirExecutionFlow flow : path) {
-				if(flow.get_type() == CirExecutionFlowType.true_flow) {
-					CirStatement statement = flow.get_source().get_statement();
-					CirExpression condition;
-					if(statement instanceof CirIfStatement) {
-						condition = ((CirIfStatement) statement).get_condition();
-					}
-					else {
-						condition = ((CirCaseStatement) statement).get_condition();
-					}
-					constraints.add(cir_mutations.expression_constraint(statement, condition, true));
-				}
-				else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
-					CirStatement statement = flow.get_source().get_statement();
-					CirExpression condition;
-					if(statement instanceof CirIfStatement) {
-						condition = ((CirIfStatement) statement).get_condition();
-					}
-					else {
-						condition = ((CirCaseStatement) statement).get_condition();
-					}
-					constraints.add(cir_mutations.expression_constraint(statement, condition, false));
-				}
-				else if(flow.get_type() == CirExecutionFlowType.retr_flow) {
-					constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
-				}
-				else {
-					constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				}
-			}
+			this.generate_path_constraints(cir_mutations, path, constraints);
 			constraints.add(cir_mutations.expression_constraint(execution.get_statement(), Boolean.TRUE, true));
-			
 			return constraints;
 		}
 	}
@@ -497,57 +461,10 @@ public class CirMutationUtils {
 	 */
 	public List<CirConstraint> get_path_constraints(CirMutations cir_mutations, CirExecution source, CirExecution target) throws Exception {
 		List<CirExecutionFlow> common_path = this.find_must_paths_between(source, target);
-		
 		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
 		constraints.add(cir_mutations.expression_constraint(source.get_statement(), Boolean.TRUE, true));
-		for(CirExecutionFlow flow : common_path) {
-			switch(flow.get_type()) {
-			case true_flow:
-			{
-				CirStatement if_statement = flow.get_source().get_statement();
-				CirExpression condition;
-				if(if_statement instanceof CirIfStatement) {
-					condition = ((CirIfStatement) if_statement).get_condition();
-				}
-				else {
-					condition = ((CirCaseStatement) if_statement).get_condition();
-				}
-				constraints.add(cir_mutations.expression_constraint(if_statement, condition, true));
-				break;
-			}
-			case fals_flow:
-			{
-				CirStatement if_statement = flow.get_source().get_statement();
-				CirExpression condition;
-				if(if_statement instanceof CirIfStatement) {
-					condition = ((CirIfStatement) if_statement).get_condition();
-				}
-				else {
-					condition = ((CirCaseStatement) if_statement).get_condition();
-				}
-				constraints.add(cir_mutations.expression_constraint(if_statement, condition, false));
-				break;
-			}
-			case retr_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			case skip_flow:
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				constraints.add(cir_mutations.expression_constraint(flow.get_target().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			default: 
-			{
-				constraints.add(cir_mutations.expression_constraint(flow.get_source().get_statement(), Boolean.TRUE, true));
-				break;
-			}
-			}
-		}
+		this.generate_path_constraints(cir_mutations, common_path, constraints);
 		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
-		
 		return constraints;
 	}
 	

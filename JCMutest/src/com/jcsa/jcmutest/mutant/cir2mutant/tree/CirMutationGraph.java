@@ -158,20 +158,23 @@ public class CirMutationGraph {
 			for(CirExecution execution : reaching_map.keySet()) {
 				List<CirConstraint> path_constraints = CirMutationUtils.utils.
 						get_path_constraints(cir_mutations, dependence_graph, execution);
-				CirMutationNode prev = this.get_start_node(), true_next;
+				
+				CirMutationNode prev_node = this.get_start_node(), next_node;
 				for(CirConstraint constraint : path_constraints) {
-					true_next = this.execution_node(constraint.get_execution());
-					prev.link_to(CirMutationEdgeType.path_flow, true_next, constraint);
-					prev = true_next;
+					if(prev_node.get_execution() != constraint.get_execution()) {
+						next_node = this.execution_node(constraint.get_execution());
+						prev_node.link_to(CirMutationEdgeType.path_flow, next_node, constraint);
+						prev_node = next_node;
+					}
 				}
 				
-				this.reaching_nodes.add(prev);	/* add the reaching faulty statement */
+				this.reaching_nodes.add(prev_node);	/* add the reaching faulty statement */
 				
 				for(CirMutation cir_mutation : reaching_map.get(execution)) {
 					CirConstraint constraint = cir_mutation.get_constraint();
 					CirStateError state_error = cir_mutation.get_state_error();
 					CirMutationNode error_node = this.infection_node(state_error);
-					prev.link_to(CirMutationEdgeType.gena_flow, error_node, constraint);
+					prev_node.link_to(CirMutationEdgeType.gena_flow, error_node, constraint);
 					init_error_nodes.add(error_node);
 				}
 			}

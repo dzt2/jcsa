@@ -28,7 +28,7 @@ public class SymComputation {
 	}
 	public static SymConstant logic_not(SymConstant operand) throws Exception {
 		boolean value = operand.get_bool();
-		return SymFactory.new_constant(Boolean.valueOf(value));
+		return SymFactory.new_constant(!Boolean.valueOf(value));
 	}
 	public static SymConstant arith_add(
 			SymConstant loperand, SymConstant roperand) throws Exception {

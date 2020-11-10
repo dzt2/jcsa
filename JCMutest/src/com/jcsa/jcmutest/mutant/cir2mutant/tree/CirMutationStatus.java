@@ -79,7 +79,7 @@ public class CirMutationStatus {
 	protected Boolean append(CirConstraint constraint) throws Exception {
 		this.annotations.addAll(CirAnnotations.annotations(constraint, null));
 		this.execution_times++;
-		Boolean result = constraint.validate(null);
+		Boolean result = constraint.validate(null); 
 		if(result != null) {
 			if(result.booleanValue()) {
 				this.acception_times++;
