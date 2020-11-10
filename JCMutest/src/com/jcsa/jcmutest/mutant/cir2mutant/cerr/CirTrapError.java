@@ -1,7 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 
@@ -24,9 +23,4 @@ public class CirTrapError extends CirStateError {
 		return "";
 	}
 	
-	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
-		return true;
-	}
-
 }

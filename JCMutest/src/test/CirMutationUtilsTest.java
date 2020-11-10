@@ -275,7 +275,7 @@ public class CirMutationUtilsTest {
 	 * @param graph
 	 * @throws Exception
 	 */
-	private static void write_mutation_graph(FileWriter writer, CirMutationGraph graph) throws Exception {
+	private static void write_mutation_graph(FileWriter writer, CirMutationGraph graph, Boolean result) throws Exception {
 		writer.write("#BegMuta\n");
 		
 		Mutant mutant = graph.get_mutant();
@@ -285,6 +285,12 @@ public class CirMutationUtilsTest {
 				"\" at Line " + mutation.get_location().get_location().line_of() + "\n");
 		if(mutation.has_parameter())
 			writer.write("\tparameter: " + mutation.get_parameter() + "\n");
+		if(result == null)
+			writer.write("\tresult: unknown\n");
+		else if(result.booleanValue())
+			writer.write("\tresult: killed\n");
+		else
+			writer.write("\tresult: survive\n");
 		
 		writer.write("\t{\n");
 		for(CirMutationNode node : graph.get_nodes()) {
@@ -330,14 +336,17 @@ public class CirMutationUtilsTest {
 			System.out.println("\t--> Generate for " + mutant.toString());
 			CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
 			CirMutationUtils.utils.abst_evaluate(graph);
-			write_mutation_graph(writer, graph);
+			
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
+			Boolean bool_result;
 			if(result == null)
-				writer.write("#result\tunknown\n");
+				bool_result = null;
 			else if(result.get_kill_set().degree() > 0)
-				writer.write("#result\tkilled\n");
+				bool_result = Boolean.TRUE;
 			else
-				writer.write("#result\tsurvive\n");
+				bool_result = Boolean.FALSE;
+			
+			write_mutation_graph(writer, graph, bool_result);
 			write_new_line(writer);
 		}
 		
@@ -358,14 +367,17 @@ public class CirMutationUtilsTest {
 				System.out.println("\t--> Generate for " + mutant.toString());
 				CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
 				CirMutationUtils.utils.conc_evaluate(graph, state_path);
-				write_mutation_graph(writer, graph);
+				
 				MuTestProjectTestResult result = tspace.get_test_result(mutant);
+				Boolean bool_result;
 				if(result == null)
-					writer.write("#result\tunknown\n");
+					bool_result = null;
 				else if(result.get_kill_set().get(test_id))
-					writer.write("#result\tkilled\n");
+					bool_result = Boolean.TRUE;
 				else
-					writer.write("#result\tsurvive\n");
+					bool_result = Boolean.FALSE;
+				
+				write_mutation_graph(writer, graph, bool_result);
 				write_new_line(writer);
 			}
 			writer.close();

@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotations;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -108,6 +109,8 @@ public abstract class CirStateError {
 	 * 		  	--> under the state contexts as given
 	 * @throws Exception
 	 */
-	public abstract Boolean validate(CStateContexts contexts) throws Exception;
+	public Boolean validate(CStateContexts contexts) throws Exception {
+		return CirAnnotations.annotations.validate(this, contexts);
+	}
 	
 }

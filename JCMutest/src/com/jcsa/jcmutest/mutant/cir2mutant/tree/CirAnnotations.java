@@ -46,7 +46,7 @@ public class CirAnnotations {
 	/** the maximal distance for search statements in flow error **/
 	private static final int maximal_path_distance = 8;
 	/** singleton mode **/
-	private static final CirAnnotations annotations = new CirAnnotations();
+	public static final CirAnnotations annotations = new CirAnnotations();
 	
 	/* constraint generator */
 	/**
@@ -246,6 +246,13 @@ public class CirAnnotations {
 				}
 			}
 		}
+	}
+	private boolean is_integer(CirExpression expression) throws Exception {
+		CType type = expression.get_data_type();
+		if(type == null)
+			return false;
+		else
+			return CTypeAnalyzer.is_integer(CTypeAnalyzer.get_value_type(type));
 	}
 	private boolean is_numeric(CirExpression expression) throws Exception {
 		CType type = expression.get_data_type();
@@ -501,6 +508,108 @@ public class CirAnnotations {
 			return annotations.generate_annotations_for_refr_error((CirReferenceError) state_error, contexts);
 		else if(state_error instanceof CirStateValueError)
 			return annotations.generate_annotations_for_stat_error((CirStateValueError) state_error, contexts);
+		else
+			throw new IllegalArgumentException("Invalid: " + state_error);
+	}
+	
+	public Boolean validate(CirStateError state_error, CStateContexts contexts) throws Exception {
+		if(state_error == null)
+			throw new IllegalArgumentException("Invalid state_error: null");
+		else if(state_error instanceof CirExpressionError) {
+			CirExpression expression = ((CirExpressionError) state_error).get_expression();
+			SymExpression orig_value = ((CirExpressionError) state_error).get_original_value();
+			SymExpression muta_value = ((CirExpressionError) state_error).get_mutation_value();
+			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
+			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
+			if(orig_value.generate_code().equals(muta_value.generate_code())) {
+				return Boolean.FALSE;
+			}
+			else if(orig_value instanceof SymConstant && muta_value instanceof SymConstant) {
+				SymConstant lconstant = (SymConstant) orig_value;
+				SymConstant rconstant = (SymConstant) muta_value;
+				if(this.is_boolean(expression)) {
+					return Boolean.valueOf(lconstant.get_bool() != rconstant.get_bool());
+				}
+				else if(this.is_integer(expression)) {
+					return Boolean.valueOf(lconstant.get_long() != rconstant.get_long());
+				}
+				else if(this.is_numeric(expression)) {
+					return Boolean.valueOf(lconstant.get_double() != rconstant.get_double());
+				}
+				else {
+					return Boolean.FALSE;
+				}
+			}
+			else {
+				return null;
+			}
+		}
+		else if(state_error instanceof CirReferenceError) {
+			CirExpression expression = ((CirReferenceError) state_error).get_reference();
+			SymExpression orig_value = ((CirReferenceError) state_error).get_original_value();
+			SymExpression muta_value = ((CirReferenceError) state_error).get_mutation_value();
+			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
+			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
+			if(orig_value.generate_code().equals(muta_value.generate_code())) {
+				return Boolean.FALSE;
+			}
+			else if(orig_value instanceof SymConstant && muta_value instanceof SymConstant) {
+				SymConstant lconstant = (SymConstant) orig_value;
+				SymConstant rconstant = (SymConstant) muta_value;
+				if(this.is_boolean(expression)) {
+					return Boolean.valueOf(lconstant.get_bool() != rconstant.get_bool());
+				}
+				else if(this.is_integer(expression)) {
+					return Boolean.valueOf(lconstant.get_long() != rconstant.get_long());
+				}
+				else if(this.is_numeric(expression)) {
+					return Boolean.valueOf(lconstant.get_double() != rconstant.get_double());
+				}
+				else {
+					return Boolean.FALSE;
+				}
+			}
+			else {
+				return null;
+			}
+		}
+		else if(state_error instanceof CirStateValueError) {
+			CirExpression expression = ((CirStateValueError) state_error).get_reference();
+			SymExpression orig_value = ((CirStateValueError) state_error).get_original_value();
+			SymExpression muta_value = ((CirStateValueError) state_error).get_mutation_value();
+			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
+			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
+			if(orig_value.generate_code().equals(muta_value.generate_code())) {
+				return Boolean.FALSE;
+			}
+			else if(orig_value instanceof SymConstant && muta_value instanceof SymConstant) {
+				SymConstant lconstant = (SymConstant) orig_value;
+				SymConstant rconstant = (SymConstant) muta_value;
+				if(this.is_boolean(expression)) {
+					return Boolean.valueOf(lconstant.get_bool() != rconstant.get_bool());
+				}
+				else if(this.is_integer(expression)) {
+					return Boolean.valueOf(lconstant.get_long() != rconstant.get_long());
+				}
+				else if(this.is_numeric(expression)) {
+					return Boolean.valueOf(lconstant.get_double() != rconstant.get_double());
+				}
+				else {
+					return Boolean.FALSE;
+				}
+			}
+			else {
+				return null;
+			}
+		}
+		else if(state_error instanceof CirTrapError) {
+			return Boolean.TRUE;
+		}
+		else if(state_error instanceof CirFlowError) {
+			return Boolean.valueOf(
+					((CirFlowError) state_error).get_original_flow().get_target() != 
+					((CirFlowError) state_error).get_mutation_flow().get_target());
+		}
 		else
 			throw new IllegalArgumentException("Invalid: " + state_error);
 	}

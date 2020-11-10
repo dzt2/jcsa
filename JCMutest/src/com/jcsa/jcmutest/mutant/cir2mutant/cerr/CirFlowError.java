@@ -1,7 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 
 
@@ -50,11 +49,6 @@ public class CirFlowError extends CirStateError {
 	@Override
 	protected String generate_code() throws Exception {
 		return this.orig_flow.get_target() + ", " + this.muta_flow.get_target();
-	}
-	
-	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
-		return this.orig_flow.get_target() != this.muta_flow.get_target();
 	}
 	
 }

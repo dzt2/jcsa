@@ -1,10 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirErrorType;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
-import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 
 
@@ -54,19 +51,4 @@ public class CirStateValueError extends CirStateError {
 				", " + this.muta_val.generate_code();
 	}
 
-	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
-		SymExpression orig_value = SymEvaluator.evaluate_on(orig_val, contexts);
-		SymExpression muta_value = SymEvaluator.evaluate_on(muta_val, contexts);
-		if(orig_value.equals(muta_value))
-			return Boolean.FALSE;
-		else if(orig_value instanceof SymConstant
-				|| muta_value instanceof SymConstant) {
-			return Boolean.TRUE;
-		}
-		else {
-			return null;	/* undecidable */
-		}
-	}
-	
 }
