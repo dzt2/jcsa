@@ -617,228 +617,279 @@ public class CirMutationUtils {
 		return use_expressions;
 	}
 	
-	/* evaluation methods on cir-mutation graph */
+	/* concrete (dynamic) analysis methods */
 	/**
-	 * collect the node and edges to the target before it in the graph
-	 * @param node
-	 * @param nodes
-	 * @param edges
+	 * @param target the node being reached from the others
+	 * @param nodes to preserve the nodes that can reach the target in the graph
+	 * @param edges to preserve the edges that can reach the target in the graph
+	 * @throws Exception
 	 */
-	private void collect_prefix_set(CirMutationNode target, Set<CirMutationNode> nodes, Set<CirMutationEdge> edges) {
+	private void collect_prefix_nodes_and_edges(CirMutationNode target, 
+			Set<CirMutationNode> nodes, Set<CirMutationEdge> edges) throws Exception {
 		if(!nodes.contains(target)) {
 			nodes.add(target);
 			for(CirMutationEdge edge : target.get_in_edges()) {
 				edges.add(edge);
-				this.collect_prefix_set(edge.get_source(), nodes, edges);
+				this.collect_prefix_nodes_and_edges(edge.get_source(), nodes, edges);
 			}
 		}
 	}
 	/**
-	 * update the status in reach-ability analysis, excluding the initial error part for infection 
+	 * perform the dynamic analysis on given execution path to determine of which
+	 * nodes before the faulty statement have been executed (excluding the 
 	 * @param mutation_graph
 	 * @param state_path
 	 * @throws Exception
 	 */
-	private void prev_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
-		/* 1. collect the prefix part of the graph */
-		Set<CirMutationNode> prefix_nodes = new HashSet<CirMutationNode>();
-		Set<CirMutationEdge> prefix_edges = new HashSet<CirMutationEdge>();
-		for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
-			this.collect_prefix_set(seeded_node, prefix_nodes, prefix_edges);
-		}
-		
-		/* 2. remove the initial error nodes and edges from the set */
-		for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
-			prefix_nodes.remove(seeded_node);
-			for(CirMutationEdge edge : seeded_node.get_in_edges()) {
-				prefix_edges.remove(edge);
+	private void conc_prev_evaluate(CirMutationGraph mutation_graph, 
+			CStatePath state_path) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph: null");
+		else if(state_path == null)
+			throw new IllegalArgumentException("Invalid state_path as null");
+		else {
+			/* 1. collect the nodes and edges reaching the faulty statement */
+			Set<CirMutationNode> prefix_nodes = new HashSet<CirMutationNode>();
+			Set<CirMutationEdge> prefix_edges = new HashSet<CirMutationEdge>();
+			for(CirMutationNode reaching_node : mutation_graph.get_reaching_nodes()) {
+				this.collect_prefix_nodes_and_edges(reaching_node, prefix_nodes, prefix_edges);
 			}
-		}
-		
-		/* 3. build the map from execution to the edges and nodes */
-		Map<CirExecution, List<Object>> solutions = new HashMap<CirExecution, List<Object>>();
-		for(CirMutationNode node : prefix_nodes) {
-			CirExecution execution = node.get_execution();
-			if(!solutions.containsKey(execution)) {
-				solutions.put(execution, new LinkedList<Object>());
-			}
-			solutions.get(execution).add(node);
-		}
-		for(CirMutationEdge edge : prefix_edges) {
-			CirExecution execution = edge.get_constraint().get_execution();
-			if(!solutions.containsKey(execution)) {
-				solutions.put(execution, new LinkedList<Object>());
-			}
-			solutions.get(execution).add(edge);
-		}
-		
-		/* 4. perform reach-ability analysis on path by one iteration */
-		CStateContexts contexts = new CStateContexts();
-		for(CStateNode state_node : state_path.get_nodes()) {
-			contexts.accumulate(state_node);
 			
-			CirExecution execution = state_node.get_execution();
-			if(solutions.containsKey(execution)) {
-				for(Object subject : solutions.get(execution)) {
-					if(subject instanceof CirMutationNode) {
-						((CirMutationNode) subject).append_status(contexts);
-					}
-					else if(subject instanceof CirMutationEdge) {
-						((CirMutationEdge) subject).append_status(contexts);
+			/* 2. collect the nodes and edges in execution-maps */
+			Map<CirExecution, List<Object>> nodes_and_edges = new HashMap<CirExecution, List<Object>>();
+			for(CirMutationNode prefix_node : prefix_nodes) {
+				CirExecution execution = prefix_node.get_execution();
+				if(!nodes_and_edges.containsKey(execution)) {
+					nodes_and_edges.put(execution, new LinkedList<Object>());
+				}
+				nodes_and_edges.get(execution).add(prefix_node);
+			}
+			for(CirMutationEdge prefix_edge : prefix_edges) {
+				CirExecution execution = prefix_edge.get_constraint().get_execution();
+				if(!nodes_and_edges.containsKey(execution)) {
+					nodes_and_edges.put(execution, new LinkedList<Object>());
+				}
+				nodes_and_edges.get(execution).add(prefix_edge);
+			}
+			
+			/* 3. dynamic execution to solve the reaching counters */
+			CStateContexts contexts = new CStateContexts();
+			for(CStateNode state_node : state_path.get_nodes()) {
+				contexts.accumulate(state_node);
+				if(nodes_and_edges.containsKey(state_node.get_execution())) {
+					for(Object subject : nodes_and_edges.get(state_node.get_execution())) {
+						if(subject instanceof CirMutationNode) {
+							((CirMutationNode) subject).append_status(contexts);
+						}
+						else {
+							((CirMutationEdge) subject).append_status(contexts);
+						}
 					}
 				}
 			}
 		}
 	}
 	/**
-	 * collect the nodes in the local graph (with their prefix input edge)
-	 * @param root the root node in the graph as entry
-	 * @param local_graph to preserve the nodes in local graph
-	 * @param next_roots the roots as the entry of the next block graph
+	 * perform the dynamic analysis from the given root (node or edge) in error
+	 * propagation until all the reachable nodes in current execution evaluated.
+	 * @param root
+	 * @param execution
+	 * @param contexts
+	 * @param next_generations to preserve the reachable nodes or edges as next being evaluated
 	 * @throws Exception
 	 */
-	private void evaluate_local_graph(CirMutationNode root, Set<CirMutationNode> next_roots, CStateContexts contexts) throws Exception {
+	private void conc_loca_evaluate(Object root, CirExecution execution, 
+			CStateContexts contexts, Set<Object> next_generations) throws Exception {
+		/* declarations */
+		CirMutationNode head, node; Boolean result;
 		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
-		next_roots.clear(); queue.add(root); Boolean result;
 		
-		while(!queue.isEmpty()) {
-			CirMutationNode node = queue.poll();
-			
-			result = null;
-			for(CirMutationEdge edge : node.get_in_edges()) {
-				result = edge.append_status(contexts);
-				if(result != null) break;
+		/* get the head node and initialize queue */
+		if(root instanceof CirMutationEdge) {
+			result = ((CirMutationEdge) root).append_status(contexts);
+			head = ((CirMutationEdge) root).get_target();
+			if(result == null || result.booleanValue()) {
+				queue.add(head);
 			}
-			if(result != null && !result.booleanValue()) continue;
+		}
+		else {
+			head = (CirMutationNode) root;
+			queue.add(head);
+		}
+		
+		/* BFS-algorithm to search local nodes & edges */
+		while(!queue.isEmpty()) {
+			/* get next node from tree */	node = queue.poll();
 			
-			result = node.append_status(contexts);
-			if(result != null && !result.booleanValue()) continue;
-			
-			for(CirMutationEdge edge : node.get_ou_edges()) {
-				if(edge.get_source().get_execution() == edge.get_target().get_execution()) {
-					queue.add(edge.get_target());
+			/* when matched with the context */
+			if(node.get_execution() == execution) {			
+				
+				/* perform evaluation on the node and avoid edges when rejection */
+				result = node.append_status(contexts);
+				if(result != null && !result.booleanValue()) 
+					continue;	/* cut off at invalid node */
+				
+				/* continue to evaluate edges when accepted or acceptable */
+				for(CirMutationEdge edge : node.get_ou_edges()) {
+					if(edge.get_constraint().get_execution() == execution) {
+						result = edge.append_status(contexts);
+						if(result != null && !result.booleanValue()) 
+							continue;	/* cut off at invalid edge */
+						else {
+							queue.add(edge.get_target());
+						}
+					}
+					else {
+						next_generations.add(edge);	/* edge out of the range */
+					}
 				}
-				else if(edge.get_type() == CirMutationEdgeType.gate_flow) {
-					queue.add(edge.get_target());
-				}
-				else {
-					next_roots.add(edge.get_target());
-				}
+			}
+			else {
+				next_generations.add(node);		/* node out of the range */
 			}
 		}
 	}
 	/**
-	 * perform the dynamic analysis on seeded node of initial infected state error
-	 * @param seeded_node
+	 * perform the dynamic analysis on execution path to determine of which nodes
+	 * and edges in the error propagation process are reached and satisfied.
+	 * @param reaching_node
 	 * @param state_path
 	 * @throws Exception
 	 */
-	private void post_evaluate(CirMutationNode seeded_node, CStatePath state_path) throws Exception {
+	private void conc_post_evaluate(CirMutationNode reaching_node, CStatePath state_path) throws Exception {
+		/* declarations */
+		Set<Object> current_nodes_edges = new HashSet<Object>();
+		Set<Object> removed_nodes_edges = new HashSet<Object>();
+		Set<Object> next_generations = new HashSet<Object>();
 		CStateContexts contexts = new CStateContexts();
-		Set<CirMutationNode> candidates = new HashSet<CirMutationNode>();
-		Set<CirMutationNode> remove_set = new HashSet<CirMutationNode>();
-		Set<CirMutationNode> next_roots = new HashSet<CirMutationNode>();
 		
 		for(CStateNode state_node : state_path.get_nodes()) {
-			CirExecution execution = state_node.get_execution();
+			/* 1. accumulate program state */	
 			contexts.accumulate(state_node);
 			
-			if(execution == seeded_node.get_execution()) {
-				candidates.clear();
-				candidates.add(seeded_node);
-			}
-			
-			remove_set.clear();
-			for(CirMutationNode candidate : candidates) {
-				if(candidate.get_execution() == execution) {
-					remove_set.add(candidate);
+			/* 2. restart the counting on reaching node */
+			if(reaching_node.get_execution() == state_node.get_execution()) {
+				current_nodes_edges.clear();
+				for(CirMutationEdge edge : reaching_node.get_ou_edges()) {
+					current_nodes_edges.add(edge);
 				}
 			}
-			candidates.removeAll(remove_set);
 			
-			for(CirMutationNode candidate : remove_set) {
-				this.evaluate_local_graph(candidate, next_roots, contexts);
-				candidates.addAll(next_roots);
+			/* 3. perform the analysis on local nodes & edges and update */
+			removed_nodes_edges.clear(); next_generations.clear();
+			for(Object root : current_nodes_edges) {
+				removed_nodes_edges.add(root);
+				this.conc_loca_evaluate(root, state_node.get_execution(), contexts, next_generations);
 			}
+			current_nodes_edges.removeAll(removed_nodes_edges);
+			current_nodes_edges.addAll(next_generations);
 		}
-	}
-	private boolean reachable(CirMutationNode node) {
-		for(CirMutationEdge edge : node.get_in_edges()) {
-			if(edge.get_source().get_status().get_execution_times() > 0) {
-				return true;
-			}
-		}
-		return false;
 	}
 	/**
-	 * perform dynamic evaluation on the mutation feature graph
+	 * perform dynamic analysis on execution path after reaching the faulty statement.
 	 * @param mutation_graph
 	 * @param state_path
 	 * @throws Exception
 	 */
-	public void dynamic_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+	private void conc_post_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph: null");
+		else if(state_path == null)
+			throw new IllegalArgumentException("Invalid state_path as null");
+		else {
+			for(CirMutationNode reaching_node : mutation_graph.get_reaching_nodes()) {
+				if(reaching_node.get_status().is_executed()) {
+					this.conc_post_evaluate(reaching_node, state_path);
+				}
+			}
+		}
+	}
+	/**
+	 * perform dynamic analysis to count the reachability and propagation state in testing
+	 * @param mutation_graph
+	 * @param state_path
+	 * @throws Exception
+	 */
+	public void conc_evaluate(CirMutationGraph mutation_graph, CStatePath state_path) throws Exception {
 		if(mutation_graph == null)
 			throw new IllegalArgumentException("Invalid mutation_graph: null");
 		else if(state_path == null)
 			throw new IllegalArgumentException("Invalid state_path as null");
 		else {
 			mutation_graph.reset_status();
-			this.prev_evaluate(mutation_graph, state_path);
-			for(CirMutationNode seeded_node : mutation_graph.get_seeded_nodes()) {
-				if(this.reachable(seeded_node)) {
-					this.post_evaluate(seeded_node, state_path);
-				}
-			}
+			this.conc_prev_evaluate(mutation_graph, state_path);
+			this.conc_post_evaluate(mutation_graph, state_path);
 		}
 	}
-	public void static_evaluate(CirMutationGraph mutation_graph) throws Exception {
-		if(mutation_graph == null)
-			throw new IllegalArgumentException("Invalid mutation_graph as null");
-		else {
-			mutation_graph.reset_status();
-			
-			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
-			queue.add(mutation_graph.get_start_node()); Boolean result;
-			
-			while(!queue.isEmpty()) {
-				CirMutationNode node = queue.poll();
-				result = node.append_status(null);
-				if(result != null && !result.booleanValue()) continue;
-				
-				for(CirMutationEdge edge : node.get_ou_edges()) {
-					result = edge.append_status(null);
-					if(result == null || result.booleanValue()) {
-						queue.add(edge.get_target());
-					}
-				}
-			}
-		}
-	}
+	
+	/* abstract (static) analysis methods */
 	/**
+	 * Perform a context-insensitive static analysis on mutation branch tree
 	 * @param mutation_graph
-	 * @return the nodes as the terminal of the reaching range
 	 * @throws Exception
 	 */
-	public Collection<CirMutationNode> get_terminal_roots(CirMutationGraph mutation_graph) throws Exception {
-		Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
-		Set<CirMutationNode> terminals = new HashSet<CirMutationNode>();
-		queue.add(mutation_graph.get_start_node());
-		
-		while(!queue.isEmpty()) {
-			CirMutationNode node = queue.poll(); int counter = 0;
-			if(node.get_status().get_execution_times() != node.get_status().get_rejection_times()) {
-				for(CirMutationEdge edge : node.get_ou_edges()) {
-					if(edge.get_status().get_execution_times() != edge.get_status().get_rejection_times()) {
-						queue.add(edge.get_target()); counter++;
+	public void abst_evaluate(CirMutationGraph mutation_graph) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph: null");
+		else {
+			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+			queue.add(mutation_graph.get_start_node()); CirMutationNode node;
+			mutation_graph.reset_status(); Boolean result;
+			while(!queue.isEmpty()) {
+				node = queue.poll();
+				result = node.append_status(null);
+				if(result == null || result.booleanValue()) {
+					for(CirMutationEdge edge : node.get_ou_edges()) {
+						result = edge.append_status(null);
+						if(result == null || result.booleanValue()) {
+							queue.add(edge.get_target());
+						}
 					}
 				}
 			}
-			if(counter == 0) {
-				terminals.add(node);
-			}
 		}
-		
-		return terminals;
+	}
+	
+	/* acceptable border analysis */
+	/**
+	 * Find the edges and nodes as the border of the acceptable range, i.e. nodes that 
+	 * cannot be accepted yet their preconditions can, or terminal leafs of the graph.
+	 * @param mutation_graph
+	 * @return
+	 * @throws Exception
+	 */
+	public Set<Object> find_acceptable_border(CirMutationGraph mutation_graph) throws Exception {
+		if(mutation_graph == null)
+			throw new IllegalArgumentException("Invalid mutation_graph: null");
+		else {
+			Set<Object> border = new HashSet<Object>();
+			
+			Queue<CirMutationNode> queue = new LinkedList<CirMutationNode>();
+			queue.add(mutation_graph.get_start_node()); CirMutationNode node;
+			while(!queue.isEmpty()) {
+				node = queue.poll();
+				if(node.get_status().is_acceptable()) {
+					if(node.get_ou_degree() > 0) {
+						for(CirMutationEdge edge : node.get_ou_edges()) {
+							if(edge.get_status().is_acceptable()) {
+								queue.add(edge.get_target());
+							}
+							else {
+								border.add(edge);
+							}
+						}
+					}
+					else {
+						border.add(node);	/* leaf is on the border of acceptance. */
+					}
+				}
+				else {
+					border.add(node);
+				}
+			}
+			
+			return border;
+		}
 	}
 	
 }

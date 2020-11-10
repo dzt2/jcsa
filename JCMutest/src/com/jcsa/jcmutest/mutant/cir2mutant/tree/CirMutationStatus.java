@@ -120,4 +120,19 @@ public class CirMutationStatus {
 		return Boolean.TRUE;
 	}
 	
+	/* verifiers */
+	/**
+	 * @return whether the subject has been executed in analysis
+	 */
+	public boolean is_executed() { return this.execution_times > 0; }
+	/**
+	 * @return whether the subject was accepted at least once in testing
+	 */
+	public boolean is_accepted() { return this.acception_times > 0; }
+	/**
+	 * @return whether the subject can be accepted (accpetion_times > 0 or
+	 *         rejection_times < execution_times)
+	 */
+	public boolean is_acceptable() { return this.execution_times > this.rejection_times; }
+	
 }

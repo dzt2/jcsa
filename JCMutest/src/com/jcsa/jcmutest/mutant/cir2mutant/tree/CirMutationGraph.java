@@ -11,13 +11,11 @@ import java.util.Queue;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -35,7 +33,7 @@ public class CirMutationGraph {
 	private CirMutations cir_mutations;
 	private Mutant mutant;
 	private List<CirMutationNode> nodes;
-	private List<CirMutationNode> seeded_nodes;
+	private List<CirMutationNode> reaching_nodes;
 	private CirMutationGraph(Mutant mutant) throws Exception {
 		if(mutant == null)
 			throw new IllegalArgumentException("Invalid mutant: null");
@@ -43,7 +41,7 @@ public class CirMutationGraph {
 			this.mutant = mutant;
 			this.cir_mutations = new CirMutations(mutant.get_space().get_cir_tree());
 			this.nodes = new ArrayList<CirMutationNode>();
-			this.seeded_nodes = new ArrayList<CirMutationNode>();
+			this.reaching_nodes = new ArrayList<CirMutationNode>();
 		}
 	}
 	
@@ -77,9 +75,11 @@ public class CirMutationGraph {
 	 */
 	public Iterable<CirMutationNode> get_nodes() { return this.nodes; }
 	/**
-	 * @return nodes as the initial seed for infecting program state at faulty statement
+	 * @return the set of execution nodes as referred to the faulty statement being reached
+	 * 		   from which the gena-flow edge represents the direct infection after faulty
+	 * 		   statement is executed and program state is infected with an initial error.
 	 */
-	public Iterable<CirMutationNode> get_seeded_nodes() { return this.seeded_nodes; }
+	public Iterable<CirMutationNode> get_reaching_nodes() { return this.reaching_nodes; }
 	
 	/* node creators */
 	/**
@@ -91,7 +91,7 @@ public class CirMutationGraph {
 			node.delete();
 		}
 		this.nodes.clear();
-		this.seeded_nodes.clear();
+		this.reaching_nodes.clear();
 		
 		CirFunctionCallGraph fgraph = this.get_cir_tree().get_function_call_graph();
 		CirFunction main_function = fgraph.get_main_function();
@@ -141,9 +141,9 @@ public class CirMutationGraph {
 	 * @throws Exception
 	 */
 	private Collection<CirMutationNode> build_prefix_paths(CDependGraph dependence_graph) throws Exception {
-		this.clear_graph();
-		this.seeded_nodes.clear();
+		List<CirMutationNode> init_error_nodes = new ArrayList<CirMutationNode>();
 		
+		this.clear_graph();
 		if(this.mutant.has_cir_mutations()) {
 			Map<CirExecution, List<CirMutation>> reaching_map = new HashMap<CirExecution, List<CirMutation>>();
 			for(CirMutation cir_mutation : this.mutant.get_cir_mutations()) {
@@ -165,25 +165,19 @@ public class CirMutationGraph {
 					prev = true_next;
 				}
 				
+				this.reaching_nodes.add(prev);	/* add the reaching faulty statement */
+				
 				for(CirMutation cir_mutation : reaching_map.get(execution)) {
 					CirConstraint constraint = cir_mutation.get_constraint();
 					CirStateError state_error = cir_mutation.get_state_error();
 					CirMutationNode error_node = this.infection_node(state_error);
 					prev.link_to(CirMutationEdgeType.gena_flow, error_node, constraint);
-					this.seeded_nodes.add(error_node);
+					init_error_nodes.add(error_node);
 				}
 			}
 		}
 		
-		return this.seeded_nodes;
-	}
-	public static CirMutationGraph new_graph(Mutant mutant, CDependGraph dependence_graph, int maximal_distance) throws Exception {
-		CirMutationGraph graph = new CirMutationGraph(mutant);
-		Collection<CirMutationNode> roots = graph.build_prefix_paths(dependence_graph);
-		for(CirMutationNode root : roots) {
-			graph.build_from(root, dependence_graph, maximal_distance);
-		}
-		return graph;
+		return init_error_nodes;
 	}
 	/**
 	 * @param root
@@ -208,11 +202,6 @@ public class CirMutationGraph {
 			
 			if(prev.get_state_error() instanceof CirStateValueError) {
 				leafs.add(prev);
-			}
-			else if(prev.get_state_error() instanceof CirFlowError
-					|| prev.get_state_error() instanceof CirTrapError) {
-				prev.link_to(CirMutationEdgeType.path_flow, this.get_final_node(), cir_mutations.
-						expression_constraint(this.get_final_node().get_statement(), Boolean.TRUE, true));
 			}
 		}
 		
@@ -297,6 +286,22 @@ public class CirMutationGraph {
 				}
 			}
 		}
+	}
+	/**
+	 * create a mutation branch graph w.r.t. the mutant as given
+	 * @param mutant
+	 * @param dependence_graph used to build reachability and propagation edges
+	 * @param maximal_distance the maximal distance from the initial error nodes to following in propagation
+	 * @return 
+	 * @throws Exception
+	 */
+	public static CirMutationGraph new_graph(Mutant mutant, CDependGraph dependence_graph, int maximal_distance) throws Exception {
+		CirMutationGraph graph = new CirMutationGraph(mutant);
+		Collection<CirMutationNode> init_error_nodes = graph.build_prefix_paths(dependence_graph);
+		for(CirMutationNode init_error_node : init_error_nodes) {
+			graph.build_from(init_error_node, dependence_graph, maximal_distance);
+		}
+		return graph;
 	}
 	
 }

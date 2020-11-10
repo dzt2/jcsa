@@ -54,8 +54,6 @@ public class CirMutationGraphTest {
 		writer.write("\n");
 	}
 	private static void output_mutation_node(CirMutationNode node, FileWriter writer) throws Exception {
-		// node.append_status(null);
-		
 		writer.write("\tnode[" + node.hashCode() + "]");
 		writer.write("\t" + node.get_type());
 		writer.write("\t" + node.get_execution());
@@ -99,6 +97,30 @@ public class CirMutationGraphTest {
 			output_mutation_node(node, writer);
 		}
 		
+		writer.write("\tACCEPTANCE\n\t{\n");
+		for(Object subject : CirMutationUtils.utils.find_acceptable_border(graph)) {
+			writer.write("\t\t");
+			if(subject instanceof CirMutationEdge) {
+				CirMutationEdge edge = (CirMutationEdge) subject;
+				writer.write(edge.get_type() + "[" + edge.get_source().hashCode() + ", " + edge.get_target().hashCode() + "]");
+				writer.write("\t" + edge.get_constraint());
+				CirMutationStatus status = edge.get_status();
+				writer.write("\t[" + status.get_execution_times() + ", " + status.
+						get_acception_times() + ", " + status.get_rejection_times() + "]");
+			}
+			else {
+				CirMutationNode node = (CirMutationNode) subject;
+				writer.write("node[" + node.hashCode() + "]\t" + node.get_type() + "(" + node.get_execution() + ")");
+				if(node.has_state_error()) {
+					writer.write("\t" + node.get_state_error().toString());
+				}
+				CirMutationStatus status = node.get_status();
+				writer.write("\t[" + status.get_execution_times() + ", " + status.
+						get_acception_times() + ", " + status.get_rejection_times() + "]");
+			}
+			writer.write("\n");
+		}
+		writer.write("\t}\n");
 		writer.write("#END\n");
 	}
 	private static void output(MuTestProject project, File output) throws Exception {
@@ -111,7 +133,7 @@ public class CirMutationGraphTest {
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 			System.out.println("\t--> " + mutant.toString());
 			CirMutationGraph graph = CirMutationGraph.new_graph(mutant, dependence_graph, maximal_distance);
-			CirMutationUtils.utils.static_evaluate(graph);
+			CirMutationUtils.utils.abst_evaluate(graph);
 			output_mutation_graph(graph, writer);
 			writer.write("\n");
 		}

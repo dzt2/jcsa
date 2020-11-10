@@ -92,6 +92,14 @@ public class CirMutationNode {
 	 * @return edges pointing from this node to the others
 	 */ 
 	public Iterable<CirMutationEdge> get_ou_edges() { return this.ou_edges; }
+	/**
+	 * @return the number of edges pointing to this node from the others
+	 */
+	public int get_in_degree() { return this.in_edges.size(); }
+	/**
+	 * @return the number of edges pointing from this node to the others
+	 */
+	public int get_ou_degree() { return this.ou_edges.size(); }
 	
 	/* setters */
 	/**

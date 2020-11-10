@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -21,6 +24,21 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 	@Override
 	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,
 			CirNode target_location, Map<CirStateError, CirConstraint> propagations) throws Exception {
+		/* 0. extract the mutation argument */
+		SymExpression mutation_argument;
+		if(error instanceof CirExpressionError) {
+			mutation_argument = ((CirExpressionError) error).get_mutation_value();
+		}
+		else if(error instanceof CirStateValueError) {
+			mutation_argument = ((CirStateValueError) error).get_mutation_value();
+		}
+		else if(error instanceof CirReferenceError) {
+			mutation_argument = ((CirReferenceError) error).get_mutation_value();
+		}
+		else {
+			return;
+		}
+		
 		/* 1. declarations */
 		CirArgumentList alist = (CirArgumentList) target_location;
 		CirExpression source = (CirExpression) source_location;
@@ -36,7 +54,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 		List<Object> arguments = new ArrayList<Object>();
 		for(int k = 0; k < alist.number_of_arguments(); k++) {
 			if(alist.get_argument(k) == source) {
-				arguments.add(source);
+				arguments.add(mutation_argument);
 			}
 			else {
 				arguments.add(alist.get_argument(k));
