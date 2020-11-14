@@ -4,19 +4,8 @@ import com.jcsa.jcparse.lang.ctype.CType;
 
 public class SymIdentifier extends SymBasicExpression {
 	
-	public static final String AnyBoolean = "@BOOL";
-	public static final String AnyCharacter = "@CHAR";
-	public static final String AnyInteger = "@INTG";
-	public static final String AnyPosInteger = "@PINT";
-	public static final String AnyNegInteger = "@NINT";
-	public static final String AnyReal = "@REAL";
-	public static final String AnyPosReal = "@PREAL";
-	public static final String AnyNegReal = "@NREAL";
-	public static final String AnyAddress = "@ADDR";
-	public static final String AnySequence = "@BSEQ";
-	
 	private String name;
-	protected SymIdentifier(CType data_type, String name) throws IllegalArgumentException {
+	private SymIdentifier(CType data_type, String name) throws IllegalArgumentException {
 		super(data_type);
 		if(name == null || name.isBlank())
 			throw new IllegalArgumentException("Invalid name: null");
@@ -37,6 +26,17 @@ public class SymIdentifier extends SymBasicExpression {
 	@Override
 	public String generate_code() throws Exception {
 		return this.name;
+	}
+	
+	/**
+	 * {name: type} as symbolic identifier
+	 * @param data_type
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	protected static SymIdentifier create(CType data_type, String name) throws Exception {
+		return new SymIdentifier(data_type, name);
 	}
 	
 }

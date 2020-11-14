@@ -38,7 +38,7 @@ public class CirAssignPropagator implements CirErrorPropagator {
 			}
 			
 			if(muta_operand != null) {
-				muta_value = SymFactory.type_cast(reference.get_data_type(), muta_operand);
+				muta_value = SymFactory.type_casting(reference.get_data_type(), muta_operand);
 				constraint = cir_mutations.expression_constraint(target, Boolean.TRUE, true);
 				state_error = cir_mutations.state_error((CirReferExpression) reference, muta_value);
 				propagations.put(state_error, constraint);

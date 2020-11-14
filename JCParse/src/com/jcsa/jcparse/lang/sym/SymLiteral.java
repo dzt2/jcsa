@@ -6,7 +6,7 @@ public class SymLiteral extends SymBasicExpression {
 	
 	/* definitions */
 	private String literal;
-	protected SymLiteral(CType data_type, String literal) throws IllegalArgumentException {
+	private SymLiteral(CType data_type, String literal) throws IllegalArgumentException {
 		super(data_type);
 		if(literal == null)
 			throw new IllegalArgumentException("Invalid literal: null");
@@ -45,6 +45,16 @@ public class SymLiteral extends SymBasicExpression {
 		}
 		buffer.append("\"");
 		return buffer.toString();
+	}
+	
+	/**
+	 * @param data_type
+	 * @param literal
+	 * @return string literal as symbolic node
+	 * @throws Exception
+	 */
+	protected static SymLiteral create(CType data_type, String literal) throws Exception {
+		return new SymLiteral(data_type, literal);
 	}
 	
 }

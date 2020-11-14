@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 
 public class SymBinaryExpression extends SymExpression {
 
-	protected SymBinaryExpression(CType data_type) throws IllegalArgumentException {
+	private SymBinaryExpression(CType data_type) throws IllegalArgumentException {
 		super(data_type);
 	}
 	
@@ -33,6 +33,23 @@ public class SymBinaryExpression extends SymExpression {
 		return "(" + this.get_loperand().generate_code() + ") "
 				+ this.get_operator().generate_code() + " ("
 				+ this.get_roperand().generate_code() + ")";
+	}
+	
+	/**
+	 * @param data_type
+	 * @param operator
+	 * @param loperand
+	 * @param roperand
+	 * @return symbolic binary expression := {type; (operator, loperand, roperand) }
+	 * @throws Exception
+	 */
+	protected static SymBinaryExpression create(CType data_type, SymOperator operator, 
+			SymExpression loperand, SymExpression roperand) throws Exception {
+		SymBinaryExpression expression = new SymBinaryExpression(data_type);
+		expression.add_child(operator);
+		expression.add_child(loperand);
+		expression.add_child(roperand);
+		return expression;
 	}
 	
 }

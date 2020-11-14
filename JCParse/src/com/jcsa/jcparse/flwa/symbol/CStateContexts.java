@@ -13,7 +13,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.lang.sym.SymInvocate;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStateUnit;
@@ -65,15 +64,6 @@ public class CStateContexts {
 		else
 			throw new IllegalArgumentException("Unable to match");
 		*/
-	}
-	/**
-	 * save the value w.r.t. the key in current context
-	 * @param key {AstNode|CirNode|SymNode}
-	 * @param value
-	 * @throws Exception
-	 */
-	public void put(Object key, Object value) throws Exception {
-		this.context.put_value(key, value);
 	}
 	/**
 	 * add the invocation machine to the contexts.
@@ -131,7 +121,7 @@ public class CStateContexts {
 	 * @throws Exception
 	 */
 	public boolean has(Object key) throws Exception {
-		return this.context.has_value(key);
+		return this.context.has(key);
 	}
 	/**
 	 * @param key {AstNode|CirNode|SymNode}
@@ -139,7 +129,16 @@ public class CStateContexts {
 	 * @throws Exception
 	 */
 	public SymExpression get(Object key) throws Exception {
-		return this.context.get_value(key);
+		return this.context.get(key);
+	}
+	/**
+	 * save the value w.r.t. the key in current context
+	 * @param key {AstNode|CirNode|SymNode}
+	 * @param value
+	 * @throws Exception
+	 */
+	public void put(Object key, Object value) throws Exception {
+		this.context.put(key, value);
 	}
 	/**
 	 * @param source
@@ -183,7 +182,7 @@ public class CStateContexts {
 					CirExpression lvalue = ((CirAssignStatement) prev_statement).get_lvalue();
 					CirExpression rvalue = ((CirAssignStatement) prev_statement).get_rvalue();
 					if(node.get_prev_node().has_unit(rvalue)) {
-						this.context.put_value(lvalue, node.get_prev_node().get_unit(rvalue).get_value());
+						this.put(lvalue, node.get_prev_node().get_unit(rvalue).get_value());
 					}
 				}
 			}
@@ -207,58 +206,13 @@ public class CStateContexts {
 			}
 			
 			/* 4. accumulate the statement as being executed */
-			SymExpression sexpr = SymFactory.sym_statement(statement);
-			SymExpression value = this.context.get_value(sexpr);
+			SymExpression value = this.context.get(statement);
 			int counter = 0;
 			if(value != null) {
 				counter = ((SymConstant) value).get_int();
 			}
 			counter++;
-			this.context.put_value(sexpr, Integer.valueOf(counter));
-		}
-	}
-	/**
-	 * accumulate the symbolic valuation in node to this contexts 
-	 * @param node
-	 * @throws Exception
-	 */
-	public void accumulate(SymStateNode node) throws Exception {
-		if(node == null)
-			throw new IllegalArgumentException("Invalid node");
-		else {
-			/* 1. update the state contexts stack */
-			CirStatement statement = node.get_statement();
-			CirFunction def = statement.get_tree().get_localizer().
-					get_execution(statement).get_graph().get_function();
-			if(statement instanceof CirBegStatement) {
-				this.push(def);
-			}
-			else if(statement instanceof CirEndStatement) {
-				this.pop(def);
-			}
-			
-			/* 2. update the local state valuations */
-			for(SymStateUnit unit : node.get_state_units()) {
-				SymExpression source = unit.get_value();
-				SymExpression target = this.evaluate(source);
-				this.put(unit.get_location(), target);
-			}
-			if(statement instanceof CirAssignStatement) {
-				CirExpression lvalue = ((CirAssignStatement) statement).get_lvalue();
-				CirExpression rvalue = ((CirAssignStatement) statement).get_rvalue();
-				SymExpression right_sym_value = node.get_unit(rvalue).get_value();
-				this.context.put_value(lvalue, right_sym_value);
-			}
-			
-			/* 3. accumulate the statement counters */
-			SymExpression sexpr = SymFactory.sym_statement(statement);
-			SymExpression value = this.context.get_value(sexpr);
-			int counter = 0;
-			if(value != null) {
-				counter = ((SymConstant) value).get_int();
-			}
-			counter++;
-			this.context.put_value(sexpr, Integer.valueOf(counter));
+			this.context.put(statement, Integer.valueOf(counter));
 		}
 	}
 	

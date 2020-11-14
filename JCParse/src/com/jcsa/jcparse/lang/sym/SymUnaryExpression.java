@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
  */
 public class SymUnaryExpression extends SymExpression {
 
-	protected SymUnaryExpression(CType data_type) throws IllegalArgumentException {
+	private SymUnaryExpression(CType data_type) throws IllegalArgumentException {
 		super(data_type);
 	}
 	
@@ -34,5 +34,19 @@ public class SymUnaryExpression extends SymExpression {
 		return this.get_operator().generate_code() + "("
 				+ this.get_operand().generate_code() + ")";
 	}
-
+	
+	/**
+	 * @param data_type
+	 * @param operator
+	 * @param operand
+	 * @return unary expression as operator(operand)
+	 * @throws Exception
+	 */
+	protected static SymUnaryExpression create(CType data_type, SymOperator operator, SymExpression operand) throws Exception {
+		SymUnaryExpression expression = new SymUnaryExpression(data_type);
+		expression.add_child(operator);
+		expression.add_child(operand);
+		return expression;
+	}
+	
 }

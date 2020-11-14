@@ -9,7 +9,7 @@ public class SymField extends SymUnit {
 	
 	/* definitions */
 	private String name;
-	protected SymField(String name) throws IllegalArgumentException {
+	private SymField(String name) throws IllegalArgumentException {
 		if(name == null || name.isBlank()) {
 			throw new IllegalArgumentException("invalid name");
 		}
@@ -31,6 +31,15 @@ public class SymField extends SymUnit {
 	@Override
 	public String generate_code() throws Exception {
 		return this.name;
+	}
+	
+	/**
+	 * @param name
+	 * @return field := name
+	 * @throws Exception
+	 */
+	protected static SymField create(String name) throws Exception {
+		return new SymField(name);
 	}
 	
 }

@@ -26,5 +26,19 @@ public class SymFieldExpression extends SymExpression {
 		return "(" + this.get_body().generate_code() + 
 				")." + this.get_field().generate_code();
 	}
-
+	
+	/**
+	 * @param data_type
+	 * @param body
+	 * @param field
+	 * @return field expression := body.field
+	 * @throws Exception
+	 */
+	protected static SymFieldExpression create(CType data_type, SymExpression body, SymField field) throws Exception {
+		SymFieldExpression expression = new SymFieldExpression(data_type);
+		expression.add_child(body);
+		expression.add_child(field);
+		return expression;
+	}
+	
 }

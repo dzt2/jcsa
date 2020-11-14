@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 
 public class SymCallExpression extends SymExpression {
 
-	protected SymCallExpression(CType data_type) throws IllegalArgumentException {
+	private SymCallExpression(CType data_type) throws IllegalArgumentException {
 		super(data_type);
 	}
 	
@@ -27,5 +27,18 @@ public class SymCallExpression extends SymExpression {
 				this.get_argument_list().generate_code();
 	}
 	
-
+	/**
+	 * @param data_type
+	 * @param function
+	 * @param arguments
+	 * @return call-expression as function arguments
+	 * @throws Exception
+	 */
+	protected static SymCallExpression create(CType data_type, SymExpression function, SymArgumentList arguments) throws Exception {
+		SymCallExpression expression = new SymCallExpression(data_type);
+		expression.add_child(function);
+		expression.add_child(arguments);
+		return expression;
+	}
+	
 }

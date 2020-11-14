@@ -7,7 +7,7 @@ package com.jcsa.jcparse.lang.sym;
  */
 public class SymArgumentList extends SymUnit {
 	
-	protected SymArgumentList() {}
+	private SymArgumentList() {}
 	
 	/**
 	 * @return the number of arguments in the list
@@ -40,5 +40,18 @@ public class SymArgumentList extends SymUnit {
 		buffer.append(")");
 		return buffer.toString();
 	}
-
+	
+	/**
+	 * @param arguments
+	 * @return argument_list := ({expression}*)
+	 * @throws Exception
+	 */
+	protected static SymArgumentList create(Iterable<SymExpression> arguments) throws Exception {
+		SymArgumentList list = new SymArgumentList();
+		for(SymExpression argument : arguments) {
+			list.add_child(argument);
+		}
+		return list;
+	}
+	
 }

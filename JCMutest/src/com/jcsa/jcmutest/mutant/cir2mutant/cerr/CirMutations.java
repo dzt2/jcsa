@@ -112,7 +112,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public SymExpression condition_of(Object expression, boolean value) throws Exception {
-		SymExpression condition = SymFactory.parse(expression);
+		SymExpression condition = SymFactory.sym_expression(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) { }
@@ -145,7 +145,7 @@ public class CirMutations {
 	public CirConstraint expression_constraint(CirStatement statement,
 			Object expression, boolean value) throws Exception {
 		this.verify_location(statement);
-		SymExpression condition = SymFactory.parse(expression);
+		SymExpression condition = SymFactory.sym_expression(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) { }
@@ -179,7 +179,7 @@ public class CirMutations {
 	public CirConstraint statement_constraint(CirStatement statement, 
 			int minimal_times, int maximal_times) throws Exception {
 		this.verify_location(statement);
-		SymExpression stmt_id = SymFactory.sym_statement(statement);
+		SymExpression stmt_id = SymFactory.sym_expression(statement);
 		SymExpression lcondition = SymFactory.
 				greater_eq(stmt_id, Integer.valueOf(minimal_times));
 		SymExpression rcondition = SymFactory.
@@ -217,7 +217,7 @@ public class CirMutations {
 			SymExpression muta_value) throws Exception {
 		this.verify_location(expression);
 		return this.get_unique_state_error(new CirExpressionError(
-				expression, SymFactory.parse(expression), muta_value));
+				expression, SymFactory.sym_expression(expression), muta_value));
 	}
 	/**
 	 * @param reference
@@ -229,7 +229,7 @@ public class CirMutations {
 			SymExpression muta_value) throws Exception {
 		this.verify_location(reference);
 		return this.get_unique_state_error(new CirReferenceError(
-				reference, SymFactory.parse(reference), muta_value));
+				reference, SymFactory.sym_expression(reference), muta_value));
 	}
 	/**
 	 * @param reference
@@ -241,7 +241,7 @@ public class CirMutations {
 			SymExpression muta_value) throws Exception {
 		this.verify_location(reference);
 		return this.get_unique_state_error(new CirStateValueError(
-				reference, SymFactory.parse(reference), muta_value));
+				reference, SymFactory.sym_expression(reference), muta_value));
 	}
 	/**
 	 * @param constraint

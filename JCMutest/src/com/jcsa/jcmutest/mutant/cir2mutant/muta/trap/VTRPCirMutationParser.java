@@ -47,16 +47,16 @@ public class VTRPCirMutationParser extends CirMutationParser {
 						if(cname instanceof CInstanceName) {
 							CInstance instance = ((CInstanceName) cname).get_instance();
 							String identifier = cname.get_name() + "#" + scope.hashCode();
-							return SymFactory.new_identifier(instance.get_type(), identifier);
+							return SymFactory.identifier(instance.get_type(), identifier);
 						}
 						else if(cname instanceof CParameterName) {
 							CInstance instance = ((CParameterName) cname).get_parameter();
 							String identifier = cname.get_name() + "#" + scope.hashCode();
-							return SymFactory.new_identifier(instance.get_type(), identifier);
+							return SymFactory.identifier(instance.get_type(), identifier);
 						}
 						else if(cname instanceof CEnumeratorName) {
 							CEnumerator enumerator = ((CEnumeratorName) cname).get_enumerator();
-							return SymFactory.parse(Integer.valueOf(enumerator.get_value()));
+							return SymFactory.sym_expression(Integer.valueOf(enumerator.get_value()));
 						}
 						else {
 							throw new IllegalArgumentException(cname.getClass().getSimpleName());
@@ -73,7 +73,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			throw new IllegalArgumentException("Not in any scope.");
 		}
 		else {
-			return SymFactory.parse(parameter);
+			return SymFactory.sym_expression(parameter);
 		}
 	}
 	

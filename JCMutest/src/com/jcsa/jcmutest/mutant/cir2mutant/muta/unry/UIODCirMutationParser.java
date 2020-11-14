@@ -37,7 +37,7 @@ public class UIODCirMutationParser extends CirMutationParser {
 			CirComputeExpression expression = (CirComputeExpression) inc_statement.get_rvalue();
 			CirExpression loperand = expression.get_operand(0);
 			CirConstraint constraint = mutations.expression_constraint(inc_statement, Boolean.TRUE, true);
-			CirStateError state_error = mutations.expr_error(expression, SymFactory.parse(loperand));
+			CirStateError state_error = mutations.expr_error(expression, SymFactory.sym_expression(loperand));
 			infections.put(state_error, constraint);
 			break;
 		}

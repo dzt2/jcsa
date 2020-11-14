@@ -5,10 +5,9 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Random;
 
-import com.jcsa.jcparse.flwa.symbol.SymStateNode;
-import com.jcsa.jcparse.flwa.symbol.SymStateUnit;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.JCTestProject;
 import com.jcsa.jcparse.test.file.TestInput;
@@ -37,8 +36,8 @@ public class JCProjectResultTest {
 						project.get_test_part().number_of_test_inputs();
 				// if(!print_instrumental_lines(project, tid, writer)) k--;
 				// if(!print_instrumental_nodes(project, tid, writer)) k--;
-				// if(!print_instrumental_path(project, tid, writer)) k--;
-				if(!print_symbolic_path(project, tid, writer)) k++;
+				if(!print_instrumental_path(project, tid, writer)) k--;
+				// if(!print_symbolic_path(project, tid, writer)) k++;
 			}
 			writer.close();
 		}
@@ -120,6 +119,7 @@ public class JCProjectResultTest {
 	
 	protected static boolean print_instrumental_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
 		AstCirFile program = project.get_code_part().get_program(0);
+		SymFactory.config(program.get_run_template(), true);
 		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
 		try {
 			CStatePath path = project.get_result_part().load_instrumental_path(program.
@@ -133,37 +133,6 @@ public class JCProjectResultTest {
 					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
 					for(CStateUnit unit : node.get_units()) {
 						writer.write("\t--> " + unit.get_expression().generate_code(true) + 
-									 " \tas " + unit.get_value().generate_code() + "\n");
-					}
-					writer.write("\n");
-				}
-				writer.write("\n\n");
-				System.out.println("\t\tLoad path for Test#" + tid);
-			}
-			return path != null;
-		}
-		catch(Exception ex) {
-			throw ex;
-		}
-	}
-	
-	protected static boolean print_symbolic_path(JCTestProject project, int tid, FileWriter writer) throws Exception {
-		AstCirFile program = project.get_code_part().get_program(0);
-		TestInput input = project.get_test_part().get_test_inputs().get_input(tid);
-		try {
-			CStatePath path = project.get_result_part().load_instrumental_path(program.
-					get_run_template(), program.get_ast_tree(), program.get_cir_tree(), input);
-			if(path != null) {
-				List<SymStateNode> sym_path = SymStateNode.generate(path);
-				writer.write("Instrument Path for test[" + tid + "]:\n");
-				writer.write("Parameters: " + input.get_parameter() + "\n\n");
-				for(int index = 0; index < sym_path.size(); index++) {
-					SymStateNode node = sym_path.get(index);
-					writer.write("Node[" + index + "]::" + node.get_execution() + "\n");
-					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
-					writer.write("\tGuidance: " + node.get_guidance().generate_code() + "\n");
-					for(SymStateUnit unit : node.get_state_units()) {
-						writer.write("\t--> " + unit.get_location().generate_code(true) + 
 									 " \tas " + unit.get_value().generate_code() + "\n");
 					}
 					writer.write("\n");

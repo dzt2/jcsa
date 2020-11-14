@@ -4,14 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
+import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
-import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstOperator;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
@@ -20,20 +22,17 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstField;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
-import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
-import com.jcsa.jcparse.lang.ctype.CEnumType;
-import com.jcsa.jcparse.lang.ctype.CFunctionType;
-import com.jcsa.jcparse.lang.ctype.CPointerType;
-import com.jcsa.jcparse.lang.ctype.CStructType;
+import com.jcsa.jcparse.lang.ctype.CEnumerator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
-import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
@@ -41,6 +40,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
 import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirField;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
@@ -52,203 +52,295 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
+import com.jcsa.jcparse.lang.scope.CInstance;
 import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 
 /**
- * It provides interface to parse from AstNode or CirNode.
+ * It is used to generate symbolic nodes by parsing AstNode, CirNode, CirExecution, CirStatement, Boolean,
+ * Character, Short, Integer, Long, Float, Double, Complex and String.
  * 
  * @author yukimula
  *
  */
-public class SymParser {
+class SymParser {
 	
-	/* definitions */
-	private CRunTemplate sizeof_template;
+	/* singleton definitions */
+	/** private constructor **/
 	private SymParser() { }
-	private static final SymParser parser = new SymParser();
+	/** used to support sizeof operation **/
+	private CRunTemplate ast_run_template;
+	/** the CIR is optimized for default-value **/
+	private boolean cir_optimize_switch;
+	/** singleton instance of the parser **/
+	protected static final SymParser parser = new SymParser();
 	
-	/* parsed from AstNode */
-	private SymExpression parse_ast(AstExpression source) throws Exception {
-		SymExpression target;
+	/* parsing from SymNode */
+	/**
+	 * [bool]	--> expression 		{true}
+	 * 			-->	!expression		{false}
+	 * [number]	--> expression != 0	{true}
+	 * 			--> expression == 0	{false}
+	 * @param expression
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymExpression sym_condition(SymExpression expression, boolean value) throws Exception {
+		CType data_type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		if(CTypeAnalyzer.is_boolean(data_type)) {
+			if(value) {
+				return expression;
+			}
+			else {
+				return SymUnaryExpression.create(CBasicTypeImpl.bool_type, SymOperator.create(COperator.logic_not), expression);
+			}
+		}
+		else if(CTypeAnalyzer.is_number(data_type) || CTypeAnalyzer.is_pointer(data_type)) {
+			CConstant constant = new CConstant();
+			constant.set_int(0);
+			SymConstant zero = SymConstant.create(constant);
+			
+			SymOperator operator;
+			if(value) {
+				operator = SymOperator.create(COperator.not_equals);
+			}
+			else {
+				operator = SymOperator.create(COperator.equal_with);
+			}
+			
+			return SymBinaryExpression.create(CBasicTypeImpl.bool_type, operator, expression, zero);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + data_type.generate_code());
+		}
+	}
+	
+	/* parsing from AstNode */
+	/**
+	 * @param source
+	 * @param run_template
+	 * @return parse from ast-node w.r.t. the sizeof template
+	 * @throws Exception
+	 */
+	protected SymNode parse_ast(AstNode source, CRunTemplate run_template) throws Exception {
+		this.ast_run_template = run_template;
+		return this.parse_ast(source);
+	}
+	/**
+	 * @param source
+	 * @return symbolic node parsed from abstract syntactic node
+	 * @throws Exception
+	 */
+	private SymNode parse_ast(AstNode source) throws Exception {
+		SymNode solution;
+		
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(source instanceof AstIdExpression)
-			target = this.parse_id_expression((AstIdExpression) source);
+			solution = this.parse_id_expression((AstIdExpression) source);
 		else if(source instanceof AstConstant)
-			target = this.parse_constant((AstConstant) source);
+			solution = this.parse_constant((AstConstant) source);
 		else if(source instanceof AstLiteral)
-			target = this.parse_literal((AstLiteral) source);
-		else if(source instanceof AstArrayExpression)
-			target = this.parse_array_expression((AstArrayExpression) source);
-		else if(source instanceof AstCastExpression)
-			target = this.parse_cast_expression((AstCastExpression) source);
-		else if(source instanceof AstCommaExpression)
-			target = this.parse_comma_expression((AstCommaExpression) source);
-		else if(source instanceof AstConstExpression)
-			target = this.parse_const_expression((AstConstExpression) source);
-		else if(source instanceof AstParanthExpression)
-			target = this.parse_paranth_expression((AstParanthExpression) source);
-		else if(source instanceof AstFunCallExpression)
-			target = this.parse_call_expression((AstFunCallExpression) source);
-		else if(source instanceof AstFieldExpression)
-			target = this.parse_field_expression((AstFieldExpression) source);
-		else if(source instanceof AstInitializerBody)
-			target = this.parse_initializer_body((AstInitializerBody) source);
-		else if(source instanceof AstSizeofExpression)
-			target = this.parse_sizeof_expression((AstSizeofExpression) source);
-		else if(source instanceof AstPostfixExpression)
-			target = this.parse_postfix_expression((AstPostfixExpression) source);
+			solution = this.parse_literal((AstLiteral) source);
+		else if(source instanceof AstOperator)
+			solution = this.parse_operator((AstOperator) source);
 		else if(source instanceof AstUnaryExpression)
-			target = this.parse_unary_expression((AstUnaryExpression) source);
+			solution = this.parse_unary_expression((AstUnaryExpression) source);
 		else if(source instanceof AstBinaryExpression)
-			target = this.parse_binary_expression((AstBinaryExpression) source);
+			solution = this.parse_binary_expression((AstBinaryExpression) source);
+		else if(source instanceof AstPostfixExpression)
+			solution = this.parse_postfix_expression((AstPostfixExpression) source);
+		else if(source instanceof AstArrayExpression)
+			solution = this.parse_array_expression((AstArrayExpression) source);
+		else if(source instanceof AstCastExpression)
+			solution = this.parse_cast_expression((AstCastExpression) source);
+		else if(source instanceof AstCommaExpression)
+			solution = this.parse_comma_expression((AstCommaExpression) source);
+		else if(source instanceof AstConstExpression)
+			solution = this.parse_const_expression((AstConstExpression) source);
+		else if(source instanceof AstParanthExpression)
+			solution = this.parse_paranth_expression((AstParanthExpression) source);
 		else if(source instanceof AstConditionalExpression)
-			target = this.parse_conditional_expression((AstConditionalExpression) source);
-		else 
-			throw new IllegalArgumentException("Unsupport: " + source);
-		target.set_source(source);
-		return target;
-	}
-	private SymExpression parse_id_expression(AstIdExpression source) throws Exception {
-		CName cname = source.get_cname();
-		if(cname instanceof CInstanceName) {
-			CType data_type = ((CInstanceName) cname).get_instance().get_type();
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return new SymIdentifier(data_type, name);
-		}
-		else if(cname instanceof CParameterName) {
-			CType data_type = ((CParameterName) cname).get_parameter().get_type();
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return new SymIdentifier(data_type, name);
-		}
-		else if(cname instanceof CEnumeratorName) {
-			int value = ((CEnumeratorName) cname).get_enumerator().get_value();
-			CConstant constant = new CConstant(); constant.set_int(value);
-			return new SymConstant(CBasicTypeImpl.int_type, constant);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + cname.get_name());
-		}
-	}
-	private SymExpression parse_constant(AstConstant source) throws Exception {
-		return new SymConstant(source.get_value_type(), source.get_constant());
-	}
-	private SymExpression parse_literal(AstLiteral source) throws Exception {
-		return new SymLiteral(source.get_value_type(), source.get_literal());
-	}
-	private SymExpression parse_array_expression(AstArrayExpression source) throws Exception {
-		SymExpression base = this.parse_ast(source.get_array_expression());
-		SymExpression bias = this.parse_ast(source.get_dimension_expression());
-		SymExpression addr = SymFactory.arith_add(base.get_data_type(), base, bias);
-		return SymFactory.dereference(source.get_value_type(), addr);
-	}
-	private SymExpression parse_cast_expression(AstCastExpression source) throws Exception {
-		SymExpression operand = this.parse_ast(source.get_expression());
-		return SymFactory.type_cast(source.get_value_type(), operand);
-	}
-	private SymExpression parse_comma_expression(AstCommaExpression source) throws Exception {
-		int index = source.number_of_arguments() - 1;
-		return this.parse_ast(source.get_expression(index));
-	}
-	private SymExpression parse_const_expression(AstConstExpression source) throws Exception {
-		return this.parse_ast(source.get_expression());
-	}
-	private SymExpression parse_paranth_expression(AstParanthExpression source) throws Exception {
-		return this.parse_ast(source.get_sub_expression());
-	}
-	private SymExpression parse_call_expression(AstFunCallExpression source) throws Exception {
-		SymExpression function = this.parse_ast(source.get_function());
-		List<Object> arguments = new ArrayList<Object>();
-		if(source.has_argument_list()) {
-			AstArgumentList alist = source.get_argument_list();
-			for(int k = 0; k < alist.number_of_arguments(); k++) {
-				arguments.add(this.parse_ast(alist.get_argument(k)));
-			}
-		}
-		return SymFactory.call_expression(source.get_value_type(), function, arguments);
-	}
-	private CType find_pointed_type(CType data_type) throws Exception {
-		data_type = CTypeAnalyzer.get_value_type(data_type);
-		if(data_type instanceof CArrayType) {
-			return ((CArrayType) data_type).get_element_type();
-		}
-		else if(data_type instanceof CPointerType) {
-			return ((CPointerType) data_type).get_pointed_type();
-		}
-		else {
-			throw new IllegalArgumentException(data_type.generate_code());
-		}
-	}
-	private SymExpression parse_field_expression(AstFieldExpression source) throws Exception {
-		SymExpression body = this.parse_ast(source.get_body());
-		String name = source.get_field().get_name();
-		
-		if(source.get_operator().get_punctuator() == CPunctuator.arrow) {
-			CType type = this.find_pointed_type(body.get_data_type());
-			body = SymFactory.dereference(type, body);
-		}
-		
-		return SymFactory.field_expression(source.get_value_type(), body, name);
-	}
-	private SymExpression parse_initializer_body(AstInitializerBody source) throws Exception {
-		List<Object> elements = new ArrayList<Object>();
-		AstInitializerList list = source.get_initializer_list();
-		for(int k = 0; k < list.number_of_initializer(); k++) {
-			AstInitializer ik = list.get_initializer(k).get_initializer();
-			if(ik.is_body())
-				elements.add(this.parse_ast(ik.get_body()));
-			else
-				elements.add(this.parse_ast(ik.get_expression()));
-		}
-		return SymFactory.initializer_list(source.get_value_type(), elements);
-	}
-	private SymExpression parse_sizeof_expression(AstSizeofExpression source) throws Exception {
-		CType data_type;
-		if(source.is_expression())
-			data_type = source.get_expression().get_value_type();
+			solution = this.parse_conditional_expression((AstConditionalExpression) source);
+		else if(source instanceof AstField)
+			solution = this.parse_field((AstField) source);
+		else if(source instanceof AstFieldExpression)
+			solution = this.parse_field_expression((AstFieldExpression) source);
+		else if(source instanceof AstArgumentList)
+			solution = this.parse_argument_list((AstArgumentList) source);
+		else if(source instanceof AstFunCallExpression)
+			solution = this.parse_fun_call_expression((AstFunCallExpression) source);
+		else if(source instanceof AstInitializer)
+			solution = this.parse_initializer((AstInitializer) source);
+		else if(source instanceof AstInitializerBody)
+			solution = this.parse_initializer_body((AstInitializerBody) source);
+		else if(source instanceof AstFieldInitializer)
+			solution = this.parse_field_initializer((AstFieldInitializer) source);
+		else if(source instanceof AstSizeofExpression)
+			solution = this.parse_sizeof_expression((AstSizeofExpression) source);
 		else
-			data_type = source.get_typename().get_type();
-		data_type = CTypeAnalyzer.get_value_type(data_type);
-		if(this.sizeof_template == null) {
-			return SymFactory.new_identifier(source.
-					get_value_type(), SymIdentifier.AnyPosInteger);
+			throw new IllegalArgumentException("Unsupported: " + source);
+		
+		if(!solution.has_source()) solution.set_source(source);
+		
+		return solution;
+	}
+	/**
+	 * identifier 	--> sym_identifier 	{non-enumerator}
+	 * 				--> sym_constant	{enumerator}
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_id_expression(AstIdExpression source) throws Exception {
+		CName cname = source.get_cname();
+		/* 1. identifier as declarator --> sym_identifier */
+		if(cname instanceof CInstanceName) {
+			CInstance instance = ((CInstanceName) cname).get_instance();
+			return SymIdentifier.create(instance.get_type(), cname.get_name());
+		}
+		/* 2. identifier as parameter --> sym_identifier */
+		else if(cname instanceof CParameterName) {
+			CInstance instance = ((CParameterName) cname).get_parameter();
+			return SymIdentifier.create(instance.get_type(), cname.get_name());
+		}
+		/* 3. identifier as enumerator --> sym_constant(int) */
+		else if(cname instanceof CEnumeratorName) {
+			CEnumerator enumerator = ((CEnumeratorName) cname).get_enumerator();
+			CConstant int_constant = new CConstant();
+			int_constant.set_int(enumerator.get_value());
+			return SymConstant.create(int_constant);
 		}
 		else {
-			int value = this.sizeof_template.sizeof(data_type);
-			return SymFactory.new_constant(Integer.valueOf(value));
+			throw new IllegalArgumentException("Invalid: " + cname);
 		}
 	}
-	private SymExpression parse_postfix_expression(AstPostfixExpression source) throws Exception {
-		switch(source.get_operator().get_operator()) {
-		case increment:
-		case decrement:	return this.parse_ast(source.get_operand());
-		default: throw new IllegalArgumentException(source.generate_code());
-		}
+	/**
+	 * constant --> sym_constant(numeric)
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_constant(AstConstant source) throws Exception {
+		CConstant constant = source.get_constant();
+		return SymConstant.create(constant);
 	}
-	private SymExpression parse_unary_expression(AstUnaryExpression source) throws Exception {
-		SymExpression operand = this.parse_ast(source.get_operand());
-		switch(source.get_operator().get_operator()) {
-		case positive:		return operand;
-		case negative:		return SymFactory.arith_neg(source.get_value_type(), operand);
-		case bit_not:		return SymFactory.bitws_rsv(source.get_value_type(), operand);
-		case logic_not:		return SymFactory.logic_not(operand);
-		case address_of:	return SymFactory.address_of(source.get_value_type(), operand);
-		case dereference:	return SymFactory.dereference(source.get_value_type(), operand);
-		case increment:		return SymFactory.arith_add(source.get_value_type(), operand, Integer.valueOf(1));
-		case decrement:		return SymFactory.arith_sub(source.get_value_type(), operand, Integer.valueOf(1));
-		default: throw new IllegalArgumentException(source.generate_code());
-		}
+	/**
+	 * literal --> sym_literal
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_literal(AstLiteral source) throws Exception {
+		return SymLiteral.create(source.get_value_type(), source.get_literal());
 	}
-	private SymExpression parse_binary_expression(AstBinaryExpression source) throws Exception {
-		SymExpression loperand = this.parse_ast(source.get_loperand());
-		SymExpression roperand = this.parse_ast(source.get_roperand());
+	/**
+	 * @param source
+	 * @return sym_operator referred to operator of ast_node
+	 * @throws Exception
+	 */
+	private SymNode parse_operator(AstOperator source) throws Exception {
+		return SymOperator.create(source.get_operator());
+	}
+	/**
+	 * 	+x	--> {x}
+	 * 	-x	--> -{x}
+	 * 	*x	--> defer{x}
+	 * 	&x	--> addrs{x}
+	 * 	~x	--> ~{x}
+	 * 	++x	--> {x} + 1
+	 * 	--x	--> {x} - 1
+	 * 	!x	--> !{x}
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_unary_expression(AstUnaryExpression source) throws Exception {
+		/* recursively parse the operand of the unary expression */
 		COperator operator = source.get_operator().get_operator();
+		SymExpression operand = (SymExpression) this.parse_ast(source.get_operand());
+		CType data_type = source.get_value_type();
 		
+		/* syntax-directed translation */
 		switch(operator) {
+		case positive:				/* +x --> {x} */
+		{
+			return operand;
+		}
+		case negative:				/* -x --> -{x} */
+		case bit_not:				/* ~x --> ~{x} */
+		case address_of:			/* &x --> &{x} */
+		case dereference:			/* *x --> *{x} */
+		{
+			return SymUnaryExpression.create(data_type, SymOperator.create(operator), operand);
+		}
+		case logic_not:				/* !x --> !(condition(x)) */
+		{
+			return this.sym_condition(operand, false);
+		}
+		case increment:				/* ++x --> x + 1 */
+		{
+			CConstant constant = new CConstant();
+			constant.set_int(1);
+			SymExpression roperand = SymConstant.create(constant);
+			return SymBinaryExpression.create(data_type, SymOperator.create(COperator.arith_add), operand, roperand);
+		}
+		case decrement:				/* --x --> x - 1 */
+		{
+			CConstant constant = new CConstant();
+			constant.set_int(1);
+			SymExpression roperand = SymConstant.create(constant);
+			return SymBinaryExpression.create(data_type, SymOperator.create(COperator.arith_sub), operand, roperand);
+		}
+		default: throw new IllegalArgumentException(source.generate_code());
+		}
+	}
+	/**
+	 * @param source
+	 * @return x++ --> {x} & x-- --> {x}
+	 * @throws Exception
+	 */
+	private SymNode parse_postfix_expression(AstPostfixExpression source) throws Exception {
+		return this.parse_ast(source.get_operand());
+	}
+	/**
+	 * @param source
+	 * @return operator(loperand, roperand)
+	 * @throws Exception
+	 */
+	private SymNode parse_binary_expression(AstBinaryExpression source) throws Exception {
+		/* recursively solve the operator and operands */
+		COperator operator = source.get_operator().get_operator();
+		SymExpression loperand = (SymExpression) this.parse_ast(source.get_loperand());
+		SymExpression roperand = (SymExpression) this.parse_ast(source.get_roperand());
+		CType data_type = source.get_value_type();
+		
+		/* operator-oriented parsing algorithms */
+		switch(operator) {
+		case arith_add:
+		case arith_sub:
+		case arith_mul:
+		case arith_div:
+		case arith_mod:
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case left_shift:
+		case righ_shift:
+		case logic_and:
+		case logic_or:
+		case greater_tn:
+		case greater_eq:
+		case smaller_tn:
+		case smaller_eq:
+		case equal_with:
+		case not_equals:
+		{
+			return SymBinaryExpression.create(data_type, SymOperator.create(operator), loperand, roperand);
+		}
 		case arith_add_assign:
 		case arith_sub_assign:
 		case arith_mul_assign:
@@ -258,214 +350,490 @@ public class SymParser {
 		case bit_or_assign:
 		case bit_xor_assign:
 		case left_shift_assign:
-		case righ_shift_assign:
+		case righ_shift_assign:			/* x += y --> x + y */
 		{
-			String code = operator.toString();
-			code = code.substring(0, code.length() - 7);
-			operator = COperator.valueOf(code.strip());
+			String operator_name = operator.toString();
+			operator_name = operator_name.substring(0, operator_name.length() - 7);
+			operator = COperator.valueOf(operator_name.strip());
+			return SymBinaryExpression.create(data_type, SymOperator.create(operator), loperand, roperand);
 		}
-		default:		break;
+		case assign:					/* x = y --> cast(type, y) */
+		{
+			return SymUnaryExpression.create(data_type, SymOperator.create(COperator.assign), roperand);
 		}
-		
-		CType type = source.get_value_type();
-		switch(operator) {
-		case arith_add:		return SymFactory.arith_add(type, loperand, roperand);
-		case arith_sub:		return SymFactory.arith_sub(type, loperand, roperand);
-		case arith_mul:		return SymFactory.arith_mul(type, loperand, roperand);
-		case arith_div:		return SymFactory.arith_div(type, loperand, roperand);
-		case arith_mod:		return SymFactory.arith_mod(type, loperand, roperand);
-		case bit_and:		return SymFactory.bitws_and(type, loperand, roperand);
-		case bit_or:		return SymFactory.bitws_ior(type, loperand, roperand);
-		case bit_xor:		return SymFactory.bitws_xor(type, loperand, roperand);
-		case left_shift:	return SymFactory.bitws_lsh(type, loperand, roperand);
-		case righ_shift:	return SymFactory.bitws_rsh(type, loperand, roperand);
-		case logic_and:		return SymFactory.logic_and(loperand, roperand);
-		case logic_or:		return SymFactory.logic_ior(loperand, roperand);
-		case greater_tn:	return SymFactory.greater_tn(loperand, roperand);
-		case greater_eq:	return SymFactory.greater_eq(loperand, roperand);
-		case smaller_tn:	return SymFactory.smaller_tn(loperand, roperand);
-		case smaller_eq:	return SymFactory.smaller_eq(loperand, roperand);
-		case equal_with:	return SymFactory.equal_with(loperand, roperand);
-		case not_equals:	return SymFactory.not_equals(loperand, roperand);
-		case assign:		return roperand;
-		default:	throw new IllegalArgumentException("Invalid operator");
+		default: throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private SymExpression parse_conditional_expression(AstConditionalExpression source) throws Exception {
-		SymExpression condition = this.parse_ast(source.get_condition());
-		SymExpression toperand = this.parse_ast(source.get_true_branch());
-		SymExpression foperand = this.parse_ast(source.get_false_branch());
-		SymExpression ncondition = SymFactory.logic_not(condition);
+	/**
+	 * @param source
+	 * @return x[y] --> *(x + y)
+	 * @throws Exception
+	 */
+	private SymNode parse_array_expression(AstArrayExpression source) throws Exception {
+		SymExpression base_address = (SymExpression) this.parse_ast(source.get_array_expression());
+		SymExpression bias_address = (SymExpression) this.parse_ast(source.get_dimension_expression());
+		SymExpression address = SymBinaryExpression.create(base_address.get_data_type(), 
+				SymOperator.create(COperator.arith_add), base_address, bias_address);
+		return SymUnaryExpression.create(source.get_value_type(), SymOperator.create(COperator.dereference), address);
+	}
+	/**
+	 * @param source
+	 * @return (type)(= operand)
+	 * @throws Exception
+	 */
+	private SymNode parse_cast_expression(AstCastExpression source) throws Exception {
+		SymExpression operand = (SymExpression) this.parse_ast(source.get_expression());
+		CType data_type = source.get_typename().get_type();
+		return SymUnaryExpression.create(data_type, SymOperator.create(COperator.assign), operand);
+	}
+	/**
+	 * @param source
+	 * @return x1, x2, ..., xn --> {xn}
+	 * @throws Exception
+	 */
+	private SymNode parse_comma_expression(AstCommaExpression source) throws Exception {
+		int number = source.number_of_arguments();
+		return this.parse_ast(source.get_expression(number - 1));
+	}
+	/**
+	 * x ? y : z --> x * y + !x * z
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_conditional_expression(AstConditionalExpression source) throws Exception {
+		SymExpression x = (SymExpression) this.parse_ast(source.get_condition());
+		SymExpression y = (SymExpression) this.parse_ast(source.get_true_branch());
+		SymExpression z = (SymExpression) this.parse_ast(source.get_false_branch());
 		
-		SymExpression loperand = SymFactory.
-				arith_mul(source.get_value_type(), condition, toperand);
-		SymExpression roperand = SymFactory.
-				arith_mul(source.get_value_type(), ncondition, foperand);
-		return SymFactory.arith_add(source.get_value_type(), loperand, roperand);
+		SymExpression tcondition = this.sym_condition(x, true);
+		SymExpression fcondition = this.sym_condition(x, false);
+		
+		SymExpression loperand = SymBinaryExpression.create(y.get_data_type(), 
+				SymOperator.create(COperator.arith_mul), tcondition, y);
+		SymExpression roperand = SymBinaryExpression.create(z.get_data_type(), 
+				SymOperator.create(COperator.arith_mul), fcondition, z);
+		
+		return SymBinaryExpression.create(source.get_value_type(), 
+				SymOperator.create(COperator.arith_add), loperand, roperand);
+	}
+	/**
+	 * @param source
+	 * @return recurively solving
+	 * @throws Exception
+	 */
+	private SymNode parse_const_expression(AstConstExpression source) throws Exception {
+		return this.parse_ast(source.get_expression());
+	}
+	/**
+	 * @param source
+	 * @return recurively solving
+	 * @throws Exception
+	 */
+	private SymNode parse_paranth_expression(AstParanthExpression source) throws Exception {
+		return this.parse_ast(source.get_sub_expression());
+	}
+	/**
+	 * @param source
+	 * @return sym_field as field.name
+	 * @throws Exception
+	 */
+	private SymNode parse_field(AstField source) throws Exception {
+		return SymField.create(source.get_name());
+	}
+	/**
+	 * @param source
+	 * @return field_expression as {body}.{field}
+	 * @throws Exception
+	 */
+	private SymNode parse_field_expression(AstFieldExpression source) throws Exception {
+		SymExpression body = (SymExpression) this.parse_ast(source.get_body());
+		SymField field = (SymField) this.parse_ast(source.get_field());
+		return SymFieldExpression.create(source.get_value_type(), body, field);
+	}
+	/**
+	 * @param source
+	 * @return argument_list |-- ({expression}*)
+	 * @throws Exception
+	 */
+	private SymNode parse_argument_list(AstArgumentList source) throws Exception {
+		List<SymExpression> arguments = new ArrayList<SymExpression>();
+		for(int k = 0; k < source.number_of_arguments(); k++) {
+			arguments.add((SymExpression) this.parse_ast(source.get_argument(k)));
+		}
+		return SymArgumentList.create(arguments);
+	}
+	/**
+	 * @param source
+	 * @return function argument_list
+	 * @throws Exception
+	 */
+	private SymNode parse_fun_call_expression(AstFunCallExpression source) throws Exception {
+		SymExpression function = (SymExpression) this.parse_ast(source.get_function());
+		SymArgumentList arguments = (SymArgumentList) this.parse_ast(source.get_argument_list());
+		return SymCallExpression.create(source.get_value_type(), function, arguments);
+	}
+	/**
+	 * @param source
+	 * @return initializer body | expression
+	 * @throws Exception
+	 */
+	private SymNode parse_initializer(AstInitializer source) throws Exception {
+		if(source.is_body())
+			return this.parse_ast(source.get_body());
+		else
+			return this.parse_ast(source.get_expression());
+	}
+	/**
+	 * @param source
+	 * @return parse from initializer body
+	 * @throws Exception
+	 */
+	private SymNode parse_initializer_body(AstInitializerBody source) throws Exception {
+		List<SymExpression> elements = new ArrayList<SymExpression>();
+		
+		AstInitializerList list = source.get_initializer_list();
+		for(int k = 0; k < list.number_of_initializer(); k++) {
+			AstFieldInitializer field_initializer = list.get_initializer(k);
+			elements.add((SymExpression) this.parse_ast(field_initializer));
+		}
+		
+		return SymInitializerList.create(source.get_value_type(), elements);
+	}
+	/**
+	 * @param source
+	 * @return parse from field initializer
+	 * @throws Exception
+	 */
+	private SymNode parse_field_initializer(AstFieldInitializer source) throws Exception {
+		return this.parse_ast(source.get_initializer());
+	}
+	/**
+	 * @param source
+	 * @return this needs CRunTemplate to support sizeof computation
+	 * @throws Exception
+	 */
+	private SymNode parse_sizeof_expression(AstSizeofExpression source) throws Exception {
+		CType data_type;
+		if(source.is_expression())
+			data_type = source.get_expression().get_value_type();
+		else
+			data_type = source.get_typename().get_type();
+		data_type = CTypeAnalyzer.get_value_type(data_type);
+		
+		CConstant constant = new CConstant();
+		if(this.ast_run_template == null)
+			throw new IllegalArgumentException("Not support sizeof operator");
+		else
+			constant.set_int(this.ast_run_template.sizeof(data_type));
+		
+		return SymConstant.create(constant);
 	}
 	
-	/* parsed from CirNode */
-	private SymExpression parse_cir(CirExpression source) throws Exception {
-		SymExpression target;
+	/* parsing from CirNode */
+	/**
+	 * @param source
+	 * @param cir_optimize whether to optimize the initialized value of default-value
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymNode parse_cir(CirNode source, boolean cir_optimize) throws Exception {
+		this.cir_optimize_switch = cir_optimize;
+		return this.parse_cir(source);
+	}
+	/**
+	 * @param source
+	 * @return parse from C-intermediate representation
+	 * @throws Exception
+	 */
+	private SymNode parse_cir(CirNode source) throws Exception {
+		SymNode solution;
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(source instanceof CirNameExpression)
-			target = this.parse_name_expression((CirNameExpression) source);
+			solution = this.parse_name_expression((CirNameExpression) source);
 		else if(source instanceof CirConstExpression)
-			target = this.parse_constant((CirConstExpression) source);
+			solution = this.parse_cir_const_expression((CirConstExpression) source);
 		else if(source instanceof CirStringLiteral)
-			target = this.parse_string_literal((CirStringLiteral) source);
-		else if(source instanceof CirFieldExpression)
-			target = this.parse_field_expression((CirFieldExpression) source);
-		else if(source instanceof CirDeferExpression)
-			target = this.parse_defer_expression((CirDeferExpression) source);
+			solution = this.parse_string_literal((CirStringLiteral) source);
 		else if(source instanceof CirAddressExpression)
-			target = this.parse_address_expression((CirAddressExpression) source);
+			solution = this.parse_address_expression((CirAddressExpression) source);
+		else if(source instanceof CirDeferExpression)
+			solution = this.parse_defer_expression((CirDeferExpression) source);
+		else if(source instanceof CirField)
+			solution = this.parse_field((CirField) source);
+		else if(source instanceof CirFieldExpression)
+			solution = this.parse_field_expression((CirFieldExpression) source);
 		else if(source instanceof CirCastExpression)
-			target = this.parse_cast_expression((CirCastExpression) source);
-		else if(source instanceof CirComputeExpression)
-			target = this.parse_compute_expression((CirComputeExpression) source);
+			solution = this.parse_cast_expression((CirCastExpression) source);
 		else if(source instanceof CirDefaultValue)
-			target = this.parse_default_value((CirDefaultValue) source);
+			solution = this.parse_default_value((CirDefaultValue) source);
 		else if(source instanceof CirInitializerBody)
-			target = this.parse_initializer_body((CirInitializerBody) source);
+			solution = this.parse_initializer_body((CirInitializerBody) source);
+		else if(source instanceof CirArgumentList)
+			solution = this.parse_argument_list((CirArgumentList) source);
 		else if(source instanceof CirWaitExpression)
-			target = this.parse_wait_expression((CirWaitExpression) source);
+			solution = this.parse_wait_expression((CirWaitExpression) source);
+		else if(source instanceof CirComputeExpression)
+			solution = this.parse_compute_expression((CirComputeExpression) source);
 		else
-			throw new IllegalArgumentException("Unsupport: " + source);
-		target.set_source(source);
-		return target;
-	}
-	private SymExpression parse_name_expression(CirNameExpression source) throws Exception {
-		return SymFactory.new_identifier(source.get_data_type(), source.get_unique_name());
-	}
-	private SymExpression parse_constant(CirConstExpression source) throws Exception {
-		return SymFactory.new_constant(source.get_constant());
-	}
-	private SymExpression parse_string_literal(CirStringLiteral source) throws Exception {
-		return SymFactory.new_literal(source.get_data_type(), source.get_literal());
-	}
-	private SymExpression parse_field_expression(CirFieldExpression source) throws Exception {
-		SymExpression body = this.parse_cir(source.get_body());
-		return SymFactory.field_expression(source.
-				get_data_type(), body, source.get_field().get_name());
-	}
-	private SymExpression parse_defer_expression(CirDeferExpression source) throws Exception {
-		SymExpression operand = this.parse_cir(source.get_address());
-		return SymFactory.dereference(source.get_data_type(), operand);
-	}
-	private SymExpression parse_address_expression(CirAddressExpression source) throws Exception {
-		SymExpression operand = this.parse_cir(source.get_operand());
-		return SymFactory.address_of(source.get_data_type(), operand);
-	}
-	private SymExpression parse_cast_expression(CirCastExpression source) throws Exception {
-		SymExpression operand = this.parse_cir(source.get_operand());
-		return SymFactory.type_cast(source.get_data_type(), operand);
-	}
-	private SymExpression parse_compute_expression(CirComputeExpression source) throws Exception {
-		CType type = source.get_data_type();
-		SymExpression operand = this.parse_cir(source.get_operand(0));
-		SymExpression loperand = operand, roperand = null;
-		if(source.number_of_operand() == 2) {
-			roperand = this.parse_cir(source.get_operand(1));
-		}
+			throw new IllegalArgumentException(source.generate_code(true));
+		if(!solution.has_source()) solution.set_source(source);
+		return solution;
 		
-		switch(source.get_operator()) {
-		case negative:		return SymFactory.arith_neg(type, operand);
-		case bit_not:		return SymFactory.bitws_rsv(type, operand);
-		case logic_not:		return SymFactory.logic_not(operand);
-		case arith_add:		return SymFactory.arith_add(type, loperand, roperand);
-		case arith_sub:		return SymFactory.arith_sub(type, loperand, roperand);
-		case arith_mul:		return SymFactory.arith_mul(type, loperand, roperand);
-		case arith_div:		return SymFactory.arith_div(type, loperand, roperand);
-		case arith_mod:		return SymFactory.arith_mod(type, loperand, roperand);
-		case bit_and:		return SymFactory.bitws_and(type, loperand, roperand);
-		case bit_or:		return SymFactory.bitws_ior(type, loperand, roperand);
-		case bit_xor:		return SymFactory.bitws_xor(type, loperand, roperand);
-		case left_shift:	return SymFactory.bitws_lsh(type, loperand, roperand);
-		case righ_shift:	return SymFactory.bitws_rsh(type, loperand, roperand);
-		case logic_and:		return SymFactory.logic_and(loperand, roperand);
-		case logic_or:		return SymFactory.logic_ior(loperand, roperand);
-		case greater_tn:	return SymFactory.greater_tn(loperand, roperand);
-		case greater_eq:	return SymFactory.greater_eq(loperand, roperand);
-		case smaller_tn:	return SymFactory.smaller_tn(loperand, roperand);
-		case smaller_eq:	return SymFactory.smaller_eq(loperand, roperand);
-		case equal_with:	return SymFactory.equal_with(loperand, roperand);
-		case not_equals:	return SymFactory.not_equals(loperand, roperand);
-		default: throw new IllegalArgumentException(source.generate_code(true));
-		}
 	}
-	private SymExpression parse_default_value(CirDefaultValue source) throws Exception {
-		CType type = CTypeAnalyzer.get_value_type(source.get_data_type());
-		if(type == null) {
-			return SymFactory.new_identifier(
-					CBasicTypeImpl.void_type, SymIdentifier.AnySequence);
-		}
-		else if(type instanceof CBasicType) {
-			switch(((CBasicType) type).get_tag()) {
-			case c_bool:	return SymFactory.new_identifier(type, SymIdentifier.AnyBoolean);
-			case c_char:	
-			case c_uchar:	return SymFactory.new_identifier(type, SymIdentifier.AnyCharacter);
-			case c_short:
-			case c_int:
-			case c_long:
-			case c_llong:	return SymFactory.new_identifier(type, SymIdentifier.AnyInteger);
-			case c_ushort:
-			case c_uint:
-			case c_ulong:
-			case c_ullong:	return SymFactory.new_identifier(type, SymIdentifier.AnyPosInteger);
-			case c_float:
-			case c_double:
-			case c_ldouble:	return SymFactory.new_identifier(type, SymIdentifier.AnyReal);
-			default: 		return SymFactory.new_identifier(type, SymIdentifier.AnySequence);
+	/**
+	 * @param source
+	 * @return (type, name_expression.unique_name)
+	 * @throws Exception
+	 */
+	private SymNode parse_name_expression(CirNameExpression source) throws Exception {
+		return SymIdentifier.create(source.get_data_type(), source.get_unique_name());
+	}
+	/**
+	 * @param source
+	 * @return constant
+	 * @throws Exception
+	 */
+	private SymNode parse_cir_const_expression(CirConstExpression source) throws Exception {
+		return SymConstant.create(source.get_constant());
+	}
+	/**
+	 * @param source
+	 * @return string literal
+	 * @throws Exception
+	 */
+	private SymNode parse_string_literal(CirStringLiteral source) throws Exception {
+		return SymLiteral.create(source.get_data_type(), source.get_literal());
+	}
+	/**
+	 * @param source
+	 * @return &x --> &{x}
+	 * @throws Exception
+	 */
+	private SymNode parse_address_expression(CirAddressExpression source) throws Exception {
+		SymExpression operand = (SymExpression) this.parse_cir(source.get_operand());
+		SymOperator operator = SymOperator.create(COperator.address_of);
+		return SymUnaryExpression.create(source.get_data_type(), operator, operand);
+	}
+	/**
+	 * @param source
+	 * @return *x --> *{x}
+	 * @throws Exception
+	 */
+	private SymNode parse_defer_expression(CirDeferExpression source) throws Exception {
+		SymExpression operand = (SymExpression) this.parse_cir(source.get_address());
+		SymOperator operator = SymOperator.create(COperator.dereference);
+		return SymUnaryExpression.create(source.get_data_type(), operator, operand);
+	}
+	/**
+	 * @param source
+	 * @return field.name --> {name}
+	 * @throws Exception
+	 */
+	private SymNode parse_field(CirField source) throws Exception {
+		return SymField.create(source.get_name());
+	}
+	/**
+	 * @param source
+	 * @return x.f --> {x}.{f}
+	 * @throws Exception
+	 */
+	private SymNode parse_field_expression(CirFieldExpression source) throws Exception {
+		SymExpression body = (SymExpression) this.parse_cir(source.get_body());
+		SymField field = (SymField) this.parse_cir(source.get_field());
+		return SymFieldExpression.create(source.get_data_type(), body, field);
+	}
+	/**
+	 * @param source
+	 * @return (type){x}
+	 * @throws Exception
+	 */
+	private SymNode parse_cast_expression(CirCastExpression source) throws Exception {
+		SymOperator operator = SymOperator.create(COperator.assign);
+		SymExpression operand = (SymExpression) this.parse_cir(source.get_operand());
+		return SymUnaryExpression.create(source.get_data_type(), operator, operand);
+	}
+	/**
+	 * default value of the expression source
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode get_default_value(CType data_type, CirExpression source) throws Exception {
+		String name = "default@" + source.get_node_id();
+		return SymIdentifier.create(data_type, name);
+	}
+	/**
+	 * @param source
+	 * @return default_value --> (type, default#{CirNode.node_id})
+	 * @throws Exception
+	 */
+	private SymNode parse_default_value(CirDefaultValue source) throws Exception {
+		CType data_type = source.get_data_type();
+		if(data_type != null)
+			data_type = CTypeAnalyzer.get_value_type(data_type);
+		else
+			data_type = CBasicTypeImpl.void_type;
+		
+		if(this.cir_optimize_switch) {
+			if(data_type instanceof CBasicType) {
+				switch(((CBasicType) data_type).get_tag()) {
+				case c_bool:		return this.parse_constant(Boolean.FALSE);
+				case c_char: 
+				case c_uchar:		return this.parse_constant(Character.valueOf('\0'));
+				case c_short:
+				case c_ushort:		return this.parse_constant(Short.valueOf((short) 0));
+				case c_int:
+				case c_uint:		return this.parse_constant(Integer.valueOf(0));
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:		return this.parse_constant(Long.valueOf(0L));
+				case c_float:		return this.parse_constant(Float.valueOf(0.0f));
+				case c_double:
+				case c_ldouble:		return this.parse_constant(Double.valueOf(0.0));
+				default:			return this.get_default_value(data_type, source);
+				}
+			}
+			else {
+				return this.get_default_value(data_type, source);
 			}
 		}
-		else if(type instanceof CArrayType
-				|| type instanceof CPointerType
-				|| type instanceof CFunctionType) {
-			return SymFactory.new_identifier(type, SymIdentifier.AnyAddress);
-		}
-		else if(type instanceof CStructType
-				|| type instanceof CUnionType) {
-			return SymFactory.new_identifier(type, SymIdentifier.AnySequence);
-		}
-		else if(type instanceof CEnumType) {
-			return SymFactory.new_identifier(type, SymIdentifier.AnyInteger);
-		}
 		else {
-			throw new IllegalArgumentException(type.generate_code());
+			return this.get_default_value(data_type, source);
 		}
 	}
-	private SymExpression parse_initializer_body(CirInitializerBody source) throws Exception {
-		List<Object> elements = new ArrayList<Object>();
+	/**
+	 * @param source
+	 * @return {(expression)*}
+	 * @throws Exception
+	 */
+	private SymNode parse_initializer_body(CirInitializerBody source) throws Exception {
+		List<SymExpression> elements = new ArrayList<SymExpression>();
 		for(int k = 0; k < source.number_of_elements(); k++) {
-			elements.add(this.parse_cir(source.get_element(k)));
+			elements.add((SymExpression) this.parse_cir(source.get_element(k)));
 		}
-		return SymFactory.initializer_list(source.get_data_type(), elements);
+		return SymInitializerList.create(source.get_data_type(), elements);
 	}
-	private SymExpression parse_wait_expression(CirWaitExpression source) throws Exception {
+	/**
+	 * @param source
+	 * @return ({expression}*)
+	 * @throws Exception
+	 */
+	private SymNode parse_argument_list(CirArgumentList source) throws Exception {
+		List<SymExpression> arguments = new ArrayList<SymExpression>();
+		for(int k = 0; k < source.number_of_arguments(); k++) {
+			arguments.add((SymExpression) this.parse_cir(source.get_argument(k)));
+		}
+		return SymArgumentList.create(arguments);
+	}
+	/**
+	 * @param source
+	 * @return wait expression --> function argument_list
+	 * @throws Exception
+	 */
+	private SymNode parse_wait_expression(CirWaitExpression source) throws Exception {
 		CirStatement wait_statement = source.statement_of();
-		CirExecution wait_execution = wait_statement.get_tree().get_function_call_graph().
-				get_function(wait_statement).get_flow_graph().get_execution(wait_statement);
+		CirExecution wait_execution = wait_statement.get_tree().get_localizer().get_execution(wait_statement);
 		CirExecution call_execution = wait_execution.get_graph().get_execution(wait_execution.get_id() - 1);
 		CirCallStatement call_statement = (CirCallStatement) call_execution.get_statement();
 		
-		SymExpression function = this.parse_cir(call_statement.get_function());
-		List<Object> arguments = new ArrayList<Object>();
-		CirArgumentList list = call_statement.get_arguments();
-		for(int k = 0; k < list.number_of_arguments(); k++) {
-			arguments.add(this.parse_cir(list.get_argument(k)));
+		SymExpression function = (SymExpression) this.parse_cir(call_statement.get_function());
+		SymArgumentList arguments = (SymArgumentList) this.parse_cir(call_statement.get_arguments());
+		
+		return SymCallExpression.create(source.get_data_type(), function, arguments);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymNode parse_compute_expression(CirComputeExpression source) throws Exception {
+		/* 1. parse from the operands */
+		List<SymExpression> operands = new ArrayList<SymExpression>();
+		COperator operator = source.get_operator();
+		for(int k = 0; k < source.number_of_operand(); k++) {
+			operands.add((SymExpression) this.parse_cir(source.get_operand(k)));
 		}
-		return SymFactory.call_expression(source.get_data_type(), function, arguments);
+		
+		/* 2. construct the computational expression */
+		switch(operator) {
+		case positive:
+		case negative:
+		case bit_not:
+		case logic_not:
+		{
+			return SymUnaryExpression.create(source.get_data_type(), SymOperator.create(operator), operands.get(0));
+		}
+		case arith_add:
+		case arith_sub:
+		case arith_mul:
+		case arith_div:
+		case arith_mod:
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case left_shift:
+		case righ_shift:
+		case greater_tn:
+		case greater_eq:
+		case smaller_tn:
+		case smaller_eq:
+		case equal_with:
+		case not_equals:
+		{
+			return SymBinaryExpression.create(source.get_data_type(), SymOperator.create(operator), operands.get(0), operands.get(1));
+		}
+		default: throw new IllegalArgumentException(source.generate_code(true));
+		}
+		
 	}
 	
-	/* parsing methods */
-	public static SymExpression parse(AstExpression source, CRunTemplate sizeof_template) throws Exception {
-		parser.sizeof_template = sizeof_template;
-		return parser.parse_ast(source);
+	/* parsing from instance */
+	/**
+	 * @param source
+	 * @return boolean|character|short|integer|long|float|double|CConstant
+	 * @throws Exception
+	 */
+	protected SymConstant parse_constant(Object source) throws Exception {
+		SymConstant solution; CConstant constant = new CConstant();
+		if(source == null)
+			throw new IllegalArgumentException("Invalid source: null");
+		else if(source instanceof Boolean) 
+			constant.set_bool(((Boolean) source).booleanValue());
+		else if(source instanceof Character)
+			constant.set_char(((Character) source).charValue());
+		else if(source instanceof Short)
+			constant.set_int(((Short) source).intValue());
+		else if(source instanceof Integer)
+			constant.set_int(((Integer) source).intValue());
+		else if(source instanceof Long)
+			constant.set_long(((Long) source).longValue());
+		else if(source instanceof Float)
+			constant.set_float(((Float) source).floatValue());
+		else if(source instanceof Double)
+			constant.set_double(((Double) source).doubleValue());
+		else if(source instanceof CConstant)
+			constant = (CConstant) source;
+		else
+			throw new IllegalArgumentException(source.getClass().getName());
+		solution = SymConstant.create(constant);
+		solution.set_source(source);
+		return solution;
 	}
-	public static SymExpression parse(CirExpression source) throws Exception {
-		return parser.parse_cir(source);
+	
+	/* parsing from statement */
+	/**
+	 * @param source
+	 * @return (int, do#{source.toString())
+	 * @throws Exception
+	 */
+	protected SymIdentifier parse_statement(CirExecution source) throws Exception {
+		String name = "do#" + source.toString();
+		SymIdentifier expression = SymIdentifier.create(CBasicTypeImpl.int_type, name);
+		expression.set_source(source);
+		return expression;
 	}
 	
 }

@@ -29,14 +29,14 @@ public class VBRPCirMutationParser extends CirMutationParser {
 		case set_true: 	
 		{
 			constraint = mutations.expression_constraint(statement, expression, false);
-			muta_value = SymFactory.new_constant(Boolean.TRUE);
+			muta_value = SymFactory.sym_constant(Boolean.TRUE);
 			infections.put(mutations.expr_error(expression, muta_value), constraint);
 			break;
 		}
 		case set_false:	
 		{
 			constraint = mutations.expression_constraint(statement, expression, true);
-			muta_value = SymFactory.new_constant(Boolean.FALSE);
+			muta_value = SymFactory.sym_constant(Boolean.FALSE);
 			infections.put(mutations.expr_error(expression, muta_value), constraint);
 			break;
 		}

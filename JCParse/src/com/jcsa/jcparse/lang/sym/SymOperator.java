@@ -11,7 +11,7 @@ public class SymOperator extends SymUnit {
 	
 	/* definition */
 	private COperator operator;
-	protected SymOperator(COperator operator) throws IllegalArgumentException {
+	private SymOperator(COperator operator) throws IllegalArgumentException {
 		if(operator == null)
 			throw new IllegalArgumentException("Invalid operator: null");
 		else
@@ -58,5 +58,14 @@ public class SymOperator extends SymUnit {
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
-
+	
+	/**
+	 * @param operator
+	 * @return symbolic node to represent the operator
+	 * @throws Exception
+	 */
+	protected static SymOperator create(COperator operator) throws Exception {
+		return new SymOperator(operator);
+	}
+	
 }

@@ -76,8 +76,8 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		CirCaseStatement statement2 = (CirCaseStatement) 
 							this.get_cir_node(cir_tree, case_statement, CirCaseStatement.class);
 		
-		SymExpression condition1 = SymFactory.parse(statement2.get_condition());
-		SymExpression condition2 = SymFactory.sym_statement(statement2);
+		SymExpression condition1 = SymFactory.sym_expression(statement2.get_condition());
+		SymExpression condition2 = SymFactory.sym_expression(statement2);
 		condition2 = SymFactory.greater_eq(statement2, Integer.valueOf(1));
 		SymExpression condition = SymFactory.logic_and(condition1, condition2);
 		CirConstraint constraint = mutations.expression_constraint(statement2, condition, true);

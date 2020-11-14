@@ -40,16 +40,16 @@ public class VRRPCirMutationParser extends CirMutationParser {
 					if(cname instanceof CInstanceName) {
 						CInstance instance = ((CInstanceName) cname).get_instance();
 						String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-						return SymFactory.new_identifier(instance.get_type(), name);
+						return SymFactory.identifier(instance.get_type(), name);
 					}
 					else if(cname instanceof CParameterName) {
 						CInstance instance = ((CParameterName) cname).get_parameter();
 						String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-						return SymFactory.new_identifier(instance.get_type(), name);
+						return SymFactory.identifier(instance.get_type(), name);
 					}
 					else if(cname instanceof CEnumeratorName) {
 						CEnumerator enumerator = ((CEnumeratorName) cname).get_enumerator();
-						return SymFactory.new_constant(Integer.valueOf(enumerator.get_value()));
+						return SymFactory.sym_expression(Integer.valueOf(enumerator.get_value()));
 					}
 					else {
 						throw new IllegalArgumentException("Invalid name: " + parameter);

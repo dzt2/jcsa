@@ -1,10 +1,11 @@
 package com.jcsa.jcparse.lang.sym;
 
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 
 public class SymInitializerList extends SymExpression {
 
-	protected SymInitializerList(CType data_type) throws IllegalArgumentException {
+	private SymInitializerList(CType data_type) throws IllegalArgumentException {
 		super(data_type);
 	}
 	
@@ -32,5 +33,19 @@ public class SymInitializerList extends SymExpression {
 		buffer.append("}");
 		return buffer.toString();
 	}
-
+	
+	/**
+	 * @param data_type
+	 * @param elements
+	 * @return create the initializer list w.r.t. the elements as given
+	 * @throws Exception
+	 */
+	protected static SymInitializerList create(CType data_type, Iterable<SymExpression> elements) throws Exception {
+		if(data_type == null)
+			data_type = CBasicTypeImpl.void_type;
+		SymInitializerList list = new SymInitializerList(data_type);
+		for(SymExpression element : elements) list.add_child(element);
+		return list;
+	}
+	
 }

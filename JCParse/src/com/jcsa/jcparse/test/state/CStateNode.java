@@ -126,10 +126,10 @@ public class CStateNode {
 				|| value instanceof Short || value instanceof Integer
 				|| value instanceof Long || value instanceof Float
 				|| value instanceof Double) {
-				sym_value = SymFactory.new_constant(value);
+				sym_value = SymFactory.sym_expression(value);
 			}
 			else {
-				sym_value = SymFactory.parse(expression);
+				sym_value = SymFactory.sym_expression(expression);
 			}
 			
 			/* 3. record value */ element.set_value(sym_value);

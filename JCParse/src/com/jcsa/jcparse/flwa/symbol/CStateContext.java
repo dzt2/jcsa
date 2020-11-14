@@ -3,6 +3,7 @@ package com.jcsa.jcparse.flwa.symbol;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -54,30 +55,6 @@ public class CStateContext {
 		}
 	}
 	
-	/* key-value methods */
-	/**
-	 * @param key {AstExpression|CirExpression|SymExpression|
-	 * 			   CirStatement|others are not allowed.}
-	 * @return 
-	 * @throws Exception
-	 */
-	public static String get_string_key(Object key) throws Exception {
-		if(key == null)
-			throw new IllegalArgumentException("Invalid key: null");
-		else if(key instanceof AstExpression)
-			return ((AstExpression) key).generate_code();
-		else if(key instanceof CirExpression)
-			return SymFactory.parse(key).generate_code();
-		else if(key instanceof SymExpression)
-			return ((SymExpression) key).generate_code();
-		else if(key instanceof CirStatement)
-			return SymFactory.sym_statement((CirStatement) key).generate_code();
-		else if(key instanceof CirExecution)
-			return SymFactory.sym_statement(((CirExecution) key).get_statement()).generate_code();
-		else
-			throw new IllegalArgumentException("Unsupported: " + key.getClass().getSimpleName());
-	}
-	
 	/* getters */
 	/**
 	 * @return whether the context is a root
@@ -91,64 +68,85 @@ public class CStateContext {
 	 * @return the key of the context used for push and pop
 	 */
 	public Object get_context_key() { return this.context_key; }
-	
 	/**
-	 * @param key {AstExpression|CirExpression|SymExpression|
-	 * 			   CirStatement|others are not allowed.}
-	 * @return true if the key corresponds to some value in 
-	 * 		   the context or its parent
+	 * @param context_key
+	 * @return create the child context under this one as parent w.r.t. the given key
 	 * @throws Exception
 	 */
-	public boolean has_value(Object key) throws Exception {
-		String string_key = get_string_key(key);
-		CStateContext context = this;
-		while(context != null) {
-			if(context.local_values.containsKey(string_key)) {
-				return true;
-			}
-			else {
-				context = context.parent;
-			}
-		}
-		return false;
-	}
-	/**
-	 * @param key {AstNode|CirNode|SymNode|Any.toString()}
-	 * @return the value w.r.t. the key in the context
-	 * @throws Exception
-	 */
-	public SymExpression get_value(Object key) throws Exception {
-		String string_key = get_string_key(key);
-		CStateContext context = this;
-		while(context != null) {
-			if(context.local_values.containsKey(string_key)) {
-				return context.local_values.get(string_key);
-			}
-			else {
-				context = context.parent;
-			}
-		}
-		return null;
-	}
-	/**
-	 * set the value w.r.t. the key
-	 * @param key {AstExpression|CirExpression|SymExpression|
-	 * 			   CirStatement|others are not allowed.}
-	 * @param value {Boolean|Character|Short|Integer|Long|Float
-	 * 				|Double|AstExpression|CirExpression|
-	 * 				|SymExpression|CirStatement|CirExecution
-	 * 				|CConstant}
-	 * @throws Exception
-	 */
-	public void put_value(Object key, Object value) throws Exception {
-		String string_key = get_string_key(key);
-		SymExpression sym_value = SymFactory.parse(value);
-		this.local_values.put(string_key, sym_value);
-	}
-	
-	/* setters */
 	protected CStateContext new_child(Object context_key) throws Exception {
 		return new CStateContext(this, context_key);
+	}
+	
+	/* data table access */
+	/**
+	 * @param key AstExpression | AstInitializer | CirExpression | CirStatement | CirExecution | SymExpression
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean has(Object key) throws Exception {
+		if(key == null)
+			return false;
+		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
+				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
+			SymExpression sym_key = SymFactory.sym_expression(key);
+			String string_code = sym_key.generate_code();
+			CStateContext context = this;
+			while(context != null) {
+				if(context.local_values.containsKey(string_code)) {
+					return true;
+				}
+				else {
+					context = context.parent;
+				}
+			}
+			return false;
+		}
+		else
+			return false;
+	}
+	/**
+	 * 
+	 * @param key AstExpression | AstInitializer | CirExpression | CirStatement | CirExecution | SymExpression
+	 * @return null if no solution corresponds to the symbolic representation that is parsed from the key
+	 * @throws Exception
+	 */
+	protected SymExpression get(Object key) throws Exception {
+		if(key == null)
+			throw new IllegalArgumentException("Invalid key: null");
+		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
+				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
+			SymExpression sym_key = SymFactory.sym_expression(key);
+			String string_code = sym_key.generate_code();
+			CStateContext context = this;
+			while(context != null) {
+				if(context.local_values.containsKey(string_code)) {
+					return context.local_values.get(string_code);
+				}
+				else {
+					context = context.parent;
+				}
+			}
+			return null;
+		}
+		else
+			throw new IllegalArgumentException(key.getClass().getSimpleName());
+	}
+	/**
+	 * @param key AstExpression | AstInitializer | CirExpression | CirStatement | CirExecution | SymExpression
+	 * @param value used to generate value corresponding to the context
+	 * @throws Exception
+	 */
+	protected void put(Object key, Object value) throws Exception {
+		if(key == null)
+			throw new IllegalArgumentException("Invalid key: null");
+		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
+				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
+			SymExpression sym_key = SymFactory.sym_expression(key);
+			String string_code = sym_key.generate_code();
+			this.local_values.put(string_code, SymFactory.sym_expression(value));
+		}
+		else
+			throw new IllegalArgumentException(key.getClass().getSimpleName());
 	}
 	
 }

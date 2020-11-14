@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.lexical.CConstant;
 public class SymConstant extends SymBasicExpression {
 
 	private CConstant constant;
-	protected SymConstant(CType data_type, CConstant constant) throws IllegalArgumentException {
+	private SymConstant(CType data_type, CConstant constant) throws IllegalArgumentException {
 		super(data_type);
 		if(constant == null)
 			throw new IllegalArgumentException("Invalid constant");
@@ -250,6 +250,16 @@ public class SymConstant extends SymBasicExpression {
 		else {
 			return ((Double) number).doubleValue() < 0;
 		}
+	}
+	
+	/**
+	 * create sym_constant w.r.t. the constant as given
+	 * @param constant
+	 * @return
+	 * @throws Exception
+	 */
+	protected static SymConstant create(CConstant constant) throws Exception {
+		return new SymConstant(constant.get_type(), constant);
 	}
 	
 }

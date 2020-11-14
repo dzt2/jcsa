@@ -18,6 +18,9 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 
 public abstract class CirSetOperatorParser {
 	
+	/** any boolean value **/
+	public static final String AnyBoolean = "default#boolean";
+	
 	/* definitions */
 	/** source mutation to cause state infections **/
 	private AstMutation mutation;
@@ -173,7 +176,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected CirStateError set_expression(Object muta_expression) throws Exception {
-		return mutations.expr_error(expression, SymFactory.parse(muta_expression));
+		return mutations.expr_error(expression, SymFactory.sym_expression(muta_expression));
 	}
 	/**
 	 * @param operand
@@ -230,7 +233,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymExpression sym_condition(Object expression, boolean value) throws Exception {
-		SymExpression condition = SymFactory.parse(expression);
+		SymExpression condition = SymFactory.sym_expression(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) { }
@@ -292,7 +295,7 @@ public abstract class CirSetOperatorParser {
 	 */
 	protected SymExpression sym_expression(COperator operator, Object operand) throws Exception {
 		switch(operator) {
-		case positive:	return SymFactory.parse(operand);
+		case positive:	return SymFactory.sym_expression(operand);
 		case negative:	return SymFactory.arith_neg(expression.get_data_type(), operand);
 		case bit_not:	return SymFactory.bitws_rsv(expression.get_data_type(), operand);
 		case logic_not:	return SymFactory.logic_not(operand);

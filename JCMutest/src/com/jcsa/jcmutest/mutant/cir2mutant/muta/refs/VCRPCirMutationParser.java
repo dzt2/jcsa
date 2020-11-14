@@ -24,7 +24,7 @@ public class VCRPCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		SymExpression muta_value = SymFactory.parse(mutation.get_parameter());
+		SymExpression muta_value = SymFactory.sym_expression(mutation.get_parameter());
 		
 		SymExpression condition = SymFactory.not_equals(expression, muta_value);
 		CirConstraint constraint = mutations.expression_constraint(statement, condition, true);

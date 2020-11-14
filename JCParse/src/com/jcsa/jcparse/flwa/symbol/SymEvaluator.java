@@ -25,6 +25,7 @@ import com.jcsa.jcparse.lang.sym.SymFieldExpression;
 import com.jcsa.jcparse.lang.sym.SymInitializerList;
 import com.jcsa.jcparse.lang.sym.SymUnaryExpression;
 
+
 /**
  * It is used to evaluate the value of symbolic expression in a given context.
  * 
@@ -129,8 +130,8 @@ public class SymEvaluator {
 		for(int k = 0; k < alist.number_of_arguments(); k++) {
 			arguments.add(this.evaluate(alist.get_argument(k)));
 		}
-		SymCallExpression target = SymFactory.call_expression(
-				source.get_data_type(), function, arguments);
+		SymCallExpression target = (SymCallExpression) SymFactory.
+				call_expression(source.get_data_type(), function, arguments);
 		if(this.context != null)
 			return this.context.invocate(target);
 		else
@@ -139,8 +140,7 @@ public class SymEvaluator {
 	private SymExpression eval_field_expression(SymFieldExpression source) throws Exception {
 		SymExpression body = this.evaluate(source.get_body());
 		String field = source.get_field().get_name();
-		return SymFactory.field_expression(
-				source.get_data_type(), body, field);
+		return SymFactory.field_expression(source.get_data_type(), body, field);
 	}
 	private SymExpression eval_initializer_list(SymInitializerList source) throws Exception {
 		List<Object> elements = new ArrayList<Object>();
@@ -326,10 +326,10 @@ public class SymEvaluator {
 			else {
 				throw new IllegalArgumentException(data_type.generate_code());
 			}
-			return SymFactory.new_constant(constant);
+			return SymFactory.sym_expression(constant);
 		}
 		else {
-			return SymFactory.type_cast(data_type, operand);
+			return SymFactory.type_casting(data_type, operand);
 		}
 	}
 	
@@ -380,7 +380,7 @@ public class SymEvaluator {
 	 */
 	private List<SymExpression> sov_operands_in_as(List<SymExpression> operands) throws Exception {
 		List<SymExpression> new_operands = new ArrayList<SymExpression>();
-		SymConstant constant = SymFactory.new_constant(Integer.valueOf(0));
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Integer.valueOf(0));
 		for(SymExpression operand : operands) {
 			SymExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SymConstant) {
@@ -438,7 +438,7 @@ public class SymEvaluator {
 	private SymExpression com_operands_in_as(CType type, SymExpression loperand, SymExpression roperand) throws Exception {
 		if(loperand == null) {
 			if(roperand == null) {
-				return SymFactory.new_constant(Long.valueOf(0));
+				return SymFactory.sym_expression(Long.valueOf(0));
 			}
 			else {
 				return SymFactory.arith_neg(type, roperand);
@@ -498,7 +498,7 @@ public class SymEvaluator {
 					source).get_operator().get_operator();
 			if(operator == COperator.negative) {
 				loperands.add(((SymUnaryExpression) source).get_operand());
-				roperands.add(SymFactory.new_constant(Long.valueOf(-1L)));
+				roperands.add(SymFactory.sym_expression(Long.valueOf(-1L)));
 			}
 			else {
 				loperands.add(source);
@@ -530,7 +530,7 @@ public class SymEvaluator {
 	 */
 	private List<SymExpression> sov_operands_in_md(List<SymExpression> operands) throws Exception {
 		List<SymExpression> new_operands = new ArrayList<SymExpression>();
-		SymConstant constant = SymFactory.new_constant(Long.valueOf(1L));
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Long.valueOf(1L));
 		for(SymExpression operand : operands) {
 			SymExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SymConstant) {
@@ -591,16 +591,16 @@ public class SymEvaluator {
 			x = x / gcd; y = y / gcd;
 			if(y < 0) { y = -y; x = -x; }
 			return new SymConstant[] { 
-				SymFactory.new_constant(Long.valueOf(x)),
-				SymFactory.new_constant(Long.valueOf(y))
+					(SymConstant) SymFactory.sym_expression(Long.valueOf(x)),
+					(SymConstant) SymFactory.sym_expression(Long.valueOf(y))
 			};
 		}
 		else if(CTypeAnalyzer.is_real(type)) {
 			double x = lconstant.get_double();
 			double y = rconstant.get_double();
 			return new SymConstant[] {
-				SymFactory.new_constant(Double.valueOf(x / y)),
-				SymFactory.new_constant(Long.valueOf(1L))
+					(SymConstant) SymFactory.sym_expression(Double.valueOf(x / y)),
+					(SymConstant) SymFactory.sym_expression(Long.valueOf(1L))
 			};
 		}
 		else {
@@ -651,10 +651,10 @@ public class SymEvaluator {
 	private SymExpression com_operands_in_md(CType type, SymExpression loperand, SymExpression roperand) throws Exception {
 		if(loperand == null) {
 			if(roperand == null) {
-				return SymFactory.new_constant(Long.valueOf(1));
+				return SymFactory.sym_expression(Long.valueOf(1));
 			}
 			else {
-				return SymFactory.arith_div(type, SymFactory.new_constant(Long.valueOf(1)), roperand);
+				return SymFactory.arith_div(type, SymFactory.sym_expression(Long.valueOf(1)), roperand);
 			}
 		}
 		else {
@@ -684,7 +684,7 @@ public class SymEvaluator {
 		SymConstant rconstant = (SymConstant) roperands.remove(roperands.size() - 1);
 		SymConstant[] constants = this.get_constant_in_md(type, lconstant, rconstant);
 		lconstant = constants[0]; rconstant = constants[1];
-		if(lconstant.compare(0)) { return SymFactory.new_constant(0L); }
+		if(lconstant.compare(0)) { return SymFactory.sym_expression(0L); }
 		if(!lconstant.compare(1)) { loperands.add(lconstant); }
 		if(!rconstant.compare(1)) { roperands.add(rconstant); }
 		
@@ -724,7 +724,7 @@ public class SymEvaluator {
 			if(roperand instanceof SymConstant) {
 				SymConstant rconstant = (SymConstant) roperand;
 				if(rconstant.compare(1) || rconstant.compare(-1)) {
-					return SymFactory.new_constant(Long.valueOf(0));
+					return SymFactory.sym_expression(Long.valueOf(0));
 				}
 				else {
 					return SymFactory.arith_mod(data_type, loperand, roperand);
@@ -799,13 +799,13 @@ public class SymEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		
 		/* obtain solved operands using initial constant */
-		SymConstant constant = SymFactory.new_constant(Long.valueOf(~0L));
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Long.valueOf(~0L));
 		this.get_operands_in_xx(source, operands, operator);
 		operands = this.sov_operands_in_xx(operands, constant, operator);
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymConstant) operands.remove(operands.size() - 1);
-		if(constant.compare(0L)) return SymFactory.new_constant(Long.valueOf(0L)); 
+		if(constant.compare(0L)) return SymFactory.sym_expression(Long.valueOf(0L)); 
 		else if(!constant.compare(~0L) || operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
@@ -817,13 +817,13 @@ public class SymEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		
 		/* obtain solved operands using initial constant */
-		SymConstant constant = SymFactory.new_constant(Long.valueOf(0L));
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Long.valueOf(0L));
 		this.get_operands_in_xx(source, operands, operator);
 		operands = this.sov_operands_in_xx(operands, constant, operator);
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymConstant) operands.remove(operands.size() - 1);
-		if(constant.compare(~0L)) return SymFactory.new_constant(Long.valueOf(~0L)); 
+		if(constant.compare(~0L)) return SymFactory.sym_expression(Long.valueOf(~0L)); 
 		else if(!constant.compare(0L) || operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
@@ -835,7 +835,7 @@ public class SymEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		
 		/* obtain solved operands using initial constant */
-		SymConstant constant = SymFactory.new_constant(Long.valueOf(0L));
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Long.valueOf(0L));
 		this.get_operands_in_xx(source, operands, operator);
 		operands = this.sov_operands_in_xx(operands, constant, operator);
 		
@@ -852,13 +852,13 @@ public class SymEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		
 		/* obtain solved operands using initial constant */
-		SymConstant constant = SymFactory.new_constant(Boolean.TRUE);
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Boolean.TRUE);
 		this.get_operands_in_xx(source, operands, operator);
 		operands = this.sov_operands_in_xx(operands, constant, operator);
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymConstant) operands.remove(operands.size() - 1);
-		if(!constant.get_bool()) return SymFactory.new_constant(Boolean.FALSE); 
+		if(!constant.get_bool()) return SymFactory.sym_expression(Boolean.FALSE); 
 		if(operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
@@ -870,13 +870,13 @@ public class SymEvaluator {
 		COperator operator = source.get_operator().get_operator();
 		
 		/* obtain solved operands using initial constant */
-		SymConstant constant = SymFactory.new_constant(Boolean.FALSE);
+		SymConstant constant = (SymConstant) SymFactory.sym_expression(Boolean.FALSE);
 		this.get_operands_in_xx(source, operands, operator);
 		operands = this.sov_operands_in_xx(operands, constant, operator);
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymConstant) operands.remove(operands.size() - 1);
-		if(constant.get_bool()) return SymFactory.new_constant(Boolean.TRUE); 
+		if(constant.get_bool()) return SymFactory.sym_expression(Boolean.TRUE); 
 		if(operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);

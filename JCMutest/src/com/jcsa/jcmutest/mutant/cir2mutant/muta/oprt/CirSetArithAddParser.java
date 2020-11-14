@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
-import com.jcsa.jcparse.lang.sym.SymIdentifier;
+
 
 public class CirSetArithAddParser extends CirSetOperatorParser {
 	
@@ -273,7 +273,7 @@ public class CirSetArithAddParser extends CirSetOperatorParser {
 		CirConstraint constraint; CirStateError init_error; SymExpression operand;
 		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
 		
-		operand = SymFactory.new_identifier(CBasicTypeImpl.bool_type, SymIdentifier.AnyBoolean);
+		operand = SymFactory.identifier(CBasicTypeImpl.bool_type, CirSetOperatorParser.AnyBoolean);
 		constraints.add(get_constraint(sym_expression(COperator.not_equals, loperand, operand)));
 		constraints.add(get_constraint(sym_expression(COperator.not_equals, roperand, operand)));
 		constraint = this.disjunct(constraints);

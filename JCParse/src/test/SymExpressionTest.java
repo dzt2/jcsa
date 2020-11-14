@@ -115,6 +115,7 @@ public class SymExpressionTest {
 	private static void output_symbolic_nodes(JCTestProject project, File output) throws Exception {
 		FileWriter writer = new FileWriter(output);
 		AstCirFile program = project.get_code_part().get_program(0);
+		SymFactory.config(program.get_run_template(), true);
 		CirFunctionCallGraph graph = program.get_function_call_graph();
 		for(CirFunction function : graph.get_functions()) {
 			writer.write("FUNC " + function.get_name() + "\n");
@@ -124,8 +125,8 @@ public class SymExpressionTest {
 				writer.write("\t" + execution.toString() + ":\t" + execution.get_statement().generate_code(true) + "\n");
 				CirStatement statement = execution.get_statement();
 				if(statement instanceof CirAssignStatement) {
-					SymExpression lvalue = SymFactory.parse(((CirAssignStatement) statement).get_lvalue());
-					SymExpression rvalue = SymFactory.parse(((CirAssignStatement) statement).get_rvalue());
+					SymExpression lvalue = SymFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
+					SymExpression rvalue = SymFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t==> [1] " + lvalue.generate_code() + "\n");
 					writer.write("\t==> [2] " + rvalue.generate_code() + "\n");
 					lvalue = SymEvaluator.evaluate_on(lvalue); 
@@ -134,13 +135,13 @@ public class SymExpressionTest {
 					writer.write("\t~~> [2] " + rvalue.generate_code() + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
-					SymExpression value = SymFactory.parse(((CirIfStatement) statement).get_condition());
+					SymExpression value = SymFactory.sym_expression(((CirIfStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code() + "\n");
 					value = SymEvaluator.evaluate_on(value);
 					writer.write("\t~~> [1] " + value.generate_code() + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
-					SymExpression value = SymFactory.parse(((CirCaseStatement) statement).get_condition());
+					SymExpression value = SymFactory.sym_expression(((CirCaseStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code() + "\n");
 					value = SymEvaluator.evaluate_on(value);
 					writer.write("\t~~> [1] " + value.generate_code() + "\n");

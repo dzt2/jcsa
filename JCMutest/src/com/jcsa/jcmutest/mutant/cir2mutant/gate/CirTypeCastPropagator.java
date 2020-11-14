@@ -41,7 +41,7 @@ public class CirTypeCastPropagator implements CirErrorPropagator {
 				constraint = cir_mutations.expression_constraint(
 						target.statement_of(), Boolean.TRUE, true);
 				muta_value = SymFactory.
-						type_cast(target.get_data_type(), muta_operand);
+						type_casting(target.get_data_type(), muta_operand);
 				state_error = cir_mutations.expr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}

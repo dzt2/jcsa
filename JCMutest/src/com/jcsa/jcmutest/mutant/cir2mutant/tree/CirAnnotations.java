@@ -82,7 +82,7 @@ public class CirAnnotations {
 			}
 			else {
 				annotations.add(new CirAnnotation(CirAnnotateType.eval_stmt, 
-						statement, SymFactory.new_constant(Boolean.FALSE)));
+						statement, SymFactory.sym_constant(Boolean.FALSE)));
 			}
 		}
 		else {
@@ -106,7 +106,7 @@ public class CirAnnotations {
 		
 		List<CirAnnotation> annotations = new ArrayList<CirAnnotation>();
 		annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, statement, 
-				SymFactory.new_constant(Integer.valueOf(1))));
+				SymFactory.sym_constant(Integer.valueOf(1))));
 		this.generate_annotations_in_condition(statement, condition, annotations);
 		return annotations;
 	}
