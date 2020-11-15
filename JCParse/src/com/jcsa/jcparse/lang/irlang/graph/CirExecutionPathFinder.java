@@ -14,6 +14,7 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * 	It provides the algorithms to find path from a source to a target.
@@ -185,22 +186,14 @@ public class CirExecutionPathFinder {
 		path.addFinal(flow); return true;
 	}
 	/**
-	 * @param source
-	 * @param flows
+	 * Extend the path to the target using decidable way, and build virtual flow if not matched
+	 * @param path
 	 * @param target
-	 * @return create the virtual path from source to target via the given flows.
 	 * @throws Exception
 	 */
-	private CirExecutionPath new_vpath(CirExecution source, Iterable<CirExecutionFlow> flows, CirExecution target) throws Exception {
-		/* connect the path to the flows */
-		CirExecutionPath path = new CirExecutionPath(source);
-		for(CirExecutionFlow flow : flows) {
-			this.extend_to(path, flow);
-		}
-		
-		/* extend the path to target */
+	private void extend_to(CirExecutionPath path, CirExecution target) throws Exception {
 		while(path.get_target() != target) {
-			source = path.get_target();
+			CirExecution source = path.get_target();
 			if(source.get_ou_degree() == 0) {
 				break;
 			}
@@ -226,11 +219,25 @@ public class CirExecutionPathFinder {
 			}
 		}
 		
-		
 		if(path.get_target() != target) {
 			path.addFinal(CirExecutionFlow.virtual_flow(
 					CirExecutionFlowType.next_flow, path.get_target(), target));
 		}
+	}
+	/**
+	 * @param source
+	 * @param flows
+	 * @param target
+	 * @return create the virtual path from source to target via the given flows.
+	 * @throws Exception
+	 */
+	private CirExecutionPath new_vpath(CirExecution source, Iterable<CirExecutionFlow> flows, CirExecution target) throws Exception {
+		/* connect the path to the flows */
+		CirExecutionPath path = new CirExecutionPath(source);
+		for(CirExecutionFlow flow : flows) {
+			this.extend_to(path, flow);
+		}
+		this.extend_to(path, target);
 		return path;
 	}
 	
@@ -493,6 +500,23 @@ public class CirExecutionPathFinder {
 				}
 			}
 			return paths;
+		}
+	}
+	
+	/* instrumental path */
+	/**
+	 * @param state_path
+	 * @return generate the execution path from the instrumental path
+	 * @throws Exception
+	 */
+	public CirExecutionPath find_path(CStatePath state_path) throws Exception {
+		if(state_path == null || state_path.size() == 0)
+			throw new IllegalArgumentException("Invalid state_path as null");
+		else {
+			CirExecutionPath path = new CirExecutionPath(state_path.get_node(0).get_execution());
+			for(int k = 1; k < state_path.size(); k++) 
+				this.extend_to(path, state_path.get_node(k).get_execution());
+			return path;
 		}
 	}
 	
