@@ -164,8 +164,14 @@ public class CirExecutionPath {
 	public String toString() {
 		StringBuilder buffer = new StringBuilder();
 		for(CirExecutionFlow flow : this.flows) {
-			buffer.append(flow.get_source() + " --");
-			buffer.append(flow.get_type() + "--> ");
+			if(!flow.is_valid_flow()) {
+				buffer.append(flow.get_source() + " ~~");
+				buffer.append(flow.get_type() + "~~ ");
+			}
+			else {
+				buffer.append(flow.get_source() + " --");
+				buffer.append(flow.get_type() + "-- ");
+			}
 		}
 		buffer.append(this.target.toString());
 		return buffer.toString();

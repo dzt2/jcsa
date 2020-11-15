@@ -68,7 +68,7 @@ public class CirExecutionFlow {
 	 */
 	public boolean is_valid_flow() {
 		for(CirExecutionFlow ou_flow : this.source.get_ou_flows()) {
-			if(ou_flow == this) {
+			if(ou_flow.equals(this)) {
 				return true;
 			}
 		}
@@ -87,6 +87,27 @@ public class CirExecutionFlow {
 	public static CirExecutionFlow virtual_flow(CirExecutionFlowType type,
 			CirExecution source, CirExecution target) throws Exception {
 		return new CirExecutionFlow(type, source, target);
+	}
+	
+	/* common interfaces */
+	@Override
+	public String toString() {
+		return this.source + "::" + this.type + "::" + this.target;
+	}
+	@Override
+	public int hashCode() {
+		return this.toString().hashCode();
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == this)
+			return true;
+		else if(obj instanceof CirExecutionFlow) {
+			CirExecutionFlow flow = (CirExecutionFlow) obj;
+			return flow.type == this.type && flow.source == this.source && flow.target == this.target;
+		}
+		else
+			return false;
 	}
 	
 }
