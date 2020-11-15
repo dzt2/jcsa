@@ -59,7 +59,7 @@ public class STDLCirMutationParser extends CirMutationParser {
 		}
 		
 		CirExecutionFlow orig_flow = beg_execution.get_ou_flow(0);
-		CirExecutionFlow muta_flow = CirExecutionFlow.invalid_flow(
+		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(
 				CirExecutionFlowType.next_flow, beg_execution, end_execution);
 		CirStateError state_error = mutations.flow_error(orig_flow, muta_flow);
 		

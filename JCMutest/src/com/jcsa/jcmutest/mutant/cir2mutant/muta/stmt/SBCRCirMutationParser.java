@@ -64,7 +64,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		}
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
 		
-		CirExecutionFlow muta_flow = CirExecutionFlow.invalid_flow(CirExecutionFlowType.next_flow, source, target);
+		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(CirExecutionFlowType.next_flow, source, target);
 		infections.put(mutations.flow_error(orig_flow, muta_flow), mutations.expression_constraint(statement, Boolean.TRUE, true));
 	}
 

@@ -45,7 +45,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
 		
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
-		CirExecutionFlow muta_flow = CirExecutionFlow.invalid_flow(CirExecutionFlowType.next_flow, 
+		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(CirExecutionFlowType.next_flow, 
 				beg_execution.get_in_flow(0).get_source(), end_execution);
 		CirStateError state_error = mutations.flow_error(orig_flow, muta_flow);
 		
@@ -62,7 +62,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 				this.get_cir_node(cir_tree, mutation.get_location(), CirIfStatement.class);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
 		CirExecutionFlow muta_flow = CirExecutionFlow.
-				invalid_flow(CirExecutionFlowType.next_flow, beg_execution, end_execution);
+				virtual_flow(CirExecutionFlowType.next_flow, beg_execution, end_execution);
 		
 		infections.put(mutations.flow_error(orig_flow, muta_flow), mutations.expression_constraint(beg_statement, Boolean.TRUE, true));
 	}
