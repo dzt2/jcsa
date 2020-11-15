@@ -84,7 +84,7 @@ public class CirExecutionFlow {
 	 * 		   which was NOT linked to the entity of the execution nodes.
 	 * @throws Exception
 	 */
-	public static CirExecutionFlow invalid_flow(CirExecutionFlowType type,
+	public static CirExecutionFlow virtual_flow(CirExecutionFlowType type,
 			CirExecution source, CirExecution target) throws Exception {
 		return new CirExecutionFlow(type, source, target);
 	}

@@ -33,7 +33,7 @@ public class CirInstanceEdge extends CirInstance {
 	 */
 	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target,
 			Object context, CirExecutionFlowType flow_type) throws Exception {
-		super(source.get_graph(), context, CirExecutionFlow.invalid_flow(
+		super(source.get_graph(), context, CirExecutionFlow.virtual_flow(
 				flow_type, source.get_execution(), target.get_execution()));
 		this.source = source; this.target = target;
 	}
