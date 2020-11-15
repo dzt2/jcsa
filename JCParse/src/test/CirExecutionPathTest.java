@@ -16,7 +16,10 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
@@ -54,7 +57,10 @@ public class CirExecutionPathTest {
 		CirStatement statement = execution.get_statement();
 		if(statement instanceof CirAssignStatement 
 			|| statement instanceof CirIfStatement
-			|| statement instanceof CirCaseStatement) {
+			|| statement instanceof CirCaseStatement
+			|| statement instanceof CirCallStatement
+			|| statement instanceof CirBegStatement
+			|| statement instanceof CirEndStatement) {
 			Set<CirExecutionPath> paths = CirExecutionPathFinder.finder.find_dependence_paths(dependence_graph, execution);
 			for(CirExecutionPath path : paths) { writer.write("\t==> "); writer.write(path.toString()); writer.write("\n"); }
 		}

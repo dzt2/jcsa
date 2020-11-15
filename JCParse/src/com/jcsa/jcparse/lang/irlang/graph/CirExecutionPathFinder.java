@@ -192,10 +192,41 @@ public class CirExecutionPathFinder {
 	 * @throws Exception
 	 */
 	private CirExecutionPath new_vpath(CirExecution source, Iterable<CirExecutionFlow> flows, CirExecution target) throws Exception {
+		/* connect the path to the flows */
 		CirExecutionPath path = new CirExecutionPath(source);
 		for(CirExecutionFlow flow : flows) {
 			this.extend_to(path, flow);
 		}
+		
+		/* extend the path to target */
+		while(path.get_target() != target) {
+			source = path.get_target();
+			if(source.get_ou_degree() == 0) {
+				break;
+			}
+			else if(source.get_ou_degree() == 1) {
+				path.addFinal(source.get_ou_flow(0));
+			}
+			else if(source.get_statement() instanceof CirEndStatement) {
+				CirExecutionFlow call_flow = this.call_flow_of_context(path);
+				boolean has_ret = false;
+				if(call_flow != null) {
+					for(CirExecutionFlow retr_flow : source.get_ou_flows()) {
+						if(this.match_call_retr_flow_pair(call_flow, retr_flow)) {
+							has_ret = true;
+							path.addFinal(retr_flow);
+							break;
+						}
+					}
+				}
+				if(!has_ret) break;	/* unable to extend the path */
+			}
+			else {
+				break;	/* unable to extend the path */
+			}
+		}
+		
+		
 		if(path.get_target() != target) {
 			path.addFinal(CirExecutionFlow.virtual_flow(
 					CirExecutionFlowType.next_flow, path.get_target(), target));
