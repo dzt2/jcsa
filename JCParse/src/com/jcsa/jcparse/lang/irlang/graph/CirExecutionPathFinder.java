@@ -16,6 +16,8 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * It implements the path selection/finding algorithm on execution flow graph.
@@ -432,6 +434,36 @@ public class CirExecutionPathFinder {
 				return this.simple_paths(target.get_graph().get_entry(), target);
 			}
 			
+		}
+	}
+	
+	/* instrumental path creation */
+	/**
+	 * @param state_path
+	 * @return the execution path connecting statements in testing
+	 * @throws Exception
+	 */
+	public CirExecutionPath instrumental_path(CStatePath state_path) throws Exception {
+		if(state_path == null || state_path.size() == 0)
+			throw new IllegalArgumentException("Invalid state_path: null");
+		else {
+			CirExecutionPath path = new CirExecutionPath(state_path.get_node(0).get_execution());
+			int prev_index = 0;
+			for(int k = 1; k < state_path.size(); k++) {
+				CStateNode prev_node = state_path.get_node(k - 1);
+				CStateNode next_node = state_path.get_node(k);
+				
+				if(!this.decidable_extend(path, next_node.get_execution())) {
+					path.add(CirExecutionFlow.virtual_flow(CirExecutionFlowType.next_flow, path.get_target(), next_node.get_execution()));
+				}
+				
+				CirExecutionEdge prev_edge = path.get_edge(prev_index);
+				CirExecutionEdge post_edge = path.peek();
+				prev_edge.set_annotation(prev_node.get_units());
+				prev_index = post_edge.get_index();
+			}
+			path.peek().set_annotation(state_path.get_last_node().get_units());
+			return path;
 		}
 	}
 	

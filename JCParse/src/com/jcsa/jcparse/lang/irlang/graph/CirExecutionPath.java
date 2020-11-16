@@ -151,6 +151,13 @@ public class CirExecutionPath {
 		this.target = edge.get_source();
 		return edge;
 	}
+	/**
+	 * @return the final edge in the path
+	 * @throws IndexOutOfBoundsException
+	 */
+	public CirExecutionEdge peek() throws IndexOutOfBoundsException {
+		return this.edges.get(this.edges.size() - 1);
+	}
 	
 	/* self-finder */
 	/**
