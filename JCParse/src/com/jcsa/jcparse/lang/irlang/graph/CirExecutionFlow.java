@@ -62,18 +62,6 @@ public class CirExecutionFlow {
 	public boolean is_reachable() { 
 		return this.source.is_reachable() && this.target.is_reachable(); 
 	}
-	/**
-	 * @return A flow is valid if it belongs to the output flow of its source
-	 *  	   as well as an input flow of its target.
-	 */
-	public boolean is_valid_flow() {
-		for(CirExecutionFlow ou_flow : this.source.get_ou_flows()) {
-			if(ou_flow.equals(this)) {
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	/* virtual constructor */
 	/**
@@ -88,11 +76,35 @@ public class CirExecutionFlow {
 			CirExecution source, CirExecution target) throws Exception {
 		return new CirExecutionFlow(type, source, target);
 	}
+	/**
+	 * @return the flow is virtual if it is not equivalent with any flow connecting from its source to its target
+	 * 		   with respect to the same flow type.
+	 */
+	public boolean is_virtual() {
+		for(CirExecutionFlow flow : this.source.get_ou_flows()) {
+			if(this.equals(flow)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	/**
+	 * @return the flow is actual if it is equivalent with some flow that connects from its source to its target
+	 * 		   with respect to the same flow type. 
+	 */
+	public boolean is_actual() {
+		for(CirExecutionFlow flow : this.source.get_ou_flows()) {
+			if(this.equals(flow)) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/* common interfaces */
 	@Override
 	public String toString() {
-		return this.source + "::" + this.type + "::" + this.target;
+		return this.type + "(" + this.source + ", " + this.target + ")";
 	}
 	@Override
 	public int hashCode() {

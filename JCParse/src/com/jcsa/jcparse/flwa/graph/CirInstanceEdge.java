@@ -75,7 +75,7 @@ public class CirInstanceEdge extends CirInstance {
 
 	@Override
 	public boolean is_virtual() {
-		return !this.get_flow().is_valid_flow();
+		return this.get_flow().is_virtual();
 	}
 	
 }
