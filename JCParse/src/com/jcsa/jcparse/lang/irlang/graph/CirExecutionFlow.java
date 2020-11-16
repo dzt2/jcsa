@@ -62,43 +62,30 @@ public class CirExecutionFlow {
 	public boolean is_reachable() { 
 		return this.source.is_reachable() && this.target.is_reachable(); 
 	}
+	/**
+	 * @return whether the flow is virtual created
+	 */
+	public boolean is_virtual() { 
+		return this.type == CirExecutionFlowType.virt_flow; 
+	}  
+	/**
+	 * @return the flow is actual if it is not virtual
+	 */
+	public boolean is_actual() {
+		return this.type != CirExecutionFlowType.virt_flow;
+	}
 	
 	/* virtual constructor */
 	/**
-	 * @param type
 	 * @param source
 	 * @param target
 	 * @return create an invalid flow from source to target w.r.t. the type
 	 * 		   which was NOT linked to the entity of the execution nodes.
 	 * @throws Exception
 	 */
-	public static CirExecutionFlow virtual_flow(CirExecutionFlowType type,
-			CirExecution source, CirExecution target) throws Exception {
-		return new CirExecutionFlow(type, source, target);
-	}
-	/**
-	 * @return the flow is virtual if it is not equivalent with any flow connecting from its source to its target
-	 * 		   with respect to the same flow type.
-	 */
-	public boolean is_virtual() {
-		for(CirExecutionFlow flow : this.source.get_ou_flows()) {
-			if(this.equals(flow)) {
-				return false;
-			}
-		}
-		return true;
-	}
-	/**
-	 * @return the flow is actual if it is equivalent with some flow that connects from its source to its target
-	 * 		   with respect to the same flow type. 
-	 */
-	public boolean is_actual() {
-		for(CirExecutionFlow flow : this.source.get_ou_flows()) {
-			if(this.equals(flow)) {
-				return true;
-			}
-		}
-		return false;
+	public static CirExecutionFlow virtual_flow(CirExecution source, 
+			CirExecution target) throws IllegalArgumentException {
+		return new CirExecutionFlow(CirExecutionFlowType.virt_flow, source, target);
 	}
 	/**
 	 * @param call_flow

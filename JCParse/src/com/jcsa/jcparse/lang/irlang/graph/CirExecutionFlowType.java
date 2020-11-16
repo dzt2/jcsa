@@ -19,4 +19,5 @@ public enum CirExecutionFlowType {
 	call_flow,
 	retr_flow,
 	skip_flow,
+	virt_flow,
 }

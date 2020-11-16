@@ -14,7 +14,6 @@ import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionType;
 
 public class CirInstanceGraph {
@@ -279,16 +278,14 @@ public class CirInstanceGraph {
 	 * @throws Exception
 	 */
 	protected CirInstanceEdge new_edge(CirInstanceNode source, CirInstanceNode target,
-			Object context, CirExecutionFlowType flow_type) throws Exception {
+			Object context) throws Exception {
 		if(source == null || source.get_graph() != this)
 			throw new IllegalArgumentException("invalid source: " + source);
 		else if(target == null || target.get_graph() != this)
 			throw new IllegalArgumentException("invalid target: " + target);
 		else if(context == null)
 			throw new IllegalArgumentException("invalid context: null");
-		else if(flow_type == null)
-			throw new IllegalArgumentException("invalid flow as null");
-		else { return source.link_to(target, context, flow_type); }
+		else { return source.link_to(target, context); }
 	}
 	/**
 	 * update the set of heads and tails in the graph such that all the others can reach or be reached

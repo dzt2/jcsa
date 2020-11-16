@@ -371,7 +371,8 @@ class CDefineUseBuilder {
 	 * @throws Exception
 	 */
 	private void call_wait_links(CirInstanceNode instance) throws Exception {
-		if(instance.get_ou_edge(0).get_type() == CirExecutionFlowType.skip_flow) {
+		if(instance.get_ou_edge(0).get_type() == CirExecutionFlowType.skip_flow || 
+				instance.get_ou_edge(0).get_type() == CirExecutionFlowType.virt_flow) {
 			CirExecution call_execution = instance.get_execution();
 			CirExecution wait_execution = call_execution.get_graph().
 					get_execution(call_execution.get_id() + 1);

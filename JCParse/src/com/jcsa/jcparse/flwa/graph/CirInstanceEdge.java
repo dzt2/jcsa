@@ -31,10 +31,9 @@ public class CirInstanceEdge extends CirInstance {
 	 * @param flow_type
 	 * @throws Exception
 	 */
-	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target,
-			Object context, CirExecutionFlowType flow_type) throws Exception {
+	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target, Object context) throws Exception {
 		super(source.get_graph(), context, CirExecutionFlow.virtual_flow(
-				flow_type, source.get_execution(), target.get_execution()));
+				source.get_execution(), target.get_execution()));
 		this.source = source; this.target = target;
 	}
 	
@@ -75,7 +74,7 @@ public class CirInstanceEdge extends CirInstance {
 
 	@Override
 	public boolean is_virtual() {
-		return this.get_flow().is_virtual();
+		return this.get_flow().get_type() == CirExecutionFlowType.virt_flow;
 	}
 	
 }

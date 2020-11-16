@@ -4,7 +4,6 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
@@ -99,7 +98,7 @@ public class CirCallContextInstanceGraph extends CirInstanceGraph {
 		CirExecution source_execution = source.get_execution(); CirFunctionCall calling;
 		Iterable<CirExecutionFlow> ou_flows = source_execution.get_ou_flows();
 		CirFunctionCallTreeNode target_context; CirExecution target_execution;
-		CirExecutionFlow source_target_flow; CirExecutionFlowType flow_type;
+		CirExecutionFlow source_target_flow; 
 		CirFunctionCallGraph call_graph = this.get_cir_tree().get_function_call_graph();
 		Iterable<CirFunctionCallTreeNode> children; CirFunctionCall parent_call;
 		
@@ -117,14 +116,12 @@ public class CirCallContextInstanceGraph extends CirInstanceGraph {
 				
 				target_context = source_context;
 				target_execution = calling.get_wait_execution();
-				flow_type = CirExecutionFlowType.skip_flow;
 				source_target_flow = null;
 				
 				for(CirFunctionCallTreeNode child : children) {
 					if(child.get_context() == calling) {
 						target_context = child;
 						target_execution = ou_flow.get_target();
-						flow_type = null; 
 						source_target_flow = ou_flow;
 						break;
 					}
@@ -142,13 +139,11 @@ public class CirCallContextInstanceGraph extends CirInstanceGraph {
 				target_context = null;
 				target_execution = null;
 				source_target_flow = null;
-				flow_type = null;
 				
 				if(calling == parent_call) {
 					target_context = source_context.get_parent();
 					target_execution = ou_flow.get_target();
 					source_target_flow = ou_flow;
-					flow_type = null;
 				}
 			}
 			break;
@@ -159,7 +154,6 @@ public class CirCallContextInstanceGraph extends CirInstanceGraph {
 				target_context = source_context;
 				target_execution = ou_flow.get_target();
 				source_target_flow = ou_flow; 
-				flow_type = null;
 			}
 			break; 
 			
@@ -172,7 +166,7 @@ public class CirCallContextInstanceGraph extends CirInstanceGraph {
 					this.new_edge(source, target, source_context, source_target_flow);
 				}
 				else {
-					this.new_edge(source, target, source_context, flow_type);
+					this.new_edge(source, target, source_context);
 				}
 			}
 			

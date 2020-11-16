@@ -7,7 +7,6 @@ import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
@@ -169,12 +168,11 @@ public class CirInstanceNode extends CirInstance {
 	 * @return
 	 * @throws Exception
 	 */
-	protected CirInstanceEdge link_to(CirInstanceNode target, 
-			Object context, CirExecutionFlowType flow_type) throws Exception {
+	protected CirInstanceEdge link_to(CirInstanceNode target, Object context) throws Exception {
 		if(target == null || target.get_graph() != this.get_graph())
 			throw new IllegalArgumentException("Undefined target: " + target);
 		else {
-			CirInstanceEdge edge = new CirInstanceEdge(this, target, context, flow_type);
+			CirInstanceEdge edge = new CirInstanceEdge(this, target, context);
 			this.ou.add(edge); target.in.add(edge); return edge;
 		}
 	}
