@@ -100,6 +100,23 @@ public class CirExecutionFlow {
 		}
 		return false;
 	}
+	/**
+	 * @param call_flow
+	 * @param retr_flow
+	 * @return whether the call-flow matches with the return flow as given
+	 */
+	public static boolean match_call_retr_flow(CirExecutionFlow call_flow, CirExecutionFlow retr_flow) {
+		if(call_flow == null || call_flow.type != CirExecutionFlowType.call_flow)
+			return false;
+		else if(retr_flow == null || retr_flow.type != CirExecutionFlowType.retr_flow)
+			return false;
+		else {
+			CirExecution call_execution = call_flow.source;
+			CirExecution wait_execution = retr_flow.target;
+			return call_execution.get_graph() == wait_execution.get_graph() &&
+					call_execution.get_id() + 1 == wait_execution.get_id();
+		}
+	}
 	
 	/* common interfaces */
 	@Override
