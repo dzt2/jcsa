@@ -101,24 +101,16 @@ public class CirExecutionPathFinder {
 		else if(flow == null)
 			throw new IllegalArgumentException("Invalid flow as null");
 		else {
-			List<CirExecutionFlow> next_flows = new ArrayList<CirExecutionFlow>();
-			while(path.is_empty() || path.get_edge(path.length() - 1).get_flow().equals(flow)) {
-				this.collect_next_flows(path, next_flows);
-				if(next_flows.size() == 0) break;
-				else if(next_flows.size() == 1) {
-					path.add(next_flows.get(0));
-				}
-				else {
-					for(CirExecutionFlow next_flow : next_flows) {
-						if(next_flow.equals(flow)) {
-							path.add(next_flow);
-							break;
-						}
-					}
-					break;
-				}
+			if(path.length() > 0 && path.get_edge(path.length() - 1).get_flow().equals(flow)) {
+				return true;
 			}
-			return path.length() > 0 && path.get_edge(path.length() - 1).get_flow().equals(flow);
+			else if(this.decidable_extend(path, flow.get_source())) {
+				path.add(flow); 
+				return true;
+			}
+			else {
+				return false;
+			}
 		}
 	}
 	/**
@@ -373,7 +365,7 @@ public class CirExecutionPathFinder {
 				for(CDependEdge dependence_edge : dependence_node.get_ou_edges()) {
 					if(dependence_edge.get_type() == CDependType.predicate_depend) {
 						CDependPredicate element = (CDependPredicate) dependence_edge.get_element();
-						CirStatement if_statement = element.get_condition().statement_of();
+						CirStatement if_statement = dependence_edge.get_target().get_statement();
 						CirExecution if_execution = 
 								if_statement.get_tree().get_localizer().get_execution(if_statement);
 						for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
@@ -399,6 +391,7 @@ public class CirExecutionPathFinder {
 						CirExecutionFlow retr_flow = wait_instance.get_in_edge(0).get_flow();
 						if(retr_flow.get_type() == CirExecutionFlowType.retr_flow) 
 							dependence_flows.add(retr_flow);
+						break;
 					}
 				}
 				dependence_node = next_node;

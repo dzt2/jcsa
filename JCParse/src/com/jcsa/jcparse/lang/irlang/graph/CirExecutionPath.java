@@ -77,7 +77,10 @@ public class CirExecutionPath {
 		StringBuilder buffer = new StringBuilder();
 		for(CirExecutionEdge edge : this.edges) {
 			buffer.append(edge.get_source().toString());
-			buffer.append(" <" + edge.get_type() + "> ");
+			if(edge.get_flow().is_actual())
+				buffer.append(" <" + edge.get_type() + "> ");
+			else
+				buffer.append(" @virtual@ ");
 		}
 		buffer.append(this.target.toString());
 		return buffer.toString();
