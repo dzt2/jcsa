@@ -11,6 +11,8 @@ import com.jcsa.jcparse.base.BitSequence;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.file.TestInputs;
 import com.jcsa.jcparse.test.inst.InstrumentalLine;
@@ -208,6 +210,26 @@ public class MuTestProjectTestSpace {
 				get_instrument_file(this.get_instrumental_output_directory());
 		if(instrumental_file.exists()) {
 			return CStatePath.read_path(template, ast_tree, cir_tree, instrumental_file);
+		}
+		else {
+			return null;	/* no instrumental results are found in */
+		}
+	}
+	/**
+	 * @param template
+	 * @param ast_tree
+	 * @param cir_tree
+	 * @param input
+	 * @return the execution path during testing
+	 * @throws Exception
+	 */
+	public CirExecutionPath load_execution_path(CRunTemplate template, 
+			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
+		File instrumental_file = input.
+				get_instrument_file(this.get_instrumental_output_directory());
+		if(instrumental_file.exists()) {
+			CStatePath state_path = CStatePath.read_path(template, ast_tree, cir_tree, instrumental_file);
+			return CirExecutionPathFinder.finder.instrumental_path(state_path);
 		}
 		else {
 			return null;	/* no instrumental results are found in */
