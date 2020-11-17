@@ -15,7 +15,6 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -64,7 +63,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		}
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
 		
-		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(CirExecutionFlowType.next_flow, source, target);
+		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
 		infections.put(mutations.flow_error(orig_flow, muta_flow), mutations.expression_constraint(statement, Boolean.TRUE, true));
 	}
 

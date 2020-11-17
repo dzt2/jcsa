@@ -36,8 +36,9 @@ public class MutExecutionPathTest {
 	@SuppressWarnings("unchecked")
 	private static void write_execution_path(FileWriter writer, CirExecutionPath path) throws Exception {
 		for(CirExecutionEdge edge : path.get_edges()) {
-			writer.write(edge.toString() + ": ");
-			writer.write(strip_code(edge.get_source().get_statement().generate_code(true)) + "\n");
+			writer.write(edge.toString() + "\n");
+			writer.write("\t" + edge.get_target().toString() + ": ");
+			writer.write(strip_code(edge.get_target().get_statement().generate_code(true)) + "\n");
 			if(edge.get_annotation() instanceof List) {
 				List<CStateUnit> units = (List<CStateUnit>) edge.get_annotation();
 				for(CStateUnit unit : units) {

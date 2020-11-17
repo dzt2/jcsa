@@ -8,8 +8,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * 	It implements the path finding algorithms and provide following methods for users to apply.
@@ -461,24 +464,16 @@ public class CirExecutionPathFinder {
 		if(!prev_path.has_edge_of(flow)) {	/* to avoid non-simple path */
 			prev_path.add_final(flow);		/* push the flow into prev_path */
 			
-			/* record the original length to recover path */
-			int original_length = prev_path.length();
-			
-			/* when decidable extends to the target, find solution */
-			if(this.df_extend(prev_path, target)) {
-				paths.add(prev_path.clone());	
+			if(flow.get_target() == target) {
+				paths.add(prev_path.clone());	/* find a solution to target */
 			}
-			/* otherwise, it continues to traverse the multiple next_flows */
-			else {
+			else {								/* recursively search on next flows */
 				List<CirExecutionFlow> next_flows = new ArrayList<CirExecutionFlow>();
 				this.collect_next_flows(prev_path, next_flows);
 				for(CirExecutionFlow next_flow : next_flows) {
 					this.find_simple_forward_paths(prev_path, next_flow, target, paths);
 				}
 			}
-			
-			/* recover the previous path to the original size */
-			while(prev_path.length() > original_length) prev_path.del_final();
 			
 			prev_path.del_final();			/* pop the flow from prev_path */
 		}
@@ -496,24 +491,16 @@ public class CirExecutionPathFinder {
 		if(!post_path.has_edge_of(flow)) {	/* to avoid non-simple path */
 			post_path.add_first(flow);		/* push the flow in the head of the path */
 			
-			/* record the original length to recover path */
-			int original_length = post_path.length();
-			
-			/* when decidable extends to the source, find a solution */
-			if(this.db_extend(post_path, source)) {
-				paths.add(post_path.clone());
+			if(flow.get_source() == flow.get_source()) {
+				paths.add(post_path.clone());	/* find a solution to source */
 			}
-			/* otherwise, continues to traverse the multile prev_flows */
-			else {
+			else {								/* recursively search on prev flows */
 				List<CirExecutionFlow> prev_flows = new ArrayList<CirExecutionFlow>();
 				this.collect_prev_flows(post_path, prev_flows);
 				for(CirExecutionFlow prev_flow : prev_flows) {
 					this.find_simple_bakward_paths(post_path, prev_flow, source, paths);
 				}
 			}
-			
-			/* recover the following path to the original size */
-			while(post_path.length() > original_length) post_path.del_first();
 			
 			post_path.del_first();			/* pop the first flow from the head of path */
 		}
@@ -675,6 +662,34 @@ public class CirExecutionPathFinder {
 			}
 		}
 		return rand_path;
+	}
+	
+	/* user-level path generation */
+	/**
+	 * @param state_path
+	 * @return the execution path generated from the state-path of instrumentation
+	 * 		   of which flow is correlated with annotation as List[CStateUnit] of
+	 * 		   the evaluated values of each expression before the edge.target is
+	 * 		   executed in testing.
+	 * @throws Exception
+	 */
+	public CirExecutionPath instrumental_path(CStatePath state_path) throws Exception {
+		if(state_path == null || state_path.size() == 0)
+			throw new IllegalArgumentException("Empty state-path is invalid");
+		else {
+			CirTree cir_tree = state_path.get_cir_tree();
+			CirExecutionPath path = new CirExecutionPath(
+					cir_tree.get_function_call_graph().
+					get_main_function().get_flow_graph().get_entry());
+			for(CStateNode state_node : state_path.get_nodes()) {
+				this.vf_extend(path, state_node.get_execution());
+				CirExecutionEdge edge = path.get_final();
+				if(edge != null) {
+					edge.set_annotation(state_node.get_units());
+				}
+			}
+			return path;
+		}
 	}
 	
 }

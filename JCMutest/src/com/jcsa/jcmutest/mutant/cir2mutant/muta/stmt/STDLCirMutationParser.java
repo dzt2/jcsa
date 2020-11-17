@@ -11,7 +11,6 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class STDLCirMutationParser extends CirMutationParser {
@@ -59,8 +58,7 @@ public class STDLCirMutationParser extends CirMutationParser {
 		}
 		
 		CirExecutionFlow orig_flow = beg_execution.get_ou_flow(0);
-		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(
-				CirExecutionFlowType.next_flow, beg_execution, end_execution);
+		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
 		CirStateError state_error = mutations.flow_error(orig_flow, muta_flow);
 		
 		infections.put(state_error, mutations.expression_constraint(beg_statement, Boolean.TRUE, true));
