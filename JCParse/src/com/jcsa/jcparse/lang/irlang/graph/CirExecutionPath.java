@@ -30,7 +30,7 @@ public class CirExecutionPath {
 	 * @param execution
 	 * @throws IllegalArgumentException
 	 */
-	protected CirExecutionPath(CirExecution execution) throws IllegalArgumentException {
+	public CirExecutionPath(CirExecution execution) throws IllegalArgumentException {
 		if(execution == null)
 			throw new IllegalArgumentException("Invalid execution: null");
 		else {
@@ -241,7 +241,7 @@ public class CirExecutionPath {
 	 * @return the edge of call flow that generates the context in which the path.target is executed
 	 * 		   or null if the path.target is on the top of the calling stack.
 	 */
-	protected CirExecutionEdge closest_call_edge() throws Exception {
+	protected CirExecutionEdge final_call_edge() throws Exception {
 		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
 		Iterator<CirExecutionEdge> iterator = this.edges.descendingIterator();
 		while(iterator.hasNext()) {
@@ -262,6 +262,74 @@ public class CirExecutionPath {
 			}
 		}
 		return null;
+	}
+	/**
+	 * @return the call flow that generates the context in which the path.target is executed
+	 * @throws Exception
+	 */
+	protected CirExecutionFlow final_call_flow() throws Exception {
+		CirExecutionEdge edge = this.final_call_edge();
+		if(edge == null)
+			return null;
+		else
+			return edge.get_flow();
+	}
+	/**
+	 * @return the edge of return flow that corresponds to context where the path.source is executed
+	 * @throws Exception
+	 */
+	protected CirExecutionEdge first_retr_edge() throws Exception {
+		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
+		Iterator<CirExecutionEdge> iterator = this.edges.iterator();
+		while(iterator.hasNext()) {
+			CirExecutionEdge edge = iterator.next();
+			if(edge.get_type() == CirExecutionFlowType.call_flow) {
+				call_stack.push(edge.get_flow());
+			}
+			else if(edge.get_type() == CirExecutionFlowType.retr_flow) {
+				if(call_stack.isEmpty())
+					return edge;
+				else {
+					CirExecutionFlow call_flow = call_stack.pop();
+					CirExecutionFlow retr_flow = edge.get_flow();
+					if(!CirExecutionFlow.match_call_retr_flow(call_flow, retr_flow))
+						throw new RuntimeException(call_flow + " ==> " + retr_flow);
+				}
+			}
+		}
+		return null;
+	}
+	/**
+	 * @return the return flow that corresponds to the context where the path.source is executed
+	 * @throws Exception
+	 */
+	protected CirExecutionFlow first_retr_flow() throws Exception {
+		CirExecutionEdge edge = this.first_retr_edge();
+		if(edge == null)
+			return null;
+		else
+			return edge.get_flow();
+	}
+	/**
+	 * @param flow
+	 * @return whether there is edge in the path w.r.t. the given flow
+	 */
+	protected boolean has_edge_of(CirExecutionFlow flow) {
+		if(flow == null)
+			return false;
+		else {
+			for(CirExecutionEdge edge : this.edges) {
+				if(edge.get_flow().equals(flow))
+					return true;
+			}
+			return false;
+		}
+	}
+	/**
+	 * @return the iterator returns the edges in reversed sequence in the path
+	 */
+	protected Iterator<CirExecutionEdge> get_reverse_edges() {
+		return this.edges.descendingIterator();
 	}
 	
 }
