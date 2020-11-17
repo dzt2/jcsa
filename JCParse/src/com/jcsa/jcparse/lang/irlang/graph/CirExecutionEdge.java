@@ -12,8 +12,6 @@ public class CirExecutionEdge {
 	/* definitions */
 	/** the path in which the execution edge is created **/
 	private CirExecutionPath path;
-	/** the index of the execution edge in the sequence **/
-	private int index;
 	/** the execution flow to which the edge correspond **/
 	private CirExecutionFlow flow;
 	/** the annotation correlated with the flow **/
@@ -27,17 +25,13 @@ public class CirExecutionEdge {
 	 * @param flow
 	 * @throws IllegalArgumentException
 	 */
-	protected CirExecutionEdge(CirExecutionPath path, int index, 
-			CirExecutionFlow flow) throws IllegalArgumentException {
+	protected CirExecutionEdge(CirExecutionPath path, CirExecutionFlow flow) throws IllegalArgumentException {
 		if(path == null)
 			throw new IllegalArgumentException("Invalid path: null");
-		else if(index < 0)
-			throw new IllegalArgumentException("Invalid index as " + index);
 		else if(flow == null)
 			throw new IllegalArgumentException("Invalid flow: null");
 		else {
 			this.path = path;
-			this.index = index;
 			this.flow = flow;
 			this.annotation = null;
 		}
@@ -48,10 +42,6 @@ public class CirExecutionEdge {
 	 * @return the path in which the execution edge is created
 	 */
 	public CirExecutionPath get_path() { return this.path; }
-	/**
-	 * @return the index of the execution edge in the path
-	 */
-	public int get_index() { return this.index; }
 	/**
 	 * @return the execution flow to which the edge corresponds
 	 */
@@ -107,7 +97,6 @@ public class CirExecutionEdge {
 	 */
 	protected void delete() {
 		this.path = null;
-		this.index = -1;
 		this.flow = null;
 		this.annotation = null;
 	}
