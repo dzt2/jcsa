@@ -1,5 +1,7 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
+package com.jcsa.jcmutest.mutant.cir2mutant;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CirMutation {
@@ -14,7 +16,7 @@ public class CirMutation {
 	 * @param state_error that is expected to occur for killing mutation
 	 * @throws Exception
 	 */
-	protected CirMutation(SymConstraint constraint, 
+	public CirMutation(SymConstraint constraint, 
 			SymStateError state_error) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");

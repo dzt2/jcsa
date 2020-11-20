@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.CirNode;

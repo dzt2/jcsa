@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;

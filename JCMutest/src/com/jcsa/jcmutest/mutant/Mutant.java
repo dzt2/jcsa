@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 
 /**

@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxx.OAXACirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxx.OAXNCirMutationParser;
