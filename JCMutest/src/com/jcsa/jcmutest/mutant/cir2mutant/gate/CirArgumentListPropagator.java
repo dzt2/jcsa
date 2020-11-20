@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -22,18 +22,18 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirArgumentListPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,
-			CirNode target_location, Map<CirStateError, CirConstraint> propagations) throws Exception {
+	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 0. extract the mutation argument */
 		SymExpression mutation_argument;
-		if(error instanceof CirExpressionError) {
-			mutation_argument = ((CirExpressionError) error).get_mutation_value();
+		if(error instanceof SymExpressionError) {
+			mutation_argument = ((SymExpressionError) error).get_mutation_value();
 		}
-		else if(error instanceof CirStateValueError) {
-			mutation_argument = ((CirStateValueError) error).get_mutation_value();
+		else if(error instanceof SymStateValueError) {
+			mutation_argument = ((SymStateValueError) error).get_mutation_value();
 		}
-		else if(error instanceof CirReferenceError) {
-			mutation_argument = ((CirReferenceError) error).get_mutation_value();
+		else if(error instanceof SymReferenceError) {
+			mutation_argument = ((SymReferenceError) error).get_mutation_value();
 		}
 		else {
 			return;
@@ -64,8 +64,8 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 				get_data_type(), call_statement.get_function(), arguments);
 		
 		/* 3. construct constraint-error pair */
-		CirStateError state_error = cir_mutations.expr_error(target, muta_value);
-		CirConstraint constraint = cir_mutations.expression_constraint(statement, Boolean.TRUE, true);
+		SymStateError state_error = cir_mutations.expr_error(target, muta_value);
+		SymConstraint constraint = cir_mutations.expression_constraint(statement, Boolean.TRUE, true);
 		propagations.put(state_error, constraint);
 	}
 

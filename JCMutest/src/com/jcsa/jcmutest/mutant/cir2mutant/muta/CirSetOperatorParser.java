@@ -3,9 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.Collection;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -37,7 +37,7 @@ public abstract class CirSetOperatorParser {
 	/** used to generate constraints and state errors **/
 	private CirMutations mutations;
 	/** mapping from state errors to the constraints for killing mutation **/
-	private Map<CirStateError, CirConstraint> infections;
+	private Map<SymStateError, SymConstraint> infections;
 	
 	/* constructor */
 	public CirSetOperatorParser() { }
@@ -56,7 +56,7 @@ public abstract class CirSetOperatorParser {
 			CirStatement statement, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
 			CirMutations mutations,
-			Map<CirStateError, CirConstraint> infection) throws Exception {
+			Map<SymStateError, SymConstraint> infection) throws Exception {
 		/* declarations */
 		this.mutation = mutation;
 		this.statement = statement;
@@ -134,7 +134,7 @@ public abstract class CirSetOperatorParser {
 	 * @return add the infection-pair of [constraint, init_error] into the module.
 	 * @throws Exception
 	 */
-	protected boolean add_infection(CirConstraint constraint, CirStateError init_error) throws Exception {
+	protected boolean add_infection(SymConstraint constraint, SymStateError init_error) throws Exception {
 		this.infections.put(init_error, constraint); return true;
 	}
 	/**
@@ -142,14 +142,14 @@ public abstract class CirSetOperatorParser {
 	 * @return assert_on(this.statement, condition, true).
 	 * @throws Exception
 	 */
-	protected CirConstraint get_constraint(Object condition) throws Exception {
+	protected SymConstraint get_constraint(Object condition) throws Exception {
 		return this.mutations.expression_constraint(statement, condition, true);
 	}
 	/**
 	 * @return trp_stmt(this.statement)
 	 * @throws Exception
 	 */
-	protected CirStateError trap_statement() throws Exception {
+	protected SymStateError trap_statement() throws Exception {
 		return this.mutations.trap_error(statement);
 	}
 	
@@ -175,7 +175,7 @@ public abstract class CirSetOperatorParser {
 	 * @return set_expr(this.expression, muta_expression)
 	 * @throws Exception
 	 */
-	protected CirStateError set_expression(Object muta_expression) throws Exception {
+	protected SymStateError set_expression(Object muta_expression) throws Exception {
 		return mutations.expr_error(expression, SymFactory.sym_expression(muta_expression));
 	}
 	/**
@@ -183,7 +183,7 @@ public abstract class CirSetOperatorParser {
 	 * @return add_expr(this.expression, +, operand)
 	 * @throws Exception
 	 */
-	protected CirStateError add_expression(Object operand) throws Exception {
+	protected SymStateError add_expression(Object operand) throws Exception {
 		return mutations.expr_error(expression, SymFactory.arith_add(expression.get_data_type(), expression, operand));
 	}
 	/**
@@ -191,28 +191,28 @@ public abstract class CirSetOperatorParser {
 	 * @return add_expr(this.expression, -, operand)
 	 * @throws Exception
 	 */
-	protected CirStateError sub_expression(Object operand) throws Exception {
+	protected SymStateError sub_expression(Object operand) throws Exception {
 		return mutations.expr_error(expression, SymFactory.arith_sub(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @return uny_expr(this.expression, -)
 	 * @throws Exception
 	 */
-	protected CirStateError neg_expression() throws Exception {
+	protected SymStateError neg_expression() throws Exception {
 		return mutations.expr_error(expression, SymFactory.arith_neg(expression.get_data_type(), expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, ~)
 	 * @throws Exception
 	 */
-	protected CirStateError rsv_expression() throws Exception {
+	protected SymStateError rsv_expression() throws Exception {
 		return mutations.expr_error(expression, SymFactory.bitws_rsv(expression.get_data_type(), expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, !)
 	 * @throws Exception
 	 */
-	protected CirStateError not_expression() throws Exception {
+	protected SymStateError not_expression() throws Exception {
 		return mutations.expr_error(expression, SymFactory.logic_not(expression));
 	}
 	/**
@@ -221,7 +221,7 @@ public abstract class CirSetOperatorParser {
 	 * @return ins_expr(orig_expr, operator, operand)
 	 * @throws Exception
 	 */
-	protected CirStateError ins_expression(Object operand, COperator operator) throws Exception {
+	protected SymStateError ins_expression(Object operand, COperator operator) throws Exception {
 		return mutations.expr_error(expression, this.sym_expression(operator, operand, expression));
 	}
 	
@@ -309,14 +309,14 @@ public abstract class CirSetOperatorParser {
 	 * @return conjunction of the descriptions
 	 * @throws Exception
 	 */
-	protected CirConstraint conjunct(Collection<CirConstraint> constraints) throws Exception {
+	protected SymConstraint conjunct(Collection<SymConstraint> constraints) throws Exception {
 		if(constraints.isEmpty())
 			return mutations.expression_constraint(statement, Boolean.TRUE, true);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
 			SymExpression condition = null;
-			for(CirConstraint constraint : constraints) {
+			for(SymConstraint constraint : constraints) {
 				if(condition == null)
 					condition = constraint.get_condition();
 				else
@@ -330,14 +330,14 @@ public abstract class CirSetOperatorParser {
 	 * @return disjunction of the descriptions
 	 * @throws Exception
 	 */
-	protected CirConstraint disjunct(Collection<CirConstraint> constraints) throws Exception {
+	protected SymConstraint disjunct(Collection<SymConstraint> constraints) throws Exception {
 		if(constraints.isEmpty())
 			return mutations.expression_constraint(statement, Boolean.FALSE, true);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
 			SymExpression condition = null;
-			for(CirConstraint constraint : constraints) {
+			for(SymConstraint constraint : constraints) {
 				if(condition == null)
 					condition = constraint.get_condition();
 				else

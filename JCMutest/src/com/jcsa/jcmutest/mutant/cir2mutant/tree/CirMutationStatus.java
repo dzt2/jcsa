@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 
 /**
  * It records the status of the constraint or state-error under analysis.
@@ -57,7 +57,7 @@ public class CirMutationStatus {
 	 */
 	public Iterable<CirAnnotation> get_annotations() { return this.annotations; }
 	/**
-	 * @return either CirConstraint* or CirStateError*
+	 * @return either SymConstraint* or SymStateError*
 	 */
 	public Iterable<Object> get_concrete_values() { return this.concrete_values; }
 	
@@ -76,7 +76,7 @@ public class CirMutationStatus {
 	 * @return append the concrete constraint to the status
 	 * @throws Exception
 	 */
-	protected Boolean append(CirConstraint constraint) throws Exception {
+	protected Boolean append(SymConstraint constraint) throws Exception {
 		this.annotations.addAll(CirAnnotations.annotations(constraint, null));
 		this.execution_times++;
 		Boolean result = constraint.validate(null); 
@@ -97,7 +97,7 @@ public class CirMutationStatus {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected Boolean append(CirStateError state_error) throws Exception { 
+	protected Boolean append(SymStateError state_error) throws Exception { 
 		this.annotations.addAll(CirAnnotations.annotations(state_error, null));
 		this.execution_times++;
 		Boolean result = state_error.validate(null);

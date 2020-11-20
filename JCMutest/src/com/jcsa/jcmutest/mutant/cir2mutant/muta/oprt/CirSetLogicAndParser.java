@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.sym.SymExpression;
@@ -21,7 +21,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -44,9 +44,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -73,7 +73,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [!B(y)] --> trap
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
 		condition = this.sym_condition(this.roperand, false);
 		constraint = this.get_constraint(condition);
@@ -87,9 +87,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		 * [!B(y)] --> trap
 		 * [B(x)] --> set_false
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		if(this.compare_or_mutate) {
 			condition = this.sym_condition(this.loperand, true);
@@ -126,7 +126,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -149,9 +149,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -173,9 +173,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) && !B(y)]
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
@@ -197,7 +197,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x)]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -218,7 +218,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) != B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		SymExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
@@ -241,7 +241,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * 	[B(x)] --> not_expr
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -257,7 +257,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [!B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.roperand, false));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -273,7 +273,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(y)] --> not_expr
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.roperand, true));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -289,7 +289,7 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [!B(x)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_condition(this.loperand, false));
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -305,9 +305,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [!B(x) && !B(y)] --> set_true
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, false);
 		constraints.add(this.get_constraint(condition));
@@ -329,9 +329,9 @@ public class CirSetLogicAndParser extends CirSetOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		CirConstraint constraint; CirStateError init_error; 
+		SymConstraint constraint; SymStateError init_error; 
 		SymExpression condition;
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));

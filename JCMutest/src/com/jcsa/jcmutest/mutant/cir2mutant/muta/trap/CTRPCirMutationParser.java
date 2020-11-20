@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -68,7 +68,7 @@ public class CTRPCirMutationParser extends CirMutationParser {
 	
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		AstSwitchStatement switch_statement = this.get_switch_statement(mutation.get_location());
 		AstCaseStatement case_statement = this.get_case_statement((AstNode) mutation.get_parameter());
 		CirAssignStatement statement1 = (CirAssignStatement) 
@@ -80,7 +80,7 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		SymExpression condition2 = SymFactory.sym_expression(statement2);
 		condition2 = SymFactory.greater_eq(statement2, Integer.valueOf(1));
 		SymExpression condition = SymFactory.logic_and(condition1, condition2);
-		CirConstraint constraint = mutations.expression_constraint(statement2, condition, true);
+		SymConstraint constraint = mutations.expression_constraint(statement2, condition, true);
 		
 		infections.put(mutations.trap_error(statement1), constraint);
 	}

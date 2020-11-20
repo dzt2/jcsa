@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxx;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetOperatorParsers;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -23,7 +23,7 @@ public class OLXNCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		
 		CirAssignStatement save1 = (CirAssignStatement) this.get_cir_node(

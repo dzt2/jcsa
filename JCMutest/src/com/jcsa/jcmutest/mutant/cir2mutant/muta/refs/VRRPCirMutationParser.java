@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.refs;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -68,14 +68,14 @@ public class VRRPCirMutationParser extends CirMutationParser {
 	
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymExpression muta_value = this.get_muta_value(mutation.get_location(), mutation.get_parameter().toString());
 		
 		SymExpression condition = SymFactory.not_equals(expression, muta_value);
-		CirConstraint constraint = mutations.expression_constraint(statement, condition, true);
+		SymConstraint constraint = mutations.expression_constraint(statement, condition, true);
 		
-		CirStateError state_error;
+		SymStateError state_error;
 		if(expression instanceof CirReferExpression && !(muta_value instanceof SymConstant)) {
 			state_error = mutations.refer_error((CirReferExpression) expression, muta_value);
 		}

@@ -5,13 +5,13 @@ import java.io.FileWriter;
 import java.util.Random;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
@@ -153,7 +153,7 @@ public class CirMutationUtilsTest {
 	 * @param constraint
 	 * @throws Exception
 	 */
-	private static void write_constraint(FileWriter writer, CirConstraint constraint) throws Exception {
+	private static void write_constraint(FileWriter writer, SymConstraint constraint) throws Exception {
 		writer.write("#const\t");
 		writer.write(constraint.get_execution().toString() + "\t");
 		writer.write(get_code(constraint.get_condition()));
@@ -164,29 +164,29 @@ public class CirMutationUtilsTest {
 	 * @param state_error
 	 * @throws Exception
 	 */
-	private static void write_state_error(FileWriter writer, CirStateError state_error) throws Exception {
+	private static void write_state_error(FileWriter writer, SymStateError state_error) throws Exception {
 		writer.write("#error\t" + state_error.get_execution());
 		writer.write("\t" + state_error.get_type().toString());
-		if(state_error instanceof CirFlowError) {
-			CirExecutionFlow orig_flow = ((CirFlowError) state_error).get_original_flow();
-			CirExecutionFlow muta_flow = ((CirFlowError) state_error).get_mutation_flow();
+		if(state_error instanceof SymFlowError) {
+			CirExecutionFlow orig_flow = ((SymFlowError) state_error).get_original_flow();
+			CirExecutionFlow muta_flow = ((SymFlowError) state_error).get_mutation_flow();
 			writer.write("\t" + orig_flow.get_type() + "[" + orig_flow.get_target() + "]");
 			writer.write("\t" + muta_flow.get_type() + "[" + muta_flow.get_target() + "]");
 		}
-		else if(state_error instanceof CirTrapError) {
+		else if(state_error instanceof SymTrapError) {
 			writer.write("\t\"" + get_code(state_error.get_statement()) + "\"");
 		}
-		else if(state_error instanceof CirExpressionError) {
-			writer.write("\t\"" + get_code(((CirExpressionError) state_error).get_expression()) + "\"");
-			writer.write("\t\"" + get_code(((CirExpressionError) state_error).get_mutation_value()) + "\"");
+		else if(state_error instanceof SymExpressionError) {
+			writer.write("\t\"" + get_code(((SymExpressionError) state_error).get_expression()) + "\"");
+			writer.write("\t\"" + get_code(((SymExpressionError) state_error).get_mutation_value()) + "\"");
 		}
-		else if(state_error instanceof CirReferenceError) {
-			writer.write("\t\"" + get_code(((CirReferenceError) state_error).get_reference()) + "\"");
-			writer.write("\t\"" + get_code(((CirReferenceError) state_error).get_mutation_value()) + "\"");
+		else if(state_error instanceof SymReferenceError) {
+			writer.write("\t\"" + get_code(((SymReferenceError) state_error).get_expression()) + "\"");
+			writer.write("\t\"" + get_code(((SymReferenceError) state_error).get_mutation_value()) + "\"");
 		}
-		else if(state_error instanceof CirStateValueError) {
-			writer.write("\t\"" + get_code(((CirStateValueError) state_error).get_reference()) + "\"");
-			writer.write("\t\"" + get_code(((CirStateValueError) state_error).get_mutation_value()) + "\"");
+		else if(state_error instanceof SymStateValueError) {
+			writer.write("\t\"" + get_code(((SymStateValueError) state_error).get_expression()) + "\"");
+			writer.write("\t\"" + get_code(((SymStateValueError) state_error).get_mutation_value()) + "\"");
 		}
 		else {
 			throw new IllegalArgumentException("Invalid state-error: " + state_error);

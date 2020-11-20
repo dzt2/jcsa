@@ -2,10 +2,10 @@ package com.jcsa.jcmutest.mutant.cir2mutant.gate;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -20,19 +20,19 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirAddressOfPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,
-			CirNode target_location, Map<CirStateError, CirConstraint> propagations) throws Exception {
+	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirAddressExpression target = (CirAddressExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymExpression muta_operand; SymExpression muta_value;
-		CirConstraint constraint; CirStateError state_error;
+		SymConstraint constraint; SymStateError state_error;
 		
 		/* 2. perform error propagation */
 		if(source == target.get_operand()) {
 			/* 3. determine the mutation value of operand */
-			if(error instanceof CirReferenceError) {
-				muta_operand = ((CirReferenceError) error).get_mutation_value();
+			if(error instanceof SymReferenceError) {
+				muta_operand = ((SymReferenceError) error).get_mutation_value();
 			}
 			else {
 				muta_operand = null;

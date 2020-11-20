@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -19,9 +19,9 @@ public class STRPCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
-		CirConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
-		CirStateError state_error = mutations.trap_error(statement);
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
+		SymConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
+		SymStateError state_error = mutations.trap_error(statement);
 		infections.put(state_error, constraint);
 	}
 

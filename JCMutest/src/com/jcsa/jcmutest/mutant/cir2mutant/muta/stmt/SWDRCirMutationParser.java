@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -23,7 +23,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 	}
 	
 	private void while_to_do_while(CirMutations mutations, CirTree cir_tree,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		/* constraint: true_branch execute at least 1 times */
 		CirIfStatement if_statement = (CirIfStatement) 
 				this.get_cir_node(cir_tree, mutation.get_location(), CirIfStatement.class);
@@ -35,7 +35,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 				break;
 			}
 		}
-		CirConstraint constraint = mutations.expression_constraint(
+		SymConstraint constraint = mutations.expression_constraint(
 					true_branch.get_statement(), Boolean.TRUE, true);
 		
 		/* beg_stmt.before --> end_stmt */
@@ -47,13 +47,13 @@ public class SWDRCirMutationParser extends CirMutationParser {
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(
 				beg_execution.get_in_flow(0).get_source(), end_execution);
-		CirStateError state_error = mutations.flow_error(orig_flow, muta_flow);
+		SymStateError state_error = mutations.flow_error(orig_flow, muta_flow);
 		
 		infections.put(state_error, constraint);
 	}
 	
 	private void do_while_to_while(CirMutations mutations, CirTree cir_tree,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirStatement beg_statement = this.get_beg_statement(cir_tree, mutation.get_location());
 		CirExecution beg_execution = cir_tree.get_localizer().get_execution(beg_statement);
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
@@ -68,7 +68,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 	
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		switch(mutation.get_operator()) {
 		case while_to_do_while:	this.while_to_do_while(mutations, cir_tree, mutation, infections); break;
 		case do_while_to_while:	this.do_while_to_while(mutations, cir_tree, mutation, infections); break;

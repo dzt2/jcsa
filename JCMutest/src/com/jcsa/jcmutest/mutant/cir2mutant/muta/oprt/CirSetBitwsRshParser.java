@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -9,7 +9,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -25,7 +25,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -43,7 +43,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -61,7 +61,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, loperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -80,7 +80,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		 * [y == 0] --> trap_stmt()
 		 * [x != 0] -->
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, Integer.valueOf(0)));
@@ -107,7 +107,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		 * [y == 0] --> trap_stmt()
 		 * [x != 0] -->
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, Integer.valueOf(0)));
@@ -133,7 +133,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, loperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -151,7 +151,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -169,7 +169,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -187,7 +187,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -210,7 +210,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, loperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -228,7 +228,7 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 		/**
 		 * [y != 0]
 		 */
-		CirConstraint constraint; CirStateError init_error;
+		SymConstraint constraint; SymStateError init_error;
 		constraint = this.get_constraint(this.sym_expression(
 				COperator.not_equals, roperand, Integer.valueOf(0)));
 		if(this.compare_or_mutate) {
@@ -242,8 +242,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean greater_tn() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -256,8 +256,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean greater_eq() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -270,8 +270,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean smaller_tn() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -284,8 +284,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean smaller_eq() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -298,8 +298,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean equal_with() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -312,8 +312,8 @@ public class CirSetBitwsRshParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean not_equals() throws Exception {
-		CirConstraint constraint = this.get_constraint(Boolean.TRUE);
-		CirStateError init_error;
+		SymConstraint constraint = this.get_constraint(Boolean.TRUE);
+		SymStateError init_error;
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

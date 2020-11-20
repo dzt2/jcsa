@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.unry;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -24,7 +24,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	}
 	
 	private void prev_inc_to_prev_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -34,7 +34,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 	}
 	private void prev_inc_to_post_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
 			SymExpression muta_expression = SymFactory.arith_sub(
@@ -44,7 +44,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		}
 	}
 	private void prev_inc_to_post_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -63,7 +63,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	}
 	
 	private void prev_dec_to_prev_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -73,7 +73,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 	}
 	private void prev_dec_to_post_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
 			SymExpression muta_expression = SymFactory.arith_add(
@@ -83,7 +83,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		}
 	}
 	private void prev_dec_to_post_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -102,7 +102,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	}
 	
 	private void post_inc_to_post_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -112,7 +112,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 	}
 	private void post_inc_to_prev_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
 			SymExpression muta_expression = SymFactory.arith_add(
@@ -122,7 +122,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		}
 	}
 	private void post_inc_to_prev_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -141,7 +141,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	}
 	
 	private void post_dec_to_post_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -151,7 +151,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 	}
 	private void post_dec_to_prev_dec(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
 			SymExpression muta_expression = SymFactory.arith_sub(
@@ -161,7 +161,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		}
 	}
 	private void post_dec_to_prev_inc(CirMutations mutations, CirTree cir_tree, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
@@ -181,7 +181,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 	
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		switch(mutation.get_operator()) {
 		case prev_inc_to_prev_dec:	this.prev_inc_to_prev_dec(mutations, cir_tree, mutation, infections); break;
 		case prev_inc_to_post_inc:	this.prev_inc_to_post_inc(mutations, cir_tree, mutation, infections); break;

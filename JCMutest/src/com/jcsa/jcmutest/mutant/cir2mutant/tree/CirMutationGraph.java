@@ -9,13 +9,13 @@ import java.util.Map;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -115,7 +115,7 @@ public class CirMutationGraph {
 	 * @return create an isolated node for infecting the state-error
 	 * @throws Exception
 	 */
-	protected CirMutationNode infection_node(CirStateError state_error) throws Exception {
+	protected CirMutationNode infection_node(SymStateError state_error) throws Exception {
 		CirMutationNode node = new CirMutationNode(this,
 				CirMutationNodeType.infects,
 				state_error.get_execution(), state_error);
@@ -156,11 +156,11 @@ public class CirMutationGraph {
 			}
 			
 			for(CirExecution execution : reaching_map.keySet()) {
-				List<CirConstraint> path_constraints = CirMutationUtils.utils.
+				List<SymConstraint> path_constraints = CirMutationUtils.utils.
 						get_path_constraints(cir_mutations, dependence_graph, execution);
 				
 				CirMutationNode prev_node = this.get_start_node(), next_node;
-				for(CirConstraint constraint : path_constraints) {
+				for(SymConstraint constraint : path_constraints) {
 					if(prev_node.get_execution() != constraint.get_execution()) {
 						next_node = this.execution_node(constraint.get_execution());
 						prev_node.link_to(CirMutationEdgeType.path_flow, next_node, constraint);
@@ -171,8 +171,8 @@ public class CirMutationGraph {
 				this.reaching_nodes.add(prev_node);	/* add the reaching faulty statement */
 				
 				for(CirMutation cir_mutation : reaching_map.get(execution)) {
-					CirConstraint constraint = cir_mutation.get_constraint();
-					CirStateError state_error = cir_mutation.get_state_error();
+					SymConstraint constraint = cir_mutation.get_constraint();
+					SymStateError state_error = cir_mutation.get_state_error();
 					CirMutationNode error_node = this.infection_node(state_error);
 					prev_node.link_to(CirMutationEdgeType.gena_flow, error_node, constraint);
 					init_error_nodes.add(error_node);
@@ -203,7 +203,7 @@ public class CirMutationGraph {
 				prev.link_to(CirMutationEdgeType.gate_flow, next, next_mutation.get_constraint());
 			}
 			
-			if(prev.get_state_error() instanceof CirStateValueError) {
+			if(prev.get_state_error() instanceof SymStateValueError) {
 				leafs.add(prev);
 			}
 		}
@@ -217,18 +217,18 @@ public class CirMutationGraph {
 	 */
 	private Collection<CirMutationNode> build_on(CDependGraph dependence_graph, CirMutationNode source) throws Exception {
 		CirExpression def_expression; SymExpression mutation_value;
-		CirStateError state_error = source.get_state_error();
-		if(state_error instanceof CirExpressionError) {
-			def_expression = ((CirExpressionError) state_error).get_expression();
-			mutation_value = ((CirExpressionError) state_error).get_mutation_value();
+		SymStateError state_error = source.get_state_error();
+		if(state_error instanceof SymExpressionError) {
+			def_expression = ((SymExpressionError) state_error).get_expression();
+			mutation_value = ((SymExpressionError) state_error).get_mutation_value();
 		}
-		else if(state_error instanceof CirReferenceError) {
-			def_expression = ((CirReferenceError) state_error).get_reference();
-			mutation_value = ((CirReferenceError) state_error).get_mutation_value();
+		else if(state_error instanceof SymReferenceError) {
+			def_expression = ((SymReferenceError) state_error).get_expression();
+			mutation_value = ((SymReferenceError) state_error).get_mutation_value();
 		}
-		else if(state_error instanceof CirStateValueError) {
-			def_expression = ((CirStateValueError) state_error).get_reference();
-			mutation_value = ((CirStateValueError) state_error).get_mutation_value();
+		else if(state_error instanceof SymStateValueError) {
+			def_expression = ((SymStateValueError) state_error).get_expression();
+			mutation_value = ((SymStateValueError) state_error).get_mutation_value();
 		}
 		else {
 			def_expression = null;
@@ -247,9 +247,9 @@ public class CirMutationGraph {
 				CirStatement use_statement = use_expression.statement_of();
 				CirExecution target_execution = use_statement.get_tree().get_localizer().get_execution(use_statement);
 				
-				List<CirConstraint> constraints = CirMutationUtils.utils.get_path_constraints(cir_mutations, source_execution, target_execution);
+				List<SymConstraint> constraints = CirMutationUtils.utils.get_path_constraints(cir_mutations, source_execution, target_execution);
 				CirMutationNode prev = source, next; boolean first = true;
-				for(CirConstraint constraint : constraints) {
+				for(SymConstraint constraint : constraints) {
 					next = this.execution_node(constraint.get_execution());
 					if(first) {
 						first = false;
@@ -261,7 +261,7 @@ public class CirMutationGraph {
 					prev = next;
 				}
 				
-				CirStateError next_error = cir_mutations.expr_error(use_expression, mutation_value);
+				SymStateError next_error = cir_mutations.expr_error(use_expression, mutation_value);
 				next = this.infection_node(next_error);
 				prev.link_to(CirMutationEdgeType.gena_flow, next, cir_mutations.expression_constraint(use_statement, Boolean.TRUE, true));
 				

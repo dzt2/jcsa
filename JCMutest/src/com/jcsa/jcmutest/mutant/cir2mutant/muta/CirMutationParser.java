@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
@@ -41,7 +41,7 @@ public abstract class CirMutationParser {
 	 */
 	protected abstract void generate_infections(CirMutations mutations,
 			CirTree cir_tree, CirStatement statement, AstMutation mutation, 
-			Map<CirStateError, CirConstraint> infections) throws Exception;
+			Map<SymStateError, SymConstraint> infections) throws Exception;
 	/**
 	 * @param mutations
 	 * @param mutant
@@ -59,12 +59,12 @@ public abstract class CirMutationParser {
 			CirStatement statement = 
 					this.get_location(mutations.get_cir_tree(), mutation);
 			if(statement != null) {
-				Map<CirStateError, CirConstraint> infections = 
-						new HashMap<CirStateError, CirConstraint>();
+				Map<SymStateError, SymConstraint> infections = 
+						new HashMap<SymStateError, SymConstraint>();
 				this.generate_infections(mutations, mutations.
 						get_cir_tree(), statement, mutation, infections);
-				for(CirStateError state_error : infections.keySet()) {
-					CirConstraint constraint = infections.get(state_error);
+				for(SymStateError state_error : infections.keySet()) {
+					SymConstraint constraint = infections.get(state_error);
 					cir_mutations.add(mutations.new_mutation(constraint, state_error));
 				}
 			}

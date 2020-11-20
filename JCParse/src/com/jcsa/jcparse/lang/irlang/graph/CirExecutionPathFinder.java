@@ -8,9 +8,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import com.jcsa.jcparse.flwa.depend.CDependEdge;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.depend.CDependNode;
+import com.jcsa.jcparse.flwa.depend.CDependPredicate;
+import com.jcsa.jcparse.flwa.depend.CDependType;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -689,6 +697,133 @@ public class CirExecutionPathFinder {
 				}
 			}
 			return path;
+		}
+	}
+	private List<CirExecutionFlow> dependence_flows(CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
+		CDependNode dependence_node = dependence_graph.get_node(instance), next_node;
+		List<CirExecutionFlow> dependence_flows = new ArrayList<CirExecutionFlow>();
+		
+		while(dependence_node != null) {
+			/* traverse the control dependence path until none */
+			next_node = null;
+			
+			/* traverse the control dependence edges from the node */
+			for(CDependEdge dependence_edge : dependence_node.get_ou_edges()) {
+				next_node = null;
+				if(dependence_edge.get_type() == CDependType.predicate_depend) {
+					CDependPredicate element = (CDependPredicate) dependence_edge.get_element();
+					CirStatement if_statement = element.get_statement();
+					CirExecution if_execution = if_statement.get_tree().get_localizer().get_execution(if_statement);
+					for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
+						if(flow.get_type() == CirExecutionFlowType.true_flow && element.get_predicate_value()) {
+							dependence_flows.add(flow); break;
+						}
+						else if(flow.get_type() == CirExecutionFlowType.fals_flow && !element.get_predicate_value()) {
+							dependence_flows.add(flow); break;
+						}
+					}
+					next_node = dependence_edge.get_target();
+				}
+				else if(dependence_edge.get_type() == CDependType.stmt_exit_depend) {
+					CirInstanceNode wait_instance = dependence_edge.get_target().get_instance();
+					CirInstanceNode exit_instance = wait_instance.get_in_edge(0).get_source();
+					dependence_flows.add(wait_instance.get_in_edge(0).get_flow());
+					next_node = dependence_graph.get_node(exit_instance);
+				}
+				else if(dependence_edge.get_type() == CDependType.stmt_call_depend) {
+					CirInstanceNode call_instance = dependence_edge.get_target().get_instance();
+					CirExecutionFlow flow = call_instance.get_ou_edge(0).get_flow();
+					if(flow.get_type() == CirExecutionFlowType.call_flow)
+						dependence_flows.add(flow);
+					next_node = dependence_edge.get_target();
+				}
+				if(next_node != null) break;	/* when find control dependence */
+			}
+			
+			dependence_node = next_node;
+		}
+		
+		for(int k = 0; k < dependence_flows.size() / 2; k++) {
+			CirExecutionFlow x = dependence_flows.get(k);
+			CirExecutionFlow y = dependence_flows.get(dependence_flows.size() - 1 - k);
+			dependence_flows.set(k, y); dependence_flows.set(dependence_flows.size() - 1 - k, x);
+		}
+		
+		return dependence_flows;
+	}
+	/**
+	 * @param dependence_graph
+	 * @param instance
+	 * @return the dependence path from program entry to the node of instance execution.
+	 * @throws Exception 
+	 */
+	public CirExecutionPath dependence_path(CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
+		if(dependence_graph == null)
+			throw new IllegalArgumentException("Invalid dependence_graph: null");
+		else if(instance == null) 
+			throw new IllegalArgumentException("Invalid instance: null");
+		else if(!dependence_graph.has_node(instance)) {	/* virtual path from function entry */
+			CirExecution source = instance.get_execution().get_graph().get_entry();
+			CirExecution target = instance.get_execution();
+			CirExecutionPath path = new CirExecutionPath(source);
+			this.vf_extend(path, target); return path;
+		}
+		else {
+			List<CirExecutionFlow> dependence_flows = this.dependence_flows(dependence_graph, instance);
+			CirExecutionPath path = new CirExecutionPath(dependence_graph.get_program_graph().get_cir_tree().
+					get_function_call_graph().get_main_function().get_flow_graph().get_entry());
+			for(CirExecutionFlow dependence_flow : dependence_flows) this.vf_extend(path, dependence_flow);
+			this.vf_extend(path, instance.get_execution()); return path;
+		}
+	}
+	/**
+	 * 
+	 * @param dependence_graph
+	 * @param execution
+	 * @return
+	 * @throws Exception
+	 */
+	public CirExecutionPath dependence_path(CDependGraph dependence_graph, CirExecution execution) throws Exception {
+		if(dependence_graph == null)
+			throw new IllegalArgumentException("Invalid dependence_graph: null");
+		else if(execution == null) 
+			throw new IllegalArgumentException("Invalid execution as null");
+		else {
+			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
+			if(instance_graph.has_instances_of(execution)) {
+				List<CirExecutionFlow> common_flows = new ArrayList<CirExecutionFlow>();
+				Set<CirExecutionFlow> removed_flows = new HashSet<CirExecutionFlow>();
+				List<CirExecutionFlow> dependence_flows;
+				
+				boolean first = true;
+				for(CirInstanceNode instance : instance_graph.get_instances_of(execution)) {
+					dependence_flows = this.dependence_flows(dependence_graph, instance);
+					if(first) {
+						first = false;
+						common_flows.addAll(dependence_flows);
+					}
+					else {
+						removed_flows.clear();
+						for(CirExecutionFlow flow : dependence_flows) {
+							if(!common_flows.contains(flow)) {
+								removed_flows.add(flow);
+							}
+						}
+						common_flows.removeAll(removed_flows);
+					}
+				}
+				
+				CirExecutionPath path = new CirExecutionPath(dependence_graph.get_program_graph().get_cir_tree().
+						get_function_call_graph().get_main_function().get_flow_graph().get_entry());
+				for(CirExecutionFlow dependence_flow : common_flows) this.vf_extend(path, dependence_flow);
+				this.vf_extend(path, execution); return path;
+			}
+			else {
+				CirExecution source = execution.get_graph().get_entry();
+				CirExecution target = execution;
+				CirExecutionPath path = new CirExecutionPath(source);
+				this.vf_extend(path, target); return path;
+			}
 		}
 	}
 	

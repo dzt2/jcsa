@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 
@@ -14,7 +14,7 @@ public class CirMutationEdge {
 	/** the node to which the edge points from another **/
 	private CirMutationNode target;
 	/** constraint required for the edge to propagate **/
-	private CirConstraint constraint;
+	private SymConstraint constraint;
 	/** to record the state on the constraint of the edge **/
 	private CirMutationStatus status;
 	
@@ -29,7 +29,7 @@ public class CirMutationEdge {
 	protected CirMutationEdge(CirMutationEdgeType type,
 			CirMutationNode source, 
 			CirMutationNode target, 
-			CirConstraint constraint) throws Exception {
+			SymConstraint constraint) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("Invalid type: null");
 		else if(source == null)
@@ -60,7 +60,7 @@ public class CirMutationEdge {
 	/**
 	 * @return the constraint required for the edge to propagate
 	 */
-	public CirConstraint get_constraint() { return this.constraint; }
+	public SymConstraint get_constraint() { return this.constraint; }
 	/**
 	 * @return to record the state on the constraint of the edge
 	 */
@@ -78,7 +78,7 @@ public class CirMutationEdge {
 	 */
 	public Boolean append_status(CStateContexts contexts) throws Exception {
 		CirMutations cir_mutations = this.source.get_graph().get_cir_mutations();
-		CirConstraint constraint = cir_mutations.optimize(this.constraint, contexts);
+		SymConstraint constraint = cir_mutations.optimize(this.constraint, contexts);
 		return this.status.append(constraint);
 	}
 	

@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.unry;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -22,11 +22,11 @@ public class UIOICirMutationParser extends CirMutationParser {
 
 	@Override
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
-			AstMutation mutation, Map<CirStateError, CirConstraint> infections) throws Exception {
+			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirReferExpression reference = (CirReferExpression) 
 				this.get_cir_expression(cir_tree, mutation.get_location());
 		SymExpression muta_expression;
-		CirConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
+		SymConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
 		
 		switch(mutation.get_operator()) {
 		case insert_post_inc:

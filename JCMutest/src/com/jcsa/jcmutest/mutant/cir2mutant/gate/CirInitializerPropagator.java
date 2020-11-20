@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
@@ -18,20 +18,20 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirInitializerPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,
-			CirNode target_location, Map<CirStateError, CirConstraint> propagations) throws Exception {
+	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirInitializerBody target = (CirInitializerBody) target_location;
 		CirExpression source = (CirExpression) source_location;
-		CirConstraint constraint; CirStateError state_error; 
+		SymConstraint constraint; SymStateError state_error; 
 		SymExpression muta_operand; SymExpression muta_value;
 		
 		/* 2. obtain the muta_operand */
-		if(error instanceof CirExpressionError) {
-			muta_operand = ((CirExpressionError) error).get_mutation_value();
+		if(error instanceof SymExpressionError) {
+			muta_operand = ((SymExpressionError) error).get_mutation_value();
 		}
-		else if(error instanceof CirReferenceError) {
-			muta_operand = ((CirReferenceError) error).get_mutation_value();
+		else if(error instanceof SymReferenceError) {
+			muta_operand = ((SymReferenceError) error).get_mutation_value();
 		}
 		else {
 			muta_operand = null;

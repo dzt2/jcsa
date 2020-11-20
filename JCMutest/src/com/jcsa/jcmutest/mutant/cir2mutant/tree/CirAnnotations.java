@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirTrapError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -98,7 +98,7 @@ public class CirAnnotations {
 	 * @throws Exception
 	 */
 	private Collection<CirAnnotation> generate_annotations_for_constraint(
-			CirConstraint constraint, CStateContexts contexts, boolean optimize) throws Exception {
+			SymConstraint constraint, CStateContexts contexts, boolean optimize) throws Exception {
 		CirStatement statement = constraint.get_statement();
 		SymExpression condition = constraint.get_condition();
 		if(optimize) 
@@ -118,7 +118,7 @@ public class CirAnnotations {
 	 * @throws Exception
 	 */
 	private Collection<CirAnnotation> generate_annotations_for_trap_error(
-			CirTrapError state_error) throws Exception {
+			SymTrapError state_error) throws Exception {
 		List<CirAnnotation> annotations = new ArrayList<CirAnnotation>();
 		annotations.add(new CirAnnotation(CirAnnotateType.trap_stmt,
 				state_error.get_statement(), null));
@@ -208,7 +208,7 @@ public class CirAnnotations {
 	 * @throws Exception
 	 */
 	private Collection<CirAnnotation> generate_annotations_for_flow_error(
-			CirFlowError state_error, int maximal_distance) throws Exception {
+			SymFlowError state_error, int maximal_distance) throws Exception {
 		Map<Boolean, Set<CirExecution>> results = this.search_add_and_del_sets(
 				state_error.get_original_flow(), state_error.get_mutation_flow(), 
 				maximal_distance);
@@ -455,7 +455,7 @@ public class CirAnnotations {
 	
 	/* expression error generator */
 	private Collection<CirAnnotation> generate_annotations_for_expr_error(
-			CirExpressionError state_error, CStateContexts contexts) throws Exception {
+			SymExpressionError state_error, CStateContexts contexts) throws Exception {
 		List<CirAnnotation> annotations = new ArrayList<CirAnnotation>();
 		annotations.add(new CirAnnotation(CirAnnotateType.mut_value, state_error.get_expression(), null));
 		this.generate_annotations_in_expression(state_error.get_expression(), 
@@ -463,62 +463,62 @@ public class CirAnnotations {
 		return annotations;
 	}
 	private Collection<CirAnnotation> generate_annotations_for_refr_error(
-			CirReferenceError state_error, CStateContexts contexts) throws Exception {
+			SymReferenceError state_error, CStateContexts contexts) throws Exception {
 		List<CirAnnotation> annotations = new ArrayList<CirAnnotation>();
-		annotations.add(new CirAnnotation(CirAnnotateType.mut_refer, state_error.get_reference(), null));
-		this.generate_annotations_in_expression(state_error.get_reference(), 
+		annotations.add(new CirAnnotation(CirAnnotateType.mut_refer, state_error.get_expression(), null));
+		this.generate_annotations_in_expression(state_error.get_expression(), 
 				state_error.get_original_value(), state_error.get_mutation_value(), contexts, annotations);
 		return annotations;
 	}
 	private Collection<CirAnnotation> generate_annotations_for_stat_error(
-			CirStateValueError state_error, CStateContexts contexts) throws Exception {
+			SymStateValueError state_error, CStateContexts contexts) throws Exception {
 		List<CirAnnotation> annotations = new ArrayList<CirAnnotation>();
-		annotations.add(new CirAnnotation(CirAnnotateType.mut_state, state_error.get_reference(), null));
-		this.generate_annotations_in_expression(state_error.get_reference(), 
+		annotations.add(new CirAnnotation(CirAnnotateType.mut_state, state_error.get_expression(), null));
+		this.generate_annotations_in_expression(state_error.get_expression(), 
 				state_error.get_original_value(), state_error.get_mutation_value(), contexts, annotations);
 		return annotations;
 	}
 	
 	/* generator */
-	public static Collection<CirAnnotation> annotations(CirConstraint constraint) throws Exception {
+	public static Collection<CirAnnotation> annotations(SymConstraint constraint) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else
 			return annotations.generate_annotations_for_constraint(constraint, null, false);
 	}
-	public static Collection<CirAnnotation> annotations(CirConstraint constraint, CStateContexts contexts) throws Exception {
+	public static Collection<CirAnnotation> annotations(SymConstraint constraint, CStateContexts contexts) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else
 			return annotations.generate_annotations_for_constraint(constraint, contexts, true);
 	}
-	public static Collection<CirAnnotation> annotations(CirStateError state_error) throws Exception {
+	public static Collection<CirAnnotation> annotations(SymStateError state_error) throws Exception {
 		return annotations(state_error, null);
 	}
-	public static Collection<CirAnnotation> annotations(CirStateError state_error, CStateContexts contexts) throws Exception {
+	public static Collection<CirAnnotation> annotations(SymStateError state_error, CStateContexts contexts) throws Exception {
 		if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
-		else if(state_error instanceof CirTrapError)
-			return annotations.generate_annotations_for_trap_error((CirTrapError) state_error);
-		else if(state_error instanceof CirFlowError)
-			return annotations.generate_annotations_for_flow_error((CirFlowError) state_error, maximal_path_distance);
-		else if(state_error instanceof CirExpressionError)
-			return annotations.generate_annotations_for_expr_error((CirExpressionError) state_error, contexts);
-		else if(state_error instanceof CirReferenceError)
-			return annotations.generate_annotations_for_refr_error((CirReferenceError) state_error, contexts);
-		else if(state_error instanceof CirStateValueError)
-			return annotations.generate_annotations_for_stat_error((CirStateValueError) state_error, contexts);
+		else if(state_error instanceof SymTrapError)
+			return annotations.generate_annotations_for_trap_error((SymTrapError) state_error);
+		else if(state_error instanceof SymFlowError)
+			return annotations.generate_annotations_for_flow_error((SymFlowError) state_error, maximal_path_distance);
+		else if(state_error instanceof SymExpressionError)
+			return annotations.generate_annotations_for_expr_error((SymExpressionError) state_error, contexts);
+		else if(state_error instanceof SymReferenceError)
+			return annotations.generate_annotations_for_refr_error((SymReferenceError) state_error, contexts);
+		else if(state_error instanceof SymStateValueError)
+			return annotations.generate_annotations_for_stat_error((SymStateValueError) state_error, contexts);
 		else
 			throw new IllegalArgumentException("Invalid: " + state_error);
 	}
 	
-	public Boolean validate(CirStateError state_error, CStateContexts contexts) throws Exception {
+	public Boolean validate(SymStateError state_error, CStateContexts contexts) throws Exception {
 		if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
-		else if(state_error instanceof CirExpressionError) {
-			CirExpression expression = ((CirExpressionError) state_error).get_expression();
-			SymExpression orig_value = ((CirExpressionError) state_error).get_original_value();
-			SymExpression muta_value = ((CirExpressionError) state_error).get_mutation_value();
+		else if(state_error instanceof SymExpressionError) {
+			CirExpression expression = ((SymExpressionError) state_error).get_expression();
+			SymExpression orig_value = ((SymExpressionError) state_error).get_original_value();
+			SymExpression muta_value = ((SymExpressionError) state_error).get_mutation_value();
 			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
 			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
 			if(orig_value.generate_code().equals(muta_value.generate_code())) {
@@ -544,10 +544,10 @@ public class CirAnnotations {
 				return null;
 			}
 		}
-		else if(state_error instanceof CirReferenceError) {
-			CirExpression expression = ((CirReferenceError) state_error).get_reference();
-			SymExpression orig_value = ((CirReferenceError) state_error).get_original_value();
-			SymExpression muta_value = ((CirReferenceError) state_error).get_mutation_value();
+		else if(state_error instanceof SymReferenceError) {
+			CirExpression expression = ((SymReferenceError) state_error).get_expression();
+			SymExpression orig_value = ((SymReferenceError) state_error).get_original_value();
+			SymExpression muta_value = ((SymReferenceError) state_error).get_mutation_value();
 			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
 			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
 			if(orig_value.generate_code().equals(muta_value.generate_code())) {
@@ -573,10 +573,10 @@ public class CirAnnotations {
 				return null;
 			}
 		}
-		else if(state_error instanceof CirStateValueError) {
-			CirExpression expression = ((CirStateValueError) state_error).get_reference();
-			SymExpression orig_value = ((CirStateValueError) state_error).get_original_value();
-			SymExpression muta_value = ((CirStateValueError) state_error).get_mutation_value();
+		else if(state_error instanceof SymStateValueError) {
+			CirExpression expression = ((SymStateValueError) state_error).get_expression();
+			SymExpression orig_value = ((SymStateValueError) state_error).get_original_value();
+			SymExpression muta_value = ((SymStateValueError) state_error).get_mutation_value();
 			orig_value = SymEvaluator.evaluate_on(orig_value, contexts);
 			muta_value = SymEvaluator.evaluate_on(muta_value, contexts);
 			if(orig_value.generate_code().equals(muta_value.generate_code())) {
@@ -602,13 +602,13 @@ public class CirAnnotations {
 				return null;
 			}
 		}
-		else if(state_error instanceof CirTrapError) {
+		else if(state_error instanceof SymTrapError) {
 			return Boolean.TRUE;
 		}
-		else if(state_error instanceof CirFlowError) {
+		else if(state_error instanceof SymFlowError) {
 			return Boolean.valueOf(
-					((CirFlowError) state_error).get_original_flow().get_target() != 
-					((CirFlowError) state_error).get_mutation_flow().get_target());
+					((SymFlowError) state_error).get_original_flow().get_target() != 
+					((SymFlowError) state_error).get_mutation_flow().get_target());
 		}
 		else
 			throw new IllegalArgumentException("Invalid: " + state_error);

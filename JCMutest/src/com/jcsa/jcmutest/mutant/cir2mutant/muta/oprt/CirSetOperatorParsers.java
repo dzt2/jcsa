@@ -3,9 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
@@ -59,7 +59,7 @@ public class CirSetOperatorParsers {
 			CirStatement statement, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
 			CirMutations mutations,
-			Map<CirStateError, CirConstraint> infections) throws Exception {
+			Map<SymStateError, SymConstraint> infections) throws Exception {
 		AstBinaryExpression location = (AstBinaryExpression) mutation.get_location();
 		return map.get(location.get_operator().get_operator()).generate_infections(
 					mutation, statement, expression, loperand, roperand, mutations, infections);

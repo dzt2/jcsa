@@ -11,12 +11,12 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAddressOfPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArgumentListPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithAddPropagator;
@@ -333,7 +333,7 @@ public class CirMutationUtils {
 	 * @throws Exception
 	 */
 	private void generate_path_constraints(CirMutations cir_mutations, 
-			List<CirExecutionFlow> path, List<CirConstraint> constraints) throws Exception {
+			List<CirExecutionFlow> path, List<SymConstraint> constraints) throws Exception {
 		for(CirExecutionFlow flow : path) {
 			if(flow.get_type() == CirExecutionFlowType.true_flow) {
 				CirStatement statement = flow.get_source().get_statement();
@@ -373,7 +373,7 @@ public class CirMutationUtils {
 	 * @return the path constraints for reaching the execution without dependence relationship
 	 * @throws Exception
 	 */
-	private List<CirConstraint> generate_path_constraints(CirMutations cir_mutations,
+	private List<SymConstraint> generate_path_constraints(CirMutations cir_mutations,
 			CirExecution target) throws Exception {
 		CirExecution source = target.get_graph().get_entry();
 		Collection<List<CirExecutionFlow>> paths = this.find_paths_between(source, target);
@@ -399,7 +399,7 @@ public class CirMutationUtils {
 			}
 		}
 		
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		constraints.add(cir_mutations.expression_constraint(source.get_statement(), Boolean.TRUE, true));
 		this.generate_path_constraints(cir_mutations, common_path, constraints);
 		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
@@ -413,7 +413,7 @@ public class CirMutationUtils {
 	 * @return the constraints for reaching the execution node using dependence graph
 	 * @throws Exception
 	 */
-	private List<CirConstraint> generate_path_constraints(CirMutations cir_mutations, 
+	private List<SymConstraint> generate_path_constraints(CirMutations cir_mutations, 
 			CDependGraph dependence_graph, CirExecution execution) throws Exception {
 		if(dependence_graph == null)
 			throw new IllegalArgumentException("Invalid dependence_graph: null");
@@ -421,7 +421,7 @@ public class CirMutationUtils {
 			throw new IllegalArgumentException("Invalid execution as null");
 		else {
 			List<CirExecutionFlow> path = this.get_dominance_path(dependence_graph, execution);
-			List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+			List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 			this.generate_path_constraints(cir_mutations, path, constraints);
 			constraints.add(cir_mutations.expression_constraint(execution.get_statement(), Boolean.TRUE, true));
 			return constraints;
@@ -434,7 +434,7 @@ public class CirMutationUtils {
 	 * @return path constraints for reaching the execution node
 	 * @throws Exception
 	 */
-	public List<CirConstraint> get_path_constraints(CirMutations cir_mutations, CDependGraph dependence_graph, CirExecution execution) throws Exception {
+	public List<SymConstraint> get_path_constraints(CirMutations cir_mutations, CDependGraph dependence_graph, CirExecution execution) throws Exception {
 		if(cir_mutations == null)
 			throw new IllegalArgumentException("Invalid cir_mutations: null");
 		else if(execution == null)
@@ -459,9 +459,9 @@ public class CirMutationUtils {
 	 * @return path constraints required from source to target
 	 * @throws Exception
 	 */
-	public List<CirConstraint> get_path_constraints(CirMutations cir_mutations, CirExecution source, CirExecution target) throws Exception {
+	public List<SymConstraint> get_path_constraints(CirMutations cir_mutations, CirExecution source, CirExecution target) throws Exception {
 		List<CirExecutionFlow> common_path = this.find_must_paths_between(source, target);
-		List<CirConstraint> constraints = new ArrayList<CirConstraint>();
+		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		constraints.add(cir_mutations.expression_constraint(source.get_statement(), Boolean.TRUE, true));
 		this.generate_path_constraints(cir_mutations, common_path, constraints);
 		constraints.add(cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true));
@@ -477,15 +477,15 @@ public class CirMutationUtils {
 	 * @throws Exception
 	 */
 	public Collection<CirMutation> local_propagate(CirMutations cir_mutations, 
-			CirStateError source_error) throws Exception {
+			SymStateError source_error) throws Exception {
 		List<CirMutation> next_mutations = new ArrayList<CirMutation>();
 		
 		CirExpression location;
-		if(source_error instanceof CirExpressionError) {
-			location = ((CirExpressionError) source_error).get_expression();
+		if(source_error instanceof SymExpressionError) {
+			location = ((SymExpressionError) source_error).get_expression();
 		}
-		else if(source_error instanceof CirReferenceError) {
-			location = ((CirReferenceError) source_error).get_reference();
+		else if(source_error instanceof SymReferenceError) {
+			location = ((SymReferenceError) source_error).get_expression();
 		}
 		else {
 			location = null;
@@ -493,7 +493,7 @@ public class CirMutationUtils {
 		
 		if(location != null) {
 			CirNode parent = location.get_parent();
-			Map<CirStateError, CirConstraint> propagations = new HashMap<CirStateError, CirConstraint>();
+			Map<SymStateError, SymConstraint> propagations = new HashMap<SymStateError, SymConstraint>();
 			
 			if(parent instanceof CirDeferExpression) {
 				this.propagators.get(COperator.dereference).propagate(cir_mutations, source_error, location, parent, propagations);
@@ -543,8 +543,8 @@ public class CirMutationUtils {
 				propagators.get(COperator.assign).propagate(cir_mutations, source_error, location, parent, propagations);
 			}
 			
-			for(CirStateError next_error : propagations.keySet()) {
-				CirConstraint constraint = propagations.get(next_error);
+			for(SymStateError next_error : propagations.keySet()) {
+				SymConstraint constraint = propagations.get(next_error);
 				next_mutations.add(cir_mutations.new_mutation(constraint, next_error));
 			}
 		}

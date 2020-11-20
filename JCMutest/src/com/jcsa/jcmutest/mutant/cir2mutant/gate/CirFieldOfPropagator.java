@@ -2,11 +2,11 @@ package com.jcsa.jcmutest.mutant.cir2mutant.gate;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirExpressionError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
@@ -22,25 +22,25 @@ import com.jcsa.jcparse.lang.sym.SymFactory;
 public class CirFieldOfPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, CirStateError error, CirNode source_location,
-			CirNode target_location, Map<CirStateError, CirConstraint> propagations) throws Exception {
+	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirFieldExpression target = (CirFieldExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		CirConstraint constraint; CirStateError state_error; 
+		SymConstraint constraint; SymStateError state_error; 
 		SymExpression muta_operand; SymExpression muta_value;
 		
 		/* 2. check the operand */
 		if(source == target.get_body()) {
 			/* 3. construct the target error */
-			if(error instanceof CirExpressionError) {
-				muta_operand = ((CirExpressionError) error).get_mutation_value();
+			if(error instanceof SymExpressionError) {
+				muta_operand = ((SymExpressionError) error).get_mutation_value();
 				muta_value = SymFactory.field_expression(target.get_data_type(), 
 						muta_operand, target.get_field().get_name());
 				state_error = cir_mutations.expr_error(target, muta_value);
 			}
-			else if(error instanceof CirReferenceError) {
-				muta_operand = ((CirReferenceError) error).get_mutation_value();
+			else if(error instanceof SymReferenceError) {
+				muta_operand = ((SymReferenceError) error).get_mutation_value();
 				muta_value = SymFactory.field_expression(target.get_data_type(), 
 						muta_operand, target.get_field().get_name());
 				state_error = cir_mutations.refer_error(target, muta_value);
