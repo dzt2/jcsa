@@ -37,7 +37,7 @@ public class TTRPCirMutationParser extends CirMutationParser {
 		}
 		int times = ((Integer) mutation.get_parameter()).intValue();
 		
-		SymConstraint constraint = mutations.statement_constraint(true_branch.get_statement(), times, times);
+		SymConstraint constraint = mutations.statement_constraint(true_branch.get_statement(), times);
 		infections.put(mutations.trap_error(true_branch.get_statement()), constraint);
 	}
 
