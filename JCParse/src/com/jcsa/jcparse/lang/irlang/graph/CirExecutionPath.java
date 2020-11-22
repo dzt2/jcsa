@@ -87,7 +87,7 @@ public class CirExecutionPath {
 	/**
 	 * clear the edges in the path and move path.target to path.source
 	 */
-	protected void clc_to_first() {
+	public void clc_to_first() {
 		for(CirExecutionEdge edge : this.edges)
 			edge.delete();
 		this.edges.clear();
@@ -96,7 +96,7 @@ public class CirExecutionPath {
 	/**
 	 * clear the edges in the path and move path.source to path.target
 	 */
-	protected void clc_to_final() {
+	public void clc_to_final() {
 		for(CirExecutionEdge edge : this.edges) 
 			edge.delete();
 		this.edges.clear();
@@ -107,7 +107,7 @@ public class CirExecutionPath {
 	 * @return insert the flow before the source of the path
 	 * @throws IllegalArgumentException
 	 */
-	protected CirExecutionEdge add_first(CirExecutionFlow flow) throws IllegalArgumentException {
+	public CirExecutionEdge add_first(CirExecutionFlow flow) throws IllegalArgumentException {
 		if(flow == null || flow.get_target() != this.source)
 			throw new IllegalArgumentException("Invalid flow: " + flow + " before " + this.source);
 		else {
@@ -122,7 +122,7 @@ public class CirExecutionPath {
 	 * @return add the next flow into the path
 	 * @throws IllegalArgumentException
 	 */
-	protected CirExecutionEdge add_final(CirExecutionFlow flow) throws IllegalArgumentException {
+	public CirExecutionEdge add_final(CirExecutionFlow flow) throws IllegalArgumentException {
 		if(flow == null || flow.get_source() != this.target)
 			throw new IllegalArgumentException("Invalid flow: " + flow + " since " + this.target);
 		else {
@@ -136,7 +136,7 @@ public class CirExecutionPath {
 	 * @return remove the first edge in the head of the path and update path.source
 	 * @throws IndexOutOfBoundsException
 	 */
-	protected CirExecutionEdge del_first() throws IndexOutOfBoundsException {
+	public CirExecutionEdge del_first() throws IndexOutOfBoundsException {
 		if(this.edges.isEmpty())
 			throw new IndexOutOfBoundsException("Empty path cannot be deleted");
 		else {
@@ -149,7 +149,7 @@ public class CirExecutionPath {
 	 * @return remove the final edge in the head of the path and update path.target
 	 * @throws IndexOutOfBoundsException
 	 */
-	protected CirExecutionEdge del_final() throws IndexOutOfBoundsException {
+	public CirExecutionEdge del_final() throws IndexOutOfBoundsException {
 		if(this.edges.isEmpty())
 			throw new IndexOutOfBoundsException("Empty path cannot be deleted");
 		else {
@@ -161,7 +161,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the first edge in the path or null if the path is empty
 	 */
-	protected CirExecutionEdge get_first() {
+	public CirExecutionEdge get_first() {
 		if(this.edges.isEmpty())
 			return null;
 		else
@@ -170,7 +170,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the final edge in the path or null if the path is empty
 	 */
-	protected CirExecutionEdge get_final() {
+	public CirExecutionEdge get_final() {
 		if(this.edges.isEmpty())
 			return null;
 		else
@@ -179,7 +179,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the first flow in the path or null if the path is empty
 	 */
-	protected CirExecutionFlow get_first_flow() {
+	public CirExecutionFlow get_first_flow() {
 		if(this.edges.isEmpty())
 			return null;
 		else
@@ -188,7 +188,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the final flow in the path or null if the path is empty
 	 */
-	protected CirExecutionFlow get_final_flow() {
+	public CirExecutionFlow get_final_flow() {
 		if(this.edges.isEmpty())
 			return null;
 		else
@@ -241,7 +241,7 @@ public class CirExecutionPath {
 	 * @return the edge of call flow that generates the context in which the path.target is executed
 	 * 		   or null if the path.target is on the top of the calling stack.
 	 */
-	protected CirExecutionEdge final_call_edge() throws Exception {
+	public CirExecutionEdge final_call_edge() throws Exception {
 		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
 		Iterator<CirExecutionEdge> iterator = this.edges.descendingIterator();
 		while(iterator.hasNext()) {
@@ -267,7 +267,7 @@ public class CirExecutionPath {
 	 * @return the call flow that generates the context in which the path.target is executed
 	 * @throws Exception
 	 */
-	protected CirExecutionFlow final_call_flow() throws Exception {
+	public CirExecutionFlow final_call_flow() throws Exception {
 		CirExecutionEdge edge = this.final_call_edge();
 		if(edge == null)
 			return null;
@@ -278,7 +278,7 @@ public class CirExecutionPath {
 	 * @return the edge of return flow that corresponds to context where the path.source is executed
 	 * @throws Exception
 	 */
-	protected CirExecutionEdge first_retr_edge() throws Exception {
+	public CirExecutionEdge first_retr_edge() throws Exception {
 		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
 		Iterator<CirExecutionEdge> iterator = this.edges.iterator();
 		while(iterator.hasNext()) {
@@ -303,7 +303,7 @@ public class CirExecutionPath {
 	 * @return the return flow that corresponds to the context where the path.source is executed
 	 * @throws Exception
 	 */
-	protected CirExecutionFlow first_retr_flow() throws Exception {
+	public CirExecutionFlow first_retr_flow() throws Exception {
 		CirExecutionEdge edge = this.first_retr_edge();
 		if(edge == null)
 			return null;
@@ -314,7 +314,7 @@ public class CirExecutionPath {
 	 * @param flow
 	 * @return whether there is edge in the path w.r.t. the given flow
 	 */
-	protected boolean has_edge_of(CirExecutionFlow flow) {
+	public boolean has_edge_of(CirExecutionFlow flow) {
 		if(flow == null)
 			return false;
 		else {
@@ -328,7 +328,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the iterator returns the edges in reversed sequence in the path
 	 */
-	protected Iterator<CirExecutionEdge> get_reverse_edges() {
+	public Iterator<CirExecutionEdge> get_reverse_edges() {
 		return this.edges.descendingIterator();
 	}
 	

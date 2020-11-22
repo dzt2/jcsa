@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.SymConstraintOptimizer;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -16,9 +16,6 @@ import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
-import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 
@@ -194,6 +191,7 @@ public class CirMutations {
 		return this.cir_mutations.values();
 	}
 	
+	/* optimizations */
 	/**
 	 * @param source
 	 * @param contexts
@@ -293,61 +291,22 @@ public class CirMutations {
 			return this.new_mutation(constraint, state_error);
 		}
 	}
-	
-	/* constraint reduction and optimization */
-	/**
-	 * divide the conditions into automated and normalized format and preserve into the buffer of constraints collection
-	 * @param execution
-	 * @param condition
-	 * @param constraints
-	 * @throws Exception
-	 */
-	private boolean divide_conditions(CirExecution execution, SymExpression condition, Collection<SymConstraint> constraints) throws Exception {
-		if(condition instanceof SymConstant) {
-			if(((SymConstant) condition).get_bool()) {
-				return true;
-			}
-			else {
-				constraints.clear();
-				constraints.add((SymConstraint) this.get_unique_instance(new SymConstraint(execution, SymFactory.sym_constant(Boolean.FALSE))));
-				return false;
-			}
-		}
-		else if(condition instanceof SymBinaryExpression) {
-			if(((SymBinaryExpression) condition).get_operator().get_operator() == COperator.logic_and) {
-				if(this.divide_conditions(execution, ((SymBinaryExpression) condition).get_loperand(), constraints)) {
-					if(this.divide_conditions(execution, ((SymBinaryExpression) condition).get_roperand(), constraints)) {
-						return true;
-					}
-					else {
-						return false;
-					}
-				}
-				else {
-					return false;
-				}
-			}
-			else {
-				constraints.add((SymConstraint) this.get_unique_instance(new SymConstraint(execution, condition)));
-				return true;
-			}
-		}
-		else {
-			constraints.add((SymConstraint) this.get_unique_instance(new SymConstraint(execution, condition)));
-			return true;
-		}
-	}
 	/**
 	 * @param constraint
-	 * @return divide the conditions in the constraint into automated format and preserve into buffer
+	 * @return the set of constraints improved from the source constraint
 	 * @throws Exception
 	 */
-	private Collection<SymConstraint> divide_constraint(SymConstraint constraint) throws Exception {
-		Set<SymConstraint> constraints = new HashSet<SymConstraint>();
-		constraints.add((SymConstraint) this.get_unique_instance(this.expression_constraint(constraint.get_statement(), Boolean.TRUE, true)));
-		this.divide_conditions(constraint.get_execution(), constraint.get_condition(), constraints);
-		return constraints;
+	public Collection<SymConstraint> improve_constraints(SymConstraint constraint) throws Exception {
+		Collection<SymConstraint> divide_constraints = SymConstraintOptimizer.optimizer.divide_in_constraints(this, constraint);
+		Collection<SymConstraint> improv_constraints = new HashSet<SymConstraint>();
+		for(SymConstraint divide_constraint : divide_constraints) 
+			improv_constraints.add(SymConstraintOptimizer.optimizer.path_improvement(this, divide_constraint));
+		// System.out.println("\t" + divide_constraints);
+		Collection<SymConstraint> subsum_constraints = new HashSet<SymConstraint>();
+		for(SymConstraint improv_constraint : improv_constraints) {
+			subsum_constraints.addAll(SymConstraintOptimizer.optimizer.subsume_constraints(this, improv_constraint));
+		}
+		return subsum_constraints;
 	}
-	
 	
 }
