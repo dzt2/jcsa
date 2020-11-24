@@ -7,6 +7,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 
@@ -28,7 +29,7 @@ public class CirMutationStatus {
 	/** the annotations to describe the subject for each of its execution **/
 	private Set<CirAnnotation> annotations;
 	/** the sequence of concrete values of subject recorded in the status **/
-	private List<Object> concrete_values;
+	private List<SymInstance> concrete_values;
 	
 	/* definitions */
 	/**
@@ -39,7 +40,7 @@ public class CirMutationStatus {
 		this.acception_times = 0;
 		this.rejection_times = 0;
 		this.annotations = new HashSet<CirAnnotation>();
-		this.concrete_values = new ArrayList<Object>();
+		this.concrete_values = new ArrayList<SymInstance>();
 	}
 	
 	/* getters */
@@ -62,7 +63,7 @@ public class CirMutationStatus {
 	/**
 	 * @return either SymConstraint* or SymStateError*
 	 */
-	public Iterable<Object> get_concrete_values() { return this.concrete_values; }
+	public Iterable<SymInstance> get_concrete_values() { return this.concrete_values; }
 	
 	/* setters */
 	/**
