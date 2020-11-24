@@ -25,7 +25,9 @@ import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.sym.SymIdentifier;
 import com.jcsa.jcparse.lang.sym.SymNode;
+
 
 /**
  * It implements the interface for optimizing or proceeding symbolic instance evaluated during testing.
@@ -140,17 +142,66 @@ public class SymInstanceUtils {
 		}
 	}
 	/**
-	 * whether the condition is in form of execution_ID >= integer_times
+	 * whether the condition is in form of statement_ID >= times(integer_Constant)
 	 * @param condition
-	 * @return integer_times in right-side or -1 if it is not the statement condition
+	 * @return the times required for execution the target statement or -1 if it is not
 	 * @throws Exception
 	 */
-	private int is_statement_condition(CirExecution execution, SymExpression condition) throws Exception {
+	private boolean is_statement_condition(SymExpression condition) throws Exception {
 		if(condition instanceof SymBinaryExpression) {
-			COperator operator = ((SymBinaryExpression) condition).get_operator().get_operator();
-			if(operator == COperator.greater_eq) {
-				SymConstant roperand = (SymConstant) ((SymBinaryExpression) condition).get_roperand();
-				return roperand.get_int();
+			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
+			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
+				return true;
+			}
+			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param condition
+	 * @return the execution to which the operand in condition refers to or null if it is not
+	 * @throws Exception
+	 */
+	private CirExecution execution_in_condition(SymExpression condition) throws Exception {
+		if(condition instanceof SymBinaryExpression) {
+			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
+			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
+				return (CirExecution) loperand.get_source();
+			}
+			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
+				return (CirExecution) roperand.get_source();
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param condition
+	 * @return the times that the execution in condition is required
+	 * @throws Exception
+	 */
+	private int int_times_of_condition(SymExpression condition) throws Exception {
+		if(condition instanceof SymBinaryExpression) {
+			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
+			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
+				return ((SymConstant) roperand).get_int();
+			}
+			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
+				return ((SymConstant) loperand).get_int();
 			}
 			else {
 				return -1;
@@ -170,8 +221,8 @@ public class SymInstanceUtils {
 		if(condition instanceof SymConstant) {
 			return execution.get_graph().get_entry();
 		}
-		else if(this.is_statement_condition(execution, condition) > 0) {
-			return execution;
+		else if(this.is_statement_condition(condition)) {
+			return this.execution_in_condition(condition);
 		}
 		else {
 			CirExecutionPath path = CirExecutionPathFinder.finder.db_extend(execution);
@@ -334,7 +385,7 @@ public class SymInstanceUtils {
 				}
 			}
 			else {
-				times = this.is_statement_condition(execution, condition);
+				times = this.int_times_of_condition(condition);
 			}
 			if(times > 0) {
 				annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, 
