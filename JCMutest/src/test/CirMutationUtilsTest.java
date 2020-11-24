@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.util.Random;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
@@ -12,7 +13,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationNode;

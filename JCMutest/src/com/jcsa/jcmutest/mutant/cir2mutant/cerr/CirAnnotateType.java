@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 /**
  * The type of annotation to describe program state in C-intermediate representation code.

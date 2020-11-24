@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 
 /**
@@ -77,7 +80,7 @@ public class CirMutationStatus {
 	 * @throws Exception
 	 */
 	protected Boolean append(SymConstraint constraint) throws Exception {
-		this.annotations.addAll(CirAnnotations.annotations(constraint, null));
+		this.annotations.addAll(SymInstanceUtils.annotations(constraint));
 		this.execution_times++;
 		Boolean result = constraint.validate(null); 
 		if(result != null) {
@@ -98,7 +101,7 @@ public class CirMutationStatus {
 	 * @throws Exception
 	 */
 	protected Boolean append(SymStateError state_error) throws Exception { 
-		this.annotations.addAll(CirAnnotations.annotations(state_error, null));
+		this.annotations.addAll(SymInstanceUtils.annotations(state_error));
 		this.execution_times++;
 		Boolean result = state_error.validate(null);
 		if(result != null) {

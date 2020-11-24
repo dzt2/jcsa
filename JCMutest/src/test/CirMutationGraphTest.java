@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationNode;

@@ -2,11 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.SymConstraintOptimizer;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -297,16 +295,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public Collection<SymConstraint> improve_constraints(SymConstraint constraint) throws Exception {
-		Collection<SymConstraint> divide_constraints = SymConstraintOptimizer.optimizer.divide_in_constraints(this, constraint);
-		Collection<SymConstraint> improv_constraints = new HashSet<SymConstraint>();
-		for(SymConstraint divide_constraint : divide_constraints) 
-			improv_constraints.add(SymConstraintOptimizer.optimizer.path_improvement(this, divide_constraint));
-		// System.out.println("\t" + divide_constraints);
-		Collection<SymConstraint> subsum_constraints = new HashSet<SymConstraint>();
-		for(SymConstraint improv_constraint : improv_constraints) {
-			subsum_constraints.addAll(SymConstraintOptimizer.optimizer.subsume_constraints(this, improv_constraint));
-		}
-		return subsum_constraints;
+		return SymInstanceUtils.improve_constraints(this, constraint);
 	}
 	
 }
