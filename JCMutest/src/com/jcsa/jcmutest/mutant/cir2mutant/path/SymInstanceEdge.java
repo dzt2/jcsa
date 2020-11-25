@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.paths;
+package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
