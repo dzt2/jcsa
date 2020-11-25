@@ -1,21 +1,65 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAddressOfPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArgumentListPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithAddPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithDivPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithModPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithMulPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithNegPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithSubPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAssignPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsAndPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsIorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsLshPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRshPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRsvPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsXorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirDereferencePropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirEqualWithPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirErrorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirFieldOfPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterEqPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterTnPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirInitializerPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicAndPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicIorPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicNotPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirNotEqualsPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerEqPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerTnPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirTypeCastPropagator;
+import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirWaitValuePropagator;
 import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -38,8 +82,47 @@ import com.jcsa.jcparse.lang.sym.SymNode;
 public class SymInstanceUtils {
 	
 	/* singleton mode */
+	/** mapping from expression operator to the propagator for generating state error **/
+	private Map<COperator, CirErrorPropagator> propagators;
 	/** private constructor for producing singleton of utilities **/
-	private SymInstanceUtils() { }
+	private SymInstanceUtils() { 
+		propagators = new HashMap<COperator, CirErrorPropagator>();
+		
+		propagators.put(COperator.arith_add, new CirArithAddPropagator());
+		propagators.put(COperator.arith_sub, new CirArithSubPropagator());
+		propagators.put(COperator.arith_mul, new CirArithMulPropagator());
+		propagators.put(COperator.arith_div, new CirArithDivPropagator());
+		propagators.put(COperator.arith_mod, new CirArithModPropagator());
+		propagators.put(COperator.negative, new CirArithNegPropagator());
+		
+		propagators.put(COperator.bit_not, new CirBitwsRsvPropagator());
+		propagators.put(COperator.bit_and, new CirBitwsAndPropagator());
+		propagators.put(COperator.bit_or, new CirBitwsIorPropagator());
+		propagators.put(COperator.bit_xor, new CirBitwsXorPropagator());
+		propagators.put(COperator.left_shift, new CirBitwsLshPropagator());
+		propagators.put(COperator.righ_shift, new CirBitwsRshPropagator());
+		
+		propagators.put(COperator.assign, new CirAssignPropagator());
+		propagators.put(COperator.address_of, new CirAddressOfPropagator());
+		propagators.put(COperator.dereference, new CirDereferencePropagator());
+		
+		propagators.put(COperator.greater_eq, new CirGreaterEqPropagator());
+		propagators.put(COperator.greater_tn, new CirGreaterTnPropagator());
+		propagators.put(COperator.smaller_eq, new CirSmallerEqPropagator());
+		propagators.put(COperator.smaller_tn, new CirSmallerTnPropagator());
+		propagators.put(COperator.equal_with, new CirEqualWithPropagator());
+		propagators.put(COperator.not_equals, new CirNotEqualsPropagator());
+		
+		propagators.put(COperator.logic_and, new CirLogicAndPropagator());
+		propagators.put(COperator.logic_or, new CirLogicIorPropagator());
+		propagators.put(COperator.logic_not, new CirLogicNotPropagator());
+		
+		propagators.put(COperator.arith_add_assign, new CirFieldOfPropagator());
+		propagators.put(COperator.arith_sub_assign, new CirTypeCastPropagator());
+		propagators.put(COperator.arith_mul_assign, new CirInitializerPropagator());
+		propagators.put(COperator.arith_div_assign, new CirArgumentListPropagator());
+		propagators.put(COperator.arith_mod_assign, new CirWaitValuePropagator());
+	}
 	/** the singleton of symbolic instance utility for algorithms **/
 	private static final SymInstanceUtils utils = new SymInstanceUtils();
 	
@@ -354,6 +437,269 @@ public class SymInstanceUtils {
 		return subsum_constraints;
 	}
 	
+	/* annotation methods as supporting */
+	/**
+	 * @param expression
+	 * @return true if the expression is logical or used as condition of IF-statement
+	 * @throws Exception
+	 */
+	private boolean is_boolean(CirExpression expression) throws Exception {
+		CType type = expression.get_data_type();
+		if(type == null) {
+			return false;
+		}
+		else {
+			type = CTypeAnalyzer.get_value_type(type);
+			if(CTypeAnalyzer.is_boolean(type)) {
+				return true;
+			}
+			else {
+				CirNode parent = expression.get_parent();
+				if(parent instanceof CirIfStatement) {
+					return ((CirIfStatement) parent).get_condition() == expression;
+				}
+				else if(parent instanceof CirCaseStatement) {
+					return ((CirCaseStatement) parent).get_condition() == expression;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+	}
+	/**
+	 * @param expression
+	 * @return true if the expression is integer or double, and used as operand in arithmetic, bitwise expressions
+	 * @throws Exception
+	 */
+	private boolean is_numeric(CirExpression expression) throws Exception {
+		CType type = expression.get_data_type();
+		if(type == null)
+			return false;
+		else
+			return CTypeAnalyzer.is_number(CTypeAnalyzer.get_value_type(type));
+	}
+	/**
+	 * @param expression
+	 * @return true if the expression is a pointer and used in arithmetic or parameter expressions
+	 * @throws Exception
+	 */
+	private boolean is_address(CirExpression expression) throws Exception {
+		CType type = expression.get_data_type();
+		if(type == null)
+			return false;
+		else
+			return CTypeAnalyzer.is_pointer(CTypeAnalyzer.get_value_type(type));
+	}
+	/**
+	 * generate the annotation for an expression in boolean context
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_boolean_expression(CirExpression expression, 
+			SymExpression orig_value, SymExpression muta_value, 
+			Collection<CirAnnotation> annotations) throws Exception {
+		annotations.add(new CirAnnotation(CirAnnotateType.chg_bool, expression, null));
+		if(muta_value instanceof SymConstant) {
+			if(((SymConstant) muta_value).get_bool())
+				annotations.add(new CirAnnotation(CirAnnotateType.set_true, expression, null));
+			else
+				annotations.add(new CirAnnotation(CirAnnotateType.set_false, expression, null));
+		}
+		annotations.add(new CirAnnotation(CirAnnotateType.set_bool, expression, muta_value));
+	}
+	/**
+	 * generate the annotation for an expression in numeric context
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_numeric_expression(CirExpression expression, 
+			SymExpression orig_value, SymExpression muta_value, 
+			Collection<CirAnnotation> annotations) throws Exception {
+		annotations.add(new CirAnnotation(CirAnnotateType.chg_numb, expression, null));
+		annotations.add(new CirAnnotation(CirAnnotateType.set_numb, expression, muta_value));
+		
+		/* value domain property */
+		if(muta_value instanceof SymConstant) {
+			Object number = ((SymConstant) muta_value).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				if(value > 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_post, expression, null));
+				}
+				else if(value < 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_negt, expression, null));
+				}
+				else {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_zero, expression, null));
+				}
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				if(value > 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_post, expression, null));
+				}
+				else if(value < 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_negt, expression, null));
+				}
+				else {
+					annotations.add(new CirAnnotation(CirAnnotateType.set_zero, expression, null));
+				}
+			}
+		}
+		
+		/* difference property */
+		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
+		difference = SymEvaluator.evaluate_on(difference, null);
+		if(difference instanceof SymConstant) {
+			Object number = ((SymConstant) difference).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				if(value > 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
+				}
+				else if(value < 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
+				}
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				if(value > 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
+				}
+				else if(value < 0) {
+					annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
+				}
+			}
+		}
+		
+		/* value range property */
+		orig_value = SymEvaluator.evaluate_on(orig_value, null);
+		muta_value = SymEvaluator.evaluate_on(muta_value, null);
+		if(orig_value instanceof SymConstant) {
+			Object lnumber = ((SymConstant) orig_value).get_number();
+			if(muta_value instanceof SymConstant) {
+				Object rnumber = ((SymConstant) muta_value).get_number();
+				if(lnumber instanceof Long) {
+					long x = ((Long) lnumber).longValue();
+					if(rnumber instanceof Long) {
+						long y = ((Long) rnumber).longValue();
+						if(Math.abs(y) > Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
+						}
+						else if(Math.abs(y) < Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
+						}
+					}
+					else {
+						double y = ((Double) rnumber).doubleValue();
+						if(Math.abs(y) > Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
+						}
+						else if(Math.abs(y) < Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
+						}
+					}
+				}
+				else {
+					double x = ((Double) lnumber).doubleValue();
+					if(rnumber instanceof Long) {
+						long y = ((Long) rnumber).longValue();
+						if(Math.abs(y) > Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
+						}
+						else if(Math.abs(y) < Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
+						}
+					}
+					else {
+						double y = ((Double) rnumber).doubleValue();
+						if(Math.abs(y) > Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
+						}
+						else if(Math.abs(y) < Math.abs(x)) {
+							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
+						}
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * generate the annotation for an expression in address context
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_address_expression(CirExpression expression, 
+			SymExpression orig_value, SymExpression muta_value, 
+			Collection<CirAnnotation> annotations) throws Exception {
+		annotations.add(new CirAnnotation(CirAnnotateType.chg_addr, expression, null));
+		annotations.add(new CirAnnotation(CirAnnotateType.set_addr, expression, muta_value));
+		
+		/* value domain property */
+		if(muta_value instanceof SymConstant) {
+			long value = ((SymConstant) muta_value).get_long();
+			if(value == 0) {
+				annotations.add(new CirAnnotation(CirAnnotateType.set_null, expression, null));
+			}
+			else {
+				annotations.add(new CirAnnotation(CirAnnotateType.set_invp, expression, null));
+			}
+		}
+		
+		/* difference property */
+		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
+		difference = SymEvaluator.evaluate_on(difference, null);
+		if(difference instanceof SymConstant) {
+			Object number = ((SymConstant) difference).get_number();
+			long value = ((Long) number).longValue();
+			if(value > 0) {
+				annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
+			}
+			else if(value < 0) {
+				annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
+			}
+		}
+	}
+	/**
+	 * generate annotations for expression value error
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_expression(CirExpression expression, 
+			SymExpression orig_value, SymExpression muta_value, 
+			Collection<CirAnnotation> annotations) throws Exception {
+		if(orig_value.equals(muta_value)) {
+			annotations.clear();
+			return;
+		}
+		else if(this.is_boolean(expression)) {
+			this.generate_annotations_in_boolean_expression(expression, orig_value, muta_value, annotations);
+		}
+		else if(this.is_numeric(expression)) {
+			this.generate_annotations_in_numeric_expression(expression, orig_value, muta_value, annotations);
+		}
+		else if(this.is_address(expression)) {
+			this.generate_annotations_in_address_expression(expression, orig_value, muta_value, annotations);
+		}
+		else {
+			annotations.add(new CirAnnotation(CirAnnotateType.chg_auto, expression, null));
+			annotations.add(new CirAnnotation(CirAnnotateType.set_auto, expression, muta_value));
+		}
+	}
+	
 	/* symbolic annotation generator */
 	/**
 	 * @param constraint
@@ -473,232 +819,6 @@ public class SymInstanceUtils {
 		this.generate_annotations_in_expression(state_error.get_expression(), 
 				state_error.get_original_value(), state_error.get_mutation_value(), annotations);
 	}
-	
-	/* annotation methods as supporting */
-	private boolean is_boolean(CirExpression expression) throws Exception {
-		CType type = expression.get_data_type();
-		if(type == null) {
-			return false;
-		}
-		else {
-			type = CTypeAnalyzer.get_value_type(type);
-			if(CTypeAnalyzer.is_boolean(type)) {
-				return true;
-			}
-			else {
-				CirNode parent = expression.get_parent();
-				if(parent instanceof CirIfStatement) {
-					return ((CirIfStatement) parent).get_condition() == expression;
-				}
-				else if(parent instanceof CirCaseStatement) {
-					return ((CirCaseStatement) parent).get_condition() == expression;
-				}
-				else {
-					return false;
-				}
-			}
-		}
-	}
-	private boolean is_numeric(CirExpression expression) throws Exception {
-		CType type = expression.get_data_type();
-		if(type == null)
-			return false;
-		else
-			return CTypeAnalyzer.is_number(CTypeAnalyzer.get_value_type(type));
-	}
-	private boolean is_address(CirExpression expression) throws Exception {
-		CType type = expression.get_data_type();
-		if(type == null)
-			return false;
-		else
-			return CTypeAnalyzer.is_pointer(CTypeAnalyzer.get_value_type(type));
-	}
-	private void generate_annotations_in_boolean_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		annotations.add(new CirAnnotation(CirAnnotateType.chg_bool, expression, null));
-		if(muta_value instanceof SymConstant) {
-			if(((SymConstant) muta_value).get_bool())
-				annotations.add(new CirAnnotation(CirAnnotateType.set_true, expression, null));
-			else
-				annotations.add(new CirAnnotation(CirAnnotateType.set_false, expression, null));
-		}
-		annotations.add(new CirAnnotation(CirAnnotateType.set_bool, expression, muta_value));
-	}
-	private void generate_annotations_in_numeric_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		annotations.add(new CirAnnotation(CirAnnotateType.chg_numb, expression, null));
-		annotations.add(new CirAnnotation(CirAnnotateType.set_numb, expression, muta_value));
-		
-		/* value domain property */
-		if(muta_value instanceof SymConstant) {
-			Object number = ((SymConstant) muta_value).get_number();
-			if(number instanceof Long) {
-				long value = ((Long) number).longValue();
-				if(value > 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_post, expression, null));
-				}
-				else if(value < 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_negt, expression, null));
-				}
-				else {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_zero, expression, null));
-				}
-			}
-			else {
-				double value = ((Double) number).doubleValue();
-				if(value > 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_post, expression, null));
-				}
-				else if(value < 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_negt, expression, null));
-				}
-				else {
-					annotations.add(new CirAnnotation(CirAnnotateType.set_zero, expression, null));
-				}
-			}
-		}
-		
-		/* difference property */
-		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
-		difference = SymEvaluator.evaluate_on(difference, null);
-		if(difference instanceof SymConstant) {
-			Object number = ((SymConstant) difference).get_number();
-			if(number instanceof Long) {
-				long value = ((Long) number).longValue();
-				if(value > 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
-				}
-				else if(value < 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
-				}
-			}
-			else {
-				double value = ((Double) number).doubleValue();
-				if(value > 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
-				}
-				else if(value < 0) {
-					annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
-				}
-			}
-		}
-		
-		/* value range property */
-		orig_value = SymEvaluator.evaluate_on(orig_value, null);
-		muta_value = SymEvaluator.evaluate_on(muta_value, null);
-		if(orig_value instanceof SymConstant) {
-			Object lnumber = ((SymConstant) orig_value).get_number();
-			if(muta_value instanceof SymConstant) {
-				Object rnumber = ((SymConstant) muta_value).get_number();
-				if(lnumber instanceof Long) {
-					long x = ((Long) lnumber).longValue();
-					if(rnumber instanceof Long) {
-						long y = ((Long) rnumber).longValue();
-						if(Math.abs(y) > Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
-						}
-						else if(Math.abs(y) < Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
-						}
-					}
-					else {
-						double y = ((Double) rnumber).doubleValue();
-						if(Math.abs(y) > Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
-						}
-						else if(Math.abs(y) < Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
-						}
-					}
-				}
-				else {
-					double x = ((Double) lnumber).doubleValue();
-					if(rnumber instanceof Long) {
-						long y = ((Long) rnumber).longValue();
-						if(Math.abs(y) > Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
-						}
-						else if(Math.abs(y) < Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
-						}
-					}
-					else {
-						double y = ((Double) rnumber).doubleValue();
-						if(Math.abs(y) > Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.ext_value, expression, null));
-						}
-						else if(Math.abs(y) < Math.abs(x)) {
-							annotations.add(new CirAnnotation(CirAnnotateType.shk_value, expression, null));
-						}
-					}
-				}
-			}
-		}
-	}
-	private void generate_annotations_in_address_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		annotations.add(new CirAnnotation(CirAnnotateType.chg_addr, expression, null));
-		annotations.add(new CirAnnotation(CirAnnotateType.set_addr, expression, muta_value));
-		
-		/* value domain property */
-		if(muta_value instanceof SymConstant) {
-			long value = ((SymConstant) muta_value).get_long();
-			if(value == 0) {
-				annotations.add(new CirAnnotation(CirAnnotateType.set_null, expression, null));
-			}
-			else {
-				annotations.add(new CirAnnotation(CirAnnotateType.set_invp, expression, null));
-			}
-		}
-		
-		/* difference property */
-		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
-		difference = SymEvaluator.evaluate_on(difference, null);
-		if(difference instanceof SymConstant) {
-			Object number = ((SymConstant) difference).get_number();
-			long value = ((Long) number).longValue();
-			if(value > 0) {
-				annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
-			}
-			else if(value < 0) {
-				annotations.add(new CirAnnotation(CirAnnotateType.dec_value, expression, null));
-			}
-		}
-	}
-	/**
-	 * generate annotations for expression value error
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		if(orig_value.equals(muta_value)) {
-			annotations.clear();
-			return;
-		}
-		else if(this.is_boolean(expression)) {
-			this.generate_annotations_in_boolean_expression(expression, orig_value, muta_value, annotations);
-		}
-		else if(this.is_numeric(expression)) {
-			this.generate_annotations_in_numeric_expression(expression, orig_value, muta_value, annotations);
-		}
-		else if(this.is_address(expression)) {
-			this.generate_annotations_in_address_expression(expression, orig_value, muta_value, annotations);
-		}
-		else {
-			annotations.add(new CirAnnotation(CirAnnotateType.chg_auto, expression, null));
-			annotations.add(new CirAnnotation(CirAnnotateType.set_auto, expression, muta_value));
-		}
-	}
-	
-	/* generate annotations */
 	/**
 	 * @param instance
 	 * @return the set of annotations to describe the symbolic instance
@@ -721,6 +841,105 @@ public class SymInstanceUtils {
 		else
 			throw new IllegalArgumentException("Invalid instance as: " + instance);
 		return annotations;
+	}
+	
+	/* state error propagations */
+	/**
+	 * generate the error-constraint pair in local propagation from source error and append
+	 * them in the propagations table.
+	 * @param cir_mutations
+	 * @param source_error
+	 * @param propagations
+	 * @throws Exception
+	 */
+	private void propagate_on(CirMutations cir_mutations, SymStateError source_error, 
+				Map<SymStateError, SymConstraint> propagations) throws Exception {
+		/* get the next location for error of propagation */
+		CirExpression location;
+		if(source_error instanceof SymExpressionError) {
+			location = ((SymExpressionError) source_error).get_expression();
+		}
+		else if(source_error instanceof SymReferenceError) {
+			location = ((SymReferenceError) source_error).get_expression();
+		}
+		else {
+			location = null;
+		}
+		
+		/* syntax-directed error propagation algorithms */
+		if(location != null) {
+			CirNode parent = location.get_parent();
+			
+			if(parent instanceof CirDeferExpression) {
+				this.propagators.get(COperator.dereference).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirFieldExpression) {
+				this.propagators.get(COperator.arith_add_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirAddressExpression) {
+				this.propagators.get(COperator.address_of).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirCastExpression) {
+				this.propagators.get(COperator.arith_sub_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirInitializerBody) {
+				this.propagators.get(COperator.arith_mul_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirWaitExpression) {
+				this.propagators.get(COperator.arith_mod_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirComputeExpression) {
+				this.propagators.get(((CirComputeExpression) parent).get_operator()).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirArgumentList) {
+				this.propagators.get(COperator.arith_div_assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirIfStatement
+					|| parent instanceof CirCaseStatement) {
+				CirStatement statement = (CirStatement) parent;
+				CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+				CirExecutionFlow true_flow = execution.get_ou_flow(0);
+				CirExecutionFlow fals_flow = execution.get_ou_flow(1);
+				
+				CirExpression condition;
+				if(statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) statement).get_condition();
+				}
+				
+				propagations.put(cir_mutations.flow_error(true_flow, fals_flow), 
+						cir_mutations.expression_constraint(statement, condition, true));
+				propagations.put(cir_mutations.flow_error(fals_flow, true_flow), 
+						cir_mutations.expression_constraint(statement, condition, false));
+			}
+			else if(parent instanceof CirAssignStatement) {
+				propagators.get(COperator.assign).propagate(cir_mutations, source_error, location, parent, propagations);
+			}
+		}
+	}
+	/**
+	 * @param cir_mutations
+	 * @param source_error
+	 * @return the set of CirMutation generated from source error as its next propagation gender
+	 * @throws Exception
+	 */
+	public static Collection<CirMutation> propagate(CirMutations cir_mutations, SymStateError source_error) throws Exception {
+		if(cir_mutations == null)
+			throw new IllegalArgumentException("Invalid cir_mutations: null");
+		else if(source_error == null)
+			throw new IllegalArgumentException("Invalid source_error: null");
+		else {
+			List<CirMutation> next_mutations = new ArrayList<CirMutation>();
+			Map<SymStateError, SymConstraint> propagations = new HashMap<SymStateError, SymConstraint>();
+			utils.propagate_on(cir_mutations, source_error, propagations);
+			for(SymStateError next_error : propagations.keySet()) {
+				SymConstraint constraint = propagations.get(next_error);
+				next_mutations.add(cir_mutations.new_mutation(constraint, next_error));
+			}
+			return next_mutations;
+		}
 	}
 	
 }

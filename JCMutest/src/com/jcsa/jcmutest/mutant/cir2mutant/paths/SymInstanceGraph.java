@@ -9,6 +9,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
@@ -26,6 +27,8 @@ public class SymInstanceGraph {
 	private CirMutations cir_mutations;
 	/** the collection of symbolic nodes created in this graph **/
 	private Collection<SymInstanceNode> nodes;
+	/** the set of nodes w.r.t. mutated statement of the cir-mutations **/
+	protected Collection<SymInstanceNode> reaching_ndoes;
 	/** mapping from symbolic instance in the nodes | edges of the graph to their status in testing **/
 	private Map<SymInstance, SymInstanceStatus> status_table;
 	/**
@@ -65,6 +68,10 @@ public class SymInstanceGraph {
 	 * @return the collection of nodes created in this graph
 	 */
 	public Iterable<SymInstanceNode> get_nodes() { return this.nodes; }
+	/**
+	 * @return the set of nodes w.r.t. mutated statement of the cir-mutations
+	 */
+	public Iterable<SymInstanceNode> get_reaching_nodes() { return this.reaching_ndoes; }
 	/**
 	 * @param instance
 	 * @return whether there is status w.r.t. the instance as given
@@ -112,6 +119,14 @@ public class SymInstanceGraph {
 	protected SymInstanceNode new_node(CirExecution execution) throws Exception {
 		SymInstanceNode node = new SymInstanceNode(this, execution);
 		this.nodes.add(node); return node;
+	}
+	
+	/* builder */
+	public static SymInstanceGraph new_graph(CDependGraph dependence_graph, Mutant mutant) throws Exception {
+		SymInstanceGraph sym_graph = new SymInstanceGraph(mutant);
+		SymInstanceGraphBuilder.builder.generate_reaching_paths(dependence_graph, sym_graph);
+		/* TODO implement propagation part here... */
+		return sym_graph;
 	}
 	
 }
