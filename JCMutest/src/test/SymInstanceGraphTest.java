@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
@@ -30,6 +31,7 @@ public class SymInstanceGraphTest {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/mprojects/";
 	private static final String result_dir = "result/graphs/";
+	private static final int maximal_distance = 3;
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
@@ -69,7 +71,8 @@ public class SymInstanceGraphTest {
 		writer.write("\t\t#node\t" + node.hashCode());
 		writer.write("\t" + node.get_execution());
 		writer.write("\t\"" + get_code(node.get_execution().get_statement()) + "\"\n");
-		for(SymStateError state_error : node.get_state_errors()) {
+		if(node.has_state_error()) {
+			SymStateError state_error = node.get_state_error();
 			writer.write("\t\t\t#error\t" + state_error.get_type());
 			writer.write("\t" + state_error.get_execution());
 			writer.write("\t" + get_code(state_error.get_location()));
@@ -85,24 +88,30 @@ public class SymInstanceGraphTest {
 				writer.write("\t" + get_code(orig_value) + "\t" + get_code(muta_value));
 			}
 			writer.write("\n");
+			
+			writer.write("\t\t\t#anno\t[ ");
+			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
+			for(CirAnnotation annotation : SymInstanceUtils.annotations(state_error)) {
+				writer.write(annotation.get_type() + "; ");
+			}
+			writer.write("]\n");
 		}
 	}
 	private static void output_instance_edge(FileWriter writer, SymInstanceEdge edge) throws Exception {
 		writer.write("\t\t#edge");
 		writer.write("\t" + edge.get_source().hashCode() + "\t" + edge.get_target().hashCode() + "\n");
-		for(SymConstraint constraint : edge.get_constraints()) {
-			writer.write("\t\t\t#cons\t" + constraint.get_execution() + 
-					"\t" + get_code(constraint.get_condition()) + 
-					"\tat " + get_code(constraint.get_statement()) + "\n");
-			
-			constraint = edge.get_source().get_graph().get_cir_mutations().optimize(constraint, null);
-			Collection<SymConstraint> improve_constraints = SymInstanceUtils.
-					improve_constraints(edge.get_source().get_graph().get_cir_mutations(), constraint);
-			for(SymConstraint improve_constraint : improve_constraints) {
-				writer.write("\t\t\t#optm\t" + improve_constraint.get_execution() + 
-						"\t" + get_code(improve_constraint.get_condition()) + 
-						"\tat " + get_code(improve_constraint.get_statement()) + "\n");
-			}
+		SymConstraint constraint = edge.get_constraint();
+		writer.write("\t\t\t#cons\t" + constraint.get_execution() + 
+				"\t" + get_code(constraint.get_condition()) + 
+				"\tat " + get_code(constraint.get_statement()) + "\n");
+		
+		constraint = edge.get_source().get_graph().get_cir_mutations().optimize(constraint, null);
+		Collection<SymConstraint> improve_constraints = SymInstanceUtils.
+				improve_constraints(edge.get_source().get_graph().get_cir_mutations(), constraint);
+		for(SymConstraint improve_constraint : improve_constraints) {
+			writer.write("\t\t\t#optm\t" + improve_constraint.get_execution() + 
+					"\t" + get_code(improve_constraint.get_condition()) + 
+					"\tat " + get_code(improve_constraint.get_statement()) + "\n");
 		}
 	}
 	private static void output_instance_graph(FileWriter writer, Mutant mutant, CDependGraph dependence_graph) throws Exception {
@@ -113,7 +122,7 @@ public class SymInstanceGraphTest {
 		AstNode location = mutant.get_mutation().get_location();
 		writer.write(" at line " + location.get_location().line_of() + "\n");
 		
-		SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant);
+		SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, maximal_distance);
 		for(SymInstanceNode node : graph.get_nodes()) {
 			output_instance_node(writer, node);
 			for(SymInstanceEdge edge : node.get_ou_edges()) {

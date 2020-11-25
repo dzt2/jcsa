@@ -8,6 +8,7 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -116,16 +117,16 @@ public class SymInstanceGraph {
 	 * @return
 	 * @throws Exception
 	 */
-	protected SymInstanceNode new_node(CirExecution execution) throws Exception {
-		SymInstanceNode node = new SymInstanceNode(this, execution);
+	protected SymInstanceNode new_node(CirExecution execution, SymStateError state_error) throws Exception {
+		SymInstanceNode node = new SymInstanceNode(this, execution, state_error);
 		this.nodes.add(node); return node;
 	}
 	
 	/* builder */
-	public static SymInstanceGraph new_graph(CDependGraph dependence_graph, Mutant mutant) throws Exception {
+	public static SymInstanceGraph new_graph(CDependGraph dependence_graph, Mutant mutant, int maximal_distance) throws Exception {
 		SymInstanceGraph sym_graph = new SymInstanceGraph(mutant);
 		SymInstanceGraphBuilder.builder.generate_reaching_paths(dependence_graph, sym_graph);
-		/* TODO implement propagation part here... */
+		SymInstanceGraphBuilder.builder.propagate(dependence_graph, sym_graph, maximal_distance);
 		return sym_graph;
 	}
 	

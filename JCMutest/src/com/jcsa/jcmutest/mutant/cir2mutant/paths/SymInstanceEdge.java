@@ -1,8 +1,5 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.paths;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 
@@ -19,22 +16,25 @@ public class SymInstanceEdge {
 	/** the symbolic execution node to which the edge points from another **/
 	private SymInstanceNode target;
 	/** the set of symbolic constraints being evaluated on this edge **/
-	private Collection<SymConstraint> constraints;
+	private SymConstraint constraint;
 	/**
 	 * create the edge pointing from the source to the target
 	 * @param source
 	 * @param target
 	 * @throws Exception
 	 */
-	protected SymInstanceEdge(SymInstanceNode source, SymInstanceNode target) throws Exception {
+	protected SymInstanceEdge(SymInstanceNode source, SymInstanceNode target, SymConstraint constraint) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(target == null)
 			throw new IllegalArgumentException("Invalid target: null");
+		else if(constraint == null)
+			throw new IllegalArgumentException("Invalid constraint as null");
 		else {
 			this.source = source;
 			this.target = target;
-			this.constraints = new ArrayList<SymConstraint>();
+			this.constraint = constraint;
+			this.source.get_graph().register_status(constraint);
 		}
 	}
 	
@@ -50,31 +50,17 @@ public class SymInstanceEdge {
 	/**
 	 * @return the set of symbolic constraints being evaluated on this edge
 	 */
-	public Iterable<SymConstraint> get_constraints() { return this.constraints; }
+	public SymConstraint get_constraint() { return this.constraint; }
 	
 	/* setters */
-	/**
-	 * add the symbolic constraint in the edge for being evaluated
-	 * @param constraint
-	 * @throws Exception
-	 */
-	protected void add_constraint(SymConstraint constraint) throws Exception {
-		if(constraint == null)
-			throw new IllegalArgumentException("Invalid constraint: null");
-		else if(!this.constraints.contains(constraint)) {
-			this.constraints.add(constraint);
-			this.source.get_graph().register_status(constraint);
-		}
-	}
 	/**
 	 * remove this edge from the node of the graph
 	 */
 	protected void delete() {
-		if(this.constraints != null) {
+		if(this.constraint != null) {
 			this.source = null;
 			this.target = null;
-			this.constraints.clear();
-			this.constraints = null;
+			this.constraint = null;
 		}
 	}
 	/**
@@ -82,11 +68,9 @@ public class SymInstanceEdge {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected void evaluate(CStateContexts contexts) throws Exception {
+	protected Boolean evaluate(CStateContexts contexts) throws Exception {
 		SymInstanceGraph graph = this.source.get_graph();
-		for(SymConstraint constraint : this.constraints) {
-			graph.get_status(constraint).evaluate(graph.get_cir_mutations(), contexts);
-		}
+		return graph.get_status(this.constraint).evaluate(graph.get_cir_mutations(), contexts);
 	}
 	
 }

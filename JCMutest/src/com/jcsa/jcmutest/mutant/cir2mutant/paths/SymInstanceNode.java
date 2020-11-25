@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.paths;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -19,8 +20,8 @@ public class SymInstanceNode {
 	private SymInstanceGraph graph;
 	/** the execution of statement where the node is evaluated **/
 	private CirExecution execution;
-	/** the set of symbolic state error being evaluated at this node **/
-	private Collection<SymStateError> state_errors;
+	/** the symbolic state error being evaluated at this node **/
+	private SymStateError state_error;
 	/** the set of symbolic instance edges pointing to this node from others **/
 	private Collection<SymInstanceEdge> in_edges;
 	/** the set of symbolic instance edges pointing from this node to others **/
@@ -31,7 +32,7 @@ public class SymInstanceNode {
 	 * @param execution
 	 * @throws Exception
 	 */
-	protected SymInstanceNode(SymInstanceGraph graph, CirExecution execution) throws Exception {
+	protected SymInstanceNode(SymInstanceGraph graph, CirExecution execution, SymStateError state_error) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
 		else if(execution == null)
@@ -39,9 +40,11 @@ public class SymInstanceNode {
 		else {
 			this.graph = graph;
 			this.execution = execution;
-			this.state_errors = new ArrayList<SymStateError>();
+			this.state_error = state_error;
 			this.in_edges = new ArrayList<SymInstanceEdge>();
 			this.ou_edges = new ArrayList<SymInstanceEdge>();
+			if(this.state_error != null)
+				this.graph.register_status(this.state_error);
 		}
 	}
 	
@@ -55,9 +58,13 @@ public class SymInstanceNode {
 	 */
 	public CirExecution get_execution() { return this.execution; }
 	/**
-	 * @return the set of symbolic state error being evaluated at this node
+	 * @return whether there are state error with corresponding to the node
 	 */
-	public Iterable<SymStateError> get_state_errors() { return this.state_errors; }
+	public boolean has_state_error() { return this.state_error != null; }
+	/**
+	 * @return the symbolic state error being evaluated at this node
+	 */
+	public SymStateError get_state_error() { return this.state_error; }
 	/**
 	 * @return the set of symbolic instance edges pointing to this node from others
 	 */
@@ -66,6 +73,14 @@ public class SymInstanceNode {
 	 * @return the set of symbolic instance edges pointing from this node to others
 	 */
 	public Iterable<SymInstanceEdge> get_ou_edges() { return this.ou_edges; }
+	/**
+	 * @return the number of edges pointing to this node
+	 */
+	public int get_in_degree() { return this.in_edges.size(); }
+	/**
+	 * @return the number of edges pointing from this node
+	 */
+	public int get_ou_degree() { return this.ou_edges.size(); }
 	
 	/* setters */
 	/**
@@ -75,7 +90,7 @@ public class SymInstanceNode {
 		if(this.graph != null) {
 			this.graph = null;
 			this.execution = null;
-			this.state_errors.clear();
+			this.state_error = null;
 			for(SymInstanceEdge edge : this.ou_edges) {
 				edge.delete();
 			}
@@ -88,38 +103,26 @@ public class SymInstanceNode {
 	 * @return connect this node to the target
 	 * @throws Exception
 	 */
-	protected SymInstanceEdge link_to(SymInstanceNode target) throws Exception {
+	protected SymInstanceEdge link_to(SymInstanceNode target, SymConstraint constraint) throws Exception {
 		for(SymInstanceEdge edge : this.ou_edges) {
 			if(edge.get_target() == target) {
 				return edge;
 			}
 		}
-		SymInstanceEdge edge = new SymInstanceEdge(this, target);
+		SymInstanceEdge edge = new SymInstanceEdge(this, target, constraint);
 		this.ou_edges.add(edge); target.in_edges.add(edge);
 		return edge;
-	}
-	/**
-	 * add the state-error in the node for being evaluated
-	 * @param state_error
-	 * @throws Exception
-	 */
-	protected void add_state_error(SymStateError state_error) throws Exception {
-		if(state_error == null)
-			throw new IllegalArgumentException("Invalid state_error: null");
-		else if(!this.state_errors.contains(state_error)) {
-			this.state_errors.add(state_error);
-			this.graph.register_status(state_error);
-		}
 	}
 	/**
 	 * evaluate the state errors in the node w.r.t. the given contexts
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected void evaluate(CStateContexts contexts) throws Exception {
-		for(SymStateError state_error : this.state_errors) {
-			this.graph.get_status(state_error).evaluate(this.graph.get_cir_mutations(), contexts);
-		}
+	protected Boolean evaluate(CStateContexts contexts) throws Exception {
+		if(this.state_error == null)
+			throw new IllegalArgumentException("No state error to be evaluated.");
+		else
+			return this.graph.get_status(this.state_error).evaluate(this.graph.get_cir_mutations(), contexts);
 	}
 	
 }
