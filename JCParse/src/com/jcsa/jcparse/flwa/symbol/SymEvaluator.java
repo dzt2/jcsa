@@ -251,11 +251,58 @@ public class SymEvaluator {
 				return ((SymUnaryExpression) operand).get_operand();
 			}
 			else {
-				return SymFactory.logic_not(operand);
+				return SymFactory.sym_condition(operand, false);
+			}
+		}
+		else if(operand instanceof SymBinaryExpression) {
+			COperator operator = ((SymBinaryExpression) operand).get_operator().get_operator();
+			SymExpression loperand = ((SymBinaryExpression) operand).get_loperand();
+			SymExpression roperand = ((SymBinaryExpression) operand).get_roperand();
+			switch(operator) {
+			case logic_and:
+			{
+				loperand = this.evaluate(SymFactory.sym_condition(loperand, false));
+				roperand = this.evaluate(SymFactory.sym_condition(roperand, false));
+				return SymFactory.logic_ior(loperand, roperand);
+			}
+			case logic_or:
+			{
+				loperand = this.evaluate(SymFactory.sym_condition(loperand, false));
+				roperand = this.evaluate(SymFactory.sym_condition(roperand, false));
+				return SymFactory.logic_and(loperand, roperand);
+			}
+			case greater_tn:
+			{
+				return SymFactory.smaller_eq(loperand, roperand);
+			}
+			case greater_eq:
+			{
+				return SymFactory.smaller_tn(loperand, roperand);
+			}
+			case smaller_tn:
+			{
+				return SymFactory.greater_eq(loperand, roperand);
+			}
+			case smaller_eq:
+			{
+				return SymFactory.greater_tn(loperand, roperand);
+			}
+			case equal_with:
+			{
+				return SymFactory.not_equals(loperand, roperand);
+			}
+			case not_equals:
+			{
+				return SymFactory.equal_with(loperand, roperand);
+			}
+			default: 
+			{
+				return SymFactory.sym_condition(operand, false);
+			}
 			}
 		}
 		else {
-			return SymFactory.logic_not(operand);
+			return SymFactory.sym_condition(operand, false);
 		}
 	}
 	private SymExpression eval_address_of(SymUnaryExpression source) throws Exception {

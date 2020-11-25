@@ -16,12 +16,15 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymValueError;
 import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.flwa.depend.CDependNode;
 import com.jcsa.jcparse.flwa.depend.CDependReference;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
+import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
@@ -29,9 +32,13 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymFactory;
 
 /**
  * It implements the construction of symbolic instance nodes and edges.
@@ -185,7 +192,7 @@ class SymInstanceGraphBuilder {
 			/* declarations */
 			CirExecution entry = sym_graph.get_mutant().get_space().get_cir_tree().
 					get_function_call_graph().get_main_function().get_flow_graph().get_entry();
-			sym_graph.clear(); SymInstanceNode source = sym_graph.new_node(entry, null), target;
+			SymInstanceNode source = sym_graph.new_node(entry, null), target;
 			sym_graph.reaching_ndoes = new ArrayList<SymInstanceNode>();
 			CirStatement muta_statement; CirExecution muta_execution; 
 			
@@ -270,6 +277,63 @@ class SymInstanceGraphBuilder {
 		return this.get_leafs(source);
 	}
 	/**
+	 * @param statement
+	 * @param expression
+	 * @return whether the expression is defined in the statement
+	 * @throws Exception
+	 */
+	private boolean is_defined(CirStatement statement, CirExpression expression) throws Exception {
+		if(statement instanceof CirAssignStatement) {
+			String key = ((CirAssignStatement) statement).get_lvalue().generate_code(true);
+			Queue<CirNode> queue = new LinkedList<CirNode>(); queue.add(expression);
+			while(!queue.isEmpty()) {
+				CirNode parent = queue.poll();
+				if(parent.generate_code(true).equals(key)) {
+					return true;
+				}
+				else {
+					for(CirNode child : parent.get_children()) {
+						queue.add(child);
+					}
+				}
+			}
+			return false;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * the set of expressions w.r.t. the given definition used in the statement
+	 * @param statement
+	 * @param expression
+	 * @param use_expressions
+	 * @throws Exception
+	 */
+	private void append_use_expressions(CirStatement statement, CirExpression expression, Collection<CirExpression> use_expressions) throws Exception {
+		Queue<CirNode> queue = new LinkedList<CirNode>(); queue.add(statement);
+		String code = expression.generate_code(true);
+		while(!queue.isEmpty()) {
+			CirNode parent = queue.poll();
+			if(parent instanceof CirExpression && 
+					parent.generate_code(true).equals(code)) {
+				boolean is_lvalue = false;
+				if(statement instanceof CirAssignStatement) {
+					if(((CirAssignStatement) statement).get_lvalue() == parent) {
+						is_lvalue = true;
+					}
+				}
+				if(!is_lvalue)
+					use_expressions.add((CirExpression) parent);
+			}
+			else {
+				for(CirNode child : parent.get_children()) {
+					queue.add(child);
+				}
+			}
+		}
+	}
+	/**
 	 * @param dependence_graph
 	 * @param definition
 	 * @return the set of expressions of which value is computed at the definition point
@@ -277,10 +341,10 @@ class SymInstanceGraphBuilder {
 	 */
 	private Collection<CirExpression> get_use_expressions(CDependGraph dependence_graph, CirExpression definition) throws Exception {
 		Set<CirExpression> use_expressions = new HashSet<CirExpression>();
+		CirStatement def_statement = definition.statement_of();
+		CirExecution def_execution = def_statement.get_tree().get_localizer().get_execution(def_statement);
 		
 		if(dependence_graph != null) {
-			CirStatement def_statement = definition.statement_of();
-			CirExecution def_execution = def_statement.get_tree().get_localizer().get_execution(def_statement);
 			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
 			if(instance_graph.has_instances_of(def_execution)) {
 				for(CirInstanceNode instance : instance_graph.get_instances_of(def_execution)) {
@@ -305,6 +369,17 @@ class SymInstanceGraphBuilder {
 			}
 		}
 		
+		/* using decidable path analysis to fetch use-expressions */
+		if(use_expressions.isEmpty()) {
+			CirExecutionPath path = CirExecutionPathFinder.finder.df_extend(def_execution);
+			for(CirExecutionEdge edge : path.get_edges()) {
+				this.append_use_expressions(edge.get_target().get_statement(), definition, use_expressions);
+				if(this.is_defined(edge.get_target().get_statement(), definition)) {
+					break;
+				}
+			}
+		}
+		
 		return use_expressions;
 	}
 	/**
@@ -325,7 +400,6 @@ class SymInstanceGraphBuilder {
 					get_cir_mutations().expr_error(use_expression, state_error.get_mutation_value()));
 			source.link_to(target, source.get_graph().get_cir_mutations().expression_constraint(use_statement, Boolean.TRUE, true));
 			targets.add(target);
-			
 		}
 		return targets;
 	}
@@ -343,6 +417,84 @@ class SymInstanceGraphBuilder {
 						dependence_graph, ((SymStateValueError) state_error).get_expression());
 				Collection<SymInstanceNode> targets = this.data_propagate_on(source, use_expressions);
 				next_nodes.addAll(targets);
+			}
+			else if(state_error instanceof SymValueError) {
+				CirExpression location = ((SymValueError) state_error).get_expression();
+				SymExpression muta_value = ((SymValueError) state_error).get_mutation_value();
+				CirMutations cir_mutations = source.get_graph().get_cir_mutations();
+				SymConstraint constraint; SymStateError next_error; SymInstanceNode next_node;
+				if(location.get_parent() instanceof CirIfStatement || location.get_parent() instanceof CirCaseStatement) {
+					muta_value = SymEvaluator.evaluate_on(muta_value);
+					if(muta_value instanceof SymConstant) {
+						if(((SymConstant) muta_value).get_bool()) {
+							CirStatement if_statement = location.statement_of();
+							CirExecution if_execution = if_statement.get_tree().get_localizer().get_execution(if_statement);
+							CirExecutionFlow true_flow = null, fals_flow = null;
+							for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
+								if(flow.get_type() == CirExecutionFlowType.true_flow) {
+									true_flow = flow;
+								}
+								else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+									fals_flow = flow;
+								}
+							}
+							constraint = cir_mutations.expression_constraint(if_statement, location, false);
+							next_error = cir_mutations.flow_error(fals_flow, true_flow);
+							next_node = source.get_graph().new_node(if_execution, next_error);
+							next_nodes.add(next_node);
+							source.link_to(next_node, constraint);
+						}
+						else {
+							CirStatement if_statement = location.statement_of();
+							CirExecution if_execution = if_statement.get_tree().get_localizer().get_execution(if_statement);
+							CirExecutionFlow true_flow = null, fals_flow = null;
+							for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
+								if(flow.get_type() == CirExecutionFlowType.true_flow) {
+									true_flow = flow;
+								}
+								else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+									fals_flow = flow;
+								}
+							}
+							constraint = cir_mutations.expression_constraint(if_statement, location, true);
+							next_error = cir_mutations.flow_error(true_flow, fals_flow);
+							next_node = source.get_graph().new_node(if_execution, next_error);
+							next_nodes.add(next_node);
+							source.link_to(next_node, constraint);
+						}
+					}
+					else {
+						CirStatement if_statement = location.statement_of();
+						CirExecution if_execution = if_statement.get_tree().get_localizer().get_execution(if_statement);
+						CirExecutionFlow true_flow = null, fals_flow = null;
+						for(CirExecutionFlow flow : if_execution.get_ou_flows()) {
+							if(flow.get_type() == CirExecutionFlowType.true_flow) {
+								true_flow = flow;
+							}
+							else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+								fals_flow = flow;
+							}
+						}
+						
+						SymExpression condition1 = SymFactory.sym_condition(location, true);
+						SymExpression condition2 = SymFactory.sym_condition(muta_value, false);
+						SymExpression condition = SymFactory.logic_and(condition1, condition2);
+						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
+						next_error = cir_mutations.flow_error(true_flow, fals_flow);
+						next_node = source.get_graph().new_node(if_execution, next_error);
+						next_nodes.add(next_node);
+						source.link_to(next_node, constraint);
+						
+						condition1 = SymFactory.sym_condition(location, false);
+						condition2 = SymFactory.sym_condition(muta_value, true);
+						condition = SymFactory.logic_and(condition1, condition2);
+						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
+						next_error = cir_mutations.flow_error(fals_flow, true_flow);
+						next_node = source.get_graph().new_node(if_execution, next_error);
+						next_nodes.add(next_node);
+						source.link_to(next_node, constraint);
+					}
+				}
 			}
 		}
 		return next_nodes;
@@ -373,7 +525,9 @@ class SymInstanceGraphBuilder {
 	 */
 	protected void propagate(CDependGraph dependence_graph, SymInstanceGraph sym_graph, int maximal_distance) throws Exception {
 		for(SymInstanceNode reaching_node : sym_graph.get_reaching_nodes()) {
-			this.propagate_from(dependence_graph, reaching_node, maximal_distance);
+			for(SymInstanceEdge infect_edge : reaching_node.get_ou_edges()) {
+				this.propagate_from(dependence_graph, infect_edge.get_target(), maximal_distance);
+			}
 		}
 	}
 	

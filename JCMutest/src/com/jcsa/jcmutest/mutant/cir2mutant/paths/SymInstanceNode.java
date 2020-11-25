@@ -96,6 +96,8 @@ public class SymInstanceNode {
 			}
 			this.in_edges.clear();
 			this.ou_edges.clear();
+			this.in_edges = null;
+			this.ou_edges = null;
 		}
 	}
 	/**
@@ -104,11 +106,6 @@ public class SymInstanceNode {
 	 * @throws Exception
 	 */
 	protected SymInstanceEdge link_to(SymInstanceNode target, SymConstraint constraint) throws Exception {
-		for(SymInstanceEdge edge : this.ou_edges) {
-			if(edge.get_target() == target) {
-				return edge;
-			}
-		}
 		SymInstanceEdge edge = new SymInstanceEdge(this, target, constraint);
 		this.ou_edges.add(edge); target.in_edges.add(edge);
 		return edge;
@@ -123,6 +120,13 @@ public class SymInstanceNode {
 			throw new IllegalArgumentException("No state error to be evaluated.");
 		else
 			return this.graph.get_status(this.state_error).evaluate(this.graph.get_cir_mutations(), contexts);
+	}
+	@Override
+	public String toString() {
+		if(this.has_state_error())
+			return this.state_error.toString();
+		else
+			return this.execution.toString();
 	}
 	
 }

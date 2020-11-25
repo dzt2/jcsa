@@ -384,8 +384,6 @@ public class SymInstanceUtils {
 			{
 				conditions.add(bin_expression);
 				conditions.add(SymFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				conditions.add(SymFactory.smaller_tn(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				conditions.add(SymFactory.smaller_tn(bin_expression.get_roperand(), bin_expression.get_loperand()));
 				break;
 			}
 			default:

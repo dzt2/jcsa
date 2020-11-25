@@ -106,6 +106,9 @@ public class SymInstanceGraphTest {
 				"\tat " + get_code(constraint.get_statement()) + "\n");
 		
 		constraint = edge.get_source().get_graph().get_cir_mutations().optimize(constraint, null);
+		writer.write("\t\t\t#optm\t" + constraint.get_execution() + 
+				"\t" + get_code(constraint.get_condition()) + 
+				"\tat " + get_code(constraint.get_statement()) + "\n");
 		Collection<SymConstraint> improve_constraints = SymInstanceUtils.
 				improve_constraints(edge.get_source().get_graph().get_cir_mutations(), constraint);
 		for(SymConstraint improve_constraint : improve_constraints) {
