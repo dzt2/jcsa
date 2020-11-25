@@ -8,6 +8,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymFactory;
 
@@ -142,8 +143,11 @@ public class CStateContext {
 		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
 				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
 			SymExpression sym_key = SymFactory.sym_expression(key);
-			String string_code = sym_key.generate_code();
-			this.local_values.put(string_code, SymFactory.sym_expression(value));
+			if(sym_key instanceof SymConstant) { /* ignored list */ }
+			else {
+				this.local_values.put(sym_key.generate_code(), 
+							SymFactory.sym_expression(value));
+			}
 		}
 		else
 			throw new IllegalArgumentException(key.getClass().getSimpleName());
