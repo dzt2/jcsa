@@ -3,6 +3,7 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Collection;
+import java.util.Random;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
@@ -27,12 +28,15 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.test.file.TestInput;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 public class SymInstanceGraphTest {
 	
-	private static final String root_path = "/home/dzt2/Development/Data/mprojects/";
+	private static final String root_path = "/home/dzt2/Development/Data/rprojects/";
 	private static final String result_dir = "result/graphs/";
 	private static final int maximal_distance = 3;
+	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
@@ -141,7 +145,7 @@ public class SymInstanceGraphTest {
 		
 		output_instance_status(writer, edge.get_status());
 	}
-	private static void output_instance_graph(FileWriter writer, Mutant mutant, CDependGraph dependence_graph) throws Exception {
+	private static void output_instance_graph(FileWriter writer, Mutant mutant, CDependGraph dependence_graph, CStatePath state_path) throws Exception {
 		writer.write("#muta\t" + mutant.get_id() + "\n");
 		writer.write("\t#class: " + mutant.get_mutation().get_class() + 
 					":" + mutant.get_mutation().get_operator() + "\n");
@@ -150,7 +154,10 @@ public class SymInstanceGraphTest {
 		writer.write(" at line " + location.get_location().line_of() + "\n");
 		
 		SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, maximal_distance);
-		graph.evaluate();	/* perform static evaluation to test its status account */
+		if(state_path == null)
+			graph.evaluate();	/* perform static evaluation to test its status account */
+		else
+			graph.evaluate(state_path);	/* dynamic evaluation to test its status result */
 		
 		for(SymInstanceNode node : graph.get_nodes()) {
 			output_instance_node(writer, node);
@@ -160,23 +167,42 @@ public class SymInstanceGraphTest {
 		}
 		writer.write("\n");
 	}
-	private static void output_mutations(MuTestProject project, File output) throws Exception {
+	private static void output_mutations(MuTestProject project, File output, CStatePath state_path) throws Exception {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		CirFunction root_function = code_file.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1));
 		
+		System.out.println("Write mutants to " + output.getAbsolutePath());
 		FileWriter writer = new FileWriter(output);
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 			System.out.println("\t==> " + mutant.toString());
-			output_instance_graph(writer, mutant, dependence_graph);
+			output_instance_graph(writer, mutant, dependence_graph, state_path);
 		}
 		writer.close();
+	}
+	private static boolean output_mutations(MuTestProject project, int test_id) throws Exception {
+		TestInput test_case = project.get_test_space().get_test_space().get_input(test_id);
+		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
+		CStatePath state_path = project.get_test_space().load_instrumental_path(
+				code_file.get_sizeof_template(), 
+				code_file.get_ast_tree(), code_file.get_cir_tree(), test_case);
+		if(state_path != null) {
+			File output = new File(result_dir + project.get_name() + "." + test_id + ".txt");
+			output_mutations(project, output, state_path);
+		}
+		return state_path != null;
 	}
 	protected static void testing(File root) throws Exception {
 		MuTestProject project = get_project(root);
 		System.out.println("Testing on " + project.get_name());
-		output_mutations(project, new File(result_dir + project.get_name() + ".txt"));
+		output_mutations(project, new File(result_dir + project.get_name() + ".txt"), null);
+		
+		int number = project.get_test_space().number_of_test_inputs();
+		for(int k = 0; k < 16; k++) {
+			int test_id = Math.abs(random.nextInt()) % number;
+			if(output_mutations(project, test_id)) break;
+		}
 	}
 	
 }
