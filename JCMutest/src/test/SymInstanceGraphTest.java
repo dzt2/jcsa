@@ -166,6 +166,7 @@ public class SymInstanceGraphTest {
 			}
 		}
 		writer.write("\n");
+		writer.flush();
 	}
 	private static void output_mutations(MuTestProject project, File output, CStatePath state_path) throws Exception {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
