@@ -41,20 +41,20 @@ public class SymInstanceStatus {
 	 * @param instance
 	 * @throws Exception
 	 */
-	protected SymInstanceStatus(SymInstance instance) throws Exception {
-		if(instance == null)
-			throw new IllegalArgumentException("Invalid instance: null");
-		else {
-			this.instance = instance;
-			this.execution_times = 0;
-			this.rejection_times = 0;
-			this.acception_times = 0;
-			this.concrete_instances = new ArrayList<SymInstance>();
-			this.cir_annotations = new HashSet<CirAnnotation>();
-		}
+	protected SymInstanceStatus(SymInstance instance) {
+		this.instance = instance;
+		this.execution_times = 0;
+		this.rejection_times = 0;
+		this.acception_times = 0;
+		this.concrete_instances = new ArrayList<SymInstance>();
+		this.cir_annotations = new HashSet<CirAnnotation>();
 	}
 	
 	/* getters */
+	/**
+	 * @return whether the status refers to any symbolic instance
+	 */
+	public boolean has_instance() { return this.instance != null; }
 	/**
 	 * @return the original instance hold by the status
 	 */
@@ -98,21 +98,30 @@ public class SymInstanceStatus {
 	 * @throws Exception
 	 */
 	protected Boolean evaluate(CirMutations cir_mutations, CStateContexts contexts) throws Exception {
+		/* determine the validation result of the symbolic instance */
 		Boolean result;
-		if(this.instance instanceof SymConstraint) {
+		if(this.instance == null) {
+			result = Boolean.TRUE;	/* record as reached for reaching node */
+		}
+		else if(this.instance instanceof SymConstraint) {
 			SymConstraint constraint = (SymConstraint) this.instance;
 			constraint = cir_mutations.optimize(constraint, contexts);
 			this.concrete_instances.add(constraint);
 			this.cir_annotations.addAll(SymInstanceUtils.annotations(constraint));
 			result = constraint.validate(null);
 		}
-		else {
+		else if(this.instance instanceof SymStateError) {
 			SymStateError state_error = (SymStateError) this.instance;
 			state_error = cir_mutations.optimize(state_error, contexts);
 			this.concrete_instances.add(state_error);
 			this.cir_annotations.addAll(SymInstanceUtils.annotations(state_error));
 			result = state_error.validate(null);
 		}
+		else {
+			result = null;
+		}
+		
+		/* account for the times in the status instance */
 		this.execution_times++;
 		if(result != null) {
 			if(result.booleanValue()) {
@@ -124,5 +133,19 @@ public class SymInstanceStatus {
 		}
 		return result;
 	}
+	
+	/* implication */
+	/**
+	 * @return whether the status has been evaluated
+	 */
+	public boolean is_executed() { return this.execution_times > 0; }
+	/**
+	 * @return whether the status has been accepted in testing
+	 */
+	public boolean is_accepted() { return this.acception_times > 0; }
+	/**
+	 * @return the status is acceptable if it is evaluated but not always false
+	 */
+	public boolean is_acceptable() { return this.execution_times > this.rejection_times; }
 	
 }

@@ -134,7 +134,7 @@ class SymInstanceBuilder {
 			/* link the previous node to the source of the current flow */
 			if(prev_node.get_execution() != dependence_flow.get_source()) {
 				constraint = cir_mutations.expression_constraint(dependence_flow.get_source().get_statement(), Boolean.TRUE, true);
-				next_node = sym_graph.new_node(dependence_flow.get_source(), null);
+				next_node = sym_graph.new_node(SymInstanceNodeType.path_node, dependence_flow.get_source(), null);
 				prev_node.link_to(SymInstanceEdgeType.exec_flow, next_node, constraint); 
 				prev_node = next_node;
 			}
@@ -167,17 +167,16 @@ class SymInstanceBuilder {
 			}
 			
 			/* link from the source of the flow to the target of flow */
-			next_node = sym_graph.new_node(dependence_flow.get_target(), null);
+			next_node = sym_graph.new_node(SymInstanceNodeType.path_node, dependence_flow.get_target(), null);
 			prev_node.link_to(SymInstanceEdgeType.exec_flow, next_node, constraint);
 			prev_node = next_node;
 		}
 		
-		if(prev_node.get_execution() != target) {
-			next_node = sym_graph.new_node(target, null);
-			constraint = cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true);
-			prev_node.link_to(SymInstanceEdgeType.exec_flow, next_node, constraint);
-			prev_node = next_node;
-		}
+		/* link from last predicate node to the mutated statement node */
+		next_node = sym_graph.new_node(SymInstanceNodeType.muta_node, target, null);
+		constraint = cir_mutations.expression_constraint(target.get_statement(), Boolean.TRUE, true);
+		prev_node.link_to(SymInstanceEdgeType.exec_flow, next_node, constraint);
+		prev_node = next_node;
 		
 		return prev_node;
 	}
@@ -192,10 +191,7 @@ class SymInstanceBuilder {
 			throw new IllegalArgumentException("Invalid sym_graph as null");
 		else {
 			/* declarations */
-			CirExecution entry = sym_graph.get_mutant().get_space().get_cir_tree().
-					get_function_call_graph().get_main_function().get_flow_graph().get_entry();
-			SymInstanceNode source = sym_graph.new_node(entry, null), target;
-			sym_graph.reaching_ndoes = new ArrayList<SymInstanceNode>();
+			SymInstanceNode source = sym_graph.get_root(), target;
 			CirStatement muta_statement; CirExecution muta_execution; 
 			
 			/* collect the set of cir-mutations w.r.t. the execution where it is seeded */
@@ -212,16 +208,15 @@ class SymInstanceBuilder {
 			}
 			
 			/* solve the reaching and infection part of each reaching node */
-			sym_graph.reaching_ndoes = new ArrayList<SymInstanceNode>();
 			for(CirExecution target_execution : init_set.keySet()) {
 				target = this.construct_reaching_path(dependence_graph, source, target_execution);
 				for(CirMutation cir_mutation : init_set.get(target_execution)) {
 					muta_statement = cir_mutation.get_statement();
 					muta_execution = muta_statement.get_tree().get_localizer().get_execution(muta_statement);
-					SymInstanceNode init_error_node = sym_graph.new_node(muta_execution, cir_mutation.get_state_error());
+					SymInstanceNode init_error_node = sym_graph.
+							new_node(SymInstanceNodeType.root_erro, muta_execution, cir_mutation.get_state_error());
 					target.link_to(SymInstanceEdgeType.infc_flow, init_error_node, cir_mutation.get_constraint());
 				}
-				sym_graph.reaching_ndoes.add(target);
 			}
 		}
 	}
@@ -239,7 +234,8 @@ class SymInstanceBuilder {
 			for(CirMutation next_mutation : next_mutations) {
 				CirStatement statement = next_mutation.get_statement();
 				CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
-				SymInstanceNode next_node = source.get_graph().new_node(execution, next_mutation.get_state_error());
+				SymInstanceNode next_node = source.get_graph().
+						new_node(SymInstanceNodeType.next_erro, execution, next_mutation.get_state_error());
 				source.link_to(SymInstanceEdgeType.inpa_flow, next_node, next_mutation.get_constraint());
 				this.build_local_propagations(next_node);	/* recursively solve the next to enclosing locations */
 			}
@@ -398,7 +394,7 @@ class SymInstanceBuilder {
 		for(CirExpression use_expression : use_expressions) {
 			CirStatement use_statement = use_expression.statement_of();
 			CirExecution use_execution = use_statement.get_tree().get_localizer().get_execution(use_statement);
-			SymInstanceNode target = source.get_graph().new_node(use_execution, source.get_graph().
+			SymInstanceNode target = source.get_graph().new_node(SymInstanceNodeType.root_erro, use_execution, source.get_graph().
 					get_cir_mutations().expr_error(use_expression, state_error.get_mutation_value()));
 			source.link_to(SymInstanceEdgeType.oupa_flow, target, 
 					source.get_graph().get_cir_mutations().expression_constraint(use_statement, Boolean.TRUE, true));
@@ -443,7 +439,7 @@ class SymInstanceBuilder {
 							}
 							constraint = cir_mutations.expression_constraint(if_statement, location, false);
 							next_error = cir_mutations.flow_error(fals_flow, true_flow);
-							next_node = source.get_graph().new_node(if_execution, next_error);
+							next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);
 							next_nodes.add(next_node);
 							source.link_to(SymInstanceEdgeType.cont_flow, next_node, constraint);
 						}
@@ -461,7 +457,7 @@ class SymInstanceBuilder {
 							}
 							constraint = cir_mutations.expression_constraint(if_statement, location, true);
 							next_error = cir_mutations.flow_error(true_flow, fals_flow);
-							next_node = source.get_graph().new_node(if_execution, next_error);
+							next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);
 							next_nodes.add(next_node);
 							source.link_to(SymInstanceEdgeType.cont_flow, next_node, constraint);
 						}
@@ -484,7 +480,7 @@ class SymInstanceBuilder {
 						SymExpression condition = SymFactory.logic_and(condition1, condition2);
 						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
 						next_error = cir_mutations.flow_error(true_flow, fals_flow);
-						next_node = source.get_graph().new_node(if_execution, next_error);
+						next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);
 						next_nodes.add(next_node);
 						source.link_to(SymInstanceEdgeType.cont_flow, next_node, constraint);
 						
@@ -493,7 +489,7 @@ class SymInstanceBuilder {
 						condition = SymFactory.logic_and(condition1, condition2);
 						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
 						next_error = cir_mutations.flow_error(fals_flow, true_flow);
-						next_node = source.get_graph().new_node(if_execution, next_error);
+						next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);
 						next_nodes.add(next_node);
 						source.link_to(SymInstanceEdgeType.cont_flow, next_node, constraint);
 					}
@@ -527,8 +523,8 @@ class SymInstanceBuilder {
 	 * @throws Exception
 	 */
 	protected void propagate(CDependGraph dependence_graph, SymInstanceGraph sym_graph, int maximal_distance) throws Exception {
-		for(SymInstanceNode reaching_node : sym_graph.get_reaching_nodes()) {
-			for(SymInstanceEdge infect_edge : reaching_node.get_ou_edges()) {
+		for(SymInstanceNode mutated_node : sym_graph.get_mutated_nodes()) {
+			for(SymInstanceEdge infect_edge : mutated_node.get_ou_edges()) {
 				this.propagate_from(dependence_graph, infect_edge.get_target(), maximal_distance);
 			}
 		}

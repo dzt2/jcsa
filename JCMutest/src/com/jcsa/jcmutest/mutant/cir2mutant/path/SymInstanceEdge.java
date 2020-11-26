@@ -19,6 +19,8 @@ public class SymInstanceEdge {
 	private SymInstanceNode target;
 	/** the set of symbolic constraints being evaluated on this edge **/
 	private SymConstraint constraint;
+	/** the instance that records the status of evaluating its constraint **/
+	private SymInstanceStatus status;
 	/**
 	 * create the edge pointing from the source to the target
 	 * @param source
@@ -40,7 +42,7 @@ public class SymInstanceEdge {
 			this.source = source;
 			this.target = target;
 			this.constraint = constraint;
-			this.source.get_graph().register_status(constraint);
+			this.status = new SymInstanceStatus(this.constraint);
 		}
 	}
 	
@@ -64,7 +66,7 @@ public class SymInstanceEdge {
 	/**
 	 * @return the instance that records the status of the constraint required in the propagation edge.
 	 */
-	public SymInstanceStatus get_status() { return this.source.get_graph().get_status(this.constraint); }
+	public SymInstanceStatus get_status() { return this.status; }
 	
 	/* setters */
 	/**
@@ -75,6 +77,7 @@ public class SymInstanceEdge {
 			this.source = null;
 			this.target = null;
 			this.constraint = null;
+			this.status = null;
 		}
 	}
 	

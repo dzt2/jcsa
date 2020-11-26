@@ -1,17 +1,17 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * The symbolic instance graph as feature model for prediction and evaluation.
@@ -27,11 +27,7 @@ public class SymInstanceGraph {
 	/** the library used to generate symbolic instance **/
 	private CirMutations cir_mutations;
 	/** the collection of symbolic nodes created in this graph **/
-	private Collection<SymInstanceNode> nodes;
-	/** the set of nodes w.r.t. mutated statement of the cir-mutations **/
-	protected Collection<SymInstanceNode> reaching_ndoes;
-	/** mapping from symbolic instance in the nodes | edges of the graph to their status in testing **/
-	private Map<SymInstance, SymInstanceStatus> status_table;
+	private List<SymInstanceNode> nodes;
 	/**
 	 * create an empty graph to describe the structural features hold by the mutant
 	 * @param mutant
@@ -44,7 +40,7 @@ public class SymInstanceGraph {
 			this.mutant = mutant;
 			this.cir_mutations = new CirMutations(mutant.get_space().get_cir_tree());
 			this.nodes = new ArrayList<SymInstanceNode>();
-			this.status_table = new HashMap<SymInstance, SymInstanceStatus>();
+			this.clear();
 		}
 	}
 	
@@ -66,50 +62,42 @@ public class SymInstanceGraph {
 	 */
 	public int size() { return this.nodes.size(); }
 	/**
+	 * @return the root node w.r.t. the main function entry in the graph
+	 */
+	public SymInstanceNode get_root() { return this.nodes.get(0); }
+	/**
 	 * @return the collection of nodes created in this graph
 	 */
 	public Iterable<SymInstanceNode> get_nodes() { return this.nodes; }
 	/**
 	 * @return the set of nodes w.r.t. mutated statement of the cir-mutations
 	 */
-	public Iterable<SymInstanceNode> get_reaching_nodes() { return this.reaching_ndoes; }
-	/**
-	 * @param instance
-	 * @return whether there is status w.r.t. the instance as given
-	 */
-	public boolean has_status(SymInstance instance) {
-		return this.status_table.containsKey(instance);
-	}
-	/**
-	 * @param instance
-	 * @return the status w.r.t. the instance or null if no such instance exists
-	 */
-	public SymInstanceStatus get_status(SymInstance instance) {
-		if(this.status_table.containsKey(instance))
-			return this.status_table.get(instance);
-		else
-			return null;	/* no existing status */
+	public Iterable<SymInstanceNode> get_mutated_nodes() { 
+		List<SymInstanceNode> mutated_nodes = new ArrayList<SymInstanceNode>();
+		for(SymInstanceNode node : this.nodes) {
+			if(node.get_type() == SymInstanceNodeType.muta_node) {
+				mutated_nodes.add(node);
+			}
+		}
+		return mutated_nodes;
 	}
 	
 	/* setters */
 	/**
-	 * remove all the nodes, edges and their status in the graph
+	 * remove all the nodes, edges in the graph and regenerate the root node
 	 */
-	protected void clear() {
+	private void clear() throws Exception {
+		/* remove the original nodes in the graph */
 		for(SymInstanceNode node : this.nodes) {
 			node.delete();
 		}
-		this.nodes.clear(); this.status_table.clear();
-	}
-	/**
-	 * register a new status for the given instance
-	 * @param instance
-	 */
-	protected void register_status(SymInstance instance) throws Exception {
-		if(instance != null) {
-			if(!this.status_table.containsKey(instance))
-				this.status_table.put(instance, new SymInstanceStatus(instance));
-		}
+		this.nodes.clear(); 
+		
+		/* regenerate the root of the node */
+		CirTree cir_tree = this.mutant.get_space().get_cir_tree();
+		CirFunction main = cir_tree.get_function_call_graph().get_main_function();
+		CirExecution main_entry = main.get_flow_graph().get_entry();
+		this.new_node(SymInstanceNodeType.path_node, main_entry, null);
 	}
 	/**
 	 * create a new isolated node in the graph w.r.t. the execution
@@ -117,8 +105,9 @@ public class SymInstanceGraph {
 	 * @return
 	 * @throws Exception
 	 */
-	protected SymInstanceNode new_node(CirExecution execution, SymStateError state_error) throws Exception {
-		SymInstanceNode node = new SymInstanceNode(this, execution, state_error);
+	protected SymInstanceNode new_node(SymInstanceNodeType type, CirExecution 
+			execution, SymStateError state_error) throws Exception {
+		SymInstanceNode node = new SymInstanceNode(this, type, execution, state_error);
 		this.nodes.add(node); return node;
 	}
 	
@@ -136,6 +125,23 @@ public class SymInstanceGraph {
 		SymInstanceBuilder.builder.generate_reaching_paths(dependence_graph, sym_graph);
 		SymInstanceBuilder.builder.propagate(dependence_graph, sym_graph, maximal_distance);
 		return sym_graph;
+	}
+	
+	/* evaluation */
+	/**
+	 * Perform dynamic evaluation on nodes and edges in the graph
+	 * @param state_path
+	 * @throws Exception
+	 */
+	public void evaluate(CStatePath state_path) throws Exception {
+		SymInstanceEvaluator.evaluator.dynamic_evaluate(this, state_path);
+	}
+	/**
+	 * Perform static evaluation on nodes and edges in the graph
+	 * @throws Exception
+	 */
+	public void evaluate() throws Exception {
+		SymInstanceEvaluator.evaluator.static_evaluate(this);
 	}
 	
 }

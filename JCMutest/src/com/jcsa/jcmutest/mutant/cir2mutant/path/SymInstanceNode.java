@@ -17,6 +17,8 @@ public class SymInstanceNode {
 	/* definitions */
 	/** the graph in which the node is created **/
 	private SymInstanceGraph graph;
+	/** the type of symbolic instance node in the graph **/
+	private SymInstanceNodeType type;
 	/** the execution of statement where the node is evaluated **/
 	private CirExecution execution;
 	/** the symbolic state error being evaluated at this node **/
@@ -25,25 +27,30 @@ public class SymInstanceNode {
 	private Collection<SymInstanceEdge> in_edges;
 	/** the set of symbolic instance edges pointing from this node to others **/
 	private Collection<SymInstanceEdge> ou_edges;
+	/** the instance that records the status of the state error evaluated in this node **/
+	private SymInstanceStatus status;
 	/**
 	 * create an isolated node in the graph w.r.t. the execution of given statement
 	 * @param graph
 	 * @param execution
 	 * @throws Exception
 	 */
-	protected SymInstanceNode(SymInstanceGraph graph, CirExecution execution, SymStateError state_error) throws Exception {
+	protected SymInstanceNode(SymInstanceGraph graph, SymInstanceNodeType type, 
+			CirExecution execution, SymStateError state_error) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
+		else if(type == null)
+			throw new IllegalArgumentException("Invalid type as null");
 		else if(execution == null)
 			throw new IllegalArgumentException("Invalid execution: null");
 		else {
 			this.graph = graph;
+			this.type = type;
 			this.execution = execution;
 			this.state_error = state_error;
 			this.in_edges = new ArrayList<SymInstanceEdge>();
 			this.ou_edges = new ArrayList<SymInstanceEdge>();
-			if(this.state_error != null)
-				this.graph.register_status(this.state_error);
+			this.status = new SymInstanceStatus(state_error);
 		}
 	}
 	
@@ -52,6 +59,10 @@ public class SymInstanceNode {
 	 * @return the graph in which the node is created
 	 */
 	public SymInstanceGraph get_graph() { return this.graph; } 
+	/**
+	 * @return the type of symbolic instance node
+	 */
+	public SymInstanceNodeType get_type() { return this.type; }
 	/**
 	 * @return the execution of statement where the node is evaluated
 	 */
@@ -83,9 +94,7 @@ public class SymInstanceNode {
 	/**
 	 * @return the instance that records the status hold by the state error or null if the instance node contains no state error
 	 */
-	public SymInstanceStatus get_status() { 
-		return this.graph.get_status(this.state_error); 
-	}
+	public SymInstanceStatus get_status() { return this.status; }
 	
 	/* setters */
 	/**
