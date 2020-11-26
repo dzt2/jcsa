@@ -123,10 +123,18 @@ public class SymInstanceGraph {
 	}
 	
 	/* builder */
+	/**
+	 * create a symbolic instance graph with specified distance of error propagation
+	 * @param dependence_graph used to generate control and data dependence for reaching or propagation
+	 * @param mutant the mutation as the source of the symbolic instance graph
+	 * @param maximal_distance the maximal distance of error propagation from the enclosing expression where the mutation is seeded
+	 * @return the symbolic instance graph built from the mutant
+	 * @throws Exception
+	 */
 	public static SymInstanceGraph new_graph(CDependGraph dependence_graph, Mutant mutant, int maximal_distance) throws Exception {
 		SymInstanceGraph sym_graph = new SymInstanceGraph(mutant);
-		SymInstanceGraphBuilder.builder.generate_reaching_paths(dependence_graph, sym_graph);
-		SymInstanceGraphBuilder.builder.propagate(dependence_graph, sym_graph, maximal_distance);
+		SymInstanceBuilder.builder.generate_reaching_paths(dependence_graph, sym_graph);
+		SymInstanceBuilder.builder.propagate(dependence_graph, sym_graph, maximal_distance);
 		return sym_graph;
 	}
 	

@@ -5,7 +5,6 @@ import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
@@ -81,6 +80,12 @@ public class SymInstanceNode {
 	 * @return the number of edges pointing from this node
 	 */
 	public int get_ou_degree() { return this.ou_edges.size(); }
+	/**
+	 * @return the instance that records the status hold by the state error or null if the instance node contains no state error
+	 */
+	public SymInstanceStatus get_status() { 
+		return this.graph.get_status(this.state_error); 
+	}
 	
 	/* setters */
 	/**
@@ -105,21 +110,13 @@ public class SymInstanceNode {
 	 * @return connect this node to the target
 	 * @throws Exception
 	 */
-	protected SymInstanceEdge link_to(SymInstanceNode target, SymConstraint constraint) throws Exception {
-		SymInstanceEdge edge = new SymInstanceEdge(this, target, constraint);
+	protected SymInstanceEdge link_to(
+			SymInstanceEdgeType type, 
+			SymInstanceNode target, 
+			SymConstraint constraint) throws Exception {
+		SymInstanceEdge edge = new SymInstanceEdge(type, this, target, constraint);
 		this.ou_edges.add(edge); target.in_edges.add(edge);
 		return edge;
-	}
-	/**
-	 * evaluate the state errors in the node w.r.t. the given contexts
-	 * @param contexts
-	 * @throws Exception
-	 */
-	protected Boolean evaluate(CStateContexts contexts) throws Exception {
-		if(this.state_error == null)
-			throw new IllegalArgumentException("No state error to be evaluated.");
-		else
-			return this.graph.get_status(this.state_error).evaluate(this.graph.get_cir_mutations(), contexts);
 	}
 	@Override
 	public String toString() {

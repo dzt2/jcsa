@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
+
 
 /**
  * It represents the error propagation edge between symbolic instance node w.r.t. a constraint that is required.
@@ -11,6 +11,8 @@ import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 public class SymInstanceEdge {
 	
 	/* definitions */
+	/** the type of the symbolic instance edge **/
+	private SymInstanceEdgeType type;
 	/** the symbolic execution node from which the edge points to another **/
 	private SymInstanceNode source;
 	/** the symbolic execution node to which the edge points from another **/
@@ -23,14 +25,18 @@ public class SymInstanceEdge {
 	 * @param target
 	 * @throws Exception
 	 */
-	protected SymInstanceEdge(SymInstanceNode source, SymInstanceNode target, SymConstraint constraint) throws Exception {
-		if(source == null)
+	protected SymInstanceEdge(SymInstanceEdgeType type, SymInstanceNode source, 
+			SymInstanceNode target, SymConstraint constraint) throws Exception {
+		if(type == null)
+			throw new IllegalArgumentException("Invalid type as null");
+		else if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(target == null)
 			throw new IllegalArgumentException("Invalid target: null");
 		else if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint as null");
 		else {
+			this.type = type;
 			this.source = source;
 			this.target = target;
 			this.constraint = constraint;
@@ -39,6 +45,10 @@ public class SymInstanceEdge {
 	}
 	
 	/* getters */
+	/**
+	 * @return the type of the symbolic instance edge
+	 */
+	public SymInstanceEdgeType get_type() { return this.type; }
 	/**
 	 * @return the node from which the edge points to another
 	 */
@@ -51,6 +61,10 @@ public class SymInstanceEdge {
 	 * @return the set of symbolic constraints being evaluated on this edge
 	 */
 	public SymConstraint get_constraint() { return this.constraint; }
+	/**
+	 * @return the instance that records the status of the constraint required in the propagation edge.
+	 */
+	public SymInstanceStatus get_status() { return this.source.get_graph().get_status(this.constraint); }
 	
 	/* setters */
 	/**
@@ -62,15 +76,6 @@ public class SymInstanceEdge {
 			this.target = null;
 			this.constraint = null;
 		}
-	}
-	/**
-	 * evaluate the constraints within the edge for error propagation
-	 * @param contexts
-	 * @throws Exception
-	 */
-	protected Boolean evaluate(CStateContexts contexts) throws Exception {
-		SymInstanceGraph graph = this.source.get_graph();
-		return graph.get_status(this.constraint).evaluate(graph.get_cir_mutations(), contexts);
 	}
 	
 }
