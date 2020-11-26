@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -142,6 +143,13 @@ public class SymInstanceGraph {
 	 */
 	public void evaluate() throws Exception {
 		SymInstanceEvaluator.evaluator.static_evaluate(this);
+	}
+	/**
+	 * @return the set of reachable paths from the root of the node 
+	 * @throws Exception
+	 */
+	public Collection<List<SymInstanceEdge>> select_reachable_paths() throws Exception {
+		return SymInstanceEvaluator.evaluator.select_reachable_paths(this);
 	}
 	
 }

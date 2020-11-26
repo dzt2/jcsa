@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcparse.flwa.symbol.CStateContexts;
@@ -367,6 +368,49 @@ class SymInstanceEvaluator {
 				}
 			}
 		}
+	}
+	
+	/* feature selection algorithms */
+	/**
+	 * traverse the symbolic instance graph from the edge and collect the reachable path into the paths
+	 * @param edge
+	 * @param path
+	 * @param paths
+	 * @throws Exception
+	 */
+	private void select_reachable_paths(SymInstanceEdge edge, Stack<SymInstanceEdge> 
+					path, Collection<List<SymInstanceEdge>> paths) throws Exception {
+		if(edge.get_status().is_acceptable()) {
+			path.push(edge);
+			
+			if(edge.get_target().get_ou_degree() == 0) {
+				List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
+				for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
+			}
+			else {
+				for(SymInstanceEdge next_edge : edge.get_target().get_ou_edges()) {
+					this.select_reachable_paths(next_edge, path, paths);
+				}
+			}
+			
+			path.pop();
+		}
+		else {
+			List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
+			for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
+		}
+	}
+	/**
+	 * @param graph
+	 * @return the set of paths from program entry to mutated node until a state error node that can be reached from
+	 * 		   the evaluation status.
+	 * @throws Exception
+	 */
+	protected Collection<List<SymInstanceEdge>> select_reachable_paths(SymInstanceGraph graph) throws Exception {
+		Collection<List<SymInstanceEdge>> paths = new HashSet<List<SymInstanceEdge>>();
+		for(SymInstanceEdge init_edge : graph.get_root().get_ou_edges()) 
+			this.select_reachable_paths(init_edge, new Stack<SymInstanceEdge>(), paths);
+		return paths;
 	}
 	
 }
