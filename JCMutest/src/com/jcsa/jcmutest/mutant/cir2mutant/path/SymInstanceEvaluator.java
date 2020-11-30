@@ -386,6 +386,7 @@ class SymInstanceEvaluator {
 			if(edge.get_target().get_ou_degree() == 0) {
 				List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
 				for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
+				paths.add(copy);
 			}
 			else {
 				for(SymInstanceEdge next_edge : edge.get_target().get_ou_edges()) {
@@ -398,6 +399,7 @@ class SymInstanceEvaluator {
 		else {
 			List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
 			for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
+			paths.add(copy);
 		}
 	}
 	/**
