@@ -850,10 +850,12 @@ public class MuTestProjectFeatureWriter {
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1));
 		this.write_sym_instance_graphs(dependence_graph, max_distance);
+		/*
 		MuTestProjectTestSpace tspace = this.code_file.get_code_space().get_project().get_test_space();
 		for(TestInput test_case : tspace.get_test_inputs()) {
 			this.write_sym_instance_graphs(test_case, dependence_graph, max_distance);
 		}
+		*/
 	}
 	
 	/* static generation */
