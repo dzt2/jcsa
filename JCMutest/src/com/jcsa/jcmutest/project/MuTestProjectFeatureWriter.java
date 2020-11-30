@@ -547,7 +547,6 @@ public class MuTestProjectFeatureWriter {
 		this.write_tst();
 		this.write_mut();
 		this.write_res();
-		// TODO implement the following transformation
 	}
 	
 	/* TST information */
