@@ -18,6 +18,9 @@ class CProject:
 		self.muta_space.load_mutation_results(res_file_path)
 		return
 
+	def load_document(self, sym_file_path: str, test_id: int):
+		return MutationDocument(self, sym_file_path, test_id)
+
 
 class TestCase:
 	def __init__(self, space, test_id: int, parameter: str):
@@ -255,16 +258,100 @@ class MutationSpace:
 		return
 
 
+class MutationLine:
+	"""
+	Each line contains a set of words, mutation and its three test results [cov, wek, str]
+	"""
+	def __init__(self, document, mutation: Mutation, test_id: int, words):
+		document: MutationDocument
+		self.document = document
+		self.mutation = mutation
+		if test_id >= 0:
+			self.cov_result = mutation.get_result().is_covered_by(test_id)
+			self.wek_result = mutation.get_result().is_infected_by(test_id)
+			self.str_result = mutation.get_result().is_killed_by(test_id)
+		else:
+			self.cov_result = mutation.get_result().is_covered()
+			self.wek_result = mutation.get_result().is_infected()
+			self.str_result = mutation.get_result().is_killed()
+		self.words = list()
+		for word in words:
+			word: str
+			self.words.append(word.strip())
+		return
+
+	def get_mutation(self):
+		return self.mutation
+
+	def get_coverage_result(self):
+		return self.cov_result
+
+	def get_infection_result(self):
+		return self.wek_result
+
+	def get_killing_result(self):
+		return self.str_result
+
+	def get_words(self):
+		return self.words
+
+
+class MutationDocument:
+	def __init__(self, project: CProject, sym_file_path: str, test_id: int):
+		self.project = project
+		self.corpus = dict()
+		self.lines = list()
+		self.__parse__(sym_file_path, test_id)
+		return
+
+	def get_project(self):
+		return self.project
+
+	def get_corpus(self):
+		return self.corpus.values()
+
+	def get_lines(self):
+		return self.lines
+
+	def get_line(self, index: int):
+		line = self.lines[index]
+		line: MutationLine
+		return line
+
+	def __unique__(self, word: str):
+		if not(word in self.corpus):
+			self.corpus[word] = word
+		return self.corpus[word]
+
+	def __parse__(self, sym_file_path: str, test_id: int):
+		space = self.project.muta_space
+		self.lines.clear()
+		with open(sym_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mutation = space.get_mutation(int(items[0].strip()))
+					annotations = set()
+					for k in range(2, len(items)):
+						annotation = items[k].strip()
+						if len(annotation) > 0:
+							annotation = self.__unique__(annotation)
+							annotations.add(annotation)
+					line = MutationLine(self, mutation, test_id, annotations)
+					self.lines.append(line)
+		return
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = CProject(directory, file_name)
 		print("Load", len(c_project.muta_space.mutations), "mutations and", len(c_project.test_space.test_cases), "tests for", file_name)
-		for c_mutation in c_project.muta_space.get_mutations():
-			c_mutation: Mutation
-			print("\t", file_name, c_mutation.muta_id, c_mutation.muta_class, c_mutation.muta_operator,
-				  c_mutation.get_result().is_covered(), c_mutation.get_result().is_infected(),
-				  c_mutation.get_result().is_killed(), "--> ", c_mutation.get_coverage_mutation().muta_id,
-				  c_mutation.get_weakness_mutation().muta_id, c_mutation.get_stronger_mutation().muta_id)
+		sym_file_path = os.path.join(directory, file_name + ".sym")
+		test_id = -1
+		document = c_project.load_document(sym_file_path, test_id)
+		print("\t==> Get", len(document.get_lines()), "lines of annotations with", len(document.get_corpus()), "words.")
+		print()
 
