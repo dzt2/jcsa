@@ -748,6 +748,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param test_case
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private void write_sym_instance_graphs(TestInput test_case, CDependGraph dependence_graph, int max_distance) throws Exception {
 		MuTestProjectTestSpace tspace = this.code_file.get_code_space().get_project().get_test_space();
 		CStatePath state_path = tspace.load_instrumental_path(this.code_file.get_sizeof_template(), 

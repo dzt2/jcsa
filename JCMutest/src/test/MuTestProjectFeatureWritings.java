@@ -11,7 +11,7 @@ public class MuTestProjectFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/";
 	private static final String result_dir = "result/features/";
-	private static final int max_distance = 3;
+	private static final int max_distance = 1;
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
