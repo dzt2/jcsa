@@ -709,14 +709,12 @@ public class MuTestProjectFeatureWriter {
 		constraint = cir_mutations.optimize(constraint, null);
 		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
 		
-		writer.write("[");
-		writer.write(" ");
+		writer.write("\t");
 		this.write_sym_instance(edge.get_constraint());
 		for(SymConstraint improved_constraint : constraints) {
-			writer.write(" ");
+			writer.write("\t");
 			this.write_sym_instance(improved_constraint);
 		}
-		writer.write(" ]");
 	}
 	/**
 	 * ( error annotation+ )
@@ -724,36 +722,37 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_instance_node(SymInstanceNode node) throws Exception {
-		writer.write("(");
 		if(node.has_state_error()) {
-			writer.write(" ");
-			this.write_sym_instance(node.get_state_error());
+			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
+				writer.write("\t");
+				this.write_cir_annotation(annotation);
+			}
 		}
-		for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
-			writer.write(" ");
-			this.write_cir_annotation(annotation);
-		}
-		
-		writer.write(" )");
 	}
 	/**
-	 * mid tid res node edge node edge ... edge node
-	 * @param graph
-	 * @param state_path
+	 * cons error annotation ...
+	 * @param path
 	 * @throws Exception
 	 */
-	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case, int test_result) throws Exception {
+	private void write_sym_instance_path(List<SymInstanceEdge> path) throws Exception {
+		for(SymInstanceEdge edge : path) {
+			this.write_sym_instance_edge(edge);
+			this.write_sym_instance_node(edge.get_target());
+		}
+	}
+	/**
+	 * mid tid {cons|erro|anno}*
+	 * @param graph
+	 * @param test_case
+	 * @throws Exception
+	 */
+	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case) throws Exception {
 		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
+		int test_id = -1;
+		if(test_case != null) test_id = test_case.get_id();
 		for(List<SymInstanceEdge> path : paths) {
-			int tid = -1;
-			if(test_case != null) tid = test_case.get_id();
-			writer.write(graph.get_mutant().get_id() + "\t" + tid + "\t" + test_result);
-			for(SymInstanceEdge edge : path) {
-				writer.write("\t");
-				this.write_sym_instance_edge(edge);
-				writer.write("\t");
-				this.write_sym_instance_node(edge.get_target());
-			}
+			writer.write(graph.get_mutant().get_id() + "\t" + test_id);
+			this.write_sym_instance_path(path);
 			writer.write("\n");
 		}
 	}
@@ -770,40 +769,13 @@ public class MuTestProjectFeatureWriter {
 		if(state_path != null) {
 			this.open_writer(test_case.get_id() + ".sym");
 			for(Mutant mutant : this.code_file.get_mutant_space().get_mutants()) {
-				MuTestProjectTestResult result = tspace.get_test_result(mutant); int test_result;
+				MuTestProjectTestResult result = tspace.get_test_result(mutant);
 				if(result == null) {
 					continue;
 				}
-				
 				SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
 				graph.evaluate(state_path);
-				if(result.get_kill_set().get(test_case.get_id())) {
-					test_result = 3;
-				}
-				else {
-					boolean covered = false, infected = false;
-					for(SymInstanceNode muta_node : graph.get_mutated_nodes()) {
-						if(muta_node.get_status().is_executed()) {
-							covered = true;
-						}
-						for(SymInstanceEdge muta_edge : muta_node.get_ou_edges()) {
-							if(muta_edge.get_status().is_acceptable()) {
-								infected = true;
-							}
-						}
-					}
-					if(!covered) {
-						test_result = 0;
-					}
-					else if(!infected) {
-						test_result = 1;
-					}
-					else {
-						test_result = 2;
-					}
-				}
-				
-				this.write_sym_instance_graph(graph, test_case, test_result);
+				this.write_sym_instance_graph(graph, test_case);
 			}
 			this.close_writer();
 		}
@@ -818,40 +790,14 @@ public class MuTestProjectFeatureWriter {
 		MuTestProjectTestSpace tspace = this.code_file.get_code_space().get_project().get_test_space();
 		this.open_writer("sym");
 		for(Mutant mutant : this.code_file.get_mutant_space().get_mutants()) {
-			MuTestProjectTestResult result = tspace.get_test_result(mutant); int test_result;
+			MuTestProjectTestResult result = tspace.get_test_result(mutant);
 			if(result == null) {
 				continue;
 			}
 			
 			SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
 			graph.evaluate();
-			if(result.get_kill_set().degree() > 0) {
-				test_result = 3;
-			}
-			else {
-				boolean covered = false, infected = false;
-				for(SymInstanceNode muta_node : graph.get_mutated_nodes()) {
-					if(muta_node.get_status().is_executed()) {
-						covered = true;
-					}
-					for(SymInstanceEdge muta_edge : muta_node.get_ou_edges()) {
-						if(muta_edge.get_status().is_acceptable()) {
-							infected = true;
-						}
-					}
-				}
-				if(!covered) {
-					test_result = 0;
-				}
-				else if(!infected) {
-					test_result = 1;
-				}
-				else {
-					test_result = 2;
-				}
-			}
-			
-			this.write_sym_instance_graph(graph, null, test_result);
+			this.write_sym_instance_graph(graph, null);
 		}
 		this.close_writer();
 	}
