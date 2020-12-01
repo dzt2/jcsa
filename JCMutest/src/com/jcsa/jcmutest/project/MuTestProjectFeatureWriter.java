@@ -213,7 +213,7 @@ public class MuTestProjectFeatureWriter {
 	}
 	/**
 	 * n@null, b@bool, c@char, i@intg, f@real, x@real@imag, s@string, 
-	 * k@keyword, p@punctuate, o@operator, ast@id, cir@id, exe@id, 
+	 * k@keyword, p@punctuate, o@operator, ast@id, cir@id, exe@id.
 	 * typ@type, mut@id
 	 * @param token
 	 * @return
@@ -277,6 +277,20 @@ public class MuTestProjectFeatureWriter {
 		else if(token instanceof Mutant) {
 			return "mut@" + ((Mutant) token).get_id();
 		}
+		/*
+		else if(token instanceof SymExpression) {
+			String code = ((SymExpression) token).generate_code();
+			StringBuilder buffer = new StringBuilder();
+			buffer.append("sym@");
+			for(int k = 0; k < code.length(); k++) {
+				char ch = code.charAt(k);
+				if(!Character.isWhitespace(ch) && ch != '@') {
+					buffer.append(ch);
+				}
+			}
+			return buffer.toString();
+		}
+		*/
 		else 
 			throw new IllegalArgumentException(token.getClass().getSimpleName());
 	}
@@ -653,7 +667,7 @@ public class MuTestProjectFeatureWriter {
 					"@" + ((SymFlowError) instance).get_mutation_flow().get_target());
 		}
 		else if(instance instanceof SymTrapError) {
-			writer.write("trap@" + instance.get_execution());
+			writer.write("trap@" + instance.get_execution() + "@");
 		}
 		else if(instance instanceof SymExpressionError) {
 			writer.write("expr@" + ((SymValueError) instance).get_expression().get_node_id() + "@");
