@@ -3,7 +3,7 @@ It describes the model for mutation and test cases along with their features and
 """
 
 import os
-import com.jcsa.pymuta.base as base
+import com.jcsa.pymuta.base as cbase
 import com.jcsa.pymuta.code as ccode
 
 
@@ -14,8 +14,7 @@ class CProject:
 		mut_file_path = os.path.join(directory, name + ".mut")
 		res_file_path = os.path.join(directory, name + ".res")
 		self.test_space = TestCaseSpace(self, tst_file_path)
-		self.muta_space = MutationSpace(self, mut_file_path)
-		self.muta_space.load_mutation_results(res_file_path)
+		self.muta_space = MutationSpace(self, mut_file_path, res_file_path)
 		return
 
 	def load_document(self, sym_file_path: str, test_id: int):
@@ -71,7 +70,7 @@ class TestCaseSpace:
 				items = line.split('\t')
 				if len(line) > 0:
 					test_id = int(items[0].strip())
-					parameter = base.CToken.parse(items[1].strip())
+					parameter = cbase.CToken.parse(items[1].strip())
 					test_case = TestCase(self, test_id, parameter.token_value)
 					test_case_dict[test_case.test_id] = test_case
 		self.test_cases.clear()
@@ -152,7 +151,7 @@ class MutationResult:
 
 
 class Mutation:
-	def __init__(self, space, muta_id: int, muta_class: str, muta_operator: str, location: ccode.AstNode, parameter: base.CToken):
+	def __init__(self, space, muta_id: int, muta_class: str, muta_operator: str, location: ccode.AstNode, parameter: cbase.CToken):
 		space: MutationSpace
 		self.space = space
 		self.muta_id = muta_id
@@ -201,10 +200,11 @@ class Mutation:
 
 
 class MutationSpace:
-	def __init__(self, project: CProject, mut_file_path: str):
+	def __init__(self, project: CProject, mut_file_path: str, res_file_path):
 		self.project = project
 		self.mutations = list()
 		self.__parse__(mut_file_path)
+		self.__load__(res_file_path)
 		return
 
 	def get_project(self):
@@ -226,18 +226,18 @@ class MutationSpace:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					muta_id = base.CToken.parse(items[0].strip()).token_value
+					muta_id = cbase.CToken.parse(items[0].strip()).token_value
 					muta_class = items[1].strip()
 					muta_operator = items[2].strip()
-					ast_key = base.CToken.parse(items[3].strip())
+					ast_key = cbase.CToken.parse(items[3].strip())
 					location = ast_tree.get_ast_node(ast_key.get_token_value())
-					parameter = base.CToken.parse(items[4].strip())
+					parameter = cbase.CToken.parse(items[4].strip())
 					mutation = Mutation(self, muta_id, muta_class, muta_operator, location, parameter)
 					mutation_dict[mutation.muta_id] = mutation
 					subsume_keys = items[5].strip().split(' ')
-					mutation.cov_mutation = base.CToken.parse(subsume_keys[1].strip()).token_value
-					mutation.wek_mutation = base.CToken.parse(subsume_keys[2].strip()).token_value
-					mutation.str_mutation = base.CToken.parse(subsume_keys[3].strip()).token_value
+					mutation.cov_mutation = cbase.CToken.parse(subsume_keys[1].strip()).token_value
+					mutation.wek_mutation = cbase.CToken.parse(subsume_keys[2].strip()).token_value
+					mutation.str_mutation = cbase.CToken.parse(subsume_keys[3].strip()).token_value
 		self.mutations.clear()
 		for k in range(0, len(mutation_dict)):
 			mutation = mutation_dict[k]
@@ -247,7 +247,7 @@ class MutationSpace:
 			mutation.str_mutation = mutation_dict[mutation.str_mutation]
 		return
 
-	def load_mutation_results(self, res_file_path: str):
+	def __load__(self, res_file_path: str):
 		with open(res_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
@@ -256,6 +256,61 @@ class MutationSpace:
 					mutation = self.get_mutation(int(items[0].strip()))
 					mutation.get_result().set_results(items[1].strip())
 		return
+
+
+class CAnnotation:
+	"""
+	type execution location (CirNode) and parameter (SymExpression?)
+	"""
+	def __init__(self, atype: str, execution: ccode.CirExecution, location: ccode.CirNode, parameter: str):
+		"""
+		:param atype: annotation type
+		:param execution: execution where annotation is injected
+		:param location: location to be described with the annotation
+		:param parameter: symbolic expression or null to refine this annotation
+		"""
+		self.annotation_type = atype
+		self.execution = execution
+		self.location = location
+		self.parameter = parameter.strip()
+		return
+
+	def get_annotation_type(self):
+		return self.annotation_type
+
+	def get_execution(self):
+		return self.execution
+
+	def get_location(self):
+		return self.location
+
+	def has_parameter(self):
+		return len(self.parameter) > 0
+
+	def get_parameter(self):
+		return self.parameter
+
+	@staticmethod
+	def parse(project: CProject, word: str):
+		"""
+		:param project: provide contextual information
+		:param word: type$execution$location$parameter
+		:return: annotation or None
+		"""
+		word = word.strip()
+		if len(word) > 0:
+			items = word.split('$')
+			annotation_type = items[0].strip()
+			execution_token = cbase.CToken.parse(items[1].strip())
+			location_token = cbase.CToken.parse(items[2].strip())
+			parameter = items[3].strip()
+			function_name = execution_token.token_value[0]
+			execution_id = execution_token.token_value[1]
+			location_id = location_token.token_value
+			execution = project.program.function_call_graph.get_execution(function_name, execution_id)
+			location = project.program.cir_tree.get_cir_node(location_id)
+			return CAnnotation(annotation_type, execution, location, parameter)
+		return None
 
 
 class MutationLine:
@@ -351,7 +406,7 @@ if __name__ == "__main__":
 		print("Load", len(c_project.muta_space.mutations), "mutations and", len(c_project.test_space.test_cases), "tests for", file_name)
 		sym_file_path = os.path.join(directory, file_name + ".sym")
 		test_id = -1
-		document = c_project.load_document(sym_file_path, test_id)
-		print("\t==> Get", len(document.get_lines()), "lines of annotations with", len(document.get_corpus()), "words.")
+		docs = c_project.load_document(sym_file_path, test_id)
+		print("\t==> Get", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
 		print()
 

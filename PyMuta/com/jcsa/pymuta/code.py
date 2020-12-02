@@ -261,6 +261,9 @@ class CirNode:
 		self.children.append(child)
 		return
 
+	def __str__(self):
+		return self.class_name + "@" + str(self.cir_id)
+
 
 class CirTree:
 	def __init__(self, program: CProgram, cir_file_path: str):
