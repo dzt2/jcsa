@@ -36,7 +36,7 @@ public class SymOperator extends SymUnit {
 		case logic_not:		return "!";
 		case address_of:	return "&";
 		case dereference:	return "*";
-		case assign:		return "@";
+		case assign:		return "";		/* no operator for type-casting */
 		case arith_add:		return "+";
 		case arith_sub:		return "-";
 		case arith_mul:		return "*";

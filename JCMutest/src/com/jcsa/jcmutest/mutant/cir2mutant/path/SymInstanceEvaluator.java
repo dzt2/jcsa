@@ -380,9 +380,8 @@ class SymInstanceEvaluator {
 	 */
 	private void select_reachable_paths(SymInstanceEdge edge, Stack<SymInstanceEdge> 
 					path, Collection<List<SymInstanceEdge>> paths) throws Exception {
+		path.push(edge);
 		if(edge.get_status().is_acceptable()) {
-			path.push(edge);
-			
 			if(edge.get_target().get_ou_degree() == 0) {
 				List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
 				for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
@@ -393,14 +392,13 @@ class SymInstanceEvaluator {
 					this.select_reachable_paths(next_edge, path, paths);
 				}
 			}
-			
-			path.pop();
 		}
 		else {
 			List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
 			for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
-			copy.add(edge); paths.add(copy);
+			paths.add(copy);
 		}
+		path.pop();
 	}
 	/**
 	 * @param graph

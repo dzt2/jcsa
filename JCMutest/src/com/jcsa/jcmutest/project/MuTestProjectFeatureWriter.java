@@ -13,7 +13,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceNodeType;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
@@ -56,6 +55,9 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionBody;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
+import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -406,7 +408,7 @@ public class MuTestProjectFeatureWriter {
 		this.close_writer();
 	}
 	/**
-	 * id class ast_id type token [ child child ... child ]
+	 * id class ast_id type token [ child child ... child ] code
 	 * @param cir_node
 	 * @throws Exception
 	 */
@@ -470,6 +472,14 @@ public class MuTestProjectFeatureWriter {
 			this.writer.write(" " + this.token_string(child));
 		}
 		this.writer.write(" ]");
+		
+		String code = null;
+		if(!(cir_node instanceof CirFunctionDefinition
+			|| cir_node instanceof CirTransitionUnit
+			|| cir_node instanceof CirFunctionBody)) {
+			code = cir_node.generate_code(true);
+		}
+		this.writer.write("\t" + this.token_string(code));
 		
 		this.writer.write("\n");
 	}
@@ -631,13 +641,7 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_expression(SymExpression expression) throws Exception {
-		String code = expression.generate_code();
-		for(int k = 0; k < code.length(); k++) {
-			char ch = code.charAt(k);
-			if(!Character.isWhitespace(ch)) {
-				this.writer.write(ch);
-			}
-		}
+		this.writer.write(this.token_string(expression.generate_code()));
 	}
 	/**
 	 * 	constraint$execution$location$parameter
@@ -664,6 +668,9 @@ public class MuTestProjectFeatureWriter {
 		if(annotation.get_parameter() != null) {
 			SymExpression parameter = (SymExpression) annotation.get_parameter();
 			this.write_sym_expression(parameter);
+		}
+		else {
+			this.writer.write(this.token_string(null));
 		}
 	}
 	/**
@@ -704,21 +711,9 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_instance_path(List<SymInstanceEdge> path) throws Exception {
 		if(!path.isEmpty()) {
-			if(path.get(path.size() - 1).get_status().is_acceptable()) {
-				for(int k = path.size() - 1; k >= 0; k--) {
-					SymInstanceEdge edge = path.get(k);
-					this.write_sym_instance_node(edge.get_target());
-					this.write_sym_instance_edge(edge);
-					if(edge.get_source().get_type() == SymInstanceNodeType.muta_node) {
-						break;	// until the mutated statement node
-					}
-				}
-			}
-			else {
-				SymInstanceEdge end_edge = path.get(path.size() - 1);
-				this.write_sym_instance_node(end_edge.get_source());
-				this.write_sym_instance_edge(end_edge);
-				this.write_sym_instance_node(end_edge.get_target());
+			for(SymInstanceEdge edge : path) {
+				this.write_sym_instance_edge(edge);
+				this.write_sym_instance_node(edge.get_target());
 			}
 		}
 	}
