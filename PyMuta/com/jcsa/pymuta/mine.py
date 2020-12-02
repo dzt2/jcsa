@@ -431,7 +431,7 @@ class MuExecutionPatternWriter:
 		if len(min_patterns) > 0 and len(og_samples) > 0:
 			optimize_rate = len(min_patterns) / (len(og_samples) + 0.0)
 		optimize_rate = int(optimize_rate * 10000) / 100.0
-		writer.write("\t" + str(optimize_rate))
+		writer.write("\t" + str(len(og_samples)) + "\t" + str(optimize_rate))
 		intersections = set()
 		for sample in pt_samples:
 			if sample in og_samples:
