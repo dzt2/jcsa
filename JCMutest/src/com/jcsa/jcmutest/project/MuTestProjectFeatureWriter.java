@@ -10,16 +10,10 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceNodeType;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
@@ -646,55 +640,29 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * 	cons@execution@condition
-	 * 	trap@execution
-	 * 	flow@execution@orig_target@muta_target
-	 * 	expr@location@muta_value
-	 * 	refr@location@muta_value
-	 * 	stat@location@muta_value
+	 * 	constraint$execution$location$parameter
 	 * 	
 	 * 	@param instance
 	 * 	@throws Exception
 	 */
-	private void write_sym_instance(SymInstance instance) throws Exception {
-		if(instance instanceof SymConstraint) {
-			writer.write("cons@" + instance.get_execution() + "@");
-			this.write_sym_expression(((SymConstraint) instance).get_condition());
-		}
-		else if(instance instanceof SymFlowError) {
-			writer.write("flow@" + instance.get_execution() + "@");
-			writer.write(((SymFlowError) instance).get_original_flow().get_target() + 
-					"@" + ((SymFlowError) instance).get_mutation_flow().get_target());
-		}
-		else if(instance instanceof SymTrapError) {
-			writer.write("trap@" + instance.get_execution() + "@");
-		}
-		else if(instance instanceof SymExpressionError) {
-			writer.write("expr@" + ((SymValueError) instance).get_expression().get_node_id() + "@");
-			this.write_sym_expression(((SymValueError) instance).get_mutation_value());
-		}
-		else if(instance instanceof SymReferenceError) {
-			writer.write("refr@" + ((SymValueError) instance).get_expression().get_node_id() + "@");
-			this.write_sym_expression(((SymValueError) instance).get_mutation_value());
-		}
-		else if(instance instanceof SymStateValueError) {
-			writer.write("stat@" + ((SymValueError) instance).get_expression().get_node_id() + "@");
-			this.write_sym_expression(((SymValueError) instance).get_mutation_value());
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + instance);
-		}
+	private void write_sym_constraint(SymConstraint instance) throws Exception {
+		writer.write("constraint$" + this.token_string(instance.get_execution()));
+		writer.write("$" + this.token_string(instance.get_execution().get_statement()));
+		writer.write("$");
+		this.write_sym_expression(instance.get_condition());
 	}
 	/**
-	 * type@execution@parameter
+	 * type$execution$location$(parameter)?
 	 * @param annotation
 	 * @throws Exception
 	 */
 	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
-		writer.write(annotation.get_type() + "@" + annotation.get_execution());
+		writer.write(annotation.get_type().toString());
+		writer.write("$" + this.token_string(annotation.get_execution()));
+		writer.write("$" + this.token_string(annotation.get_location()));
+		writer.write("$");
 		if(annotation.get_parameter() != null) {
 			SymExpression parameter = (SymExpression) annotation.get_parameter();
-			writer.write("@");
 			this.write_sym_expression(parameter);
 		}
 	}
@@ -710,10 +678,10 @@ public class MuTestProjectFeatureWriter {
 		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
 		
 		writer.write("\t");
-		this.write_sym_instance(edge.get_constraint());
+		this.write_sym_constraint(edge.get_constraint());
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
-			this.write_sym_instance(improved_constraint);
+			this.write_sym_constraint(improved_constraint);
 		}
 	}
 	/**
@@ -735,9 +703,23 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_instance_path(List<SymInstanceEdge> path) throws Exception {
-		for(SymInstanceEdge edge : path) {
-			this.write_sym_instance_edge(edge);
-			this.write_sym_instance_node(edge.get_target());
+		if(!path.isEmpty()) {
+			if(path.get(path.size() - 1).get_status().is_acceptable()) {
+				for(int k = path.size() - 1; k >= 0; k--) {
+					SymInstanceEdge edge = path.get(k);
+					this.write_sym_instance_node(edge.get_target());
+					this.write_sym_instance_edge(edge);
+					if(edge.get_source().get_type() == SymInstanceNodeType.muta_node) {
+						break;	// until the mutated statement node
+					}
+				}
+			}
+			else {
+				SymInstanceEdge end_edge = path.get(path.size() - 1);
+				this.write_sym_instance_node(end_edge.get_source());
+				this.write_sym_instance_edge(end_edge);
+				this.write_sym_instance_node(end_edge.get_target());
+			}
 		}
 	}
 	/**

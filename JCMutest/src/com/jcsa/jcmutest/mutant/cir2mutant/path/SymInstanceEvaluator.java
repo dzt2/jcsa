@@ -399,7 +399,7 @@ class SymInstanceEvaluator {
 		else {
 			List<SymInstanceEdge> copy = new ArrayList<SymInstanceEdge>();
 			for(SymInstanceEdge path_edge : path) { copy.add(path_edge); }
-			paths.add(copy);
+			copy.add(edge); paths.add(copy);
 		}
 	}
 	/**

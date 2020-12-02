@@ -45,7 +45,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.folding" />
   </component>
-  <component name="RunManager" selected="Python.muta">
+  <component name="RunManager" selected="Python.mine">
     <configuration name="base" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -109,6 +109,27 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="mine" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PyMuta" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/pymuta" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/pymuta/mine.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="muta" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -132,6 +153,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.mine" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.base" />
@@ -162,22 +184,22 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1845" height="379" key="GridCell.Tab.0.bottom" timestamp="1606814171129">
+    <state width="1845" height="243" key="GridCell.Tab.0.bottom" timestamp="1606886173039">
       <screen x="52" y="27" width="1868" height="1053" />
     </state>
-    <state width="1845" height="379" key="GridCell.Tab.0.bottom/52.27.1868.1053@52.27.1868.1053" timestamp="1606814171129" />
-    <state width="1845" height="379" key="GridCell.Tab.0.center" timestamp="1606814171126">
+    <state width="1845" height="243" key="GridCell.Tab.0.bottom/52.27.1868.1053@52.27.1868.1053" timestamp="1606886173039" />
+    <state width="1845" height="243" key="GridCell.Tab.0.center" timestamp="1606886173038">
       <screen x="52" y="27" width="1868" height="1053" />
     </state>
-    <state width="1845" height="379" key="GridCell.Tab.0.center/52.27.1868.1053@52.27.1868.1053" timestamp="1606814171126" />
-    <state width="1845" height="379" key="GridCell.Tab.0.left" timestamp="1606814171124">
+    <state width="1845" height="243" key="GridCell.Tab.0.center/52.27.1868.1053@52.27.1868.1053" timestamp="1606886173038" />
+    <state width="1845" height="243" key="GridCell.Tab.0.left" timestamp="1606886173038">
       <screen x="52" y="27" width="1868" height="1053" />
     </state>
-    <state width="1845" height="379" key="GridCell.Tab.0.left/52.27.1868.1053@52.27.1868.1053" timestamp="1606814171124" />
-    <state width="1845" height="379" key="GridCell.Tab.0.right" timestamp="1606814171127">
+    <state width="1845" height="243" key="GridCell.Tab.0.left/52.27.1868.1053@52.27.1868.1053" timestamp="1606886173038" />
+    <state width="1845" height="243" key="GridCell.Tab.0.right" timestamp="1606886173038">
       <screen x="52" y="27" width="1868" height="1053" />
     </state>
-    <state width="1845" height="379" key="GridCell.Tab.0.right/52.27.1868.1053@52.27.1868.1053" timestamp="1606814171127" />
+    <state width="1845" height="243" key="GridCell.Tab.0.right/52.27.1868.1053@52.27.1868.1053" timestamp="1606886173038" />
     <state x="475" y="188" width="1022" height="737" key="SettingsEditor" timestamp="1606809535589">
       <screen x="52" y="27" width="1868" height="1053" />
     </state>
