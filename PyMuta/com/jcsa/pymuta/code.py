@@ -216,7 +216,7 @@ class CirNode:
 	"""
 	C-intermediate representation node
 	"""
-	def __init__(self, tree, cir_id: int, class_name: str, ast_source: AstNode, data_type: base.CToken, token: base.CToken):
+	def __init__(self, tree, cir_id: int, class_name: str, ast_source: AstNode, data_type: base.CToken, token: base.CToken, code: str):
 		tree: CirTree
 		self.tree = tree
 		self.cir_id = cir_id
@@ -226,6 +226,7 @@ class CirNode:
 		self.token = token
 		self.parent = None
 		self.children = list()
+		self.code = code
 		return
 
 	def get_tree(self):
@@ -254,6 +255,12 @@ class CirNode:
 
 	def get_children(self):
 		return self.children
+
+	def has_code(self):
+		return not(self.code is None)
+
+	def get_code(self):
+		return self.code
 
 	def add_child(self, child):
 		child: CirNode
@@ -299,7 +306,8 @@ class CirTree:
 					ast_node = None
 					if not(ast_key.get_token_value() is None):
 						ast_node = ast_tree.get_ast_node(ast_key.get_token_value())
-					cir_node = CirNode(self, cir_key.token_value, class_name, ast_node, data_type, token)
+					code_token = base.CToken.parse(items[6].strip())
+					cir_node = CirNode(self, cir_key.token_value, class_name, ast_node, data_type, token, code_token.token_value)
 					cir_node_dict[cir_node.cir_id] = cir_node
 		with open(cir_file_path, 'r') as reader:
 			for line in reader:
@@ -518,17 +526,14 @@ if __name__ == "__main__":
 		directory = os.path.join(root_path, file_name)
 		program = CProgram(directory, file_name)
 		print("Read", len(program.function_call_graph.get_functions()), "functions from", file_name)
-		for name, c_function in program.function_call_graph.get_functions().items():
-			c_function: CirFunction
-			print("\tdef", c_function.name)
-			for execution in c_function.get_executions():
-				execution: CirExecution
-				code = "[ "
-				for ou_flow in execution.ou_flows:
-					ou_flow: CirExecutionFlow
-					code += ou_flow.flow_type + ":"
-					code += str(ou_flow.target)
-					code += "; "
-				code += "]"
-				print("\t\t", str(execution), "\t==>", code)
+		for cir_node in program.cir_tree.get_cir_nodes():
+			cir_node: CirNode
+			ast_node = cir_node.get_ast_source()
+			if ast_node is None:
+				ast_line = -1
+				ast_code = None
+			else:
+				ast_line = ast_node.get_line() + 1
+				ast_code = ast_node.get_code(True)
+			print("\t--> ", str(cir_node), "\t\"", cir_node.get_code(), "\"\t", ast_line, "\t\"", ast_code, "\"")
 		print()

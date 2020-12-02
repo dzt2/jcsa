@@ -297,6 +297,7 @@ def output_mutation_samples(mutations, writer: TextIO):
 		writer.write("\t\"" + code + "\"")
 		writer.write("\t" + str(mutation.get_parameter()))
 		writer.write("\n")
+	writer.write("\n")
 	return
 
 
@@ -316,11 +317,12 @@ def output_mutation_annotations(annotations, writer: TextIO):
 		if location.has_ast_source():
 			ast_location = location.get_ast_source()
 			writer.write("\t" + str(ast_location.get_line() + 1))
-			writer.write("\t\"" + ast_location.get_code(True) + "\"")
+			writer.write("\t\"" + location.get_code() + "\"")
 		else:
-			writer.write("\t-1\tNullptr")
+			writer.write("\t-1\t" + location.get_code())
 		writer.write("\t" + str(annotation.get_parameter()))
 		writer.write("\n")
+	writer.write("\n")
 	return
 
 
@@ -332,22 +334,23 @@ def output_mutation_patterns(project: cmuta.CProject, patterns, output_file: str
 	:return:
 	"""
 	with open(output_file, 'w') as writer:
+		pid = 0
 		for pattern in patterns:
 			pattern: MutationPattern
-			writer.write("#BEG\n")
+			writer.write("#BEG\t" + str(pid) + "\n")
 			output_mutation_metrics(pattern, writer)
 			annotations = pattern.get_annotations(project)
 			output_mutation_annotations(annotations, writer)
 			mutations = pattern.get_mutations()
 			output_mutation_samples(mutations, writer)
-			writer.write("#END\n\n")
+			writer.write("#END\t" + str(pid) + "\n\n")
+			pid += 1
 	return
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	post_path = "/home/dzt2/Development/Code/git/jcsa/PyMuta/output"
-	line_metric, uk_metric, min_support, max_precision, max_length = True, True, 2, 0.75, 3
+	line_metric, uk_metric, min_support, max_precision, max_length = True, True, 2, 0.75, 1
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = cmuta.CProject(directory, file_name)
@@ -358,7 +361,7 @@ if __name__ == "__main__":
 		print("\t==> Get", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
 		generator = MutationPatterns(line_metric, uk_metric, min_support, max_precision, max_length)
 		patterns = generator.solve_good_patterns(docs)
-		output_file_path = os.path.join(post_path, file_name + ".pth")
+		output_file_path = os.path.join(directory, file_name + ".pth")
 		output_mutation_patterns(c_project, patterns, output_file_path)
 		print("\tWrite patterns on", output_file_path)
 	print("Testing finished for all...")

@@ -272,7 +272,7 @@ class CAnnotation:
 		self.annotation_type = atype
 		self.execution = execution
 		self.location = location
-		self.parameter = parameter.strip()
+		self.parameter = parameter
 		return
 
 	def get_annotation_type(self):
@@ -285,7 +285,7 @@ class CAnnotation:
 		return self.location
 
 	def has_parameter(self):
-		return len(self.parameter) > 0
+		return not(self.parameter is None)
 
 	def get_parameter(self):
 		return self.parameter
@@ -303,7 +303,8 @@ class CAnnotation:
 			annotation_type = items[0].strip()
 			execution_token = cbase.CToken.parse(items[1].strip())
 			location_token = cbase.CToken.parse(items[2].strip())
-			parameter = items[3].strip()
+			parameter_token = cbase.CToken.parse(items[3].strip())
+			parameter = parameter_token.get_token_value()
 			function_name = execution_token.token_value[0]
 			execution_id = execution_token.token_value[1]
 			location_id = location_token.token_value
@@ -408,5 +409,9 @@ if __name__ == "__main__":
 		test_id = -1
 		docs = c_project.load_document(sym_file_path, test_id)
 		print("\t==> Get", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
+		for word in docs.get_corpus():
+			word: str
+			annotation = CAnnotation.parse(c_project, word.strip())
+			print("\t--> ", annotation.annotation_type, "\t", annotation.execution, "\t", annotation.location, "\t", annotation.location.get_code(), "\t", annotation.parameter)
 		print()
 
