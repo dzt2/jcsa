@@ -392,7 +392,8 @@ class MutationLinePatternWriter:
 		if len(int_samples) > 0:
 			precision = MutationLinePatternWriter.__perception__(len(int_samples), len(pat_samples))
 			recall = MutationLinePatternWriter.__perception__(len(int_samples), len(doc_samples))
-			f1_score = 2 * precision * recall / (precision + recall)
+			f1_score = 2 * precision * recall / ((precision + recall) * 100.0)
+			f1_score = int(f1_score * 10000) / 10000.0
 		return precision, recall, f1_score
 
 	def __write_pattern_evaluation__(self, writer: TextIO):
@@ -401,11 +402,12 @@ class MutationLinePatternWriter:
 		"""
 		doc_lines, doc_mutations = self.__get_document_lines_and_mutations__()
 		pat_lines, pat_mutations = self.__get_patterns_lines_and_mutations__()
-		pat_number, lin_number, mut_number = len(self.patterns), len(doc_lines), len(doc_mutations)
+		pat_number, lin_number, mut_number = len(self.patterns), len(pat_lines), len(pat_mutations)
 		pat_lin_optimize_rate = MutationLinePatternWriter.__perception__(pat_number, lin_number)
 		pat_mut_optimize_rate = MutationLinePatternWriter.__perception__(pat_number, mut_number)
 		writer.write("Evaluation\n")
-		writer.write("\tPatterns = {}\tLINE := {}%\tMUTATION := {}%\n".format(pat_number, pat_lin_optimize_rate, pat_mut_optimize_rate))
+		writer.write("\tPatterns = {}\tLINE := {}({}%)\tMUTATION := {}({}%)\n".
+					 format(pat_number, lin_number, pat_lin_optimize_rate, mut_number, pat_mut_optimize_rate))
 		doc_line_table = MutationClassifier.classify_set(doc_lines)
 		doc_mutation_table = MutationClassifier.classify_set(doc_mutations)
 		doc_uk_lines = doc_line_table[UC_CLASS] | doc_line_table[UI_CLASS] | doc_line_table[UP_CLASS]
@@ -503,7 +505,7 @@ class MutationLinePatternWriter:
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns"
-	line_or_mutation, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.75, 1
+	line_or_mutation, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.80, 1
 	for file_name in os.listdir(root_path):
 		print("Testing on program", file_name)
 		directory = os.path.join(root_path, file_name)
@@ -514,8 +516,9 @@ if __name__ == "__main__":
 		docs = c_project.load_document(sym_file_path, test_id)
 		print("\tGet", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
 		good_patterns, min_patterns = MutationLinePatterns(line_or_mutation, uk_or_cc, min_support, max_precision, max_length).generate(docs)
-		MutationLinePatternWriter(docs, min_patterns).write(os.path.join(post_path, file_name + ".mpt"))
 		MutationLinePatternWriter(docs, good_patterns).write(os.path.join(post_path, file_name + ".gpt"))
-		print("\tWrite", len(good_patterns), "mutation patterns to output files")
+		print("\tWrite", len(good_patterns), "selected set of patterns to output file.")
+		MutationLinePatternWriter(docs, min_patterns).write(os.path.join(post_path, file_name + ".mpt"))
+		print("\tWrite", len(min_patterns), "minimal set of patterns to output file.")
 		print()
 
