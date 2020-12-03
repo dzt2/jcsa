@@ -671,7 +671,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else {
 			this.writer.write(this.token_string(null));
-		} 
+		}
 	}
 	/**
 	 * [ constraint* ]
