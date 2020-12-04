@@ -321,6 +321,75 @@ class MutationLinePatterns:
 			minimal_patterns.add(biggest_pattern)
 		return minimal_patterns
 
+	@staticmethod
+	def __line_to_patterns__(patterns):
+		"""
+		:return: dictionary from mutation lines to the patterns they match with
+		"""
+		line_patterns = dict()
+		for pattern in patterns:
+			pattern: MutationLinePattern
+			for line in pattern.get_lines():
+				line: cmuta.MutationLine
+				if not(line in line_patterns):
+					line_patterns[line] = set()
+				line_patterns[line].add(pattern)
+		return line_patterns
+
+	@staticmethod
+	def __mutation_to_patterns__(patterns):
+		"""
+		:param patterns:
+		:return: dictionary from mutation to the patterns they match with
+		"""
+		mutation_patterns = dict()
+		for pattern in patterns:
+			pattern: MutationLinePattern
+			for mutation in pattern.get_mutations():
+				if not(mutation in mutation_patterns):
+					mutation_patterns[mutation] = set()
+				mutation_patterns[mutation].add(pattern)
+		return mutation_patterns
+
+	def __find_best_pattern__(self, patterns: set):
+		"""
+		:param patterns:
+		:return: the best pattern in the given set for matching unkilled or coincidental correctness classifier
+		"""
+		best_patterns = set()
+		while len(best_patterns) < 5 and len(patterns) > 0:
+			best_pattern, best_precision = None, 0.0
+			for pattern in patterns:
+				pattern: MutationLinePattern
+				total, support, precision = pattern.measure(self.line_or_mutation, self.uk_or_cc)
+				if precision > best_precision:
+					best_pattern = pattern
+					best_precision = precision
+			if best_pattern is None:
+				break
+			else:
+				patterns.remove(best_pattern)
+				best_patterns.add(best_pattern)
+		most_best_pattern, most_best_support = None, 0
+		for pattern in best_patterns:
+			pattern: MutationLinePattern
+			total, support, precision = pattern.measure(self.line_or_mutation, self.uk_or_cc)
+			if support > most_best_support:
+				most_best_pattern = pattern
+				most_best_support = support
+		return most_best_pattern
+
+	def __find_best_patterns__(self, key_patterns: dict):
+		"""
+		:param key_patterns: mapping from lines or mutations to the patterns
+		:return: mapping from line or mutation to the best matched pattern
+		"""
+		key_best_pattern_dict = dict()
+		for key, patterns in key_patterns.items():
+			best_pattern = self.__find_best_pattern__(patterns)
+			key_best_pattern_dict[key] = best_pattern
+		return key_best_pattern_dict
+
 	def generate(self, document: cmuta.MutationDocument):
 		"""
 		:param document:
@@ -337,7 +406,9 @@ class MutationLinePatterns:
 				self.__generate__(root_pattern, words)
 		good_patterns = self.__filter_solutions__()
 		minimal_patterns = MutationLinePatterns.__minimal_solutions__(good_patterns)
-		return good_patterns, minimal_patterns
+		line_patterns = MutationLinePatterns.__line_to_patterns__(good_patterns)
+		mutation_patterns = MutationLinePatterns.__mutation_to_patterns__(good_patterns)
+		return good_patterns, minimal_patterns, self.__find_best_patterns__(line_patterns), self.__find_best_patterns__(mutation_patterns)
 
 
 class MutationLinePatternWriter:
@@ -374,14 +445,14 @@ class MutationLinePatternWriter:
 		return lines, mutations
 
 	@staticmethod
-	def __perception__(x: int, y: int):
+	def __percentage__(x: int, y: int):
 		if y == 0:
 			return 0.0
 		rate = x / (y + 0.0)
 		return int(rate * 10000) / 100.0
 
 	@staticmethod
-	def __precision_and_recall__(pat_samples: set, doc_samples: set):
+	def __precision_and_recall_f1__(pat_samples: set, doc_samples: set):
 		"""
 		:param pat_samples:
 		:param doc_samples:
@@ -390,8 +461,8 @@ class MutationLinePatternWriter:
 		int_samples = pat_samples & doc_samples
 		precision, recall, f1_score = 0.0, 0.0, 0.0
 		if len(int_samples) > 0:
-			precision = MutationLinePatternWriter.__perception__(len(int_samples), len(pat_samples))
-			recall = MutationLinePatternWriter.__perception__(len(int_samples), len(doc_samples))
+			precision = MutationLinePatternWriter.__percentage__(len(int_samples), len(pat_samples))
+			recall = MutationLinePatternWriter.__percentage__(len(int_samples), len(doc_samples))
 			f1_score = 2 * precision * recall / ((precision + recall) * 100.0)
 			f1_score = int(f1_score * 10000) / 10000.0
 		return precision, recall, f1_score
@@ -403,8 +474,8 @@ class MutationLinePatternWriter:
 		doc_lines, doc_mutations = self.__get_document_lines_and_mutations__()
 		pat_lines, pat_mutations = self.__get_patterns_lines_and_mutations__()
 		pat_number, lin_number, mut_number = len(self.patterns), len(pat_lines), len(pat_mutations)
-		pat_lin_optimize_rate = MutationLinePatternWriter.__perception__(pat_number, lin_number)
-		pat_mut_optimize_rate = MutationLinePatternWriter.__perception__(pat_number, mut_number)
+		pat_lin_optimize_rate = MutationLinePatternWriter.__percentage__(pat_number, lin_number)
+		pat_mut_optimize_rate = MutationLinePatternWriter.__percentage__(pat_number, mut_number)
 		writer.write("Evaluation\n")
 		writer.write("\tPatterns = {}\tLINE := {}({}%)\tMUTATION := {}({}%)\n".
 					 format(pat_number, lin_number, pat_lin_optimize_rate, mut_number, pat_mut_optimize_rate))
@@ -415,13 +486,13 @@ class MutationLinePatternWriter:
 		doc_uk_mutations = doc_mutation_table[UC_CLASS] | doc_mutation_table[UI_CLASS] | doc_mutation_table[UP_CLASS]
 		doc_cc_mutations = doc_mutation_table[UI_CLASS] | doc_mutation_table[UP_CLASS]
 		writer.write("\tTitle\tPrecision(%)\tRecall(%)\tF1_Score\n")
-		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall__(pat_lines, doc_uk_lines)
+		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall_f1__(pat_lines, doc_uk_lines)
 		writer.write("\t{}\t{}%\t{}%\t{}\n".format("UK-LINE", precision, recall, f1_score))
-		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall__(pat_lines, doc_cc_lines)
+		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall_f1__(pat_lines, doc_cc_lines)
 		writer.write("\t{}\t{}%\t{}%\t{}\n".format("CC-LINE", precision, recall, f1_score))
-		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall__(pat_mutations, doc_uk_mutations)
+		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall_f1__(pat_mutations, doc_uk_mutations)
 		writer.write("\t{}\t{}%\t{}%\t{}\n".format("UK-MUTA", precision, recall, f1_score))
-		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall__(pat_mutations, doc_cc_mutations)
+		precision, recall, f1_score = MutationLinePatternWriter.__precision_and_recall_f1__(pat_mutations, doc_cc_mutations)
 		writer.write("\t{}\t{}%\t{}%\t{}\n".format("CC-MUTA", precision, recall, f1_score))
 		return
 
@@ -495,10 +566,52 @@ class MutationLinePatternWriter:
 			pid = pid + 1
 		return
 
-	def write(self, output_file_path: str):
+	def write_patterns(self, output_file_path: str):
 		with open(output_file_path, 'w') as writer:
 			self.__write_patterns__(writer)
 			writer.flush()
+		return
+
+	@staticmethod
+	def __write_mutation_and_pattern__(writer: TextIO, mutation: cmuta.Mutation, pattern: MutationLinePattern, project: cmuta.CProject):
+		"""
+		:param writer:
+		:param mutation:
+		:param pattern:
+		:param project
+		:return:
+		"""
+		template = "Muta\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n"
+		mid = mutation.get_muta_id()
+		res = MutationClassifier.classify_one(mutation)
+		mclass = mutation.get_muta_class()
+		moprt = mutation.get_muta_operator()
+		location = mutation.get_location()
+		line = location.get_line() + 1
+		code = location.get_code(True)
+		parameter = str(mutation.get_parameter())
+		writer.write(template.format(mid, res, mclass, moprt, line, code, parameter))
+		MutationLinePatternWriter.__write_pattern_words__(writer, pattern, project)
+		return
+
+	@staticmethod
+	def write_best_patterns(project: cmuta.CProject, key_pattern_dict: dict, output_file_path: str):
+		"""
+		:param project:
+		:param key_pattern_dict: lines or mutations to the pattern they matched with
+		:param output_file_path:
+		:return:
+		"""
+		with open(output_file_path, 'w') as writer:
+			for key, pattern in key_pattern_dict.items():
+				if isinstance(key, cmuta.MutationLine):
+					key: cmuta.MutationLine
+					mutation = key.get_mutation()
+				else:
+					key: cmuta.Mutation
+					mutation = key
+				MutationLinePatternWriter.__write_mutation_and_pattern__(writer, mutation, pattern, project)
+				writer.write("\n")
 		return
 
 
@@ -515,10 +628,12 @@ if __name__ == "__main__":
 		test_id = -1
 		docs = c_project.load_document(sym_file_path, test_id)
 		print("\tGet", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
-		good_patterns, min_patterns = MutationLinePatterns(line_or_mutation, uk_or_cc, min_support, max_precision, max_length).generate(docs)
-		MutationLinePatternWriter(docs, good_patterns).write(os.path.join(post_path, file_name + ".gpt"))
+		good_patterns, min_patterns, line_patterns, mutation_patterns = MutationLinePatterns(line_or_mutation, uk_or_cc, min_support, max_precision, max_length).generate(docs)
+		MutationLinePatternWriter(docs, good_patterns).write_patterns(os.path.join(post_path, file_name + ".gpt"))
 		print("\tWrite", len(good_patterns), "selected set of patterns to output file.")
-		MutationLinePatternWriter(docs, min_patterns).write(os.path.join(post_path, file_name + ".mpt"))
+		MutationLinePatternWriter(docs, min_patterns).write_patterns(os.path.join(post_path, file_name + ".mpt"))
 		print("\tWrite", len(min_patterns), "minimal set of patterns to output file.")
+		MutationLinePatternWriter.write_best_patterns(c_project, mutation_patterns, os.path.join(post_path, file_name + ".bpt"))
+		print("\tWrite", len(mutation_patterns), "mutations and their best patterns to output.")
 		print()
 
