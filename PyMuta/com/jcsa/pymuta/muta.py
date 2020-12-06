@@ -374,6 +374,16 @@ class MutationDocument:
 		line: MutationLine
 		return line
 
+	def get_mutations(self):
+		"""
+		:return: the set of mutations to which the lines in document correspond to
+		"""
+		mutations = set()
+		for line in self.lines:
+			line: MutationLine
+			mutations.add(line.get_mutation())
+		return mutations
+
 	def __unique__(self, word: str):
 		if not(word in self.corpus):
 			self.corpus[word] = word

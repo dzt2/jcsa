@@ -33,7 +33,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="ADD_SUFFIX_TO_CHERRY_PICKS_OF_PUBLISHED_COMMITS" value="false" />
+    <option name="PREVIEW_PUSH_ON_COMMIT_AND_PUSH" value="false" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="WARN_ABOUT_CRLF" value="false" />
+    <option name="WARN_ABOUT_DETACHED_HEAD" value="false" />
   </component>
   <component name="ProjectId" id="1l2FUtPdgzO156vFlUPJj77zEmT" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -43,7 +47,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+    <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
   <component name="RunManager" selected="Python.mine">
     <configuration name="base" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -172,6 +176,27 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="mine" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PyMuta" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/pymuta" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/pymuta/mine.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="muta" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -196,6 +221,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.mine" />
+        <item itemvalue="Python.mine2" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.base" />
@@ -224,39 +250,5 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="1080" y="201" width="732" height="644" key="#Inspections" timestamp="1606977487082">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state x="1080" y="201" width="732" height="644" key="#Inspections/52.27.1868.1053@52.27.1868.1053" timestamp="1606977487082" />
-    <state width="1845" height="176" key="GridCell.Tab.0.bottom" timestamp="1607075244579">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state width="1839" height="140" key="GridCell.Tab.0.bottom/52.27.1862.895@52.27.1862.895" timestamp="1606999117786" />
-    <state width="1845" height="176" key="GridCell.Tab.0.bottom/52.27.1868.1053@52.27.1868.1053" timestamp="1607075244579" />
-    <state width="1845" height="176" key="GridCell.Tab.0.center" timestamp="1607075244574">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state width="1839" height="140" key="GridCell.Tab.0.center/52.27.1862.895@52.27.1862.895" timestamp="1606999117782" />
-    <state width="1845" height="176" key="GridCell.Tab.0.center/52.27.1868.1053@52.27.1868.1053" timestamp="1607075244574" />
-    <state width="1845" height="176" key="GridCell.Tab.0.left" timestamp="1607075244570">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state width="1839" height="140" key="GridCell.Tab.0.left/52.27.1862.895@52.27.1862.895" timestamp="1606999117780" />
-    <state width="1845" height="176" key="GridCell.Tab.0.left/52.27.1868.1053@52.27.1868.1053" timestamp="1607075244570" />
-    <state width="1845" height="176" key="GridCell.Tab.0.right" timestamp="1607075244576">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state width="1839" height="140" key="GridCell.Tab.0.right/52.27.1862.895@52.27.1862.895" timestamp="1606999117784" />
-    <state width="1845" height="176" key="GridCell.Tab.0.right/52.27.1868.1053@52.27.1868.1053" timestamp="1607075244576" />
-    <state x="790" y="200" width="1022" height="737" key="SettingsEditor" timestamp="1606964585014">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state x="790" y="200" width="1022" height="737" key="SettingsEditor/52.27.1868.1053@52.27.1868.1053" timestamp="1606964585014" />
-    <state x="649" y="259" width="672" height="678" key="search.everywhere.popup" timestamp="1606898090694">
-      <screen x="52" y="27" width="1868" height="1053" />
-    </state>
-    <state x="649" y="259" width="672" height="678" key="search.everywhere.popup/52.27.1868.1053@52.27.1868.1053" timestamp="1606898090694" />
   </component>
 </project>
