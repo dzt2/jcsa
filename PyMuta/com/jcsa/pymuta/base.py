@@ -1,5 +1,5 @@
 """
-It models the basic items in program and mutation description.
+This implements the translation from basic data element.
 """
 
 import enum
@@ -10,35 +10,48 @@ class CTokenType(enum.Enum):
 	Boolean = 1
 	Character = 2
 	Integer = 3
-	Floating = 4
+	Real = 4
 	Complex = 5
-	String = 6
-	Keyword = 7
-	Punctuate = 8
-	Operator = 9
-	AstKey = 10
-	CirKey = 11
-	ExeKey = 12
-	MutKey = 13
-	DataType = 14
+	Keyword = 6
+	Punctuate = 7
+	Operator = 8
+	AST = 9
+	CIR = 10
+	EXE = 11
+	MUT = 12
+	String = 13
+	SYM = 14
+	TYPE = 15
+	Test = 16
 
 	def __str__(self):
 		return self.name
 
 
 class CToken:
-	"""
-	The tokens in C program can be either n@null, b@bool, c@char, i@int, f@real, x@complex, s@string, k@keyword,
-	p@punctuate, o@operator, ast@key, cir@key, exe@key, mut@key, typ@code
-	"""
-
-	def __init__(self, token_type: CTokenType, value):
+	def __init__(self, token_type: CTokenType, token_value):
 		"""
-		:param token_type: type of this token
-		:param value: value hold by this token
+		:param token_type:
+		:param token_value:
+			Nullptr		--> None
+			Boolean		--> Bool
+			Character	--> int
+			Integer		--> int
+			Real		--> float
+			Complex		--> complex
+			Keyword		--> string
+			Punctuate	--> string
+			Operator	--> string
+			AST			--> int
+			CIR			--> int
+			EXE			--> string, int
+			String		--> string
+			SYM			--> string
+			TYPE		--> string
+			Test		--> string
 		"""
 		self.token_type = token_type
-		self.token_value = value
+		self.token_value = token_value
 		return
 
 	def get_token_type(self):
@@ -47,67 +60,78 @@ class CToken:
 	def get_token_value(self):
 		return self.token_value
 
-	@staticmethod
-	def parse(text: str):
-		items = text.strip().split('@')
-		head = items[0].strip()
-		if head == "n":				# (Nullptr, None)
-			return CToken(CTokenType(CTokenType.Nullptr), None)
-		elif head == "b":			# (Boolean, bool)
-			return CToken(CTokenType(CTokenType.Boolean), items[1].strip() == "true")
-		elif head == "c":			# (Character, int)
-			return CToken(CTokenType(CTokenType.Character), int(items[1].strip()))
-		elif head == "i":			# (Integer, int)
-			return CToken(CTokenType(CTokenType.Integer), int(items[1].strip()))
-		elif head == "f":			# (Floating, float)
-			return CToken(CTokenType(CTokenType.Floating), float(items[1].strip()))
-		elif head == "x":			# (Complex, complex)
-			return CToken(CTokenType(CTokenType.Complex), complex(float(items[1].strip()), float(items[2].strip())))
-		elif head == "s":			# (String, str)
-			text = items[1].strip()
-			text = text.replace("\\s", " ")
-			text = text.replace("\\a", "@")
-			return CToken(CTokenType(CTokenType.String), text)
-		elif head == "k":			# (Keyword, str)
-			return CToken(CTokenType(CTokenType.Keyword), items[1].strip())
-		elif head == "o":			# (Operator, str)
-			return CToken(CTokenType(CTokenType.Operator), items[1].strip())
-		elif head == "p":			# (Punctuate, str)
-			return CToken(CTokenType(CTokenType.Punctuate), items[1].strip())
-		elif head == "ast":			# (AstKey, int)
-			return CToken(CTokenType(CTokenType.AstKey), int(items[1].strip()))
-		elif head == "cir":			# (CirKey, int)
-			return CToken(CTokenType(CTokenType.CirKey), int(items[1].strip()))
-		elif head == "mut":			# (MutKey, int)
-			return CToken(CTokenType(CTokenType.MutKey), int(items[1].strip()))
-		elif head == "typ":			# (DataType, List[str])
-			return CToken(CTokenType(CTokenType.DataType), items[1].strip().split(":"))
-		elif head == "exe":			# (ExeKey, [str, int])
-			text = items[1].strip()
-			beg_index = text.find("[")
-			end_index = text.find("]")
-			func_name = text[0: beg_index].strip()
-			exec_id = text[beg_index + 1: end_index].strip()
-			exec_id = int(exec_id)
-			return CToken(CTokenType(CTokenType.ExeKey), [func_name, exec_id])
-		else:						# Unsupported return null
-			return None
-
 	def __str__(self):
 		return str(self.token_value)
+
+	@staticmethod
+	def de_normalize(text: str):
+		text = text.replace("\\s", " ")
+		text = text.replace("\\a", "@")
+		text = text.replace("\\p", "$")
+		return text
+
+	@staticmethod
+	def parse(text: str):
+		"""
+		:param text:
+		:return:
+		"""
+		items = text.strip().split('@')
+		title = items[0].strip()
+		if title == "n":
+			return CToken(CTokenType(CTokenType.Nullptr), None)
+		elif title == 'b':
+			return CToken(CTokenType(CTokenType.Boolean), bool(items[1].strip() == "true"))
+		elif title == "c":
+			return CToken(CTokenType(CTokenType.Character), int(items[1].strip()))
+		elif title == "i":
+			return CToken(CTokenType(CTokenType.Integer), int(items[1].strip()))
+		elif title == "f":
+			return CToken(CTokenType(CTokenType.Real), float(items[1].strip()))
+		elif title == "x":
+			real = float(items[1].strip())
+			image = float(items[2].strip())
+			value = complex(real, image)
+			return CToken(CTokenType(CTokenType.Complex), value)
+		elif title == "key":
+			return CToken(CTokenType(CTokenType.Keyword), items[1].strip())
+		elif title == "pun":
+			return CToken(CTokenType(CTokenType.Punctuate), items[1].strip())
+		elif title == "opr":
+			return CToken(CTokenType(CTokenType.Operator), items[1].strip())
+		elif title == "ast":
+			return CToken(CTokenType(CTokenType.AST), int(items[1].strip()))
+		elif title == "cir":
+			return CToken(CTokenType(CTokenType.CIR), int(items[1].strip()))
+		elif title == "mut":
+			return CToken(CTokenType(CTokenType.MUT), int(items[1].strip()))
+		elif title == "exe":
+			return CToken(CTokenType(CTokenType.EXE), [items[1].strip(), int(items[2].strip())])
+		elif title == "s":
+			return CToken(CTokenType(CTokenType.String), CToken.de_normalize(items[1].strip()))
+		elif title == "typ":
+			return CToken(CTokenType(CTokenType.TYPE), CToken.de_normalize(items[1].strip()))
+		elif title == "sym":
+			return CToken(CTokenType(CTokenType.SYM), CToken.de_normalize(items[1].strip()))
+		elif title == "tst":
+			return CToken(CTokenType(CTokenType.Test), CToken.de_normalize(items[1].strip()))
+		else:
+			return None		# unable to parse invalid text
 
 
 if __name__ == "__main__":
 	print(CToken.parse("n@null"))
 	print(CToken.parse("b@true"))
 	print(CToken.parse("b@false"))
-	print(CToken.parse("c@49"))
-	print(CToken.parse("i@-752628"))
-	print(CToken.parse("f@69.5583"))
-	print(CToken.parse("x@10@21.3"))
-	print(CToken.parse("s@Hello, world!"))
-	print(CToken.parse("o@arith_add"))
-	print(CToken.parse("exe@main[55]"))
-	print(CToken.parse("ast@9282"))
-	print(CToken.parse("typ@llong"))
+	print(CToken.parse("c@96"))
+	print(CToken.parse("i@-21585225"))
+	print(CToken.parse("f@-678.048825"))
+	print(CToken.parse("x@5@7.9"))
+	print(CToken.parse("key@c89_int"))
+	print(CToken.parse("pun@ari_mul"))
+	print(CToken.parse("opr@greater_eq"))
+	print(CToken.parse("typ@(int)*"))
+	print(CToken.parse("exe@#init@5"))
+	print(CToken.parse("ast@10"))
+	print(CToken.parse("sym@(length#1263257405)\s!=\s(beg#1287200676)"))
 

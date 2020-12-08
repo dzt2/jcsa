@@ -1,5 +1,5 @@
 """
-It describes the model for mutation and test cases along with their features and results.
+It implements the data model for mutation and test data.
 """
 
 import os
@@ -8,33 +8,31 @@ import com.jcsa.pymuta.code as ccode
 
 
 class CProject:
-	def __init__(self, directory: str, name: str):
-		self.program = ccode.CProgram(directory, name)
-		tst_file_path = os.path.join(directory, name + ".tst")
-		mut_file_path = os.path.join(directory, name + ".mut")
-		res_file_path = os.path.join(directory, name + ".res")
-		self.test_space = TestCaseSpace(self, tst_file_path)
-		self.muta_space = MutationSpace(self, mut_file_path, res_file_path)
+	def __init__(self, directory: str, file_name: str):
+		self.program = ccode.CProgram(directory, file_name)
+		tst_file = os.path.join(directory, file_name + ".tst")
+		mut_file = os.path.join(directory, file_name + ".mut")
+		res_file = os.path.join(directory, file_name + ".res")
+		self.test_space = TestSpace(self, tst_file)
+		self.mutant_space = MutantSpace(self, mut_file, res_file)
 		return
 
-	def load_document(self, sym_file_path: str, test_id: int):
-		return MutationDocument(self, sym_file_path, test_id)
+	def load_execution_lines(self, fet_file_path: str):
+		return MutantExecutions(self, fet_file_path)
 
 
 class TestCase:
+	"""
+	test case with parameter
+	"""
 	def __init__(self, space, test_id: int, parameter: str):
-		"""
-		:param space: space where the test case is created
-		:param test_id: the integer ID of the test case in its space
-		:param parameter: the parameter used to execute command
-		"""
-		space: TestCaseSpace
+		space: TestSpace
 		self.space = space
 		self.test_id = test_id
-		self.parameter = parameter
+		self.parameter = parameter.strip()
 		return
 
-	def get_test_space(self):
+	def get_space(self):
 		return self.space
 
 	def get_test_id(self):
@@ -44,11 +42,10 @@ class TestCase:
 		return self.parameter
 
 
-class TestCaseSpace:
+class TestSpace:
 	def __init__(self, project: CProject, tst_file_path: str):
 		self.project = project
 		self.test_cases = list()
-		self.__parse__(tst_file_path)
 		return
 
 	def get_project(self):
@@ -58,6 +55,10 @@ class TestCaseSpace:
 		return self.test_cases
 
 	def get_test_case(self, test_id: int):
+		"""
+		:param test_id:
+		:return:
+		"""
 		test_case = self.test_cases[test_id]
 		test_case: TestCase
 		return test_case
@@ -67,115 +68,49 @@ class TestCaseSpace:
 		with open(tst_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
-				items = line.split('\t')
 				if len(line) > 0:
-					test_id = int(items[0].strip())
-					parameter = cbase.CToken.parse(items[1].strip())
-					test_case = TestCase(self, test_id, parameter.token_value)
-					test_case_dict[test_case.test_id] = test_case
+					items = line.split('\t')
+					test_id = int(items[1].strip())
+					parameter = cbase.CToken.parse(items[2].strip()).get_token_value()
+					test_case = TestCase(self, test_id, parameter)
+					test_case_dict[test_case.get_test_id()] = test_case
 		self.test_cases.clear()
 		for k in range(0, len(test_case_dict)):
 			self.test_cases.append(test_case_dict[k])
 		return
 
 
-class MutationResult:
-	def __init__(self, mutation):
-		mutation: Mutation
-		self.mutation = mutation
-		self.results = ""
-		return
-
-	def get_mutation(self):
-		return self.mutation
-
-	def get_results(self):
-		return self.results
-
-	def set_results(self, results: str):
-		self.results = results
-		return
-
-	def clear(self):
-		self.results = ""
-		return
-
-	def get_degrees(self):
-		degree = 0
-		for k in range(0, len(self.results)):
-			if self.results[k] == "1":
-				degree += 1
-		return degree
-
-	def is_killed_by(self, test_id: int):
-		"""
-		:param test_id:
-		:return: true if the mutation is killed by this test
-		"""
-		return self.results[test_id] == "1"
-
-	def is_killed(self):
-		"""
-		:return: true if the mutation is killed by at least one test case
-		"""
-		for k in range(0, len(self.results)):
-			result = self.results[k]
-			if result == "1":
-				return True
-		return False
-
-	def get_kill_test_cases(self):
-		"""
-		:return: the set of test cases killing this mutation
-		"""
-		test_space = self.mutation.space.project.test_space
-		test_cases = list()
-		for test_id in range(0, len(self.results)):
-			result = self.results[test_id]
-			if result == "1":
-				test_case = test_space.get_test_case(test_id)
-				test_cases.append(test_case)
-		return test_cases
-
-	def is_covered_by(self, test_id: int):
-		return self.mutation.get_coverage_mutation().get_result().is_killed_by(test_id)
-
-	def is_covered(self):
-		return self.mutation.get_coverage_mutation().get_result().is_killed()
-
-	def is_infected_by(self, test_id: int):
-		return self.mutation.get_weakness_mutation().get_result().is_killed_by(test_id)
-
-	def is_infected(self):
-		return self.mutation.get_weakness_mutation().get_result().is_killed()
-
-
 class Mutation:
-	def __init__(self, space, muta_id: int, muta_class: str, muta_operator: str, location: ccode.AstNode, parameter: cbase.CToken):
-		space: MutationSpace
-		self.space = space
-		self.muta_id = muta_id
-		self.muta_class = muta_class
-		self.muta_operator = muta_operator
+	"""
+	syntactic mutation
+	"""
+	def __init__(self, mutant, mutation_class: str, mutation_operator: str, location: ccode.AstNode, parameter: cbase.CToken):
+		"""
+		:param mutant:
+		:param mutation_class:
+		:param mutation_operator:
+		:param location:
+		:param parameter:
+		"""
+		mutant: Mutant
+		self.mutant = mutant
+		self.mutation_class = mutation_class
+		self.mutation_operator = mutation_operator
 		self.location = location
 		self.parameter = parameter
-		self.cov_mutation = None
-		self.wek_mutation = None
-		self.str_mutation = None
-		self.result = MutationResult(self)
 		return
 
-	def get_mutation_space(self):
-		return self.space
+	def get_mutant(self):
+		"""
+		:return: mutant that is defined by this mutation
+		"""
+		return self.mutant
 
-	def get_muta_id(self):
-		return self.muta_id
+	def get_mutation_class(self):
+		return self.mutation_class
 
-	def get_muta_class(self):
-		return self.muta_class
-
-	def get_muta_operator(self):
-		return self.muta_operator
+	def get_mutation_operator(self):
+		return self.mutation_operator
 
 	def get_location(self):
 		return self.location
@@ -183,99 +118,223 @@ class Mutation:
 	def get_parameter(self):
 		return self.parameter
 
-	def get_coverage_mutation(self):
-		self.cov_mutation: Mutation
-		return self.cov_mutation
 
-	def get_weakness_mutation(self):
-		self.wek_mutation: Mutation
-		return self.wek_mutation
+class MutantResult:
+	"""
+	test result of a mutant
+	"""
+	def __init__(self, mutant, kill_sequence: str):
+		"""
+		:param mutant:
+		:param kill_sequence:
+		"""
+		mutant: Mutant
+		self.mutant = mutant
+		self.kill_sequence = kill_sequence.strip()
+		return
 
-	def get_stronger_mutation(self):
-		self.str_mutation: Mutation
-		return self.str_mutation
+	def get_mutant(self):
+		return self.mutant
 
 	def get_result(self):
+		"""
+		:return: 01-sequence for killing or not
+		"""
+		return self.kill_sequence
+
+	def __str__(self):
+		return self.kill_sequence
+
+	def get_length(self):
+		"""
+		:return: length of the killing result
+		"""
+		return len(self.kill_sequence)
+
+	def is_killed_by(self, test_id: int):
+		"""
+		:param test_id:
+		:return: true --> killed by test of specified ID or None if test_id out of range
+		"""
+		if test_id < 0 or test_id >= len(self.kill_sequence):
+			return None
+		return self.kill_sequence[test_id] == '1'
+
+	def is_killed(self):
+		"""
+		:return: whether killed by any tests
+		"""
+		for test_id in range(0, len(self.kill_sequence)):
+			if self.is_killed_by(test_id):
+				return True
+		return False
+
+	def get_degree(self):
+		"""
+		:return: number of tests that kill this mutant
+		"""
+		degree = 0
+		for test_id in range(0, len(self.kill_sequence)):
+			if self.is_killed_by(test_id):
+				degree += 1
+		return degree
+
+	def get_killing_tests(self):
+		"""
+		:return: collection of test cases for killing this mutant
+		"""
+		project = self.mutant.get_space().get_project()
+		project: CProject
+		test_space = project.test_space
+		test_cases = list()
+		for test_id in range(0, len(self.kill_sequence)):
+			if self.is_killed_by(test_id):
+				test_case = test_space.get_test_case(test_id)
+				test_cases.append(test_case)
+		return test_cases
+
+	def get_survive_tests(self):
+		"""
+		:return: collection of test cases that cannot kill this mutant
+		"""
+		project = self.mutant.get_space().get_project()
+		project: CProject
+		test_space = project.test_space
+		test_cases = list()
+		for test_id in range(0, len(self.kill_sequence)):
+			if not(self.is_killed_by(test_id)):
+				test_case = test_space.get_test_case(test_id)
+				test_cases.append(test_case)
+		return test_cases
+
+
+class Mutant:
+	"""
+	space, ID, mutation, result, coverage, weak, strong
+	"""
+	def __init__(self, space, mut_id: int, mutation: Mutation):
+		space: MutantSpace
+		self.space = space
+		self.mut_id = mut_id
+		self.mutation = mutation
+		self.c_mutant = None		# coverage mutation
+		self.w_mutant = None		# weak mutation
+		self.s_mutant = None		# strong mutation
+		self.result = None			# test result
+		return
+
+	def get_space(self):
+		return self.space
+
+	def get_mut_id(self):
+		return self.mut_id
+
+	def get_mutation(self):
+		return self.mutation
+
+	def has_result(self):
+		return self.result is not None
+
+	def get_result(self):
+		self.result: MutantResult
 		return self.result
 
+	def get_coverage_mutant(self):
+		self.c_mutant: Mutant
+		return self.c_mutant
 
-class MutationSpace:
-	def __init__(self, project: CProject, mut_file_path: str, res_file_path):
+	def get_weak_mutant(self):
+		self.w_mutant: Mutant
+		return self.w_mutant
+
+	def get_strong_mutant(self):
+		self.s_mutant: Mutant
+		return self.s_mutant
+
+
+class MutantSpace:
+	def __init__(self, project: CProject, mut_file_path: str, res_file_path: str):
+		"""
+		:param project:
+		:param mut_file_path:
+		:param res_file_path:
+		"""
 		self.project = project
-		self.mutations = list()
+		self.mutants = list()
 		self.__parse__(mut_file_path)
-		self.__load__(res_file_path)
+		self.__loads__(res_file_path)
 		return
 
 	def get_project(self):
 		return self.project
 
-	def get_mutations(self):
-		return self.mutations
+	def get_mutants(self):
+		return self.mutants
 
-	def get_mutation(self, muta_id: int):
-		mutation = self.mutations[muta_id]
-		mutation: Mutation
-		return mutation
+	def get_mutant(self, mut_id: int):
+		mutant = self.mutants[mut_id]
+		mutant: Mutant
+		return mutant
 
 	def __parse__(self, mut_file_path: str):
-		mutation_dict = dict()
-		ast_tree = self.project.program.ast_tree
+		mutant_dict = dict()
 		with open(mut_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					muta_id = cbase.CToken.parse(items[0].strip()).token_value
-					muta_class = items[1].strip()
-					muta_operator = items[2].strip()
-					ast_key = cbase.CToken.parse(items[3].strip())
-					location = ast_tree.get_ast_node(ast_key.get_token_value())
+					mut_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					mutation_class = items[1].strip()
+					mutation_operator = items[2].strip()
+					ast_id = cbase.CToken.parse(items[3].strip()).get_token_value()
+					location = self.project.program.ast_tree.get_ast_node(ast_id)
 					parameter = cbase.CToken.parse(items[4].strip())
-					mutation = Mutation(self, muta_id, muta_class, muta_operator, location, parameter)
-					mutation_dict[mutation.muta_id] = mutation
-					subsume_keys = items[5].strip().split(' ')
-					mutation.cov_mutation = cbase.CToken.parse(subsume_keys[1].strip()).token_value
-					mutation.wek_mutation = cbase.CToken.parse(subsume_keys[2].strip()).token_value
-					mutation.str_mutation = cbase.CToken.parse(subsume_keys[3].strip()).token_value
-		self.mutations.clear()
-		for k in range(0, len(mutation_dict)):
-			mutation = mutation_dict[k]
-			self.mutations.append(mutation)
-			mutation.cov_mutation = mutation_dict[mutation.cov_mutation]
-			mutation.wek_mutation = mutation_dict[mutation.wek_mutation]
-			mutation.str_mutation = mutation_dict[mutation.str_mutation]
+					mutation = Mutation(None, mutation_class, mutation_operator, location, parameter)
+					mutant = Mutant(self, mut_id, mutation)
+					mutation.mutant = mutant
+					mutant_dict[mutant.get_mut_id()] = mutant
+		with open(mut_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mut_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					mutant = mutant_dict[mut_id]
+					cov_id = cbase.CToken.parse(items[5].strip()).get_token_value()
+					wek_id = cbase.CToken.parse(items[6].strip()).get_token_value()
+					sto_id = cbase.CToken.parse(items[7].strip()).get_token_value()
+					mutant.c_mutant = mutant_dict[cov_id]
+					mutant.w_mutant = mutant_dict[wek_id]
+					mutant.s_mutant = mutant_dict[sto_id]
+		self.mutants.clear()
+		for mut_id in range(0, len(mutant_dict)):
+			self.mutants.append(mutant_dict[mut_id])
 		return
 
-	def __load__(self, res_file_path: str):
+	def __loads__(self, res_file_path: str):
 		with open(res_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					mutation = self.get_mutation(int(items[0].strip()))
-					mutation.get_result().set_results(items[1].strip())
+					mutant = self.get_mutant(int(items[0].strip()))
+					result = MutantResult(mutant, items[1].strip())
+					mutant.result = result
 		return
 
 
-class CAnnotation:
+class CirAnnotation:
 	"""
-	type execution location (CirNode) and parameter (SymExpression?)
+	type, execution, location, parameter
 	"""
-	def __init__(self, atype: str, execution: ccode.CirExecution, location: ccode.CirNode, parameter: str):
-		"""
-		:param atype: annotation type
-		:param execution: execution where annotation is injected
-		:param location: location to be described with the annotation
-		:param parameter: symbolic expression or null to refine this annotation
-		"""
-		self.annotation_type = atype
+	def __init__(self, annotation_type: str, execution: ccode.CirExecution, location: ccode.CirNode, parameter: cbase.CToken):
+		self.annotation_type = annotation_type
 		self.execution = execution
 		self.location = location
 		self.parameter = parameter
 		return
 
-	def get_annotation_type(self):
+	def get_type(self):
 		return self.annotation_type
 
 	def get_execution(self):
@@ -284,128 +343,135 @@ class CAnnotation:
 	def get_location(self):
 		return self.location
 
-	def has_parameter(self):
-		return not(self.parameter is None)
-
 	def get_parameter(self):
 		return self.parameter
 
 	@staticmethod
-	def parse(project: CProject, word: str):
+	def parse(text: str, program: ccode.CProgram):
 		"""
-		:param project: provide contextual information
-		:param word: type$execution$location$parameter
-		:return: annotation or None
+		:param text:
+		:param program:
+		:return:
 		"""
-		word = word.strip()
-		if len(word) > 0:
-			items = word.split('$')
-			annotation_type = items[0].strip()
-			execution_token = cbase.CToken.parse(items[1].strip())
-			location_token = cbase.CToken.parse(items[2].strip())
-			parameter_token = cbase.CToken.parse(items[3].strip())
-			parameter = parameter_token.get_token_value()
-			function_name = execution_token.token_value[0]
-			execution_id = execution_token.token_value[1]
-			location_id = location_token.token_value
-			execution = project.program.function_call_graph.get_execution(function_name, execution_id)
-			location = project.program.cir_tree.get_cir_node(location_id)
-			return CAnnotation(annotation_type, execution, location, parameter)
-		return None
+		items = text.strip().split('$')
+		annotation_type = items[0].strip()
+		exe_id = cbase.CToken.parse(items[1].strip()).get_token_value()
+		cir_id = cbase.CToken.parse(items[2].strip()).get_token_value()
+		parameter = cbase.CToken.parse(items[3].strip())
+		execution = program.function_call_graph.get_execution(exe_id[0], exe_id[1])
+		location = program.cir_tree.get_cir_node(cir_id)
+		return CirAnnotation(annotation_type, execution, location, parameter)
 
 
-class MutationLine:
+class MutantExecution:
 	"""
-	Each line contains a set of words, mutation and its three test results [cov, wek, str]
+	mutant, test_case, words
 	"""
-	def __init__(self, document, mutation: Mutation, test_id: int, words):
-		document: MutationDocument
-		self.document = document
-		self.mutation = mutation
-		if test_id >= 0:
-			self.cov_result = mutation.get_result().is_covered_by(test_id)
-			self.wek_result = mutation.get_result().is_infected_by(test_id)
-			self.str_result = mutation.get_result().is_killed_by(test_id)
-		else:
-			self.cov_result = mutation.get_result().is_covered()
-			self.wek_result = mutation.get_result().is_infected()
-			self.str_result = mutation.get_result().is_killed()
+	def __init__(self, mutant: Mutant, test_case: TestCase):
+		self.mutant = mutant
+		self.test_case = test_case
 		self.words = list()
-		for word in words:
-			word: str
-			self.words.append(word.strip())
 		return
 
-	def get_mutation(self):
-		return self.mutation
+	def get_mutant(self):
+		return self.mutant
 
-	def get_coverage_result(self):
-		return self.cov_result
+	def get_test_case(self):
+		return self.test_case
 
-	def get_infection_result(self):
-		return self.wek_result
-
-	def get_killing_result(self):
-		return self.str_result
+	def has_test_case(self):
+		return self.test_case is not None
 
 	def get_words(self):
 		return self.words
 
+	def get_word(self, k: int):
+		word = self.words[k]
+		word: str
+		return word
 
-class MutationDocument:
-	def __init__(self, project: CProject, sym_file_path: str, test_id: int):
+	def get_annotations(self):
+		program = self.mutant.get_space().get_project().program
+		annotations = list()
+		for word in self.words:
+			word: str
+			word = word.strip()
+			if len(word) > 0:
+				annotations.append(CirAnnotation.parse(word, program))
+		return annotations
+
+	def __killed__(self, mutant: Mutant):
+		if mutant.has_result():
+			result = mutant.get_result()
+			if self.test_case is None:
+				return result.is_killed()
+			return result.is_killed_by(self.test_case.get_test_id())
+		return None
+
+	def is_killed(self):
+		return self.__killed__(self.mutant)
+
+	def is_infected(self):
+		return self.__killed__(self.mutant.get_weak_mutant())
+
+	def is_covered(self):
+		return self.__killed__(self.mutant.get_coverage_mutant())
+
+
+class MutantExecutions:
+	def __init__(self, project: CProject, fet_file_path: str):
 		self.project = project
-		self.corpus = dict()
 		self.lines = list()
-		self.__parse__(sym_file_path, test_id)
+		self.corpus = dict()
+		self.__parse__(fet_file_path)
 		return
 
 	def get_project(self):
 		return self.project
 
-	def get_corpus(self):
-		return self.corpus.values()
-
 	def get_lines(self):
 		return self.lines
 
-	def get_line(self, index: int):
-		line = self.lines[index]
-		line: MutationLine
+	def get_line(self, k: int):
+		line = self.lines[k]
+		line: MutantExecution
 		return line
 
-	def get_mutations(self):
+	def get_length(self):
 		"""
-		:return: the set of mutations to which the lines in document correspond to
+		:return: number of execution lines in the file
 		"""
-		mutations = set()
-		for line in self.lines:
-			line: MutationLine
-			mutations.add(line.get_mutation())
-		return mutations
+		return len(self.lines)
 
-	def __unique__(self, word: str):
+	def get_corpus(self):
+		return self.corpus.keys()
+
+	def __word__(self, word: str):
 		if not(word in self.corpus):
 			self.corpus[word] = word
-		return self.corpus[word]
+		word = self.corpus[word]
+		word: str
+		return word
 
-	def __parse__(self, sym_file_path: str, test_id: int):
-		space = self.project.muta_space
+	def __parse__(self, fet_file_path: str):
 		self.lines.clear()
-		with open(sym_file_path, 'r') as reader:
+		with open(fet_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					mutation = space.get_mutation(int(items[0].strip()))
-					annotations = set()
+					mutant = self.project.mutant_space.get_mutant(int(items[0].strip()))
+					test_id = int(items[1].strip())
+					if test_id < 0:
+						test_case = None
+					else:
+						test_case = self.project.test_space.get_test_case(test_id)
+					exec_line = MutantExecution(mutant, test_case)
 					for k in range(2, len(items)):
-						annotation = items[k].strip()
-						if len(annotation) > 0:
-							annotation = self.__unique__(annotation)
-							annotations.add(annotation)
-					line = MutationLine(self, mutation, test_id, annotations)
-					self.lines.append(line)
+						word = items[k].strip()
+						if len(word) > 0:
+							exec_line.words.append(self.__word__(word))
+					self.lines.append(exec_line)
 		return
 
 
@@ -414,14 +480,15 @@ if __name__ == "__main__":
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = CProject(directory, file_name)
-		print("Load", len(c_project.muta_space.mutations), "mutations and", len(c_project.test_space.test_cases), "tests for", file_name)
-		sym_file_path = os.path.join(directory, file_name + ".sym")
-		test_id = -1
-		docs = c_project.load_document(sym_file_path, test_id)
-		print("\t==> Get", len(docs.get_lines()), "lines of annotations with", len(docs.get_corpus()), "words.")
-		for word in docs.get_corpus():
-			word: str
-			annotation = CAnnotation.parse(c_project, word.strip())
-			print("\t--> ", annotation.annotation_type, "\t", annotation.execution, "\t", annotation.location, "\t", annotation.location.get_code(), "\t", annotation.parameter)
+		exec_lines = c_project.load_execution_lines(os.path.join(directory, file_name + ".sft"))
+		# print("Load", len(c_project.mutant_space.get_mutants()), "mutants from", file_name)
+		# for c_mutant in c_project.mutant_space.get_mutants():
+		# 	c_mutant: Mutant
+		# 	print("\t{}\t{}\t{}\t{}\t\"{}\"\t{}".format(c_mutant.get_mut_id(), c_mutant.get_mutation().mutation_class,
+		# 												c_mutant.get_mutation().get_mutation_operator(),
+		# 												c_mutant.get_mutation().get_location().line_of(),
+		# 												c_mutant.get_mutation().get_location().get_code(True),
+		# 												c_mutant.get_mutation().get_parameter()))
+		print("Load", exec_lines.get_length(), "execution lines with", len(exec_lines.corpus), "words from", file_name)
 		print()
 

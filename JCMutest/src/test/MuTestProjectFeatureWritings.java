@@ -5,6 +5,7 @@ import java.io.File;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectFeatureWriter;
+import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 
 public class MuTestProjectFeatureWritings {
@@ -25,9 +26,11 @@ public class MuTestProjectFeatureWritings {
 	protected static void testing(File root) throws Exception {
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());
+		FileOperations.mkdir(output_directory);
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
-		MuTestProjectFeatureWriter.write_features(code_file, output_directory, max_distance);
+		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
+		writer.write_code(); writer.write_muta(); writer.write_features(max_distance);
 		System.out.println();
 	}
 	
