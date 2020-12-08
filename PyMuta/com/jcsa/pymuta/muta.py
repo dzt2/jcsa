@@ -17,8 +17,8 @@ class CProject:
 		self.mutant_space = MutantSpace(self, mut_file, res_file)
 		return
 
-	def load_execution_lines(self, fet_file_path: str):
-		return MutantExecutions(self, fet_file_path)
+	def load_execution_document(self, fet_file_path: str):
+		return MutantExecutionDocument(self, fet_file_path)
 
 
 class TestCase:
@@ -156,18 +156,13 @@ class MutantResult:
 		:param test_id:
 		:return: true --> killed by test of specified ID or None if test_id out of range
 		"""
-		if test_id < 0 or test_id >= len(self.kill_sequence):
-			return None
 		return self.kill_sequence[test_id] == '1'
 
 	def is_killed(self):
 		"""
 		:return: whether killed by any tests
 		"""
-		for test_id in range(0, len(self.kill_sequence)):
-			if self.is_killed_by(test_id):
-				return True
-		return False
+		return '1' in self.kill_sequence
 
 	def get_degree(self):
 		"""
@@ -363,7 +358,7 @@ class CirAnnotation:
 		return CirAnnotation(annotation_type, execution, location, parameter)
 
 
-class MutantExecution:
+class MutantExecutionLine:
 	"""
 	mutant, test_case, words
 	"""
@@ -418,7 +413,7 @@ class MutantExecution:
 		return self.__killed__(self.mutant.get_coverage_mutant())
 
 
-class MutantExecutions:
+class MutantExecutionDocument:
 	def __init__(self, project: CProject, fet_file_path: str):
 		self.project = project
 		self.lines = list()
@@ -434,7 +429,7 @@ class MutantExecutions:
 
 	def get_line(self, k: int):
 		line = self.lines[k]
-		line: MutantExecution
+		line: MutantExecutionLine
 		return line
 
 	def get_length(self):
@@ -466,7 +461,7 @@ class MutantExecutions:
 						test_case = None
 					else:
 						test_case = self.project.test_space.get_test_case(test_id)
-					exec_line = MutantExecution(mutant, test_case)
+					exec_line = MutantExecutionLine(mutant, test_case)
 					for k in range(2, len(items)):
 						word = items[k].strip()
 						if len(word) > 0:
@@ -480,7 +475,7 @@ if __name__ == "__main__":
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = CProject(directory, file_name)
-		exec_lines = c_project.load_execution_lines(os.path.join(directory, file_name + ".sft"))
+		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
 		# print("Load", len(c_project.mutant_space.get_mutants()), "mutants from", file_name)
 		# for c_mutant in c_project.mutant_space.get_mutants():
 		# 	c_mutant: Mutant
@@ -489,6 +484,6 @@ if __name__ == "__main__":
 		# 												c_mutant.get_mutation().get_location().line_of(),
 		# 												c_mutant.get_mutation().get_location().get_code(True),
 		# 												c_mutant.get_mutation().get_parameter()))
-		print("Load", exec_lines.get_length(), "execution lines with", len(exec_lines.corpus), "words from", file_name)
+		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
 		print()
 

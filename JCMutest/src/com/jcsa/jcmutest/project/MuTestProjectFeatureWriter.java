@@ -69,7 +69,7 @@ public class MuTestProjectFeatureWriter {
 	
 	/* definitions */
 	/** it provides the data source for featuring **/
-	private MuTestProjectCodeFile source;
+	private MuTestProjectCodeFile source; 
 	/** xxx as the name of output file **/
 	private String file_name;
 	/** directory where the output files are preserved **/

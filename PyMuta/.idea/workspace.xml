@@ -50,7 +50,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
-  <component name="RunManager" selected="Python.muta">
+  <component name="RunManager" selected="Python.mine">
     <configuration name="base" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -221,10 +221,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.mine" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.base" />
-        <item itemvalue="Python.mine" />
       </list>
     </recent_temporary>
   </component>
