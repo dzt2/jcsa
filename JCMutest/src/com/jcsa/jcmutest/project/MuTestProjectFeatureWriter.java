@@ -381,7 +381,7 @@ public class MuTestProjectFeatureWriter {
 		this.writer.write("\t" + flow.get_type());
 		this.writer.write("\t" + this.token_string(flow.get_source()));
 		this.writer.write("\t" + this.token_string(flow.get_target()));
-		this.writer.write("\n");
+		this.writer.write("\n"); 
 	}
 	/**
 	 * [call] call_exec wait_exec
