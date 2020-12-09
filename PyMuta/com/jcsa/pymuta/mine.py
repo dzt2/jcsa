@@ -873,7 +873,7 @@ class MutationPatternWriter:
 						 format("UK-Count",
 								doc_uk_support,
 								pat_uk_support,
-								pat_uk_precision,
+								int(pat_uk_precision * 100000000) / 1000000.0,
 								MutationPatternWriter.__proportion__(pat_uk_support, doc_uk_support)))
 			''' CC-count: doc_cc_support pat_cc_support pat_cc_precision pat_cc_recall '''
 			doc_cc_total, doc_cc_support, doc_cc_precision = classifier.estimate_all(doc_mutants, False)
@@ -882,13 +882,15 @@ class MutationPatternWriter:
 						 format("CC-Count",
 								doc_cc_support,
 								pat_cc_support,
-								pat_cc_precision,
+								int(pat_cc_precision * 100000000) / 1000000.0,
 								MutationPatternWriter.__proportion__(pat_cc_support, doc_cc_support)))
 		return
 
 
 def mining_patterns_on_none(root_path: str, post_path: str):
 	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.80, 1
+	if not(os.path.exists(post_path)):
+		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
@@ -916,7 +918,9 @@ def mining_patterns_on_none(root_path: str, post_path: str):
 
 
 def mining_patterns_on_tests(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.80, 1
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 50, 0.80, 1
+	if not(os.path.exists(post_path)):
+		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
@@ -952,7 +956,9 @@ def mining_patterns_on_tests(root_path: str, post_path: str):
 
 
 def mining_patterns_on_all(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 200, 0.80, 1
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 300, 0.80, 1
+	if not(os.path.exists(post_path)):
+		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
