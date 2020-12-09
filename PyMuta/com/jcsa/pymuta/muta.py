@@ -46,6 +46,7 @@ class TestSpace:
 	def __init__(self, project: CProject, tst_file_path: str):
 		self.project = project
 		self.test_cases = list()
+		self.__parse__(tst_file_path)
 		return
 
 	def get_project(self):
@@ -70,8 +71,8 @@ class TestSpace:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					test_id = int(items[1].strip())
-					parameter = cbase.CToken.parse(items[2].strip()).get_token_value()
+					test_id = int(items[0].strip())
+					parameter = cbase.CToken.parse(items[1].strip()).get_token_value()
 					test_case = TestCase(self, test_id, parameter)
 					test_case_dict[test_case.get_test_id()] = test_case
 		self.test_cases.clear()
@@ -151,11 +152,17 @@ class MutantResult:
 		"""
 		return len(self.kill_sequence)
 
-	def is_killed_by(self, test_id: int):
+	def is_killed_by(self, test_case):
 		"""
-		:param test_id:
+		:param test_case: TestCase or integer ID
 		:return: true --> killed by test of specified ID or None if test_id out of range
 		"""
+		if isinstance(test_case, TestCase):
+			test_case: TestCase
+			test_id = test_case.get_test_id()
+		else:
+			test_case: int
+			test_id = test_case
 		return self.kill_sequence[test_id] == '1'
 
 	def is_killed(self):
@@ -163,6 +170,16 @@ class MutantResult:
 		:return: whether killed by any tests
 		"""
 		return '1' in self.kill_sequence
+
+	def is_killed_in(self, test_cases):
+		"""
+		:param test_cases: collection of test-cases
+		:return: whether the mutant is killed by the set of input test cases
+		"""
+		for test_case in test_cases:
+			if self.is_killed_by(test_case):
+				return True
+		return False
 
 	def get_degree(self):
 		"""
@@ -182,6 +199,7 @@ class MutantResult:
 		project: CProject
 		test_space = project.test_space
 		test_cases = list()
+		# print("\t\t==>", len(test_space.get_test_cases()), "tests against", len(self.kill_sequence), "results.")
 		for test_id in range(0, len(self.kill_sequence)):
 			if self.is_killed_by(test_id):
 				test_case = test_space.get_test_case(test_id)
