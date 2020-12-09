@@ -123,7 +123,7 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 		this.output_file = new File(this.output_directory.getAbsolutePath() + "/" + this.file_name + extension);
 		this.writer = new FileWriter(this.output_file);
-		System.out.println("\t==> Write to file: " + this.output_file.getAbsolutePath());
+		System.out.println("\t==> Write to file: " + this.output_file.getAbsolutePath()); /* WARN inform the users */
 	}
 	
 	/* basic data method */
