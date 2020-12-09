@@ -8,6 +8,7 @@ import random
 import com.jcsa.pymuta.code as ccode
 import com.jcsa.pymuta.muta as cmuta
 
+
 UC_CLASS, UI_CLASS, UP_CLASS, KI_CLASS = "UC", "UI", "UP", "KI"
 
 
@@ -88,28 +89,43 @@ class MutationTestSelector:
 		return selected_sample
 
 	@staticmethod
-	def random_select_test_cases_for(mutants):
+	def select_test_cases_for(project: cmuta.CProject, mutants, min_number: int):
 		"""
-		:param mutants:
-		:return: the set of test cases for killing all mutants in set
+		:param project:
+		:param mutants: the collection of mutants that required to be covered
+		:param min_number: the minimal number of test cases required to be set
+		:return: test cases generated for killing all the input mutants
 		"""
-		remain_mutants = set()
+		''' 1. collect killable mutants from input '''
+		requirements = set()
 		for mutant in mutants:
 			mutant: cmuta.Mutant
 			if mutant.get_result().is_killable():
-				remain_mutants.add(mutant)
-		test_cases = set()
-		while len(remain_mutants) > 0:
-			selected_mutant = MutationTestSelector.__random_select_in__(remain_mutants)
-			remain_mutants.remove(selected_mutant)
+				requirements.add(mutant)
+
+		''' 2. get the minimal set of test cases for covering all objectives '''
+		selected_test_cases = set()
+		while len(requirements) > 0:
+			selected_mutant = MutationTestSelector.__random_select_in__(requirements)
 			selected_mutant: cmuta.Mutant
 			selected_test_case = MutationTestSelector.__random_select_in__(selected_mutant.get_killing_tests())
 			selected_test_case: cmuta.TestCase
-			removed_mutants = selected_test_case.get_killing_mutants(remain_mutants)
-			for mutant in removed_mutants:
-				remain_mutants.remove(mutant)
-			test_cases.add(selected_test_case)
-		return test_cases
+			removed_requirements = selected_test_case.get_killing_mutants(requirements)
+			for requirement in removed_requirements:
+				requirements.remove(requirement)
+			selected_test_cases.add(selected_test_case)
+
+		''' 3. select more random test cases until the number reaches requirement '''
+		remain_test_cases = set()
+		for test_case in project.test_space.get_test_cases():
+			test_case: cmuta.TestCase
+			if not(test_case in selected_test_cases):
+				remain_test_cases.add(test_case)
+		while len(remain_test_cases) > 0 and len(selected_test_cases) < min_number:
+			selected_test_case = MutationTestSelector.__random_select_in__(remain_test_cases)
+			remain_test_cases.remove(selected_test_case)
+			selected_test_cases.add(selected_test_case)
+		return selected_test_cases
 
 	@staticmethod
 	def evaluate_mutation_score(mutants, test_cases):
@@ -918,7 +934,7 @@ def mining_patterns_on_none(root_path: str, post_path: str):
 
 
 def mining_patterns_on_tests(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 50, 0.80, 1
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length, test_proportion = True, True, 2, 0.80, 1, 0.005
 	if not(os.path.exists(post_path)):
 		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
@@ -930,16 +946,17 @@ def mining_patterns_on_tests(root_path: str, post_path: str):
 
 		''' 2. select test cases and generate frequent patterns '''
 		selected_mutants = MutationTestSelector.select_brch_coverage_mutations(c_project.mutant_space.get_mutants())
-		selected_tests = MutationTestSelector.random_select_test_cases_for(selected_mutants)
+		minimal_test_number = int(test_proportion * len(c_project.test_space.get_test_cases()))
+		selected_tests = MutationTestSelector.select_test_cases_for(c_project, selected_mutants, minimal_test_number)
 		killed_mutants, all_score, valid_score = MutationTestSelector.\
 			evaluate_mutation_score(c_project.mutant_space.get_mutants(), selected_tests)
 		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length,
 											 selected_tests)
 		god_patterns, classifier = generator.generate(docs)
 		min_patterns = MutationPatternSelector.select_minimal_patterns(god_patterns)
-		print("\t (1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
-			  "of minimal set.", "\t\tSelect {} test cases, killing {} mutants with score = {}%.".
-			  format(len(selected_tests), len(killed_mutants), valid_score))
+		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
+			  "of minimal set.", "\n\t\tSelect {} test cases, killing {} mutants with score = {}%({}%).".
+			  format(len(selected_tests), len(killed_mutants), all_score, valid_score))
 
 		''' 3. output patterns information '''
 		MutationPatternWriter.write_patterns(docs, min_patterns, classifier,
@@ -989,11 +1006,11 @@ def mining_patterns_on_all(root_path: str, post_path: str):
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	none_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/none"
 	test_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/test"
 	alls_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/alls"
-	mining_patterns_on_none(root_path, none_path)
-	mining_patterns_on_tests(root_path, test_path)
-	mining_patterns_on_all(root_path, alls_path)
+	# mining_patterns_on_none(prev_path, none_path)
+	mining_patterns_on_tests(prev_path, test_path)
+	# mining_patterns_on_all(prev_path, alls_path)
 
