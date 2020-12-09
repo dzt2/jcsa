@@ -41,6 +41,20 @@ class TestCase:
 	def get_parameter(self):
 		return self.parameter
 
+	def get_killing_mutants(self, mutants=None):
+		"""
+		:param mutants: the set of mutants or None for all the mutants in project
+		:return: the set of mutants killed by this test
+		"""
+		if mutants is None:
+			mutants = self.space.get_project().mutant_space.get_mutants()
+		killed_mutants = set()
+		for mutant in mutants:
+			mutant: Mutant
+			if mutant.get_result().is_killed_by(self):
+				killed_mutants.add(mutant)
+		return killed_mutants
+
 
 class TestSpace:
 	def __init__(self, project: CProject, tst_file_path: str):
@@ -120,107 +134,6 @@ class Mutation:
 		return self.parameter
 
 
-class MutantResult:
-	"""
-	test result of a mutant
-	"""
-	def __init__(self, mutant, kill_sequence: str):
-		"""
-		:param mutant:
-		:param kill_sequence:
-		"""
-		mutant: Mutant
-		self.mutant = mutant
-		self.kill_sequence = kill_sequence.strip()
-		return
-
-	def get_mutant(self):
-		return self.mutant
-
-	def get_result(self):
-		"""
-		:return: 01-sequence for killing or not
-		"""
-		return self.kill_sequence
-
-	def __str__(self):
-		return self.kill_sequence
-
-	def get_length(self):
-		"""
-		:return: length of the killing result
-		"""
-		return len(self.kill_sequence)
-
-	def is_killed_by(self, test_case):
-		"""
-		:param test_case: TestCase or integer ID
-		:return: true --> killed by test of specified ID or None if test_id out of range
-		"""
-		if isinstance(test_case, TestCase):
-			test_case: TestCase
-			test_id = test_case.get_test_id()
-		else:
-			test_case: int
-			test_id = test_case
-		return self.kill_sequence[test_id] == '1'
-
-	def is_killed(self):
-		"""
-		:return: whether killed by any tests
-		"""
-		return '1' in self.kill_sequence
-
-	def is_killed_in(self, test_cases):
-		"""
-		:param test_cases: collection of test-cases
-		:return: whether the mutant is killed by the set of input test cases
-		"""
-		for test_case in test_cases:
-			if self.is_killed_by(test_case):
-				return True
-		return False
-
-	def get_degree(self):
-		"""
-		:return: number of tests that kill this mutant
-		"""
-		degree = 0
-		for test_id in range(0, len(self.kill_sequence)):
-			if self.is_killed_by(test_id):
-				degree += 1
-		return degree
-
-	def get_killing_tests(self):
-		"""
-		:return: collection of test cases for killing this mutant
-		"""
-		project = self.mutant.get_space().get_project()
-		project: CProject
-		test_space = project.test_space
-		test_cases = list()
-		# print("\t\t==>", len(test_space.get_test_cases()), "tests against", len(self.kill_sequence), "results.")
-		for test_id in range(0, len(self.kill_sequence)):
-			if self.is_killed_by(test_id):
-				test_case = test_space.get_test_case(test_id)
-				test_cases.append(test_case)
-		return test_cases
-
-	def get_survive_tests(self):
-		"""
-		:return: collection of test cases that cannot kill this mutant
-		"""
-		project = self.mutant.get_space().get_project()
-		project: CProject
-		test_space = project.test_space
-		test_cases = list()
-		for test_id in range(0, len(self.kill_sequence)):
-			if not(self.is_killed_by(test_id)):
-				test_case = test_space.get_test_case(test_id)
-				test_cases.append(test_case)
-		return test_cases
-
-
 class Mutant:
 	"""
 	space, ID, mutation, result, coverage, weak, strong
@@ -233,7 +146,7 @@ class Mutant:
 		self.c_mutant = None		# coverage mutation
 		self.w_mutant = None		# weak mutation
 		self.s_mutant = None		# strong mutation
-		self.result = None			# test result
+		self.result = MutationResult(self)
 		return
 
 	def get_space(self):
@@ -249,7 +162,7 @@ class Mutant:
 		return self.result is not None
 
 	def get_result(self):
-		self.result: MutantResult
+		self.result: MutationResult
 		return self.result
 
 	def get_coverage_mutant(self):
@@ -264,6 +177,20 @@ class Mutant:
 		self.s_mutant: Mutant
 		return self.s_mutant
 
+	def get_killing_tests(self, tests=None):
+		"""
+		:param tests: set of test cases or None for all the tests in space
+		:return: test cases that kill this mutant
+		"""
+		test_cases = set()
+		if tests is None:
+			tests = self.space.get_project().test_space.get_test_cases()
+		for test in tests:
+			test: TestCase
+			if self.result.is_killed_by(test):
+				test_cases.add(test)
+		return test_cases
+
 
 class MutantSpace:
 	def __init__(self, project: CProject, mut_file_path: str, res_file_path: str):
@@ -274,6 +201,7 @@ class MutantSpace:
 		"""
 		self.project = project
 		self.mutants = list()
+		self.results = dict()	# String --> String, Set[MutationResult]
 		self.__parse__(mut_file_path)
 		self.__loads__(res_file_path)
 		return
@@ -325,14 +253,81 @@ class MutantSpace:
 		return
 
 	def __loads__(self, res_file_path: str):
+		self.results.clear()
 		with open(res_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
 					mutant = self.get_mutant(int(items[0].strip()))
-					result = MutantResult(mutant, items[1].strip())
-					mutant.result = result
+					kill_string = items[1].strip()
+					if not(kill_string in self.results):
+						self.results[kill_string] = (kill_string, set())
+					solution = self.results[kill_string]
+					kill_string = solution[0]
+					kill_result = solution[1]
+					mutant.get_result().set_result(kill_string)
+					kill_result.add(mutant.get_result())
+		return
+
+
+class MutationResult:
+	"""
+	It preserves the test results for each mutant.
+	"""
+	def __init__(self, mutant: Mutant):
+		"""
+		create an empty test result for mutant
+		:param mutant:
+		"""
+		self.mutant = mutant
+		self.kill_string = ""
+		return
+
+	def get_mutant(self):
+		return self.mutant
+
+	def get_length(self):
+		return len(self.kill_string)
+
+	def is_killed_by(self, test):
+		"""
+		:param test: TestCase or its Integer ID
+		:return:
+		"""
+		if isinstance(test, TestCase):
+			test: TestCase
+			test_id = test.get_test_id()
+		else:
+			test: int
+			test_id = test
+		return self.kill_string[test_id] == '1'
+
+	def is_killed_in(self, tests):
+		"""
+		:param tests: collection of TestCase(s) or their Integer ID
+		:return: whether be killed by any test in the inputs collection
+		"""
+		for test in tests:
+			if self.is_killed_by(test):
+				return True
+		return False
+
+	def is_killable(self):
+		"""
+		:return: whether killed by any tests in the space
+		"""
+		return '1' in self.kill_string
+
+	def __str__(self):
+		return self.kill_string
+
+	def set_result(self, kill_string: str):
+		"""
+		:param kill_string:
+		:return: set the results of the instance
+		"""
+		self.kill_string = kill_string
 		return
 
 
@@ -414,12 +409,13 @@ class MutantExecutionLine:
 		return annotations
 
 	def __killed__(self, mutant: Mutant):
-		if mutant.has_result():
-			result = mutant.get_result()
-			if self.test_case is None:
-				return result.is_killed()
-			return result.is_killed_by(self.test_case.get_test_id())
-		return None
+		"""
+		:param mutant:
+		:return: whether mutant is killed by the test case in this line
+		"""
+		if self.test_case is None:
+			return mutant.get_result().is_killable()
+		return mutant.get_result().is_killed_by(self.test_case)
 
 	def is_killed(self):
 		return self.__killed__(self.mutant)
@@ -503,5 +499,4 @@ if __name__ == "__main__":
 		# 												c_mutant.get_mutation().get_location().get_code(True),
 		# 												c_mutant.get_mutation().get_parameter()))
 		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
-		print()
 
