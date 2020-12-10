@@ -453,7 +453,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_flw();
 	}
 	
-	/* xxx.tst */ 
+	/* xxx.tst */
 	/**
 	 * ID tst@parameter
 	 * @param test
