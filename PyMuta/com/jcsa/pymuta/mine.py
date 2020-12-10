@@ -897,7 +897,7 @@ def mining_patterns_on_over(root_path: str, post_path: str):
 	:param post_path:
 	:return:
 	"""
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 50, 0.80, 1
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, False, 50, 0.80, 1
 	if not (os.path.exists(post_path)):
 		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
