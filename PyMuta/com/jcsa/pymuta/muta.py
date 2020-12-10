@@ -3,6 +3,7 @@ It implements the data model for mutation and test data.
 """
 
 import os
+import random
 import com.jcsa.pymuta.base as cbase
 import com.jcsa.pymuta.code as ccode
 
@@ -15,6 +16,7 @@ class CProject:
 		res_file = os.path.join(directory, file_name + ".res")
 		self.test_space = TestSpace(self, tst_file)
 		self.mutant_space = MutantSpace(self, mut_file, res_file)
+		self.evaluation = MutationTestEvaluation(self)
 		return
 
 	def load_execution_document(self, fet_file_path: str):
@@ -446,11 +448,15 @@ class MutantExecutionDocument:
 		line: MutantExecutionLine
 		return line
 
-	def get_length(self):
+	def get_mutants(self):
 		"""
-		:return: number of execution lines in the file
+		:return: the set of mutants from which the execution lines cover
 		"""
-		return len(self.lines)
+		mutants = set()
+		for line in self.lines:
+			line: MutantExecutionLine
+			mutants.add(line.get_mutant())
+		return mutants
 
 	def get_corpus(self):
 		return self.corpus.keys()
@@ -484,12 +490,171 @@ class MutantExecutionDocument:
 		return
 
 
+class MutationTestEvaluation:
+	"""
+	It implements the selection of mutation and test case and their evaluation of mutation score.
+	"""
+	def __init__(self, project: CProject):
+		self.project = project
+		return
+
+	def __mutants__(self, mutants):
+		if mutants is None:
+			mutants = self.project.mutant_space.get_mutants()
+		return mutants
+
+	def __test_cases__(self, tests):
+		if tests is None:
+			tests = self.project.test_space.get_test_cases()
+		return tests
+
+	@staticmethod
+	def __rand_select__(samples):
+		"""
+		:param samples:
+		:return: a sample randomly selected from samples or none
+		"""
+		counter = random.randint(0, len(samples))
+		selected_sample = None
+		for sample in samples:
+			selected_sample = sample
+			counter = counter - 1
+			if counter < 0:
+				break
+		return selected_sample
+
+	@staticmethod
+	def __find_test_for__(tests, mutant: Mutant):
+		"""
+		:param tests: find a random test that kill the mutant
+		:param mutant:
+		:return: None if no such tests exist in the given inputs
+		"""
+		mutant.get_killing_tests(tests)
+
+	''' mutation selection '''
+	def select_mutants_by_classes(self, classes, mutants=None):
+		"""
+		:param mutants: collection of mutants from which are selected
+		:param classes: set of mutation operator classes
+		:return: set of mutants of which class is in the given inputs
+		"""
+		selected_mutants = set()
+		mutants = self.__mutants__(mutants)
+		for mutant in mutants:
+			mutant: Mutant
+			if mutant.get_mutation().get_mutation_class() in classes:
+				selected_mutants.add(mutant)
+		return selected_mutants
+
+	def select_mutants_by_results(self, killed: bool, mutants=None, tests=None):
+		"""
+		:param killed: true to select mutants that are killed
+		:param mutants: from which the outputs are selected
+		:param tests: the set of tests for killing the mutants
+		:return: the set of mutants being killed (True) or not (False) by the given tests
+		"""
+		selected_mutants = set()
+		mutants = self.__mutants__(mutants)
+		for mutant in mutants:
+			mutant: Mutant
+			if tests is None:
+				result = mutant.get_result().is_killable()
+			else:
+				result = mutant.get_result().is_killed_in(tests)
+			if result == killed:
+				selected_mutants.add(mutant)
+		return selected_mutants
+
+	''' test case selection '''
+	def select_tests_for_random(self, min_number: int, tests=None):
+		"""
+		:param min_number: minimal number of selected tests
+		:param tests: test cases from which the tests are selected
+		:return: the set of test cases randomly selected from project or inputs
+		"""
+		tests = self.__test_cases__(tests)
+		remain_tests = set()
+		for test in tests:
+			test: TestCase
+			remain_tests.add(test)
+		selected_tests = set()
+		while len(selected_tests) < min_number and len(remain_tests) > 0:
+			selected_test = MutationTestEvaluation.__rand_select__(remain_tests)
+			selected_test: TestCase
+			remain_tests.remove(selected_test)
+			selected_tests.add(selected_test)
+		return selected_tests
+
+	def select_tests_for_mutants(self, mutants, tests=None):
+		"""
+		:param mutants: the mutants being killed by selected tests
+		:param tests: test cases from which the tests are selected
+		:return: selected_tests, remain_mutants
+		"""
+		''' 1. initialization '''
+		remain_mutants = self.select_mutants_by_results(True, mutants, None)		# killable mutants among inputs
+		tests = self.__test_cases__(tests)
+		remain_tests, selected_tests = set(), set()
+		for test in tests:
+			test: TestCase
+			remain_tests.add(test)
+
+		''' 2. test case selection based on mutation '''
+		while len(remain_tests) > 0 and len(remain_mutants) > 0:
+			''' 2.1. select a random mutant for being killed '''
+			mutant = MutationTestEvaluation.__rand_select__(remain_mutants)
+			mutant: Mutant
+			remain_mutants.remove(mutant)
+
+			''' 2.2. select a random test for killing the mutants '''
+			killing_tests = mutant.get_killing_tests(remain_tests)
+			selected_test = MutationTestEvaluation.__rand_select__(killing_tests)
+			selected_test: TestCase
+			remain_tests.remove(selected_test)
+			selected_tests.add(selected_test)
+
+			''' 2.3. update the remaining mutants '''
+			killed_mutants = selected_test.get_killing_mutants(remain_mutants)
+			for killed_mutant in killed_mutants:
+				remain_mutants.remove(killed_mutant)
+
+		''' 3. return the test cases selected for killing all the mutants '''
+		return selected_tests, remain_mutants
+
+	''' mutation score evaluation '''
+	def evaluate_mutation_score(self, mutants, tests):
+		"""
+		:param mutants:
+		:param tests:
+		:return: killed_number, over_score (on all mutants), valid_score (on killable mutants)
+		"""
+		mutants = self.__mutants__(mutants)
+		total, valid, killed = 0, 0, 0
+		for mutant in mutants:
+			mutant: Mutant
+			if tests is None:
+				result = mutant.get_result().is_killable()
+			else:
+				result = mutant.get_result().is_killed_in(tests)
+			if result:
+				killed += 1
+			if mutant.get_result().is_killable():
+				valid += 1
+			total += 1
+		over_score, valid_score = 0.0, 0.0
+		if killed > 0:
+			over_score = killed / (total + 0.0)
+			valid_score = killed / (valid + 0.0)
+		return killed, over_score, valid_score
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	for file_name in os.listdir(root_path):
-		directory = os.path.join(root_path, file_name)
-		c_project = CProject(directory, file_name)
-		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
+	for fname in os.listdir(root_path):
+		dir = os.path.join(root_path, fname)
+		c_project = CProject(dir, fname)
+		docs = c_project.load_execution_document(os.path.join(dir, fname + ".sft"))
 		# print("Load", len(c_project.mutant_space.get_mutants()), "mutants from", file_name)
 		# for c_mutant in c_project.mutant_space.get_mutants():
 		# 	c_mutant: Mutant
@@ -498,5 +663,5 @@ if __name__ == "__main__":
 		# 												c_mutant.get_mutation().get_location().line_of(),
 		# 												c_mutant.get_mutation().get_location().get_code(True),
 		# 												c_mutant.get_mutation().get_parameter()))
-		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
+		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", fname)
 

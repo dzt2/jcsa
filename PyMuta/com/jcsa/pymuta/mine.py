@@ -1,201 +1,65 @@
 """
-This implements the frequent pattern mining on sample (None), test suite, or entire test space
+This implements the extensible algorithm for pattern mining on either mutation or execution-line in the context of
+either static or dynamic (with test cases)
 """
 
 import os
 from typing import TextIO
-import random
 import com.jcsa.pymuta.code as ccode
 import com.jcsa.pymuta.muta as cmuta
 
 
-UC_CLASS, UI_CLASS, UP_CLASS, KI_CLASS = "UC", "UI", "UP", "KI"
-
-
-class MutationTestSelector:
-	"""
-	It selects the mutations, execution lines and test cases for analysis.
-	"""
-	@staticmethod
-	def select_stmt_coverage_mutations(mutants):
-		"""
-		:param mutants: collection of Mutants
-		:return: the set of mutants that require the statement coverage
-		"""
-		selected_mutants = set()
-		for mutant in mutants:
-			mutant: cmuta.Mutant
-			if mutant.get_coverage_mutant() == mutant:
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "STRP":
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "ETRP":
-				selected_mutants.add(mutant)
-		return selected_mutants
-
-	@staticmethod
-	def select_brch_coverage_mutations(mutants):
-		"""
-		:param mutants: collection of Mutants
-		:return: the set of mutants that require the branch coverage
-		"""
-		selected_mutants = set()
-		for mutant in mutants:
-			mutant: cmuta.Mutant
-			if mutant.get_coverage_mutant() == mutant:
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "STRP":
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "ETRP":
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "BTRP":
-				location = mutant.get_mutation().get_location().get_parent()
-				if location.get_class_name().endswith("Statement"):
-					selected_mutants.add(mutant)
-		return selected_mutants
-
-	@staticmethod
-	def select_cond_coverage_mutations(mutants):
-		"""
-		:param mutants: collection of Mutants
-		:return: the set of mutants that require the condition coverage
-		"""
-		selected_mutants = set()
-		for mutant in mutants:
-			mutant: cmuta.Mutant
-			if mutant.get_coverage_mutant() == mutant:
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "STRP":
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "ETRP":
-				selected_mutants.add(mutant)
-			elif mutant.get_mutation().get_mutation_class() == "BTRP":
-				selected_mutants.add(mutant)
-		return selected_mutants
-
-	@staticmethod
-	def __random_select_in__(samples):
-		"""
-		:param samples:
-		:return: a sample randomly selected from set, or None
-		"""
-		counter = random.randint(0, len(samples))
-		selected_sample = None
-		for sample in samples:
-			selected_sample = sample
-			counter = counter - 1
-			if counter < 0:
-				break
-		return selected_sample
-
-	@staticmethod
-	def select_test_cases_for(project: cmuta.CProject, mutants, min_number: int):
-		"""
-		:param project:
-		:param mutants: the collection of mutants that required to be covered
-		:param min_number: the minimal number of test cases required to be set
-		:return: test cases generated for killing all the input mutants
-		"""
-		''' 1. collect killable mutants from input '''
-		requirements = set()
-		for mutant in mutants:
-			mutant: cmuta.Mutant
-			if mutant.get_result().is_killable():
-				requirements.add(mutant)
-
-		''' 2. get the minimal set of test cases for covering all objectives '''
-		selected_test_cases = set()
-		while len(requirements) > 0:
-			selected_mutant = MutationTestSelector.__random_select_in__(requirements)
-			selected_mutant: cmuta.Mutant
-			selected_test_case = MutationTestSelector.__random_select_in__(selected_mutant.get_killing_tests())
-			selected_test_case: cmuta.TestCase
-			removed_requirements = selected_test_case.get_killing_mutants(requirements)
-			for requirement in removed_requirements:
-				requirements.remove(requirement)
-			selected_test_cases.add(selected_test_case)
-
-		''' 3. select more random test cases until the number reaches requirement '''
-		remain_test_cases = set()
-		for test_case in project.test_space.get_test_cases():
-			test_case: cmuta.TestCase
-			if not(test_case in selected_test_cases):
-				remain_test_cases.add(test_case)
-		while len(remain_test_cases) > 0 and len(selected_test_cases) < min_number:
-			selected_test_case = MutationTestSelector.__random_select_in__(remain_test_cases)
-			remain_test_cases.remove(selected_test_case)
-			selected_test_cases.add(selected_test_case)
-		return selected_test_cases
-
-	@staticmethod
-	def evaluate_mutation_score(mutants, test_cases):
-		"""
-		:param mutants:
-		:param test_cases:
-		:return: killed mutants, score, valid_score
-		"""
-		killable_mutants, killed_mutants = set(), set()
-		for mutant in mutants:
-			mutant: cmuta.Mutant
-			if mutant.get_result().is_killable():
-				killable_mutants.add(mutant)
-				if mutant.get_result().is_killed_in(test_cases):
-					killed_mutants.add(mutant)
-		all_score, val_score = 0.0, 0.0
-		if len(mutants) > 0:
-			all_score = len(killed_mutants) / (len(mutants) + 0.0)
-			val_score = len(killed_mutants) / (len(killable_mutants) + 0.0)
-		return killed_mutants, int(all_score * 1000000) / 10000.0, int(val_score * 1000000) / 10000.0
+UC_CLASS = "UC"				# non-covered mutation
+UI_CLASS = "UI"				# non-infected mutation
+UP_CLASS = "UP"				# non-propagate mutation
+KI_CLASS = "KI"				# mutation is killed
 
 
 class MutationClassifier:
 	"""
-	It implements the classification on Mutant or MutantExecutionLine
+	It implements the classification on Mutants or MutantExecutionLine.
 	"""
-	def __init__(self, test_cases):
+	def __init__(self, tests):
 		"""
-		:param test_cases: None to count the mutation while set for counting the execution times
+		:param tests: it provides test cases in which the UC, UI, UP, KI are counted
+						or None to count on samples itself.
 		"""
-		self.cache = dict()
-		self.tests = test_cases
+		self.all_tests = tests
+		self.solutions = dict()		# Mutant|MutantExecutionLine --> (uc, ui, up, ki)
 		return
 
-	def __evaluate_one__(self, sample):
+	def __get_solution__(self, sample):
 		"""
-		:param sample: MutantExecutionLine or Mutant
-		:return: uc, ui, up, ki
+		:param sample: Mutant or MutantExecutionLine
+		:return: 	uc (number of non-covered tests on sample)
+					ui (number of non-infect tests on sample)
+					up (number of non-propagate tests on sample)
+					ki (number of killing tests on sample)
 		"""
-		if not (sample in self.cache):
+		solution = self.solutions[sample]
+		uc = solution[0]
+		ui = solution[1]
+		up = solution[2]
+		ki = solution[3]
+		uc: int
+		ui: int
+		up: int
+		ki: int
+		return uc, ui, up, ki
+
+	def __evaluate_on__(self, sample):
+		"""
+		:param sample: Mutant or MutantExecutionLine
+		:return: 	uc (number of non-covered tests on sample)
+					ui (number of non-infect tests on sample)
+					up (number of non-propagate tests on sample)
+					ki (number of killing tests on sample)
+		"""
+		if not(sample in self.solutions):
 			uc, ui, up, ki = 0, 0, 0, 0
-			if isinstance(sample, cmuta.Mutant):
-				sample: cmuta.Mutant
-				s_result = sample.get_result()
-				w_result = sample.get_weak_mutant().get_result()
-				c_result = sample.get_coverage_mutant().get_result()
-				if self.tests is None:
-					# evaluate on all the test cases as known
-					if s_result.is_killable():
-						ki += 1
-					elif w_result.is_killable():
-						up += 1
-					elif c_result.is_killable():
-						ui += 1
-					else:
-						uc += 1
-				else:
-					# evaluate on constraint-based test cases
-					for test_case in self.tests:
-						if s_result.is_killed_by(test_case):
-							ki += 1
-						elif w_result.is_killed_by(test_case):
-							up += 1
-						elif c_result.is_killed_by(test_case):
-							ui += 1
-						else:
-							uc += 1
-			else:
+			if isinstance(sample, cmuta.MutantExecutionLine):		# line for test or on mutant when test not specified
 				sample: cmuta.MutantExecutionLine
-				if sample.has_test_case():
+				if sample.has_test_case():							# one line on one test case
 					if sample.is_killed():
 						ki += 1
 					elif sample.is_infected():
@@ -204,24 +68,42 @@ class MutationClassifier:
 						ui += 1
 					else:
 						uc += 1
-				else:
+				else:												# one line on given tests, --> solve by mutant
 					mutant = sample.get_mutant()
-					uc, ui, up, ki = self.__evaluate_one__(mutant)
-			self.cache[sample] = (uc, ui, up, ki)
-		solution = self.cache[sample]
-		uc, ui, up, ki = solution[0], solution[1], solution[2], solution[3]
-		uc: int
-		ui: int
-		up: int
-		ki: int
-		return uc, ui, up, ki
+					uc, ui, up, ki = self.__evaluate_on__(mutant)
+			else:													# mutant for test or none for counting on itself
+				sample: cmuta.Mutant
+				s_result = sample.get_result()
+				w_result = sample.get_weak_mutant().get_result()
+				c_result = sample.get_coverage_mutant().get_result()
+				if self.all_tests is None:							# none tests ==> counting on sample itself
+					if s_result.is_killable():
+						ki += 1
+					elif w_result.is_killable():
+						up += 1
+					elif c_result.is_killable():
+						ui += 1
+					else:
+						uc += 1
+				else:												# tests set ==> counting on test cases
+					for test in self.all_tests:
+						if s_result.is_killed_by(test):
+							ki += 1
+						elif w_result.is_killed_by(test):
+							up += 1
+						elif c_result.is_killed_by(test):
+							ui += 1
+						else:
+							uc += 1
+			self.solutions[sample] = (uc, ui, up, ki)
+		return self.__get_solution__(sample)
 
 	def classify_one(self, sample):
 		"""
 		:param sample: Mutant or MutantExecutionLine
-		:return: UC|UI|UP|KI
+		:return: UC or UI or UP or KI
 		"""
-		uc, ui, up, ki = self.__evaluate_one__(sample)
+		uc, ui, up, ki = self.__evaluate_on__(sample)
 		if ki > 0:
 			return KI_CLASS
 		elif up > 0:
@@ -233,8 +115,8 @@ class MutationClassifier:
 
 	def classify_all(self, samples):
 		"""
-		:param samples:
-		:return: [UC,UI,UP,KI] ==> set[Mutant|MutantExecutionLine]
+		:param samples: collection of Mutant or MutantExecutionLine
+		:return: mapping from UC|UI|UP|KI to set of samples matching with
 		"""
 		results = dict()
 		results[UC_CLASS] = set()
@@ -248,12 +130,12 @@ class MutationClassifier:
 
 	def counting_all(self, samples):
 		"""
-		:param samples:
+		:param samples: collection of Mutant or MutantExecutionLine
 		:return: uc, ui, up, ki, uk, cc
 		"""
 		uc, ui, up, ki = 0, 0, 0, 0
 		for sample in samples:
-			luc, lui, lup, lki = self.__evaluate_one__(sample)
+			luc, lui, lup, lki = self.__evaluate_on__(sample)
 			uc += luc
 			ui += lui
 			up += lup
@@ -262,9 +144,10 @@ class MutationClassifier:
 
 	def estimate_all(self, samples, uk_or_cc: bool):
 		"""
-		:param samples: set of Mutant or MutantExecutionLine
-		:param uk_or_cc: true to estimate on non-killed, and false to estimate on CC
-		:return: total, support, precision
+		:param uk_or_cc: true to estimate on non-killed sample-tests, while false
+							to estimate on coincidental correctness sample-tests.
+		:param samples: collection of Mutant or MutantExecutionLine
+		:return: total, support, confidence
 		"""
 		uc, ui, up, ki, uk, cc = self.counting_all(samples)
 		total = uc + ui + up + ki
@@ -272,65 +155,50 @@ class MutationClassifier:
 			support = uk
 		else:
 			support = cc
-		precision = 0.0
+		confidence = 0.0
 		if support > 0:
-			precision = support / (total + 0.0)
-		return total, support, precision
+			confidence = support / (support + ki + 0.0)
+		return total, support, confidence
 
-	def select_goods(self, samples, uk_or_cc: bool):
+	def select_samples(self, samples, uk_or_cc: bool):
 		"""
-		:param samples:
-		:param uk_or_cc: true to select non-killed and false to select CC samples
-		:return:
+		:param samples: Collection of Mutant or MutantExecutionLine
+		:param uk_or_cc: true to select non-killed samples in the context of given test cases
+						or false to select coincidental correctness samples
+		:return: Set[Mutant|MutantExecutionLine]
 		"""
-		results = self.classify_all(samples)
-		selected_samples = results[UI_CLASS] | results[UP_CLASS]
+		class_dict = self.classify_all(samples)
+		selected_samples = class_dict[UI_CLASS] | class_dict[UP_CLASS]
 		if uk_or_cc:
-			selected_samples = selected_samples | results[UC_CLASS]
+			selected_samples = selected_samples | class_dict[UP_CLASS]
 		return selected_samples
-
-	@staticmethod
-	def mutation_based_classifier():
-		"""
-		:return:
-		"""
-		return MutationClassifier(None)
-
-	@staticmethod
-	def test_set_based_classifier(tests):
-		"""
-		:param tests: set of test cases
-		:return:
-		"""
-		return MutationClassifier(tests)
-
-	@staticmethod
-	def project_based_classifier(project: cmuta.CProject):
-		"""
-		:param project:
-		:return:
-		"""
-		return MutationClassifier(project.test_space.get_test_cases())
 
 
 class MutationPattern:
 	"""
-	Each pattern includes a set of words to match with the lines or mutants
+	It describes the pattern of MutantExecutionLine by a set of words in the line
 	"""
-	''' constructor '''
-
 	def __init__(self, classifier: MutationClassifier):
+		"""
+		:param classifier: used to estimate this pattern
+		"""
 		self.words = list()
 		self.lines = list()
 		self.classifier = classifier
 		return
 
-	''' feature words '''
+	''' words getters '''
 
 	def get_words(self):
+		"""
+		:return: feature words that define this pattern
+		"""
 		return self.words
 
 	def __len__(self):
+		"""
+		:return: the length of the pattern is the number of its words
+		"""
 		return len(self.words)
 
 	def __str__(self):
@@ -339,21 +207,26 @@ class MutationPattern:
 	def get_annotations(self, program: ccode.CProgram):
 		"""
 		:param program:
-		:return: annotations generated from word in the pattern
+		:return: parse the words into CirAnnotation(s)
 		"""
 		annotations = list()
 		for word in self.words:
-			word: str
-			annotation = cmuta.CirAnnotation.parse(word.strip(), program)
+			annotation = cmuta.CirAnnotation.parse(word, program)
 			annotations.append(annotation)
 		return annotations
 
-	''' data samples '''
+	''' data operations '''
 
 	def get_lines(self):
+		"""
+		:return: execution lines matched by this pattern
+		"""
 		return self.lines
 
 	def get_mutants(self):
+		"""
+		:return: the mutants of the lines in the pattern
+		"""
 		mutants = set()
 		for line in self.lines:
 			line: cmuta.MutantExecutionLine
@@ -363,70 +236,70 @@ class MutationPattern:
 	def __match__(self, line: cmuta.MutantExecutionLine):
 		"""
 		:param line:
-		:return: true if the line matches with the pattern
+		:return: whether the pattern matches with the line
 		"""
 		for word in self.words:
-			if not (word in line.get_words()):
+			if not(word in line.get_words()):
 				return False
 		return True
 
 	def set_lines(self, lines):
 		"""
-		:param lines: the set of lines being matched with this pattern
-		:return: update self.lines by matching with the inputs lines
+		:param lines: collection of MutantExecutionLine
+		:return: update self.lines by matching with the inputs
 		"""
 		self.lines.clear()
 		for line in lines:
-			line: cmuta.MutantExecutionLine
 			if self.__match__(line):
 				self.lines.append(line)
 		return
 
-	''' classification '''
+	''' estimation method '''
+
+	def __samples__(self, line_or_mutant: bool):
+		"""
+		:param line_or_mutant:
+		:return: true to return self.lines or false to return self.get_mutants()
+		"""
+		if line_or_mutant:
+			return self.lines
+		else:
+			return self.get_mutants()
 
 	def classify(self, line_or_mutant: bool):
 		"""
-		:param line_or_mutant: true to classify the lines or false to classify the mutants
-		:return: [UC, UI, UP, KI] ==> set of MutantExecutionLine (True) or Mutant (False)
+		:param line_or_mutant: true to classify on lines or false to classify on lines
+		:return: mapping from UC|UI|UP|KI to set of Lines (True) or Mutants (False)
 		"""
-		if line_or_mutant:
-			samples = self.get_lines()
-		else:
-			samples = self.get_mutants()
+		samples = self.__samples__(line_or_mutant)
 		return self.classifier.classify_all(samples)
 
 	def counting(self, line_or_mutant: bool):
 		"""
-		:param line_or_mutant: true to classify the lines or false to classify the mutants
+		:param line_or_mutant: true to count on lines or false to classify on lines
 		:return: uc, ui, up, ki, uk, cc
 		"""
-		if line_or_mutant:
-			samples = self.get_lines()
-		else:
-			samples = self.get_mutants()
+		samples = self.__samples__(line_or_mutant)
 		return self.classifier.counting_all(samples)
 
 	def estimate(self, line_or_mutant: bool, uk_or_cc: bool):
 		"""
-		:param line_or_mutant: true to classify the lines or false to classify the mutants
-		:param uk_or_cc: true to estimate on non-killed or false to estimate on CC samples
-		:return: total, support, precision
+		:param line_or_mutant: true to count on lines or false to count on mutants
+		:param uk_or_cc: true to estimate on non-killed while false to estimate on coincidental correct samples
+		:return: total, support, confidence
 		"""
-		if line_or_mutant:
-			samples = self.get_lines()
-		else:
-			samples = self.get_mutants()
+		samples = self.__samples__(line_or_mutant)
 		return self.classifier.estimate_all(samples, uk_or_cc)
 
 	''' relationship '''
 
 	def get_child(self, word: str):
 		"""
-		:param word:
-		:return: extend to create a child from the pattern or itself if the word is not additional
+		:param word: additional word added to extend the parent pattern to generate its child
+		:return: child pattern extended from this pattern by adding one word or itself
 		"""
 		word = word.strip()
-		if len(word) > 0 and not (word in self.words):
+		if len(word) > 0 and not(word in self.words):
 			child = MutationPattern(self.classifier)
 			for old_word in self.words:
 				child.words.append(old_word)
@@ -438,165 +311,91 @@ class MutationPattern:
 	def subsume(self, pattern):
 		"""
 		:param pattern:
-		:return: true if the lines of this pattern include all those lines in given pattern
+		:return: this subsumes the pattern if the lines in pattern is subset of this one
 		"""
 		pattern: MutationPattern
 		for line in pattern.get_lines():
-			if not (line in self.lines):
+			if not(line in self.lines):
 				return False
 		return True
 
 
-class MutationPatternGenerator:
+class MutationPatterns:
 	"""
-	It generate patterns using association rules mining
+	It maintains the input and output data for generated patterns
 	"""
-	def __init__(self, line_or_mutant: bool, uk_or_cc: bool, min_support: int, max_precision: float, max_length: int, test_cases):
+	def __init__(self, document: cmuta.MutantExecutionDocument, classifier_tests):
 		"""
-		:param line_or_mutant: true to classify the lines or false to classify the mutants
-		:param uk_or_cc: true to estimate on non-killed or false to estimate on CC samples
-		:param min_support: minimal number of good samples in each pattern
-		:param max_precision: maximal precision once achieved the algorithm will stop
-		:param max_length: the maximal length of words in each pattern
-		:param test_cases: used as context to classify the mutations under analysis
+		:param document: it provides all the lines and mutants for mining patterns
+		:param classifier_tests: used to create mutation classifier or None to count on sample rather than its tests
 		"""
-		self.line_or_mutant = line_or_mutant
-		self.uk_or_cc = uk_or_cc
-		self.min_support = min_support
-		self.max_precision = max_precision
-		self.max_length = max_length
-		self.patterns = dict()		# String --> MutationPattern
-		self.solution = dict()		# Pattern --> [total, support, precision]
-		self.test_cases = test_cases
-		self.classifier = MutationClassifier(test_cases)
-		return
-
-	def __root__(self, document: cmuta.MutantExecutionDocument, word: str):
-		"""
-		:param document:
-		:param word:
-		:return: root pattern with one single word that matches with the entire lines in document
-		"""
-		root = MutationPattern(self.classifier)
-		root = root.get_child(word)
-		if not(str(root) in self.patterns):
-			self.patterns[str(root)] = root
-			root.set_lines(document.get_lines())
-		root = self.patterns[str(root)]
-		root: MutationPattern
-		return root
-
-	def __child__(self, parent: MutationPattern, word: str):
-		"""
-		:param parent:
-		:param word:
-		:return: the child pattern (unique) generated from the parent by adding one word
-		"""
-		child = parent.get_child(word)
-		if child != parent and not(str(child) in self.patterns):
-			self.patterns[str(child)] = child
-			child.set_lines(parent.get_lines())
-		child = self.patterns[str(child)]
-		child: MutationPattern
-		return child
-
-	def __filter__(self):
-		"""
-		:return: good patterns selected from the generated solutions
-		"""
-		good_patterns = set()
-		for pattern, solution in self.solution.items():
-			pattern: MutationPattern
-			support = solution[1]
-			precision = solution[2]
-			if support >= self.min_support and precision >= self.max_precision and len(pattern.words) <= self.max_length:
-				good_patterns.add(pattern)
-		return good_patterns
-
-	def __generate__(self, parent: MutationPattern, words):
-		"""
-		:param parent:
-		:param words:
-		:return:
-		"""
-		if not(parent in self.solution):
-			total, support, precision = parent.estimate(self.line_or_mutant, self.uk_or_cc)
-			self.solution[parent] = [total, support, precision]
-		solution = self.solution[parent]
-		support = solution[1]
-		precision = solution[2]
-		if support >= self.min_support and precision <= self.max_precision and len(parent.words) < self.max_length:
-			for word in words:
-				child = self.__child__(parent, word)
-				if child != parent:
-					self.__generate__(child, words)
-		return
-
-	def generate(self, document: cmuta.MutantExecutionDocument):
-		"""
-		:param document:
-		:return: good patterns, classifier
-		"""
-		self.patterns.clear()
-		self.solution.clear()
-		self.classifier = MutationClassifier(self.test_cases)
-		init_lines = self.classifier.select_goods(document.get_lines(), self.uk_or_cc)
-		for init_line in init_lines:
-			init_line: cmuta.MutantExecutionLine
-			words = init_line.get_words()
-			for word in words:
-				root_pattern = self.__root__(document, word)
-				self.__generate__(root_pattern, words)
-		good_patterns = self.__filter__()
-		self.patterns.clear()
-		self.solution.clear()
-		classifier = self.classifier
-		return good_patterns, classifier
-
-
-class MutationPatternSelector:
-	"""
-	It select subset of mutation patterns from good one
-	"""
-	@staticmethod
-	def select_samples_in_patterns(patterns, line_or_mutant: bool):
-		"""
-		:param patterns:
-		:param line_or_mutant: true to select MutantExecutionLine or false to select Mutant
-		:return:
-		"""
-		samples = set()
-		for pattern in patterns:
-			pattern: MutationPattern
-			for line in pattern.get_lines():
-				line: cmuta.MutantExecutionLine
-				if line_or_mutant:
-					samples.add(line)
-				else:
-					samples.add(line.get_mutant())
-		return samples
-
-	@staticmethod
-	def select_samples_in_document(document: cmuta.MutantExecutionDocument, line_or_mutant: bool):
-		"""
-		:param document:
-		:param line_or_mutant:
-		:return: collection of lines (True) or mutants (False) in the document
-		"""
-		samples = set()
+		self.document = document
+		self.doc_lines = set()
+		self.doc_mutants = set()
 		for line in document.get_lines():
 			line: cmuta.MutantExecutionLine
-			if line_or_mutant:
-				samples.add(line)
-			else:
-				samples.add(line.get_mutant())
-		return samples
+			self.doc_lines.add(line)
+			self.doc_mutants.add(line.get_mutant())
+		self.classifier = MutationClassifier(classifier_tests)
+		self.patterns = set()
+		self.pat_lines = set()
+		self.pat_mutants = set()
+		return
 
-	@staticmethod
-	def select_minimal_patterns(patterns):
+	def get_doc_lines(self):
+		"""
+		:return: lines in the document
+		"""
+		return self.doc_lines
+
+	def get_doc_mutants(self):
+		"""
+		:return: mutants in the document
+		"""
+		return self.doc_mutants
+
+	def get_pat_lines(self):
+		"""
+		:return: the lines in the patterns
+		"""
+		return self.pat_lines
+
+	def get_pat_mutants(self):
+		"""
+		:return: mutants in the pattern
+		"""
+		return self.pat_mutants
+
+	def get_patterns(self):
+		"""
+		:return: patterns generated in the data context
+		"""
+		return self.patterns
+
+	def set_patterns(self, patterns):
 		"""
 		:param patterns:
-		:return: the minimal set of patterns selected from inputs that can covering all the lines of the others
+		:return: update the patterns and lines in the pattern
+		"""
+		self.patterns.clear()
+		self.pat_mutants.clear()
+		self.pat_lines.clear()
+		for pattern in patterns:
+			pattern: MutationPattern
+			self.patterns.add(pattern)
+			for line in pattern.get_lines():
+				line: cmuta.MutantExecutionLine
+				self.pat_lines.add(line)
+				self.pat_mutants.add(line.get_mutant())
+		return
+
+	''' generator methods '''
+
+	@staticmethod
+	def get_minimal_patterns(patterns):
+		"""
+		:param patterns:
+		:return: minimal patterns that subsume all the others in the set
 		"""
 		remain_patterns, removed_patterns, minimal_patterns = set(), set(), set()
 		for pattern in patterns:
@@ -627,7 +426,7 @@ class MutationPatternSelector:
 		"""
 		:param patterns:
 		:param line_or_mutant:
-		:return: map from line (True) or mutant (False) to the set of patterns matching with it
+		:return: mapping from line(True) or Mutant(False) to patterns
 		"""
 		results = dict()
 		for pattern in patterns:
@@ -638,18 +437,18 @@ class MutationPatternSelector:
 					sample = line
 				else:
 					sample = line.get_mutant()
-				if not(sample in results):
+				if not (sample in results):
 					results[sample] = set()
 				results[sample].add(pattern)
 		return results
 
 	@staticmethod
-	def select_best_pattern(patterns, line_or_mutant: bool, uk_or_cc: bool, precision_buffer_size=8):
+	def get_best_pattern_in(patterns, line_or_mutant: bool, uk_or_cc: bool, buffer_size=8):
 		"""
-		:param uk_or_cc:
-		:param line_or_mutant:
 		:param patterns:
-		:param precision_buffer_size: the size of buffer to preserve patterns with maximal precision of top-N
+		:param line_or_mutant: true to take line as sample or false to take mutant as sample
+		:param uk_or_cc: true to estimate on non-killed but false to estimate on coincidental correctness
+		:param buffer_size: size of buffer to preserve top-N confidence
 		:return:
 		"""
 		new_patterns = set()
@@ -658,7 +457,7 @@ class MutationPatternSelector:
 			new_patterns.add(pattern)
 
 		precision_buffer = list()
-		while len(precision_buffer) < precision_buffer_size and len(new_patterns) > 0:
+		while len(precision_buffer) < buffer_size and len(new_patterns) > 0:
 			best_precision, best_pattern = 0.0, None
 			for pattern in new_patterns:
 				total, support, precision = pattern.estimate(line_or_mutant, uk_or_cc)
@@ -679,7 +478,116 @@ class MutationPatternSelector:
 		return best_pattern
 
 
+class MutationPatternGenerator:
+	"""
+	It generates patterns using frequent pattern mining.
+	"""
+	def __init__(self, line_or_mutant: bool, uk_or_cc: bool, min_support: int, max_confidence: float, max_length: int):
+		"""
+		:param line_or_mutant: true to take sample as MutantExecutionLine or false to take as Mutant
+		:param uk_or_cc: true to estimate on non-killed samples while false to estimate on CC ones
+		:param min_support: minimal support required for generated patterns
+		:param max_confidence: maximal confidence to stop pattern mining
+		:param max_length: maximal length for words in the pattern
+		"""
+		self.line_or_mutant = line_or_mutant
+		self.uk_or_cc = uk_or_cc
+		self.min_support = min_support
+		self.max_confidence = max_confidence
+		self.max_length = max_length
+		self.patterns = dict()		# string ==> MutationPattern
+		self.solutions = dict()		# MutationPattern ==> [total, support, confidence]
+		return
+
+	def __root__(self, patterns: MutationPatterns, word: str):
+		"""
+		:param patterns:
+		:param word:
+		:return: unique root pattern with one single word
+		"""
+		root = MutationPattern(patterns.classifier)
+		root = root.get_child(word.strip())
+		if not(str(root) in self.patterns):
+			self.patterns[str(root)] = root
+			root.set_lines(patterns.get_doc_lines())
+		root = self.patterns[str(root)]
+		root: MutationPattern
+		return root
+
+	def __child__(self, parent: MutationPattern, word: str):
+		"""
+		:param parent:
+		:param word:
+		:return: child pattern extended from parent with adding one word
+		"""
+		child = parent.get_child(word.strip())
+		if not(str(child) in self.patterns):
+			self.patterns[str(child)] = child
+			child.set_lines(parent.get_lines())
+		child = self.patterns[str(child)]
+		child: MutationPattern
+		return child
+
+	def __inputs__(self, patterns: MutationPatterns):
+		"""
+		:param patterns:
+		:return: the collection of lines as either non-killed or coincidental correctness
+		"""
+		classifier = patterns.classifier
+		return classifier.select_samples(patterns.get_doc_lines(), self.uk_or_cc)
+
+	def __output__(self, patterns: MutationPatterns):
+		"""
+		:param patterns:
+		:return: update the good patterns generated from solutions
+		"""
+		good_patterns = set()
+		for pattern, solution in self.solutions.items():
+			pattern: MutationPattern
+			support = solution[1]
+			confidence = solution[2]
+			length = len(pattern.words)
+			if length <= self.max_length and support >= self.min_support and confidence >= self.max_confidence:
+				good_patterns.add(pattern)
+		patterns.set_patterns(good_patterns)
+		return
+
+	def __generate__(self, parent: MutationPattern, words):
+		if not(parent in self.solutions):
+			total, support, confidence = parent.estimate(self.line_or_mutant, self.uk_or_cc)
+			self.solutions[parent] = (total, support, confidence)
+		solution = self.solutions[parent]
+		support = solution[1]
+		confidence = solution[2]
+		length = len(parent.words)
+		if length < self.max_length and support >= self.min_support and confidence <= self.max_confidence:
+			for word in words:
+				child = self.__child__(parent, word)
+				if child != parent:
+					self.__generate__(child, words)
+		return
+
+	def generate(self, patterns: MutationPatterns):
+		"""
+		:param patterns:
+		:return:
+		"""
+		init_lines = self.__inputs__(patterns)
+		for init_line in init_lines:
+			init_line: cmuta.MutantExecutionLine
+			words = init_line.get_words()
+			for word in words:
+				root = self.__root__(patterns, word)
+				self.__generate__(root, words)
+		self.__output__(patterns)
+		return
+
+
 class MutationPatternWriter:
+	"""
+	It implements writing the information of patterns on output
+	"""
+
 	@staticmethod
 	def __proportion__(x: int, y: int):
 		if x == 0:
@@ -687,6 +595,19 @@ class MutationPatternWriter:
 		else:
 			ratio = x / (y + 0.0)
 			return int(ratio * 100000000) / 1000000.0
+
+	@staticmethod
+	def __prf_evaluation__(doc_samples: set, pat_samples: set):
+		int_samples = doc_samples & pat_samples
+		doc_size, pat_size, int_size = len(doc_samples), len(pat_samples), len(int_samples)
+		if int_size > 0:
+			precision = int_size / (pat_size + 0.0)
+			recall = int_size / (doc_size + 0.0)
+			f1_score = 2 * precision * recall / (precision + recall)
+			return int(precision * 10000) / 100.0, int(1000000 * recall) / 10000.0, int(f1_score * 1000000) / 1000000.0
+		return 0.0, 0.0, 0.0
+
+	''' pattern writer '''
 
 	@staticmethod
 	def __write_pattern_count__(writer: TextIO, pattern: MutationPattern):
@@ -700,15 +621,13 @@ class MutationPatternWriter:
 		line2 = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
 		writer.write(line2.format("Metrics", "UC", "UI", "UP", "KI", "UK(%)", "CC(%)"))
 		uc, ui, up, ki, uk, cc = pattern.counting(True)
-		total = uc + ui + up + ki
 		writer.write(line2.format("Line", uc, ui, up, ki,
-								  MutationPatternWriter.__proportion__(uk, total),
-								  MutationPatternWriter.__proportion__(cc, total)))
+								  MutationPatternWriter.__proportion__(uk, uk + ki),
+								  MutationPatternWriter.__proportion__(cc, cc + ki)))
 		uc, ui, up, ki, uk, cc = pattern.counting(False)
-		total = uc + ui + up + ki
 		writer.write(line2.format("Mutant", uc, ui, up, ki,
-								  MutationPatternWriter.__proportion__(uk, total),
-								  MutationPatternWriter.__proportion__(cc, total)))
+								  MutationPatternWriter.__proportion__(uk, uk + ki),
+								  MutationPatternWriter.__proportion__(cc, cc + ki)))
 		writer.write("\n")
 		return
 
@@ -726,7 +645,7 @@ class MutationPatternWriter:
 		for annotation in annotations:
 			writer.write("\tWord[{}]\t{}\t{}\t\"{}\"\t\"{}\"\t\"{}\"\n".
 						 format(index, annotation.get_type(), annotation.get_execution(),
-								annotation.get_execution().get_statement().get_cir_id(),
+								annotation.get_execution().get_statement().get_cir_code(),
 								annotation.get_location().get_cir_code(), annotation.get_parameter()))
 			index += 1
 		writer.write("\n")
@@ -754,28 +673,17 @@ class MutationPatternWriter:
 		return
 
 	@staticmethod
-	def __prf_evaluation__(doc_samples: set, pat_samples: set):
-		int_samples = doc_samples & pat_samples
-		doc_size, pat_size, int_size = len(doc_samples), len(pat_samples), len(int_samples)
-		if int_size > 0:
-			precision = int_size / (pat_size + 0.0)
-			recall = int_size / (doc_size + 0.0)
-			f1_score = 2 * precision * recall / (precision + recall)
-			return int(precision * 10000) / 100.0, int(10000 * recall) / 100.0, int(f1_score * 10000) / 10000.0
-		return 0.0, 0.0, 0.0
-
-	@staticmethod
-	def __write_patterns_summary__(writer: TextIO, document: cmuta.MutantExecutionDocument, patterns, classifier: MutationClassifier):
+	def __write_patterns_summary__(writer: TextIO, data: MutationPatterns, patterns):
 		"""
 		:param writer:
-		:param document:
-		:param patterns:
+		:param data:
 		:return:
 		"""
-		doc_lines = MutationPatternSelector.select_samples_in_document(document, True)
-		doc_mutants = MutationPatternSelector.select_samples_in_document(document, False)
-		pat_lines = MutationPatternSelector.select_samples_in_patterns(patterns, True)
-		pat_mutants = MutationPatternSelector.select_samples_in_patterns(patterns, False)
+		doc_lines = data.get_doc_lines()
+		doc_mutants = data.get_doc_mutants()
+		pat_lines = data.get_pat_lines()
+		pat_mutants = data.get_pat_mutants()
+		classifier = data.classifier
 		writer.write("Evaluation\n")
 		writer.write("\tPatterns := {}\tLines := {}({}%)\tMutants := {}({}%)\n".
 					 format(len(patterns),
@@ -792,10 +700,10 @@ class MutationPatternWriter:
 							cc_support,
 							MutationPatternWriter.__proportion__(len(patterns), cc_support)))
 		writer.write("\tTitle\tPrecision(%)\tRecall(%)\tF1-Score\n")
-		uk_lines = classifier.select_goods(doc_lines, True)
-		cc_lines = classifier.select_goods(doc_lines, False)
-		uk_mutants = classifier.select_goods(doc_mutants, True)
-		cc_mutants = classifier.select_goods(doc_mutants, False)
+		uk_lines = classifier.select_samples(doc_lines, True)
+		cc_lines = classifier.select_samples(doc_lines, False)
+		uk_mutants = classifier.select_samples(doc_mutants, True)
+		cc_mutants = classifier.select_samples(doc_mutants, False)
 		template = "\t{}\t{}\t{}\t{}\t{}\n"
 		precision, recall, f1_score = MutationPatternWriter.__prf_evaluation__(uk_lines, pat_lines)
 		writer.write(template.format("UK-LINE", len(uk_lines), precision, recall, f1_score))
@@ -808,15 +716,15 @@ class MutationPatternWriter:
 		return
 
 	@staticmethod
-	def write_patterns(document: cmuta.MutantExecutionDocument, patterns, classifier: MutationClassifier, output_file: str):
-		with open(output_file, 'w') as writer:
-			MutationPatternWriter.__write_patterns_summary__(writer, document, patterns, classifier)
+	def write_patterns(data: MutationPatterns, patterns, output_file_path: str):
+		with open(output_file_path, 'w') as writer:
+			MutationPatternWriter.__write_patterns_summary__(writer, data, patterns)
 			pid = 0
 			for pattern in patterns:
 				pattern: MutationPattern
 				writer.write("\nBEG\t" + str(pid) + "\n")
 				MutationPatternWriter.__write_pattern_count__(writer, pattern)
-				MutationPatternWriter.__write_pattern_words__(writer, pattern, document.get_project().program)
+				MutationPatternWriter.__write_pattern_words__(writer, pattern, data.document.get_project().program)
 				MutationPatternWriter.__write_pattern_lines__(writer, pattern)
 				writer.write("END\t" + str(pid) + "\n")
 				pid += 1
@@ -824,57 +732,57 @@ class MutationPatternWriter:
 		return
 
 	@staticmethod
-	def write_best_patterns(patterns, classifier: MutationClassifier, output_file: str, line_or_mutant: bool, uk_or_cc: bool):
+	def write_best_patterns(data: MutationPatterns, patterns, output_file: str, line_or_mutant: bool, uk_or_cc: bool):
 		"""
-		:param uk_or_cc:
-		:param line_or_mutant:
-		:param classifier:
+		:param data:
 		:param patterns:
 		:param output_file:
+		:param line_or_mutant:
+		:param uk_or_cc:
 		:return:
 		"""
-		mutant_patterns = MutationPatternSelector.map_samples_to_patterns(patterns, False)
+		mutant_patterns = MutationPatterns.map_samples_to_patterns(patterns, False)
 		with open(output_file, 'w') as writer:
 			for mutant, patterns in mutant_patterns.items():
 				mutant: cmuta.Mutant
 				line = "\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\n"
 				mutation = mutant.get_mutation()
-				result = classifier.classify_one(mutant)
+				result = data.classifier.classify_one(mutant)
 				writer.write(line.format(mutant.get_mut_id(), result,
 										 mutation.mutation_class,
 										 mutation.mutation_operator,
 										 mutation.get_location().line_of(),
 										 mutation.location.get_code(True),
 										 mutation.parameter))
-				best_pattern = MutationPatternSelector.select_best_pattern(patterns, line_or_mutant, uk_or_cc)
+				best_pattern = MutationPatterns.get_best_pattern_in(patterns, line_or_mutant, uk_or_cc)
 				if best_pattern is not None:
-					MutationPatternWriter.__write_pattern_words__(writer, best_pattern, mutant.get_space().get_project().program)
+					MutationPatternWriter.__write_pattern_words__(writer, best_pattern,
+																  mutant.get_space().get_project().program)
 		return
 
 	@staticmethod
-	def write_mutants_tests(document: cmuta.MutantExecutionDocument, patterns, classifier: MutationClassifier, output_file: str):
+	def write_mutant_results(data: MutationPatterns, patterns, output_file: str):
 		"""
-		:param document:
+		:param data:
 		:param patterns:
-		:param classifier:
 		:param output_file:
 		:return:
 		"""
 		with open(output_file, 'w') as writer:
 			''' project: doc_mutants, doc_lines, killed_mutants, over_score(valid_score) '''
-			doc_lines = MutationPatternSelector.select_samples_in_document(document, True)
-			doc_mutants = MutationPatternSelector.select_samples_in_document(document, False)
-			test_cases = classifier.tests
+			doc_lines = data.get_doc_lines()
+			doc_mutants = data.get_doc_mutants()
+			test_cases = data.classifier.all_tests
 			if test_cases is None:
-				test_cases = document.get_project().test_space.get_test_cases()
-			killed_mutants, over_score, valid_score = MutationTestSelector.evaluate_mutation_score(doc_mutants,
-																								   test_cases)
+				test_cases = data.document.get_project().test_space.get_test_cases()
+			killed_mutants, over_score, valid_score = data.document.\
+				get_project().evaluation.evaluate_mutation_score(doc_mutants, test_cases)
 			writer.write("Project\tMutants := {}\tLines := {}\tKilled := {}\tScore = {}%({}%)\n".
-						 format(len(doc_mutants), len(doc_lines), len(killed_mutants), over_score, valid_score))
+						 format(len(doc_mutants), len(doc_lines), killed_mutants, over_score, valid_score))
 
 			''' mining: patterns, pat_lines(patterns/pat_lines), pat_mutants(patterns/pat_mutants) '''
-			pat_lines = MutationPatternSelector.select_samples_in_patterns(patterns, True)
-			pat_mutants = MutationPatternSelector.select_samples_in_patterns(patterns, False)
+			pat_lines = data.get_pat_lines()
+			pat_mutants = data.get_pat_mutants()
 			writer.write("Mining\tPatterns := {}\tLines := {}({}%)\tMutants := {}({}%)\n".
 						 format(len(patterns),
 								len(pat_lines),
@@ -883,8 +791,8 @@ class MutationPatternWriter:
 								MutationPatternWriter.__proportion__(len(patterns), len(pat_mutants))))
 
 			''' UK-count: doc_uk_support pat_uk_support pat_uk_precision pat_uk_recall '''
-			doc_uk_total, doc_uk_support, doc_uk_precision = classifier.estimate_all(doc_mutants, True)
-			pat_uk_total, pat_uk_support, pat_uk_precision = classifier.estimate_all(pat_mutants, True)
+			doc_uk_total, doc_uk_support, doc_uk_precision = data.classifier.estimate_all(doc_mutants, True)
+			pat_uk_total, pat_uk_support, pat_uk_precision = data.classifier.estimate_all(pat_mutants, True)
 			writer.write("{}\tD_support := {}\tP_support := {}\tPrecision := {}%\tRecall := {}%\n".
 						 format("UK-Count",
 								doc_uk_support,
@@ -892,8 +800,8 @@ class MutationPatternWriter:
 								int(pat_uk_precision * 100000000) / 1000000.0,
 								MutationPatternWriter.__proportion__(pat_uk_support, doc_uk_support)))
 			''' CC-count: doc_cc_support pat_cc_support pat_cc_precision pat_cc_recall '''
-			doc_cc_total, doc_cc_support, doc_cc_precision = classifier.estimate_all(doc_mutants, False)
-			pat_cc_total, pat_cc_support, pat_cc_precision = classifier.estimate_all(pat_mutants, False)
+			doc_cc_total, doc_cc_support, doc_cc_precision = data.classifier.estimate_all(doc_mutants, False)
+			pat_cc_total, pat_cc_support, pat_cc_precision = data.classifier.estimate_all(pat_mutants, False)
 			writer.write("{}\tD_support := {}\tP_support := {}\tPrecision := {}%\tRecall := {}%\n".
 						 format("CC-Count",
 								doc_cc_support,
@@ -904,102 +812,117 @@ class MutationPatternWriter:
 
 
 def mining_patterns_on_none(root_path: str, post_path: str):
+	"""
+	:param root_path:
+	:param post_path:
+	:return:
+	"""
 	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.80, 1
-	if not(os.path.exists(post_path)):
+	if not (os.path.exists(post_path)):
 		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
 		c_project = cmuta.CProject(directory, file_name)
 		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
+		data = MutationPatterns(docs, None)
+		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
 
 		''' 2. generate mutation patterns '''
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length, None)
-		god_patterns, classifier = generator.generate(docs)
-		min_patterns = MutationPatternSelector.select_minimal_patterns(god_patterns)
+		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
+		generator.generate(data)
+		god_patterns = data.get_patterns()
+		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
 		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
 			  "of minimal set.")
 
 		''' 3. output patterns information '''
-		MutationPatternWriter.write_patterns(docs, min_patterns, classifier, os.path.join(post_path, file_name + ".mpt"))
+		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
 		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(min_patterns, classifier, os.path.join(post_path, file_name + ".bpt"),
-												  line_or_mutant, uk_or_cc)
+		MutationPatternWriter.write_best_patterns(data, min_patterns,
+												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
 		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutants_tests(docs, min_patterns, classifier, os.path.join(post_path, file_name + ".mtr"))
+		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
 		print("\t(4) Write mutation-test results on output file.")
 		print()
 	return
 
 
-def mining_patterns_on_tests(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length, test_proportion = True, True, 2, 0.80, 1, 0.005
-	if not(os.path.exists(post_path)):
+def mining_patterns_on_test(root_path: str, post_path: str):
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length, test_proportion = True, False, 2, 0.80, 1, 0.005
+	if not (os.path.exists(post_path)):
 		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
 		c_project = cmuta.CProject(directory, file_name)
 		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
+		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
 
 		''' 2. select test cases and generate frequent patterns '''
-		selected_mutants = MutationTestSelector.select_brch_coverage_mutations(c_project.mutant_space.get_mutants())
+		selected_mutants = c_project.evaluation.select_mutants_by_classes(["STRP", "BTRP"])
 		minimal_test_number = int(test_proportion * len(c_project.test_space.get_test_cases()))
-		selected_tests = MutationTestSelector.select_test_cases_for(c_project, selected_mutants, minimal_test_number)
-		killed_mutants, all_score, valid_score = MutationTestSelector.\
+		minimal_tests, __remain__ = c_project.evaluation.select_tests_for_mutants(selected_mutants)
+		random_tests = c_project.evaluation.select_tests_for_random(minimal_test_number)
+		selected_tests = minimal_tests | random_tests
+		killed, over_score, valid_score = c_project.evaluation.\
 			evaluate_mutation_score(c_project.mutant_space.get_mutants(), selected_tests)
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length,
-											 selected_tests)
-		god_patterns, classifier = generator.generate(docs)
-		min_patterns = MutationPatternSelector.select_minimal_patterns(god_patterns)
-		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
-			  "of minimal set.", "\n\t\tSelect {} test cases, killing {} mutants with score = {}%({}%).".
-			  format(len(selected_tests), len(killed_mutants), all_score, valid_score))
+		print("\tSelect {} test cases, killing {} mutants with score = {}%({}%).".
+			  format(len(selected_tests), killed, over_score, valid_score))
 
-		''' 3. output patterns information '''
-		MutationPatternWriter.write_patterns(docs, min_patterns, classifier,
-											 os.path.join(post_path, file_name + ".mpt"))
+		''' 3. generate patterns '''
+		data = MutationPatterns(docs, selected_tests)
+		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
+		generator.generate(data)
+		god_patterns = data.get_patterns()
+		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
+		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
+			  "of minimal set.")
+
+		''' 4. output patterns information '''
+		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
 		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(min_patterns, classifier, os.path.join(post_path, file_name + ".bpt"),
-												  line_or_mutant, uk_or_cc)
+		MutationPatternWriter.write_best_patterns(data, min_patterns,
+												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
 		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutants_tests(docs, min_patterns, classifier,
-												  os.path.join(post_path, file_name + ".mtr"))
+		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
 		print("\t(4) Write mutation-test results on output file.")
 		print()
 	return
 
 
-def mining_patterns_on_all(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 300, 0.80, 1
-	if not(os.path.exists(post_path)):
+def mining_patterns_on_over(root_path: str, post_path: str):
+	"""
+	:param root_path:
+	:param post_path:
+	:return:
+	"""
+	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 50, 0.80, 1
+	if not (os.path.exists(post_path)):
 		os.mkdir(post_path)
 	for file_name in os.listdir(root_path):
 		''' 1. load project data '''
 		directory = os.path.join(root_path, file_name)
 		c_project = cmuta.CProject(directory, file_name)
 		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		print("Load", docs.get_length(), "execution lines with", len(docs.corpus), "words from", file_name)
+		data = MutationPatterns(docs, c_project.test_space.get_test_cases())
+		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
 
-		''' 2. perform frequent pattern mining '''
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision,
-											 max_length, c_project.test_space.get_test_cases())
-		god_patterns, classifier = generator.generate(docs)
-		min_patterns = MutationPatternSelector.select_minimal_patterns(god_patterns)
-		print("\t==> Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
+		''' 2. generate mutation patterns '''
+		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
+		generator.generate(data)
+		god_patterns = data.get_patterns()
+		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
+		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
 			  "of minimal set.")
 
 		''' 3. output patterns information '''
-		MutationPatternWriter.write_patterns(docs, min_patterns, classifier,
-											 os.path.join(post_path, file_name + ".mpt"))
+		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
 		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(min_patterns, classifier, os.path.join(post_path, file_name + ".bpt"),
-												  line_or_mutant, uk_or_cc)
+		MutationPatternWriter.write_best_patterns(data, min_patterns,
+												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
 		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutants_tests(docs, min_patterns, classifier,
-												  os.path.join(post_path, file_name + ".mtr"))
+		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
 		print("\t(4) Write mutation-test results on output file.")
 		print()
 	return
@@ -1010,7 +933,8 @@ if __name__ == "__main__":
 	none_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/none"
 	test_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/test"
 	alls_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/alls"
-	# mining_patterns_on_none(prev_path, none_path)
-	mining_patterns_on_tests(prev_path, test_path)
-	# mining_patterns_on_all(prev_path, alls_path)
+	mining_patterns_on_none(prev_path, none_path)
+	mining_patterns_on_test(prev_path, test_path)
+	mining_patterns_on_over(prev_path, alls_path)
+	print("Test end for all...")
 
