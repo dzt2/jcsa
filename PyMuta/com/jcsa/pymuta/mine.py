@@ -583,156 +583,199 @@ class MutationPatternGenerator:
 		return
 
 
-class MutationPatternWriter:
+class MutationPatternsWriter:
 	"""
-	It implements writing the information of patterns on output
+	It implements writing the patterns information.
 	"""
+	def __init__(self, data: MutationPatterns):
+		self.data = data
+		self.writer = None
+		return
 
 	@staticmethod
 	def __proportion__(x: int, y: int):
-		if x == 0:
-			return 0.0
-		else:
-			ratio = x / (y + 0.0)
-			return int(ratio * 100000000) / 1000000.0
-
-	@staticmethod
-	def __prf_evaluation__(doc_samples: set, pat_samples: set):
-		int_samples = doc_samples & pat_samples
-		doc_size, pat_size, int_size = len(doc_samples), len(pat_samples), len(int_samples)
-		if int_size > 0:
-			precision = int_size / (pat_size + 0.0)
-			recall = int_size / (doc_size + 0.0)
-			f1_score = 2 * precision * recall / (precision + recall)
-			return int(precision * 10000) / 100.0, int(1000000 * recall) / 10000.0, int(f1_score * 1000000) / 1000000.0
-		return 0.0, 0.0, 0.0
-
-	''' pattern writer '''
-
-	@staticmethod
-	def __write_pattern_count__(writer: TextIO, pattern: MutationPattern):
 		"""
-		:param writer:
+		:param x:
+		:param y:
+		:return:
+		"""
+		if x == 0:
+			proportion = 0.0
+		else:
+			proportion = x / (y + 0.0)
+		return MutationPatternsWriter.__percent__(proportion)
+
+	@staticmethod
+	def __percent__(proportion: float):
+		return int(100000000 * proportion) / 1000000.0
+
+	@staticmethod
+	def __precision_recall__(doc_samples: set, pat_samples: set):
+		int_samples = doc_samples & pat_samples
+		precision, recall, f1_score = 0.0, 0.0, 0.0
+		if len(int_samples) > 0:
+			precision = len(int_samples) / (len(pat_samples) + 0.0)
+			recall = len(int_samples) / (len(doc_samples) + 0.0)
+			f1_score = 2 * precision * recall / (precision + recall)
+		return MutationPatternsWriter.__percent__(precision), MutationPatternsWriter.__percent__(recall), f1_score
+
+	''' pattern writers '''
+
+	def __write_pattern_count__(self, pattern: MutationPattern):
+		"""
 		:param pattern:
 		:return:
 		"""
-		line1 = "\tSummary\tWords\t{}\tLines\t{}\tMutants\t{}\n"
-		writer.write(line1.format(len(pattern.words), len(pattern.get_lines()), len(pattern.get_mutants())))
+		''' summary word lines mutants '''
+		self.writer: TextIO
+		self.writer.write("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format("Summary", "Words", len(pattern.get_words()),
+																  "Lines", len(pattern.get_lines()),
+																  "Mutants", len(pattern.get_mutants())))
+		''' metrics UC UI UP KI UK(%) CC(%) '''
 		line2 = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
-		writer.write(line2.format("Metrics", "UC", "UI", "UP", "KI", "UK(%)", "CC(%)"))
+		self.writer.write(line2.format("Metrics", "UC", "UI", "UP", "KI", "UK(%)", "CC(%)"))
 		uc, ui, up, ki, uk, cc = pattern.counting(True)
-		writer.write(line2.format("Line", uc, ui, up, ki,
-								  MutationPatternWriter.__proportion__(uk, uk + ki),
-								  MutationPatternWriter.__proportion__(cc, cc + ki)))
+		self.writer.write(line2.format("Lines", uc, ui, up, ki,
+									   MutationPatternsWriter.__proportion__(uk, uk + ki),
+									   MutationPatternsWriter.__proportion__(cc, cc + ki)))
 		uc, ui, up, ki, uk, cc = pattern.counting(False)
-		writer.write(line2.format("Mutant", uc, ui, up, ki,
-								  MutationPatternWriter.__proportion__(uk, uk + ki),
-								  MutationPatternWriter.__proportion__(cc, cc + ki)))
-		writer.write("\n")
+		self.writer.write(line2.format("Mutants", uc, ui, up, ki,
+									   MutationPatternsWriter.__proportion__(uk, uk + ki),
+									   MutationPatternsWriter.__proportion__(cc, cc + ki)))
 		return
 
-	@staticmethod
-	def __write_pattern_words__(writer: TextIO, pattern: MutationPattern, program: ccode.CProgram):
+	def __write_pattern_words__(self, pattern: MutationPattern):
 		"""
-		:param writer:
 		:param pattern:
-		:param program:
 		:return:
 		"""
-		writer.write("\tIndex\tType\tExecution\tStatement\tLocation\tParameter\n")
-		annotations = pattern.get_annotations(program)
+		self.writer: TextIO
+		self.writer.write("\tIndex\tType\tExecution\tStatement\tLocation\tParameter\n")
+		annotations = pattern.get_annotations(self.data.document.get_project().program)
 		index = 0
 		for annotation in annotations:
-			writer.write("\tWord[{}]\t{}\t{}\t\"{}\"\t\"{}\"\t\"{}\"\n".
-						 format(index, annotation.get_type(), annotation.get_execution(),
-								annotation.get_execution().get_statement().get_cir_code(),
-								annotation.get_location().get_cir_code(), annotation.get_parameter()))
+			self.writer.write("\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t\"{}\"\n".
+							  format(index, annotation.get_type(), annotation.get_execution(),
+									 annotation.get_execution().get_statement().get_cir_code(),
+									 annotation.get_location().get_cir_code(),
+									 annotation.get_parameter()))
 			index += 1
-		writer.write("\n")
 		return
 
-	@staticmethod
-	def __write_pattern_lines__(writer: TextIO, pattern: MutationPattern):
+	def __write_pattern_lines__(self, pattern: MutationPattern):
 		"""
-		:param writer:
 		:param pattern:
 		:return:
 		"""
 		mutants = pattern.get_mutants()
-		writer.write("\tID\tRES\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
-		line = "\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\n"
+		self.writer: TextIO
+		self.writer.write("\tID\tRES\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
 		for mutant in mutants:
 			mutation = mutant.get_mutation()
-			result = pattern.classifier.classify_one(mutant)
-			writer.write(line.format(mutant.get_mut_id(), result,
-									 mutation.mutation_class,
-									 mutation.mutation_operator,
-									 mutation.get_location().line_of(),
-									 mutation.location.get_code(True),
-									 mutation.parameter))
+			result = self.data.classifier.classify_one(mutant)
+			location = mutation.get_location()
+			self.writer.write("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".
+							  format(mutant.get_mut_id(), result, mutation.get_mutation_class(),
+									 mutation.get_mutation_operator(), location.line_of(),
+									 location.get_code(True), mutation.get_parameter()))
 		return
 
-	@staticmethod
-	def __write_patterns_summary__(writer: TextIO, data: MutationPatterns, patterns):
+	def __write_pattern__(self, pattern: MutationPattern, pattern_index: int):
 		"""
-		:param writer:
-		:param data:
+		:param pattern:
+		:param pattern_index:
 		:return:
 		"""
-		doc_lines = data.get_doc_lines()
-		doc_mutants = data.get_doc_mutants()
-		pat_lines = data.get_pat_lines()
-		pat_mutants = data.get_pat_mutants()
-		classifier = data.classifier
-		writer.write("Evaluation\n")
-		writer.write("\tPatterns := {}\tLines := {}({}%)\tMutants := {}({}%)\n".
-					 format(len(patterns),
-							len(pat_lines),
-							MutationPatternWriter.__proportion__(len(patterns), len(pat_lines)),
-							len(pat_mutants),
-							MutationPatternWriter.__proportion__(len(patterns), len(pat_mutants))))
-		total, uk_support, precision = classifier.estimate_all(doc_lines, True)
-		total, cc_support, precision = classifier.estimate_all(doc_lines, False)
-		writer.write("\tPatterns := {}\tUK-Execs := {}({}%)\tUK-Execs := {}({}%)\n".
-					 format(len(patterns),
-							uk_support,
-							MutationPatternWriter.__proportion__(len(patterns), uk_support),
-							cc_support,
-							MutationPatternWriter.__proportion__(len(patterns), cc_support)))
-		writer.write("\tTitle\tPrecision(%)\tRecall(%)\tF1-Score\n")
-		uk_lines = classifier.select_samples(doc_lines, True)
-		cc_lines = classifier.select_samples(doc_lines, False)
-		uk_mutants = classifier.select_samples(doc_mutants, True)
-		cc_mutants = classifier.select_samples(doc_mutants, False)
-		template = "\t{}\t{}\t{}\t{}\t{}\n"
-		precision, recall, f1_score = MutationPatternWriter.__prf_evaluation__(uk_lines, pat_lines)
-		writer.write(template.format("UK-LINE", len(uk_lines), precision, recall, f1_score))
-		precision, recall, f1_score = MutationPatternWriter.__prf_evaluation__(cc_lines, pat_lines)
-		writer.write(template.format("CC-LINE", len(cc_lines), precision, recall, f1_score))
-		precision, recall, f1_score = MutationPatternWriter.__prf_evaluation__(uk_mutants, pat_mutants)
-		writer.write(template.format("UK-MUTA", len(uk_mutants), precision, recall, f1_score))
-		precision, recall, f1_score = MutationPatternWriter.__prf_evaluation__(cc_mutants, pat_mutants)
-		writer.write(template.format("CC-MUTA", len(cc_mutants), precision, recall, f1_score))
+		self.writer: TextIO
+		self.writer.write("#BEG\t" + str(pattern_index) + "\n")
+		self.__write_pattern_count__(pattern)
+		self.writer.write("\n")
+		self.__write_pattern_words__(pattern)
+		self.writer.write("\n")
+		self.__write_pattern_lines__(pattern)
+		self.writer.write("#END\t" + str(pattern_index) + "\n")
 		return
 
-	@staticmethod
-	def write_patterns(data: MutationPatterns, patterns, output_file_path: str):
-		with open(output_file_path, 'w') as writer:
-			MutationPatternWriter.__write_patterns_summary__(writer, data, patterns)
-			pid = 0
+	def write_patterns(self, patterns, output_file: str):
+		with open(output_file, 'w') as writer:
+			self.writer = writer
+			index = 0
 			for pattern in patterns:
-				pattern: MutationPattern
-				writer.write("\nBEG\t" + str(pid) + "\n")
-				MutationPatternWriter.__write_pattern_count__(writer, pattern)
-				MutationPatternWriter.__write_pattern_words__(writer, pattern, data.document.get_project().program)
-				MutationPatternWriter.__write_pattern_lines__(writer, pattern)
-				writer.write("END\t" + str(pid) + "\n")
-				pid += 1
-				writer.write("\n")
+				index += 1
+				self.__write_pattern__(pattern, index)
+				self.writer.write("\n")
 		return
 
-	@staticmethod
-	def write_best_patterns(data: MutationPatterns, patterns, output_file: str, line_or_mutant: bool, uk_or_cc: bool):
+	''' testing results '''
+
+	def __write_results__(self, patterns):
+		"""
+		:param patterns:
+		:return:
+		"""
+		self.writer: TextIO
+
+		''' project: doc_mutants, doc_lines, killed_mutants, over_score(valid_score) '''
+		doc_lines = self.data.get_doc_lines()
+		doc_mutants = self.data.get_doc_mutants()
+		test_cases = self.data.classifier.all_tests
+		if test_cases is None:
+			test_cases = self.data.document.get_project().test_space.get_test_cases()
+		killed, over_score, valid_score = self.data.document.get_project().evaluation.evaluate_mutation_score(doc_mutants, test_cases)
+		self.writer.write("Project\tMutants := {}\tLines := {}\tKilled := {}\tScore = {}%({}%)\n".
+						  format(len(doc_mutants), len(doc_lines), killed, over_score, valid_score))
+
+		''' mining: patterns, pat_lines(patterns/pat_lines), pat_mutants(patterns/pat_mutants) '''
+		pat_lines = self.data.get_pat_lines()
+		pat_mutants = self.data.get_pat_mutants()
+		self.writer.write("Mining\tPatterns := {}\tLines := {}({}%)\tMutants := {}({}%)\n".
+						  format(len(patterns),
+								 len(pat_lines),
+								 MutationPatternsWriter.__proportion__(len(patterns), len(pat_lines)),
+								 len(pat_mutants),
+								 MutationPatternsWriter.__proportion__(len(patterns), len(pat_mutants))))
+		self.writer.write("\n")
+
+		''' UK-Line: doc_uk_support pat_uk_support pat_uk_precision pat_uk_recall '''
+		self.writer.write("\tTitle\tD_Support\tP_Support\tPrecision(%)\tRecall(%)\tF1-Score\n")
+
+		doc_support = self.data.classifier.select_samples(doc_lines, True)
+		pat_support = self.data.classifier.select_samples(pat_lines, True)
+		precision, recall, f1_score = MutationPatternsWriter.__precision_recall__(doc_support, pat_lines)
+		self.writer.write("\t{}\t{}\t{}\t{}\t{}\t{}\n".
+						  format("UK-Line", len(doc_support), len(pat_support), precision, recall, f1_score))
+
+		doc_support = self.data.classifier.select_samples(doc_lines, False)
+		pat_support = self.data.classifier.select_samples(pat_lines, False)
+		precision, recall, f1_score = MutationPatternsWriter.__precision_recall__(doc_support, pat_lines)
+		self.writer.write("\t{}\t{}\t{}\t{}\t{}\t{}\n".
+						  format("CC-Line", len(doc_support), len(pat_support), precision, recall, f1_score))
+
+		doc_support = self.data.classifier.select_samples(doc_mutants, True)
+		pat_support = self.data.classifier.select_samples(pat_mutants, True)
+		precision, recall, f1_score = MutationPatternsWriter.__precision_recall__(doc_support, pat_mutants)
+		self.writer.write("\t{}\t{}\t{}\t{}\t{}\t{}\n".
+						  format("UK-Muta", len(doc_support), len(pat_support), precision, recall, f1_score))
+
+		doc_support = self.data.classifier.select_samples(doc_mutants, False)
+		pat_support = self.data.classifier.select_samples(pat_mutants, False)
+		precision, recall, f1_score = MutationPatternsWriter.__precision_recall__(doc_support, pat_mutants)
+		self.writer.write("\t{}\t{}\t{}\t{}\t{}\t{}\n".
+						  format("CC-Muta", len(doc_support), len(pat_support), precision, recall, f1_score))
+		return
+
+	def write_results(self, patterns, output_file: str):
+		"""
+		:param patterns:
+		:param output_file:
+		:return:
+		"""
+		with open(output_file, 'w') as writer:
+			self.writer = writer
+			self.__write_results__(patterns)
+		return
+
+	def write_best_patterns(self, patterns, output_file: str, line_or_mutant: bool, uk_or_cc: bool):
 		"""
 		:param data:
 		:param patterns:
@@ -743,11 +786,12 @@ class MutationPatternWriter:
 		"""
 		mutant_patterns = MutationPatterns.map_samples_to_patterns(patterns, False)
 		with open(output_file, 'w') as writer:
+			self.writer = writer
 			for mutant, patterns in mutant_patterns.items():
 				mutant: cmuta.Mutant
 				line = "\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\n"
 				mutation = mutant.get_mutation()
-				result = data.classifier.classify_one(mutant)
+				result = self.data.classifier.classify_one(mutant)
 				writer.write(line.format(mutant.get_mut_id(), result,
 										 mutation.mutation_class,
 										 mutation.mutation_operator,
@@ -756,185 +800,145 @@ class MutationPatternWriter:
 										 mutation.parameter))
 				best_pattern = MutationPatterns.get_best_pattern_in(patterns, line_or_mutant, uk_or_cc)
 				if best_pattern is not None:
-					MutationPatternWriter.__write_pattern_words__(writer, best_pattern,
-																  mutant.get_space().get_project().program)
-		return
-
-	@staticmethod
-	def write_mutant_results(data: MutationPatterns, patterns, output_file: str):
-		"""
-		:param data:
-		:param patterns:
-		:param output_file:
-		:return:
-		"""
-		with open(output_file, 'w') as writer:
-			''' project: doc_mutants, doc_lines, killed_mutants, over_score(valid_score) '''
-			doc_lines = data.get_doc_lines()
-			doc_mutants = data.get_doc_mutants()
-			test_cases = data.classifier.all_tests
-			if test_cases is None:
-				test_cases = data.document.get_project().test_space.get_test_cases()
-			killed_mutants, over_score, valid_score = data.document.\
-				get_project().evaluation.evaluate_mutation_score(doc_mutants, test_cases)
-			writer.write("Project\tMutants := {}\tLines := {}\tKilled := {}\tScore = {}%({}%)\n".
-						 format(len(doc_mutants), len(doc_lines), killed_mutants, over_score, valid_score))
-
-			''' mining: patterns, pat_lines(patterns/pat_lines), pat_mutants(patterns/pat_mutants) '''
-			pat_lines = data.get_pat_lines()
-			pat_mutants = data.get_pat_mutants()
-			writer.write("Mining\tPatterns := {}\tLines := {}({}%)\tMutants := {}({}%)\n".
-						 format(len(patterns),
-								len(pat_lines),
-								MutationPatternWriter.__proportion__(len(patterns), len(pat_lines)),
-								len(pat_mutants),
-								MutationPatternWriter.__proportion__(len(patterns), len(pat_mutants))))
-
-			''' UK-count: doc_uk_support pat_uk_support pat_uk_precision pat_uk_recall '''
-			doc_uk_total, doc_uk_support, doc_uk_precision = data.classifier.estimate_all(doc_mutants, True)
-			pat_uk_total, pat_uk_support, pat_uk_precision = data.classifier.estimate_all(pat_mutants, True)
-			writer.write("{}\tD_support := {}\tP_support := {}\tPrecision := {}%\tRecall := {}%\n".
-						 format("UK-Count",
-								doc_uk_support,
-								pat_uk_support,
-								int(pat_uk_precision * 100000000) / 1000000.0,
-								MutationPatternWriter.__proportion__(pat_uk_support, doc_uk_support)))
-			''' CC-count: doc_cc_support pat_cc_support pat_cc_precision pat_cc_recall '''
-			doc_cc_total, doc_cc_support, doc_cc_precision = data.classifier.estimate_all(doc_mutants, False)
-			pat_cc_total, pat_cc_support, pat_cc_precision = data.classifier.estimate_all(pat_mutants, False)
-			writer.write("{}\tD_support := {}\tP_support := {}\tPrecision := {}%\tRecall := {}%\n".
-						 format("CC-Count",
-								doc_cc_support,
-								pat_cc_support,
-								int(pat_cc_precision * 100000000) / 1000000.0,
-								MutationPatternWriter.__proportion__(pat_cc_support, doc_cc_support)))
+					self.__write_pattern_words__(best_pattern)
+				self.writer.write("\n")
 		return
 
 
-def mining_patterns_on_none(root_path: str, post_path: str):
+def mining_patterns_on_none(input_directory: str, output_directory: str, file_name: str,
+							line_or_mutant: bool, uk_or_cc: bool,
+							min_support: int, max_confidence: float, max_length: int):
 	"""
-	:param root_path:
-	:param post_path:
+	:param file_name: name of file of the project
+	:param input_directory: directory in which xxx.cpp, xxx.ast, xxx.cir features are provided
+	:param output_directory: directory to preserve the patterns information
+	:param line_or_mutant: to take line or mutant as sample for counting
+	:param uk_or_cc: to estimate on non-killed or coincidental correctness samples
+	:param min_support: minimal support required for pattern
+	:param max_confidence: maximal confidence achieved for stopping generation of patterns
+	:param max_length: maximal length of words required in patterns being generated
 	:return:
 	"""
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, True, 2, 0.80, 1
-	if not (os.path.exists(post_path)):
-		os.mkdir(post_path)
-	for file_name in os.listdir(root_path):
-		''' 1. load project data '''
-		directory = os.path.join(root_path, file_name)
-		c_project = cmuta.CProject(directory, file_name)
-		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		data = MutationPatterns(docs, None)
-		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
+	if not (os.path.exists(output_directory)):
+		os.mkdir(output_directory)
+	print("Testing on none for", file_name)
+	project_directory = os.path.join(input_directory, file_name)
+	c_project = cmuta.CProject(project_directory, file_name)
+	c_document = c_project.load_execution_document(os.path.join(project_directory, file_name + ".sft"))
+	print("\t(1) Load", len(c_document.get_lines()), "lines for", len(c_document.get_mutants()), "mutants with",
+		  len(c_document.get_corpus()), "words from the project under test.")
 
-		''' 2. generate mutation patterns '''
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
-		generator.generate(data)
-		god_patterns = data.get_patterns()
-		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
-		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
-			  "of minimal set.")
+	patterns_data = MutationPatterns(c_document, None)
+	generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
+	generator.generate(patterns_data)
+	min_patterns = MutationPatterns.get_minimal_patterns(patterns_data.get_patterns())
+	print("\t(2) Generate", len(patterns_data.get_patterns()), "patterns with", len(min_patterns), "ones of minimal.")
 
-		''' 3. output patterns information '''
-		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
-		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(data, min_patterns,
-												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
-		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
-		print("\t(4) Write mutation-test results on output file.")
-		print()
+	# TODO rebuild the writing methods...
+	writer = MutationPatternsWriter(patterns_data)
+	writer.write_patterns(min_patterns, os.path.join(output_directory, file_name + ".mpt"))
+	writer.write_results(min_patterns, os.path.join(output_directory, file_name + ".rpt"))
+	writer.write_best_patterns(min_patterns, os.path.join(output_directory, file_name + ".bpt"), line_or_mutant, uk_or_cc)
+	print("\t(3) Write", len(min_patterns), "patterns to output files.")
+	print()
 	return
 
 
-def mining_patterns_on_test(root_path: str, post_path: str):
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length, test_proportion = True, False, 2, 0.80, 1, 0.005
-	if not (os.path.exists(post_path)):
-		os.mkdir(post_path)
-	for file_name in os.listdir(root_path):
-		''' 1. load project data '''
-		directory = os.path.join(root_path, file_name)
-		c_project = cmuta.CProject(directory, file_name)
-		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
-
-		''' 2. select test cases and generate frequent patterns '''
-		selected_mutants = c_project.evaluation.select_mutants_by_classes(["STRP", "BTRP"])
-		minimal_test_number = int(test_proportion * len(c_project.test_space.get_test_cases()))
-		minimal_tests, __remain__ = c_project.evaluation.select_tests_for_mutants(selected_mutants)
-		random_tests = c_project.evaluation.select_tests_for_random(minimal_test_number)
-		selected_tests = minimal_tests | random_tests
-		killed, over_score, valid_score = c_project.evaluation.\
-			evaluate_mutation_score(c_project.mutant_space.get_mutants(), selected_tests)
-		print("\tSelect {} test cases, killing {} mutants with score = {}%({}%).".
-			  format(len(selected_tests), killed, over_score, valid_score))
-
-		''' 3. generate patterns '''
-		data = MutationPatterns(docs, selected_tests)
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
-		generator.generate(data)
-		god_patterns = data.get_patterns()
-		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
-		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
-			  "of minimal set.")
-
-		''' 4. output patterns information '''
-		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
-		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(data, min_patterns,
-												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
-		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
-		print("\t(4) Write mutation-test results on output file.")
-		print()
-	return
-
-
-def mining_patterns_on_over(root_path: str, post_path: str):
+def mining_patterns_on_test(input_directory: str, output_directory: str, file_name: str,
+							line_or_mutant: bool, uk_or_cc: bool,
+							min_support: int, max_confidence: float, max_length: int):
 	"""
-	:param root_path:
-	:param post_path:
+	:param file_name: name of file of the project
+	:param input_directory: directory in which xxx.cpp, xxx.ast, xxx.cir features are provided
+	:param output_directory: directory to preserve the patterns information
+	:param line_or_mutant: to take line or mutant as sample for counting
+	:param uk_or_cc: to estimate on non-killed or coincidental correctness samples
+	:param min_support: minimal support required for pattern
+	:param max_confidence: maximal confidence achieved for stopping generation of patterns
+	:param max_length: maximal length of words required in patterns being generated
 	:return:
 	"""
-	line_or_mutant, uk_or_cc, min_support, max_precision, max_length = True, False, 50, 0.80, 1
-	if not (os.path.exists(post_path)):
-		os.mkdir(post_path)
-	for file_name in os.listdir(root_path):
-		''' 1. load project data '''
-		directory = os.path.join(root_path, file_name)
-		c_project = cmuta.CProject(directory, file_name)
-		docs = c_project.load_execution_document(os.path.join(directory, file_name + ".sft"))
-		data = MutationPatterns(docs, c_project.test_space.get_test_cases())
-		print("Load", len(docs.get_lines()), "execution lines with", len(docs.corpus), "words from", file_name)
+	if not (os.path.exists(output_directory)):
+		os.mkdir(output_directory)
+	print("Testing on test for", file_name)
+	project_directory = os.path.join(input_directory, file_name)
+	c_project = cmuta.CProject(project_directory, file_name)
+	c_document = c_project.load_execution_document(os.path.join(project_directory, file_name + ".sft"))
+	print("\t(1) Load", len(c_document.get_lines()), "lines for", len(c_document.get_mutants()), "mutants with",
+		  len(c_document.get_corpus()), "words from the project under test.")
 
-		''' 2. generate mutation patterns '''
-		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_precision, max_length)
-		generator.generate(data)
-		god_patterns = data.get_patterns()
-		min_patterns = MutationPatterns.get_minimal_patterns(god_patterns)
-		print("\t(1) Generate", len(god_patterns), "mutation patterns from the document with", len(min_patterns),
-			  "of minimal set.")
+	selected_mutants = c_project.evaluation.select_mutants_by_classes(["STRP", "BTRP"])
+	minimal_tests, __remains__ = c_project.evaluation.select_tests_for_mutants(selected_mutants)
+	random_tests = c_project.evaluation.select_tests_for_random(int(len(c_project.test_space.test_cases) * 0.005))
+	selected_tests = minimal_tests | random_tests
+	killed, over_score, valid_score = c_project.evaluation.\
+		evaluate_mutation_score(c_project.mutant_space.get_mutants(), selected_tests)
+	print("\t\tSelect", len(selected_tests), "test cases with {}% ({}%).".format(over_score, valid_score))
 
-		''' 3. output patterns information '''
-		MutationPatternWriter.write_patterns(data, min_patterns, os.path.join(post_path, file_name + ".mpt"))
-		print("\t(2) Write", len(min_patterns), "patterns of good set to output file")
-		MutationPatternWriter.write_best_patterns(data, min_patterns,
-												  os.path.join(post_path, file_name + ".bpt"), line_or_mutant, uk_or_cc)
-		print("\t(3) Write best patterns on output file for", file_name)
-		MutationPatternWriter.write_mutant_results(data, min_patterns, os.path.join(post_path, file_name + ".mtr"))
-		print("\t(4) Write mutation-test results on output file.")
-		print()
+	patterns_data = MutationPatterns(c_document, selected_tests)
+	generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
+	generator.generate(patterns_data)
+	min_patterns = MutationPatterns.get_minimal_patterns(patterns_data.get_patterns())
+	print("\t(2) Generate", len(patterns_data.get_patterns()), "patterns with", len(min_patterns), "ones of minimal.")
+
+	# TODO rebuild the writing methods...
+	writer = MutationPatternsWriter(patterns_data)
+	writer.write_patterns(min_patterns, os.path.join(output_directory, file_name + ".mpt"))
+	writer.write_results(min_patterns, os.path.join(output_directory, file_name + ".rpt"))
+	writer.write_best_patterns(min_patterns, os.path.join(output_directory, file_name + ".bpt"), line_or_mutant, uk_or_cc)
+	print("\t(3) Write", len(min_patterns), "patterns to output files.")
+	print()
 	return
+
+
+def mining_patterns_on_over(input_directory: str, output_directory: str, file_name: str,
+							line_or_mutant: bool, uk_or_cc: bool,
+							min_support: int, max_confidence: float, max_length: int):
+	"""
+	:param file_name: name of file of the project
+	:param input_directory: directory in which xxx.cpp, xxx.ast, xxx.cir features are provided
+	:param output_directory: directory to preserve the patterns information
+	:param line_or_mutant: to take line or mutant as sample for counting
+	:param uk_or_cc: to estimate on non-killed or coincidental correctness samples
+	:param min_support: minimal support required for pattern
+	:param max_confidence: maximal confidence achieved for stopping generation of patterns
+	:param max_length: maximal length of words required in patterns being generated
+	:return:
+	"""
+	if not (os.path.exists(output_directory)):
+		os.mkdir(output_directory)
+	print("Testing on over for", file_name)
+	project_directory = os.path.join(input_directory, file_name)
+	c_project = cmuta.CProject(project_directory, file_name)
+	c_document = c_project.load_execution_document(os.path.join(project_directory, file_name + ".sft"))
+	print("\t(1) Load", len(c_document.get_lines()), "lines for", len(c_document.get_mutants()), "mutants with",
+		  len(c_document.get_corpus()), "words from the project under test.")
+
+	patterns_data = MutationPatterns(c_document, c_project.test_space.get_test_cases())
+	generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
+	generator.generate(patterns_data)
+	min_patterns = MutationPatterns.get_minimal_patterns(patterns_data.get_patterns())
+	print("\t(2) Generate", len(patterns_data.get_patterns()), "patterns with", len(min_patterns), "ones of minimal.")
+
+	# TODO rebuild the writing methods...
+	writer = MutationPatternsWriter(patterns_data)
+	writer.write_patterns(min_patterns, os.path.join(output_directory, file_name + ".mpt"))
+	writer.write_results(min_patterns, os.path.join(output_directory, file_name + ".rpt"))
+	writer.write_best_patterns(min_patterns, os.path.join(output_directory, file_name + ".bpt"), line_or_mutant, uk_or_cc)
+	print("\t(3) Write", len(min_patterns), "patterns to output files.")
+	print()
+	return
+
 
 
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	none_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/none"
-	test_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/test"
-	alls_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/patterns/alls"
-	mining_patterns_on_none(prev_path, none_path)
-	mining_patterns_on_test(prev_path, test_path)
-	mining_patterns_on_over(prev_path, alls_path)
+	none_path = "/home/dzt2/Development/Data/patterns/none"
+	test_path = "/home/dzt2/Development/Data/patterns/test"
+	over_path = "/home/dzt2/Development/Data/patterns/over"
+	for file_name in os.listdir(prev_path):
+		mining_patterns_on_none(prev_path, none_path, file_name, True, False, 2, 0.75, 1)
+		mining_patterns_on_test(prev_path, test_path, file_name, True, False, 10, 0.80, 1)
+		mining_patterns_on_over(prev_path, over_path, file_name, True, False, 50, 0.80, 1)
 	print("Test end for all...")
 
