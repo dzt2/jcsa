@@ -12,6 +12,7 @@ class CProgram:
 		ast_file_path = os.path.join(directory, name + ".ast")
 		cir_file_path = os.path.join(directory, name + ".cir")
 		flw_file_path = os.path.join(directory, name + ".flw")
+		self.name = name
 		self.source_code = CSourceCode(self, cpp_file_path)
 		self.ast_tree = AstTree(self, ast_file_path)
 		self.cir_tree = CirTree(self, cir_file_path)

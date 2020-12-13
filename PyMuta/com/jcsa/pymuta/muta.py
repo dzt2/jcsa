@@ -646,7 +646,7 @@ class MutationTestEvaluation:
 		if killed > 0:
 			over_score = killed / (total + 0.0)
 			valid_score = killed / (valid + 0.0)
-		return killed, int(1000000 * over_score) / 10000.0, int(1000000 * valid_score) / 10000.0
+		return killed, over_score, valid_score
 
 
 if __name__ == "__main__":
