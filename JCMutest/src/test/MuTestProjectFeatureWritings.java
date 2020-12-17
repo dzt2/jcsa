@@ -1,7 +1,7 @@
 package test;
 
 import java.io.File;
-
+import java.util.Random;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectFeatureWriter;
@@ -13,6 +13,7 @@ public class MuTestProjectFeatureWritings {
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/features/";
 	private static final int max_distance = 2;
+	protected static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
@@ -30,7 +31,7 @@ public class MuTestProjectFeatureWritings {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_code(); writer.write_muta(); writer.write_features(max_distance);
+		writer.write_code(); writer.write_muta(); writer.write_features(max_distance, null);
 		System.out.println();
 	}
 	

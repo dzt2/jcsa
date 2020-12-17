@@ -634,7 +634,6 @@ public class MuTestProjectFeatureWriter {
 	 * @param test_case
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unused")
 	private void write_sym_instance_graphs(TestInput test_case, CDependGraph dependence_graph, int max_distance) throws Exception {
 		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 		CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
@@ -679,17 +678,15 @@ public class MuTestProjectFeatureWriter {
 	 * @param max_distance
 	 * @throws Exception
 	 */
-	public void write_features(int max_distance) throws Exception {
+	public void write_features(int max_distance, Collection<TestInput> test_suite) throws Exception {
 		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1));
 		this.write_sym_instance_graphs(dependence_graph, max_distance);
-		/*
-		MuTestProjectTestSpace tspace = this.code_file.get_code_space().get_project().get_test_space();
-		for(TestInput test_case : tspace.get_test_inputs()) {
-			this.write_sym_instance_graphs(test_case, dependence_graph, max_distance);
+		if(test_suite != null && !test_suite.isEmpty()) {
+			for(TestInput test_case : test_suite) 
+				this.write_sym_instance_graphs(test_case, dependence_graph, max_distance);
 		}
-		*/
 	}
 	
 }

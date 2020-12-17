@@ -15,7 +15,7 @@ public class CirReturnPointImpl extends CirExpressionImpl implements CirReturnPo
 	public String get_name() { return RETURN; }
 	@Override
 	public String get_unique_name() {
-		return RETURN + "#" + this.function_of().hashCode();
+		return RETURN + "#" + this.function_of().get_node_id();
 	}
 	
 }

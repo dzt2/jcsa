@@ -661,7 +661,7 @@ class SymParser {
 	 * @throws Exception
 	 */
 	private SymNode get_default_value(CType data_type, CirExpression source) throws Exception {
-		String name = "default@" + source.get_node_id();
+		String name = "default#" + source.get_node_id();
 		return SymIdentifier.create(data_type, name);
 	}
 	/**
