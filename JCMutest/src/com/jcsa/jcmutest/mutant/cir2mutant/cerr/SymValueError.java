@@ -93,13 +93,13 @@ public abstract class SymValueError extends SymStateError {
 	@Override
 	protected String generate_code() throws Exception {
 		return this.get_type() + ":" + this.get_location().get_node_id() + "(" + 
-				this.orig_value.generate_code() + ", " + this.muta_value.generate_code() + ")";
+				this.orig_value.generate_code(true) + ", " + this.muta_value.generate_code(true) + ")";
 	}
 	@Override
 	public Boolean validate(CStateContexts contexts) throws Exception {
 		SymExpression orig_value = SymEvaluator.evaluate_on(this.orig_value, contexts);
 		SymExpression muta_value = SymEvaluator.evaluate_on(this.muta_value, contexts);
-		if(orig_value.generate_code().equals(muta_value.get_source())) {
+		if(orig_value.generate_code(true).equals(muta_value.generate_code(true))) {
 			return Boolean.FALSE;
 		}
 		else if(orig_value instanceof SymConstant) {

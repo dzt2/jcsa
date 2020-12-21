@@ -26,20 +26,6 @@ public class SymArgumentList extends SymUnit {
 	protected SymNode construct() throws Exception {
 		return new SymArgumentList();
 	}
-
-	@Override
-	public String generate_code() throws Exception {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append("(");
-		for(int k = 0; k < this.number_of_arguments(); k++) {
-			buffer.append(this.get_argument(k).generate_code());
-			if(k < this.number_of_arguments() - 1) {
-				buffer.append(", ");
-			}
-		}
-		buffer.append(")");
-		return buffer.toString();
-	}
 	
 	/**
 	 * @param arguments

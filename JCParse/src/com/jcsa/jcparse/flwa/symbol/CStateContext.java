@@ -90,7 +90,7 @@ public class CStateContext {
 		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
 				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
 			SymExpression sym_key = SymFactory.sym_expression(key);
-			String string_code = sym_key.generate_code();
+			String string_code = sym_key.generate_code(false);
 			CStateContext context = this;
 			while(context != null) {
 				if(context.local_values.containsKey(string_code)) {
@@ -117,7 +117,7 @@ public class CStateContext {
 		else if(key instanceof AstExpression || key instanceof AstInitializer || key instanceof CirExpression
 				|| key instanceof CirStatement || key instanceof CirExecution || key instanceof SymExpression) {
 			SymExpression sym_key = SymFactory.sym_expression(key);
-			String string_code = sym_key.generate_code();
+			String string_code = sym_key.generate_code(false);
 			CStateContext context = this;
 			while(context != null) {
 				if(context.local_values.containsKey(string_code)) {
@@ -145,7 +145,7 @@ public class CStateContext {
 			SymExpression sym_key = SymFactory.sym_expression(key);
 			if(sym_key instanceof SymConstant) { /* ignored list */ }
 			else {
-				this.local_values.put(sym_key.generate_code(), 
+				this.local_values.put(sym_key.generate_code(false), 
 							SymFactory.sym_expression(value));
 			}
 		}

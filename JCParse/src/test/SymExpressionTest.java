@@ -127,24 +127,24 @@ public class SymExpressionTest {
 				if(statement instanceof CirAssignStatement) {
 					SymExpression lvalue = SymFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
 					SymExpression rvalue = SymFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
-					writer.write("\t==> [1] " + lvalue.generate_code() + "\n");
-					writer.write("\t==> [2] " + rvalue.generate_code() + "\n");
+					writer.write("\t==> [1] " + lvalue.generate_code(false) + "\n");
+					writer.write("\t==> [2] " + rvalue.generate_code(false) + "\n");
 					lvalue = SymEvaluator.evaluate_on(lvalue); 
 					rvalue = SymEvaluator.evaluate_on(rvalue);
-					writer.write("\t~~> [1] " + lvalue.generate_code() + "\n");
-					writer.write("\t~~> [2] " + rvalue.generate_code() + "\n");
+					writer.write("\t~~> [1] " + lvalue.generate_code(false) + "\n");
+					writer.write("\t~~> [2] " + rvalue.generate_code(false) + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymExpression value = SymFactory.sym_expression(((CirIfStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_code() + "\n");
+					writer.write("\t==> [1] " + value.generate_code(false) + "\n");
 					value = SymEvaluator.evaluate_on(value);
-					writer.write("\t~~> [1] " + value.generate_code() + "\n");
+					writer.write("\t~~> [1] " + value.generate_code(false) + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymExpression value = SymFactory.sym_expression(((CirCaseStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_code() + "\n");
+					writer.write("\t==> [1] " + value.generate_code(false) + "\n");
 					value = SymEvaluator.evaluate_on(value);
-					writer.write("\t~~> [1] " + value.generate_code() + "\n");
+					writer.write("\t~~> [1] " + value.generate_code(false) + "\n");
 				}
 			}
 			writer.write("END FUNC\n");

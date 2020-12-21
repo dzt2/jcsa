@@ -22,11 +22,6 @@ public class SymIdentifier extends SymBasicExpression {
 	protected SymNode construct() throws Exception {
 		return new SymIdentifier(this.get_data_type(), this.name);
 	}
-
-	@Override
-	public String generate_code() throws Exception {
-		return this.name;
-	}
 	
 	/**
 	 * {name: type} as symbolic identifier

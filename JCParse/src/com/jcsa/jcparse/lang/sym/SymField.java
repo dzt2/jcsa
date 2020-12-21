@@ -28,11 +28,6 @@ public class SymField extends SymUnit {
 		return new SymField(this.name);
 	}
 	
-	@Override
-	public String generate_code() throws Exception {
-		return this.name;
-	}
-	
 	/**
 	 * @param name
 	 * @return field := name

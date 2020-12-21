@@ -190,7 +190,7 @@ public class MuTestProjectFeatureWriter {
 		else if(token instanceof CType)
 			return "typ@" + this.normalize_string(((CType) token).generate_code());
 		else if(token instanceof SymNode)
-			return "sym@" + this.normalize_string(((SymNode) token).generate_code());
+			return "sym@" + this.normalize_string(((SymNode) token).generate_code(true));
 		else if(token instanceof TestInput)
 			return "tst@" + ((TestInput) token).get_parameter();
 		else

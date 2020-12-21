@@ -56,7 +56,7 @@ public class SymInstanceGraphTest {
 			code = ((CirNode) source).generate_code(true);
 		}
 		else if(source instanceof SymNode) {
-			code = ((SymNode) source).generate_code();
+			code = ((SymNode) source).generate_code(true);
 		}
 		else {
 			code = source.toString();

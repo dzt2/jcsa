@@ -35,7 +35,7 @@ public class SymConstraint extends SymInstance {
 	public SymExpression get_condition() { return this.condition; }
 	@Override
 	protected String generate_code() throws Exception {
-		return this.get_type() + ":" + this.get_execution() + "(" + this.condition.generate_code() + ")";
+		return this.get_type() + ":" + this.get_execution() + "(" + this.condition.generate_code(true) + ")";
 	}
 
 	@Override

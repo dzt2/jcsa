@@ -21,12 +21,6 @@ public class SymCallExpression extends SymExpression {
 		return new SymCallExpression(this.get_data_type());
 	}
 
-	@Override
-	public String generate_code() throws Exception {
-		return this.get_function().generate_code() + 
-				this.get_argument_list().generate_code();
-	}
-	
 	/**
 	 * @param data_type
 	 * @param function

@@ -3,6 +3,8 @@ package com.jcsa.jcparse.lang.sym;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.jcsa.jcparse.parse.code.SymCodeGenerator;
+
 /**
  * The symbolic language describes the expression, field and statement in C program.
  * <br>
@@ -122,7 +124,7 @@ public abstract class SymNode {
 	public String toString() {
 		while(true) {
 			try {
-				return this.generate_code();
+				return this.generate_code(false);
 			}
 			catch(Exception ex) {
 				ex.printStackTrace();
@@ -173,10 +175,9 @@ public abstract class SymNode {
 			this.children.add(child);
 		}
 	}
-	/**
-	 * @return generate the code that describes this expression
-	 * @throws Exception
-	 */
-	public abstract String generate_code() throws Exception;
+	
+	public String generate_code(boolean simplified) throws Exception {
+		return SymCodeGenerator.generate_code(this, simplified);
+	}
 	
 }

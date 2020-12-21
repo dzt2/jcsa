@@ -21,12 +21,6 @@ public class SymFieldExpression extends SymExpression {
 		return new SymFieldExpression(this.get_data_type());
 	}
 	
-	@Override
-	public String generate_code() throws Exception {
-		return "(" + this.get_body().generate_code() + 
-				")." + this.get_field().generate_code();
-	}
-	
 	/**
 	 * @param data_type
 	 * @param body

@@ -27,13 +27,6 @@ public class SymBinaryExpression extends SymExpression {
 	protected SymNode construct() throws Exception {
 		return new SymBinaryExpression(this.get_data_type());
 	}
-
-	@Override
-	public String generate_code() throws Exception {
-		return "(" + this.get_loperand().generate_code() + ") "
-				+ this.get_operator().generate_code() + " ("
-				+ this.get_roperand().generate_code() + ")";
-	}
 	
 	/**
 	 * @param data_type

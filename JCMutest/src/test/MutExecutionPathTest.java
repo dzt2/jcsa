@@ -43,7 +43,7 @@ public class MutExecutionPathTest {
 				List<CStateUnit> units = (List<CStateUnit>) edge.get_annotation();
 				for(CStateUnit unit : units) {
 					writer.write("\t" + strip_code(unit.get_expression().generate_code(true)));
-					writer.write(": " + strip_code(unit.get_value().generate_code()) + "\n");
+					writer.write(": " + strip_code(unit.get_value().generate_code(false)) + "\n");
 				}
 			}
 		}

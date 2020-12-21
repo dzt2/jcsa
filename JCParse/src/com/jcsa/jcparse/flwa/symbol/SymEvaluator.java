@@ -91,7 +91,7 @@ public class SymEvaluator {
 					target = this.eval_initializer_list((SymInitializerList) source);
 				}
 				else {
-					throw new IllegalArgumentException(source.generate_code());
+					throw new IllegalArgumentException(source.generate_code(false));
 				}
 				target.set_source(source.get_source());
 				return target;
@@ -170,7 +170,7 @@ public class SymEvaluator {
 		case smaller_eq:	return this.eval_smaller_eq(source);
 		case equal_with:	return this.eval_equal_with(source);
 		case not_equals:	return this.eval_not_equals(source);
-		default: throw new IllegalArgumentException(source.generate_code());
+		default: throw new IllegalArgumentException(source.generate_code(false));
 		}
 	}
 	private SymExpression eval_unary_expression(SymUnaryExpression source) throws Exception {
@@ -182,7 +182,7 @@ public class SymEvaluator {
 		case address_of:	return this.eval_address_of(source);
 		case dereference:	return this.eval_dereference(source);
 		case assign:		return this.eval_type_cast(source);
-		default: throw new IllegalArgumentException(source.generate_code());
+		default: throw new IllegalArgumentException(source.generate_code(false));
 		}
 	}
 	
@@ -451,10 +451,10 @@ public class SymEvaluator {
 		Set<SymExpression> lremoves = new HashSet<SymExpression>();
 		Set<SymExpression> rremoves = new HashSet<SymExpression>();
 		for(SymExpression loperand : loperands) {
-			String x = loperand.generate_code();
+			String x = loperand.generate_code(false);
 			for(SymExpression roperand : roperands) {
 				if(!rremoves.contains(roperand)) {
-					String y = roperand.generate_code();
+					String y = roperand.generate_code(false);
 					if(y.equals(x)) {
 						lremoves.add(loperand);
 						rremoves.add(roperand);
@@ -664,10 +664,10 @@ public class SymEvaluator {
 		Set<SymExpression> lremoves = new HashSet<SymExpression>();
 		Set<SymExpression> rremoves = new HashSet<SymExpression>();
 		for(SymExpression loperand : loperands) {
-			String x = loperand.generate_code();
+			String x = loperand.generate_code(false);
 			for(SymExpression roperand : roperands) {
 				if(!rremoves.contains(roperand)) {
-					String y = roperand.generate_code();
+					String y = roperand.generate_code(false);
 					if(y.equals(x)) {
 						lremoves.add(loperand);
 						rremoves.add(roperand);

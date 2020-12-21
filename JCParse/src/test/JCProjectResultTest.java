@@ -133,7 +133,7 @@ public class JCProjectResultTest {
 					writer.write("\tStatement: " + node.get_statement().generate_code(true) + "\n");
 					for(CStateUnit unit : node.get_units()) {
 						writer.write("\t--> " + unit.get_expression().generate_code(true) + 
-									 " \tas " + unit.get_value().generate_code() + "\n");
+									 " \tas " + unit.get_value().generate_code(false) + "\n");
 					}
 					writer.write("\n");
 				}

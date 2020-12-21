@@ -23,27 +23,6 @@ public class SymConstant extends SymBasicExpression {
 	protected SymNode construct() throws Exception {
 		return new SymConstant(this.get_data_type(), this.constant);
 	}
-
-	@Override
-	public String generate_code() throws Exception {
-		switch(constant.get_type().get_tag()) {
-		case c_bool:		return constant.get_bool().toString();
-		case c_char:
-		case c_uchar:		return "" + ((int) constant.get_char().charValue());
-		case c_short:
-		case c_ushort:
-		case c_int:
-		case c_uint:		return constant.get_integer().toString();
-		case c_long:
-		case c_ulong:
-		case c_llong:
-		case c_ullong:		return constant.get_long().toString();
-		case c_float:		return constant.get_float().toString();
-		case c_double:
-		case c_ldouble:		return constant.get_double().toString();
-		default: throw new IllegalArgumentException("Invalid: " + constant.get_type());
-		}
-	}
 	
 	/* constant value */
 	public boolean get_bool() {
