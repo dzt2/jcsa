@@ -39,7 +39,6 @@ import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
 import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirField;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
@@ -660,7 +659,7 @@ class SymParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymNode get_default_value(CType data_type, CirExpression source) throws Exception {
+	private SymNode get_default_value(CType data_type, CirDefaultValue source) throws Exception {
 		String name = "default#" + source.get_node_id();
 		return SymIdentifier.create(data_type, name);
 	}

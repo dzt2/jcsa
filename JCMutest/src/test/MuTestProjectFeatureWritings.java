@@ -22,6 +22,7 @@ public class MuTestProjectFeatureWritings {
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/features/";
 	private static final int max_distance = 2;
+	private static final double random_test_ratio = 0.002;
 	protected static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
@@ -45,7 +46,8 @@ public class MuTestProjectFeatureWritings {
 		classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
 		Set<Mutant> selected_mutants = select_mutants(code_file, classes);
 		Set<TestInput> selected_tests = select_tests(selected_mutants, project.get_test_space());
-		System.out.println("\t==> Select " + selected_tests.size() + " test cases from program");
+		System.out.println("\t==> Select " + selected_tests.size() + " test cases from " + 
+							project.get_test_space().number_of_test_inputs() + " inputs.");
 		
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); writer.write_muta(); writer.write_features(max_distance, selected_tests);
@@ -126,6 +128,23 @@ public class MuTestProjectFeatureWritings {
 		return null;
 	}
 	/**
+	 * select random test from the space
+	 * @param tspace
+	 * @return
+	 * @throws Exception
+	 */
+	private static TestInput select_random_test(MuTestProjectTestSpace tspace) throws Exception {
+		int tnumber = tspace.get_test_space().number_of_inputs();
+		int counter = Math.abs(random.nextInt()) % tnumber;
+		TestInput test_case = null;
+		for(int tid = 0; tid < tnumber; tid++) {
+			test_case = tspace.get_test_space().get_input(tid);
+			if(counter-- <= 0)
+				break;
+		}
+		return test_case;
+	}
+	/**
 	 * remove all the mutants killed by the test
 	 * @param mutants
 	 * @param test
@@ -154,6 +173,8 @@ public class MuTestProjectFeatureWritings {
 	 */
 	private static Set<TestInput> select_tests(Set<Mutant> mutants, MuTestProjectTestSpace tspace) throws Exception {
 		Set<TestInput> test_cases = new HashSet<TestInput>();
+		
+		/* minimal test cases */
 		while(!mutants.isEmpty()) {
 			Mutant next_mutant = select_random_mutant(mutants);
 			mutants.remove(next_mutant);
@@ -163,6 +184,14 @@ public class MuTestProjectFeatureWritings {
 				test_cases.add(test_case);
 				kill_mutants_in(mutants, test_case, tspace);
 			}
+		}
+		
+		/* random test selection to minimal size */
+		int minimal_size = ((int) (tspace.number_of_test_inputs() * random_test_ratio)) + 1;
+		while(test_cases.size() < minimal_size) {
+			TestInput test_case = select_random_test(tspace);
+			if(test_case != null)
+				test_cases.add(test_case);
 		}
 		return test_cases;
 	}

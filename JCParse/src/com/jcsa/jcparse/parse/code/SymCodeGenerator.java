@@ -1,9 +1,12 @@
 package com.jcsa.jcparse.parse.code;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.sym.SymArgumentList;
 import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
@@ -115,7 +118,7 @@ public class SymCodeGenerator {
 		case not_equals:	code = "!=";	break;
 		case address_of:	code = "&";		break;
 		case dereference:	code = "*";		break;
-		case assign:		code = "=";		break;
+		case assign:		code = "cast";		break;
 		default: throw new IllegalArgumentException("Invalid operator: " + node.get_operator());
 		}
 		this.buffer.append(code);
@@ -124,37 +127,69 @@ public class SymCodeGenerator {
 	/* basic expression */
 	private void gen_identifier(SymIdentifier node) throws Exception {
 		int index = node.get_name().indexOf('#');
-		String name = node.get_name();
+		String name = node.get_name().strip(), code;
 		
 		if(this.simplified) {
 			if(index > 0) {
 				name = name.substring(0, index).strip();
-			}
-			else {
-				AstNode source = null;
-				
-				if(node.get_cir_source() != null) {
-					source = node.get_cir_source().get_ast_source();
+				if(name.equals("default")) {
+					/* CirDefaultValue */
+					code = "?";
+				}
+				else if(name.equals("return")) {
+					/* CirReturnPoint <-- return#function_id */
+					code = name;	
 				}
 				else {
-					source = node.get_ast_source();
-				}
-				
-				if(source instanceof AstSwitchStatement) {
-					source = ((AstSwitchStatement) source).get_condition();
-				}
-				
-				if(source instanceof AstExpression) {
-					source = CTypeAnalyzer.get_expression_of((AstExpression) source);
-					name = source.generate_code();
+					/* CirDeclarator | CirIdentifier by AstIdExpression */
+					code = name;
 				}
 			}
-			
-			if(name.equals("default")) { name = "?"; }
+			else {
+				/* CirImplicator */
+				AstNode ast_source;
+				ast_source = node.get_ast_source();
+				if(ast_source == null) {
+					if(node.get_cir_source() != null)
+						ast_source = node.get_cir_source().get_ast_source();
+				}
+				if(ast_source == null) {
+					if(node.get_cir_source() != null) {
+						CirTree cir_tree = node.get_cir_source().get_tree();
+						AstTree ast_tree = cir_tree.get_root().get_ast_source().get_tree();
+						int ast_key = Integer.parseInt(node.get_name().substring(index + 1).strip());
+						ast_source = ast_tree.get_node(ast_key);
+					}
+				}
+				
+				/* non-ast-source based implicator */
+				if(ast_source == null) {
+					code = name;
+				}
+				/* extract expression code of AST */
+				else {
+					AstExpression expression;
+					if(ast_source instanceof AstCaseStatement) {
+						expression = ((AstCaseStatement) ast_source).get_expression();
+					}
+					else if(ast_source instanceof AstSwitchStatement) {
+						expression = ((AstSwitchStatement) ast_source).get_condition();
+					}
+					else {
+						expression = (AstExpression) ast_source;
+					}
+					expression = CTypeAnalyzer.get_expression_of(expression);
+					code = expression.generate_code();
+				}
+			}
+		}
+		else {
+			code = name;
 		}
 		
-		for(int k = 0; k < name.length(); k++) {
-			char ch = name.charAt(k);
+		/* remove spaces in the code generated */
+		for(int k = 0; k < code.length(); k++) {
+			char ch = code.charAt(k);
 			if(Character.isWhitespace(ch)) {
 				ch = ' ';
 			}
@@ -165,21 +200,48 @@ public class SymCodeGenerator {
 		CConstant constant = node.get_constant();
 		String code;
 		switch(constant.get_type().get_tag()) {
-		case c_bool:		code = constant.get_bool().toString();					break;
+		case c_bool:		
+		{
+			code = constant.get_bool().toString();
+			break;
+		}
 		case c_char:
-		case c_uchar:		code = "" + ((int) constant.get_char().charValue());	break;
+		case c_uchar:
+		{
+			code = "" + ((int) constant.get_char().charValue());
+			break;
+		}
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		code = constant.get_integer().toString();				break;
+		case c_uint:
+		{
+			code = constant.get_integer().toString();
+			break;
+		}
 		case c_long:
 		case c_ulong:
 		case c_llong:
-		case c_ullong:		code = constant.get_long().toString();					break;
-		case c_float:		code = constant.get_float().toString();					break;
+		case c_ullong:
+		{
+			code = constant.get_long().toString();
+			break;
+		}
+		case c_float:
+		{
+			code = constant.get_float().toString();
+			break;
+		}
 		case c_double:
-		case c_ldouble:		code = constant.get_double().toString();				break;
-		default: throw new IllegalArgumentException("Invalid: " + constant.get_type());
+		case c_ldouble:
+		{
+			code = constant.get_double().toString();
+			break;
+		}
+		default:
+		{
+			throw new IllegalArgumentException("Invalid: " + constant.get_type().generate_code());
+		}
 		}
 		this.buffer.append(code);
 	}
@@ -188,9 +250,8 @@ public class SymCodeGenerator {
 		this.buffer.append("\"");
 		for(int k = 0; k < literal.length(); k++) {
 			char ch = literal.charAt(k);
-			if(Character.isWhitespace(ch)) {
+			if(Character.isWhitespace(ch)) 
 				ch = ' ';
-			}
 			this.buffer.append(ch);
 		}
 		this.buffer.append("\"");
