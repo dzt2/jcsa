@@ -19,8 +19,33 @@ class CProject:
 		self.evaluation = MutationTestEvaluation(self)
 		return
 
-	def load_execution_document(self, fet_file_path: str):
-		return MutantExecutionDocument(self, fet_file_path)
+	def load_static_document(self, directory: str):
+		"""
+		:param directory:
+		:return: load the xxx.sft in directory to generate document of execution lines
+		"""
+		document = MutantExecutionDocument(self)
+		for file_name in os.listdir(directory):
+			if file_name.endswith(".sft"):
+				feature_file = os.path.join(directory, file_name)
+				document.append(feature_file)
+				for test_case in self.test_space.get_test_cases():
+					document.test_cases.add(test_case)
+				break
+		return document
+
+	def load_dynamic_documents(self, directory: str):
+		"""
+		:param directory:
+		:return: load xxx.int.dft in directory to generate execution lines in project
+		"""
+		document = MutantExecutionDocument(self)
+		for file_name in os.listdir(directory):
+			if file_name.endswith(".dft"):
+				feature_file = os.path.join(directory, file_name)
+				document.append(feature_file)
+		return document
+
 
 
 class TestCase:
@@ -430,11 +455,11 @@ class MutantExecutionLine:
 
 
 class MutantExecutionDocument:
-	def __init__(self, project: CProject, fet_file_path: str):
+	def __init__(self, project: CProject):
 		self.project = project
 		self.lines = list()
 		self.corpus = dict()
-		self.__parse__(fet_file_path)
+		self.test_cases = set()
 		return
 
 	def get_project(self):
@@ -447,6 +472,12 @@ class MutantExecutionDocument:
 		line = self.lines[k]
 		line: MutantExecutionLine
 		return line
+
+	def get_test_cases(self):
+		"""
+		:return: test cases in space
+		"""
+		return self.test_cases
 
 	def get_mutants(self):
 		"""
@@ -468,8 +499,19 @@ class MutantExecutionDocument:
 		word: str
 		return word
 
-	def __parse__(self, fet_file_path: str):
+	def clear(self):
+		"""
+		:return: clear all the lines and corpus in the document
+		"""
 		self.lines.clear()
+		self.corpus.clear()
+		return
+
+	def append(self, fet_file_path: str):
+		"""
+		:param fet_file_path:
+		:return: append the lines in the file to the document
+		"""
 		with open(fet_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
@@ -481,6 +523,7 @@ class MutantExecutionDocument:
 						test_case = None
 					else:
 						test_case = self.project.test_space.get_test_case(test_id)
+						self.test_cases.add(test_case)		# append test case in document
 					exec_line = MutantExecutionLine(mutant, test_case)
 					for k in range(2, len(items)):
 						word = items[k].strip()
@@ -654,7 +697,8 @@ if __name__ == "__main__":
 	for fname in os.listdir(root_path):
 		dir = os.path.join(root_path, fname)
 		c_project = CProject(dir, fname)
-		docs = c_project.load_execution_document(os.path.join(dir, fname + ".sft"))
+		docs = c_project.load_static_document(dir)
+		# docs = c_project.load_execution_document(os.path.join(dir, fname + ".sft"))
 		# print("Load", len(c_project.mutant_space.get_mutants()), "mutants from", file_name)
 		# for c_mutant in c_project.mutant_space.get_mutants():
 		# 	c_mutant: Mutant

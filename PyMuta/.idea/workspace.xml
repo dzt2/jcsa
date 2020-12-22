@@ -50,7 +50,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
-  <component name="RunManager" selected="Python.mine">
+  <component name="RunManager" selected="Python.mine2">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -284,8 +284,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.mine" />
         <item itemvalue="Python.mine2" />
+        <item itemvalue="Python.mine" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.mine3" />
         <item itemvalue="Python.mine1" />
