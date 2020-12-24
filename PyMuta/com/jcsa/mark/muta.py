@@ -240,7 +240,9 @@ class MutationResult:
 		else:
 			test: int
 			test_id = test
-		return self.kill_string[test_id] == '1'
+		if test_id < len(self.kill_string):
+			return self.kill_string[test_id] == '1'
+		return False
 
 	def is_killed_in(self, tests):
 		"""
