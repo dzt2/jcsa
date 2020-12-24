@@ -158,6 +158,10 @@ public class SymCodeGenerator {
 					/* CirReturnPoint <-- return#function_id */
 					code = name;	
 				}
+				else if(name.equals("do")) {
+					/* Execution */
+					code = node.get_name().substring(index + 1).strip();
+				}
 				else {
 					/* CirDeclarator | CirIdentifier by AstIdExpression */
 					code = name;
