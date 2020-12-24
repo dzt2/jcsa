@@ -1,13 +1,11 @@
 """
-This implements the frequent pattern mining based on features of mutation during testing (as CirAnnotation and word).
+This file implements the classification, prediction and pattern mining algorithms.
 """
 
 
 import os
 from typing import TextIO
-
-import com.jcsa.pymuta.code as ccode
-import com.jcsa.pymuta.muta as cmuta
+import com.jcsa.mark.muta as cmuta
 
 
 UC_CLASS, UI_CLASS, UP_CLASS, KI_CLASS = "UC", "UI", "UP", "KI"
@@ -62,14 +60,17 @@ class MutationClassifier:
 		:return: uc, ui, up, ki
 		"""
 		uc, ui, up, ki = 0, 0, 0, 0
-		if isinstance(sample, cmuta.MutantExecutionLine):	# sample as MutantExecutionLine
-			sample: cmuta.MutantExecutionLine
+		if isinstance(sample, cmuta.MutationFeatureLine):	# sample as MutantExecutionLine
+			sample: cmuta.MutationFeatureLine
 			if sample.has_test_case():						# based on one test case in the execution line
-				if sample.is_killed():
+				s_result = sample.get_mutant().get_result()
+				w_result = sample.get_mutant().get_weak_mutant().get_result()
+				c_result = sample.get_mutant().get_coverage_mutant().get_result()
+				if s_result.is_killed_by(sample.get_test_case()):
 					ki += 1
-				elif sample.is_infected():
+				elif w_result.is_killed_by(sample.get_test_case()):
 					up += 1
-				elif sample.is_covered():
+				elif c_result.is_killed_by(sample.get_test_case()):
 					ui += 1
 				else:
 					uc += 1
@@ -233,15 +234,15 @@ class MutationPattern:
 		"""
 		return len(self.words)
 
-	def get_annotations(self, program: ccode.CProgram):
+	def get_features(self, project: cmuta.CProject):
 		"""
-		:param program:
+		:param project:
 		:return: annotations parsed from the words in the pattern based on the program provided
 		"""
-		annotations = list()
+		features = list()
 		for word in self.words:
-			annotations.append(cmuta.CirAnnotation.parse(word, program))
-		return annotations
+			features.append(cmuta.MutationFeature.parse(project, word))
+		return features
 
 	''' sample getters '''
 
@@ -267,13 +268,13 @@ class MutationPattern:
 		else:
 			return self.mutants
 
-	def __match__(self, line: cmuta.MutantExecutionLine):
+	def __match__(self, line: cmuta.MutationFeatureLine):
 		"""
 		:param line:
 		:return: whether the line matches with this pattern
 		"""
 		for word in self.words:
-			if not(word in line.get_words()):
+			if not(word in line.get_feature_words()):
 				return False
 		return True
 
@@ -285,7 +286,7 @@ class MutationPattern:
 		self.lines.clear()
 		self.mutants.clear()
 		for line in lines:
-			line: cmuta.MutantExecutionLine
+			line: cmuta.MutationFeatureLine
 			if self.__match__(line):
 				self.lines.add(line)
 				self.mutants.add(line.get_mutant())
@@ -354,7 +355,7 @@ class MutationPatterns:
 	"""
 	It represents the outputs of the generated patterns.
 	"""
-	def __init__(self, document: cmuta.MutantExecutionDocument, classifier: MutationClassifier, patterns):
+	def __init__(self, document: cmuta.MutationFeatureDocument, classifier: MutationClassifier, patterns):
 		"""
 		:param document: it provides all the lines and mutants provided from original program and project
 		:param classifier: the classifier to classify and estimate the lines and mutants in the testing
@@ -363,8 +364,8 @@ class MutationPatterns:
 		self.document = document
 		self.doc_lines = set()
 		self.doc_mutants = set()
-		for line in document.get_lines():
-			line: cmuta.MutantExecutionLine
+		for line in document.get_feature_lines():
+			line: cmuta.MutationFeatureLine
 			self.doc_lines.add(line)
 			self.doc_mutants.add(line.get_mutant())
 		self.classifier = classifier
@@ -375,7 +376,7 @@ class MutationPatterns:
 			pattern: MutationPattern
 			self.patterns.add(pattern)
 			for line in pattern.get_lines():
-				line: cmuta.MutantExecutionLine
+				line: cmuta.MutationFeatureLine
 				self.pat_lines.add(line)
 				self.pat_mutants.add(line.get_mutant())
 		self.min_patterns = MutationPatterns.minimal_patterns_of(self.patterns)
@@ -546,7 +547,7 @@ class MutationPatternGenerator:
 
 	''' basic methods '''
 
-	def __root__(self, document: cmuta.MutantExecutionDocument, word: str):
+	def __root__(self, document: cmuta.MutationFeatureDocument, word: str):
 		"""
 		:param document: it provides all the document lines for matching with the root pattern
 		:param word: the unique word for creating the root pattern
@@ -556,7 +557,7 @@ class MutationPatternGenerator:
 		root = root.get_child(word)
 		if not(str(root) in self.__patterns__):
 			self.__patterns__[str(root)] = root
-			root.set_lines(document.get_lines())
+			root.set_lines(document.get_feature_lines())
 		root = self.__patterns__[str(root)]
 		root: MutationPattern
 		return root
@@ -596,7 +597,7 @@ class MutationPatternGenerator:
 
 	''' generator methods '''
 
-	def __output__(self, document: cmuta.MutantExecutionDocument):
+	def __output__(self, document: cmuta.MutationFeatureDocument):
 		"""
 		:return: MutationPatterns generated from the solution
 		"""
@@ -610,7 +611,7 @@ class MutationPatternGenerator:
 		output = MutationPatterns(document, self.__classifier__, good_patterns)
 		return output
 
-	def generate(self, document: cmuta.MutantExecutionDocument, classifier_tests=None):
+	def generate(self, document: cmuta.MutationFeatureDocument, classifier_tests=None):
 		"""
 		:param document: it provides all the lines and mutants for analysis
 		:param classifier_tests: test cases to create mutation classifier
@@ -620,10 +621,10 @@ class MutationPatternGenerator:
 		self.__patterns__.clear()
 		self.__solution__.clear()
 
-		init_lines = self.__classifier__.select(document.get_lines(), self.uk_or_cc)
+		init_lines = self.__classifier__.select(document.get_feature_lines(), self.uk_or_cc)
 		for init_line in init_lines:
-			init_line: cmuta.MutantExecutionLine
-			words = init_line.get_words()
+			init_line: cmuta.MutationFeatureLine
+			words = init_line.get_feature_words()
 			for word in words:
 				root = self.__root__(document, word)
 				self.__generate__(root, words)
@@ -736,7 +737,7 @@ class MutationPatternWriter:
 			mutation_class = mutant.get_mutation().get_mutation_class()
 			mutation_operator = mutant.get_mutation().get_mutation_operator()
 			location = mutant.get_mutation().get_location()
-			line = location.line_of()
+			line = location.line_of(False)
 			code = location.get_code(True)
 			parameter = mutant.get_mutation().get_parameter()
 			self.writer.write("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".format(mutant_id,
@@ -757,14 +758,14 @@ class MutationPatternWriter:
 		self.writer.write("\t@Words\n")
 		self.writer.write("\tIndex\tType\tExecution\tLine\tStatement\tLocation\tParameter\n")
 		index = 0
-		for annotation in pattern.get_annotations(self.patterns.document.get_project().program):
+		for annotation in pattern.get_features(self.patterns.document.get_project()):
 			index += 1
-			annotation_type = annotation.get_type()
+			annotation_type = annotation.get_feature_type()
 			execution = annotation.get_execution()
 			statement = execution.get_statement()
 			ast_line = None
 			if statement.has_ast_source():
-				ast_line = statement.get_ast_source().line_of()
+				ast_line = statement.get_ast_source().line_of(False)
 			location = annotation.get_location()
 			parameter = annotation.get_parameter()
 			self.writer.write("\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t{}\n".format(index,
@@ -949,7 +950,7 @@ class MutationPatternWriter:
 				result = self.patterns.classifier.__classify__(mutant)
 				mutation_class = mutant.get_mutation().get_mutation_class()
 				mutation_operator = mutant.get_mutation().get_mutation_operator()
-				line = mutant.get_mutation().get_location().line_of()
+				line = mutant.get_mutation().get_location().line_of(False)
 				code = mutant.get_mutation().get_location().get_code(True)
 				parameter = mutant.get_mutation().get_parameter()
 				self.writer.write("Mutant\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".format(
@@ -959,7 +960,7 @@ class MutationPatternWriter:
 		return
 
 
-def mining_patterns(document: cmuta.MutantExecutionDocument, classifier_tests, line_or_mutant: bool,
+def mining_patterns(document: cmuta.MutationFeatureDocument, classifier_tests, line_or_mutant: bool,
 					uk_or_cc: bool, min_support: int, max_confidence: float, max_length: int, output_directory: str):
 	"""
 	:param document: it provides lines and mutations in the program
@@ -975,7 +976,7 @@ def mining_patterns(document: cmuta.MutantExecutionDocument, classifier_tests, l
 	if not(os.path.exists(output_directory)):
 		os.mkdir(output_directory)
 	print("Testing on", document.get_project().program.name)
-	print("\t(1) Load", len(document.get_lines()), "lines of", len(document.get_mutants()),
+	print("\t(1) Load", len(document.get_feature_lines()), "lines of", len(document.get_mutants()),
 		  "mutants with", len(document.get_corpus()), "words.")
 	__killed__, over_score, valid_score = document.get_project().evaluation.\
 		evaluate_mutation_score(document.get_project().mutant_space.get_mutants(), classifier_tests)
@@ -1021,7 +1022,7 @@ if __name__ == "__main__":
 		mining_patterns(docs, c_project.test_space.get_test_cases(), True, False, 100, 0.80, 1, os.path.join(over_path))
 
 		# 2. dynamic document analysis
-		docs = c_project.load_dynamic_documents(dir)
+		docs = c_project.load_dynamic_document(dir)
 		mining_patterns(docs, docs.get_test_cases(), True, False, 20, 0.80, 1, os.path.join(dyna_path))
 	print("\nTesting end for all...")
 
