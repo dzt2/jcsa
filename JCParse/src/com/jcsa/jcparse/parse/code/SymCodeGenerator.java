@@ -5,6 +5,7 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
+import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.lexical.CConstant;
@@ -12,6 +13,7 @@ import com.jcsa.jcparse.lang.sym.SymArgumentList;
 import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
 import com.jcsa.jcparse.lang.sym.SymCallExpression;
 import com.jcsa.jcparse.lang.sym.SymConstant;
+import com.jcsa.jcparse.lang.sym.SymExpression;
 import com.jcsa.jcparse.lang.sym.SymField;
 import com.jcsa.jcparse.lang.sym.SymFieldExpression;
 import com.jcsa.jcparse.lang.sym.SymIdentifier;
@@ -118,7 +120,23 @@ public class SymCodeGenerator {
 		case not_equals:	code = "!=";	break;
 		case address_of:	code = "&";		break;
 		case dereference:	code = "*";		break;
-		case assign:		code = "cast";		break;
+		case assign:		
+		{
+			SymExpression parent = (SymExpression) node.get_parent();
+			if(parent == null) {
+				code = "(void)";
+			}
+			else {
+				CType data_type = parent.get_data_type();
+				if(data_type == null) {
+					code = "(void)";
+				}
+				else {
+					code = "(" + data_type.generate_code() + ")";
+				}
+			}
+			break;
+		}
 		default: throw new IllegalArgumentException("Invalid operator: " + node.get_operator());
 		}
 		this.buffer.append(code);

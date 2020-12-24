@@ -5,7 +5,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
@@ -15,9 +19,17 @@ import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceEdge;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceGraph;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceNode;
 import com.jcsa.jcparse.base.Complex;
+import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.depend.CDependNode;
+import com.jcsa.jcparse.flwa.depend.CDependPredicate;
+import com.jcsa.jcparse.flwa.depend.CDependReference;
+import com.jcsa.jcparse.flwa.graph.CirInstanceEdge;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
@@ -51,8 +63,16 @@ import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
+import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
+import com.jcsa.jcparse.lang.sym.SymConstant;
 import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.sym.SymField;
+import com.jcsa.jcparse.lang.sym.SymFieldExpression;
+import com.jcsa.jcparse.lang.sym.SymIdentifier;
+import com.jcsa.jcparse.lang.sym.SymLiteral;
 import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.lang.sym.SymOperator;
+import com.jcsa.jcparse.lang.sym.SymUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -150,9 +170,10 @@ public class MuTestProjectFeatureWriter {
 	/**
 	 * n@null, b@bool, c@char, i@int, f@real, x@r@i, 
 	 * key@str, pun@str, opr@str, 
-	 * ast@int, cir@int, mut@int, exe@str@int,
+	 * ast@int, cir@int, mut@int, exe@str@int, 
+	 * ins@cotext@func@index, dep@context@func@index
 	 * s@str [identifier, literal, cir_code]
-	 * typ@str, sym@str, tst@str
+	 * typ@str, sym@type@hashCode
 	 * @param token
 	 * @return
 	 */
@@ -189,10 +210,22 @@ public class MuTestProjectFeatureWriter {
 			return "s@" + this.normalize_string(token.toString());
 		else if(token instanceof CType)
 			return "typ@" + this.normalize_string(((CType) token).generate_code());
-		else if(token instanceof SymNode)
-			return "sym@" + this.normalize_string(((SymNode) token).generate_code(true));
-		else if(token instanceof TestInput)
-			return "tst@" + ((TestInput) token).get_parameter();
+		else if(token instanceof CirInstanceNode) {
+			CirInstanceNode node = (CirInstanceNode) token;
+			return "ins@" + node.get_context().hashCode() + "@" + 
+					node.get_execution().get_graph().get_function().get_name() + 
+					"@" + node.get_execution().get_id();
+		}
+		else if(token instanceof CDependNode) {
+			CirInstanceNode node = ((CDependNode) token).get_instance();
+			return "dep@" + node.get_context().hashCode() + "@" + 
+					node.get_execution().get_graph().get_function().get_name() + 
+					"@" + node.get_execution().get_id();
+		}
+		else if(token instanceof SymNode) {
+			SymNode node = (SymNode) token;
+			return "sym@" + node.getClass().getSimpleName().substring(3) + "@" + node.hashCode();
+		}
 		else
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
 	}
@@ -453,14 +486,158 @@ public class MuTestProjectFeatureWriter {
 		this.write_flw();
 	}
 	
+	/* xxx.ins xxx.dep */
+	/**
+	 * #node ID context execution
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_instance_node(CirInstanceNode node) throws Exception {
+		this.writer.write("#node");
+		this.writer.write("\t" + this.token_string(node));
+		this.writer.write("\t" + node.get_context().hashCode());
+		this.writer.write("\t" + this.token_string(node.get_execution()));
+		this.writer.write("\n");
+	}
+	/**
+	 * #edge type source_ID target_ID
+	 * @param edge
+	 * @throws Exception
+	 */
+	private void write_instance_edge(CirInstanceEdge edge) throws Exception {
+		this.writer.write("#edge");
+		this.writer.write("\t" + edge.get_type().toString());
+		this.writer.write("\t" + this.token_string(edge.get_source()));
+		this.writer.write("\t" + this.token_string(edge.get_target()));
+		this.writer.write("\n");
+	}
+	/**
+	 * #node ID context execution
+	 * #edge type source_ID target_ID
+	 * @param graph
+	 * @throws Exception
+	 */
+	private void write_instance_graph(CirInstanceGraph graph) throws Exception {
+		this.open(".ins");
+		for(Object context : graph.get_contexts()) {
+			for(CirInstance instance : graph.get_instances(context)) {
+				if(instance instanceof CirInstanceNode) {
+					CirInstanceNode node = (CirInstanceNode) instance;
+					this.write_instance_node(node);
+					for(CirInstanceEdge edge : node.get_ou_edges()) {
+						this.write_instance_edge(edge);
+					}
+				}
+			}
+		}
+		this.close();
+	}
+	/**
+	 * #node dependence_ID instance_ID
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_dependence_node(CDependNode node) throws Exception {
+		this.writer.write("#node");
+		this.writer.write("\t" + this.token_string(node));
+		this.writer.write("\t" + this.token_string(node.get_instance()));
+		this.writer.write("\n");
+	}
+	/**
+	 * #edge [predicate_depend] source_instance_ID target_instance_ID cir_condition bool
+	 * #edge [stmt_call_depend] source_instance_ID target_instance_ID call_stmt entr_stmt
+	 * #edge [stmt_exit_depend] source_instance_ID target_instance_ID exit_stmt wait_stmt
+	 * 
+	 * #edge [use_defin_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * #edge [param_arg_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * #edge [wait_retr_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * 
+	 * @param edge
+	 * @throws Exception
+	 */
+	private void write_dependence_edge(CDependEdge edge) throws Exception {
+		this.writer.write("#edge");
+		this.writer.write("\t" + edge.get_type().toString());
+		this.writer.write("\t" + this.token_string(edge.get_source()));
+		this.writer.write("\t" + this.token_string(edge.get_target()));
+		
+		switch(edge.get_type()) {
+		case predicate_depend:
+		{
+			CDependPredicate predicate = (CDependPredicate) edge.get_element();
+			this.writer.write("\t" + this.token_string(predicate.get_condition()));
+			this.writer.write("\t" + this.token_string(predicate.get_predicate_value()));
+			break;
+		}
+		case stmt_call_depend:
+		{
+			CirExecution call_execution = edge.get_target().get_execution();
+			CirExecutionFlow call_flow = call_execution.get_ou_flow(0);
+			this.writer.write("\t" + this.token_string(call_flow.get_source()));
+			this.writer.write("\t" + this.token_string(call_flow.get_target()));
+			break;
+		}
+		case stmt_exit_depend:
+		{
+			CirExecution wait_execution = edge.get_target().get_execution();
+			CirExecutionFlow retr_flow = wait_execution.get_in_flow(0);
+			this.writer.write("\t" + this.token_string(retr_flow.get_source()));
+			this.writer.write("\t" + this.token_string(retr_flow.get_target()));
+			break;
+		}
+		case use_defin_depend:
+		case param_arg_depend:
+		case wait_retr_depend:
+		{
+			CDependReference reference = (CDependReference) edge.get_element();
+			this.writer.write("\t" + this.token_string(reference.get_use()));
+			this.writer.write("\t" + this.token_string(reference.get_def()));
+			break;
+		}
+		default: throw new IllegalArgumentException("Unsupport: " + edge.get_type());
+		}
+		
+		this.writer.write("\n");
+	}
+	/**
+	 * #node dependence_ID instance_ID
+	 * #edge [predicate_depend] source_instance_ID target_instance_ID cir_condition bool
+	 * #edge [stmt_call_depend] source_instance_ID target_instance_ID call_stmt entr_stmt
+	 * #edge [stmt_exit_depend] source_instance_ID target_instance_ID exit_stmt wait_stmt
+	 * #edge [use_defin_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * #edge [param_arg_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * #edge [wait_retr_depend] source_instance_ID target_instance_ID use_expr define_expr
+	 * @param graph
+	 * @throws Exception
+	 */
+	private void write_dependence_graph(CDependGraph graph) throws Exception {
+		this.open(".dep");
+		for(CDependNode node : graph.get_nodes()) {
+			this.write_dependence_node(node);
+			for(CDependEdge edge : node.get_ou_edges()) {
+				this.write_dependence_edge(edge);
+			}
+		}
+		this.close();
+	}
+	/**
+	 * static information from dependence graph
+	 * @param graph
+	 * @throws Exception
+	 */
+	private void write_stat(CDependGraph graph) throws Exception {
+		this.write_instance_graph(graph.get_program_graph());
+		this.write_dependence_graph(graph);
+	}
+	
 	/* xxx.tst */
 	/**
-	 * ID tst@parameter
+	 * ID parameter
 	 * @param test
 	 * @throws Exception
 	 */
 	private void write_tst(TestInput test) throws Exception {
-		this.writer.write(test.get_id() + "\t" + this.token_string(test) + "\n");
+		this.writer.write(test.get_id() + "\t" + this.token_string(test.get_parameter()) + "\n");
 	}
 	/**
 	 * ID tst@parameter
@@ -538,52 +715,139 @@ public class MuTestProjectFeatureWriter {
 		this.write_res();
 	}
 	
-	/* xxx.sft|dft */
+	/* xxx.sft|dft xxx.sym */
 	/**
-	 * constraint$execution$location$parameter
+	 * collect all the nodes under the given input node into nodes collection
+	 * @param node
+	 * @param nodes
+	 * @throws Exception
+	 */
+	private void collect_sym_node(SymNode node, Collection<SymNode> nodes) throws Exception {
+		Queue<SymNode> queue = new LinkedList<SymNode>(); queue.add(node);
+		while(!queue.isEmpty()) {
+			SymNode parent = queue.poll(); nodes.add(parent);
+			for(SymNode child : parent.get_children()) queue.add(child);
+		}
+	}
+	/**
+	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_sym_node(SymNode node) throws Exception {
+		this.writer.write(this.token_string(node));
+		
+		String class_name = node.getClass().getSimpleName();
+		this.writer.write("\t" + class_name.substring(3));
+		this.writer.write("\t" + this.token_string(node.get_source()));
+		
+		CType data_type;
+		if(node instanceof SymExpression) {
+			data_type = ((SymExpression) node).get_data_type();
+		}
+		else {
+			data_type = null;
+		}
+		this.writer.write("\t" + this.token_string(data_type));
+		
+		Object content;
+		if(node instanceof SymField) {
+			content = ((SymField) node).get_name();
+		}
+		else if(node instanceof SymOperator) {
+			content = ((SymOperator) node).get_operator();
+		}
+		else if(node instanceof SymIdentifier) {
+			content = ((SymIdentifier) node).get_name();
+		}
+		else if(node instanceof SymConstant) {
+			content = ((SymConstant) node).get_constant();
+		}
+		else if(node instanceof SymLiteral) {
+			content = ((SymLiteral) node).get_literal();
+		}
+		else if(node instanceof SymBinaryExpression) {
+			content = ((SymBinaryExpression) node).get_operator().get_operator();
+		}
+		else if(node instanceof SymUnaryExpression) {
+			content = ((SymUnaryExpression) node).get_operator().get_operator();
+		}
+		else if(node instanceof SymFieldExpression) {
+			content = CPunctuator.dot;
+		}
+		else {
+			content = null;
+		}
+		this.writer.write("\t" + this.token_string(content));
+		
+		this.writer.write("\t" + this.token_string(node.generate_code(true)));
+		
+		this.writer.write("\t[");
+		for(SymNode child : node.get_children()) {
+			this.writer.write(" " + this.token_string(child));
+		}
+		this.writer.write(" ]");
+		
+		this.writer.write("\n");
+	}
+	/**
+	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
+	 * @param nodes
+	 * @throws Exception
+	 */
+	private void write_sym_nodes(Collection<SymNode> nodes) throws Exception {
+		this.open(".sym");
+		for(SymNode node : nodes) {
+			this.write_sym_node(node);
+		}
+		this.close();
+	}
+	/**
+	 * [ const execution location sym_expression ]
 	 * @param constraint
 	 * @throws Exception
 	 */
-	private void write_sym_word(SymConstraint constraint) throws Exception {
-		this.writer.write("constraint");
-		this.writer.write("$" + this.token_string(constraint.get_execution()));
-		this.writer.write("$" + this.token_string(constraint.get_statement()));
-		this.writer.write("$" + this.token_string(constraint.get_condition()));
+	private void write_feature_word(SymConstraint constraint, Collection<SymNode> nodes) throws Exception {
+		this.collect_sym_node(constraint.get_condition(), nodes);
+		this.writer.write("[");
+		this.writer.write(" const");
+		this.writer.write(" " + this.token_string(constraint.get_execution()));
+		this.writer.write(" " + this.token_string(constraint.get_statement()));
+		this.writer.write(" " + this.token_string(constraint.get_condition()));
+		this.writer.write(" ]");
 	}
 	/**
-	 * type$execution$location$parameter
+	 * [ type execution location sym_expression? ]
 	 * @param annotation
 	 * @throws Exception
 	 */
-	private void write_sym_word(CirAnnotation annotation) throws Exception {
-		writer.write(annotation.get_type().toString());
-		writer.write("$" + this.token_string(annotation.get_execution()));
-		writer.write("$" + this.token_string(annotation.get_location()));
-		writer.write("$");
-		if(annotation.get_parameter() != null) {
-			SymExpression parameter = (SymExpression) annotation.get_parameter();
-			this.writer.write(this.token_string(parameter));
+	private void write_feature_word(CirAnnotation annotation, Collection<SymNode> nodes) throws Exception {
+		if(annotation.get_parameter() instanceof SymNode) {
+			this.collect_sym_node((SymNode) annotation.get_parameter(), nodes);
 		}
-		else {
-			this.writer.write(this.token_string(null));
-		}
+		this.writer.write("[");
+		this.writer.write(" " + annotation.get_type());
+		this.writer.write(" " + this.token_string(annotation.get_execution()));
+		this.writer.write(" " + this.token_string(annotation.get_location()));
+		this.writer.write(" " + this.token_string(annotation.get_parameter()));
+		this.writer.write(" ]");
 	}
 	/**
 	 * constraint*
 	 * @param edge
 	 * @throws Exception
 	 */
-	private void write_sym_instance_edge(SymInstanceEdge edge) throws Exception {
+	private void write_sym_instance_edge(SymInstanceEdge edge, Collection<SymNode> nodes) throws Exception {
 		CirMutations cir_mutations = edge.get_source().get_graph().get_cir_mutations();
 		SymConstraint constraint = edge.get_constraint(); 
 		constraint = cir_mutations.optimize(constraint, null);
 		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
 		
 		writer.write("\t");
-		this.write_sym_word(edge.get_constraint());
+		this.write_feature_word(edge.get_constraint(), nodes);
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
-			this.write_sym_word(improved_constraint);
+			this.write_feature_word(improved_constraint, nodes);
 		}
 	}
 	/**
@@ -591,11 +855,11 @@ public class MuTestProjectFeatureWriter {
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_sym_instance_node(SymInstanceNode node) throws Exception {
+	private void write_sym_instance_node(SymInstanceNode node, Collection<SymNode> nodes) throws Exception {
 		if(node.has_state_error()) {
 			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
 				writer.write("\t");
-				this.write_sym_word(annotation);
+				this.write_feature_word(annotation, nodes);
 			}
 		}
 	}
@@ -604,12 +868,12 @@ public class MuTestProjectFeatureWriter {
 	 * @param path
 	 * @throws Exception
 	 */
-	private void write_sym_instance_path(List<SymInstanceEdge> path) throws Exception {
+	private void write_sym_instance_path(List<SymInstanceEdge> path, Collection<SymNode> nodes) throws Exception {
 		if(!path.isEmpty()) {
-			this.write_sym_instance_node(path.get(0).get_source());
+			this.write_sym_instance_node(path.get(0).get_source(), nodes);
 			for(SymInstanceEdge edge : path) {
-				this.write_sym_instance_edge(edge);
-				this.write_sym_instance_node(edge.get_target());
+				this.write_sym_instance_edge(edge, nodes);
+				this.write_sym_instance_node(edge.get_target(), nodes);
 			}
 		}
 	}
@@ -619,13 +883,13 @@ public class MuTestProjectFeatureWriter {
 	 * @param test_case
 	 * @throws Exception
 	 */
-	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case) throws Exception {
+	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case, Collection<SymNode> nodes) throws Exception {
 		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
 		int test_id = -1;
 		if(test_case != null) test_id = test_case.get_id();
 		for(List<SymInstanceEdge> path : paths) {
 			writer.write(graph.get_mutant().get_id() + "\t" + test_id);
-			this.write_sym_instance_path(path);
+			this.write_sym_instance_path(path, nodes);
 			writer.write("\n");
 		}
 	}
@@ -634,7 +898,9 @@ public class MuTestProjectFeatureWriter {
 	 * @param test_case
 	 * @throws Exception
 	 */
-	private void write_sym_instance_graphs(TestInput test_case, CDependGraph dependence_graph, int max_distance) throws Exception {
+	private void write_sym_instance_graphs(
+			TestInput test_case, CDependGraph dependence_graph, 
+			int max_distance, Collection<SymNode> nodes) throws Exception {
 		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 		CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
 							this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
@@ -647,7 +913,7 @@ public class MuTestProjectFeatureWriter {
 				}
 				SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
 				graph.evaluate(state_path);
-				this.write_sym_instance_graph(graph, test_case);
+				this.write_sym_instance_graph(graph, test_case, nodes);
 			}
 			this.close();
 		}
@@ -658,7 +924,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param max_distance
 	 * @throws Exception
 	 */
-	private void write_sym_instance_graphs(CDependGraph dependence_graph, int max_distance) throws Exception {
+	private void write_sym_instance_graphs(CDependGraph dependence_graph, int max_distance, Collection<SymNode> nodes) throws Exception {
 		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 		this.open(".sft");
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
@@ -669,7 +935,7 @@ public class MuTestProjectFeatureWriter {
 			
 			SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
 			graph.evaluate();
-			this.write_sym_instance_graph(graph, null);
+			this.write_sym_instance_graph(graph, null, nodes);
 		}
 		this.close();
 	}
@@ -682,11 +948,15 @@ public class MuTestProjectFeatureWriter {
 		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1));
-		this.write_sym_instance_graphs(dependence_graph, max_distance);
+		this.write_stat(dependence_graph);
+		
+		Set<SymNode> sym_nodes = new HashSet<SymNode>();
+		this.write_sym_instance_graphs(dependence_graph, max_distance, sym_nodes);
 		if(test_suite != null && !test_suite.isEmpty()) {
 			for(TestInput test_case : test_suite) 
-				this.write_sym_instance_graphs(test_case, dependence_graph, max_distance);
+				this.write_sym_instance_graphs(test_case, dependence_graph, max_distance, sym_nodes);
 		}
+		this.write_sym_nodes(sym_nodes);
 	}
 	
 }
