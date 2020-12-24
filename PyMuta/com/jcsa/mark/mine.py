@@ -975,28 +975,29 @@ def mining_patterns(document: cmuta.MutationFeatureDocument, classifier_tests, l
 	"""
 	if not(os.path.exists(output_directory)):
 		os.mkdir(output_directory)
-	print("Testing on", document.get_project().program.name)
-	print("\t(1) Load", len(document.get_feature_lines()), "lines of", len(document.get_mutants()),
-		  "mutants with", len(document.get_corpus()), "words.")
-	__killed__, over_score, valid_score = document.get_project().evaluation.\
-		evaluate_mutation_score(document.get_project().mutant_space.get_mutants(), classifier_tests)
-	test_number = None
-	if classifier_tests is not None:
-		test_number = len(classifier_tests)
-	print("\t\tSelect", test_number, "test cases for killing", __killed__,
-		  "mutants with {}%({}%).".format(MutationPatternWriter.__percentage__(over_score),
-										  MutationPatternWriter.__percentage__(valid_score)))
+	if len(document.get_feature_lines()) > 0:
+		print("Testing on", document.get_project().program.name)
+		print("\t(1) Load", len(document.get_feature_lines()), "lines of", len(document.get_mutants()),
+			  "mutants with", len(document.get_corpus()), "words.")
+		__killed__, over_score, valid_score = document.get_project().evaluation.\
+			evaluate_mutation_score(document.get_project().mutant_space.get_mutants(), classifier_tests)
+		test_number = None
+		if classifier_tests is not None:
+			test_number = len(classifier_tests)
+		print("\t\tSelect", test_number, "test cases for killing", __killed__,
+			  "mutants with {}%({}%).".format(MutationPatternWriter.__percentage__(over_score),
+											  MutationPatternWriter.__percentage__(valid_score)))
 
-	generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
-	patterns = generator.generate(document, classifier_tests)
-	print("\t(2) Generate", len(patterns.get_patterns()), "patterns with", len(patterns.get_minimal_patterns()), "of minimal set from.")
+		generator = MutationPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
+		patterns = generator.generate(document, classifier_tests)
+		print("\t(2) Generate", len(patterns.get_patterns()), "patterns with", len(patterns.get_minimal_patterns()), "of minimal set from.")
 
-	writer = MutationPatternWriter(patterns)
-	writer.write_patterns(os.path.join(output_directory, document.get_project().program.name + ".mpt"))
-	writer.write_results(os.path.join(output_directory, document.get_project().program.name + ".mrt"))
-	writer.write_best_patterns(os.path.join(output_directory, document.get_project().program.name + ".bpt"), line_or_mutant, uk_or_cc)
-	print("\t(3) Output the pattern, test results to output file finally...")
-	print()
+		writer = MutationPatternWriter(patterns)
+		writer.write_patterns(os.path.join(output_directory, document.get_project().program.name + ".mpt"))
+		writer.write_results(os.path.join(output_directory, document.get_project().program.name + ".mrt"))
+		writer.write_best_patterns(os.path.join(output_directory, document.get_project().program.name + ".bpt"), line_or_mutant, uk_or_cc)
+		print("\t(3) Output the pattern, test results to output file finally...")
+		print()
 	return
 
 
@@ -1017,12 +1018,12 @@ if __name__ == "__main__":
 		minimal_number = int(len(c_project.test_space.get_test_cases()) * 0.005)
 		random_tests = c_project.evaluation.select_tests_for_random(minimal_number)
 		selected_tests = minimal_tests | random_tests
-		mining_patterns(docs, None, True, False, 2, 0.75, 1, os.path.join(none_path))
-		mining_patterns(docs, selected_tests, True, False, 20, 0.80, 1, os.path.join(test_path))
-		mining_patterns(docs, c_project.test_space.get_test_cases(), True, False, 100, 0.80, 1, os.path.join(over_path))
+		mining_patterns(docs, None, True, True, 2, 0.75, 1, os.path.join(none_path))
+		mining_patterns(docs, selected_tests, True, True, 20, 0.80, 1, os.path.join(test_path))
+		mining_patterns(docs, c_project.test_space.get_test_cases(), True, True, 100, 0.80, 1, os.path.join(over_path))
 
 		# 2. dynamic document analysis
-		docs = c_project.load_dynamic_document(dir)
-		mining_patterns(docs, docs.get_test_cases(), True, False, 20, 0.80, 1, os.path.join(dyna_path))
+		# docs = c_project.load_dynamic_document(dir)
+		# mining_patterns(docs, docs.get_test_cases(), True, True, 20, 0.80, 1, os.path.join(dyna_path))
 	print("\nTesting end for all...")
 
