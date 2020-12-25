@@ -809,12 +809,10 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_feature_word(SymConstraint constraint, Collection<SymNode> nodes) throws Exception {
 		this.collect_sym_node(constraint.get_condition(), nodes);
-		this.writer.write("[");
-		this.writer.write(" const");
-		this.writer.write(" " + this.token_string(constraint.get_execution()));
-		this.writer.write(" " + this.token_string(constraint.get_statement()));
-		this.writer.write(" " + this.token_string(constraint.get_condition()));
-		this.writer.write(" ]");
+		this.writer.write("const");
+		this.writer.write("$" + this.token_string(constraint.get_execution()));
+		this.writer.write("$" + this.token_string(constraint.get_statement()));
+		this.writer.write("$" + this.token_string(constraint.get_condition()));
 	}
 	/**
 	 * [ type execution location sym_expression? ]
@@ -822,15 +820,12 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_feature_word(CirAnnotation annotation, Collection<SymNode> nodes) throws Exception {
-		if(annotation.get_parameter() instanceof SymNode) {
+		if(annotation.get_parameter() instanceof SymNode) 
 			this.collect_sym_node((SymNode) annotation.get_parameter(), nodes);
-		}
-		this.writer.write("[");
-		this.writer.write(" " + annotation.get_type());
-		this.writer.write(" " + this.token_string(annotation.get_execution()));
-		this.writer.write(" " + this.token_string(annotation.get_location()));
-		this.writer.write(" " + this.token_string(annotation.get_parameter()));
-		this.writer.write(" ]");
+		this.writer.write(annotation.get_type().toString());
+		this.writer.write("$" + this.token_string(annotation.get_execution()));
+		this.writer.write("$" + this.token_string(annotation.get_location()));
+		this.writer.write("$" + this.token_string(annotation.get_parameter()));
 	}
 	/**
 	 * constraint*

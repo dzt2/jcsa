@@ -49,8 +49,12 @@ public class MuTestProjectFeatureWritings {
 		System.out.println("\t==> Select " + selected_tests.size() + " test cases from " + 
 							project.get_test_space().number_of_test_inputs() + " inputs.");
 		
+		selected_tests.clear();		/* TODO remove this statement for generating dynamic features */
+		
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_code(); writer.write_muta(); writer.write_features(max_distance, selected_tests);
+		writer.write_code(); 
+		writer.write_muta();
+		writer.write_features(max_distance, selected_tests);
 		System.out.println();
 	}
 	
