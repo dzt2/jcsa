@@ -50,7 +50,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
-  <component name="RunManager" selected="Python.mine (1)">
+  <component name="RunManager" selected="Python.mine2">
     <configuration name="base" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -143,11 +143,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/pymuta" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/mark" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/pymuta/mine.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/mark/mine.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -284,11 +284,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.mine (1)" />
+        <item itemvalue="Python.mine2" />
         <item itemvalue="Python.muta (1)" />
+        <item itemvalue="Python.mine (1)" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.base" />
-        <item itemvalue="Python.mine" />
       </list>
     </recent_temporary>
   </component>

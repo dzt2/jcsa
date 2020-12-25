@@ -23,7 +23,7 @@ class CProject:
 		return
 
 	def load_static_document(self, directory: str):
-		document = MutationFeatureDocument(self)
+		document = MutationFeaturesDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".sft"):
 				document.load(os.path.join(directory, file_name))
@@ -31,12 +31,11 @@ class CProject:
 		return document
 
 	def load_dynamic_document(self, directory: str):
-		document = MutationFeatureDocument(self)
+		document = MutationFeaturesDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".dft"):
 				document.load(os.path.join(directory, file_name))
 		return document
-
 
 
 class TestCase:
@@ -351,164 +350,6 @@ class MutantSpace:
 		return
 
 
-class MutationFeature:
-	"""
-	type execution location parameter
-	"""
-	def __init__(self, feature_type: str, execution: ccode.CirExecution, location: ccode.CirNode, parameter: cbase.SymNode):
-		"""
-		:param feature_type: const | annotation_type
-		:param execution: where the feature is expected to hold
-		:param location: where the feature is defined upon
-		:param parameter: symbolic expression or None
-		"""
-		self.feature_type = feature_type
-		self.execution = execution
-		self.location = location
-		self.parameter = parameter
-		return
-
-	def get_feature_type(self):
-		return self.feature_type
-
-	def get_execution(self):
-		return self.execution
-
-	def get_location(self):
-		return self.location
-
-	def get_parameter(self):
-		return self.parameter
-
-	def has_parameter(self):
-		return self.parameter is not None
-
-	@staticmethod
-	def parse(project: CProject, feature_word: str):
-		"""
-		:param project:
-		:param feature_word: [ type execution location parameter ]
-		:return:
-		"""
-		items = feature_word.strip().split(' ')
-		feature_type = items[1].strip()
-		execution_token = cbase.CToken.parse(items[2].strip()).get_token_value()
-		location_token = cbase.CToken.parse(items[3].strip()).get_token_value()
-		parameter_token = cbase.CToken.parse(items[4].strip()).get_token_value()
-		execution = project.program.function_call_graph.get_execution(execution_token[0], execution_token[1])
-		location = project.program.cir_tree.get_cir_node(location_token)
-		parameter = None
-		if parameter_token is not None:
-			parameter = project.sym_tree.get_sym_node(items[4].strip())
-		return MutationFeature(feature_type, execution, location, parameter)
-
-	def __str__(self):
-		return self.feature_type + ":" + str(self.execution) + ":\"" + self.location.get_cir_code() + "\":" + str(self.parameter)
-
-
-class MutationFeatureLine:
-	def __init__(self, document, mutant: Mutant, test_case: TestCase, feature_words: list):
-		document: MutationFeatureDocument
-		self.document = document
-		self.mutant = mutant
-		self.test_case = test_case
-		self.feature_words = feature_words
-		return
-
-	def get_document(self):
-		return self.document
-
-	def get_mutant(self):
-		return self.mutant
-
-	def get_test_case(self):
-		return self.test_case
-
-	def has_test_case(self):
-		return self.test_case is not None
-
-	def get_feature_words(self):
-		return self.feature_words
-
-	def get_feature_word(self, k: int):
-		word = self.feature_words[k]
-		word: str
-		return word
-
-	def generate_features(self):
-		features = list()
-		for word in self.feature_words:
-			feature = MutationFeature.parse(self.document.project, word.strip())
-			features.append(feature)
-		return features
-
-
-class MutationFeatureDocument:
-	def __init__(self, project: CProject):
-		self.project = project
-		self.lines = list()
-		self.corpus = set()
-		self.mutants = set()
-		self.test_cases = set()
-		return
-
-	def get_project(self):
-		return self.project
-
-	def get_feature_lines(self):
-		return self.lines
-
-	def get_mutants(self):
-		return self.mutants
-
-	def get_test_cases(self):
-		return self.test_cases
-
-	def get_corpus(self):
-		return self.corpus
-
-	def __add__(self, line):
-		"""
-		:param line:
-		:return: return True if successfully append a line to the document
-		"""
-		line: str
-		items = line.strip().split('\t')
-		if len(items) > 2:
-			mid = int(items[0].strip())
-			tid = int(items[1].strip())
-			mutant = self.project.mutant_space.get_mutant(mid)
-			self.mutants.add(mutant)
-			if tid < 0:
-				test_case = None
-			else:
-				test_case = self.project.test_space.get_test_case(tid)
-				self.test_cases.add(test_case)
-			words = list()
-			for k in range(2, len(items)):
-				word = items[k].strip()
-				if len(word) > 0:
-					words.append(items[k].strip())
-					self.corpus.add(word)
-			feature_line = MutationFeatureLine(self, mutant, test_case, words)
-			self.lines.append(feature_line)
-			return True
-		return False
-
-	def load(self, feature_file: str):
-		with open(feature_file, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					self.__add__(line)
-		return
-
-	def clear(self):
-		self.corpus.clear()
-		self.lines.clear()
-		return
-
-
 class MutationTestEvaluation:
 	"""
 	It implements the selection of mutation and test case and their evaluation of mutation score.
@@ -668,20 +509,269 @@ class MutationTestEvaluation:
 		return killed, over_score, valid_score
 
 
+class MutationFeature:
+	"""
+	Each mutation feature is encoded as [type, execution, location(CIR), parameter(None or SymNode)]
+	"""
+	def __init__(self, feature_type: str, execution: ccode.CirExecution,
+				 location: ccode.CirNode, parameter: cbase.SymNode):
+		"""
+		:param feature_type: const | covr_stmt | add_stmt | trap_stmt | chg_bool | ... | set_auto ...
+		:param execution: where the feature (as property) will be validated
+		:param location: where the feature will be evaluated or the objective being mined
+		:param parameter: either symbolic expression or None if no parameter specified
+		"""
+		self.feature_type = feature_type
+		self.execution = execution
+		self.location = location
+		self.parameter = parameter
+		return
+
+	def get_feature_type(self):
+		"""
+		:return: const or state error type
+		"""
+		return self.feature_type
+
+	def get_execution(self):
+		"""
+		:return: statement where it is evaluated
+		"""
+		return self.execution
+
+	def get_location(self):
+		"""
+		:return: CIR subject being described by this feature
+		"""
+		return self.location
+
+	def has_parameter(self):
+		"""
+		:return: whether the parameter is SymNode
+		"""
+		return self.parameter is not None
+
+	def get_parameter(self):
+		return self.parameter
+
+	def __str__(self):
+		return MutationFeature.encode(self)
+
+	@staticmethod
+	def encode(feature):
+		"""
+		:param feature: to encode the MutationFeature as String
+		:return: type$execution$location$parameter
+		"""
+		feature: MutationFeature
+		feature_type = feature.feature_type
+		execution_str = "exe@" + feature.execution.get_function().get_name() + "@" + str(feature.execution.get_exe_id())
+		location_str = "cir@" + str(feature.location.get_cir_id())
+		if feature.parameter is None:
+			parameter_str = "n@null"
+		else:
+			parameter_str = "sym@" + feature.parameter.get_class_name() + "@" + str(feature.parameter.get_class_id())
+		return feature_type + "$" + execution_str + "$" + location_str + "$" + parameter_str
+
+	@staticmethod
+	def decode(project: CProject, feature_word: str):
+		"""
+		:param project: provide contextual information to decode the word as MutationFeature
+		:param feature_word: type@execution@location@parameter
+		:return:
+		"""
+		items = feature_word.strip().split('$')
+		feature_type = items[0].strip()
+		execution_token = cbase.CToken.parse(items[1].strip()).get_token_value()
+		location_token = cbase.CToken.parse(items[2].strip()).get_token_value()
+		parameter_token = cbase.CToken.parse(items[3].strip()).get_token_value()
+		execution = project.program.function_call_graph.get_execution(execution_token[0], execution_token[1])
+		location = project.program.cir_tree.get_cir_node(location_token)
+		parameter = None
+		if parameter_token is not None:
+			parameter = project.sym_tree.get_sym_node(items[3].strip())
+		return MutationFeature(feature_type, execution, location, parameter)
+
+
+class MutationFeaturesLine:
+	"""
+	Each feature line of mutation refers to a symbolic execution path with annotation of its constraints
+	as well as infected state (encoded as words and can be decoded as MutationFeature)
+	"""
+	def __init__(self, document, mutant: Mutant, test_case: TestCase, feature_words):
+		"""
+		:param document: where the feature line is created
+		:param mutant: mutation being executed
+		:param test_case: test case used to execute against the mutant
+		:param feature_words: the sequence of words to describe the features of execution state in (m, t)
+		"""
+		document: MutationFeaturesDocument
+		self.document = document
+		self.mutant = mutant
+		self.test_case = test_case
+		self.feature_words = list()
+		for feature_word in feature_words:
+			feature_word: str
+			self.feature_words.append(feature_word)
+		return
+
+	def get_document(self):
+		"""
+		:return: document where the line is created
+		"""
+		return self.document
+
+	def get_mutant(self):
+		"""
+		:return: mutation being executed in the line of mutant execution (m, t)
+		"""
+		return self.mutant
+
+	def has_test_case(self):
+		"""
+		:return: true if the line is generated using dynamic analysis
+		"""
+		return self.test_case is not None
+
+	def get_test_case(self):
+		"""
+		:return: test case used to execute for generating the execution (m, t)
+		"""
+		return self.test_case
+
+	def get_feature_words(self):
+		"""
+		:return: sequence of words to encode MutationFeature(s) in the line
+		"""
+		return self.feature_words
+
+	def get_features(self):
+		"""
+		:return: decode the feature words to MutationFeature(s)
+		"""
+		features = list()
+		for feature_word in self.feature_words:
+			feature = self.document.get_feature(feature_word)
+			features.append(feature)
+		return features
+
+
+class MutationFeaturesDocument:
+	"""
+	It maintains the features in execution line(s) recorded from xxx.sft or xxx.x.dft(s)
+	"""
+	def __init__(self, project: CProject):
+		"""
+		:param project:
+		"""
+		self.project = project
+		self.corpus = dict()		# mapping from feature word to structural feature
+		self.lines = list()			# execution lines with annotated by features
+		self.mutants = set()		# set of mutations w.r.t. some executions in the document
+		self.test_cases = set()		# set of test cases w.r.t. some executions in the document
+		return
+
+	def get_project(self):
+		"""
+		:return: mutation testing project used
+		"""
+		return self.project
+
+	def get_corpus_words(self):
+		"""
+		:return: set of mutation feature words to encode the features in execution lines
+		"""
+		return self.corpus.keys()
+
+	def get_corpus_features(self):
+		"""
+		:return: set of mutation features decoded from the words
+		"""
+		return self.corpus.values()
+
+	def get_feature(self, feature_word: str):
+		"""
+		:param feature_word:
+		:return: unique feature w.r.t. the feature word provided
+		"""
+		feature = self.corpus[feature_word]
+		feature: MutationFeature
+		return feature
+
+	def get_lines(self):
+		"""
+		:return: the execution state lines with features in the document of project
+		"""
+		return self.lines
+
+	def get_mutants(self):
+		"""
+		:return: set of mutants used to generate execution state lines in the document
+		"""
+		return self.mutants
+
+	def get_test_cases(self):
+		"""
+		:return: set of test cases used to generate (dynamic) execution state lines in the document
+		"""
+		return self.test_cases
+
+	def __append__(self, line: str):
+		"""
+		:param line: mutant test_case(-1|test_ID) words
+		:return:
+		"""
+		line = line.strip()
+		if len(line) > 0:
+			items = line.split('\t')
+			mid = int(items[0].strip())
+			tid = int(items[1].strip())
+			mutant = self.project.mutant_space.get_mutant(mid)
+			test_case = None
+			if tid >= 0:
+				test_case = self.project.test_space.get_test_case(tid)
+			feature_words = set()
+			for k in range(2, len(items)):
+				feature_word = items[k].strip()
+				if len(feature_word) > 0:
+					feature_words.add(feature_word)
+					if not(feature_word in self.corpus):
+						self.corpus[feature_word] = MutationFeature.decode(self.project, feature_word)
+			feature_line = MutationFeaturesLine(self, mutant, test_case, feature_words)
+			self.mutants.add(mutant)
+			if test_case is not None:
+				self.test_cases.add(test_case)
+			self.lines.append(feature_line)
+		return
+
+	def clear(self):
+		self.corpus.clear()
+		self.lines.clear()
+		self.mutants.clear()
+		self.test_cases.clear()
+		return
+
+	def load(self, feature_file: str):
+		with open(feature_file, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					self.__append__(line)
+		return
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	for fname in os.listdir(root_path):
-		dir = os.path.join(root_path, fname)
-		c_project = CProject(dir, fname)
-		print(fname, "contains", len(c_project.mutant_space.get_mutants()), "mutants and",
+	for filename in os.listdir(root_path):
+		directory_path = os.path.join(root_path, filename)
+		c_project = CProject(directory_path, filename)
+		print(filename, "contains", len(c_project.mutant_space.get_mutants()), "mutants and",
 			  len(c_project.test_space.get_test_cases()), "test cases.")
-		docs = c_project.load_dynamic_document(dir)
-		print("\tLoad", len(docs.get_feature_lines()), "lines with", len(docs.corpus), "words...")
-		for line in docs.get_feature_lines():
-			line: MutationFeatureLine
-			features = line.generate_features()
-			for feature in features:
-				feature: MutationFeature
-				print("\t\t==>", str(feature))
+		c_document = c_project.load_static_document(directory_path)
+		print("\tLoad", len(c_document.get_lines()), "lines with", len(c_document.get_corpus_words()), "words...")
+		for c_feature in c_document.get_corpus_features():
+			c_feature: MutationFeature
+			print("\t\t==>", c_feature.get_feature_type(), "\t", c_feature.get_execution(), "\t\"",
+				  c_feature.get_location().get_cir_code(), "\"\t{", c_feature.parameter, "}")
 		print()
 
