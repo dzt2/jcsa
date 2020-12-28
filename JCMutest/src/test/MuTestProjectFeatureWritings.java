@@ -35,12 +35,14 @@ public class MuTestProjectFeatureWritings {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
 	protected static void testing(File root) throws Exception {
+		/* 1. open project and get data interface */
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());
 		FileOperations.mkdir(output_directory);
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
 		
+		/* 2. select test cases and generate instrumental files. */
 		clear_output_directory(output_directory);
 		Collection<MutaClass> classes = new HashSet<MutaClass>();
 		classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
@@ -48,9 +50,10 @@ public class MuTestProjectFeatureWritings {
 		Set<TestInput> selected_tests = select_tests(selected_mutants, project.get_test_space());
 		System.out.println("\t==> Select " + selected_tests.size() + " test cases from " + 
 							project.get_test_space().number_of_test_inputs() + " inputs.");
+		project.execute_instrumental(selected_tests);
+		System.out.println("\t==@ Generate instrumental files for " + selected_tests.size() + " test cases");
 		
-		selected_tests.clear();		/* TODO remove this statement for generating dynamic features */
-		
+		/* 3. write feature information to output directory */
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); 
 		writer.write_muta();
