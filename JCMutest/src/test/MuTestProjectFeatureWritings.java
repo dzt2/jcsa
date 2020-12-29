@@ -57,6 +57,7 @@ public class MuTestProjectFeatureWritings {
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); 
 		writer.write_muta();
+		/* TODO don't waste time if your dynamic analysis is time-consuming */ selected_tests.clear();
 		writer.write_features(max_distance, selected_tests);
 		System.out.println();
 	}

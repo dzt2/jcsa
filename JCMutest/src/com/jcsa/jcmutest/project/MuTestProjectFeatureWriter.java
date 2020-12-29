@@ -840,6 +840,7 @@ public class MuTestProjectFeatureWriter {
 		
 		writer.write("\t");
 		this.write_feature_word(edge.get_constraint(), nodes);
+		
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
 			this.write_feature_word(improved_constraint, nodes);

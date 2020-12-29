@@ -998,6 +998,116 @@ public class SymEvaluator {
 			}
 		}
 	}
+	private SymExpression part_smaller_tn(SymExpression loperand, SymExpression roperand) throws Exception {
+		/* type-based partial evaluation */
+		CType ltype = CTypeAnalyzer.get_value_type(loperand.get_data_type());
+		if(CTypeAnalyzer.is_boolean(ltype)) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value > 1) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return SymFactory.logic_not(loperand);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value > 1) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return SymFactory.logic_not(loperand);
+					}
+				}
+			}
+		}
+		else if(CTypeAnalyzer.is_unsigned(ltype)) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value == 1) {
+						return SymFactory.equal_with(loperand, Integer.valueOf(0));
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value <= 1) {
+						return SymFactory.equal_with(loperand, Integer.valueOf(0));
+					}
+				}
+			}
+		}
+		
+		CType rtype = CTypeAnalyzer.get_value_type(roperand.get_data_type());
+		if(CTypeAnalyzer.is_boolean(rtype)) {
+			if(loperand instanceof SymConstant) {
+				Object number = ((SymConstant) loperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value >= 1) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return roperand;
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value >= 1) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return roperand;
+					}
+				}
+			}
+		}
+		else if(CTypeAnalyzer.is_unsigned(rtype)) {
+			Object number = ((SymConstant) roperand).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				if(value < 0) {
+					return SymFactory.sym_constant(Boolean.TRUE);
+				}
+				else if(value == 0) {
+					return SymFactory.not_equals(roperand, Integer.valueOf(0));
+				}
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				if(value < 0) {
+					return SymFactory.sym_constant(Boolean.TRUE);
+				}
+				else if(value == 0) {
+					return SymFactory.not_equals(roperand, Integer.valueOf(0));
+				}
+			}
+		}
+		
+		return SymFactory.smaller_tn(loperand, roperand);
+	}
 	private SymExpression eval_greater_tn(SymBinaryExpression source) throws Exception {
 		SymExpression loperand = this.evaluate(source.get_loperand());
 		SymExpression roperand = this.evaluate(source.get_roperand());
@@ -1010,21 +1120,7 @@ public class SymEvaluator {
 			}
 		}
 		
-		return SymFactory.smaller_tn(roperand, loperand);
-	}
-	private SymExpression eval_greater_eq(SymBinaryExpression source) throws Exception {
-		SymExpression loperand = this.evaluate(source.get_loperand());
-		SymExpression roperand = this.evaluate(source.get_roperand());
-		
-		if(loperand instanceof SymConstant) {
-			SymConstant lconstant = (SymConstant) loperand;
-			if(roperand instanceof SymConstant) {
-				SymConstant rconstant = (SymConstant) roperand;
-				return SymComputation.greater_eq(lconstant, rconstant);
-			}
-		}
-		
-		return SymFactory.smaller_eq(roperand, loperand);
+		return this.part_smaller_tn(roperand, loperand);
 	}
 	private SymExpression eval_smaller_tn(SymBinaryExpression source) throws Exception {
 		SymExpression loperand = this.evaluate(source.get_loperand());
@@ -1038,7 +1134,126 @@ public class SymEvaluator {
 			}
 		}
 		
-		return SymFactory.smaller_tn(loperand, roperand);
+		return this.part_smaller_tn(loperand, roperand);
+	}
+	private SymExpression part_smaller_eq(SymExpression loperand, SymExpression roperand) throws Exception {
+		CType ltype = CTypeAnalyzer.get_value_type(loperand.get_data_type());
+		if(CTypeAnalyzer.is_boolean(ltype)) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value >= 1) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else {
+						return SymFactory.logic_not(loperand);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value >= 1) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else {
+						return SymFactory.logic_not(loperand);
+					}
+				}
+			}
+		}
+		else if(CTypeAnalyzer.is_unsigned(ltype)) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value == 0) {
+						return SymFactory.equal_with(loperand, Integer.valueOf(0));
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value < 0) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else if(value == 0) {
+						return SymFactory.equal_with(loperand, Integer.valueOf(0));
+					}
+				}
+			}
+		}
+		
+		CType rtype = CTypeAnalyzer.get_value_type(roperand.get_data_type());
+		if(CTypeAnalyzer.is_boolean(rtype)) {
+			if(loperand instanceof SymConstant) {
+				Object number = ((SymConstant) loperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value > 1) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return loperand;
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+					else if(value > 1) {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+					else {
+						return loperand;
+					}
+				}
+			}
+		}
+		else if(CTypeAnalyzer.is_unsigned(rtype)) {
+			if(loperand instanceof SymConstant) {
+				Object number = ((SymConstant) loperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value <= 0) {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+			}
+		}
+		
+		return SymFactory.smaller_eq(loperand, roperand);
+	}
+	private SymExpression eval_greater_eq(SymBinaryExpression source) throws Exception {
+		SymExpression loperand = this.evaluate(source.get_loperand());
+		SymExpression roperand = this.evaluate(source.get_roperand());
+		
+		if(loperand instanceof SymConstant) {
+			SymConstant lconstant = (SymConstant) loperand;
+			if(roperand instanceof SymConstant) {
+				SymConstant rconstant = (SymConstant) roperand;
+				return SymComputation.greater_eq(lconstant, rconstant);
+			}
+		}
+		
+		return this.part_smaller_eq(roperand, loperand);
 	}
 	private SymExpression eval_smaller_eq(SymBinaryExpression source) throws Exception {
 		SymExpression loperand = this.evaluate(source.get_loperand());
@@ -1052,7 +1267,68 @@ public class SymEvaluator {
 			}
 		}
 		
-		return SymFactory.smaller_eq(loperand, roperand);
+		return this.part_smaller_eq(loperand, roperand);
+	}
+	private SymExpression part_equal_with(SymExpression loperand, SymExpression roperand) throws Exception {
+		if(CTypeAnalyzer.is_boolean(CTypeAnalyzer.get_value_type(loperand.get_data_type()))) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value == 0) {
+						return SymFactory.logic_not(loperand);
+					}
+					else if(value == 1) {
+						return loperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value == 0) {
+						return SymFactory.logic_not(loperand);
+					}
+					else if(value == 1) {
+						return loperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+				}
+			}
+		}
+		if(CTypeAnalyzer.is_boolean(CTypeAnalyzer.get_value_type(roperand.get_data_type()))) {
+			if(loperand instanceof SymConstant) {
+				Object number = ((SymConstant) loperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value == 0) {
+						return SymFactory.logic_not(roperand);
+					}
+					else if(value == 1) {
+						return roperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value == 0) {
+						return SymFactory.logic_not(roperand);
+					}
+					else if(value == 1) {
+						return roperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.FALSE);
+					}
+				}
+			}
+		}
+		return SymFactory.equal_with(loperand, roperand);
 	}
 	private SymExpression eval_equal_with(SymBinaryExpression source) throws Exception {
 		SymExpression loperand = this.evaluate(source.get_loperand());
@@ -1066,7 +1342,68 @@ public class SymEvaluator {
 			}
 		}
 		
-		return SymFactory.equal_with(loperand, roperand);
+		return this.part_equal_with(loperand, roperand);
+	}
+	private SymExpression part_not_equals(SymExpression loperand, SymExpression roperand) throws Exception {
+		if(CTypeAnalyzer.is_boolean(CTypeAnalyzer.get_value_type(loperand.get_data_type()))) {
+			if(roperand instanceof SymConstant) {
+				Object number = ((SymConstant) roperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value == 1) {
+						return SymFactory.logic_not(loperand);
+					}
+					else if(value == 0) {
+						return loperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value == 1) {
+						return SymFactory.logic_not(loperand);
+					}
+					else if(value == 0) {
+						return loperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+			}
+		}
+		if(CTypeAnalyzer.is_boolean(CTypeAnalyzer.get_value_type(roperand.get_data_type()))) {
+			if(loperand instanceof SymConstant) {
+				Object number = ((SymConstant) loperand).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value == 1) {
+						return SymFactory.logic_not(roperand);
+					}
+					else if(value == 0) {
+						return roperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value == 1) {
+						return SymFactory.logic_not(roperand);
+					}
+					else if(value == 0) {
+						return roperand;
+					}
+					else {
+						return SymFactory.sym_constant(Boolean.TRUE);
+					}
+				}
+			}
+		}
+		return SymFactory.not_equals(loperand, roperand);
 	}
 	private SymExpression eval_not_equals(SymBinaryExpression source) throws Exception {
 		SymExpression loperand = this.evaluate(source.get_loperand());
@@ -1080,7 +1417,7 @@ public class SymEvaluator {
 			}
 		}
 		
-		return SymFactory.not_equals(loperand, roperand);
+		return this.part_not_equals(loperand, roperand);
 	}
 	
 }
