@@ -5,7 +5,7 @@ This file implements the classification, prediction and pattern mining algorithm
 
 import os
 from typing import TextIO
-import com.jcsa.mark.muta as cmuta
+import com.jcsa.libs.muta as cmuta
 
 
 UC_CLASS, UI_CLASS, UP_CLASS, KI_CLASS = "UC", "UI", "UP", "KI"

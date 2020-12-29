@@ -4,7 +4,7 @@ This file defines data model to represent SourceCode, AstTree, CirTree, CirExecu
 
 
 import os
-import com.jcsa.mark.base as cbase
+import com.jcsa.libs.base as jcbase
 
 
 class CProgram:
@@ -111,7 +111,7 @@ class AstNode:
 	abstract syntactic node
 	"""
 	def __init__(self, tree, ast_id: int, class_name: str, beg_index: int, end_index: int,
-				 data_type: cbase.CToken, content: cbase.CToken):
+				 data_type: jcbase.CToken, content: jcbase.CToken):
 		"""
 		:param tree: tree where the node is created
 		:param ast_id: integer ID to tag this node in the tree
@@ -203,7 +203,7 @@ class AstNode:
 			index = self.end_index - 1
 		source_code = self.tree.program.source_code
 		source_code: CSourceCode
-		return source_code.line_of(index)
+		return source_code.line_of(index) + 1
 
 	def is_root(self):
 		return self.parent is None
@@ -257,12 +257,12 @@ class AstTree:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					ast_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					ast_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					class_name = items[1].strip()
 					beg_index = int(items[2].strip())
 					end_index = int(items[3].strip())
-					data_type = cbase.CToken.parse(items[4].strip())
-					content = cbase.CToken.parse(items[5].strip())
+					data_type = jcbase.CToken.parse(items[4].strip())
+					content = jcbase.CToken.parse(items[5].strip())
 					ast_node = AstNode(self, ast_id, class_name, beg_index, end_index, data_type, content)
 					ast_node_dict[ast_node.get_ast_id()] = ast_node
 		with open(ast_file, 'r') as reader:
@@ -270,11 +270,11 @@ class AstTree:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					parent_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					parent_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					parent = ast_node_dict[parent_id]
 					children_ids = items[6].strip().split(' ')
 					for k in range(1, len(children_ids) - 1):
-						child_id = cbase.CToken.parse(children_ids[k].strip()).get_token_value()
+						child_id = jcbase.CToken.parse(children_ids[k].strip()).get_token_value()
 						child = ast_node_dict[child_id]
 						parent.add_child(child)
 		self.ast_nodes.clear()
@@ -289,7 +289,7 @@ class CirNode:
 	C-intermediate representation node
 	"""
 	def __init__(self, tree, cir_id: int, class_name: str, ast_source: AstNode,
-				 data_type: cbase.CToken, content: cbase.CToken, code: str):
+				 data_type: jcbase.CToken, content: jcbase.CToken, code: str):
 		"""
 		:param tree: tree where the node is created
 		:param class_name: the name of CIR-node class
@@ -406,15 +406,15 @@ class CirTree:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					cir_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					cir_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					class_name = items[1].strip()
-					ast_id = cbase.CToken.parse(items[2].strip()).get_token_value()
+					ast_id = jcbase.CToken.parse(items[2].strip()).get_token_value()
 					ast_source = None
 					if ast_id is not None:
 						ast_source = ast_tree.get_ast_node(ast_id)
-					data_type = cbase.CToken.parse(items[3].strip())
-					content = cbase.CToken.parse(items[4].strip())
-					code = cbase.CToken.parse(items[6].strip()).get_token_value()
+					data_type = jcbase.CToken.parse(items[3].strip())
+					content = jcbase.CToken.parse(items[4].strip())
+					code = jcbase.CToken.parse(items[6].strip()).get_token_value()
 					if code is None:
 						code = ""
 					cir_node = CirNode(self, cir_id, class_name, ast_source, data_type, content, code)
@@ -424,11 +424,11 @@ class CirTree:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.split('\t')
-					parent_id = cbase.CToken.parse(items[0].strip()).get_token_value()
+					parent_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					parent = cir_node_dict[parent_id]
 					children_ids = items[5].strip().split(' ')
 					for k in range(1, len(children_ids) - 1):
-						child_id = cbase.CToken.parse(children_ids[k].strip()).get_token_value()
+						child_id = jcbase.CToken.parse(children_ids[k].strip()).get_token_value()
 						child = cir_node_dict[child_id]
 						parent.add_child(child)
 		self.cir_nodes.clear()
@@ -636,8 +636,8 @@ class CirFunctionCallGraph:
 						function.executions.append(execution)
 					executions_dict.clear()
 				elif line.startswith("[node]"):
-					exe_token = cbase.CToken.parse(items[1].strip()).get_token_value()
-					cir_token = cbase.CToken.parse(items[2].strip()).get_token_value()
+					exe_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+					cir_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
 					statement = cir_tree.get_cir_node(cir_token)
 					execution = CirExecution(function, exe_token[1], statement)
 					executions_dict[execution.get_exe_id()] = execution
@@ -647,8 +647,8 @@ class CirFunctionCallGraph:
 				items = line.split('\t')
 				if line.startswith("[edge]"):
 					flow_type = items[1].strip()
-					source_token = cbase.CToken.parse(items[2].strip()).get_token_value()
-					target_token = cbase.CToken.parse(items[3].strip()).get_token_value()
+					source_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+					target_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
 					source = self.get_execution(source_token[0], source_token[1])
 					target = self.get_execution(target_token[0], target_token[1])
 					source.link_to(target, flow_type)
@@ -657,8 +657,8 @@ class CirFunctionCallGraph:
 				line = line.strip()
 				items = line.split('\t')
 				if line.startswith("[call]"):
-					call_token = cbase.CToken.parse(items[1].strip()).get_token_value()
-					wait_token = cbase.CToken.parse(items[2].strip()).get_token_value()
+					call_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+					wait_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
 					call_execution = self.get_execution(call_token[0], call_token[1])
 					wait_execution = self.get_execution(wait_token[0], wait_token[1])
 					call_flow = call_execution.ou_flows[0]
@@ -768,7 +768,7 @@ class CirInstanceGraph:
 				line = line.strip()
 				items = line.split('\t')
 				if line.startswith("#node"):
-					token = cbase.CToken.parse(items[1].strip()).get_token_value()
+					token = jcbase.CToken.parse(items[1].strip()).get_token_value()
 					context = token[0]
 					name = token[1]
 					exe_id = token[2]
@@ -783,8 +783,8 @@ class CirInstanceGraph:
 				items = line.split('\t')
 				if line.startswith("#edge"):
 					flow_type = items[1].strip()
-					source_token = cbase.CToken.parse(items[2].strip()).get_token_value()
-					target_token = cbase.CToken.parse(items[3].strip()).get_token_value()
+					source_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+					target_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
 					source = self.get_instance_node(source_token[0], function_call_graph.get_execution(source_token[1], source_token[2]))
 					target = self.get_instance_node(target_token[0], function_call_graph.get_execution(target_token[1], target_token[2]))
 					source.link_to(target, flow_type)
@@ -795,7 +795,7 @@ class CDependenceEdge:
 	"""
 	depend_type, source, target, (param1, param2)
 	"""
-	def __init__(self, depend_type: str, source, target, parameter_0: cbase.CToken, parameter_1: cbase.CToken):
+	def __init__(self, depend_type: str, source, target, parameter_0: jcbase.CToken, parameter_1: jcbase.CToken):
 		self.depend_type = depend_type
 		source: CDependenceNode
 		target: CDependenceNode
@@ -887,7 +887,7 @@ class CDependenceGraph:
 				line = line.strip()
 				items = line.split('\t')
 				if line.startswith("#node"):
-					dep_token = cbase.CToken.parse(items[1].strip()).get_token_value()
+					dep_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
 					instance = instance_graph.get_instance_node(
 						dep_token[0], function_call_graph.get_execution(dep_token[1], dep_token[2]))
 					node = CDependenceNode(self, instance)
@@ -898,8 +898,8 @@ class CDependenceGraph:
 				items = line.split('\t')
 				if line.startswith("#edge"):
 					depend_type = items[1].strip()
-					source_token = cbase.CToken.parse(items[2].strip()).get_token_value()
-					target_token = cbase.CToken.parse(items[3].strip()).get_token_value()
+					source_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+					target_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
 					source_instance = instance_graph.get_instance_node(
 						source_token[0], function_call_graph.get_execution(source_token[1], source_token[2]))
 					target_instance = instance_graph.get_instance_node(
@@ -907,8 +907,8 @@ class CDependenceGraph:
 					source = self.dependence_nodes[source_instance]
 					target = self.dependence_nodes[target_instance]
 					source: CDependenceNode
-					parameter0 = cbase.CToken.parse(items[4].strip())
-					parameter1 = cbase.CToken.parse(items[5].strip())
+					parameter0 = jcbase.CToken.parse(items[4].strip())
+					parameter1 = jcbase.CToken.parse(items[5].strip())
 					source.link_to(target, depend_type, parameter0, parameter1)
 		return
 
