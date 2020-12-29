@@ -837,10 +837,10 @@ public class MuTestProjectFeatureWriter {
 		SymConstraint constraint = edge.get_constraint(); 
 		constraint = cir_mutations.optimize(constraint, null);
 		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
-		
+		/*
 		writer.write("\t");
 		this.write_feature_word(edge.get_constraint(), nodes);
-		
+		*/
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
 			this.write_feature_word(improved_constraint, nodes);
