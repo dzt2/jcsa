@@ -5,6 +5,7 @@ This file defines basic element used, including CToken and SymNode
 
 import enum
 import os
+import random
 
 
 class CTokenType(enum.Enum):
@@ -277,6 +278,21 @@ class SymTree:
 						child = self.sym_nodes[child_key]
 						parent.add_child(child)
 		return
+
+
+def rand_select(objects):
+	"""
+	:param objects:
+	:return: select a random object from the collection
+	"""
+	counter = random.randint(0, len(objects))
+	selected_object = None
+	for item in objects:
+		selected_object = item
+		counter -= 1
+		if counter < 0:
+			break
+	return selected_object
 
 
 if __name__ == "__main__":
