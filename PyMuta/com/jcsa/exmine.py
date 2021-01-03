@@ -1,61 +1,108 @@
 """
-This file implements pattern mining algorithm to mine symbolic execution patterns for clustering and predicting
-tests-equivalent mutants.
+This file implements the pattern mining on symbolic execution in mutation analysis.
 """
 
 
 import os
 from typing import TextIO
+import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
 
 
-UC_CLASS = "UC"			# non-covered execution
-UI_CLASS = "UI"			# non-infected but covered
-UP_CLASS = "UP"			# non-propagate but infected
-KI_CLASS = "KI"			# killed execution
+UC_CLASS = "UC"				''' not-covered symbolic execution '''
+UI_CLASS = "UI"				''' not-infected but covered execution '''
+UP_CLASS = "UP"				''' not-killed but infected execution '''
+KI_CLASS = "KI"				''' killed execution '''
 
 
-class SymbolicExecutionClassifier:
+class SymExecutionClassifier:
 	"""
-	It is used to count, classify and estimate the symbolic executions
+	It is used to classify the symbolic execution or mutation for pattern mining.
 	"""
-	def __init__(self, classifier_tests):
+
+	def __init__(self, tests):
 		"""
-		:param classifier_tests:
-				(1) set of test cases to classify the mutation
-				(2) None if it assumes the execution is classified statically
+		:param tests:
+				(1) for dynamic symbolic execution, the parameter is not used
+				(2) for static symbolic execution, the parameter is used to determine mutation test results
+				(3) for static symbolic execution and tests is None, the classifier is used to determine the
+					result of mutation based on whether it is killed or not.
 		"""
-		self.classifier_tests = classifier_tests
-		self.solutions = dict()		# String ==> [uc, ui, up, ki]
+		self.tests = tests
+		self.solutions = dict()		# SymbolicExecution | Mutant ==> [uc, ui, up, ki]
 		return
 
-	def has_classifier_tests(self):
-		"""
-		:return: False if it classifies the executions over all test cases
-		"""
-		return self.classifier_tests is not None
+	def has_tests(self):
+		return self.tests is not None
 
-	def get_classifier_tests(self):
+	def get_tests(self):
 		"""
 		:return:
-				(1) set of test cases to classify the mutation
-				(2) None if it assumes the execution is classified statically
+				(1) for dynamic symbolic execution, the parameter is not used
+				(2) for static symbolic execution, the parameter is used to determine mutation test results
+				(3) for static symbolic execution and tests is None, the classifier is used to determine the
+					result of mutation based on whether it is killed or not.
 		"""
-		return self.classifier_tests
+		return self.tests
+
+	def __solving__(self, mutant: jcmuta.Mutant, test_case):
+		"""
+		:param mutant: mutation that is executed and evaluate according to its result
+		:param test_case: test case is provided by dynamic symbolic execution or None
+		:return: uc, ui, up, ki
+					(1) uc: number of executions that are not covered
+					(2) ui: number of executions that are covered but not infected
+					(3) up: number of executions that are not killed but infected
+					(4) ki: number of executions that are killed during testing
+		"""
+		uc, ui, up, ki = 0, 0, 0, 0
+		s_result = mutant.get_result()
+		w_result = mutant.get_weak_mutant().get_result()
+		c_result = mutant.get_coverage_mutant().get_result()
+		if test_case is not None:
+			if s_result.is_killed_by(test_case):
+				ki += 1
+			elif w_result.is_killed_by(test_case):
+				up += 1
+			elif c_result.is_killed_by(test_case):
+				ui += 1
+			else:
+				uc += 1
+		elif self.tests is not None:
+			for test in self.tests:
+				if s_result.is_killed_by(test):
+					ki += 1
+				elif w_result.is_killed_by(test):
+					up += 1
+				elif c_result.is_killed_by(test):
+					ui += 1
+				else:
+					uc += 1
+		else:
+			if s_result.is_killable():
+				ki += 1
+			elif w_result.is_killable():
+				up += 1
+			elif c_result.is_killable():
+				ui += 1
+			else:
+				uc += 1
+		return uc, ui, up, ki
 
 	def __get_solution__(self, sample):
 		"""
-		:param sample: Mutant or SymbolicExecution
-		:return: 	(1)	uc: number of executions not covered
-					(2) ui: number of executions not infected but covered
-					(3) up: number of executions not propagate but infected
-					(4) ki: number of executions being killed during testing
+		:param sample: either SymbolicExecution or Mutant
+		:return: uc, ui, up, ki
+					(1) uc: number of executions that are not covered
+					(2) ui: number of executions that are covered but not infected
+					(3) up: number of executions that are not killed but infected
+					(4) ki: number of executions that are killed during testing
 		"""
 		solution = self.solutions[sample]
-		uc = solution[0]
-		ui = solution[1]
-		up = solution[2]
-		ki = solution[3]
+		uc = solution[0]		# number of executions that are not covered
+		ui = solution[1]		# number of executions that are covered but not infected
+		up = solution[2]		# number of executions that are not killed but infected
+		ki = solution[3]		# number of executions that are killed during testing
 		uc: int
 		ui: int
 		up: int
@@ -64,60 +111,26 @@ class SymbolicExecutionClassifier:
 
 	def __set_solution__(self, sample):
 		"""
-		:param sample: Mutant or SymbolicExecution
-		:return: update the solution w.r.t. the sample
+		:param sample: either SymbolicExecution or Mutant
+		:return: update [uc, ui, up, ki] ==> self.solutions[sample]
 		"""
-		uc, ui, up, ki = 0, 0, 0, 0
 		if isinstance(sample, jcmuta.SymbolicExecution):
 			sample: jcmuta.SymbolicExecution
-			s_result = sample.get_mutant().get_result()
-			w_result = sample.get_mutant().get_weak_mutant().get_result()
-			c_result = sample.get_mutant().get_coverage_mutant().get_result()
-			if sample.has_test_case():
-				if s_result.is_killed_by(sample.get_test_case()):
-					ki += 1
-				elif w_result.is_killed_by(sample.get_test_case()):
-					up += 1
-				elif c_result.is_killed_by(sample.get_test_case()):
-					ui += 1
-				else:
-					uc += 1
-			else:
-				uc, ui, up, ki = self.__solve__(sample.get_mutant())
+			solution = self.__solving__(sample.get_mutant(), sample.get_test_case())
 		else:
 			sample: jcmuta.Mutant
-			s_result = sample.get_result()
-			w_result = sample.get_weak_mutant().get_result()
-			c_result = sample.get_coverage_mutant().get_result()
-			if self.classifier_tests is None:
-				if s_result.is_killable():
-					ki += 1
-				elif w_result.is_killable():
-					up += 1
-				elif c_result.is_killable():
-					ui += 1
-				else:
-					uc += 1
-			else:
-				for test in self.classifier_tests:
-					if s_result.is_killed_by(test):
-						ki += 1
-					elif w_result.is_killed_by(test):
-						up += 1
-					elif c_result.is_killed_by(test):
-						ui += 1
-					else:
-						uc += 1
-		self.solutions[sample] = (uc, ui, up, ki)
+			solution = self.__solving__(sample, None)
+		self.solutions[sample] = solution
 		return
 
-	def __solve__(self, sample):
+	def __solution__(self, sample):
 		"""
-		:param sample: Mutant or SymbolicExecution
-		:return: 	(1)	uc: number of executions not covered
-					(2) ui: number of executions not infected but covered
-					(3) up: number of executions not propagate but infected
-					(4) ki: number of executions being killed during testing
+		:param sample: SymbolicExecution or Mutant being solved
+		:return: uc, ui, up, ki
+					(1) uc: number of executions that are not covered
+					(2) ui: number of executions that are covered but not infected
+					(3) up: number of executions that are not killed but infected
+					(4) ki: number of executions that are killed during testing
 		"""
 		if not(sample in self.solutions):
 			self.__set_solution__(sample)
@@ -125,10 +138,10 @@ class SymbolicExecutionClassifier:
 
 	def __classify__(self, sample):
 		"""
-		:param sample: Mutant or SymbolicExecution
-		:return: 	UC | UI | UP | KI
+		:param sample: SymbolicExecution or Mutant being solved
+		:return: UC | UI | UP | KI
 		"""
-		uc, ui, up, ki = self.__solve__(sample)
+		uc, ui, up, ki = self.__solution__(sample)
 		if ki > 0:
 			return KI_CLASS
 		elif up > 0:
@@ -140,17 +153,18 @@ class SymbolicExecutionClassifier:
 
 	def counting(self, samples):
 		"""
-		:param samples: set of Mutant or SymbolicExecution
-		:return: 	(1) uc: number of executions not covered
-					(2) ui: number of executions covered not infected
-					(3) up: number of executions infected not propagate
-					(4) ki: number of executions being killed
-					(5) uk: number of executions not killed
-					(6) cc: number of executions not killed but covered
+		:param samples: set of Mutant or SymbolicExecution being counted
+		:return: uc, ui, up, ki, uk, cc
+					(1) uc: number of executions that are not covered
+					(2) ui: number of executions that are covered but not infected
+					(3) up: number of executions that are not killed but infected
+					(4) ki: number of executions that are killed during testing
+					(5) uk: number of executions that are not killed
+					(6) cc: number of executions that are not killed but covered
 		"""
 		uc, ui, up, ki = 0, 0, 0, 0
 		for sample in samples:
-			luc, lui, lup, lki = self.__solve__(sample)
+			luc, lui, lup, lki = self.__solution__(sample)
 			uc += luc
 			ui += lui
 			up += lup
@@ -159,8 +173,8 @@ class SymbolicExecutionClassifier:
 
 	def classify(self, samples):
 		"""
-		:param samples: set of Mutant or SymbolicExecution
-		:return: UC|UI|UP|KI ==> set of samples
+		:param samples: set of Mutant or SymbolicExecution being classified
+		:return: [UC|UI|UP|KI] ==> set of Mutant or SymbolicExecution
 		"""
 		results = dict()
 		results[UC_CLASS] = set()
@@ -174,8 +188,8 @@ class SymbolicExecutionClassifier:
 
 	def estimate(self, samples, uk_or_cc: bool):
 		"""
-		:param samples: set of Mutant or SymbolicExecution
-		:param uk_or_cc: true to select uk as support or false to take cc as support
+		:param samples: set of Mutant or SymbolicExecution being estimated
+		:param uk_or_cc: true to take uk as support or cc as support
 		:return: total, support, confidence
 		"""
 		uc, ui, up, ki, uk, cc = self.counting(samples)
@@ -190,8 +204,8 @@ class SymbolicExecutionClassifier:
 
 	def select(self, samples, uk_or_cc: bool):
 		"""
-		:param samples: set of Mutant or SymbolicExecution
-		:param uk_or_cc: true to select non-killed samples or coincidental correct ones
+		:param samples: set of Mutant or SymbolicExecution being estimated
+		:param uk_or_cc: true to select non-killed samples or coincidental correct samples
 		:return:
 		"""
 		results = self.classify(samples)
@@ -201,76 +215,79 @@ class SymbolicExecutionClassifier:
 		return selected_results
 
 
-class SymbolicExecutionPattern:
+class SymExecutionPattern:
 	"""
-	The symbolic execution pattern specifies a set of features in mutation testing
+	The pattern of symbolic execution specifies a set of features in symbolic executions.
 	"""
-	def __init__(self, classifier: SymbolicExecutionClassifier):
+
+	def __init__(self, classifier: SymExecutionClassifier):
 		"""
-		:param classifier: used to estimate the samples in pattern
+		create an empty pattern for matching all the symbolic execution
 		"""
 		self.classifier = classifier
 		self.feature_words = list()
-		self.executions = set()
 		self.mutants = set()
+		self.executions = set()
 		return
 
 	def get_classifier(self):
 		"""
-		:return: classifier to classify and estimate the samples
+		:return: classified used to estimate this pattern
 		"""
 		return self.classifier
 
 	def get_feature_words(self):
 		"""
-		:return: set of feature words in the pattern to match execution
+		:return: set of words to describe mutation features
 		"""
 		return self.feature_words
-
-	def get_features(self, project: jcmuta.CProject):
-		"""
-		:param project: used to generate structural features in symbolic execution
-		:return:
-		"""
-		features = list()
-		for feature_word in self.feature_words:
-			features.append(jcmuta.SymbolicFeature.parse(project, feature_word))
-		return features
 
 	def __str__(self):
 		return str(self.feature_words)
 
 	def __len__(self):
 		"""
-		:return: number of words in the pattern
+		:return: the number of words to define symbolic features
 		"""
 		return len(self.feature_words)
 
+	def get_features(self, project: jcmuta.CProject):
+		"""
+		:param project: context to generate structural symbolic feature
+		:return:
+		"""
+		features = list()
+		for feature_word in self.feature_words:
+			feature = jcmuta.SymbolicFeature.parse(project, feature_word)
+			features.append(feature)
+		return features
+
 	def get_executions(self):
 		"""
-		:return: symbolic executions matched with the pattern
+		:return: the set of symbolic executions matching with this pattern
 		"""
 		return self.executions
 
 	def get_mutants(self):
 		"""
-		:return: mutations of which executions match with the pattern
+		:return: the set of mutations of which executions match with this one
 		"""
 		return self.mutants
 
 	def get_samples(self, exec_or_mutant: bool):
 		"""
-		:param exec_or_mutant: true to select symbolic executions or mutants
+		:param exec_or_mutant: true to select SymbolicExecution(s) or Mutant(s) matching with this pattern
 		:return:
 		"""
 		if exec_or_mutant:
 			return self.executions
-		return self.mutants
+		else:
+			return self.mutants
 
-	def __match__(self, execution: jcmuta.SymbolicExecution):
+	def __matching__(self, execution: jcmuta.SymbolicExecution):
 		"""
-		:param execution: symbolic execution being matched with
-		:return: whether the execution matches with the pattern
+		:param execution:
+		:return: whether the symbolic execution matches with this pattern
 		"""
 		for feature_word in self.feature_words:
 			if not(feature_word in execution.get_feature_words()):
@@ -279,41 +296,42 @@ class SymbolicExecutionPattern:
 
 	def set_executions(self, executions):
 		"""
-		:param executions: set of executions being matched
-		:return: update self.executions and self.mutants
+		:param executions: set of symbolic executions to update self.executions and self.mutants
+		:return:
 		"""
 		self.executions.clear()
 		self.mutants.clear()
 		for execution in executions:
 			execution: jcmuta.SymbolicExecution
-			if self.__match__(execution):
+			if self.__matching__(execution):
 				self.executions.add(execution)
 				self.mutants.add(execution.get_mutant())
 		return
 
 	def counting(self, exec_or_mutant: bool):
 		"""
-		:param exec_or_mutant: true to select symbolic executions or mutants
-		:return: 	(1) uc: number of executions not covered
-					(2) ui: number of executions covered not infected
-					(3) up: number of executions infected not propagate
-					(4) ki: number of executions being killed
-					(5) uk: number of executions not killed
-					(6) cc: number of executions not killed but covered
+		:param exec_or_mutant: true to take SymbolicExecution or Mutant
+		:return: 	uc, ui, up, ki, uk, cc
+					(1) uc: number of executions that are not covered
+					(2) ui: number of executions that are covered but not infected
+					(3) up: number of executions that are not killed but infected
+					(4) ki: number of executions that are killed during testing
+					(5) uk: number of executions that are not killed
+					(6) cc: number of executions that are not killed but covered
 		"""
 		return self.classifier.counting(self.get_samples(exec_or_mutant))
 
 	def classify(self, exec_or_mutant: bool):
 		"""
-		:param exec_or_mutant: true to select symbolic executions or mutants as samples
-		:return: UC|UI|UP|KI ==> set of samples
+		:param exec_or_mutant: true to take SymbolicExecution or Mutant
+		:return: [UC|UI|UP|KI] ==> set of Mutant or SymbolicExecution
 		"""
 		return self.classifier.classify(self.get_samples(exec_or_mutant))
 
 	def estimate(self, exec_or_mutant: bool, uk_or_cc: bool):
 		"""
-		:param exec_or_mutant: true to select symbolic executions or mutants as samples
-		:param uk_or_cc: true to take unkilled samples as support or CC samples as support
+		:param uk_or_cc: true to take non-killed or CC sample
+		:param exec_or_mutant: true to take SymbolicExecution or Mutant
 		:return: total, support, confidence
 		"""
 		return self.classifier.estimate(self.get_samples(exec_or_mutant), uk_or_cc)
@@ -321,11 +339,11 @@ class SymbolicExecutionPattern:
 	def get_child(self, feature_word: str):
 		"""
 		:param feature_word:
-		:return: child pattern extended from the pattern by adding one word
+		:return: child pattern extended from this one by adding one single word or itself
 		"""
 		feature_word = feature_word.strip()
 		if len(feature_word) > 0 and not(feature_word in self.feature_words):
-			child = SymbolicExecutionPattern(self.classifier)
+			child = SymExecutionPattern(self.classifier)
 			for old_word in self.feature_words:
 				child.feature_words.append(old_word)
 			child.feature_words.append(feature_word)
@@ -336,24 +354,25 @@ class SymbolicExecutionPattern:
 	def subsume(self, pattern):
 		"""
 		:param pattern:
-		:return: true if the executions matched in this pattern include those in the pattern
+		:return: true if the executions matched in this pattern include all those in pattern
 		"""
-		pattern: SymbolicExecutionPattern
+		pattern: SymExecutionPattern
 		for execution in pattern.get_executions():
 			if not(execution in self.executions):
 				return False
 		return True
 
 
-class SymbolicExecutionPatterns:
+class SymExecutionPatterns:
 	"""
-	Set of symbolic execution patterns
+	It preserves the document and patterns generated from it
 	"""
-	def __init__(self, document: jcmuta.SymbolicDocument, classifier: SymbolicExecutionClassifier, patterns):
+
+	def __init__(self, document: jcmuta.SymbolicDocument, classifier: SymExecutionClassifier, patterns: set):
 		"""
-		:param document: it provides all the symbolic executions and mutations being executed
-		:param classifier: used to classify and estimate the patterns under analysis
-		:param patterns: set of symbolic execution patterns generated from the document
+		:param document: it provides all the symbolic executions being classified
+		:param classifier: it is used to estimate the symbolic execution or mutant
+		:param patterns: the set of patterns being generated from the document
 		"""
 		self.document = document
 		self.doc_executions = set()
@@ -367,18 +386,18 @@ class SymbolicExecutionPatterns:
 		self.pat_executions = set()
 		self.pat_mutants = set()
 		for pattern in patterns:
-			pattern: SymbolicExecutionPattern
+			pattern: SymExecutionPattern
 			self.all_patterns.add(pattern)
 			for execution in pattern.get_executions():
 				execution: jcmuta.SymbolicExecution
 				self.pat_executions.add(execution)
 				self.pat_mutants.add(execution.get_mutant())
-		self.min_patterns = self.__select_min_patterns__()
+		self.min_patterns = self.__get_minimal_patterns__()
 		return
 
-	def __select_min_patterns__(self):
+	def __get_minimal_patterns__(self):
 		"""
-		:return: set of patterns that subsume all the others in the program
+		:return: set of patterns to subsume all the others
 		"""
 		remain_patterns, remove_patterns, minimal_patterns = set(), set(), set()
 		for pattern in self.all_patterns:
@@ -390,17 +409,59 @@ class SymbolicExecutionPatterns:
 				if subsume_pattern is None:
 					subsume_pattern = pattern
 					remove_patterns.add(pattern)
-				elif subsume_pattern.subsume(pattern):
-					remove_patterns.add(pattern)
 				elif pattern.subsume(subsume_pattern):
 					subsume_pattern = pattern
+					remove_patterns.add(pattern)
+				elif subsume_pattern.subsume(pattern):
 					remove_patterns.add(pattern)
 			for pattern in remove_patterns:
 				remain_patterns.remove(pattern)
 			if subsume_pattern is not None:
-				subsume_pattern: SymbolicExecutionPattern
+				subsume_pattern: SymExecutionPattern
 				minimal_patterns.add(subsume_pattern)
 		return minimal_patterns
+
+	def get_document(self):
+		"""
+		:return: it provides all the symbolic executions being classified
+		"""
+		return self.document
+
+	def get_doc_executions(self):
+		"""
+		:return: the set of symbolic executions loaded from mutation testing
+		"""
+		return self.doc_executions
+
+	def get_doc_mutants(self):
+		"""
+		:return: the set of mutants being executed during testing
+		"""
+		return self.doc_mutants
+
+	def get_classifier(self):
+		"""
+		:return: used to classify and evaluate mutation patterns
+		"""
+		return self.classifier
+
+	def get_all_patterns(self):
+		"""
+		:return: all the patterns generated from the document
+		"""
+		return self.all_patterns
+
+	def get_min_patterns(self):
+		"""
+		:return: minimal set of patterns subsuming all the others
+		"""
+		return self.min_patterns
+
+	def get_pat_executions(self):
+		return self.pat_executions
+
+	def get_pat_mutants(self):
+		return self.pat_mutants
 
 	@staticmethod
 	def __select_best_pattern__(patterns, exec_or_mutant: bool, uk_or_cc: bool):
@@ -412,7 +473,7 @@ class SymbolicExecutionPatterns:
 		"""
 		remain_patterns = set()
 		for pattern in patterns:
-			pattern: SymbolicExecutionPattern
+			pattern: SymExecutionPattern
 			remain_patterns.add(pattern)
 
 		length = max(int(len(remain_patterns) * 0.50), 1)
@@ -445,96 +506,71 @@ class SymbolicExecutionPatterns:
 				best_pattern = pattern
 		return best_pattern
 
-	def get_document(self):
-		return self.document
-
-	def get_doc_executions(self):
-		return self.doc_executions
-
-	def get_doc_mutants(self):
-		return self.doc_mutants
-
-	def get_classifier(self):
-		return self.classifier
-
-	def get_all_patterns(self):
-		return self.all_patterns
-
-	def get_min_patterns(self):
-		return self.min_patterns
-
-	def get_pat_executions(self):
-		return self.pat_executions
-
-	def get_pat_mutants(self):
-		return self.pat_mutants
-
-	def get_best_patterns(self, exec_or_mutant: bool, uk_or_cc: bool):
+	def select_best_patterns(self, exec_or_mutant: bool, uk_or_cc: bool):
 		"""
 		:param exec_or_mutant: true to take SymbolicExecution or false to take Mutant as sample
 		:param uk_or_cc: true to estimate on non-killed or coincidental correctness sample when set as false
-		:return: mutant to pattern
+		:return: Mutant ==> SymExecutionPattern that best matches with it...
 		"""
 		mutant_patterns = dict()
 		for pattern in self.all_patterns:
 			for mutant in pattern.get_mutants():
 				mutant: jcmuta.Mutant
-				if not (mutant in mutant_patterns):
+				if not(mutant in mutant_patterns):
 					mutant_patterns[mutant] = set()
 				mutant_patterns[mutant].add(pattern)
-		results = dict()
+		best_patterns = dict()
 		for mutant, patterns in mutant_patterns.items():
-			best_pattern = SymbolicExecutionPatterns.__select_best_pattern__(patterns, exec_or_mutant, uk_or_cc)
-			results[mutant] = best_pattern
-		return results
+			best_pattern = SymExecutionPatterns.__select_best_pattern__(patterns, exec_or_mutant, uk_or_cc)
+			if best_pattern is not None:
+				best_pattern: SymExecutionPattern
+				best_patterns[mutant] = best_pattern
+		return best_patterns
 
 
-class SymbolicExecutionPatternGenerator:
+class SymExecutionPatternGenerator:
 	"""
-	It generates the symbolic execution patterns from frequent pattern mining algorithm using following parameters:
-		(1) exec_or_mutant: true to take symbolic execution or mutant as samples
-		(2) uk_or_cc: true to take non-killed samples of CC samples as support
-		(3) min_support: minimal number of support required for generated patterns
-		(4) max_confidence: maximal confidence once achieved will stop the traversal
-		(5) max_length: the maximal length allowed for generating patterns
+	It is used to generate symbolic execution patterns from document.
 	"""
+
 	def __init__(self, exec_or_mutant: bool, uk_or_cc: bool, min_support: int, max_confidence: float, max_length: int):
 		"""
 		:param exec_or_mutant: true to take SymbolicExecution as sample or false to take Mutant as well
 		:param uk_or_cc: true to estimate on non-killed samples or false to take coincidental correct samples
 		:param min_support: minimal number of samples that support the patterns
 		:param max_confidence: maximal confidence once achieved the pattern generation will be ter
+		:param max_length: maximal length of pattern being generated
 		"""
 		self.exec_or_mutant = exec_or_mutant
 		self.uk_or_cc = uk_or_cc
 		self.min_support = min_support
 		self.max_confidence = max_confidence
 		self.max_length = max_length
-		self.__classifier__ = None  # Used to create MutationPattern and estimate them
-		self.__patterns__ = dict()  # String ==> SymbolicExecutionPattern
-		self.__solution__ = dict()  # SymbolicExecutionPattern ==> [total, support, confidence]
+		self.__classifier__ = None  # Used to create SymExecutionPattern and estimate them
+		self.__patterns__ = dict()  # String ==> SymExecutionPattern
+		self.__solution__ = dict()  # SymExecutionPattern ==> [total, support, confidence]
 		return
 
 	def __root__(self, document: jcmuta.SymbolicDocument, feature_word: str):
 		"""
 		:param document:
 		:param feature_word:
-		:return: create a root pattern with one single word and matching with the executions in document
+		:return: unique instance of pattern with single word
 		"""
-		root = SymbolicExecutionPattern(self.__classifier__)
+		root = SymExecutionPattern(self.__classifier__)
 		root = root.get_child(feature_word)
 		if not(str(root) in self.__patterns__):
 			self.__patterns__[str(root)] = root
 			root.set_executions(document.get_executions())
 		root = self.__patterns__[str(root)]
-		root: SymbolicExecutionPattern
+		root: SymExecutionPattern
 		return root
 
-	def __child__(self, parent: SymbolicExecutionPattern, feature_word: str):
+	def __child__(self, parent: SymExecutionPattern, feature_word: str):
 		"""
-		:param parent: parent pattern from which the child is generated
+		:param parent:
 		:param feature_word:
-		:return: child pattern generated from the parent by adding one word or parent itself
+		:return: child pattern extended from parent by adding one word
 		"""
 		child = parent.get_child(feature_word)
 		if child != parent:
@@ -542,15 +578,15 @@ class SymbolicExecutionPatternGenerator:
 				self.__patterns__[str(child)] = child
 				child.set_executions(parent.get_executions())
 			child = self.__patterns__[str(child)]
-			child: SymbolicExecutionPattern
+			child: SymExecutionPattern
 			return child
 		return parent
 
-	def __generate__(self, parent: SymbolicExecutionPattern, feature_words):
+	def __generate__(self, parent: SymExecutionPattern, feature_words):
 		"""
 		:param parent:
-		:param feature_words: set of feature words to extend the pattern
-		:return:
+		:param feature_words:
+		:return: recursively solve the patterns under parent
 		"""
 		if not(parent in self.__solution__):
 			total, support, confidence = parent.estimate(self.exec_or_mutant, self.uk_or_cc)
@@ -565,26 +601,27 @@ class SymbolicExecutionPatternGenerator:
 					self.__generate__(child, feature_words)
 		return
 
-	def __output__(self, document: jcmuta.SymbolicDocument):
+	def __outputs__(self, document: jcmuta.SymbolicDocument):
 		"""
 		:param document:
-		:return: mutation patterns library w.r.t. good patterns in this generator
+		:return: SymExecutionPatterns
 		"""
 		good_patterns = set()
 		for pattern, solution in self.__solution__.items():
+			pattern: SymExecutionPattern
 			support = solution[1]
 			confidence = solution[2]
 			if support >= self.min_support and confidence >= self.max_confidence:
 				good_patterns.add(pattern)
-		return SymbolicExecutionPatterns(document, self.__classifier__, good_patterns)
+		return SymExecutionPatterns(document, self.__classifier__, good_patterns)
 
 	def generate(self, document: jcmuta.SymbolicDocument, classifier_tests):
 		"""
-		:param document: original symbolic executions from which patterns are generated
-		:param classifier_tests: set of test cases to classify mutants or None in static analysis
-		:return: SymbolicExecutionPatterns
+		:param document:
+		:param classifier_tests:
+		:return: SymExecutionPatterns
 		"""
-		self.__classifier__ = SymbolicExecutionClassifier(classifier_tests)
+		self.__classifier__ = SymExecutionClassifier(classifier_tests)
 		self.__patterns__.clear()
 		self.__solution__.clear()
 
@@ -596,18 +633,20 @@ class SymbolicExecutionPatternGenerator:
 				root = self.__root__(document, feature_word)
 				self.__generate__(root, feature_words)
 
-		output_patterns = self.__output__(document)
-		self.__classifier__ = None
+		patterns = self.__outputs__(document)
 		self.__patterns__.clear()
 		self.__solution__.clear()
-		return output_patterns
+		self.__classifier__ = None
+
+		return patterns
 
 
-class SymbolicExecutionPatternWriter:
+class SymExecutionPatternWriter:
 	"""
-	It writes information of SymbolicExecutionPattern to output file
+	It writes the evaluation results on Symbolic Execution Patterns
 	"""
-	def __init__(self, patterns: SymbolicExecutionPatterns):
+
+	def __init__(self, patterns: SymExecutionPatterns):
 		"""
 		:param patterns:
 		"""
@@ -624,7 +663,7 @@ class SymbolicExecutionPatternWriter:
 		ratio = 0.0
 		if x != 0:
 			ratio = x / (y + 0.0)
-		return SymbolicExecutionPatternWriter.__percentage__(ratio)
+		return SymExecutionPatternWriter.__percentage__(ratio)
 
 	@staticmethod
 	def __prf_evaluation__(doc_samples: set, pat_samples: set):
@@ -642,9 +681,9 @@ class SymbolicExecutionPatternWriter:
 			f1_score = 2 * precision * recall / (precision + recall)
 		return precision, recall, f1_score
 
-	''' patterns writer '''
+	''' pattern writer '''
 
-	def __write_pattern_count__(self, pattern: SymbolicExecutionPattern):
+	def __write_pattern_count__(self, pattern: SymExecutionPattern):
 		"""
 		:param pattern:
 		:return:
@@ -674,19 +713,19 @@ class SymbolicExecutionPatternWriter:
 		self.writer.write("\tTitle\ttotal\tsupport\tconfidence(%)\n")
 		total, support, confidence = pattern.estimate(True, True)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Line", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(True, False)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Line", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(False, True)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Mutant", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(False, False)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Mutant", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		return
 
-	def __write_pattern_lines__(self, pattern: SymbolicExecutionPattern):
+	def __write_pattern_lines__(self, pattern: SymExecutionPattern):
 		"""
 		:param pattern:
 		:return:
@@ -714,7 +753,7 @@ class SymbolicExecutionPatternWriter:
 																		  parameter))
 		return
 
-	def __write_pattern_words__(self, pattern: SymbolicExecutionPattern):
+	def __write_pattern_words__(self, pattern: SymExecutionPattern):
 		"""
 		:param pattern:
 		:return: index type execution line statement location parameter
@@ -742,7 +781,7 @@ class SymbolicExecutionPatternWriter:
 																			  parameter))
 		return
 
-	def __write_pattern__(self, pattern: SymbolicExecutionPattern, pattern_index: int):
+	def __write_pattern__(self, pattern: SymExecutionPattern, pattern_index: int):
 		self.writer: TextIO
 		self.writer.write("#BEG\t{}\n".format(pattern_index))
 		self.__write_pattern_count__(pattern)
@@ -777,7 +816,7 @@ class SymbolicExecutionPatternWriter:
 		"""
 		with open(output_file, 'w') as writer:
 			self.writer = writer
-			mutant_best_patterns = self.patterns.get_best_patterns(line_or_mutant, uk_or_cc)
+			mutant_best_patterns = self.patterns.select_best_patterns(line_or_mutant, uk_or_cc)
 			for mutant, best_pattern in mutant_best_patterns.items():
 				mutant_id = mutant.get_mut_id()
 				result = self.patterns.classifier.__classify__(mutant)
@@ -813,17 +852,17 @@ class SymbolicExecutionPatternWriter:
 		''' summary tests mutants over_score valid_score '''
 		self.writer.write("@Summary\n")
 		test_number = None
-		if classifier.has_classifier_tests():
-			test_number = len(self.patterns.classifier.get_classifier_tests())
+		if classifier.has_tests():
+			test_number = len(self.patterns.classifier.get_tests())
 		self.writer.write("\t{} := {}\n".format("Tests", test_number))
 		self.writer.write("\t{} := {}\n".format("Lines", len(doc_lines)))
 		self.writer.write("\t{} := {}\n".format("Mutants", len(doc_mutants)))
 		killed, over_score, valid_score = project.evaluation.evaluate_mutation_score(doc_mutants,
-																					 classifier.get_classifier_tests())
+																					 classifier.get_tests())
 		self.writer.write(
-			"\t{} := {}%\n".format("over_score", SymbolicExecutionPatternWriter.__percentage__(over_score)))
+			"\t{} := {}%\n".format("over_score", SymExecutionPatternWriter.__percentage__(over_score)))
 		self.writer.write(
-			"\t{} := {}%\n".format("valid_score", SymbolicExecutionPatternWriter.__percentage__(valid_score)))
+			"\t{} := {}%\n".format("valid_score", SymExecutionPatternWriter.__percentage__(valid_score)))
 		self.writer.write("\n")
 
 		''' counting UC UI UP KI UK CC '''
@@ -840,16 +879,16 @@ class SymbolicExecutionPatternWriter:
 		self.writer.write("\tTitle\ttotal\tsupport\tconfidence(%)\n")
 		total, support, confidence = classifier.estimate(doc_lines, True)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Line", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = classifier.estimate(doc_lines, False)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Line", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = classifier.estimate(doc_mutants, True)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Mutant", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		total, support, confidence = classifier.estimate(doc_mutants, False)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Mutant", total, support,
-													  SymbolicExecutionPatternWriter.__percentage__(confidence)))
+													  SymExecutionPatternWriter.__percentage__(confidence)))
 		self.writer.write("\n")
 
 		''' matching precision recall f1_score '''
@@ -860,25 +899,25 @@ class SymbolicExecutionPatternWriter:
 		doc_cc_mutants = classifier.select(doc_mutants, False)
 		self.writer.write("@Matching\n")
 		self.writer.write("\tTitle\tprecision(%)\trecall(%)\tf1_score\n")
-		precision, recall, f1_score = SymbolicExecutionPatternWriter.__prf_evaluation__(doc_uk_lines, pat_lines)
+		precision, recall, f1_score = SymExecutionPatternWriter.__prf_evaluation__(doc_uk_lines, pat_lines)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Line",
-													  SymbolicExecutionPatternWriter.__percentage__(precision),
-													  SymbolicExecutionPatternWriter.__percentage__(recall),
+													  SymExecutionPatternWriter.__percentage__(precision),
+													  SymExecutionPatternWriter.__percentage__(recall),
 													  f1_score))
-		precision, recall, f1_score = SymbolicExecutionPatternWriter.__prf_evaluation__(doc_cc_lines, pat_lines)
+		precision, recall, f1_score = SymExecutionPatternWriter.__prf_evaluation__(doc_cc_lines, pat_lines)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Line",
-													  SymbolicExecutionPatternWriter.__percentage__(precision),
-													  SymbolicExecutionPatternWriter.__percentage__(recall),
+													  SymExecutionPatternWriter.__percentage__(precision),
+													  SymExecutionPatternWriter.__percentage__(recall),
 													  f1_score))
-		precision, recall, f1_score = SymbolicExecutionPatternWriter.__prf_evaluation__(doc_uk_mutants, pat_mutants)
+		precision, recall, f1_score = SymExecutionPatternWriter.__prf_evaluation__(doc_uk_mutants, pat_mutants)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("UK-Mutant",
-													  SymbolicExecutionPatternWriter.__percentage__(precision),
-													  SymbolicExecutionPatternWriter.__percentage__(recall),
+													  SymExecutionPatternWriter.__percentage__(precision),
+													  SymExecutionPatternWriter.__percentage__(recall),
 													  f1_score))
-		precision, recall, f1_score = SymbolicExecutionPatternWriter.__prf_evaluation__(doc_cc_mutants, pat_mutants)
+		precision, recall, f1_score = SymExecutionPatternWriter.__prf_evaluation__(doc_cc_mutants, pat_mutants)
 		self.writer.write("\t{}\t{}\t{}\t{}\n".format("CC-Mutant",
-													  SymbolicExecutionPatternWriter.__percentage__(precision),
-													  SymbolicExecutionPatternWriter.__percentage__(recall),
+													  SymExecutionPatternWriter.__percentage__(precision),
+													  SymExecutionPatternWriter.__percentage__(recall),
 													  f1_score))
 		self.writer.write("\n")
 
@@ -897,26 +936,26 @@ class SymbolicExecutionPatternWriter:
 			total, cc_mutant_support, cc_mutant_confidence = pattern.estimate(False, False)
 			self.writer.write("\t{}\t{}\t{}\t{}\t{}%\t{}%\t{}%\t{}%\n".
 							  format(index, length, lines_number, mutants_number,
-									 SymbolicExecutionPatternWriter.__percentage__(uk_line_confidence),
-									 SymbolicExecutionPatternWriter.__percentage__(cc_line_confidence),
-									 SymbolicExecutionPatternWriter.__percentage__(uk_mutant_confidence),
-									 SymbolicExecutionPatternWriter.__percentage__(cc_mutant_confidence)))
+									 SymExecutionPatternWriter.__percentage__(uk_line_confidence),
+									 SymExecutionPatternWriter.__percentage__(cc_line_confidence),
+									 SymExecutionPatternWriter.__percentage__(uk_mutant_confidence),
+									 SymExecutionPatternWriter.__percentage__(cc_mutant_confidence)))
 		self.writer.write("\n")
 
 		''' optimization patterns uk_line_optimization cc_line_optimization ... '''
 		self.writer.write("@Optimizer\n")
 		patterns_number = len(self.patterns.get_min_patterns())
 		self.writer.write("\t{} := {}%\n".format("UK_LINE_OPTIMIZE",
-												 SymbolicExecutionPatternWriter.__proportion__(patterns_number,
+												 SymExecutionPatternWriter.__proportion__(patterns_number,
 																							   len(doc_uk_lines))))
 		self.writer.write("\t{} := {}%\n".format("CC_LINE_OPTIMIZE",
-												 SymbolicExecutionPatternWriter.__proportion__(patterns_number,
+												 SymExecutionPatternWriter.__proportion__(patterns_number,
 																							   len(doc_cc_lines))))
 		self.writer.write("\t{} := {}%\n".format("UK_MUTA_OPTIMIZE",
-												 SymbolicExecutionPatternWriter.__proportion__(patterns_number,
+												 SymExecutionPatternWriter.__proportion__(patterns_number,
 																							   len(doc_uk_mutants))))
 		self.writer.write("\t{} := {}%\n".format("CC_MUTA_OPTIMIZE",
-												 SymbolicExecutionPatternWriter.__proportion__(patterns_number,
+												 SymExecutionPatternWriter.__proportion__(patterns_number,
 																							   len(doc_cc_mutants))))
 		self.writer.write("\n")
 		self.writer.flush()
@@ -958,14 +997,14 @@ def mining_patterns(document: jcmuta.SymbolicDocument, classifier_tests, line_or
 		if classifier_tests is not None:
 			test_number = len(classifier_tests)
 		print("\t\tSelect", test_number, "test cases for killing", __killed__,
-			  "mutants with {}%({}%).".format(SymbolicExecutionPatternWriter.__percentage__(over_score),
-											  SymbolicExecutionPatternWriter.__percentage__(valid_score)))
+			  "mutants with {}%({}%).".format(SymExecutionPatternWriter.__percentage__(over_score),
+											  SymExecutionPatternWriter.__percentage__(valid_score)))
 
-		generator = SymbolicExecutionPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
+		generator = SymExecutionPatternGenerator(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
 		patterns = generator.generate(document, classifier_tests)
 		print("\t(2) Generate", len(patterns.get_all_patterns()), "patterns with", len(patterns.get_min_patterns()), "of minimal set from.")
 
-		writer = SymbolicExecutionPatternWriter(patterns)
+		writer = SymExecutionPatternWriter(patterns)
 		writer.write_patterns(os.path.join(output_directory, document.get_project().program.name + ".mpt"))
 		writer.write_results(os.path.join(output_directory, document.get_project().program.name + ".mrt"))
 		writer.write_best_patterns(os.path.join(output_directory, document.get_project().program.name + ".bpt"), line_or_mutant, uk_or_cc)
