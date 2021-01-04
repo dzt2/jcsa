@@ -5,14 +5,13 @@ This file implements the pattern mining on symbolic execution in mutation analys
 
 import os
 from typing import TextIO
-import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
 
 
-UC_CLASS = "UC"				''' not-covered symbolic execution '''
-UI_CLASS = "UI"				''' not-infected but covered execution '''
-UP_CLASS = "UP"				''' not-killed but infected execution '''
-KI_CLASS = "KI"				''' killed execution '''
+UC_CLASS = "UC"
+UI_CLASS = "UI"
+UP_CLASS = "UP"
+KI_CLASS = "KI"
 
 
 class SymExecutionClassifier:
