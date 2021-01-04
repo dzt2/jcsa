@@ -128,28 +128,25 @@ public class SymbolNodeCodeTest {
 					SymbolExpression rvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t==> [1] " + lvalue.generate_code(true) + "\n");
 					writer.write("\t==> [2] " + rvalue.generate_code(true) + "\n");
-					/*
-					lvalue = SymEvaluator.evaluate_on(lvalue); 
-					rvalue = SymEvaluator.evaluate_on(rvalue);
+					
+					lvalue = lvalue.evaluate(null);
+					rvalue = rvalue.evaluate(null);
 					writer.write("\t~~> [1] " + lvalue.generate_code(true) + "\n");
 					writer.write("\t~~> [2] " + rvalue.generate_code(true) + "\n");
-					*/
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
-					/*
-					value = SymEvaluator.evaluate_on(value);
+					
+					value = value.evaluate(null);
 					writer.write("\t~~> [1] " + value.generate_code(true) + "\n");
-					*/
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
-					/*
-					value = SymEvaluator.evaluate_on(value);
+					
+					value = value.evaluate(null);
 					writer.write("\t~~> [1] " + value.generate_code(true) + "\n");
-					*/
 				}
 			}
 			writer.write("END FUNC\n");

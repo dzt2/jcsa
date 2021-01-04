@@ -97,7 +97,7 @@ public abstract class SymbolNode {
 	 * set the source of the symbolic node
 	 * @param source
 	 */
-	protected void set_source(Object source) { this.source = source; }
+	public void set_source(Object source) { this.source = source; }
 	/**
 	 * add the child at the tail of the children list in the node
 	 * @param child

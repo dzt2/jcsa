@@ -18,7 +18,9 @@ import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
+import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 import com.jcsa.jcparse.lang.scope.CInstanceName;
@@ -69,10 +71,20 @@ public class SymbolFactory {
 			return (SymbolExpression) SymbolParser.parser.parse_con(source);
 		else if(source instanceof AstNode)
 			return (SymbolExpression) SymbolParser.parser.parse_ast((AstNode) source, ast_template);
+		else if(source instanceof CirStatement) {
+			CirStatement statement = (CirStatement) source;
+			CirExecution execution = statement.get_tree().get_function_call_graph().
+					get_function(statement).get_flow_graph().get_execution(statement);
+			return (SymbolExpression) SymbolParser.parser.parse_exe(execution);
+		}
 		else if(source instanceof CirNode)
 			return (SymbolExpression) SymbolParser.parser.parse_cir((CirNode) source, cir_optimize);
 		else if(source instanceof CirExecution)
 			return (SymbolExpression) SymbolParser.parser.parse_exe((CirExecution) source);
+		else if(source instanceof SymbolExpression)
+			return (SymbolExpression) source;
+		else if(source instanceof CConstant)
+			return sym_expression(((CConstant) source).get_object());
 		else
 			throw new IllegalArgumentException("Invalid: " + source.getClass().getSimpleName());
 	}
@@ -202,7 +214,7 @@ public class SymbolFactory {
 		
 		return SymbolCallExpression.create(data_type, sfunction, SymbolArgumentList.create(elist));
 	}
-	public static SymbolExpression negative(Object operand) throws Exception {
+	public static SymbolExpression arith_neg(Object operand) throws Exception {
 		SymbolExpression soperand = sym_expression(operand);
 		CType data_type = CTypeAnalyzer.get_value_type(soperand.get_data_type());
 		

@@ -41,7 +41,7 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	 * @return the name of the identifier
 	 */
 	public String get_name() { return this.name; }
-
+	
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolIdentifier(this.get_data_type(), this.get_name());
@@ -96,6 +96,15 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	protected static SymbolIdentifier create(CirExecution execution) throws Exception {
 		String name = "do#" + execution.toString();
 		return new SymbolIdentifier(CBasicTypeImpl.int_type, name);
+	}
+	/**
+	 * @param data_type
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	protected static SymbolIdentifier create(CType data_type, String name) throws Exception {
+		return new SymbolIdentifier(data_type, name);
 	}
 	
 }

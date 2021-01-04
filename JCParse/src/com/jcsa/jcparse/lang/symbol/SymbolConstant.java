@@ -177,6 +177,58 @@ public class SymbolConstant extends SymbolBasicExpression {
 		}
 	}
 	
+	/* comparator */
+	/**
+	 * @param value
+	 * @return true if the constant equal_with the value
+	 */
+	public boolean compare(long value) {
+		Object number = this.get_number();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() == value;
+		}
+		else {
+			return ((Double) number).doubleValue() == value;
+		}
+	}
+	/**
+	 * @param value
+	 * @return true if the constant equal_with the value
+	 */
+	public boolean compare(double value) {
+		Object number = this.get_number();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() == value;
+		}
+		else {
+			return ((Double) number).doubleValue() == value;
+		}
+	}
+	/**
+	 * @return whether the constant is positive number
+	 */
+	public boolean is_pos() {
+		Object number = this.number_of_children();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() > 0L;
+		}
+		else {
+			return ((Double) number).doubleValue() > 0;
+		}
+	}
+	/**
+	 * @return whether the constant is positive number
+	 */
+	public boolean is_neg() {
+		Object number = this.number_of_children();
+		if(number instanceof Long) {
+			return ((Long) number).longValue() < 0L;
+		}
+		else {
+			return ((Double) number).doubleValue() < 0;
+		}
+	}
+	
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolConstant(this.get_data_type(), this.get_constant());
