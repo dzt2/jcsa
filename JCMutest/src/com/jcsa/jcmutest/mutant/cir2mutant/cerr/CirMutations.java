@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -14,8 +12,10 @@ import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 /**
  * Used to create unique instance of SymInstance or CirMutation
@@ -97,7 +97,7 @@ public class CirMutations {
 	public SymConstraint expression_constraint(CirStatement statement,
 			Object expression, boolean value) throws Exception {
 		this.verify_location(statement);
-		SymExpression condition = SymFactory.sym_condition(expression, value);
+		SymbolExpression condition = SymbolFactory.sym_condition(expression, value);
 		CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
 		return (SymConstraint) this.get_unique_instance(new SymConstraint(execution, condition));
 	}
@@ -110,8 +110,8 @@ public class CirMutations {
 	 */
 	public SymConstraint statement_constraint(CirStatement statement, int times) throws Exception {
 		this.verify_location(statement);
-		SymExpression stmt_id = SymFactory.sym_expression(statement);
-		SymExpression condition = SymFactory.greater_eq(stmt_id, Integer.valueOf(times));
+		SymbolExpression stmt_id = SymbolFactory.sym_expression(statement);
+		SymbolExpression condition = SymbolFactory.greater_eq(stmt_id, Integer.valueOf(times));
 		CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
 		return (SymConstraint) this.get_unique_instance(new SymConstraint(execution, condition));
 	}
@@ -143,10 +143,10 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public SymExpressionError expr_error(CirExpression expression,
-			SymExpression muta_value) throws Exception {
+			SymbolExpression muta_value) throws Exception {
 		this.verify_location(expression);
 		CirExecution execution = expression.get_tree().get_localizer().get_execution(expression.statement_of());
-		return (SymExpressionError) this.get_unique_instance(new SymExpressionError(execution, expression, SymFactory.sym_expression(expression), muta_value));
+		return (SymExpressionError) this.get_unique_instance(new SymExpressionError(execution, expression, SymbolFactory.sym_expression(expression), muta_value));
 	}
 	/**
 	 * @param reference
@@ -155,10 +155,10 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public SymReferenceError refer_error(CirReferExpression expression,
-			SymExpression muta_value) throws Exception {
+			SymbolExpression muta_value) throws Exception {
 		this.verify_location(expression);
 		CirExecution execution = expression.get_tree().get_localizer().get_execution(expression.statement_of());
-		return (SymReferenceError) this.get_unique_instance(new SymReferenceError(execution, expression, SymFactory.sym_expression(expression), muta_value));
+		return (SymReferenceError) this.get_unique_instance(new SymReferenceError(execution, expression, SymbolFactory.sym_expression(expression), muta_value));
 	}
 	/**
 	 * @param reference
@@ -167,10 +167,10 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	public SymStateValueError state_error(CirReferExpression expression,
-			SymExpression muta_value) throws Exception {
+			SymbolExpression muta_value) throws Exception {
 		this.verify_location(expression);
 		CirExecution execution = expression.get_tree().get_localizer().get_execution(expression.statement_of());
-		return (SymStateValueError) this.get_unique_instance(new SymStateValueError(execution, expression, SymFactory.sym_expression(expression), muta_value));
+		return (SymStateValueError) this.get_unique_instance(new SymStateValueError(execution, expression, SymbolFactory.sym_expression(expression), muta_value));
 	}
 	/**
 	 * @param constraint
@@ -196,8 +196,8 @@ public class CirMutations {
 	 * @return get the symbolic result of the expression evaluated under contexts
 	 * @throws Exception
 	 */
-	private SymExpression evaluate(SymExpression source, CStateContexts contexts) throws Exception {
-		return SymEvaluator.evaluate_on(source, contexts);
+	private SymbolExpression evaluate(SymbolExpression source, SymbolStateContexts contexts) throws Exception {
+		return SymbolEvaluator.evaluate_on(source, contexts);
 	}
 	/**
 	 * @param constraint
@@ -205,12 +205,12 @@ public class CirMutations {
 	 * @return optimize the constraint to a concrete version w.r.t. the contexts as given
 	 * @throws Exception
 	 */
-	public SymConstraint optimize(SymConstraint constraint, CStateContexts contexts) throws Exception {
+	public SymConstraint optimize(SymConstraint constraint, SymbolStateContexts contexts) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else {
 			CirStatement statement = constraint.get_statement();
-			SymExpression condition = constraint.get_condition();
+			SymbolExpression condition = constraint.get_condition();
 			condition = this.evaluate(condition, contexts);
 			return this.expression_constraint(statement, condition, true);
 		}
@@ -221,7 +221,7 @@ public class CirMutations {
 	 * @return optimize the state error to a concrete version w.r.t. the contexts as given
 	 * @throws Exception
 	 */
-	public SymStateError optimize(SymStateError state_error, CStateContexts contexts) throws Exception {
+	public SymStateError optimize(SymStateError state_error, SymbolStateContexts contexts) throws Exception {
 		if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error: null");
 		else if(state_error instanceof SymTrapError) {
@@ -233,8 +233,8 @@ public class CirMutations {
 		}
 		else if(state_error instanceof SymExpressionError) {
 			CirExpression expression = ((SymExpressionError) state_error).get_expression();
-			SymExpression orig_value = ((SymExpressionError) state_error).get_original_value();
-			SymExpression muta_value = ((SymExpressionError) state_error).get_mutation_value();
+			SymbolExpression orig_value = ((SymExpressionError) state_error).get_original_value();
+			SymbolExpression muta_value = ((SymExpressionError) state_error).get_mutation_value();
 			try {
 				orig_value = this.evaluate(orig_value, contexts); 
 				muta_value = this.evaluate(muta_value, contexts);
@@ -246,8 +246,8 @@ public class CirMutations {
 		}
 		else if(state_error instanceof SymReferenceError) {
 			CirReferExpression reference = (CirReferExpression) ((SymReferenceError) state_error).get_expression();
-			SymExpression orig_value = ((SymReferenceError) state_error).get_original_value();
-			SymExpression muta_value = ((SymReferenceError) state_error).get_mutation_value();
+			SymbolExpression orig_value = ((SymReferenceError) state_error).get_original_value();
+			SymbolExpression muta_value = ((SymReferenceError) state_error).get_mutation_value();
 			try {
 				orig_value = this.evaluate(orig_value, contexts); 
 				muta_value = this.evaluate(muta_value, contexts);
@@ -259,8 +259,8 @@ public class CirMutations {
 		}
 		else if(state_error instanceof SymStateValueError) {
 			CirReferExpression reference = (CirReferExpression) ((SymStateValueError) state_error).get_expression();
-			SymExpression orig_value = ((SymStateValueError) state_error).get_original_value();
-			SymExpression muta_value = ((SymStateValueError) state_error).get_mutation_value();
+			SymbolExpression orig_value = ((SymStateValueError) state_error).get_original_value();
+			SymbolExpression muta_value = ((SymStateValueError) state_error).get_mutation_value();
 			try {
 				orig_value = this.evaluate(orig_value, contexts); 
 				muta_value = this.evaluate(muta_value, contexts);
@@ -280,7 +280,7 @@ public class CirMutations {
 	 * @return the mutation of which constraint and state error are optimized w.r.t. the contexts
 	 * @throws Exception
 	 */
-	public CirMutation optimize(CirMutation mutation, CStateContexts contexts) throws Exception {
+	public CirMutation optimize(CirMutation mutation, SymbolStateContexts contexts) throws Exception {
 		if(mutation == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else {

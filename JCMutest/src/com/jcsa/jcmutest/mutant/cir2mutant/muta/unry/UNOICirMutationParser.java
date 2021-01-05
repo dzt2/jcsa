@@ -7,11 +7,14 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UNOICirMutationParser extends CirMutationParser {
 
@@ -24,14 +27,17 @@ public class UNOICirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		SymConstraint constraint; SymStateError state_error; SymExpression condition, muta_value;
+		SymConstraint constraint; SymStateError state_error; SymbolExpression condition, muta_value;
+		CType data_type = expression.get_data_type();
+		if(data_type == null) data_type = CBasicTypeImpl.void_type;
+		else data_type = CTypeAnalyzer.get_value_type(data_type);
 		
 		switch(mutation.get_operator()) {
 		case insert_arith_neg:
 		{
-			condition = SymFactory.not_equals(expression, Integer.valueOf(0));
+			condition = SymbolFactory.not_equals(expression, Integer.valueOf(0));
 			constraint = mutations.expression_constraint(statement, condition, true);
-			muta_value = SymFactory.arith_neg(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.arith_neg(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
@@ -39,7 +45,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		case insert_bitws_rsv:
 		{
 			constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
-			muta_value = SymFactory.bitws_rsv(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.bitws_rsv(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
@@ -47,25 +53,35 @@ public class UNOICirMutationParser extends CirMutationParser {
 		case insert_logic_not:
 		{
 			constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
-			muta_value = SymFactory.logic_not(expression);
+			muta_value = SymbolFactory.logic_not(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
 		case insert_abs_value:
 		{
-			condition = SymFactory.smaller_tn(expression, Integer.valueOf(0));
+			if(CTypeAnalyzer.is_boolean(data_type)) {
+				condition = SymbolFactory.sym_expression(Boolean.FALSE);
+			}
+			else {
+				condition = SymbolFactory.smaller_tn(expression, Integer.valueOf(0));
+			}
 			constraint = mutations.expression_constraint(statement, condition, true);
-			muta_value = SymFactory.arith_neg(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.arith_neg(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
 		case insert_nabs_value:
 		{
-			condition = SymFactory.greater_tn(expression, Integer.valueOf(0));
+			if(CTypeAnalyzer.is_boolean(data_type)) {
+				condition = SymbolFactory.sym_expression(Boolean.TRUE);
+			}
+			else {
+				condition = SymbolFactory.greater_tn(expression, Integer.valueOf(0));
+			}
 			constraint = mutations.expression_constraint(statement, condition, true);
-			muta_value = SymFactory.arith_neg(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.arith_neg(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;

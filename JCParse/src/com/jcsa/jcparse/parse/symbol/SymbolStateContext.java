@@ -153,5 +153,4 @@ public class SymbolStateContext {
 			throw new IllegalArgumentException(key.getClass().getSimpleName());
 	}
 	
-	
 }

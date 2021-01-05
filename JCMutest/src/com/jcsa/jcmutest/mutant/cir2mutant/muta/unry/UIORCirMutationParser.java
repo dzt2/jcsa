@@ -13,8 +13,8 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIncreAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UIORCirMutationParser extends CirMutationParser {
 	
@@ -28,7 +28,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_sub(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
@@ -37,7 +37,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			SymExpression muta_expression = SymFactory.arith_sub(
+			SymbolExpression muta_expression = SymbolFactory.arith_sub(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -48,14 +48,14 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_sub(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 		
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			muta_expression = SymFactory.arith_add(
+			muta_expression = SymbolFactory.arith_add(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -67,7 +67,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_add(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
@@ -76,7 +76,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			SymExpression muta_expression = SymFactory.arith_add(
+			SymbolExpression muta_expression = SymbolFactory.arith_add(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -87,14 +87,14 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_add(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 		
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			muta_expression = SymFactory.arith_sub(
+			muta_expression = SymbolFactory.arith_sub(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -106,7 +106,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_sub(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
@@ -115,7 +115,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			SymExpression muta_expression = SymFactory.arith_add(
+			SymbolExpression muta_expression = SymbolFactory.arith_add(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -126,14 +126,14 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_sub(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 		
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			muta_expression = SymFactory.arith_sub(
+			muta_expression = SymbolFactory.arith_sub(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -145,7 +145,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_add(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
@@ -154,7 +154,7 @@ public class UIORCirMutationParser extends CirMutationParser {
 			Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			SymExpression muta_expression = SymFactory.arith_sub(
+			SymbolExpression muta_expression = SymbolFactory.arith_sub(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));
@@ -165,14 +165,14 @@ public class UIORCirMutationParser extends CirMutationParser {
 		CirAssignStatement inc_statement = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 		CirComputeExpression inc_expression = (CirComputeExpression) inc_statement.get_rvalue();
-		SymExpression muta_expression = SymFactory.
+		SymbolExpression muta_expression = SymbolFactory.
 				arith_add(inc_expression.get_data_type(), inc_expression, Integer.valueOf(2));
 		infections.put(mutations.expr_error(inc_expression, muta_expression), 
 				mutations.expression_constraint(inc_statement, Boolean.TRUE, true));
 		
 		CirExpression use_expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		if(use_expression != null && use_expression.statement_of() != null) {
-			muta_expression = SymFactory.arith_add(
+			muta_expression = SymbolFactory.arith_add(
 					use_expression.get_data_type(), use_expression, Integer.valueOf(1));
 			infections.put(mutations.expr_error(use_expression, muta_expression), 
 					mutations.expression_constraint(use_expression.statement_of(), use_expression, true));

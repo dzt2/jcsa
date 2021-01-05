@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIncreAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 
 public class UIODCirMutationParser extends CirMutationParser {
@@ -37,7 +37,7 @@ public class UIODCirMutationParser extends CirMutationParser {
 			CirComputeExpression expression = (CirComputeExpression) inc_statement.get_rvalue();
 			CirExpression loperand = expression.get_operand(0);
 			SymConstraint constraint = mutations.expression_constraint(inc_statement, Boolean.TRUE, true);
-			SymStateError state_error = mutations.expr_error(expression, SymFactory.sym_expression(loperand));
+			SymStateError state_error = mutations.expr_error(expression, SymbolFactory.sym_expression(loperand));
 			infections.put(state_error, constraint);
 			break;
 		}

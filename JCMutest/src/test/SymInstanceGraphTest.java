@@ -22,12 +22,11 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -55,8 +54,8 @@ public class SymInstanceGraphTest {
 		else if(source instanceof CirNode) {
 			code = ((CirNode) source).generate_code(true);
 		}
-		else if(source instanceof SymNode) {
-			code = ((SymNode) source).generate_code(true);
+		else if(source instanceof SymbolNode) {
+			code = ((SymbolNode) source).generate_code(true);
 		}
 		else {
 			code = source.toString();
@@ -112,10 +111,10 @@ public class SymInstanceGraphTest {
 				writer.write("\t" + ((SymFlowError) state_error).get_mutation_flow());
 			}
 			else if(state_error instanceof SymValueError) {
-				SymExpression orig_value = ((SymValueError) state_error).get_original_value();
-				SymExpression muta_value = ((SymValueError) state_error).get_mutation_value();
-				orig_value = SymEvaluator.evaluate_on(orig_value);
-				muta_value = SymEvaluator.evaluate_on(muta_value);
+				SymbolExpression orig_value = ((SymValueError) state_error).get_original_value();
+				SymbolExpression muta_value = ((SymValueError) state_error).get_mutation_value();
+				orig_value = orig_value.evaluate(null);
+				muta_value = muta_value.evaluate(null);
 				writer.write("\t" + get_code(orig_value) + "\t" + get_code(muta_value));
 			}
 			writer.write("\n");

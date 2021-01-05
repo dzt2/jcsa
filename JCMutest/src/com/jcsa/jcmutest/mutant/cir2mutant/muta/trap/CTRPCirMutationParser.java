@@ -15,8 +15,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * [switch.condition == case.expression] --> trap(switch)
@@ -76,10 +76,10 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		CirCaseStatement statement2 = (CirCaseStatement) 
 							this.get_cir_node(cir_tree, case_statement, CirCaseStatement.class);
 		
-		SymExpression condition1 = SymFactory.sym_expression(statement2.get_condition());
-		SymExpression condition2 = SymFactory.sym_expression(statement2);
-		condition2 = SymFactory.greater_eq(statement2, Integer.valueOf(1));
-		SymExpression condition = SymFactory.logic_and(condition1, condition2);
+		SymbolExpression condition1 = SymbolFactory.sym_expression(statement2.get_condition());
+		SymbolExpression condition2 = SymbolFactory.sym_expression(statement2);
+		condition2 = SymbolFactory.greater_eq(statement2, Integer.valueOf(1));
+		SymbolExpression condition = SymbolFactory.logic_and(condition1, condition2);
 		SymConstraint constraint = mutations.expression_constraint(statement2, condition, true);
 		
 		infections.put(mutations.trap_error(statement1), constraint);

@@ -1,10 +1,10 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 /**
  * Symbolic constraint is a symbolic expression (boolean) evaluated at some point of the program.
@@ -15,14 +15,14 @@ import com.jcsa.jcparse.lang.sym.SymExpression;
 public class SymConstraint extends SymInstance {
 	
 	/** the symbolic condition being evaluated at the statement point **/
-	private SymExpression condition;
+	private SymbolExpression condition;
 	
 	/**
 	 * @param execution
 	 * @param condition
 	 * @throws IllegalArgumentException
 	 */
-	protected SymConstraint(CirExecution execution, SymExpression condition) throws IllegalArgumentException {
+	protected SymConstraint(CirExecution execution, SymbolExpression condition) throws IllegalArgumentException {
 		super(SymInstanceType.constraint, execution);
 		if(condition == null)
 			throw new IllegalArgumentException("Invalid condition: null");
@@ -32,18 +32,18 @@ public class SymConstraint extends SymInstance {
 	/**
 	 * @return the symbolic condition being evaluated at the statement point
 	 */
-	public SymExpression get_condition() { return this.condition; }
+	public SymbolExpression get_condition() { return this.condition; }
 	@Override
 	protected String generate_code() throws Exception {
 		return this.get_type() + ":" + this.get_execution() + "(" + this.condition.generate_code(true) + ")";
 	}
 
 	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
-		SymExpression expression = SymEvaluator.
+	public Boolean validate(SymbolStateContexts contexts) throws Exception {
+		SymbolExpression expression = SymbolEvaluator.
 				evaluate_on(this.condition, contexts);
-		if(expression instanceof SymConstant) {
-			return ((SymConstant) expression).get_bool();
+		if(expression instanceof SymbolConstant) {
+			return ((SymbolConstant) expression).get_bool();
 		}
 		else {
 			return null;	/* Undecidable */

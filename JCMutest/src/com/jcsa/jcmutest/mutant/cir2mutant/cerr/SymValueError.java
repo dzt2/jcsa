@@ -1,7 +1,5 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -9,15 +7,17 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 public abstract class SymValueError extends SymStateError {
 	
 	/** the original value hold by the expression before mutated **/
-	private SymExpression orig_value;
+	private SymbolExpression orig_value;
 	/** the mutation valud that mutates the original values hold **/
-	private SymExpression muta_value;
+	private SymbolExpression muta_value;
 	
 	/**
 	 * @param type
@@ -27,8 +27,8 @@ public abstract class SymValueError extends SymStateError {
 	 * @throws IllegalArgumentException
 	 */
 	protected SymValueError(SymInstanceType type, CirExecution execution, 
-			CirExpression expression, SymExpression orig_expression,
-			SymExpression muta_expression) throws Exception {
+			CirExpression expression, SymbolExpression orig_expression,
+			SymbolExpression muta_expression) throws Exception {
 		super(type, execution, expression);
 		if(muta_expression == null)
 			throw new IllegalArgumentException("Invalid muta_expression: null");
@@ -84,11 +84,11 @@ public abstract class SymValueError extends SymStateError {
 	/**
 	 * @return the original value hold by the expression before mutated
 	 */
-	public SymExpression get_original_value() { return this.orig_value; }
+	public SymbolExpression get_original_value() { return this.orig_value; }
 	/**
 	 * @return the mutation valud that mutates the original values hold
 	 */
-	public SymExpression get_mutation_value() { return this.muta_value; }
+	public SymbolExpression get_mutation_value() { return this.muta_value; }
 
 	@Override
 	protected String generate_code() throws Exception {
@@ -96,16 +96,16 @@ public abstract class SymValueError extends SymStateError {
 				this.orig_value.generate_code(true) + ", " + this.muta_value.generate_code(true) + ")";
 	}
 	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
-		SymExpression orig_value = SymEvaluator.evaluate_on(this.orig_value, contexts);
-		SymExpression muta_value = SymEvaluator.evaluate_on(this.muta_value, contexts);
+	public Boolean validate(SymbolStateContexts contexts) throws Exception {
+		SymbolExpression orig_value = SymbolEvaluator.evaluate_on(this.orig_value, contexts);
+		SymbolExpression muta_value = SymbolEvaluator.evaluate_on(this.muta_value, contexts);
 		if(orig_value.generate_code(true).equals(muta_value.generate_code(true))) {
 			return Boolean.FALSE;
 		}
-		else if(orig_value instanceof SymConstant) {
-			if(muta_value instanceof SymConstant) {
-				SymConstant lconstant = (SymConstant) orig_value;
-				SymConstant rconstant = (SymConstant) muta_value;
+		else if(orig_value instanceof SymbolConstant) {
+			if(muta_value instanceof SymbolConstant) {
+				SymbolConstant lconstant = (SymbolConstant) orig_value;
+				SymbolConstant rconstant = (SymbolConstant) muta_value;
 				if(this.is_boolean(this.get_expression())) {
 					return Boolean.valueOf(lconstant.get_bool() != rconstant.get_bool());
 				}
@@ -123,7 +123,7 @@ public abstract class SymValueError extends SymStateError {
 				return Boolean.TRUE;
 			}
 		}
-		else if(muta_value instanceof SymConstant) {
+		else if(muta_value instanceof SymbolConstant) {
 			return Boolean.TRUE;
 		}
 		else {

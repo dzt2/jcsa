@@ -15,8 +15,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+
 
 /**
  * Each unit in program state space refers to an expression of cir-code,
@@ -35,7 +34,7 @@ public class CStateUnit {
 	/** the expression being instrumented **/
 	private CirExpression expression;
 	/** the value hold by this expression **/
-	private SymExpression value;
+	private Object value;
 	
 	/* constructor */
 	/**
@@ -111,7 +110,7 @@ public class CStateUnit {
 	 * @param value
 	 * @throws Exception
 	 */
-	protected CStateUnit(CStateNode node, CirExpression expression, SymExpression value) throws Exception {
+	protected CStateUnit(CStateNode node, CirExpression expression) throws Exception {
 		if(expression == null || expression.statement_of() == null)
 			throw new IllegalArgumentException("Invalid expression: null");
 		else if(node == null)
@@ -120,7 +119,7 @@ public class CStateUnit {
 			this.node = node;
 			this.type = this.classifier_of(expression);
 			this.expression = expression;
-			this.value = value;
+			this.value = null;
 		}
 	}
 	
@@ -153,12 +152,12 @@ public class CStateUnit {
 	/**
 	 * @return the value hold by the unit during testing process.
 	 */
-	public SymExpression get_value() { return this.value; }
+	public Object get_value() { return this.value; }
 	/**
 	 * set the value of the expression under testing
 	 * @param value
 	 */
-	protected void set_value(SymExpression value) { this.value = value; }
+	protected void set_value(Object value) { this.value = value; }
 	
 	/* value translators */
 	/**
@@ -168,8 +167,20 @@ public class CStateUnit {
 	public boolean get_bool() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_bool();
+		else if(value instanceof Boolean)
+			return ((Boolean) value).booleanValue();
+		else if(value instanceof Character)
+			return ((Character) value).charValue() != '\0';
+		else if(value instanceof Short)
+			return ((Short) value).shortValue() != 0;
+		else if(value instanceof Integer)
+			return ((Integer) value).intValue() != 0;
+		else if(value instanceof Long)
+			return ((Long) value).longValue() != 0L;
+		else if(value instanceof Float)
+			return ((Float) value).floatValue() != 0.0f;
+		else if(value instanceof Double)
+			return ((Double) value).doubleValue() != 0.0;
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -180,8 +191,20 @@ public class CStateUnit {
 	public char get_char() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_char();
+		else if(value instanceof Boolean)
+			return ((Boolean) value).booleanValue() ? '\1' : '\0';
+		else if(value instanceof Character)
+			return (char) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (char) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (char) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (char) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (char) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (char) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -192,8 +215,20 @@ public class CStateUnit {
 	public short get_short() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_short();
+		else if(value instanceof Boolean)
+			return (short) (((Boolean) value).booleanValue() ? 1 : 0);
+		else if(value instanceof Character)
+			return (short) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (short) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (short) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (short) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (short) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (short) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -204,8 +239,20 @@ public class CStateUnit {
 	public int get_int() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_int();
+		else if(value instanceof Boolean)
+			return (int) (((Boolean) value).booleanValue() ? 1 : 0);
+		else if(value instanceof Character)
+			return (int) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (int) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (int) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (int) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (int) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (int) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -216,8 +263,20 @@ public class CStateUnit {
 	public long get_long() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_long();
+		else if(value instanceof Boolean)
+			return (long) (((Boolean) value).booleanValue() ? 1 : 0);
+		else if(value instanceof Character)
+			return (long) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (long) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (long) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (long) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (long) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (long) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -228,8 +287,20 @@ public class CStateUnit {
 	public float get_float() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_float();
+		else if(value instanceof Boolean)
+			return (float) (((Boolean) value).booleanValue() ? 1 : 0);
+		else if(value instanceof Character)
+			return (float) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (float) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (float) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (float) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (float) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (float) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
@@ -240,8 +311,20 @@ public class CStateUnit {
 	public double get_double() throws IllegalArgumentException {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
-		else if(value instanceof SymConstant) 
-			return ((SymConstant) value).get_double();
+		else if(value instanceof Boolean)
+			return (double) (((Boolean) value).booleanValue() ? 1 : 0);
+		else if(value instanceof Character)
+			return (double) (((Character) value).charValue());
+		else if(value instanceof Short)
+			return (double) ((Short) value).shortValue();
+		else if(value instanceof Integer)
+			return (double) ((Integer) value).intValue();
+		else if(value instanceof Long)
+			return (double) ((Long) value).longValue();
+		else if(value instanceof Float)
+			return (double) ((Float) value).floatValue();
+		else if(value instanceof Double)
+			return (double) ((Double) value).doubleValue();
 		else 
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}

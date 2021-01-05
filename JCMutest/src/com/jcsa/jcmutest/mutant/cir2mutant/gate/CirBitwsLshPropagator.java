@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirBitwsLshPropagator implements CirErrorPropagator {
 
@@ -20,7 +20,7 @@ public class CirBitwsLshPropagator implements CirErrorPropagator {
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		SymConstraint constraint; SymStateError state_error; 
 		
 		if(error instanceof SymExpressionError) {
@@ -36,14 +36,14 @@ public class CirBitwsLshPropagator implements CirErrorPropagator {
 		if(source == target.get_operand(0)) {
 			constraint = cir_mutations.expression_constraint(
 					target.statement_of(), Boolean.TRUE, true);
-			muta_value = SymFactory.bitws_lsh(target.get_data_type(), 
+			muta_value = SymbolFactory.bitws_lsh(target.get_data_type(), 
 					muta_operand, target.get_operand(1));
 		}
 		else if(source == target.get_operand(1)) {
 			constraint = cir_mutations.expression_constraint(
-					target.statement_of(), SymFactory.not_equals(target.
+					target.statement_of(), SymbolFactory.not_equals(target.
 							get_operand(0), Integer.valueOf(0)), true);
-			muta_value = SymFactory.bitws_lsh(target.get_data_type(), 
+			muta_value = SymbolFactory.bitws_lsh(target.get_data_type(), 
 					target.get_operand(0), muta_operand);
 		}
 		else {

@@ -7,7 +7,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class CirSetBitwsXorParser extends CirSetOperatorParser {
 
@@ -30,7 +30,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x & y != 0]
 		 */
-		SymConstraint constraint; SymStateError init_error; SymExpression condition;
+		SymConstraint constraint; SymStateError init_error; SymbolExpression condition;
 		condition = this.sym_expression(COperator.bit_and, loperand, roperand);
 		condition = this.sym_expression(COperator.not_equals, condition, Integer.valueOf(0));
 		constraint = this.get_constraint(condition);
@@ -49,7 +49,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x & y != y] 
 		 */
-		SymConstraint constraint; SymStateError init_error; SymExpression condition;
+		SymConstraint constraint; SymStateError init_error; SymbolExpression condition;
 		condition = this.sym_expression(COperator.bit_and, loperand, roperand);
 		condition = this.sym_expression(COperator.not_equals, condition, roperand);
 		constraint = this.get_constraint(condition);
@@ -69,7 +69,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		 * [x != 0 || y != 0]
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
@@ -136,7 +136,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		 * [x != 0 || y != 0]
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
@@ -214,7 +214,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		 * [x != 0 || y != 0]
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
@@ -238,7 +238,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		 * [x != 0 || y != 0]
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));

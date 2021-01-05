@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirTypeCastPropagator implements CirErrorPropagator {
 	
@@ -22,7 +22,7 @@ public class CirTypeCastPropagator implements CirErrorPropagator {
 		CirCastExpression target = (CirCastExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error; 
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		
 		if(source == target.get_operand()) {
 			/* 2. determine the muta_operand */
@@ -40,8 +40,8 @@ public class CirTypeCastPropagator implements CirErrorPropagator {
 			if(muta_operand != null) {
 				constraint = cir_mutations.expression_constraint(
 						target.statement_of(), Boolean.TRUE, true);
-				muta_value = SymFactory.
-						type_casting(target.get_data_type(), muta_operand);
+				muta_value = SymbolFactory.
+						cast_expression(target.get_data_type(), muta_operand);
 				state_error = cir_mutations.expr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}

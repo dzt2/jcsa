@@ -7,7 +7,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class CirSetArithDivParser extends CirSetOperatorParser {
 
@@ -70,7 +70,7 @@ public class CirSetArithDivParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0 && y != 1 && y != -1]
 		 */
-		SymConstraint constraint; SymStateError init_error; SymExpression condition;
+		SymConstraint constraint; SymStateError init_error; SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));

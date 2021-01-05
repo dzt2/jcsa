@@ -10,8 +10,9 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+
 
 public class CirBitwsRsvPropagator implements CirErrorPropagator {
 
@@ -22,7 +23,7 @@ public class CirBitwsRsvPropagator implements CirErrorPropagator {
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error; 
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		
 		if(source == target.get_operand(0)) {
 			/* 2. obtain the muta-operand */
@@ -38,8 +39,7 @@ public class CirBitwsRsvPropagator implements CirErrorPropagator {
 			
 			/* 3. construct the muta_value */
 			if(muta_operand != null) {
-				muta_value = SymFactory.
-						bitws_rsv(target.get_data_type(), muta_operand);
+				muta_value = SymbolFactory.bitws_rsv(muta_operand);
 				constraint = cir_mutations.expression_constraint(
 						target.statement_of(), Boolean.TRUE, true);
 				state_error = cir_mutations.expr_error(target, muta_value);

@@ -12,8 +12,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirInitializerPropagator implements CirErrorPropagator {
 
@@ -24,7 +24,7 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 		CirInitializerBody target = (CirInitializerBody) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error; 
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		
 		/* 2. obtain the muta_operand */
 		if(error instanceof SymExpressionError) {
@@ -48,8 +48,7 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 					elements.add(target.get_element(k));
 				}
 			}
-			muta_value = SymFactory.initializer_list(
-					target.get_data_type(), elements);
+			muta_value = SymbolFactory.initializer_list(elements);
 			
 			/* 4. construct the constraint-error pair */
 			constraint = cir_mutations.expression_constraint(

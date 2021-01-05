@@ -16,8 +16,8 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirWaitValuePropagator implements CirErrorPropagator {
 
@@ -28,7 +28,7 @@ public class CirWaitValuePropagator implements CirErrorPropagator {
 		CirWaitExpression target = (CirWaitExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error; 
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		
 		if(source == target.get_function()) {
 			/* 2. determine the muta_operand */
@@ -57,8 +57,7 @@ public class CirWaitValuePropagator implements CirErrorPropagator {
 			for(int k = 0; k < alist.number_of_arguments(); k++) {
 				arguments.add(alist.get_argument(k));
 			}
-			muta_value = SymFactory.call_expression(
-					target.get_data_type(), muta_operand, arguments);
+			muta_value = SymbolFactory.call_expression(muta_operand, arguments);
 			
 			/* 5. construct the error propagation pair */
 			constraint = cir_mutations.

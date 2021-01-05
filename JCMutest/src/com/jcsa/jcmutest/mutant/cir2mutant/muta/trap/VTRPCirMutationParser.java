@@ -9,18 +9,16 @@ import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
-import com.jcsa.jcparse.lang.ctype.CEnumerator;
+import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.scope.CEnumeratorName;
-import com.jcsa.jcparse.lang.scope.CInstance;
-import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
-import com.jcsa.jcparse.lang.scope.CParameterName;
 import com.jcsa.jcparse.lang.scope.CScope;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class VTRPCirMutationParser extends CirMutationParser {
 
@@ -35,7 +33,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 	 * @return the expression as the parameter to generate constraint
 	 * @throws Exception
 	 */
-	private SymExpression get_parameter(AstNode location, Object parameter) throws Exception {
+	private SymbolExpression get_parameter(AstNode location, Object parameter) throws Exception {
 		if(parameter instanceof String) {
 			String name = parameter.toString();
 			while(location != null) {
@@ -44,23 +42,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 					CScope scope = scope_node.get_scope();
 					if(scope.has_name(name)) {
 						CName cname = scope.get_name(name);
-						if(cname instanceof CInstanceName) {
-							CInstance instance = ((CInstanceName) cname).get_instance();
-							String identifier = cname.get_name() + "#" + scope.hashCode();
-							return SymFactory.identifier(instance.get_type(), identifier);
-						}
-						else if(cname instanceof CParameterName) {
-							CInstance instance = ((CParameterName) cname).get_parameter();
-							String identifier = cname.get_name() + "#" + scope.hashCode();
-							return SymFactory.identifier(instance.get_type(), identifier);
-						}
-						else if(cname instanceof CEnumeratorName) {
-							CEnumerator enumerator = ((CEnumeratorName) cname).get_enumerator();
-							return SymFactory.sym_expression(Integer.valueOf(enumerator.get_value()));
-						}
-						else {
-							throw new IllegalArgumentException(cname.getClass().getSimpleName());
-						}
+						return SymbolFactory.identifier(cname);
 					}
 					else {
 						throw new IllegalArgumentException("Undefined: " + name);
@@ -73,7 +55,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			throw new IllegalArgumentException("Not in any scope.");
 		}
 		else {
-			return SymFactory.sym_expression(parameter);
+			return SymbolFactory.sym_expression(parameter);
 		}
 	}
 	
@@ -81,13 +63,43 @@ public class VTRPCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
+		CType data_type = expression.get_data_type();
+		if(data_type == null) data_type = CBasicTypeImpl.void_type;
+		else data_type = CTypeAnalyzer.get_value_type(data_type);
 		
-		SymExpression condition;
+		SymbolExpression condition; 
 		switch(mutation.get_operator()) {
-		case trap_on_pos:	condition = SymFactory.greater_tn(expression, Integer.valueOf(0)); break;
-		case trap_on_zro:	condition = SymFactory.equal_with(expression, Integer.valueOf(0)); break;
-		case trap_on_neg:	condition = SymFactory.smaller_tn(expression, Integer.valueOf(0)); break;
-		case trap_on_dif: 	condition = SymFactory.not_equals(expression, get_parameter(
+		case trap_on_pos:	
+		{
+			if(CTypeAnalyzer.is_boolean(data_type)) {
+				condition = SymbolFactory.sym_condition(expression, true);
+			}
+			else {
+				condition = SymbolFactory.greater_tn(expression, Integer.valueOf(0));
+			}
+			break;
+		}
+		case trap_on_zro:	
+		{
+			if(CTypeAnalyzer.is_boolean(data_type)) {
+				condition = SymbolFactory.sym_condition(expression, false);
+			}
+			else {
+				condition = SymbolFactory.equal_with(expression, Integer.valueOf(0));
+			}
+			break;
+		}
+		case trap_on_neg:	
+		{
+			if(CTypeAnalyzer.is_boolean(data_type)) {
+				condition = SymbolFactory.sym_expression(Boolean.FALSE);
+			}
+			else {
+				condition = SymbolFactory.smaller_tn(expression, Integer.valueOf(0));
+			}
+			break;
+		}
+		case trap_on_dif: 	condition = SymbolFactory.not_equals(expression, get_parameter(
 										mutation.get_location(), mutation.get_parameter())); 	break;
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}

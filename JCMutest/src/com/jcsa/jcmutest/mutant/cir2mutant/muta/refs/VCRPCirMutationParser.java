@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class VCRPCirMutationParser extends CirMutationParser {
 	
@@ -24,9 +24,9 @@ public class VCRPCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		SymExpression muta_value = SymFactory.sym_expression(mutation.get_parameter());
+		SymbolExpression muta_value = SymbolFactory.sym_expression(mutation.get_parameter());
 		
-		SymExpression condition = SymFactory.not_equals(expression, muta_value);
+		SymbolExpression condition = SymbolFactory.not_equals(expression, muta_value);
 		SymConstraint constraint = mutations.expression_constraint(statement, condition, true);
 		SymStateError state_error = mutations.expr_error(expression, muta_value);
 		infections.put(state_error, constraint);

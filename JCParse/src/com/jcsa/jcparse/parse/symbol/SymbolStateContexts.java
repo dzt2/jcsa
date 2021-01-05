@@ -4,8 +4,19 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.invocate.MathPackageInvocate;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStateUnit;
 
 public class SymbolStateContexts {
 	
@@ -15,6 +26,10 @@ public class SymbolStateContexts {
 	public SymbolStateContexts() {
 		this.context = new SymbolStateContext(null);
 		this.invocate_set = new HashSet<SymbolInvocate>();
+		this.load_default_library();
+	}
+	private void load_default_library() {
+		this.invocate_set.add(new MathPackageInvocate());
 	}
 	
 	/* context operations */
@@ -146,15 +161,60 @@ import com.jcsa.jcparse.lang.sym.SymbolCallExpression;
 		return source;
 	}
 	
+	/* update by dynamic information */
 	/**
-	 * @param source
-	 * @return evaluate the input symbolic expression using the current context
+	 * accumulate the state on flow from node.prev_node --> node,
+	 * including assigning value of right-value in node.prev_node
+	 * and obtaining the input value of the node.
+	 * @param node for flow[node.prev_node --> node]
 	 * @throws Exception
 	 */
-	/*
-	public SymbolExpression evaluate(SymbolExpression source) throws Exception {
-		return SymbolEvaluator.evaluate_on(source, this);
+	public void accumulate(CStateNode node) throws Exception {
+		if(node == null)
+			throw new IllegalArgumentException("Invalid node");
+		else {
+			/* 1. update the left-reference in prev-assignment */
+			if(node.get_prev_node() != null) {
+				CirStatement prev_statement = node.get_prev_node().get_statement();
+				if(prev_statement instanceof CirAssignStatement) {
+					CirExpression lvalue = ((CirAssignStatement) prev_statement).get_lvalue();
+					CirExpression rvalue = ((CirAssignStatement) prev_statement).get_rvalue();
+					if(node.get_prev_node().has_unit(rvalue)) {
+						this.put(lvalue, node.get_prev_node().get_unit(rvalue).get_value());
+					}
+				}
+			}
+			
+			/* 2. update the scope at the border of function */
+			CirStatement statement = node.get_statement();
+			CirFunction def = statement.get_tree().get_localizer().
+					get_execution(statement).get_graph().get_function();
+			if(statement instanceof CirBegStatement) {
+				this.push(def);
+			}
+			else if(statement instanceof CirEndStatement) {
+				this.pop(def);
+			}
+			
+			/* 3. update the local state in current scope */
+			for(CStateUnit unit : node.get_units()) {
+				if(unit.has_value()) {
+					Object orig_value = unit.get_value();
+					SymbolExpression source = SymbolFactory.sym_expression(orig_value);
+					SymbolExpression target = SymbolEvaluator.evaluate_on(source, this);
+					this.put(unit.get_expression(), target);
+				}
+			}
+			
+			/* 4. accumulate the statement as being executed */
+			SymbolExpression value = this.context.get(statement);
+			int counter = 0;
+			if(value != null) {
+				counter = ((SymbolConstant) value).get_int();
+			}
+			counter++;
+			this.put(statement, Integer.valueOf(counter));
+		}
 	}
-	*/
 	
 }

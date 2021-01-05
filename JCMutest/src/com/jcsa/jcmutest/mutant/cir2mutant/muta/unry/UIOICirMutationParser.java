@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UIOICirMutationParser extends CirMutationParser {
 
@@ -25,32 +25,32 @@ public class UIOICirMutationParser extends CirMutationParser {
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirReferExpression reference = (CirReferExpression) 
 				this.get_cir_expression(cir_tree, mutation.get_location());
-		SymExpression muta_expression;
+		SymbolExpression muta_expression;
 		SymConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
 		
 		switch(mutation.get_operator()) {
 		case insert_post_inc:
 		{
-			muta_expression = SymFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
+			muta_expression = SymbolFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
 			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_post_dec:
 		{
-			muta_expression = SymFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
+			muta_expression = SymbolFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
 			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_prev_inc:
 		{
-			muta_expression = SymFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
+			muta_expression = SymbolFactory.arith_add(reference.get_data_type(), reference, Integer.valueOf(1));
 			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			infections.put(mutations.expr_error(reference, muta_expression), constraint);
 			break;
 		}
 		case insert_prev_dec:
 		{
-			muta_expression = SymFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
+			muta_expression = SymbolFactory.arith_sub(reference.get_data_type(), reference, Integer.valueOf(1));
 			infections.put(mutations.state_error(reference, muta_expression), constraint);
 			infections.put(mutations.expr_error(reference, muta_expression), constraint);
 			break;

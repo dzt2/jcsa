@@ -23,7 +23,6 @@ import com.jcsa.jcparse.flwa.depend.CDependNode;
 import com.jcsa.jcparse.flwa.depend.CDependReference;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -36,9 +35,11 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+
 
 /**
  * It implements the construction of symbolic instance nodes and edges.
@@ -419,13 +420,13 @@ class SymInstanceBuilder {
 			}
 			else if(state_error instanceof SymValueError) {
 				CirExpression location = ((SymValueError) state_error).get_expression();
-				SymExpression muta_value = ((SymValueError) state_error).get_mutation_value();
+				SymbolExpression muta_value = ((SymValueError) state_error).get_mutation_value();
 				CirMutations cir_mutations = source.get_graph().get_cir_mutations();
 				SymConstraint constraint; SymStateError next_error; SymInstanceNode next_node;
 				if(location.get_parent() instanceof CirIfStatement || location.get_parent() instanceof CirCaseStatement) {
-					muta_value = SymEvaluator.evaluate_on(muta_value);
-					if(muta_value instanceof SymConstant) {
-						if(((SymConstant) muta_value).get_bool()) {
+					muta_value = SymbolEvaluator.evaluate_on(muta_value);
+					if(muta_value instanceof SymbolConstant) {
+						if(((SymbolConstant) muta_value).get_bool()) {
 							CirStatement if_statement = location.statement_of();
 							CirExecution if_execution = if_statement.get_tree().get_localizer().get_execution(if_statement);
 							CirExecutionFlow true_flow = null, fals_flow = null;
@@ -475,18 +476,18 @@ class SymInstanceBuilder {
 							}
 						}
 						
-						SymExpression condition1 = SymFactory.sym_condition(location, true);
-						SymExpression condition2 = SymFactory.sym_condition(muta_value, false);
-						SymExpression condition = SymFactory.logic_and(condition1, condition2);
+						SymbolExpression condition1 = SymbolFactory.sym_condition(location, true);
+						SymbolExpression condition2 = SymbolFactory.sym_condition(muta_value, false);
+						SymbolExpression condition = SymbolFactory.logic_and(condition1, condition2);
 						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
 						next_error = cir_mutations.flow_error(true_flow, fals_flow);
 						next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);
 						next_nodes.add(next_node);
 						source.link_to(SymInstanceEdgeType.cont_flow, next_node, constraint);
 						
-						condition1 = SymFactory.sym_condition(location, false);
-						condition2 = SymFactory.sym_condition(muta_value, true);
-						condition = SymFactory.logic_and(condition1, condition2);
+						condition1 = SymbolFactory.sym_condition(location, false);
+						condition2 = SymbolFactory.sym_condition(muta_value, true);
+						condition = SymbolFactory.logic_and(condition1, condition2);
 						constraint = cir_mutations.expression_constraint(if_statement, condition, true);
 						next_error = cir_mutations.flow_error(fals_flow, true_flow);
 						next_node = source.get_graph().new_node(SymInstanceNodeType.root_erro, if_execution, next_error);

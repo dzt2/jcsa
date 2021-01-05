@@ -16,8 +16,8 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirArgumentListPropagator implements CirErrorPropagator {
 
@@ -25,7 +25,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 0. extract the mutation argument */
-		SymExpression mutation_argument;
+		SymbolExpression mutation_argument;
 		if(error instanceof SymExpressionError) {
 			mutation_argument = ((SymExpressionError) error).get_mutation_value();
 		}
@@ -48,7 +48,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 		CirExecution wait_execution = call_execution.
 						get_graph().get_execution(call_execution.get_id() + 1);
 		CirAssignStatement statement = (CirAssignStatement) wait_execution.get_statement();
-		CirExpression target = statement.get_rvalue(); SymExpression muta_value;
+		CirExpression target = statement.get_rvalue(); SymbolExpression muta_value;
 		
 		/* 2. rebuild the new arguments list */
 		List<Object> arguments = new ArrayList<Object>();
@@ -60,8 +60,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 				arguments.add(alist.get_argument(k));
 			}
 		}
-		muta_value = SymFactory.call_expression(target.
-				get_data_type(), call_statement.get_function(), arguments);
+		muta_value = SymbolFactory.call_expression(call_statement.get_function(), arguments);
 		
 		/* 3. construct constraint-error pair */
 		SymStateError state_error = cir_mutations.expr_error(target, muta_value);

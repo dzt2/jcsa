@@ -11,7 +11,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 /**
  * It records the status of symbolic instance being evaluated during testing.
@@ -97,7 +97,7 @@ public class SymInstanceStatus {
 	 * @return execute the instance in the given context and append its 
 	 * @throws Exception
 	 */
-	protected Boolean evaluate(CirMutations cir_mutations, CStateContexts contexts) throws Exception {
+	protected Boolean evaluate(CirMutations cir_mutations, SymbolStateContexts contexts) throws Exception {
 		/* determine the validation result of the symbolic instance */
 		Boolean result;
 		if(this.instance == null) {

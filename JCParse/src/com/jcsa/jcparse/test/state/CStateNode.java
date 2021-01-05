@@ -6,8 +6,6 @@ import java.util.List;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
 
 
 /**
@@ -98,41 +96,49 @@ public class CStateNode {
 		return null;
 	}
 	/**
+	 * @param value 
+	 * @return allow Boolean, Character, Short, Integer, 
+	 */
+	private boolean available_value(Object value) {
+		return 	value instanceof Boolean 
+				|| value instanceof Character
+				|| value instanceof Short 
+				|| value instanceof Integer
+				|| value instanceof Long 
+				|| value instanceof Float
+				|| value instanceof Double;
+	}
+	/**
 	 * set the value of the expression being evaluated in the statement
 	 * @param expression
 	 * @param value
 	 * @throws Exception
+	 * @return	true if the value is successfully set to the unit w.r.t. the expression in the node
 	 */
-	public void set_unit(CirExpression expression, Object value) throws Exception {
+	public boolean set_unit(CirExpression expression, Object value) throws Exception {
 		if(expression == null || expression.statement_of() != this.get_statement())
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		else {
-			/* 1. obtain the element w.r.t. expression */
-			CStateUnit element = null;
-			for(CStateUnit unit : this.units) {
-				if(unit.get_expression() == expression) {
-					element = unit;
-					break;
+			if(this.available_value(value)) {
+				/* 1. obtain the element w.r.t. expression */
+				CStateUnit state_unit = null;
+				for(CStateUnit unit : this.units) {
+					if(unit.get_expression() == expression) {
+						state_unit = unit;
+						break;
+					}
 				}
-			}
-			if(element == null) {
-				element = new CStateUnit(this, expression, null);
-				this.units.add(element);
-			}
-			
-			/* 2. generate the symbolic value of value */
-			SymExpression sym_value;
-			if(value instanceof Boolean || value instanceof Character
-				|| value instanceof Short || value instanceof Integer
-				|| value instanceof Long || value instanceof Float
-				|| value instanceof Double) {
-				sym_value = SymFactory.sym_expression(value);
+				if(state_unit == null) {
+					state_unit = new CStateUnit(this, expression);
+					this.units.add(state_unit);
+				}
+				/* 2. update state unit and return true */
+				state_unit.set_value(value);
+				return true;
 			}
 			else {
-				sym_value = SymFactory.sym_expression(expression);
+				return false;	/* failed to set values */
 			}
-			
-			/* 3. record value */ element.set_value(sym_value);
 		}
 	}
 	/**

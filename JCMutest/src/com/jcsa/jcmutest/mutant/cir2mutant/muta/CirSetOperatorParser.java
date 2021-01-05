@@ -13,8 +13,8 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public abstract class CirSetOperatorParser {
 	
@@ -176,7 +176,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError set_expression(Object muta_expression) throws Exception {
-		return mutations.expr_error(expression, SymFactory.sym_expression(muta_expression));
+		return mutations.expr_error(expression, SymbolFactory.sym_expression(muta_expression));
 	}
 	/**
 	 * @param operand
@@ -184,7 +184,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError add_expression(Object operand) throws Exception {
-		return mutations.expr_error(expression, SymFactory.arith_add(expression.get_data_type(), expression, operand));
+		return mutations.expr_error(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @param operand
@@ -192,28 +192,28 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError sub_expression(Object operand) throws Exception {
-		return mutations.expr_error(expression, SymFactory.arith_sub(expression.get_data_type(), expression, operand));
+		return mutations.expr_error(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @return uny_expr(this.expression, -)
 	 * @throws Exception
 	 */
 	protected SymStateError neg_expression() throws Exception {
-		return mutations.expr_error(expression, SymFactory.arith_neg(expression.get_data_type(), expression));
+		return mutations.expr_error(expression, SymbolFactory.arith_neg(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, ~)
 	 * @throws Exception
 	 */
 	protected SymStateError rsv_expression() throws Exception {
-		return mutations.expr_error(expression, SymFactory.bitws_rsv(expression.get_data_type(), expression));
+		return mutations.expr_error(expression, SymbolFactory.bitws_rsv(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, !)
 	 * @throws Exception
 	 */
 	protected SymStateError not_expression() throws Exception {
-		return mutations.expr_error(expression, SymFactory.logic_not(expression));
+		return mutations.expr_error(expression, SymbolFactory.logic_not(expression));
 	}
 	/**
 	 * @param operand
@@ -232,23 +232,23 @@ public abstract class CirSetOperatorParser {
 	 * @return symbolic condition as expression == value
 	 * @throws Exception
 	 */
-	protected SymExpression sym_condition(Object expression, boolean value) throws Exception {
-		SymExpression condition = SymFactory.sym_expression(expression);
+	protected SymbolExpression sym_condition(Object expression, boolean value) throws Exception {
+		SymbolExpression condition = SymbolFactory.sym_expression(expression);
 		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
 			if(value) { }
 			else {
-				condition = SymFactory.logic_not(condition);
+				condition = SymbolFactory.logic_not(condition);
 			}
 		}
 		else if(CTypeAnalyzer.is_integer(type) 
 				|| CTypeAnalyzer.is_real(type)
 				|| CTypeAnalyzer.is_pointer(type)) {
 			if(value) {
-				condition = SymFactory.not_equals(condition, Integer.valueOf(0));
+				condition = SymbolFactory.not_equals(condition, Integer.valueOf(0));
 			}
 			else {
-				condition = SymFactory.equal_with(condition, Integer.valueOf(0));
+				condition = SymbolFactory.equal_with(condition, Integer.valueOf(0));
 			}
 		}
 		else {
@@ -263,27 +263,27 @@ public abstract class CirSetOperatorParser {
 	 * @return the symbolic binary expression w.r.t. the loperand as well as roperand
 	 * @throws Exception
 	 */
-	protected SymExpression sym_expression(COperator operator, Object loperand, Object roperand) throws Exception {
+	protected SymbolExpression sym_expression(COperator operator, Object loperand, Object roperand) throws Exception {
 		CType type = this.expression.get_data_type();
 		switch(operator) {
-		case arith_add:		return SymFactory.arith_add(type, loperand, roperand);
-		case arith_sub:		return SymFactory.arith_sub(type, loperand, roperand);
-		case arith_mul:		return SymFactory.arith_mul(type, loperand, roperand);
-		case arith_div:		return SymFactory.arith_div(type, loperand, roperand);
-		case arith_mod:		return SymFactory.arith_mod(type, loperand, roperand);
-		case bit_and:		return SymFactory.bitws_and(type, loperand, roperand);
-		case bit_or:		return SymFactory.bitws_ior(type, loperand, roperand);
-		case bit_xor:		return SymFactory.bitws_xor(type, loperand, roperand);
-		case left_shift:	return SymFactory.bitws_lsh(type, loperand, roperand);
-		case righ_shift:	return SymFactory.bitws_rsh(type, loperand, roperand);
-		case logic_and:		return SymFactory.logic_and(loperand, roperand);
-		case logic_or:		return SymFactory.logic_ior(loperand, roperand);
-		case greater_tn:	return SymFactory.greater_tn(loperand, roperand);
-		case greater_eq:	return SymFactory.greater_eq(loperand, roperand);
-		case smaller_tn:	return SymFactory.smaller_tn(loperand, roperand);
-		case smaller_eq:	return SymFactory.smaller_eq(loperand, roperand);
-		case equal_with:	return SymFactory.equal_with(loperand, roperand);
-		case not_equals:	return SymFactory.not_equals(loperand, roperand);
+		case arith_add:		return SymbolFactory.arith_add(type, loperand, roperand);
+		case arith_sub:		return SymbolFactory.arith_sub(type, loperand, roperand);
+		case arith_mul:		return SymbolFactory.arith_mul(type, loperand, roperand);
+		case arith_div:		return SymbolFactory.arith_div(type, loperand, roperand);
+		case arith_mod:		return SymbolFactory.arith_mod(type, loperand, roperand);
+		case bit_and:		return SymbolFactory.bitws_and(type, loperand, roperand);
+		case bit_or:		return SymbolFactory.bitws_ior(type, loperand, roperand);
+		case bit_xor:		return SymbolFactory.bitws_xor(type, loperand, roperand);
+		case left_shift:	return SymbolFactory.bitws_lsh(type, loperand, roperand);
+		case righ_shift:	return SymbolFactory.bitws_rsh(type, loperand, roperand);
+		case logic_and:		return SymbolFactory.logic_and(loperand, roperand);
+		case logic_or:		return SymbolFactory.logic_ior(loperand, roperand);
+		case greater_tn:	return SymbolFactory.greater_tn(loperand, roperand);
+		case greater_eq:	return SymbolFactory.greater_eq(loperand, roperand);
+		case smaller_tn:	return SymbolFactory.smaller_tn(loperand, roperand);
+		case smaller_eq:	return SymbolFactory.smaller_eq(loperand, roperand);
+		case equal_with:	return SymbolFactory.equal_with(loperand, roperand);
+		case not_equals:	return SymbolFactory.not_equals(loperand, roperand);
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
@@ -293,12 +293,12 @@ public abstract class CirSetOperatorParser {
 	 * @return the symbolic unary expression w.r.t. the operand
 	 * @throws Exception
 	 */
-	protected SymExpression sym_expression(COperator operator, Object operand) throws Exception {
+	protected SymbolExpression sym_expression(COperator operator, Object operand) throws Exception {
 		switch(operator) {
-		case positive:	return SymFactory.sym_expression(operand);
-		case negative:	return SymFactory.arith_neg(expression.get_data_type(), operand);
-		case bit_not:	return SymFactory.bitws_rsv(expression.get_data_type(), operand);
-		case logic_not:	return SymFactory.logic_not(operand);
+		case positive:	return SymbolFactory.sym_expression(operand);
+		case negative:	return SymbolFactory.arith_neg(operand);
+		case bit_not:	return SymbolFactory.bitws_rsv(operand);
+		case logic_not:	return SymbolFactory.logic_not(operand);
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
@@ -315,12 +315,12 @@ public abstract class CirSetOperatorParser {
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
-			SymExpression condition = null;
+			SymbolExpression condition = null;
 			for(SymConstraint constraint : constraints) {
 				if(condition == null)
 					condition = constraint.get_condition();
 				else
-					condition = SymFactory.logic_and(condition, constraint.get_condition());
+					condition = SymbolFactory.logic_and(condition, constraint.get_condition());
 			}
 			return mutations.expression_constraint(statement, condition, true);
 		}
@@ -336,12 +336,12 @@ public abstract class CirSetOperatorParser {
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
-			SymExpression condition = null;
+			SymbolExpression condition = null;
 			for(SymConstraint constraint : constraints) {
 				if(condition == null)
 					condition = constraint.get_condition();
 				else
-					condition = SymFactory.logic_ior(condition, constraint.get_condition());
+					condition = SymbolFactory.logic_ior(condition, constraint.get_condition());
 			}
 			return mutations.expression_constraint(statement, condition, true);
 		}

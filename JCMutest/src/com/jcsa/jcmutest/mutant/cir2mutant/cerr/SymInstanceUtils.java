@@ -42,7 +42,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerEqPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerTnPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirTypeCastPropagator;
 import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirWaitValuePropagator;
-import com.jcsa.jcparse.flwa.symbol.SymEvaluator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -65,12 +64,13 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymBinaryExpression;
-import com.jcsa.jcparse.lang.sym.SymConstant;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
-import com.jcsa.jcparse.lang.sym.SymIdentifier;
-import com.jcsa.jcparse.lang.sym.SymNode;
+import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
+import com.jcsa.jcparse.lang.symbol.SymbolNode;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
 
 
 /**
@@ -131,9 +131,9 @@ public class SymInstanceUtils {
 	 * @param expression
 	 * @return whether the expression is logical AND
 	 */
-	private boolean is_conjunction(SymExpression expression) {
-		if(expression instanceof SymBinaryExpression) {
-			return ((SymBinaryExpression) expression).get_operator().get_operator() == COperator.logic_and;
+	private boolean is_conjunction(SymbolExpression expression) {
+		if(expression instanceof SymbolBinaryExpression) {
+			return ((SymbolBinaryExpression) expression).get_operator().get_operator() == COperator.logic_and;
 		}
 		else {
 			return false;
@@ -145,27 +145,27 @@ public class SymInstanceUtils {
 	 * @param conditions
 	 * @throws Exception
 	 */
-	private boolean collect_conditions_in(SymExpression expression, Collection<SymExpression> conditions) throws Exception {
-		if(expression instanceof SymConstant) {
-			if(((SymConstant) expression).get_bool()) {
+	private boolean collect_conditions_in(SymbolExpression expression, Collection<SymbolExpression> conditions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_bool()) {
 				return true;
 			}
 			else {
 				conditions.clear();
-				conditions.add(SymFactory.sym_constant(Boolean.FALSE));
+				conditions.add(SymbolFactory.sym_expression(Boolean.FALSE));
 				return false;
 			}
 		}
 		else if(this.is_conjunction(expression)) {
-			if(this.collect_conditions_in(((SymBinaryExpression) expression).get_loperand(), conditions)) {
-				return this.collect_conditions_in(((SymBinaryExpression) expression).get_roperand(), conditions);
+			if(this.collect_conditions_in(((SymbolBinaryExpression) expression).get_loperand(), conditions)) {
+				return this.collect_conditions_in(((SymbolBinaryExpression) expression).get_roperand(), conditions);
 			}
 			else {
 				return false;
 			}
 		}
 		else {
-			conditions.add(SymFactory.sym_condition(expression, true));
+			conditions.add(SymbolFactory.sym_condition(expression, true));
 			return true;
 		}
 	}
@@ -182,12 +182,12 @@ public class SymInstanceUtils {
 			throw new IllegalArgumentException("Invalid constraint as null");
 		else {
 			/* 1. collect the conditions in the conjunction of expression */
-			Set<SymExpression> conditions = new HashSet<SymExpression>();
+			Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
 			this.collect_conditions_in(constraint.get_condition(), conditions);
 			
 			/* 2. generate the set of symbolic constraints w.r.t. the conditions */
 			Set<SymConstraint> constraints = new HashSet<SymConstraint>();
-			for(SymExpression condition : conditions) {
+			for(SymbolExpression condition : conditions) {
 				constraints.add(cir_mutations.expression_constraint(
 						constraint.get_statement(), condition, true));
 			}
@@ -201,16 +201,16 @@ public class SymInstanceUtils {
 	 * @return whether the symbolic expression in condition is defined in the statement
 	 * @throws Exception
 	 */
-	private boolean is_defined(SymExpression condition, CirStatement statement) throws Exception {
+	private boolean is_defined(SymbolExpression condition, CirStatement statement) throws Exception {
 		if(statement instanceof CirAssignStatement) {
-			SymExpression definition = SymFactory.sym_expression(
+			SymbolExpression definition = SymbolFactory.sym_expression(
 					((CirAssignStatement) statement).get_lvalue());
 			
-			Queue<SymNode> queue = new LinkedList<SymNode>();
-			queue.add(condition); SymNode sym_node;
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(condition); SymbolNode sym_node;
 			while(!queue.isEmpty()) {
 				sym_node = queue.poll();
-				for(SymNode child : sym_node.get_children()) {
+				for(SymbolNode child : sym_node.get_children()) {
 					queue.add(child);
 				}
 				if(sym_node.equals(definition)) {
@@ -230,14 +230,14 @@ public class SymInstanceUtils {
 	 * @return the times required for execution the target statement or -1 if it is not
 	 * @throws Exception
 	 */
-	private boolean is_statement_condition(SymExpression condition) throws Exception {
-		if(condition instanceof SymBinaryExpression) {
-			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
-			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
+	private boolean is_statement_condition(SymbolExpression condition) throws Exception {
+		if(condition instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
 				return true;
 			}
-			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
+			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
 				return true;
 			}
 			else {
@@ -253,14 +253,14 @@ public class SymInstanceUtils {
 	 * @return the execution to which the operand in condition refers to or null if it is not
 	 * @throws Exception
 	 */
-	private CirExecution execution_in_condition(SymExpression condition) throws Exception {
-		if(condition instanceof SymBinaryExpression) {
-			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
-			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
+	private CirExecution execution_in_condition(SymbolExpression condition) throws Exception {
+		if(condition instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
 				return (CirExecution) loperand.get_source();
 			}
-			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
+			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
 				return (CirExecution) roperand.get_source();
 			}
 			else {
@@ -276,15 +276,15 @@ public class SymInstanceUtils {
 	 * @return the times that the execution in condition is required
 	 * @throws Exception
 	 */
-	private int int_times_of_condition(SymExpression condition) throws Exception {
-		if(condition instanceof SymBinaryExpression) {
-			SymExpression loperand = ((SymBinaryExpression) condition).get_loperand();
-			SymExpression roperand = ((SymBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymIdentifier && loperand.get_source() instanceof CirExecution) {
-				return ((SymConstant) roperand).get_int();
+	private int int_times_of_condition(SymbolExpression condition) throws Exception {
+		if(condition instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
+			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
+				return ((SymbolConstant) roperand).get_int();
 			}
-			else if(roperand instanceof SymIdentifier && roperand.get_source() instanceof CirExecution) {
-				return ((SymConstant) loperand).get_int();
+			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
+				return ((SymbolConstant) loperand).get_int();
 			}
 			else {
 				return -1;
@@ -300,8 +300,8 @@ public class SymInstanceUtils {
 	 * @return the statement point where the condition can reach to prior
 	 * @throws Exception
 	 */
-	private CirExecution prev_reach_point(CirExecution execution, SymExpression condition) throws Exception {
-		if(condition instanceof SymConstant) {
+	private CirExecution prev_reach_point(CirExecution execution, SymbolExpression condition) throws Exception {
+		if(condition instanceof SymbolConstant) {
 			return execution.get_graph().get_entry();
 		}
 		else if(this.is_statement_condition(condition)) {
@@ -344,16 +344,16 @@ public class SymInstanceUtils {
 	 * @param conditions
 	 * @throws Exception
 	 */
-	private void generate_subsume_set(SymExpression expression, Collection<SymExpression> conditions) throws Exception {
-		if(expression instanceof SymBinaryExpression) {
-			SymBinaryExpression bin_expression = (SymBinaryExpression) expression;
-			COperator operator = ((SymBinaryExpression) expression).get_operator().get_operator();
+	private void generate_subsume_set(SymbolExpression expression, Collection<SymbolExpression> conditions) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			SymbolBinaryExpression bin_expression = (SymbolBinaryExpression) expression;
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
 			switch(operator) {
 			case smaller_tn:
 			{
 				conditions.add(bin_expression);
-				conditions.add(SymFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				conditions.add(SymFactory.not_equals(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_loperand(), bin_expression.get_roperand()));
 				break;
 			}
 			case smaller_eq:
@@ -363,27 +363,27 @@ public class SymInstanceUtils {
 			}
 			case greater_tn:
 			{
-				conditions.add(SymFactory.smaller_tn(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				conditions.add(SymFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				conditions.add(SymFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.smaller_tn(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
 				break;
 			}
 			case greater_eq:
 			{
-				conditions.add(SymFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
 				break;
 			}
 			case equal_with:
 			{
 				conditions.add(bin_expression);
-				conditions.add(SymFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				conditions.add(SymFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
 				break;
 			}
 			case not_equals:
 			{
 				conditions.add(bin_expression);
-				conditions.add(SymFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
 				break;
 			}
 			default:
@@ -410,9 +410,9 @@ public class SymInstanceUtils {
 			throw new IllegalArgumentException("Invalid constraint as null");
 		else {
 			Set<SymConstraint> constraints = new HashSet<SymConstraint>();
-			Set<SymExpression> conditions = new HashSet<SymExpression>();
+			Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
 			this.generate_subsume_set(constraint.get_condition(), conditions);
-			for(SymExpression condition : conditions) {
+			for(SymbolExpression condition : conditions) {
 				constraints.add(cir_mutations.expression_constraint(constraint.get_statement(), condition, true));
 			}
 			return constraints;
@@ -498,11 +498,11 @@ public class SymInstanceUtils {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_boolean_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
 			Collection<CirAnnotation> annotations) throws Exception {
 		annotations.add(new CirAnnotation(CirAnnotateType.chg_bool, expression, null));
-		if(muta_value instanceof SymConstant) {
-			if(((SymConstant) muta_value).get_bool())
+		if(muta_value instanceof SymbolConstant) {
+			if(((SymbolConstant) muta_value).get_bool())
 				annotations.add(new CirAnnotation(CirAnnotateType.set_true, expression, null));
 			else
 				annotations.add(new CirAnnotation(CirAnnotateType.set_false, expression, null));
@@ -518,14 +518,14 @@ public class SymInstanceUtils {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_numeric_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
 			Collection<CirAnnotation> annotations) throws Exception {
 		annotations.add(new CirAnnotation(CirAnnotateType.chg_numb, expression, null));
 		annotations.add(new CirAnnotation(CirAnnotateType.set_numb, expression, muta_value));
 		
 		/* value domain property */
-		if(muta_value instanceof SymConstant) {
-			Object number = ((SymConstant) muta_value).get_number();
+		if(muta_value instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) muta_value).get_number();
 			if(number instanceof Long) {
 				long value = ((Long) number).longValue();
 				if(value > 0) {
@@ -553,10 +553,10 @@ public class SymInstanceUtils {
 		}
 		
 		/* difference property */
-		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
-		difference = SymEvaluator.evaluate_on(difference, null);
-		if(difference instanceof SymConstant) {
-			Object number = ((SymConstant) difference).get_number();
+		SymbolExpression difference = SymbolFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
+		difference = SymbolEvaluator.evaluate_on(difference, null);
+		if(difference instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) difference).get_number();
 			if(number instanceof Long) {
 				long value = ((Long) number).longValue();
 				if(value > 0) {
@@ -578,12 +578,12 @@ public class SymInstanceUtils {
 		}
 		
 		/* value range property */
-		orig_value = SymEvaluator.evaluate_on(orig_value, null);
-		muta_value = SymEvaluator.evaluate_on(muta_value, null);
-		if(orig_value instanceof SymConstant) {
-			Object lnumber = ((SymConstant) orig_value).get_number();
-			if(muta_value instanceof SymConstant) {
-				Object rnumber = ((SymConstant) muta_value).get_number();
+		orig_value = SymbolEvaluator.evaluate_on(orig_value, null);
+		muta_value = SymbolEvaluator.evaluate_on(muta_value, null);
+		if(orig_value instanceof SymbolConstant) {
+			Object lnumber = ((SymbolConstant) orig_value).get_number();
+			if(muta_value instanceof SymbolConstant) {
+				Object rnumber = ((SymbolConstant) muta_value).get_number();
 				if(lnumber instanceof Long) {
 					long x = ((Long) lnumber).longValue();
 					if(rnumber instanceof Long) {
@@ -638,14 +638,14 @@ public class SymInstanceUtils {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_address_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
 			Collection<CirAnnotation> annotations) throws Exception {
 		annotations.add(new CirAnnotation(CirAnnotateType.chg_addr, expression, null));
 		annotations.add(new CirAnnotation(CirAnnotateType.set_addr, expression, muta_value));
 		
 		/* value domain property */
-		if(muta_value instanceof SymConstant) {
-			long value = ((SymConstant) muta_value).get_long();
+		if(muta_value instanceof SymbolConstant) {
+			long value = ((SymbolConstant) muta_value).get_long();
 			if(value == 0) {
 				annotations.add(new CirAnnotation(CirAnnotateType.set_null, expression, null));
 			}
@@ -655,10 +655,10 @@ public class SymInstanceUtils {
 		}
 		
 		/* difference property */
-		SymExpression difference = SymFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
-		difference = SymEvaluator.evaluate_on(difference, null);
-		if(difference instanceof SymConstant) {
-			Object number = ((SymConstant) difference).get_number();
+		SymbolExpression difference = SymbolFactory.arith_sub(expression.get_data_type(), muta_value, orig_value);
+		difference = SymbolEvaluator.evaluate_on(difference, null);
+		if(difference instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) difference).get_number();
 			long value = ((Long) number).longValue();
 			if(value > 0) {
 				annotations.add(new CirAnnotation(CirAnnotateType.inc_value, expression, null));
@@ -677,7 +677,7 @@ public class SymInstanceUtils {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_expression(CirExpression expression, 
-			SymExpression orig_value, SymExpression muta_value, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
 			Collection<CirAnnotation> annotations) throws Exception {
 		if(orig_value.equals(muta_value)) {
 			annotations.clear();
@@ -713,15 +713,15 @@ public class SymInstanceUtils {
 			throw new IllegalArgumentException("Invalid constraint as null");
 		else {
 			CirExecution execution = constraint.get_execution();
-			SymExpression condition = constraint.get_condition();
+			SymbolExpression condition = constraint.get_condition();
 			
 			/* 	*********************************************************
 			 * 	|-- stmt_id >= times 	--> covr_stmt(statement, times)	|
 			 * 	|--	(execution, TRUE)	-->	covr_stmt(statement, 1) 	|
 			 * 	*********************************************************/
 			int times;
-			if(condition instanceof SymConstant) {
-				if(((SymConstant) condition).get_bool()) {
+			if(condition instanceof SymbolConstant) {
+				if(((SymbolConstant) condition).get_bool()) {
 					times = 1;
 				}
 				else {
@@ -734,7 +734,7 @@ public class SymInstanceUtils {
 			if(times > 0) {
 				annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, 
 						execution.get_statement(), 
-						SymFactory.sym_constant(Integer.valueOf(times))));
+						SymbolFactory.sym_expression(Integer.valueOf(times))));
 			}
 			/* |--	(execution, other)	--> eval_stmt(statement, expression) */
 			else {

@@ -11,6 +11,7 @@ import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.test.state.CStateUnit;
 
 public class MutExecutionPathTest {
@@ -43,7 +44,7 @@ public class MutExecutionPathTest {
 				List<CStateUnit> units = (List<CStateUnit>) edge.get_annotation();
 				for(CStateUnit unit : units) {
 					writer.write("\t" + strip_code(unit.get_expression().generate_code(true)));
-					writer.write(": " + strip_code(unit.get_value().generate_code(false)) + "\n");
+					writer.write(": " + strip_code(SymbolFactory.sym_expression(unit.get_value()).generate_code(false)) + "\n");
 				}
 			}
 		}

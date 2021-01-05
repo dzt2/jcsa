@@ -4,7 +4,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
@@ -19,7 +19,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		 * [true] --> set_expr(B(x + y))
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -41,7 +41,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean arith_mul() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -62,7 +62,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -91,7 +91,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
 			init_error = this.trap_statement();
@@ -116,7 +116,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean bitws_and() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -133,7 +133,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean bitws_ior() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -155,7 +155,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean bitws_lsh() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -172,7 +172,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean bitws_rsh() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -189,7 +189,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean logic_and() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
@@ -206,7 +206,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 	@Override
 	protected boolean logic_ior() throws Exception {
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();

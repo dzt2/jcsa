@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UNODCirMutationParser extends CirMutationParser {
 	
@@ -24,14 +24,14 @@ public class UNODCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		SymConstraint constraint; SymStateError state_error; SymExpression condition, muta_value;
+		SymConstraint constraint; SymStateError state_error; SymbolExpression condition, muta_value;
 		
 		switch(mutation.get_operator()) {
 		case delete_arith_neg:
 		{
-			condition = SymFactory.not_equals(expression, Integer.valueOf(0));
+			condition = SymbolFactory.not_equals(expression, Integer.valueOf(0));
 			constraint = mutations.expression_constraint(statement, condition, true);
-			muta_value = SymFactory.arith_neg(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.arith_neg(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
@@ -39,7 +39,7 @@ public class UNODCirMutationParser extends CirMutationParser {
 		case delete_bitws_rsv:
 		{
 			constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
-			muta_value = SymFactory.bitws_rsv(expression.get_data_type(), expression);
+			muta_value = SymbolFactory.bitws_rsv(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
@@ -47,7 +47,7 @@ public class UNODCirMutationParser extends CirMutationParser {
 		case delete_logic_not:
 		{
 			constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
-			muta_value = SymFactory.logic_not(expression);
+			muta_value = SymbolFactory.logic_not(expression);
 			state_error = mutations.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;

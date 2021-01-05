@@ -7,7 +7,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirSetOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.sym.SymExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class CirSetLogicIorParser extends CirSetOperatorParser {
 
@@ -27,7 +27,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [B(x) && B(y)] --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
@@ -51,7 +51,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * B(x) != B(y) --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error;
-		SymExpression lcondition, rcondition, condition;
+		SymbolExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
@@ -75,7 +75,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * 	[!B(x) && B(y)] --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		if(this.compare_or_mutate) {
@@ -110,7 +110,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [!B(y)] --> trap()
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
@@ -136,7 +136,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * B(x) != B(y) --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error;
-		SymExpression lcondition, rcondition, condition;
+		SymbolExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
@@ -164,7 +164,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [B(x) && B(y)] --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);
@@ -188,7 +188,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [!B(x) && B(y)] --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, false);
@@ -229,7 +229,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * B(x) != B(y) --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error;
-		SymExpression lcondition, rcondition, condition;
+		SymbolExpression lcondition, rcondition, condition;
 		
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
@@ -325,7 +325,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [!B(x) || !B(y)] --> not_expr
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, false);
@@ -349,7 +349,7 @@ public class CirSetLogicIorParser extends CirSetOperatorParser {
 		 * [B(x) && B(y)] --> set_false
 		 */
 		SymConstraint constraint; SymStateError init_error; 
-		SymExpression condition;
+		SymbolExpression condition;
 		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
 		
 		condition = this.sym_condition(this.loperand, true);

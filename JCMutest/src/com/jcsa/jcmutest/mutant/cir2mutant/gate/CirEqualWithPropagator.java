@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirEqualWithPropagator implements CirErrorPropagator {
 
@@ -20,7 +20,7 @@ public class CirEqualWithPropagator implements CirErrorPropagator {
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		SymConstraint constraint; SymStateError state_error; 
 		
 		if(error instanceof SymExpressionError) {
@@ -34,11 +34,11 @@ public class CirEqualWithPropagator implements CirErrorPropagator {
 		}
 		
 		if(source == target.get_operand(0)) {
-			muta_value = SymFactory.equal_with(
+			muta_value = SymbolFactory.equal_with(
 					muta_operand, target.get_operand(1));
 		}
 		else if(source == target.get_operand(1)) {
-			muta_value = SymFactory.equal_with(
+			muta_value = SymbolFactory.equal_with(
 					target.get_operand(0), muta_operand);
 		}
 		else {

@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.cerr;
 
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 public class SymTrapError extends SymStateError {
 
@@ -15,7 +15,7 @@ public class SymTrapError extends SymStateError {
 	}
 
 	@Override
-	public Boolean validate(CStateContexts contexts) throws Exception {
+	public Boolean validate(SymbolStateContexts contexts) throws Exception {
 		return Boolean.TRUE;
 	}
 

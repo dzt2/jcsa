@@ -11,8 +11,8 @@ import java.util.Queue;
 import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcparse.flwa.symbol.CStateContexts;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -143,7 +143,7 @@ class SymInstanceEvaluator {
 	 * @return true if the validation result is either null or true
 	 * @throws Exception
 	 */
-	private boolean evaluate_status(SymInstanceStatus status, CirMutations cir_mutations, CStateContexts contexts) throws Exception {
+	private boolean evaluate_status(SymInstanceStatus status, CirMutations cir_mutations, SymbolStateContexts contexts) throws Exception {
 		Boolean validation = status.evaluate(cir_mutations, contexts);
 		return validation == null || validation.booleanValue();
 	}
@@ -154,7 +154,7 @@ class SymInstanceEvaluator {
 	 * @return the set of output edges from the node if it is evaluated as non-false
 	 * @throws Exception
 	 */
-	private Iterable<SymInstanceEdge> evaluate_status(SymInstanceNode node, CStateContexts contexts) throws Exception {
+	private Iterable<SymInstanceEdge> evaluate_status(SymInstanceNode node, SymbolStateContexts contexts) throws Exception {
 		CirMutations cir_mutations = node.get_graph().get_cir_mutations();
 		List<SymInstanceEdge> next_edges = new ArrayList<SymInstanceEdge>();
 		if(this.evaluate_status(node.get_status(), cir_mutations, contexts)) {
@@ -171,7 +171,7 @@ class SymInstanceEvaluator {
 	 * @return the set of next edges from the target of the edge if it passes to the target and evaluated as true or null
 	 * @throws Exception
 	 */
-	private Iterable<SymInstanceEdge> evaluate_status(SymInstanceEdge edge, CStateContexts contexts) throws Exception {
+	private Iterable<SymInstanceEdge> evaluate_status(SymInstanceEdge edge, SymbolStateContexts contexts) throws Exception {
 		List<SymInstanceEdge> next_edges = new ArrayList<SymInstanceEdge>();
 		CirMutations cir_mutations = edge.get_source().get_graph().get_cir_mutations();
 		if(this.evaluate_status(edge.get_status(), cir_mutations, contexts)) {
@@ -274,7 +274,7 @@ class SymInstanceEvaluator {
 	private void dynamic_prev_evaluate(SymInstanceGraph graph, CStatePath state_path) throws Exception {
 		/* get the status of nodes and edges in the reaching part (including mutated nodes and infection edges) */
 		Map<CirExecution, Collection<SymInstanceStatus>> reaching_map = this.get_reaching_status(graph);
-		CStateContexts contexts = new CStateContexts();
+		SymbolStateContexts contexts = new SymbolStateContexts();
 		CirMutations cir_mutations = graph.get_cir_mutations();
 		
 		/* perform dynamic evaluation on the status of nodes and edges in the reaching part of the graph */
@@ -295,7 +295,7 @@ class SymInstanceEvaluator {
 	 * @return the set of child blocks from the parent that can be reached during the propagation
 	 * @throws Exception
 	 */
-	private Iterable<SymInstanceBlock> evaluate_local_block(SymInstanceBlock parent, CStateContexts contexts) throws Exception {
+	private Iterable<SymInstanceBlock> evaluate_local_block(SymInstanceBlock parent, SymbolStateContexts contexts) throws Exception {
 		List<SymInstanceBlock> valid_children = new ArrayList<SymInstanceBlock>();
 		Queue<SymInstanceEdge> queue = new LinkedList<SymInstanceEdge>();
 		
@@ -324,7 +324,7 @@ class SymInstanceEvaluator {
 	 */
 	private void dynamic_post_evaluate(SymInstanceBlock tree, CStatePath state_path) throws Exception {
 		/* declarations */
-		CStateContexts contexts = new CStateContexts();
+		SymbolStateContexts contexts = new SymbolStateContexts();
 		Collection<SymInstanceBlock> candidates = new HashSet<SymInstanceBlock>();
 		Collection<SymInstanceBlock> remove_set = new HashSet<SymInstanceBlock>();
 		

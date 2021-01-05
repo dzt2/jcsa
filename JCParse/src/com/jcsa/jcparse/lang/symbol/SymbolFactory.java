@@ -145,6 +145,16 @@ public class SymbolFactory {
 		return SymbolIdentifier.create(data_type, def);
 	}
 	/**
+	 * @param data_type
+	 * @param def
+	 * @return return#function.id
+	 * @throws Exception
+	 */
+	public static SymbolExpression identifier(CType data_type, String identifier) throws Exception {
+		return SymbolIdentifier.create(data_type, identifier);
+	}
+	
+	/**
 	 * @param value 
 	 * @return
 	 * @throws Exception
@@ -221,7 +231,7 @@ public class SymbolFactory {
 		if(CTypeAnalyzer.is_boolean(data_type)) {
 			data_type = CBasicTypeImpl.int_type;
 		}
-		else if(CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type)) {
+		else if(CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type) || CTypeAnalyzer.is_pointer(data_type)) {
 			/* remain the original data type */
 		}
 		else {
@@ -237,7 +247,7 @@ public class SymbolFactory {
 		if(CTypeAnalyzer.is_boolean(data_type)) {
 			data_type = CBasicTypeImpl.int_type;
 		}
-		else if(CTypeAnalyzer.is_integer(data_type)) {
+		else if(CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_pointer(data_type)) {
 			/* remain the original data type */
 		}
 		else {

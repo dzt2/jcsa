@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
-import com.jcsa.jcparse.lang.sym.SymExpression;
-import com.jcsa.jcparse.lang.sym.SymFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * set_expr(body) 	--> set_expr(body.field)
@@ -28,21 +28,19 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 		CirFieldExpression target = (CirFieldExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error; 
-		SymExpression muta_operand; SymExpression muta_value;
+		SymbolExpression muta_operand; SymbolExpression muta_value;
 		
 		/* 2. check the operand */
 		if(source == target.get_body()) {
 			/* 3. construct the target error */
 			if(error instanceof SymExpressionError) {
 				muta_operand = ((SymExpressionError) error).get_mutation_value();
-				muta_value = SymFactory.field_expression(target.get_data_type(), 
-						muta_operand, target.get_field().get_name());
+				muta_value = SymbolFactory.field_expression(muta_operand, target.get_field().get_name());
 				state_error = cir_mutations.expr_error(target, muta_value);
 			}
 			else if(error instanceof SymReferenceError) {
 				muta_operand = ((SymReferenceError) error).get_mutation_value();
-				muta_value = SymFactory.field_expression(target.get_data_type(), 
-						muta_operand, target.get_field().get_name());
+				muta_value = SymbolFactory.field_expression(muta_operand, target.get_field().get_name());
 				state_error = cir_mutations.refer_error(target, muta_value);
 			}
 			else {
