@@ -57,7 +57,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.exmine">
+  <component name="RunManager" selected="Python.muta">
     <configuration name="code" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -249,8 +249,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.exmine" />
         <item itemvalue="Python.muta" />
+        <item itemvalue="Python.exmine" />
         <item itemvalue="Python.eqmine" />
         <item itemvalue="Python.equiv_mine" />
         <item itemvalue="Python.code" />

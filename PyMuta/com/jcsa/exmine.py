@@ -1014,6 +1014,7 @@ def mining_patterns(document: jcmuta.SymbolicDocument, classifier_tests, line_or
 
 def testing_project(directory: str, file_name: str, none_directory: str, over_directory: str,
 					test_directory: str, dyna_directory: str, dynamic_evaluation: bool):
+	print("Testing on", file_name)
 	c_project = jcmuta.CProject(directory, file_name)
 
 	docs = c_project.load_static_document(directory)
