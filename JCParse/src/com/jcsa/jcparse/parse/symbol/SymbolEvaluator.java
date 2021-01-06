@@ -487,7 +487,7 @@ public class SymbolEvaluator {
 		for(SymbolExpression operand : operands) {
 			SymbolExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SymbolConstant) {
-				constant = SymbolComputation.arith_add(
+				constant = this.const_evaluate(COperator.arith_add, 
 						constant, (SymbolConstant) new_operand);
 			}
 			else {
@@ -572,8 +572,8 @@ public class SymbolEvaluator {
 		/* 3. composite both constants in left and right */
 		SymbolExpression lconstant = loperands.remove(loperands.size() - 1);
 		SymbolExpression rconstant = roperands.remove(roperands.size() - 1);
-		SymbolConstant constant = SymbolComputation.arith_sub(
-					(SymbolConstant) lconstant, (SymbolConstant) rconstant);
+		SymbolConstant constant = this.const_evaluate(COperator.arith_add, 
+				(SymbolConstant) lconstant, (SymbolConstant) rconstant);
 		if(!this.compare(constant, Integer.valueOf(0))) {
 			loperands.add(constant);
 		}
@@ -639,7 +639,7 @@ public class SymbolEvaluator {
 		for(SymbolExpression operand : operands) {
 			SymbolExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SymbolConstant) {
-				constant = SymbolComputation.arith_mul(
+				constant = this.const_evaluate(COperator.arith_mul, 
 						constant, (SymbolConstant) new_operand);
 			}
 			else {
@@ -814,7 +814,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.arith_mod(lconstant, rconstant);
+				return this.const_evaluate(COperator.arith_mod, lconstant, rconstant);
 			}
 			else {
 				if(this.compare(lconstant, Integer.valueOf(0))
@@ -865,11 +865,15 @@ public class SymbolEvaluator {
 			SymbolExpression new_operand = this.evaluate(operand);
 			if(new_operand instanceof SymbolConstant) {
 				switch(operator) {
-				case bit_and:	constant = SymbolComputation.bitws_and(constant, (SymbolConstant) new_operand); break;
-				case bit_or:	constant = SymbolComputation.bitws_ior(constant, (SymbolConstant) new_operand); break;
-				case bit_xor:	constant = SymbolComputation.bitws_xor(constant, (SymbolConstant) new_operand); break;
-				case logic_and:	constant = SymbolComputation.logic_and(constant, (SymbolConstant) new_operand); break;
-				case logic_or:	constant = SymbolComputation.logic_ior(constant, (SymbolConstant) new_operand); break;
+				case bit_and:	
+				case bit_or:	
+				case bit_xor:	
+				case logic_and:	
+				case logic_or:	
+				{
+					constant = this.const_evaluate(operator, constant, (SymbolConstant) new_operand);
+					break;
+				}
 				default: throw new IllegalArgumentException("Invalid: " + operator);
 				}
 			}
@@ -1005,7 +1009,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.bitws_lsh(lconstant, rconstant);
+				return this.const_evaluate(COperator.left_shift, lconstant, rconstant);
 			}
 			else {
 				if(this.compare(lconstant, Integer.valueOf(0))){
@@ -1039,7 +1043,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.bitws_rsh(lconstant, rconstant);
+				return this.const_evaluate(COperator.righ_shift, lconstant, rconstant);
 			}
 			else {
 				if(this.compare(lconstant, Integer.valueOf(0))) {
@@ -1185,7 +1189,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.greater_tn(lconstant, rconstant);
+				return this.const_evaluate(COperator.greater_tn, lconstant, rconstant);
 			}
 		}
 		
@@ -1199,7 +1203,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.smaller_tn(lconstant, rconstant);
+				return this.const_evaluate(COperator.smaller_tn, lconstant, rconstant);
 			}
 		}
 		
@@ -1318,7 +1322,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.greater_eq(lconstant, rconstant);
+				return this.const_evaluate(COperator.greater_eq, lconstant, rconstant);
 			}
 		}
 		
@@ -1332,7 +1336,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.smaller_eq(lconstant, rconstant);
+				return this.const_evaluate(COperator.smaller_eq, lconstant, rconstant);
 			}
 		}
 		
@@ -1407,7 +1411,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.equal_with(lconstant, rconstant);
+				return this.const_evaluate(COperator.equal_with, lconstant, rconstant);
 			}
 		}
 		
@@ -1482,7 +1486,7 @@ public class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				return SymbolComputation.not_equals(lconstant, rconstant);
+				return this.const_evaluate(COperator.not_equals, lconstant, rconstant);
 			}
 		}
 		
