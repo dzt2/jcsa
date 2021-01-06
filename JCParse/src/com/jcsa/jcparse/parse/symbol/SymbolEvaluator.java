@@ -26,37 +26,103 @@ import com.jcsa.jcparse.lang.symbol.SymbolInitializerList;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 
 /**
- * It is used to optimize symbolic expression.
+ * It is used to evaluate the value hold by SymbolExpression using recursive algorithm.
  * 
  * @author yukimula
  *
  */
 public class SymbolEvaluator {
 	
-	/* definition */
-	private SymbolStateContexts context;
-	private SymbolEvaluator() { }
-	private static SymbolEvaluator evaluator = new SymbolEvaluator();
+	/* definitions */
+	/** to preserve the value hold by variable during testing **/
+	private SymbolStateContexts contexts;
+	/** private constructor for singleton mode **/
+	private SymbolEvaluator() { this.contexts = null; }
+	/** singleton instance for evaluating SymbolExpression **/
+	private static final SymbolEvaluator evaluator = new SymbolEvaluator();
 	
-	/* evaluation methods */
+	/* basic methods */
 	/**
 	 * @param source
-	 * @return get the solution by source, source.get_source & source.generate_code()
+	 * @return the solution w.r.t. the input or null if no preserved in contexts
 	 * @throws Exception
 	 */
 	private SymbolExpression get_solution(SymbolExpression source) throws Exception {
-		if(context == null) {
+		if(contexts == null)
 			return null;
-		}
-		else if(this.context.has(source)) {
-			return this.context.get(source);
-		}
-		else {
+		else if(contexts.has(source)) 
+			return contexts.get(source);
+		else
 			return null;
+	}
+	/**
+	 * @param operator	{+, -, ~, !}
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant const_evaluate(COperator operator, SymbolConstant operand) throws Exception {
+		switch(operator) {
+		case positive:	return operand;
+		case negative:	return SymbolComputation.arith_neg(operand);
+		case bit_not:	return SymbolComputation.bitws_rsv(operand);
+		case logic_not:	return SymbolComputation.logic_not(operand);
+		default: throw new IllegalArgumentException("Invalid: " + operator);
 		}
 	}
 	/**
-	 * evaluate the result of the symbolic expression
+	 * @param operator	{+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant const_evaluate(COperator operator, SymbolConstant loperand, SymbolConstant roperand) throws Exception {
+		switch(operator) {
+		case arith_add:		return SymbolComputation.arith_add(loperand, roperand);
+		case arith_sub:		return SymbolComputation.arith_sub(loperand, roperand);
+		case arith_mul:		return SymbolComputation.arith_mul(loperand, roperand);
+		case arith_div:		return SymbolComputation.arith_div(loperand, roperand);
+		case arith_mod:		return SymbolComputation.arith_mod(loperand, roperand);
+		case bit_and:		return SymbolComputation.bitws_and(loperand, roperand);
+		case bit_or:		return SymbolComputation.bitws_ior(loperand, roperand);
+		case bit_xor:		return SymbolComputation.bitws_xor(loperand, roperand);
+		case left_shift:	return SymbolComputation.bitws_lsh(loperand, roperand);
+		case righ_shift:	return SymbolComputation.bitws_rsh(loperand, roperand);
+		case logic_and:		return SymbolComputation.logic_and(loperand, roperand);
+		case logic_or:		return SymbolComputation.logic_ior(loperand, roperand);
+		case greater_tn:	return SymbolComputation.greater_tn(loperand, roperand);
+		case greater_eq:	return SymbolComputation.greater_eq(loperand, roperand);
+		case smaller_tn:	return SymbolComputation.smaller_tn(loperand, roperand);
+		case smaller_eq:	return SymbolComputation.smaller_eq(loperand, roperand);
+		case equal_with:	return SymbolComputation.equal_with(loperand, roperand);
+		case not_equals:	return SymbolComputation.not_equals(loperand, roperand);
+		default: throw new IllegalArgumentException("Invalid: " + operator);
+		}
+	}
+	/**
+	 * @param value
+	 * @return Boolean Character Short Integer Long Float Double
+	 * @throws Exception
+	 */
+	private SymbolConstant sym_constant(Object value) throws Exception {
+		return (SymbolConstant) SymbolFactory.sym_expression(value);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return true if two operands are equivalent to each other
+	 * @throws Exception
+	 */
+	private boolean compare(Object loperand, Object roperand) throws Exception {
+		SymbolConstant x = this.sym_constant(loperand);
+		SymbolConstant y = this.sym_constant(roperand);
+		return this.const_evaluate(COperator.equal_with, x, y).get_bool();
+	}
+	
+	/* core evaluate methods */
+	/**
+	 * recursive solving algorithm
 	 * @param source
 	 * @return
 	 * @throws Exception
@@ -65,36 +131,31 @@ public class SymbolEvaluator {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
 		else {
-			SymbolExpression result = this.get_solution(source);
-			if(result != null) {
-				return result;
-			}
-			else {
-				SymbolExpression target;
+			SymbolExpression solution = this.get_solution(source);
+			if(solution == null) {
 				if(source instanceof SymbolBasicExpression) {
-					target = this.eval_basic_expression((SymbolBasicExpression) source);
+					solution = this.eval_basic_expression((SymbolBasicExpression) source);
 				}
 				else if(source instanceof SymbolBinaryExpression) {
-					target = this.eval_binary_expression((SymbolBinaryExpression) source);
+					solution = this.eval_binary_expression((SymbolBinaryExpression) source);
 				}
 				else if(source instanceof SymbolUnaryExpression) {
-					target = this.eval_unary_expression((SymbolUnaryExpression) source);
+					solution = this.eval_unary_expression((SymbolUnaryExpression) source);
 				}
 				else if(source instanceof SymbolCallExpression) {
-					target = this.eval_call_expression((SymbolCallExpression) source);
+					solution = this.eval_call_expression((SymbolCallExpression) source);
 				}
 				else if(source instanceof SymbolFieldExpression) {
-					target = this.eval_field_expression((SymbolFieldExpression) source);
+					solution = this.eval_field_expression((SymbolFieldExpression) source);
 				}
 				else if(source instanceof SymbolInitializerList) {
-					target = this.eval_initializer_list((SymbolInitializerList) source);
+					solution = this.eval_initializer_list((SymbolInitializerList) source);
 				}
 				else {
-					throw new IllegalArgumentException(source.generate_code(false));
+					throw new IllegalArgumentException(source.getClass().getSimpleName());
 				}
-				target.set_source(source.get_source());
-				return target;
 			}
+			return solution;
 		}
 	}
 	/**
@@ -104,7 +165,7 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	public static SymbolExpression evaluate_on(SymbolExpression source, SymbolStateContexts contexts) throws Exception {
-		evaluator.context = contexts;
+		evaluator.contexts = contexts;
 		return evaluator.evaluate(source);
 	}
 	/**
@@ -114,7 +175,7 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	public static SymbolExpression evaluate_on(SymbolExpression source) throws Exception {
-		evaluator.context = null;
+		evaluator.contexts = null;
 		return evaluator.evaluate(source);
 	}
 	
@@ -130,8 +191,8 @@ public class SymbolEvaluator {
 			arguments.add(this.evaluate(alist.get_argument(k)));
 		}
 		SymbolCallExpression target = (SymbolCallExpression) SymbolFactory.call_expression(function, arguments);
-		if(this.context != null)
-			return this.context.invocate(target);
+		if(this.contexts != null)
+			return this.contexts.invocate(target);
 		else
 			return target;
 	}
@@ -189,7 +250,7 @@ public class SymbolEvaluator {
 		SymbolExpression operand = this.evaluate(source.get_operand());
 		CType data_type = source.get_data_type();
 		if(operand instanceof SymbolConstant) {
-			return SymbolComputation.arith_neg((SymbolConstant) operand);
+			return this.const_evaluate(COperator.negative, (SymbolConstant) operand);
 		}
 		else if(operand instanceof SymbolUnaryExpression) {
 			COperator operator = 
@@ -221,7 +282,7 @@ public class SymbolEvaluator {
 		SymbolExpression operand = this.evaluate(source.get_operand());
 		
 		if(operand instanceof SymbolConstant) {
-			return SymbolComputation.bitws_rsv((SymbolConstant) operand);
+			return this.const_evaluate(COperator.bit_not, (SymbolConstant) operand);
 		}
 		else if(operand instanceof SymbolUnaryExpression) {
 			COperator operator = ((SymbolUnaryExpression) operand).get_operator().get_operator();
@@ -239,7 +300,7 @@ public class SymbolEvaluator {
 	private SymbolExpression eval_logic_not(SymbolUnaryExpression source) throws Exception {
 		SymbolExpression operand = this.evaluate(source.get_operand());
 		if(operand instanceof SymbolConstant) {
-			return SymbolComputation.logic_not((SymbolConstant) operand);
+			return this.const_evaluate(COperator.logic_not, (SymbolConstant) operand);
 		}
 		else if(operand instanceof SymbolUnaryExpression) {
 			COperator operator = 
@@ -513,7 +574,9 @@ public class SymbolEvaluator {
 		SymbolExpression rconstant = roperands.remove(roperands.size() - 1);
 		SymbolConstant constant = SymbolComputation.arith_sub(
 					(SymbolConstant) lconstant, (SymbolConstant) rconstant);
-		if(!constant.compare(0)) { loperands.add(constant); }
+		if(!this.compare(constant, Integer.valueOf(0))) {
+			loperands.add(constant);
+		}
 		
 		/* 4. remove duplicated numbers in left and right */
 		this.rem_operands_in_as(loperands, roperands);
@@ -726,9 +789,9 @@ public class SymbolEvaluator {
 		SymbolConstant rconstant = (SymbolConstant) roperands.remove(roperands.size() - 1);
 		SymbolConstant[] constants = this.get_constant_in_md(type, lconstant, rconstant);
 		lconstant = constants[0]; rconstant = constants[1];
-		if(lconstant.compare(0)) { return SymbolFactory.sym_expression(0L); }
-		if(!lconstant.compare(1)) { loperands.add(lconstant); }
-		if(!rconstant.compare(1)) { roperands.add(rconstant); }
+		if(this.compare(lconstant, Integer.valueOf(0))) { return SymbolFactory.sym_expression(0L); }
+		if(!this.compare(lconstant, Integer.valueOf(1))) { loperands.add(lconstant); }
+		if(!this.compare(rconstant, Integer.valueOf(1))) { roperands.add(rconstant); }
 		
 		/* 4. remove the duplicated operands in left & right */
 		this.rem_operands_in_md(loperands, roperands);
@@ -754,7 +817,8 @@ public class SymbolEvaluator {
 				return SymbolComputation.arith_mod(lconstant, rconstant);
 			}
 			else {
-				if(lconstant.compare(0) || lconstant.compare(1)) {
+				if(this.compare(lconstant, Integer.valueOf(0))
+					|| this.compare(lconstant, Integer.valueOf(1))) {
 					return lconstant;
 				}
 				else {
@@ -765,7 +829,8 @@ public class SymbolEvaluator {
 		else {
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				if(rconstant.compare(1) || rconstant.compare(-1)) {
+				if(this.compare(rconstant, Integer.valueOf(1))
+					|| this.compare(rconstant, Integer.valueOf(-1))) {
 					return SymbolFactory.sym_expression(Long.valueOf(0));
 				}
 				else {
@@ -847,8 +912,11 @@ public class SymbolEvaluator {
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymbolConstant) operands.remove(operands.size() - 1);
-		if(constant.compare(0L)) return SymbolFactory.sym_expression(Long.valueOf(0L)); 
-		else if(!constant.compare(~0L) || operands.isEmpty()) operands.add(constant);
+		if(this.compare(constant, Integer.valueOf(0))) {
+			return SymbolFactory.sym_expression(Long.valueOf(0L)); 
+		}
+		else if(!this.compare(constant, Integer.valueOf(~0))
+				|| operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
 	}
@@ -865,8 +933,11 @@ public class SymbolEvaluator {
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymbolConstant) operands.remove(operands.size() - 1);
-		if(constant.compare(~0L)) return SymbolFactory.sym_expression(Long.valueOf(~0L)); 
-		else if(!constant.compare(0L) || operands.isEmpty()) operands.add(constant);
+		if(this.compare(constant, Integer.valueOf(~0))) {
+			return SymbolFactory.sym_expression(Long.valueOf(~0L)); 
+		}
+		else if(!this.compare(constant, Integer.valueOf(0))
+				|| operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
 	}
@@ -883,7 +954,8 @@ public class SymbolEvaluator {
 		
 		/* rebuild constant and partial evaluation */
 		constant = (SymbolConstant) operands.remove(operands.size() - 1);
-		if(!constant.compare(0L) || operands.isEmpty()) operands.add(constant);
+		if(!this.compare(constant, Integer.valueOf(0))
+			|| operands.isEmpty()) operands.add(constant);
 		
 		return this.acc_operands_in_xx(data_type, operator, operands);
 	}
@@ -936,7 +1008,7 @@ public class SymbolEvaluator {
 				return SymbolComputation.bitws_lsh(lconstant, rconstant);
 			}
 			else {
-				if(lconstant.compare(0)) {
+				if(this.compare(lconstant, Integer.valueOf(0))){
 					return loperand;
 				}
 				else {
@@ -947,7 +1019,7 @@ public class SymbolEvaluator {
 		else {
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				if(rconstant.compare(0)) {
+				if(this.compare(rconstant, Integer.valueOf(0))) {
 					return loperand;
 				}
 				else {
@@ -970,7 +1042,7 @@ public class SymbolEvaluator {
 				return SymbolComputation.bitws_rsh(lconstant, rconstant);
 			}
 			else {
-				if(lconstant.compare(0)) {
+				if(this.compare(lconstant, Integer.valueOf(0))) {
 					return loperand;
 				}
 				else {
@@ -981,7 +1053,7 @@ public class SymbolEvaluator {
 		else {
 			if(roperand instanceof SymbolConstant) {
 				SymbolConstant rconstant = (SymbolConstant) roperand;
-				if(rconstant.compare(0)) {
+				if(this.compare(rconstant, Integer.valueOf(0))) {
 					return loperand;
 				}
 				else {
