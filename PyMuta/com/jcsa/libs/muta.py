@@ -26,27 +26,29 @@ class CProject:
 		self.evaluation = MutationTestEvaluation(self)
 		return
 
-	def load_static_document(self, directory: str):
+	def load_static_document(self, directory: str, print_value: bool):
 		"""
+		:param print_value: true to remain value in condition-word or not
 		:param directory:
 		:return: load execution from directory/xxx.sft
 		"""
 		document = SymbolicDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".sft"):
-				document.load(os.path.join(directory, file_name))
+				document.load(os.path.join(directory, file_name), print_value)
 				break
 		return document
 
-	def load_dynamic_document(self, directory: str):
+	def load_dynamic_document(self, directory: str, print_value: bool):
 		"""
+		:param print_value: true to remain value in condition-word or not
 		:param directory:
 		:return: load execution from directory/xxx.dft
 		"""
 		document = SymbolicDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".dft"):
-				document.load(os.path.join(directory, file_name))
+				document.load(os.path.join(directory, file_name), print_value)
 		return document
 
 
@@ -691,34 +693,20 @@ class SymbolicExecution:
 		"""
 		return self.test_case
 
-	def get_words(self, print_value: bool):
+	def get_words(self):
 		"""
-		:param print_value: true to show value or false to hide value
 		:return: the set of words to encode symbolic conditions required for killing mutant in this execution
 		"""
-		words = list()
-		for word in self.words:
-			if print_value:
-				words.append(word)
-			else:
-				items = word.split('$')
-				new_word = items[0].strip() + \
-						   '$' + items[1].strip() + \
-						   '$' + items[2].strip() + \
-						   '$' + items[3].strip() + \
-						   '$' + "n@null"
-				words.append(new_word)
-		return words
+		return self.words
 
-	def get_conditions(self, print_value: bool):
+	def get_conditions(self):
 		"""
 		:return: symbolic conditions required for killing mutant in this execution
 		"""
 		project = self.document.project
 		project: CProject
 		conditions = list()
-		words = self.get_words(print_value)
-		for word in words:
+		for word in self.words:
 			condition = SymbolicCondition.parse(project, word)
 			condition: SymbolicCondition
 			conditions.append(condition)
@@ -767,9 +755,27 @@ class SymbolicDocument:
 		"""
 		return self.test_cases
 
-	def __add__(self, line: str):
+	@staticmethod
+	def __word__(word: str, print_value: bool):
+		"""
+		:param word:
+		:param print_value:
+		:return:
+		"""
+		if print_value:
+			return word.strip()
+		else:
+			items = word.strip().split('$')
+			return items[0].strip() + \
+				   '$' + items[1].strip() + \
+				   '$' + items[2].strip() + \
+				   '$' + items[3].strip() + \
+				   '$' + "n@null"
+
+	def __add__(self, line: str, print_value: bool):
 		"""
 		:param line: mid tid word*
+		:param print_value: whether to remain the value in symbolic condition
 		:return:
 		"""
 		line = line.strip()
@@ -786,7 +792,7 @@ class SymbolicDocument:
 				self.test_cases.add(test_case)
 			words.clear()
 			for k in range(2, len(items)):
-				word = items[k].strip()
+				word = SymbolicDocument.__word__(items[k].strip(), print_value)
 				if len(word) > 0:
 					words.add(word)
 					self.corpus.add(word)
@@ -794,14 +800,15 @@ class SymbolicDocument:
 			self.executions.append(execution)
 		return
 
-	def load(self, file_path: str):
+	def load(self, file_path: str, print_value: bool):
 		"""
 		:param file_path:
+		:param print_value: whether to remain the value in symbolic condition
 		:return: load the symbolic executions from feature file
 		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				self.__add__(line.strip())
+				self.__add__(line.strip(), print_value)
 		return
 
 
@@ -812,11 +819,11 @@ if __name__ == "__main__":
 		c_project = CProject(directory_path, filename)
 		print(filename, "contains", len(c_project.mutant_space.get_mutants()), "mutants and",
 			  len(c_project.test_space.get_test_cases()), "test cases.")
-		c_document = c_project.load_static_document(directory_path)
+		c_document = c_project.load_static_document(directory_path, True)
 		print("\tLoad", len(c_document.get_executions()), "lines with", len(c_document.get_corpus()), "words...")
 		for m_execution in c_document.get_executions():
 			m_execution: SymbolicExecution
-			for s_condition in m_execution.get_conditions(True):
+			for s_condition in m_execution.get_conditions():
 				print("\t\t==>", s_condition.get_feature(),
 					  "\t", s_condition.get_value(),
 					  "\t", s_condition.get_execution(),

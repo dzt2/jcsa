@@ -278,29 +278,27 @@ class MutationPattern:
 		else:
 			return self.mutants
 
-	def __match__(self, execution: jcmuta.SymbolicExecution, print_value: bool):
+	def __match__(self, execution: jcmuta.SymbolicExecution):
 		"""
 		:param execution:
-		:param print_value: true to select value-condition or non-value-condition as features being matched
 		:return: whether the symbolic execution matches with the pattern
 		"""
-		words = execution.get_words(print_value)
+		words = execution.get_words()
 		for word in self.words:
 			if not(word in words):
 				return False
 		return True
 
-	def set_executions(self, executions, print_value: bool):
+	def set_executions(self, executions):
 		"""
 		:param executions: set of symbolic executions being matched
-		:param print_value: true to select value-condition or non-value-condition as features being matched
 		:return: update self.mutants and self.executions
 		"""
 		self.executions.clear()
 		self.mutants.clear()
 		for execution in executions:
 			execution: jcmuta.SymbolicExecution
-			if self.__match__(execution, print_value):
+			if self.__match__(execution):
 				self.executions.add(execution)
 				self.mutants.add(execution.get_mutant())
 		return
@@ -548,19 +546,17 @@ class MutationPatternMiner:
 	It implements the frequent pattern mining to get mutation patterns
 	"""
 
-	def __init__(self, exec_or_mutant: bool, uk_or_cc: bool, print_value: bool,
+	def __init__(self, exec_or_mutant: bool, uk_or_cc: bool,
 				 min_support: int, max_confidence: float, max_length: int):
 		"""
 		:param exec_or_mutant: true to take SymbolicExecution as sample or false to take Mutant as well
 		:param uk_or_cc: true to estimate on non-killed samples or false to take coincidental correct samples
-		:param print_value: true to take value of symbolic condition into feature or no-value feature
 		:param min_support: minimal number of samples that support the patterns
 		:param max_confidence: maximal confidence once achieved the pattern generation will be terminate
 		:param max_length: maximal length of pattern being generated
 		"""
 		self.exec_or_mutant = exec_or_mutant
 		self.uk_or_cc = uk_or_cc
-		self.print_value = print_value
 		self.min_support = min_support
 		self.max_confidence = max_confidence
 		self.max_length = max_length
@@ -579,7 +575,7 @@ class MutationPatternMiner:
 		root = root.get_child(word)
 		if not(str(root) in self.__patterns__):
 			self.__patterns__[str(root)] = root
-			root.set_executions(document.get_executions(), self.print_value)
+			root.set_executions(document.get_executions())
 		root = self.__patterns__[str(root)]
 		root: MutationPattern
 		return root
@@ -594,7 +590,7 @@ class MutationPatternMiner:
 		if child != parent:
 			if not(str(child) in self.__patterns__):
 				self.__patterns__[str(child)] = child
-				child.set_executions(parent.get_executions(), self.print_value)
+				child.set_executions(parent.get_executions())
 			child = self.__patterns__[str(child)]
 			child: MutationPattern
 			return child
@@ -646,7 +642,7 @@ class MutationPatternMiner:
 		init_executions = self.__classifier__.select(document.get_executions(), self.uk_or_cc)
 		for init_execution in init_executions:
 			init_execution: jcmuta.SymbolicExecution
-			words = init_execution.get_words(self.print_value)
+			words = init_execution.get_words()
 			for word in words:
 				root = self.__root__(document, word)
 				self.__mine__(root, words)
@@ -664,12 +660,11 @@ class MutationPatternWriter:
 		It writes the evaluation results on Symbolic Execution Patterns
 		"""
 
-	def __init__(self, patterns: MutationPatterns, print_value: bool):
+	def __init__(self, patterns: MutationPatterns):
 		"""
 		:param patterns:
 		"""
 		self.patterns = patterns
-		self.print_value = print_value
 		self.writer = None
 		return
 
@@ -993,13 +988,12 @@ class MutationPatternWriter:
 
 
 def mining_patterns(document: jcmuta.SymbolicDocument, classifier_tests, line_or_mutant: bool, uk_or_cc: bool,
-					print_value: bool, min_support: int, max_confidence: float, max_length: int, output_directory: str):
+					min_support: int, max_confidence: float, max_length: int, output_directory: str):
 	"""
 	:param document: it provides lines and mutations in the program
 	:param classifier_tests: used to generate classifier of mutation
 	:param line_or_mutant: true to take line as sample or false to take mutant as sample
 	:param uk_or_cc: true to estimate on non-killed samples or false on coincidental correctness samples
-	:param print_value: true to use value-condition or ignore value of condition for mining
 	:param min_support: minimal number of samples supporting the patterns
 	:param max_confidence: maximal confidence once achieved to stop the pattern generation
 	:param max_length: maximal length of the patterns allowed to generate
@@ -1021,11 +1015,11 @@ def mining_patterns(document: jcmuta.SymbolicDocument, classifier_tests, line_or
 			  "mutants with {}%({}%).".format(MutationPatternWriter.__percentage__(over_score),
 											  MutationPatternWriter.__percentage__(valid_score)))
 
-		generator = MutationPatternMiner(line_or_mutant, uk_or_cc, print_value, min_support, max_confidence, max_length)
+		generator = MutationPatternMiner(line_or_mutant, uk_or_cc, min_support, max_confidence, max_length)
 		patterns = generator.mine(document, classifier_tests)
 		print("\t(2) Generate", len(patterns.get_all_patterns()), "patterns with", len(patterns.get_min_patterns()), "of minimal set from.")
 
-		writer = MutationPatternWriter(patterns, print_value)
+		writer = MutationPatternWriter(patterns)
 		writer.write_patterns(os.path.join(output_directory, document.get_project().program.name + ".mpt"))
 		writer.write_results(os.path.join(output_directory, document.get_project().program.name + ".mrt"))
 		writer.write_best_patterns(os.path.join(output_directory, document.get_project().program.name + ".bpt"), line_or_mutant, uk_or_cc)
@@ -1045,20 +1039,20 @@ def testing_project(directory: str, file_name: str,
 					dynamic_evaluation: bool):
 	c_project = jcmuta.CProject(directory, file_name)
 
-	docs = c_project.load_static_document(directory)
+	docs = c_project.load_static_document(directory, print_value)
 	selected_mutants = c_project.evaluation.select_mutants_by_classes(["STRP", "BTRP"])
 	minimal_tests, __remained__ = c_project.evaluation.select_tests_for_mutants(selected_mutants)
 	minimal_number = int(len(c_project.test_space.get_test_cases()) * 0.004)
 	random_tests = c_project.evaluation.select_tests_for_random(minimal_number)
 	selected_tests = minimal_tests | random_tests
 
-	mining_patterns(docs, None, exec_or_mutant, uk_or_cc, print_value, 2, 0.80, 1, os.path.join(none_directory))
-	mining_patterns(docs, selected_tests, exec_or_mutant, uk_or_cc, print_value, 20, 0.80, 1, os.path.join(test_directory))
-	mining_patterns(docs, c_project.test_space.get_test_cases(), exec_or_mutant, uk_or_cc, print_value, 100, 0.80, 1, os.path.join(over_directory))
+	mining_patterns(docs, None, exec_or_mutant, uk_or_cc, 2, 0.80, 1, os.path.join(none_directory))
+	mining_patterns(docs, selected_tests, exec_or_mutant, uk_or_cc, 20, 0.80, 1, os.path.join(test_directory))
+	mining_patterns(docs, c_project.test_space.get_test_cases(), exec_or_mutant, uk_or_cc, 100, 0.80, 1, os.path.join(over_directory))
 
 	if dynamic_evaluation:
-		docs = c_project.load_dynamic_document(directory)
-		mining_patterns(docs, docs.get_test_cases(), exec_or_mutant, uk_or_cc, print_value, 20, 0.80, 1, os.path.join(dyna_directory))
+		docs = c_project.load_dynamic_document(directory, print_value)
+		mining_patterns(docs, docs.get_test_cases(), exec_or_mutant, uk_or_cc, 20, 0.80, 1, os.path.join(dyna_directory))
 	return
 
 
