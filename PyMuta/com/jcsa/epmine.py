@@ -779,7 +779,7 @@ class MutationPatternWriter:
 		"""
 		self.writer: TextIO
 		self.writer.write("\t@Words\n")
-		self.writer.write("\tIndex\tType\tExecution\tLine\tStatement\tLocation\tParameter\n")
+		self.writer.write("\tIndex\tType\tValue\tExecution\tLine\tStatement\tLocation\tParameter\n")
 		index = 0
 		for annotation in pattern.get_conditions(self.patterns.document.get_project()):
 			index += 1
@@ -791,13 +791,14 @@ class MutationPatternWriter:
 				ast_line = statement.get_ast_source().line_of(False)
 			location = annotation.get_location()
 			parameter = annotation.get_parameter()
-			self.writer.write("\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t{}\n".format(index,
-																			  annotation_type,
-																			  execution,
-																			  ast_line,
-																			  statement.get_cir_code(),
-																			  location.get_cir_code(),
-																			  parameter))
+			self.writer.write("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t{}\n".format(index,
+																				  annotation_type,
+																				  annotation.get_value(),
+																				  execution,
+																				  ast_line,
+																				  statement.get_cir_code(),
+																				  location.get_cir_code(),
+																				  parameter))
 		return
 
 	def __write_pattern__(self, pattern: MutationPattern, pattern_index: int):
