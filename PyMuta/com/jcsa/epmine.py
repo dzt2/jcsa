@@ -1070,15 +1070,8 @@ if __name__ == "__main__":
 	dyna_path = "/home/dzt2/Development/Data/patterns/dyna"
 	for filename in os.listdir(prev_path):
 		direct = os.path.join(prev_path, filename)
-		testing_project(direct,
-						filename,
-						True,
-						True,
-						False,
-						none_path,
-						over_path,
-						test_path,
-						dyna_path,
-						False)
+		testing_project(directory=direct, file_name=filename, exec_or_mutant=True, uk_or_cc=True, print_value=False,
+						none_directory=none_path, over_directory=over_path, test_directory=test_path,
+						dyna_directory=dyna_path, dynamic_evaluation=False)
 	print("\nTesting end for all...")
 
