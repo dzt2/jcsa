@@ -758,42 +758,43 @@ class SymbolicDocument:
 	@staticmethod
 	def __word__(word: str, print_value: bool):
 		"""
-		:param word:
+		:param word: feature$execution$location$parameter$value
 		:param print_value:
-		:return:
+		:return: generate the standard word to encode symbolic condition
 		"""
-		if print_value:
-			return word.strip()
-		else:
-			items = word.strip().split('$')
-			return items[0].strip() + \
-				   '$' + items[1].strip() + \
-				   '$' + items[2].strip() + \
-				   '$' + items[3].strip() + \
-				   '$' + "n@null"
+		items = word.strip().split('$')
+		if not print_value:
+			items[4] = "n@null"
+		return "{}${}${}${}${}".format(items[0].strip(),
+									   items[1].strip(),
+									   items[2].strip(),
+									   items[3].strip(),
+									   items[4].strip())
 
-	def __add__(self, line: str, print_value: bool):
+	def __add__(self, line: str, print_value: bool, words: set):
 		"""
-		:param line: mid tid word*
+		:param line: mid tid word
 		:param print_value: whether to remain the value in symbolic condition
+		:param words: used as buffer to preserve the words to construct execution
 		:return:
 		"""
 		line = line.strip()
-		words = set()
 		if len(line) > 0:
 			items = line.split('\t')
 			mid = int(items[0].strip())
 			tid = int(items[1].strip())
 			mutant = self.project.mutant_space.get_mutant(mid)
 			self.mutants.add(mutant)
-			test_case = None
 			if tid >= 0:
 				test_case = self.project.test_space.get_test_case(tid)
 				self.test_cases.add(test_case)
+			else:
+				test_case = None
 			words.clear()
 			for k in range(2, len(items)):
-				word = SymbolicDocument.__word__(items[k].strip(), print_value)
+				word = items[k].strip()
 				if len(word) > 0:
+					word = SymbolicDocument.__word__(word, print_value)
 					words.add(word)
 					self.corpus.add(word)
 			execution = SymbolicExecution(self, mutant, test_case, words)
@@ -806,9 +807,10 @@ class SymbolicDocument:
 		:param print_value: whether to remain the value in symbolic condition
 		:return: load the symbolic executions from feature file
 		"""
+		words = set()
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				self.__add__(line.strip(), print_value)
+				self.__add__(line.strip(), print_value, words)
 		return
 
 

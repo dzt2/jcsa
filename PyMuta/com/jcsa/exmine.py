@@ -1,5 +1,5 @@
 """
-It implements the pattern mining algorithm to obtain patterns of equivalent mutation execution
+This file implements good pattern mining algorithm to mine execution patterns for mutation testing.
 """
 
 
@@ -8,15 +8,15 @@ from typing import TextIO
 import com.jcsa.libs.muta as jcmuta
 
 
-UC_CLASS = "UC"
-UI_CLASS = "UI"
-UP_CLASS = "UP"
-KI_CLASS = "KI"
+UC_CLASS = "UC"			# execution that is not covered during testing
+UI_CLASS = "UI"			# execution that is not infected but covered
+UP_CLASS = "UP"			# execution that is not killed but infected
+KI_CLASS = "KI"			# execution that is killed
 
 
 class MutationClassifier:
 	"""
-	It is used to classify the symbolic execution or mutation for pattern mining.
+	It is used to estimate the performance of mutation patterns
 	"""
 
 	def __init__(self, tests):
@@ -58,7 +58,7 @@ class MutationClassifier:
 		s_result = mutant.get_result()
 		w_result = mutant.get_weak_mutant().get_result()
 		c_result = mutant.get_coverage_mutant().get_result()
-		if test_case is not None:
+		if not(test_case is None):
 			if s_result.is_killed_by(test_case):
 				ki += 1
 			elif w_result.is_killed_by(test_case):
@@ -216,38 +216,39 @@ class MutationClassifier:
 
 class MutationPattern:
 	"""
-	It contains the words of symbolic conditions in mutant execution and execution & mutant being matched
+	Pattern of mutant execution contains the words of symbolic conditions in mutant execution and execution & mutant
+	being matched.
 	"""
 
 	def __init__(self, classifier: MutationClassifier):
 		"""
-		:param classifier: used to estimate the patterns
+		:param classifier: used to estimate the performance of pattern
 		"""
-		self.classifier = classifier	# used to estimate the pattern
-		self.executions = set()			# set of executions matched with the pattern
-		self.mutants = set()			# set of mutants of which executions matched
-		self.words = list()				# set of words to encode symbolic conditions in mutant execution
+		self.words = list()				# words to encode symbolic conditions in executions for being matched
+		self.executions = set()			# the set of symbolic executions that match with this pattern
+		self.mutants = set()			# the set of mutants of which executions match with this pattern
+		self.classifier = classifier	# classifier used to estimate the performance of this pattern
 		return
-
-	def get_words(self):
-		"""
-		:return: set of words to encode symbolic conditions in mutant execution
-		"""
-		return self.words
 
 	def __str__(self):
 		return str(self.words)
 
 	def __len__(self):
 		"""
-		:return: number of symbolic conditions being matched in execution
+		:return: number of condition words in this pattern for matching
 		"""
 		return len(self.words)
+
+	def get_words(self):
+		"""
+		:return: words to encode symbolic conditions in executions for being matched
+		"""
+		return self.words
 
 	def get_conditions(self, project: jcmuta.CProject):
 		"""
 		:param project:
-		:return: symbolic conditions in mutant execution as the pattern
+		:return: set of conditions in symbolic executions being matched
 		"""
 		conditions = list()
 		for word in self.words:
@@ -258,19 +259,19 @@ class MutationPattern:
 
 	def get_executions(self):
 		"""
-		:return: set of executions matched with the pattern
+		:return: the set of symbolic executions that match with this pattern
 		"""
 		return self.executions
 
 	def get_mutants(self):
 		"""
-		:return: set of mutants of which executions matched
+		:return: the set of mutants of which executions match with this pattern
 		"""
 		return self.mutants
 
 	def get_samples(self, exec_or_mutant: bool):
 		"""
-		:param exec_or_mutant: true to select SymbolicExecution or Mutant being matched
+		:param exec_or_mutant: true to select executions or mutants matched
 		:return:
 		"""
 		if exec_or_mutant:
@@ -281,18 +282,17 @@ class MutationPattern:
 	def __match__(self, execution: jcmuta.SymbolicExecution):
 		"""
 		:param execution:
-		:return: whether the symbolic execution matches with the pattern
+		:return: whether the execution matches with the pattern
 		"""
-		words = execution.get_words()
 		for word in self.words:
-			if not(word in words):
+			if not(word in execution.get_words()):
 				return False
 		return True
 
 	def set_executions(self, executions):
 		"""
-		:param executions: set of symbolic executions being matched
-		:return: update self.mutants and self.executions
+		:param executions:
+		:return: update the executions and mutants in the pattern
 		"""
 		self.executions.clear()
 		self.mutants.clear()
@@ -305,7 +305,7 @@ class MutationPattern:
 
 	def get_classifier(self):
 		"""
-		:return: used to estimate the performance of the pattern
+		:return: classifier used to estimate the performance of this pattern
 		"""
 		return self.classifier
 
@@ -337,22 +337,18 @@ class MutationPattern:
 		"""
 		return self.classifier.estimate(self.get_samples(exec_or_mutant), uk_or_cc)
 
-	def select(self, samples, uk_or_cc: bool):
+	def select(self, exec_or_mutant: bool, uk_or_cc: bool):
 		"""
-		:param samples: set of Mutant or SymbolicExecution being estimated
-		:param uk_or_cc: true to select non-killed samples or coincidental correct samples
+		:param exec_or_mutant: true to select SymbolicExecution or Mutant being matched
+		:param uk_or_cc: true to take uk as support or cc as support
 		:return:
 		"""
-		results = self.classify(samples)
-		selected_results = results[UI_CLASS] | results[UP_CLASS]
-		if uk_or_cc:
-			selected_results = selected_results | results[UC_CLASS]
-		return selected_results
+		return self.classifier.select(self.get_samples(exec_or_mutant), uk_or_cc)
 
 	def get_child(self, word: str):
 		"""
 		:param word:
-		:return: child pattern extended from this one by adding one word or itself
+		:return: child pattern extended from this one by adding one new word or itself
 		"""
 		word = word.strip()
 		if len(word) > 0 and not(word in self.words):
@@ -367,11 +363,11 @@ class MutationPattern:
 	def subsume(self, pattern):
 		"""
 		:param pattern:
-		:return: it subsumes the pattern if the samples contain all those in the pattern
+		:return:
 		"""
 		pattern: MutationPattern
-		for execution in self.executions:
-			if not(execution in pattern.get_executions()):
+		for execution in pattern.get_executions():
+			if not(execution in self.executions):
 				return False
 		return True
 
@@ -429,9 +425,10 @@ class MutationPatterns:
 					remove_patterns.add(pattern)
 			for pattern in remove_patterns:
 				remain_patterns.remove(pattern)
-			if subsume_pattern is not None:
-				subsume_pattern: MutationPattern
-				minimal_patterns.add(subsume_pattern)
+			if not(subsume_pattern is None):
+				minimal_pattern = subsume_pattern
+				minimal_pattern: MutationPattern
+				minimal_patterns.add(minimal_pattern)
 		return minimal_patterns
 
 	def get_document(self):
@@ -543,7 +540,7 @@ class MutationPatterns:
 
 class MutationPatternMiner:
 	"""
-	It implements the frequent pattern mining to get mutation patterns
+	It is used to mine the patterns of mutant executions from dataset.
 	"""
 
 	def __init__(self, exec_or_mutant: bool, uk_or_cc: bool,
@@ -560,16 +557,16 @@ class MutationPatternMiner:
 		self.min_support = min_support
 		self.max_confidence = max_confidence
 		self.max_length = max_length
-		self.__classifier__ = None  # Used to create SymExecutionPattern and estimate them
-		self.__patterns__ = dict()  # String ==> SymExecutionPattern
-		self.__solution__ = dict()  # SymExecutionPattern ==> [total, support, confidence]
+		self.__classifier__ = None  	# Used to create SymExecutionPattern and estimate them
+		self.__patterns__ = dict()  	# String ==> SymExecutionPattern
+		self.__solution__ = dict()  	# SymExecutionPattern ==> [total, support, confidence]
 		return
 
 	def __root__(self, document: jcmuta.SymbolicDocument, word: str):
 		"""
 		:param document:
 		:param word:
-		:return: unique root pattern with one word that matches with all the executions
+		:return: unique instance of root pattern with one word
 		"""
 		root = MutationPattern(self.__classifier__)
 		root = root.get_child(word)
@@ -584,7 +581,7 @@ class MutationPatternMiner:
 		"""
 		:param parent:
 		:param word:
-		:return: child pattern extended from the parent by adding one word or parent
+		:return: child pattern extended from parent by adding new word or parent
 		"""
 		child = parent.get_child(word)
 		if child != parent:
