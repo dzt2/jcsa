@@ -710,14 +710,15 @@ class SymbolicExecution:
 				words.append(new_word)
 		return words
 
-	def get_conditions(self):
+	def get_conditions(self, print_value: bool):
 		"""
 		:return: symbolic conditions required for killing mutant in this execution
 		"""
 		project = self.document.project
 		project: CProject
 		conditions = list()
-		for word in self.words:
+		words = self.get_words(print_value)
+		for word in words:
 			condition = SymbolicCondition.parse(project, word)
 			condition: SymbolicCondition
 			conditions.append(condition)
@@ -815,7 +816,7 @@ if __name__ == "__main__":
 		print("\tLoad", len(c_document.get_executions()), "lines with", len(c_document.get_corpus()), "words...")
 		for m_execution in c_document.get_executions():
 			m_execution: SymbolicExecution
-			for s_condition in m_execution.get_conditions():
+			for s_condition in m_execution.get_conditions(True):
 				print("\t\t==>", s_condition.get_feature(),
 					  "\t", s_condition.get_value(),
 					  "\t", s_condition.get_execution(),
