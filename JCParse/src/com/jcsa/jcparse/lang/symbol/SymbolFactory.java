@@ -275,7 +275,7 @@ public class SymbolFactory {
 			data_type = ((CArrayType) data_type).get_element_type();
 		}
 		else {
-			throw new IllegalArgumentException(data_type.generate_code());
+			data_type = t_factory.get_pointer_type(CBasicTypeImpl.void_type);
 		}
 		return SymbolUnaryExpression.create(data_type, SymbolOperator.create(COperator.dereference), soperand);
 	}

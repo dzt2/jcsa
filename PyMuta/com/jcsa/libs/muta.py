@@ -10,6 +10,10 @@ import com.jcsa.libs.code as jcparse
 
 
 class CProject:
+	"""
+	Mutation Testing Project
+	"""
+
 	def __init__(self, directory: str, file_name: str):
 		self.program = jcparse.CProgram(directory, file_name)
 		tst_file_path = os.path.join(directory, file_name + ".tst")
@@ -185,7 +189,7 @@ class Mutant:
 		return self.mutation
 
 	def has_result(self):
-		return self.result is not None
+		return not(self.result is None)
 
 	def get_result(self):
 		self.result: MutationResult
@@ -518,214 +522,259 @@ class MutationTestEvaluation:
 		return killed, over_score, valid_score
 
 
-class SymbolicFeature:
+class SymbolicCondition:
 	"""
-	Structural feature annotated in symbolic execution as:
-		(1) type: const|mut_flow|CirAnnotateType
-		(2) execution: where the feature is evaluated
-		(3) location: the subject that is described by the feature
-		(4) parameter: None | CirExecution | SymNode
+	It describes the conditions (either constraint or state_error) required for killing a mutant in an execution
+		(1) feature: const, chg_numb, set_bool, trap_stmt, ...
+		(2) execution: where the condition is injected and validated
+		(3) location: the subject being validated by the condition
+		(4) parameter: None or CirExecution or SymNode
+		(5) value: None or bool to determine whether condition is satisfied
 	"""
-	def __init__(self, feature_type: str, execution: jcparse.CirExecution, location: jcparse.CirNode, parameter):
+	def __init__(self, feature: str, execution: jcparse.CirExecution, location: jcparse.CirNode, parameter, value: bool):
 		"""
-		:param feature_type: const | mut_flow | CirAnnotateType
-		:param execution: where the feature is evaluated
-		:param location: the subject that is described by the feature
-		:param parameter: None | CirExecution | SymNode
+		:param feature: const, chg_numb, set_bool, trap_stmt, ... flow_error
+		:param execution: where the condition is injected and validated
+		:param location: the subject being validated by the condition
+		:param parameter: None or CirExecution or SymNode to refine condition
+		:param value: None or bool to determine whether condition is satisfied
 		"""
-		self.feature_type = feature_type
+		self.feature = feature
 		self.execution = execution
 		self.location = location
 		self.parameter = parameter
+		self.value = value
 		return
 
-	def get_feature_type(self):
+	def get_feature(self):
 		"""
-		:return: const | mut_flow | CirAnnotateType
+		:return: const, chg_numb, set_bool, trap_stmt, ... flow_error
 		"""
-		return self.feature_type
+		return self.feature
 
 	def get_execution(self):
 		"""
-		:return: where the feature is evaluated
+		:return:  where the condition is injected and validated
 		"""
 		return self.execution
 
 	def get_location(self):
 		"""
-		:return: the subject that is described by the feature
+		:return: the subject being validated by the condition
 		"""
 		return self.location
 
-	def has_parameter(self):
-		"""
-		:return: whether the parameter is None
-		"""
-		return self.parameter is not None
-
 	def get_parameter(self):
 		"""
-		:return: None | CirExecution | SymNode
+		:return: None or CirExecution or SymNode to refine condition
 		"""
 		return self.parameter
 
+	def get_value(self):
+		"""
+		:return: None or bool to determine whether condition is satisfied
+		"""
+		return self.value
+
+	def has_parameter(self):
+		"""
+		:return: whether there is parameter needed to refine the condition
+		"""
+		return not(self.parameter is None)
+
+	def is_constraint(self):
+		"""
+		:return: whether the condition is a symbolic constraint
+		"""
+		return self.feature in ["const", "eval_stmt", "covr_stmt"]
+
+	def is_state_error(self):
+		"""
+		:return: whether the condition is a symbolic state description
+		"""
+		return not self.is_constraint()
+
 	def __str__(self):
-		feature_type = self.feature_type
+		feature = self.feature
 		execution = "exe@" + self.execution.get_function().get_name() + "@" + str(self.execution.get_exe_id())
 		location = "cir@" + str(self.location.get_cir_id())
-		parameter = "n@null"
-		if isinstance(self.parameter, jcparse.CirExecution):
-			self.parameter: jcparse.CirExecution
-			parameter = "exe@" + self.parameter.get_function().get_name() + "@" + str(self.parameter.get_exe_id())
-		elif isinstance(self.parameter, jcbase.SymNode):
+		if isinstance(self.parameter, jcbase.SymNode):
 			self.parameter: jcbase.SymNode
 			parameter = "sym@" + self.parameter.get_class_name() + "@" + str(self.parameter.get_class_id())
-		return feature_type + "$" + execution + "$" + location + "$" + parameter
+		elif isinstance(self.parameter, jcparse.CirExecution):
+			self.parameter: jcparse.CirExecution
+			parameter = "exe@" + self.parameter.get_function().get_name() + "@" + str(self.parameter.get_exe_id())
+		else:
+			parameter = "n@null"
+		if self.value is None:
+			value = "n@null"
+		elif self.value:
+			value = "b@true"
+		else:
+			value = "b@false"
+		return feature + "$" + execution + "$" + location + "$" + parameter + "$" + value
 
 	@staticmethod
-	def parse(project: CProject, feature_word: str):
+	def parse(project: CProject, word: str):
 		"""
 		:param project:
-		:param feature_word: type$execution$location$parameter
-		:return:
+		:param word: feature@execution@location@parameter@value
+		:return: SymbolicCondition
 		"""
-		items = feature_word.strip().split('$')
-		feature_type = items[0].strip()
-		execution_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-		execution = project.program.function_call_graph.get_execution(execution_token[0], execution_token[1])
-		location_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-		location = project.program.cir_tree.get_cir_node(location_token)
-		parameter_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-		if parameter_token is None:
-			parameter = None
-		elif items[3].startswith("exe"):
-			parameter = project.program.function_call_graph.get_execution(parameter_token[0], parameter_token[1])
-		else:
-			parameter = project.sym_tree.get_sym_node(items[3].strip())
-		return SymbolicFeature(feature_type, execution, location, parameter)
+		items = word.strip().split('$')
+		if len(items) > 1:
+			feature = items[0].strip()
+			execution_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+			execution = project.program.function_call_graph.get_execution(execution_token[0], execution_token[1])
+			location_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			location = project.program.cir_tree.get_cir_node(location_token)
+			parameter_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
+			if parameter_token is None:
+				parameter = None
+			elif items[3].strip().startswith("exe@"):
+				parameter = project.program.function_call_graph.get_execution(parameter_token[0], parameter_token[1])
+			else:
+				parameter = project.sym_tree.get_sym_node(items[3].strip())
+			value = jcbase.CToken.parse(items[4].strip()).get_token_value()
+			return SymbolicCondition(feature, execution, location, parameter, value)
+		return None
 
 
 class SymbolicExecution:
 	"""
-	Symbolic execution for each mutant against each test case is defined as:
-		(0) document: the document to preserve the symbolic execution
-		(1) mutant: the mutation being executed during testing
-		(2) test_case: the test case used to execute against the mutant or None if the execution is constructed
-						via static symbolic analysis
-		(3) feature_words: the words used to encode the features in symbolic execution
-		(4) get_features(): the set of symbolic features in this execution
+	Mutation execution described by symbolic notations with a set of conditions need to be satisfied for
+	killing the mutation at target:
+		(1) mutant: mutation being killed as target
+		(2) test_case: test used to execute against the mutant or None if the execution is constructed via static method
+		(3) words: the set of words to encode symbolic conditions required for killing mutant in the execution
+		(4) get_conditions: the set of conditions (either constraint or state-error) required for killing mutant
 	"""
-	def __init__(self, document, mutant: Mutant, test_case: TestCase, feature_words):
+	def __init__(self, document, mutant: Mutant, test_case: TestCase, words):
 		"""
-		:param document: the document to preserve the symbolic execution
-		:param mutant: the mutation being executed during testing
-		:param test_case: the test case used to execute against the mutant or None if the execution is constructed
-						via static symbolic analysis
-		:param feature_words: the words used to encode the features in symbolic execution
+		:param document: to preserve the symbolic execution in library
+		:param mutant: mutation being killed as target
+		:param test_case: test used to execute against the mutant or None if the execution is constructed via static way
+		:param words: the set of words to encode symbolic conditions required for killing mutant in the execution
 		"""
 		document: SymbolicDocument
 		self.document = document
 		self.mutant = mutant
 		self.test_case = test_case
-		self.feature_words = list()
-		for feature_word in feature_words:
-			feature_word: str
-			self.feature_words.append(feature_word)
+		self.words = list()
+		for word in words:
+			word: str
+			self.words.append(word.strip())
 		return
 
 	def get_document(self):
 		"""
-		:return:  the document to preserve the symbolic execution
+		:return: to preserve the symbolic execution in library
 		"""
 		return self.document
 
 	def get_mutant(self):
 		"""
-		:return: the mutation being executed during testing
+		:return: mutation being killed as target
 		"""
 		return self.mutant
 
 	def has_test_case(self):
 		"""
-		:return: True if the symbolic execution is constructed via dynamic symbolic analysis
+		:return: true if the execution is extracted via dynamic analysis
 		"""
-		return self.test_case is not None
+		return not(self.test_case is None)
 
 	def get_test_case(self):
 		"""
-		:return: the test case used to execute against the mutant or None if the execution is constructed
-						via static symbolic analysis
+		:return: test case executed against the mutant to generate execution or None if the execution
+				is generated via static symbolic analysis
 		"""
 		return self.test_case
 
-	def get_feature_words(self):
+	def get_words(self, print_value: bool):
 		"""
-		:return: the words used to encode the features in symbolic execution
+		:param print_value: true to show value or false to hide value
+		:return: the set of words to encode symbolic conditions required for killing mutant in this execution
 		"""
-		return self.feature_words
+		words = list()
+		for word in self.words:
+			if print_value:
+				words.append(word)
+			else:
+				items = word.split('$')
+				new_word = items[0].strip() + \
+						   '$' + items[1].strip() + \
+						   '$' + items[2].strip() + \
+						   '$' + items[3].strip() + \
+						   '$' + "n@null"
+				words.append(new_word)
+		return words
 
-	def get_features(self):
+	def get_conditions(self):
 		"""
-		:return: the set of symbolic features in this execution
+		:return: symbolic conditions required for killing mutant in this execution
 		"""
-		features = list()
 		project = self.document.project
 		project: CProject
-		for feature_word in self.feature_words:
-			feature = SymbolicFeature.parse(project, feature_word)
-			features.append(feature)
-		return features
+		conditions = list()
+		for word in self.words:
+			condition = SymbolicCondition.parse(project, word)
+			condition: SymbolicCondition
+			conditions.append(condition)
+		return conditions
 
 
 class SymbolicDocument:
 	"""
-	It preserves the symbolic executions in mutation testing loaded from feature files
+	It preserves the symbolic executions required for each program.
 	"""
 	def __init__(self, project: CProject):
-		self.project = project			# the project provides contextual information to generate features
-		self.executions = list()		# set of symbolic executions loaded in document
-		self.mutants = set()			# set of mutations being executed against some line in the document
-		self.test_cases = set()			# set of test cases executed against the mutants in the document
-		self.corpus = set()				# set of words encoding the features in symbolic executions
+		self.project = project
+		self.executions = list()		# set of symbolic executions being mined
+		self.corpus = set()				# set of words to encode symbolic conditions
+		self.mutants = set()			# set of mutants being executed during testing
+		self.test_cases = set()			# set of test cases being executed
 		return
 
 	def get_project(self):
 		"""
-		:return: the project provides contextual information to generate features
+		:return: project used to extract symbolic condition from words
 		"""
 		return self.project
 
 	def get_executions(self):
 		"""
-		:return: set of symbolic executions loaded in document
+		:return: set of symbolic executions being mined
 		"""
 		return self.executions
 
+	def get_corpus(self):
+		"""
+		:return: set of words to encode symbolic conditions
+		"""
+		return self.corpus
+
 	def get_mutants(self):
 		"""
-		:return: set of mutations being executed against some line in the document
+		:return: set of mutants being executed during testing
 		"""
 		return self.mutants
 
 	def get_test_cases(self):
 		"""
-		:return: set of test cases executed against the mutants in the document
+		:return: set of test cases being executed
 		"""
 		return self.test_cases
 
-	def get_corpus(self):
-		"""
-		:return: set of words encoding the features in symbolic executions
-		"""
-		return self.corpus
-
-	def append(self, line: str):
+	def __add__(self, line: str):
 		"""
 		:param line: mid tid word*
 		:return:
 		"""
-		items = line.strip().split('\t')
-		if len(items) > 2:
+		line = line.strip()
+		words = set()
+		if len(line) > 0:
+			items = line.split('\t')
 			mid = int(items[0].strip())
 			tid = int(items[1].strip())
 			mutant = self.project.mutant_space.get_mutant(mid)
@@ -734,26 +783,25 @@ class SymbolicDocument:
 			if tid >= 0:
 				test_case = self.project.test_space.get_test_case(tid)
 				self.test_cases.add(test_case)
-			feature_words = set()
+			words.clear()
 			for k in range(2, len(items)):
-				feature_word = items[k].strip()
-				if len(feature_word) > 0:
-					feature_words.add(feature_word)
-					self.corpus.add(feature_word)
-			execution = SymbolicExecution(self, mutant, test_case, feature_words)
+				word = items[k].strip()
+				if len(word) > 0:
+					words.add(word)
+					self.corpus.add(word)
+			execution = SymbolicExecution(self, mutant, test_case, words)
 			self.executions.append(execution)
 		return
 
 	def load(self, file_path: str):
 		"""
-		:param file_path: file to provide symbolic execution information
-		:return:
+		:param file_path:
+		:return: load the symbolic executions from feature file
 		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				self.append(line)
+				self.__add__(line.strip())
 		return
-
 
 
 if __name__ == "__main__":
@@ -767,8 +815,11 @@ if __name__ == "__main__":
 		print("\tLoad", len(c_document.get_executions()), "lines with", len(c_document.get_corpus()), "words...")
 		for m_execution in c_document.get_executions():
 			m_execution: SymbolicExecution
-			for s_feature in m_execution.get_features():
-				print("\t\t==>", s_feature.get_feature_type(), "\t", s_feature.get_execution(),
-					  "\t\"", s_feature.get_location().get_cir_code(), "\"\t{", s_feature.get_parameter(), "}")
+			for s_condition in m_execution.get_conditions():
+				print("\t\t==>", s_condition.get_feature(),
+					  "\t", s_condition.get_value(),
+					  "\t", s_condition.get_execution(),
+					  "\t\"", s_condition.get_location().get_cir_code(),
+					  "\"\t{", s_condition.get_parameter(), "}")
 		print()
 

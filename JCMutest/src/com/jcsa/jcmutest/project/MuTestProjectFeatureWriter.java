@@ -804,7 +804,7 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 	}
 	/**
-	 * [const|type execution location parameter]
+	 * type$execution$location$parameter$value
 	 * @param instance
 	 * @param sym_nodes
 	 * @return
@@ -813,6 +813,7 @@ public class MuTestProjectFeatureWriter {
 	private void write_sym_word(Object instance, Collection<SymbolNode> sym_nodes) throws Exception {
 		String type; CirExecution execution;
 		CirNode location; Object parameter;
+		Boolean value;	/* true, false, null */
 		
 		if(instance instanceof SymConstraint) {
 			SymConstraint constraint = (SymConstraint) instance;
@@ -820,6 +821,7 @@ public class MuTestProjectFeatureWriter {
 			execution = constraint.get_execution();
 			location = constraint.get_statement();
 			parameter = ((SymConstraint) instance).get_condition();
+			value = constraint.validate(null);
 		}
 		else if(instance instanceof SymFlowError) {
 			SymFlowError error = (SymFlowError) instance;
@@ -827,6 +829,7 @@ public class MuTestProjectFeatureWriter {
 			execution = error.get_execution();
 			location = error.get_original_flow().get_source().get_statement();
 			parameter = error.get_mutation_flow().get_target();
+			value = error.validate(null);
 		}
 		else if(instance instanceof SymTrapError) {
 			SymTrapError error = (SymTrapError) instance;
@@ -834,6 +837,7 @@ public class MuTestProjectFeatureWriter {
 			execution = error.get_execution();
 			location = error.get_statement();
 			parameter = null;
+			value = error.validate(null);
 		}
 		else if(instance instanceof SymExpressionError) {
 			SymExpressionError error = (SymExpressionError) instance;
@@ -841,6 +845,7 @@ public class MuTestProjectFeatureWriter {
 			execution = error.get_execution();
 			location = error.get_expression();
 			parameter = error.get_mutation_value();
+			value = error.validate(null);
 		}
 		else if(instance instanceof SymReferenceError) {
 			SymReferenceError error = (SymReferenceError) instance;
@@ -848,6 +853,7 @@ public class MuTestProjectFeatureWriter {
 			execution = error.get_execution();
 			location = error.get_expression();
 			parameter = error.get_mutation_value();
+			value = error.validate(null);
 		}
 		else if(instance instanceof SymStateValueError) {
 			SymStateValueError error = (SymStateValueError) instance;
@@ -855,6 +861,7 @@ public class MuTestProjectFeatureWriter {
 			execution = error.get_execution();
 			location = error.get_expression();
 			parameter = error.get_mutation_value();
+			value = error.validate(null);
 		}
 		else if(instance instanceof CirAnnotation) {
 			CirAnnotation annotation = (CirAnnotation) instance;
@@ -862,15 +869,18 @@ public class MuTestProjectFeatureWriter {
 			execution = annotation.get_execution();
 			location = annotation.get_location();
 			parameter = annotation.get_parameter();
+			value = Boolean.TRUE;
 		}
 		else {
 			throw new IllegalArgumentException("Invalid instance: " + instance);
 		}
 		
+		/* type$value$execution$location$parameter */
 		this.writer.write(type);
 		this.writer.write("$" + this.token_string(execution));
 		this.writer.write("$" + this.token_string(location));
 		this.writer.write("$" + this.token_string(parameter));
+		this.writer.write("$" + this.token_string(value));
 		if(parameter instanceof SymbolNode) 
 			sym_nodes.add((SymbolNode) parameter);
 	}
@@ -884,7 +894,7 @@ public class MuTestProjectFeatureWriter {
 		SymConstraint constraint = edge.get_constraint(); 
 		constraint = cir_mutations.optimize(constraint, null);
 		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
-		
+		/* improved_constraint* & const_annotation* */
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
 			this.write_sym_word(improved_constraint, nodes);
@@ -900,7 +910,12 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_instance_node(SymInstanceNode node, Collection<SymbolNode> nodes) throws Exception {
+		/* error error_annotation */
 		if(node.has_state_error()) {
+			/*
+			writer.write("\t");
+			this.write_sym_word(node.get_state_error(), nodes);
+			*/
 			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
 				writer.write("\t");
 				this.write_sym_word(annotation, nodes);
