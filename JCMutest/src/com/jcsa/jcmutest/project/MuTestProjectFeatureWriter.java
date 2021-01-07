@@ -912,7 +912,7 @@ public class MuTestProjectFeatureWriter {
 	private void write_sym_instance_node(SymInstanceNode node, Collection<SymbolNode> nodes) throws Exception {
 		/* error error_annotation */
 		if(node.has_state_error()) {
-			/*
+			/* TODO this might influence on pattern mining
 			writer.write("\t");
 			this.write_sym_word(node.get_state_error(), nodes);
 			*/
