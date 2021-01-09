@@ -17,6 +17,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceEdge;
@@ -70,6 +71,7 @@ import com.jcsa.jcparse.lang.lexical.CPunctuator;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolField;
 import com.jcsa.jcparse.lang.symbol.SymbolFieldExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
@@ -828,7 +830,7 @@ public class MuTestProjectFeatureWriter {
 			type = "mut_flow";
 			execution = error.get_execution();
 			location = error.get_original_flow().get_source().get_statement();
-			parameter = error.get_mutation_flow().get_target();
+			parameter = SymbolFactory.sym_expression(error.get_mutation_flow().get_target());
 			value = error.validate(null);
 		}
 		else if(instance instanceof SymTrapError) {
@@ -872,7 +874,7 @@ public class MuTestProjectFeatureWriter {
 			value = Boolean.TRUE;
 		}
 		else {
-			throw new IllegalArgumentException("Invalid instance: " + instance);
+			throw new IllegalArgumentException("Invalid: " + instance.getClass().getSimpleName());
 		}
 		
 		/* type$value$execution$location$parameter */
@@ -881,11 +883,11 @@ public class MuTestProjectFeatureWriter {
 		this.writer.write("$" + this.token_string(location));
 		this.writer.write("$" + this.token_string(parameter));
 		this.writer.write("$" + this.token_string(value));
-		if(parameter instanceof SymbolNode) 
+		if(parameter != null) 
 			sym_nodes.add((SymbolNode) parameter);
 	}
 	/**
-	 * constraint*
+	 * improved(constraint[null]) + annotate(constraint)
 	 * @param edge
 	 * @throws Exception
 	 */
@@ -905,15 +907,17 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * annotation+
+	 * error[null] + annotate(error)
 	 * @param node
 	 * @throws Exception
 	 */
 	private void write_sym_instance_node(SymInstanceNode node, Collection<SymbolNode> nodes) throws Exception {
 		/* error error_annotation */
 		if(node.has_state_error()) {
-			writer.write("\t");
-			this.write_sym_word(node.get_state_error(), nodes);
+			SymStateError state_error = node.get_state_error();
+			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
+			writer.write("\t"); this.write_sym_word(state_error, nodes);
+			
 			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
 				writer.write("\t");
 				this.write_sym_word(annotation, nodes);
