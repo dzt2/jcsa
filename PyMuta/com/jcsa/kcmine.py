@@ -107,7 +107,7 @@ class KillClassifier:
 			solution = self.__solving__(sample, None)
 		else:
 			sample: jcmuta.SymbolicExecution
-			solution = self.__solving__(sample.get_mutant(), sample.get_test_case())
+			solution = self.__solving__(sample.get_mutant(), sample.get_test())
 		self.solutions[sample] = solution
 		return
 
