@@ -806,20 +806,23 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 	}
 	/**
-	 * type$execution$location$parameter$value
+	 * class$type$value$execution$location$parameter
 	 * @param instance
 	 * @param sym_nodes
 	 * @return
 	 * @throws Exception
 	 */
 	private void write_sym_word(Object instance, Collection<SymbolNode> sym_nodes) throws Exception {
-		String type; CirExecution execution;
-		CirNode location; Object parameter;
-		Boolean value;	/* true, false, null */
+		String category, type; 
+		Boolean value;
+		CirExecution execution; 
+		CirNode location;
+		Object parameter;
 		
 		if(instance instanceof SymConstraint) {
 			SymConstraint constraint = (SymConstraint) instance;
-			type = "const";
+			category = "condition";
+			type = CirAnnotateType.eval_stmt.toString();
 			execution = constraint.get_execution();
 			location = constraint.get_statement();
 			parameter = ((SymConstraint) instance).get_condition();
@@ -827,6 +830,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else if(instance instanceof SymFlowError) {
 			SymFlowError error = (SymFlowError) instance;
+			category = "infection";
 			type = "mut_flow";
 			execution = error.get_execution();
 			location = error.get_original_flow().get_source().get_statement();
@@ -835,6 +839,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else if(instance instanceof SymTrapError) {
 			SymTrapError error = (SymTrapError) instance;
+			category = "infection";
 			type = CirAnnotateType.trap_stmt.toString();
 			execution = error.get_execution();
 			location = error.get_statement();
@@ -843,6 +848,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else if(instance instanceof SymExpressionError) {
 			SymExpressionError error = (SymExpressionError) instance;
+			category = "infection";
 			type = CirAnnotateType.mut_value.toString();
 			execution = error.get_execution();
 			location = error.get_expression();
@@ -851,6 +857,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else if(instance instanceof SymReferenceError) {
 			SymReferenceError error = (SymReferenceError) instance;
+			category = "infection";
 			type = CirAnnotateType.mut_refer.toString();
 			execution = error.get_execution();
 			location = error.get_expression();
@@ -859,6 +866,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else if(instance instanceof SymStateValueError) {
 			SymStateValueError error = (SymStateValueError) instance;
+			category = "infection";
 			type = CirAnnotateType.mut_state.toString();
 			execution = error.get_execution();
 			location = error.get_expression();
@@ -868,23 +876,29 @@ public class MuTestProjectFeatureWriter {
 		else if(instance instanceof CirAnnotation) {
 			CirAnnotation annotation = (CirAnnotation) instance;
 			type = annotation.get_type().toString();
+			switch(annotation.get_type()) {
+			case covr_stmt:
+			case eval_stmt:
+						category = "condition";	break;
+			default: 	category = "infection";	break;
+			}
 			execution = annotation.get_execution();
 			location = annotation.get_location();
 			parameter = annotation.get_parameter();
 			value = Boolean.TRUE;
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + instance.getClass().getSimpleName());
+			throw new IllegalArgumentException("Invalid class: " + instance.getClass().getSimpleName());
 		}
 		
-		/* type$value$execution$location$parameter */
-		this.writer.write(type);
+		this.writer.write(category + "$" + type);
+		this.writer.write("$" + this.token_string(value));
 		this.writer.write("$" + this.token_string(execution));
 		this.writer.write("$" + this.token_string(location));
 		this.writer.write("$" + this.token_string(parameter));
-		this.writer.write("$" + this.token_string(value));
-		if(parameter != null) 
+		if(parameter != null) {
 			sym_nodes.add((SymbolNode) parameter);
+		}
 	}
 	/**
 	 * improved(constraint[null]) + annotate(constraint)
@@ -939,15 +953,18 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * mid tid {cons|erro|anno}*
+	 * mid res ies pes {cons|erro|anno}*
 	 * @param graph
 	 * @param test_case
 	 * @throws Exception
 	 */
 	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case, Collection<SymbolNode> nodes) throws Exception {
 		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
-		int test_id = -1;
-		if(test_case != null) test_id = test_case.get_id();
+		int test_id;
+		if(test_case != null)
+			test_id = test_case.get_id();
+		else
+			test_id = -1;
 		for(List<SymInstanceEdge> path : paths) {
 			writer.write(graph.get_mutant().get_id() + "\t" + test_id);
 			this.write_sym_instance_path(path, nodes);
@@ -1017,6 +1034,7 @@ public class MuTestProjectFeatureWriter {
 			for(TestInput test_case : test_suite) 
 				this.write_sym_instance_graphs(test_case, dependence_graph, max_distance, sym_nodes);
 		}
+		
 		this.write_sym_nodes(sym_nodes);
 	}
 	

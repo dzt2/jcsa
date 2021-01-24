@@ -295,6 +295,22 @@ def rand_select(objects):
 	return selected_object
 
 
+def rand_resort(objects):
+	"""
+	:param objects:
+	:return: list of objects randomly sorted from the inputs
+	"""
+	remains = set()
+	for obj in objects:
+		remains.add(obj)
+	rlist = list()
+	while len(remains) > 0:
+		obj = rand_select(remains)
+		remains.remove(obj)
+		rlist.append(obj)
+	return rlist
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	for file_name in os.listdir(root_path):

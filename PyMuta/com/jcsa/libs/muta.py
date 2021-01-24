@@ -26,37 +26,41 @@ class CProject:
 		self.evaluation = MutationTestEvaluation(self)
 		return
 
-	def load_static_document(self, directory: str, option: int):
+	def load_static_document(self, directory: str, set_none: bool, de_value):
 		"""
 		:param directory:
-		:param option:
-				(1) O_WORD_OPTION: remain value as original in word
-				(2) T_WORD_OPTION: set None value as True in word
-				(3) F_WORD_OPTION: set None value as False in word
-				(4) I_WORD_OPTION: set True, False as None in word
+		:param set_none:	(T, T) --> Set validate of None as True
+							(T, F) --> Set validate of None as False
+							(T, N) --> Set validate of None as None (maintain)
+							(F, T) --> Set validate of True|False as True
+							(F, F) --> Set validate of True|False as False
+							(F, N) --> Set validate of True|False as None
+		:param de_value:
 		:return: load execution from directory/xxx.sft
 		"""
-		document = SymbolicDocument(self)
+		document = RIPDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".sft"):
-				document.load(os.path.join(directory, file_name), option)
+				document.load(os.path.join(directory, file_name), set_none, de_value)
 				break
 		return document
 
-	def load_dynamic_document(self, directory: str, option: int):
+	def load_dynamic_document(self, directory: str, set_none: bool, de_value):
 		"""
 		:param directory:
-		:param option:
-				(1) O_WORD_OPTION: remain value as original in word
-				(2) T_WORD_OPTION: set None value as True in word
-				(3) F_WORD_OPTION: set None value as False in word
-				(4) I_WORD_OPTION: set True, False as None in word
+		:param set_none:	(T, T) --> Set validate of None as True
+							(T, F) --> Set validate of None as False
+							(T, N) --> Set validate of None as None (maintain)
+							(F, T) --> Set validate of True|False as True
+							(F, F) --> Set validate of True|False as False
+							(F, N) --> Set validate of True|False as None
+		:param de_value:
 		:return: load execution from directory/xxx.dft
 		"""
-		document = SymbolicDocument(self)
+		document = RIPDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".dft"):
-				document.load(os.path.join(directory, file_name), option)
+				document.load(os.path.join(directory, file_name), set_none, de_value)
 		return document
 
 
@@ -532,102 +536,90 @@ class MutationTestEvaluation:
 		return killed, over_score, valid_score
 
 
-class SymbolicCondition:
+class RIPFeature:
 	"""
-	It defines the symbolic feature for killing the target mutant, specifying either a constraint for reaching
-	or infecting the program state, or describing infected state for propagation.
-		(1) feature: const, cover_stmt, eval_stmt; chg_bool, chg_numb, set_numb, ..., set_auto;
-		(2) execution: the execution of statement where the condition is validated or state error is injected;
-		(3) location: the C-intermediate representation code location where the feature is encoded;
-		(4) parameter: symbolic expression to refine the description of the feature or None if not needed;
-		(5) value: 	for condition: 		T-satisfied, F-not-satisfied, N-unknown;
-					for state-error: 	T-infected, F-not-infected, N-unknown;
+	It describes the feature of reachability-infection-propagation to evaluate testability of mutation in testing.
+		(1) category: condition for satisfaction or infection for observation
+		(2) operator: eval_stmt, chg_numb, set_bool, ..., trap_stmt, set_auto
+		(3) validate: success(True), failure(False), unknown(None)
+		(4) execution: the statement where the feature is validated (condition) or injected (infection)
+		(5) location: the C-intermediate location where the feature is evaluated
+		(6) parameter: symbolic expression to refine the feature description or None if not necessary
 	"""
 
-	def __init__(self, feature: str, execution: jcparse.CirExecution, location: jcparse.CirNode, parameter: jcbase.SymNode, value: bool):
+	def __init__(self, category: str, operator: str, validate: bool,
+				 execution: jcparse.CirExecution, location: jcparse.CirNode,
+				 parameter: jcbase.SymNode):
 		"""
-		:param feature: const, cover_stmt, eval_stmt; chg_bool, chg_numb, set_numb, ..., set_auto;
-		:param execution: the execution of statement where the condition is validated or state error is injected;
-		:param location: the C-intermediate representation code location where the feature is encoded;
-		:param parameter: symbolic expression to refine the description of the feature or None if not needed;
-		:param value: 	for condition: 		T-satisfied, F-not-satisfied, N-unknown;
-						for state-error: 	T-infected, F-not-infected, N-unknown;
+		:param category: condition for satisfaction or infection for observation
+		:param operator: eval_stmt, chg_numb, set_bool, ..., trap_stmt, set_auto
+		:param validate: success(True), failure(False), unknown(None)
+		:param execution: the statement where the feature is validated (condition) or injected (infection)
+		:param location: the C-intermediate location where the feature is evaluated
+		:param parameter: symbolic expression to refine the feature description or None if not necessary
 		"""
-		self.feature = feature
+		self.category = category
+		self.operator = operator
+		self.validate = validate
 		self.execution = execution
 		self.location = location
 		self.parameter = parameter
-		self.value = value
 		return
 
-	def get_feature(self):
+	def get_category(self):
 		"""
-		:return: const, cover_stmt, eval_stmt; chg_bool, chg_numb, set_numb, ..., set_auto;
+		:return: condition for satisfaction or infection for observation
 		"""
-		return self.feature
+		return self.category
+
+	def get_operator(self):
+		"""
+		:return: eval_stmt, chg_numb, set_bool, ..., trap_stmt, set_auto
+		"""
+		return self.operator
+
+	def get_validate(self):
+		"""
+		:return:  success(True), failure(False), unknown(None)
+		"""
+		return self.validate
 
 	def get_execution(self):
 		"""
-		:return: the execution of statement where the condition is validated or state error is injected;
+		:return: the statement where the feature is validated (condition) or injected (infection)
 		"""
 		return self.execution
 
 	def get_location(self):
 		"""
-		:return: the C-intermediate representation code location where the feature is encoded;
+		:return: the C-intermediate location where the feature is evaluated
 		"""
 		return self.location
 
-	def has_parameter(self):
-		"""
-		:return: true if symbolic expression is used to refine the feature or false without needing it
-		"""
-		return not(self.parameter is None)
-
 	def get_parameter(self):
 		"""
-		:return: symbolic expression to refine the description of the feature or None if not needed;
+		:return: symbolic expression to refine the feature description or None if not necessary
 		"""
 		return self.parameter
 
-	def get_value(self):
-		"""
-		:return:	for constraint: 	T-satisfied, F-not-satisfied, N-unknown;
-					for propagation: 	T-infected, F-not-infected, N-unknown;
-		"""
-		return self.value
 
-	def is_constraint(self):
-		"""
-		:return: whether this is a condition that need be validated
-		"""
-		return self.feature in ["const", "covr_stmt", "eval_stmt"]
-
-	def is_propagation(self):
-		"""
-		:return: whether this is a infection that need be observed
-		"""
-		return not self.is_constraint()
-
-
-class SymbolicExecution:
+class RIPExecution:
 	"""
-	The mutant execution is defined as (m, t) extracted from either static or dynamic analysis.
-		(1) mutant: the mutation as target to be killed during execution.
-		(2) test: the test case being executed or None if the execution is extracted from static analysis.
-		(3) words: the set of words encoding the symbolic conditions required for killing that mutant.
-		(4) get_conditions(): the symbolic conditions required for killing that mutant in the execution.
-		(5) document: the document to preserve the symbolic executions and conditions required for killing.
+	It describes the mutation execution using RIP-testability-features defined as following.
+		(0) document: the document where the execution information is preserved
+		(1) mutant: the mutation as target to be killed during execution
+		(2) test: the test case to be executed to perform the testing on mutation
+		(3) words: the set of words encoding the RIP-features occur in executions
 	"""
 
 	def __init__(self, document, mutant: Mutant, test: TestCase, words):
 		"""
-		:param document: the document to preserve the symbolic executions and conditions required for killing.
-		:param mutant: the mutation as target to be killed during execution.
-		:param test: the test case being executed or None if the execution is extracted from static analysis.
-		:param words: the set of words encoding the symbolic conditions required for killing that mutant.
+		:param document: the document where the execution information is preserved
+		:param mutant: the mutation as target to be killed during execution
+		:param test: the test case to be executed to perform the testing on mutation
+		:param words: the set of words encoding the RIP-features occur in executions
 		"""
-		document: SymbolicDocument
+		document: RIPDocument
 		self.document = document
 		self.mutant = mutant
 		self.test = test
@@ -639,225 +631,233 @@ class SymbolicExecution:
 
 	def get_document(self):
 		"""
-		:return: the document to preserve the symbolic executions and conditions required for killing.
+		:return: the document where the execution information is preserved
 		"""
 		return self.document
 
 	def get_mutant(self):
 		"""
-		:return: the mutation as target to be killed during execution.
+		:return: the mutation as target to be killed during execution
 		"""
 		return self.mutant
 
 	def has_test(self):
 		"""
-		:return: true if the execution is extracted from dynamic analysis or false
+		:return: True if the execution is generated using dynamic analysis or static analysis alternatively
 		"""
 		return not(self.test is None)
 
 	def get_test(self):
 		"""
-		:return: the test case being executed or None if the execution is extracted from static analysis.
+		:return: the test case to be executed to perform the testing on mutation
 		"""
 		return self.test
 
 	def get_words(self):
 		"""
-		:return: the set of words encoding the symbolic conditions required for killing that mutant.
+		:return: the set of words encoding the RIP-features occur in executions
 		"""
 		return self.words
 
-	def get_conditions(self):
+	def get_s_result(self):
 		"""
-		:return: the symbolic conditions required for killing that mutant in the execution.
+		:return: whether the mutant is strongly killed by the test specified in execution
 		"""
-		conditions = list()
+		if self.test is None:
+			return self.mutant.get_result().is_killable()
+		else:
+			return self.mutant.get_result().is_killed_by(self.test)
+
+	def get_w_result(self):
+		"""
+		:return: whether the mutant is weakly killed by the test specified in execution
+		"""
+		if self.test is None:
+			return self.mutant.get_weak_mutant().get_result().is_killable()
+		else:
+			return self.mutant.get_weak_mutant().get_result().is_killed_by(self.test)
+
+	def get_c_result(self):
+		"""
+		:return: whether the mutant is reached by the test specified in testing
+		"""
+		if self.test is None:
+			return self.mutant.get_coverage_mutant().get_result().is_killable()
+		else:
+			return self.mutant.get_coverage_mutant().get_result().is_killed_by(self.test)
+
+	def get_features(self):
+		"""
+		:return: the set of RIP-testability features required in execution
+		"""
+		features = list()
 		for word in self.words:
-			conditions.append(self.document.get_condition(word))
-		return conditions
+			features.append(self.document.get_feature(word))
+		return features
 
 
-O_WORD_OPTION = 0			# remain value as original in word
-T_WORD_OPTION = 1			# set None value as True in word
-F_WORD_OPTION = 2			# set None value as False in word
-I_WORD_OPTION = 3			# set True, False as None in word
-
-
-class SymbolicDocument:
+class RIPDocument:
 	"""
-	The document to preserve symbolic executions with conditions required for killing mutants.
-		(1) project: it provides contextual information to generate symbolic condition.
-		(2) executions: set of symbolic executions with conditions required for killing mutants.
-		(3) mutants: set of mutants being executed against some executions in the document.
-		(4) tests: set of test cases being executed against some executions in the document.
-		(5) corpus: set of words encoding the symbolic conditions required for killing mutants.
+	The document is used to preserve the executions, mutants and tests being executed and the words
+	to encode RIP-testability features extracted from the symbolic analysis.
 	"""
 
 	def __init__(self, project: CProject):
-		self.project = project
-		self.executions = list()
-		self.mutants = dict()		# mapping from mutant to the set of corresponding executions
-		self.tests = dict()			# mapping from test case to set of corresponding executions
-		self.corpus = set()			# set of words encoding the symbolic conditions required for killing mutants
-		self.nones = set()			# empty set of executions for non-defined key in get_executions_of(key)
+		self.project = project			# It provides contextual information to parse RIP-feature from word
+		self.exec_list = list()			# The set of executions against mutant and test being analyzed
+		self.muta_exec = dict()			# The mapping from Mutant to the set of executions it is performed
+		self.test_exec = dict()			# The mapping from TestCase to the set of executions it's performed
+		self.corpus = set()				# The set of words encoding the RIP-testability features in executions
 		return
 
 	def get_project(self):
 		"""
-		:return: it provides contextual information to generate symbolic condition.
+		:return: It provides contextual information to parse RIP-feature from word
 		"""
 		return self.project
 
 	def get_executions(self):
 		"""
-		:return: set of symbolic executions with conditions required for killing mutants.
+		:return: The set of executions against mutant and test being analyzed
 		"""
-		return self.executions
+		return self.exec_list
 
 	def get_mutants(self):
 		"""
-		:return: set of mutants being executed against some executions in the document.
+		:return: The set of mutants being executed against tests in executions
 		"""
-		return self.mutants.keys()
+		return self.muta_exec.keys()
 
 	def get_tests(self):
 		"""
-		:return: set of test cases being executed against some executions in the document.
+		:return: The set of test cases being executed against mutants in the executions
 		"""
-		return self.tests.keys()
+		return self.test_exec.keys()
 
 	def get_executions_of(self, key):
 		"""
-		:param key: Mutant, TestCase, or None
-		:return: set of corresponding executions
+		:param key: Mutant or TestCase
+		:return: the set of executions performed on the Mutant or TestCase
 		"""
-		if key in self.mutants:
-			executions = self.mutants[key]
-		elif key in self.tests:
-			executions = self.tests[key]
+		if key in self.muta_exec:
+			executions = self.muta_exec[key]
+		elif key in self.test_exec:
+			executions = self.test_exec[key]
 		else:
-			executions = self.nones
+			executions = set()
 		executions: set
 		return executions
 
-	def get_condition(self, word: str):
+	def get_feature(self, word: str):
 		"""
-		:param word: feature$execution$location$parameter$value
-		:return:
+		:param word: category$operator$validate$execution$location$parameter
+		:return: RIPFeature being encoded by the word
 		"""
 		items = word.strip().split('$')
-		feature = items[0].strip()
-		execution_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-		execution = self.project.program.function_call_graph.get_execution(execution_token[0], execution_token[1])
-		location_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-		location = self.project.program.cir_tree.get_cir_node(location_token)
-		parameter_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-		if parameter_token is None:
+		category = items[0].strip()
+		operator = items[1].strip()
+		validate = jcbase.CToken.parse(items[2].strip()).get_token_value()
+		ex_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
+		lo_token = jcbase.CToken.parse(items[4].strip()).get_token_value()
+		execution = self.project.program.function_call_graph.get_execution(ex_token[0], ex_token[1])
+		location = self.project.program.cir_tree.get_cir_node(lo_token)
+		param_tok = jcbase.CToken.parse(items[5].strip()).get_token_value()
+		if param_tok is None:
 			parameter = None
 		else:
-			parameter = self.project.sym_tree.get_sym_node(items[3].strip())
-		value = jcbase.CToken.parse(items[4].strip()).get_token_value()
-		return SymbolicCondition(feature, execution, location, parameter, value)
+			parameter = self.project.sym_tree.get_sym_node(items[5].strip())
+		return RIPFeature(category, operator, validate, execution, location, parameter)
 
 	def get_corpus(self):
 		return self.corpus
 
-	@staticmethod
-	def __std_word__(word: str, option: int):
+	def __add_word__(self, word: str, set_none: bool, de_value: bool):
 		"""
-		:param word: feature$execution$location$parameter$value
-		:param option:
-				(1) O_WORD_OPTION: remain value as original in word
-				(2) T_WORD_OPTION: set None value as True in word
-				(3) F_WORD_OPTION: set None value as False in word
-				(4) I_WORD_OPTION: set True, False as None in word
-		:return: feature$execution$location$parameter${value}
+		:param word: category$operator$validate$execution$location$parameter
+		:param set_none: True to set None as de_value or True|False as de_value
+		:param de_value: the boolean value set to None or Non-None validate
+		:return: category$operator$[validate]$execution$location$parameter
 		"""
 		word = word.strip()
 		if len(word) > 0:
 			items = word.split('$')
-			feature = items[0].strip()
-			execution = items[1].strip()
-			location = items[2].strip()
-			parameter = items[3].strip()
-			bool_value = jcbase.CToken.parse(items[4].strip()).get_token_value()
-			if option == T_WORD_OPTION:  # set None as True
-				if bool_value is None:
-					bool_value = True
-			elif option == F_WORD_OPTION:  # set None as False
-				if bool_value is None:
-					bool_value = False
-			elif option == I_WORD_OPTION:  # set All as None
-				bool_value = None
-			if bool_value is None:
-				value = "n@null"
-			elif bool_value:
-				value = "b@true"
+			category = items[0].strip()
+			operator = items[1].strip()
+			bool_val = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			execution = items[3].strip()
+			location = items[4].strip()
+			parameter = items[5].strip()
+			if set_none:
+				if bool_val is None:
+					bool_val = de_value
+				else:
+					pass
 			else:
-				value = "b@false"
-			word = "{}${}${}${}${}".format(feature, execution, location, parameter, value)
+				if bool_val is None:
+					pass
+				else:
+					bool_val = de_value
+			if bool_val is None:
+				validate = "n@null"
+			elif bool_val:
+				validate = "b@true"
+			else:
+				validate = "b@false"
+			word = "{}${}${}${}${}${}".format(category, operator, validate, execution, location, parameter)
+			self.corpus.add(word)
 		return word
 
-	def __add_execution__(self, execution: SymbolicExecution):
-		"""
-		:param execution: add execution in the document and update entire tables
-		:return:
-		"""
-		self.executions.append(execution)
-		if not(execution.get_mutant() in self.mutants):
-			self.mutants[execution.get_mutant()] = set()
-		self.mutants[execution.get_mutant()].add(execution)
-		if not(execution.get_test() in self.tests):
-			self.tests[execution.get_test()] = set()
-		self.tests[execution.get_test()].add(execution)
-		for word in execution.get_words():
-			self.corpus.add(word)
-		return
-
-	def __add_line__(self, line: str, buffer: set, option: int):
+	def __produce__(self, line: str):
 		"""
 		:param line: mid tid word+
-		:param buffer: used to preserve standard words to generate execution
-		:param option:
-				(1) O_WORD_OPTION: remain value as original in word
-				(2) T_WORD_OPTION: set None value as True in word
-				(3) F_WORD_OPTION: set None value as False in word
-				(4) I_WORD_OPTION: set True, False as None in word
-		:return:
+		:return: RIPExecution
 		"""
 		if len(line.strip()) > 0:
 			items = line.strip().split('\t')
 			mid = int(items[0].strip())
-			tid = int(items[1].strip())
 			mutant = self.project.mutant_space.get_mutant(mid)
+			tid = int(items[1].strip())
 			if tid < 0:
 				test = None
 			else:
 				test = self.project.test_space.get_test_case(tid)
-			buffer.clear()
+			words = set()
 			for k in range(2, len(items)):
 				word = items[k].strip()
 				if len(word) > 0:
-					word = SymbolicDocument.__std_word__(word, option)
-					buffer.add(word)
-			execution = SymbolicExecution(self, mutant, test, buffer)
-			self.__add_execution__(execution)
+					words.add(word)
+			return RIPExecution(self, mutant, test, words)
+		else:
+			return None
+
+	def __consume__(self, execution: RIPExecution, set_none: bool, de_value: bool):
+		"""
+		:param execution:
+		:return: update the table in the document
+		"""
+		if not(execution is None):
+			self.exec_list.append(execution)
+			if not (execution.get_mutant() in self.muta_exec):
+				self.muta_exec[execution.get_mutant()] = set()
+			self.muta_exec[execution.get_mutant()].add(execution)
+			if not (execution.get_test() in self.test_exec):
+				self.test_exec[execution.get_test()] = set()
+			self.test_exec[execution.get_test()].add(execution)
+			for word in execution.get_words():
+				self.__add_word__(word, set_none, de_value)
 		return
 
-	def load(self, file_path: str, option: int):
+	def load(self, file_path: str, set_none: bool, de_value: bool):
 		"""
-		:param file_path: load symbolic executions from feature file to the file
-		:param option:
-				(1) O_WORD_OPTION: remain value as original in word
-				(2) T_WORD_OPTION: set None value as True in word
-				(3) F_WORD_OPTION: set None value as False in word
-				(4) I_WORD_OPTION: set True, False as None in word
+		:param file_path:
+		:param set_none: True to update None-validate or otherwise Not-None validate
+		:param de_value: default value used to update the specified validate values
 		:return:
 		"""
 		with open(file_path, 'r') as reader:
-			buffer = set()
 			for line in reader:
-				self.__add_line__(line.strip(), buffer, option)
+				execution = self.__produce__(line.strip())
+				self.__consume__(execution, set_none, de_value)
 		return
 
 
@@ -868,15 +868,16 @@ if __name__ == "__main__":
 		c_project = CProject(directory_path, filename)
 		print(filename, "contains", len(c_project.mutant_space.get_mutants()), "mutants and",
 			  len(c_project.test_space.get_test_cases()), "test cases.")
-		c_document = c_project.load_static_document(directory_path, I_WORD_OPTION)
+		c_document = c_project.load_static_document(directory_path, True, None)
 		print("\tLoad", len(c_document.get_executions()), "lines with", len(c_document.get_corpus()), "words...")
 		for sym_exec in c_document.get_executions():
-			sym_exec: SymbolicExecution
-			for sym_condition in sym_exec.get_conditions():
-				print("\t\t==>", sym_condition.get_feature(),
-					  "\t", sym_condition.get_value(),
-					  "\t", sym_condition.get_execution(),
-					  "\t\"", sym_condition.get_location().get_cir_code(),
-					  "\"\t{", sym_condition.get_parameter(), "}")
+			sym_exec: RIPExecution
+			for rip_feature in sym_exec.get_features():
+				print("\t\t==>", rip_feature.get_category(),
+					  "\t", rip_feature.get_operator(),
+					  "\t", rip_feature.get_validate(),
+					  "\t", rip_feature.get_execution(),
+					  "\t\"", rip_feature.get_location().get_cir_code(),
+					  "\"\t{", rip_feature.get_parameter(), "}")
 		print()
 
