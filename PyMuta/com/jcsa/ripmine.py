@@ -283,7 +283,7 @@ class RIPPattern:
 		"""
 		features = list()
 		for word in self.words:
-			features.append(self.document.get_feature(word))
+			features.append(self.document.decode(word))
 		return features
 
 	def __str__(self):
@@ -902,7 +902,6 @@ class RIPPatternWriter:
 		:return: index length executions mutants uk_exe_supp uk_exe_conf cc_exe_supp cc_exe_conf uk_mut_supp
 				uk_mut_conf cc_mut_supp cc_mut_conf
 		"""
-		length = len(pattern)
 		executions = len(pattern.get_executions())
 		mutants = len(pattern.get_mutants())
 		_, uk_exe_supp, uk_exe_conf = pattern.estimate(True, True)
@@ -950,7 +949,6 @@ def mining_patterns(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bo
 					min_support: int, max_confidence: float, max_length: int, output_directory: str):
 	"""
 	:param document: it provides lines and mutations in the program
-	:param classifier_tests: used to generate classifier of mutation
 	:param exe_or_mut: true to take line as sample or false to take mutant as sample
 	:param uk_or_cc: true to estimate on non-killed samples or false on coincidental correctness samples
 	:param min_support: minimal number of samples supporting the patterns
@@ -1004,6 +1002,6 @@ if __name__ == "__main__":
 	# dyna_path = "/home/dzt2/Development/Data/patterns/dyna"
 	for filename in os.listdir(prev_path):
 		direct = os.path.join(prev_path, filename)
-		testing_project(directory=direct, file_name=filename, set_none=False, de_value=None,
+		testing_project(directory=direct, file_name=filename, set_none=True, de_value=True,
 						exe_or_mut=True, uk_or_cc=True, stat_directory=stat_path, dyna_directory=dyna_path)
 
