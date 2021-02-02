@@ -806,99 +806,107 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 	}
 	/**
-	 * class$type$value$execution$location$parameter
-	 * @param instance
-	 * @param sym_nodes
-	 * @return
+	 * 	category$operator$validate$execution$location$parameter
+	 * 	=================================================================================
+	 * 	---	validate bool: 		True 		-- 	reached (definitive)
+	 * 							False		--	not-reachable
+	 * 							Null		--	reached (might-be)
+	 * 	---	category String:	constraint	--	as constraint being validated
+	 * 							observation	--	as state error being observed
+	 * 	---	operator String:	CirAnnotateType
+	 * 	---	execution	   :	The execution point where the characteristics is defined
+	 * 	---	location	   :	The C-intermediate representation location as subject be
+	 * 							described in the given characteristics.
+	 * 	---	parameter	   :	The symbolic expression to refine the characteristics.
+	 * 	=================================================================================
+	 * 
+	 * @param feature path characteristics as condition being satisfied
+	 * @param parameters 
 	 * @throws Exception
 	 */
-	private void write_sym_word(Object instance, Collection<SymbolNode> sym_nodes) throws Exception {
-		String category, type; 
-		Boolean value;
-		CirExecution execution; 
-		CirNode location;
-		Object parameter;
+	private void write_sym_feature(Object feature, Collection<SymbolNode> parameters) throws Exception {
+		Boolean validate; String category, operator;
+		CirExecution execution; CirNode location;
+		SymbolNode parameter;
 		
-		if(instance instanceof SymConstraint) {
-			SymConstraint constraint = (SymConstraint) instance;
-			category = "condition";
-			type = CirAnnotateType.eval_stmt.toString();
+		if(feature instanceof SymConstraint) {
+			SymConstraint constraint = (SymConstraint) feature;
+			validate = constraint.validate(null);
+			category = "constraint";
+			operator = CirAnnotateType.eval_stmt.toString();
 			execution = constraint.get_execution();
 			location = constraint.get_statement();
-			parameter = ((SymConstraint) instance).get_condition();
-			value = constraint.validate(null);
+			parameter = constraint.get_condition();
 		}
-		else if(instance instanceof SymFlowError) {
-			SymFlowError error = (SymFlowError) instance;
-			category = "infection";
-			type = "mut_flow";
+		else if(feature instanceof SymFlowError) {
+			SymFlowError error = (SymFlowError) feature;
+			validate = error.validate(null);
+			category = "observation";
+			operator = "mut_flow";
 			execution = error.get_execution();
 			location = error.get_original_flow().get_source().get_statement();
 			parameter = SymbolFactory.sym_expression(error.get_mutation_flow().get_target());
-			value = error.validate(null);
 		}
-		else if(instance instanceof SymTrapError) {
-			SymTrapError error = (SymTrapError) instance;
-			category = "infection";
-			type = CirAnnotateType.trap_stmt.toString();
+		else if(feature instanceof SymTrapError) {
+			SymTrapError error = (SymTrapError) feature;
+			validate = ((SymTrapError) feature).validate(null);
+			category = "observation";
+			operator = CirAnnotateType.trap_stmt.toString();
 			execution = error.get_execution();
-			location = error.get_statement();
+			location = error.get_location();
 			parameter = null;
-			value = error.validate(null);
 		}
-		else if(instance instanceof SymExpressionError) {
-			SymExpressionError error = (SymExpressionError) instance;
-			category = "infection";
-			type = CirAnnotateType.mut_value.toString();
+		else if(feature instanceof SymExpressionError) {
+			SymExpressionError error = (SymExpressionError) feature;
+			validate = error.validate(null);
+			category = "observation";
+			operator = CirAnnotateType.mut_value.toString();
 			execution = error.get_execution();
-			location = error.get_expression();
+			location = error.get_location();
 			parameter = error.get_mutation_value();
-			value = error.validate(null);
 		}
-		else if(instance instanceof SymReferenceError) {
-			SymReferenceError error = (SymReferenceError) instance;
-			category = "infection";
-			type = CirAnnotateType.mut_refer.toString();
+		else if(feature instanceof SymReferenceError) {
+			SymReferenceError error = (SymReferenceError) feature;
+			validate = error.validate(null);
+			category = "observation";
+			operator = CirAnnotateType.mut_refer.toString();
 			execution = error.get_execution();
-			location = error.get_expression();
+			location = error.get_location();
 			parameter = error.get_mutation_value();
-			value = error.validate(null);
 		}
-		else if(instance instanceof SymStateValueError) {
-			SymStateValueError error = (SymStateValueError) instance;
-			category = "infection";
-			type = CirAnnotateType.mut_state.toString();
+		else if(feature instanceof SymStateValueError) {
+			SymStateValueError error = (SymStateValueError) feature;
+			validate = error.validate(null);
+			category = "observation";
+			operator = CirAnnotateType.mut_state.toString();
 			execution = error.get_execution();
-			location = error.get_expression();
+			location = error.get_location();
 			parameter = error.get_mutation_value();
-			value = error.validate(null);
 		}
-		else if(instance instanceof CirAnnotation) {
-			CirAnnotation annotation = (CirAnnotation) instance;
-			type = annotation.get_type().toString();
+		else if(feature instanceof CirAnnotation) {
+			CirAnnotation annotation = (CirAnnotation) feature;
+			validate = Boolean.TRUE;
 			switch(annotation.get_type()) {
 			case covr_stmt:
 			case eval_stmt:
-						category = "condition";	break;
-			default: 	category = "infection";	break;
+						category = "constraint";	break;
+			default: 	category = "observation";	break;
 			}
+			operator = annotation.get_type().toString();
 			execution = annotation.get_execution();
 			location = annotation.get_location();
-			parameter = annotation.get_parameter();
-			value = Boolean.TRUE;
+			parameter = (SymbolNode) annotation.get_parameter();
 		}
 		else {
-			throw new IllegalArgumentException("Invalid class: " + instance.getClass().getSimpleName());
+			throw new IllegalArgumentException(feature.getClass().getSimpleName());
 		}
 		
-		this.writer.write(category + "$" + type);
-		this.writer.write("$" + this.token_string(value));
+		this.writer.write(category + "$" + operator);
+		this.writer.write("$" + this.token_string(validate));
 		this.writer.write("$" + this.token_string(execution));
 		this.writer.write("$" + this.token_string(location));
 		this.writer.write("$" + this.token_string(parameter));
-		if(parameter != null) {
-			sym_nodes.add((SymbolNode) parameter);
-		}
+		if(parameter != null) { parameters.add(parameter); }
 	}
 	/**
 	 * improved(constraint[null]) + annotate(constraint)
@@ -913,11 +921,11 @@ public class MuTestProjectFeatureWriter {
 		/* improved_constraint* & const_annotation* */
 		for(SymConstraint improved_constraint : constraints) {
 			writer.write("\t");
-			this.write_sym_word(improved_constraint, nodes);
+			this.write_sym_feature(improved_constraint, nodes);
 		}
 		for(CirAnnotation annotation : edge.get_status().get_cir_annotations()) {
 			writer.write("\t");
-			this.write_sym_word(annotation, nodes);
+			this.write_sym_feature(annotation, nodes);
 		}
 	}
 	/**
@@ -930,11 +938,11 @@ public class MuTestProjectFeatureWriter {
 		if(node.has_state_error()) {
 			SymStateError state_error = node.get_state_error();
 			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
-			writer.write("\t"); this.write_sym_word(state_error, nodes);
-			
+			writer.write("\t"); 
+			this.write_sym_feature(state_error, nodes);
 			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
 				writer.write("\t");
-				this.write_sym_word(annotation, nodes);
+				this.write_sym_feature(annotation, nodes);
 			}
 		}
 	}

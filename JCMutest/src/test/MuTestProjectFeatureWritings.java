@@ -20,9 +20,10 @@ import com.jcsa.jcparse.test.file.TestInput;
 public class MuTestProjectFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
-	private static final String result_dir = "result/features/";
+	private static final String result_dir = "result/dfeatures/";
 	private static final int max_distance = 2;
-	private static final double random_test_ratio = 0.0012;
+	private static final double random_test_ratio = 0.0020;
+	private static final int min_test_number = 12;
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
@@ -57,7 +58,7 @@ public class MuTestProjectFeatureWritings {
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); 
 		writer.write_muta();
-		selected_tests.clear();
+		// selected_tests.clear();
 		writer.write_features(max_distance, selected_tests);
 		System.out.println();
 	}
@@ -196,6 +197,7 @@ public class MuTestProjectFeatureWritings {
 		
 		/* random test selection to minimal size */
 		int minimal_size = ((int) (tspace.number_of_test_inputs() * random_test_ratio)) + 1;
+		if(minimal_size < min_test_number) minimal_size = min_test_number;	/* minimal size */
 		while(test_cases.size() < minimal_size) {
 			TestInput test_case = select_random_test(tspace);
 			if(test_case != null)
