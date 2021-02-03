@@ -26,41 +26,33 @@ class CProject:
 		self.evaluation = MutationTestEvaluation(self)
 		return
 
-	def load_static_document(self, directory: str, set_none: bool, de_value):
+	def load_static_document(self, directory: str, t_value, f_value, n_value):
 		"""
 		:param directory:
-		:param set_none:	(T, T) --> Set validate of None as True
-							(T, F) --> Set validate of None as False
-							(T, N) --> Set validate of None as None (maintain)
-							(F, T) --> Set validate of True|False as True
-							(F, F) --> Set validate of True|False as False
-							(F, N) --> Set validate of True|False as None
-		:param de_value:
+		:param t_value: set if validation is True
+		:param f_value: set if validation is False
+		:param n_value: set if validation is None
 		:return: load execution from directory/xxx.sft
 		"""
 		document = RIPDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".sft"):
-				document.load(os.path.join(directory, file_name), set_none, de_value)
+				document.load(os.path.join(directory, file_name), t_value, f_value, n_value)
 				break
 		return document
 
-	def load_dynamic_document(self, directory: str, set_none: bool, de_value):
+	def load_dynamic_document(self, directory: str, t_value, f_value, n_value):
 		"""
 		:param directory:
-		:param set_none:	(T, T) --> Set validate of None as True
-							(T, F) --> Set validate of None as False
-							(T, N) --> Set validate of None as None (maintain)
-							(F, T) --> Set validate of True|False as True
-							(F, F) --> Set validate of True|False as False
-							(F, N) --> Set validate of True|False as None
-		:param de_value:
+		:param t_value: set if validation is True
+		:param f_value: set if validation is False
+		:param n_value: set if validation is None
 		:return: load execution from directory/xxx.dft
 		"""
 		document = RIPDocument(self)
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".dft"):
-				document.load(os.path.join(directory, file_name), set_none, de_value)
+				document.load(os.path.join(directory, file_name), t_value, f_value, n_value)
 		return document
 
 
@@ -751,13 +743,12 @@ class RIPDocument:
 			parameter = self.project.sym_tree.get_sym_node(items[5].strip())
 		return RIPCondition(category, operator, validate, execution, location, parameter)
 
-	def __filter__(self, word: str, set_none: bool, de_value: bool):
+	def __filter__(self, word: str, t_value, f_value, n_value):
 		"""
 		:param word: category$operator$validate$execution$location$parameter
-		:param set_none: 	True -- to set validate part when it is None
-							False--	to set validate part when it is not None
-		:param de_value: 	True --	set the validate part by True
-							False--	set the validate part by False
+		:param t_value: set if validation is True
+		:param f_value: set if validation is False
+		:param n_value: set if validation is None
 		:return: category$operator$<validate>$execution$location$parameter
 		"""
 		if len(word.strip()) > 0:
@@ -765,16 +756,12 @@ class RIPDocument:
 			category = items[0].strip()
 			operator = items[1].strip()
 			bool_val = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			if set_none:
-				if bool_val is None:
-					bool_val = de_value
-				else:
-					pass
+			if bool_val is None:
+				bool_val = n_value
+			elif bool_val:
+				bool_val = t_value
 			else:
-				if bool_val is None:
-					pass
-				else:
-					bool_val = de_value
+				bool_val = f_value
 			if bool_val is None:
 				validate = "n@null"
 			elif bool_val:
@@ -790,11 +777,12 @@ class RIPDocument:
 			word = word.strip()
 		return word, len(word) > 0
 
-	def __produce__(self, line: str, set_none: bool, de_value: bool):
+	def __produce__(self, line: str, t_value, f_value, n_value):
 		"""
-		:param line: mid tid word*
-		:param set_none:
-		:param de_value:
+		:param line: mid tid word+
+		:param t_value: set if validation is True
+		:param f_value: set if validation is False
+		:param n_value: set if validation is None
 		:return: RIP-execution or None
 		"""
 		if len(line.strip()) > 0:
@@ -806,11 +794,11 @@ class RIPDocument:
 				test = None
 			else:
 				test = self.project.test_space.get_test_case(tid)
-			words = set()
+			words = list()
 			for k in range(2, len(items)):
-				word, has_word = self.__filter__(items[k].strip(), set_none, de_value)
+				word, has_word = self.__filter__(items[k].strip(), t_value, f_value, n_value)
 				if has_word:
-					words.add(word)
+					words.append(word)
 			return RIPExecution(self, mutant, test, words)
 		return None
 
@@ -829,18 +817,17 @@ class RIPDocument:
 			self.exec_list.append(execution)
 		return
 
-	def load(self, file_path: str, set_none: bool, de_value: bool):
+	def load(self, file_path: str, t_value, f_value, n_value):
 		"""
 		:param file_path:	feature file
-		:param set_none: 	True -- to set validate part when it is None
-							False--	to set validate part when it is not None
-		:param de_value: 	True --	set the validate part by True
-							False--	set the validate part by False
+		:param t_value: set if validation is True
+		:param f_value: set if validation is False
+		:param n_value: set if validation is None
 		:return:
 		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				execution = self.__produce__(line.strip(), set_none, de_value)
+				execution = self.__produce__(line.strip(), t_value, f_value, n_value)
 				self.__consume__(execution)
 		return
 
@@ -852,7 +839,7 @@ if __name__ == "__main__":
 		c_project = CProject(directory_path, filename)
 		print(filename, "contains", len(c_project.mutant_space.get_mutants()), "mutants and",
 			  len(c_project.test_space.get_test_cases()), "test cases.")
-		c_document = c_project.load_static_document(directory_path, True, True)
+		c_document = c_project.load_static_document(directory_path, True, False, True)
 		print("\tLoad", len(c_document.get_executions()), "lines with", len(c_document.get_corpus()), "words...")
 		for sym_exec in c_document.get_executions():
 			sym_exec: RIPExecution
