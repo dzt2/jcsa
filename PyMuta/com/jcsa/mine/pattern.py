@@ -359,21 +359,25 @@ class RIPPattern:
 				return child
 		return self
 
-	def subsume(self, pattern):
+	def subsume(self, pattern, uk_or_cc):
 		"""
+		:param uk_or_cc: None to take all the executions, True to take non-killed, False to take CC
 		:param pattern:
 		:return: True if samples matched with the pattern are also matched by this one
 		"""
 		pattern: RIPPattern
-		for execution in pattern.get_executions():
-			if execution in self.executions:
-				continue
-			else:
-				return False
-		if len(pattern.get_executions()) == len(self.get_executions()):
-			return len(self) <= len(pattern)	# Depth Subsume
+		if uk_or_cc is None:
+			ori_executions = self.get_executions()
+			sub_executions = pattern.get_executions()
 		else:
-			return True		# Sound Subsume
+			ori_executions = self.select(True, uk_or_cc)
+			sub_executions = pattern.select(True, uk_or_cc)
+		for execution in sub_executions:
+			if not(execution in ori_executions):
+				return False
+		if len(ori_executions) == len(sub_executions):
+			return len(self) <= len(pattern)  # Depth Subsume
+		return True	# Sound Subsume
 
 	@staticmethod
 	def __print_condition__(condition: jcmuta.RIPCondition):
@@ -408,7 +412,7 @@ class RIPPatternSpace:
 	It maintains the patterns of RIP-testability features generated from mining algorithms
 	"""
 
-	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier, good_patterns: set):
+	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier, good_patterns):
 		"""
 		:param document: it provides original data samples for being classified and mined
 		:param classifier: used to estimate the performance of generated RIP-patterns
@@ -432,7 +436,6 @@ class RIPPatternSpace:
 				execution: jcmuta.RIPExecution
 				self.pat_executions.add(execution)
 				self.pat_mutants.add(execution.get_mutant())
-		self.sub_patterns = RIPPatternSpace.select_subsuming_patterns(self.all_patterns)
 		return
 
 	# data getters
@@ -458,15 +461,11 @@ class RIPPatternSpace:
 	def get_pat_mutants(self):
 		return self.pat_mutants
 
-	def get_subsuming_patterns(self):
-		return self.sub_patterns
-
-	# selection algorithm
-
 	@staticmethod
-	def select_subsuming_patterns(patterns):
+	def select_subsuming_patterns(patterns, uk_or_cc):
 		"""
 		:param patterns: set of RIP-testability patterns
+		:param uk_or_cc: None to consider all executions or select corresponding class
 		:return: minimal set of patterns that subsume the others
 		"""
 		remain_patterns, remove_patterns, minimal_patterns = set(), set(), set()
@@ -481,18 +480,27 @@ class RIPPatternSpace:
 				if subsume_pattern is None:
 					subsume_pattern = pattern
 					remove_patterns.add(pattern)
-				elif subsume_pattern.subsume(pattern):
+				elif subsume_pattern.subsume(pattern, uk_or_cc):
 					remove_patterns.add(pattern)
-				elif pattern.subsume(subsume_pattern):
+				elif pattern.subsume(subsume_pattern, uk_or_cc):
 					subsume_pattern = pattern
 					remove_patterns.add(pattern)
 			for pattern in remove_patterns:
 				remain_patterns.remove(pattern)
-			if not(subsume_pattern is None):
+			if not (subsume_pattern is None):
 				minimal_pattern = subsume_pattern
 				minimal_pattern: RIPPattern
 				minimal_patterns.add(minimal_pattern)
 		return minimal_patterns
+
+	def get_subsuming_patterns(self, uk_or_cc):
+		"""
+		:param uk_or_cc: None to consider all executions or select corresponding class
+		:return:
+		"""
+		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns, uk_or_cc)
+
+	# selection algorithm
 
 	@staticmethod
 	def remap_keys_patterns(patterns, exe_or_mut: bool):
@@ -652,6 +660,13 @@ class RIPPatternFactory:
 			pattern.set_samples(parent)
 		pattern = self.patterns[str(pattern)]
 		pattern: RIPPattern
+		return pattern
+
+	def get_estimate(self, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return:
+		"""
 		if not(pattern in self.estimate):
 			total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
 			self.estimate[pattern] = (total, support, confidence)
@@ -662,7 +677,7 @@ class RIPPatternFactory:
 		total: int
 		support: int
 		confidence: float
-		return pattern, total, support, confidence
+		return total, support, confidence
 
 
 class RIPPatternWriter:
@@ -825,6 +840,7 @@ class RIPPatternWriter:
 			self.writer = writer
 			for pattern in patterns:
 				self.__write_pattern__(pattern)
+				self.writer.write("\n")
 		return
 
 	def write_matching(self, space: RIPPatternSpace, file_path: str, exe_or_mut: bool, uk_or_cc: bool):
@@ -877,9 +893,9 @@ class RIPPatternWriter:
 		precision, recall, f1_score = RIPPatternWriter.__f1_measure__(doc_samples, pat_samples)
 		return length, len(doc_samples), len(pat_samples), reduce, precision, recall, f1_score
 
-	def __write_evaluate_all__(self, space: RIPPatternSpace):
+	def __write_evaluate_all__(self, space: RIPPatternSpace, uk_or_cc):
 		document = space.get_document()
-		patterns = space.get_subsuming_patterns()
+		patterns = space.get_subsuming_patterns(uk_or_cc)
 		classifier = space.get_classifier()
 
 		self.output("# Cost-Effective Analysis #\n")
@@ -960,12 +976,12 @@ class RIPPatternWriter:
 		"""
 		with open(file_path, 'w') as writer:
 			self.writer = writer
-			self.__write_evaluate_all__(space)
+			self.__write_evaluate_all__(space, None)
 			self.output("# Pattern Evaluate #\n")
 			self.output("\tindex\tlength\texecutions\tmutants\tuk_exe_supp\tuk_exe_conf(%)\tcc_exe_supp\tcc_exe_conf(%)"
 						"\tuk_mut_supp\tuk_mut_conf(%)\tcc_mut_supp\tcc_mut_conf(%)\n")
 			index = 0
-			for pattern in space.get_subsuming_patterns():
+			for pattern in space.get_subsuming_patterns(None):
 				index += 1
 				self.__write_evaluate_one__(index, pattern)
 		return
