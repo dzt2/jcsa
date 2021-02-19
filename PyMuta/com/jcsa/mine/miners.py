@@ -22,7 +22,7 @@ class RIPMineContext:
 
 	def __init__(self, document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bool,
 				 min_support: int, min_confidence: float, max_confidence: float,
-				 max_t_words: int, max_f_words: int):
+				 max_length: int):
 		"""
 		:param document: it provides original data for being mined
 		:param exe_or_mut: True to count on execution or mutant
@@ -30,15 +30,13 @@ class RIPMineContext:
 		:param min_support: minimal number of samples being matched within the pattern
 		:param min_confidence: minimal confidence achieved by the generated patterns
 		:param max_confidence: maximal confidence to stop the searching of pattern mining
-		:param max_t_words: maximal number of t_words allowed in patterns generated
-		:param max_f_words: maximal number of f_words allowed in patterns generated
+		:param max_length: maximal number of t_words allowed in patterns generated
 		"""
 		self.rip_factory = jcpate.RIPPatternFactory(document, jcpate.RIPClassifier(), exe_or_mut, uk_or_cc)
 		self.min_support = min_support
 		self.min_confidence = min_confidence
 		self.max_confidence = max_confidence
-		self.max_t_words = max_t_words
-		self.max_f_words = max_f_words
+		self.max_length = max_length
 		return
 
 	def get_document(self):
@@ -83,17 +81,8 @@ class RIPMineContext:
 		"""
 		return self.max_confidence
 
-	def get_max_t_words(self):
-		"""
-		:return: maximal number of t_words allowed in patterns generated
-		"""
-		return self.max_t_words
-
-	def get_max_f_words(self):
-		"""
-		:return: maximal number of f_words allowed in patterns generated
-		"""
-		return self.max_f_words
+	def get_max_length(self):
+		return self.max_length
 
 	def get_rip_factory(self):
 		"""
@@ -101,22 +90,20 @@ class RIPMineContext:
 		"""
 		return self.rip_factory
 
-	def new_root(self, word: str, select_or_remove: bool):
+	def new_root(self, word: str):
 		"""
-		:param select_or_remove:
 		:param word:
 		:return:
 		"""
-		return self.rip_factory.get_pattern(None, word, select_or_remove)
+		return self.rip_factory.get_pattern(None, word)
 
-	def new_child(self, parent: jcpate.RIPPattern, word: str, select_or_remove: bool):
+	def new_child(self, parent: jcpate.RIPPattern, word: str):
 		"""
 		:param parent:
 		:param word:
-		:param select_or_remove:
 		:return: unique instance of child pattern extended from parent by adding one word
 		"""
-		return self.rip_factory.get_pattern(parent, word, select_or_remove)
+		return self.rip_factory.get_pattern(parent, word)
 
 	def get_patterns(self):
 		return self.rip_factory.patterns.values()
@@ -138,11 +125,9 @@ class RIPMineContext:
 		good_patterns = set()
 		for pattern in patterns:
 			pattern: jcpate.RIPPattern
-			t_words = len(pattern.get_words(True))
-			f_words = len(pattern.get_words(False))
+			length = len(pattern)
 			total, support, confidence = self.estimate(pattern)
-			if support >= self.min_support and confidence >= self.min_confidence \
-					and t_words <= self.max_t_words and f_words <= self.max_f_words:
+			if support >= self.min_support and confidence >= self.min_confidence and length < self.max_length:
 				good_patterns.add(pattern)
 		return jcpate.RIPPatternSpace(self.get_document(), self.get_classifier(), good_patterns)
 
@@ -164,11 +149,11 @@ class RIPFPTMiner:
 		"""
 		self.context: RIPMineContext
 		total, support, confidence = self.context.estimate(parent)
-		t_length = len(parent.get_words(True))
+		length = len(parent.get_words())
 		if support >= self.context.get_min_support() and confidence <= self.context.get_max_confidence() \
-				and t_length < self.context.get_max_t_words():
+				and length < self.context.get_max_length():
 			for word in words:
-				child = self.context.new_child(parent, word, True)
+				child = self.context.new_child(parent, word)
 				if child != parent:
 					self.__mine__(child, words)
 		return
@@ -184,7 +169,7 @@ class RIPFPTMiner:
 			root_execution: jcmuta.RIPExecution
 			words = root_execution.get_words()
 			for word in words:
-				root = context.new_root(word, True)
+				root = context.new_root(word)
 				self.__mine__(root, words)
 		return context.new_space(context.get_patterns())
 
@@ -258,7 +243,7 @@ class RIPDTTMiner:
 		WN = list()
 		document = self.context.get_document()
 		for word in self.W:
-			condition = document.decode(word)
+			condition = document.get_condition(word)
 			category = condition.get_category()
 			operator = condition.get_operator()
 			execution = condition.get_execution()
@@ -328,9 +313,9 @@ class RIPDTTMiner:
 					word: str
 					if X[exec_id, features[node_id]] > thresholds[node_id]:
 						words.append(word)		# select True-branch words
-			pattern = self.context.new_root("", True)
+			pattern = self.context.new_root("")
 			for word in words:
-				pattern = self.context.new_child(pattern, word, True)
+				pattern = self.context.new_child(pattern, word)
 			patterns.add(pattern)
 		return patterns
 
@@ -362,7 +347,7 @@ def do_frequent_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: b
 						 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPFPTMiner()
 	context = RIPMineContext(document, exe_or_mut, uk_or_cc, min_support,
-							 min_confidence, max_confidence, max_length, max_length)
+							 min_confidence, max_confidence, max_length)
 	return miner.mine(context)
 
 
@@ -370,46 +355,56 @@ def do_decision_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: b
 						 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPDTTMiner()
 	context = RIPMineContext(document, exe_or_mut, uk_or_cc, min_support,
-							 min_confidence, max_confidence, max_length, max_length)
+							 min_confidence, max_confidence, max_length)
 	name = document.get_project().program.name
 	return miner.mine(context, os.path.join(output_directory, name + ".pdf"))
 
 
-def testing(directory: str, file_name: str, t_value, f_value, n_value,
-						  exe_or_mut: bool, uk_or_cc: bool, output_directory: str):
+def testing(inputs_directory: str, output_directory: str, model_name: str, t_value, f_value, n_value,
+			exe_or_mut: bool, uk_or_cc: bool, min_support: int, min_confidence: float,
+			max_confidence: float, max_length: int, do_mining):
 	"""
-	:param directory:
-	:param file_name:
+	:param inputs_directory:
+	:param output_directory:
+	:param model_name:
 	:param t_value:
 	:param f_value:
 	:param n_value:
 	:param exe_or_mut:
 	:param uk_or_cc:
-	:param output_directory:
+	:param min_support:
+	:param min_confidence:
+	:param max_confidence:
+	:param max_length:
+	:param do_mining:
 	:return:
 	"""
-	print("Testing on", file_name)
-	# Step-I. Load features from data files
-	document = get_rip_document(directory, file_name, t_value, f_value, n_value, output_directory)
-	print("\t(1) Load", len(document.get_executions()), "lines of", len(document.get_mutants()),
-		  "mutants with", len(document.get_corpus()), "words.")
-	# Step-II. Perform pattern mining algorithms
-	# space = do_frequent_mine(document, exe_or_mut, uk_or_cc, 2, 0.70, 0.95, 1, output_directory)
-	space = do_decision_mine(document, exe_or_mut, uk_or_cc, 2, 0.70, 0.90, 10, output_directory)
-	print("\t(2) Generate", len(space.get_patterns()), "patterns with",
-		  len(space.get_subsuming_patterns(None)), "subsuming ones.")
-	# Step-III. Evaluate the performance of mining results
-	evaluate_results(space, output_directory, file_name, exe_or_mut, uk_or_cc)
-	print("\t(3) Output the pattern, test results to output file finally...")
-
-	print()
+	output_directory = os.path.join(output_directory, model_name)
+	if not(os.path.exists(output_directory)):
+		os.mkdir(output_directory)
+	for file_name in os.listdir(inputs_directory):
+		print("Testing on", file_name)
+		# Step-I. Load features from data files
+		document = get_rip_document(os.path.join(inputs_directory, file_name),
+									file_name, t_value, f_value, n_value, output_directory)
+		print("\t(1) Load", len(document.get_executions()), "lines of", len(document.get_mutants()),
+			  "mutants with", len(document.get_corpus()), "words.")
+		# Step-II. Perform pattern mining algorithms
+		space = do_mining(document, exe_or_mut, uk_or_cc, min_support, min_confidence,
+						  max_confidence, max_length, output_directory)
+		space: jcpate.RIPPatternSpace
+		print("\t(2) Generate", len(space.get_patterns()), "patterns with",
+			  len(space.get_subsuming_patterns()), "subsuming ones.")
+		# Step-III. Evaluate the performance of mining results
+		evaluate_results(space, output_directory, file_name, exe_or_mut, uk_or_cc)
+		print("\t(3) Output the pattern, test results to output file finally...")
+		print()
 	return
 
 
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	stat_path = "/home/dzt2/Development/Data/patterns2/stat"
-	for filename in os.listdir(prev_path):
-		direct = os.path.join(prev_path, filename)
-		testing(direct, filename, True, False, True, True, True, stat_path)
+	post_path = "/home/dzt2/Development/Data/"
+	testing(prev_path, post_path, "frequent_mine", True, False, True, True, True, 2, 0.70, 0.90, 1, do_frequent_mine)
+	testing(prev_path, post_path, "decision_tree", True, False, True, True, True, 2, 0.70, 0.90, 8, do_decision_mine)
 

@@ -1,9 +1,8 @@
 """
-This file implements the data model of RIP execution patterns.
+It implements the data model and algorithms for pattern mining of mutation execution contexts for equivalence detection
 """
 
 
-import os
 from typing import TextIO
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
@@ -203,20 +202,19 @@ class RIPClassifier:
 
 class RIPPattern:
 	"""
-	The pattern of RIP execution is defined to match a subset of testing along with mutants in the document
+	The pattern of context conditions required in mutation testing process.
 	"""
 
 	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier):
 		"""
-		:param document: it provides original data samples to be matched
-		:param classifier: used to count, classify and estimate the samples in pattern
+		:param document: it provides original samples for being matched by the pattern
+		:param classifier: used to count, estimate and classify samples in the pattern
 		"""
 		self.document = document
 		self.classifier = classifier
 		self.executions = set()
 		self.mutants = set()
-		self.t_words = list()	# words to select samples
-		self.f_words = list()	# words to remove samples
+		self.words = list()
 		return
 
 	# data samples
@@ -249,7 +247,7 @@ class RIPPattern:
 		else:
 			return self.mutants
 
-	# evaluation by classifier
+	# evaluations
 
 	def get_classifier(self):
 		"""
@@ -271,54 +269,41 @@ class RIPPattern:
 
 	# feature model
 
-	def get_words(self, select_or_remove: bool):
+	def get_words(self):
 		"""
-		:param select_or_remove:
-								True to get selecting words
-								False to get removing words
-		:return:
+		:return: words the encode the conditions required in executions matched by the pattern
 		"""
-		if select_or_remove:
-			return self.t_words
-		else:
-			return self.f_words
+		return self.words
 
-	def get_conditions(self, select_or_remove: bool):
+	def get_conditions(self):
 		"""
-		:param select_or_remove:
-								True to get selecting conditions
-								False to get removing conditions
-		:return:
+		:return: the conditions required in executions matched by the pattern
 		"""
-		words = self.get_words(select_or_remove)
 		conditions = list()
-		for word in words:
-			conditions.append(self.document.decode(word))
+		for word in self.words:
+			conditions.append(self.document.get_condition(word))
 		return conditions
 
 	def __str__(self):
-		return str(self.t_words) + str(self.f_words)
+		return str(self.words)
 
 	def __len__(self):
-		return len(self.t_words) + len(self.f_words)
+		return len(self.words)
 
 	def __matching__(self, execution: jcmuta.RIPExecution):
 		"""
 		:param execution:
-		:return:
+		:return: True if the mutation execution matches with this pattern
 		"""
-		for word in self.t_words:
+		for word in self.words:
 			if not(word in execution.get_words()):
-				return False
-		for word in self.f_words:
-			if word in execution.get_words():
 				return False
 		return True
 
 	def set_samples(self, parent):
 		"""
-		:param parent: parent pattern that generates this one
-		:return:
+		:param parent: parent pattern from which this pattern is extended.
+		:return: update the samples matched by this pattern
 		"""
 		if parent is None:
 			executions = self.document.get_executions()
@@ -334,29 +319,21 @@ class RIPPattern:
 				self.mutants.add(execution.get_mutant())
 		return
 
-	# relations
+	# relationships
 
-	def extends(self, word: str, select_or_remove: bool):
+	def extends(self, word: str):
 		"""
 		:param word:
-		:param select_or_remove:
-		:return: child pattern extended from this pattern but parent if word is invalid
+		:return: child pattern extended from this one by adding one new word
 		"""
 		word = word.strip()
-		if len(word) > 0:
-			if not(word in self.t_words) and not(word in self.f_words):
-				child = RIPPattern(self.document, self.classifier)
-				for t_word in self.t_words:
-					child.t_words.append(t_word)
-				for f_word in self.f_words:
-					child.f_words.append(f_word)
-				if select_or_remove:
-					child.t_words.append(word)
-				else:
-					child.f_words.append(word)
-				child.t_words.sort()
-				child.f_words.sort()
-				return child
+		if len(word) > 0 and not(word in self.words):
+			child = RIPPattern(self.document, self.classifier)
+			for old_word in self.words:
+				child.words.append(old_word)
+			child.words.append(word)
+			child.words.sort()
+			return child
 		return self
 
 	def subsume(self, pattern, uk_or_cc):
@@ -373,43 +350,81 @@ class RIPPattern:
 			ori_executions = self.select(True, uk_or_cc)
 			sub_executions = pattern.select(True, uk_or_cc)
 		for execution in sub_executions:
-			if not(execution in ori_executions):
+			if not (execution in ori_executions):
 				return False
 		if len(ori_executions) == len(sub_executions):
 			return len(self) <= len(pattern)  # Depth Subsume
-		return True	# Sound Subsume
+		return True  # Sound Subsume
 
-	@staticmethod
-	def __print_condition__(condition: jcmuta.RIPCondition):
+
+class RIPPatternFactory:
+	"""
+	It manages the patterns and its estimate scores.
+	"""
+
+	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier,
+				 exe_or_mut: bool, uk_or_cc: bool):
+		self.document = document
+		self.classifier = classifier
+		self.exe_or_mut = exe_or_mut
+		self.uk_or_cc = uk_or_cc
+		self.patterns = dict()	# String ==> RIPPattern
+		self.estimate = dict()	# RIPPattern ==> [total, support, confidence]
+		return
+
+	def get_document(self):
 		"""
-		:param condition:
 		:return:
 		"""
-		category = condition.get_category()
-		operator = condition.get_operator()
-		execution = str(condition.get_execution())
-		location = "\"" + condition.get_location().get_cir_code() + "\""
-		if condition.get_parameter() is None:
-			parameter = "null"
-		else:
-			parameter = "[" + condition.get_parameter().get_code() + "]"
-		return "({}:{}:{}:{}:{})".format(category, operator, execution, location, parameter)
+		return self.document
 
-	def print(self, split: str):
-		text = ""
-		for condition in self.get_conditions(True):
-			text += RIPPattern.__print_condition__(condition)
-			text += split
-		for condition in self.get_conditions(False):
-			text += "NOT" + RIPPattern.__print_condition__(condition)
-			text += split
-		text += "#EOF"
-		return text
+	def get_classifier(self):
+		"""
+		:return:
+		"""
+		return self.classifier
+
+	def get_pattern(self, parent, word: str):
+		"""
+		:param parent:
+		:param word:
+		:return: unique pattern w.r.t. the parent
+					pattern, total, support, confidence
+		"""
+		if parent is None:
+			pattern = RIPPattern(self.document, self.classifier)
+			pattern = pattern.extends(word)
+		else:
+			parent: RIPPattern
+			pattern = parent.extends(word)
+		if not(str(pattern) in self.patterns):
+			self.patterns[str(pattern)] = pattern
+			pattern.set_samples(parent)
+		pattern = self.patterns[str(pattern)]
+		pattern: RIPPattern
+		return pattern
+
+	def get_estimate(self, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return:
+		"""
+		if not(pattern in self.estimate):
+			total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
+			self.estimate[pattern] = (total, support, confidence)
+		solution = self.estimate[pattern]
+		total = solution[0]
+		support = solution[1]
+		confidence = solution[2]
+		total: int
+		support: int
+		confidence: float
+		return total, support, confidence
 
 
 class RIPPatternSpace:
 	"""
-	It maintains the patterns of RIP-testability features generated from mining algorithms
+	Where the patterns are generated and preserved.
 	"""
 
 	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier, good_patterns):
@@ -461,6 +476,8 @@ class RIPPatternSpace:
 	def get_pat_mutants(self):
 		return self.pat_mutants
 
+	# selection algorithm
+
 	@staticmethod
 	def select_subsuming_patterns(patterns, uk_or_cc):
 		"""
@@ -492,15 +509,6 @@ class RIPPatternSpace:
 				minimal_pattern: RIPPattern
 				minimal_patterns.add(minimal_pattern)
 		return minimal_patterns
-
-	def get_subsuming_patterns(self, uk_or_cc):
-		"""
-		:param uk_or_cc: None to consider all executions or select corresponding class
-		:return:
-		"""
-		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns, uk_or_cc)
-
-	# selection algorithm
 
 	@staticmethod
 	def remap_keys_patterns(patterns, exe_or_mut: bool):
@@ -597,7 +605,19 @@ class RIPPatternSpace:
 					keys_patterns.pop(sample)
 		return minimal_patterns
 
-	def select_best_patterns(self, exe_or_mut: bool, uk_or_cc: bool):
+	# data inference
+
+	def get_subsuming_patterns(self, uk_or_cc=None):
+		"""
+		:param uk_or_cc: None to consider all executions or select corresponding class
+		:return:
+		"""
+		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns, uk_or_cc)
+
+	def get_minimal_patterns(self, exe_or_mut: bool):
+		return RIPPatternSpace.select_minimal_patterns(self.all_patterns, exe_or_mut)
+
+	def get_best_patterns(self, exe_or_mut: bool, uk_or_cc: bool):
 		"""
 		:param exe_or_mut: used to estimate
 		:param uk_or_cc: used to estimate
@@ -612,72 +632,6 @@ class RIPPatternSpace:
 				best_pattern: RIPPattern
 				best_patterns[mutant] = best_pattern
 		return best_patterns
-
-
-class RIPPatternFactory:
-	"""
-	It manages the patterns and its estimate scores.
-	"""
-
-	def __init__(self, document: jcmuta.RIPDocument, classifier: RIPClassifier,
-				 exe_or_mut: bool, uk_or_cc: bool):
-		self.document = document
-		self.classifier = classifier
-		self.exe_or_mut = exe_or_mut
-		self.uk_or_cc = uk_or_cc
-		self.patterns = dict()	# String ==> RIPPattern
-		self.estimate = dict()	# RIPPattern ==> [total, support, confidence]
-		return
-
-	def get_document(self):
-		"""
-		:return:
-		"""
-		return self.document
-
-	def get_classifier(self):
-		"""
-		:return:
-		"""
-		return self.classifier
-
-	def get_pattern(self, parent, word: str, select_or_remove: bool):
-		"""
-		:param parent:
-		:param word:
-		:param select_or_remove:
-		:return: unique pattern w.r.t. the parent
-					pattern, total, support, confidence
-		"""
-		if parent is None:
-			pattern = RIPPattern(self.document, self.classifier)
-			pattern = pattern.extends(word, select_or_remove)
-		else:
-			parent: RIPPattern
-			pattern = parent.extends(word, select_or_remove)
-		if not(str(pattern) in self.patterns):
-			self.patterns[str(pattern)] = pattern
-			pattern.set_samples(parent)
-		pattern = self.patterns[str(pattern)]
-		pattern: RIPPattern
-		return pattern
-
-	def get_estimate(self, pattern: RIPPattern):
-		"""
-		:param pattern:
-		:return:
-		"""
-		if not(pattern in self.estimate):
-			total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
-			self.estimate[pattern] = (total, support, confidence)
-		solution = self.estimate[pattern]
-		total = solution[0]
-		support = solution[1]
-		confidence = solution[2]
-		total: int
-		support: int
-		confidence: float
-		return total, support, confidence
 
 
 class RIPPatternWriter:
@@ -772,13 +726,13 @@ class RIPPatternWriter:
 	def __write_pattern_feature__(self, pattern: RIPPattern):
 		"""
 		:param pattern:
-		:return: select condition category operator validate execution statement location parameter
+		:return: condition category operator validate execution statement location parameter
 		"""
-		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
-		self.output(template.format("Select", "Condition", "Category", "Operator", "Validate",
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Condition", "Category", "Operator", "Validate",
 									"Execution", "Statement", "Location", "Parameter"))
 		index = 0
-		for feature in pattern.get_conditions(True):
+		for feature in pattern.get_conditions():
 			index += 1
 			category = feature.get_category()
 			operator = feature.get_operator()
@@ -790,21 +744,7 @@ class RIPPatternWriter:
 				parameter = ""
 			else:
 				parameter = feature.get_parameter().get_code()
-			self.output(template.format(True, index, category, operator, validate,
-										execution, statement, location, parameter))
-		for feature in pattern.get_conditions(False):
-			index += 1
-			category = feature.get_category()
-			operator = feature.get_operator()
-			validate = feature.get_validate()
-			execution = feature.get_execution()
-			statement = feature.get_execution().get_statement().get_cir_code()
-			location = feature.get_location().get_cir_code()
-			if feature.get_parameter() is None:
-				parameter = ""
-			else:
-				parameter = feature.get_parameter().get_code()
-			self.output(template.format(False, index, category, operator, validate,
+			self.output(template.format(index, category, operator, validate,
 										execution, statement, location, parameter))
 		self.output("\n")
 
@@ -853,7 +793,7 @@ class RIPPatternWriter:
 					Pattern
 					Category Operator Validate Execution Statement Location Parameter*
 		"""
-		mutants_patterns = space.select_best_patterns(exe_or_mut, uk_or_cc)
+		mutants_patterns = space.get_best_patterns(exe_or_mut, uk_or_cc)
 		with open(file_path, 'w') as writer:
 			self.writer = writer
 			for mutant, pattern in mutants_patterns.items():

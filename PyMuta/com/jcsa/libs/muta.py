@@ -530,28 +530,25 @@ class MutationTestEvaluation:
 
 class RIPCondition:
 	"""
-	The condition in RIP execution path, which needs to be satisfied for killing that mutant.
-		(1)	category: constraint or observation
-		(2) operator: annotation type to refine the condition type
-		(3) validate: True 	(definitively reachable)
-					  False (definitively non-reachable)
-					  None	(might-be reachable)
-		(4) execution: the execution point where the condition is defined
-		(5) location: the C-intermediate representation location being described
-		(6) parameter: symbolic expression to refine the condition or None
+	The condition defined and required in mutation testing process in terms of Reachability, Infection & Propagation
+	model, including the following attributes as:
+		---	category: either "constraint" or "observation";
+		---	operator: annotation name to refine the type;
+		---	validate: True (satisfied); False (not-satisfied); None (unknown).
+		---	execution: the statement point where the condition is evaluated;
+		---	location: the C-intermediate element where the condition is defined;
+		---	parameter: None or symbolic expression to refine the condition;
 	"""
 
 	def __init__(self, category: str, operator: str, validate: bool, execution: jcparse.CirExecution,
 				 location: jcparse.CirNode, parameter: jcbase.SymNode):
 		"""
-		:param category: constraint or observation
-		:param operator: annotation type to refine the condition type
-		:param validate: True 	(definitively reachable)
-					  	False (definitively non-reachable)
-					  	None	(might-be reachable)
-		:param execution: the execution point where the condition is defined
-		:param location: the C-intermediate representation location being described
-		:param parameter: symbolic expression to refine the condition or None
+		:param category: either "constraint" or "observation";
+		:param operator: annotation name to refine the type;
+		:param validate: True (satisfied); False (not-satisfied); None (unknown).
+		:param execution: the statement point where the condition is evaluated;
+		:param location: the C-intermediate element where the condition is defined;
+		:param parameter: None or symbolic expression to refine the condition;
 		"""
 		self.category = category
 		self.operator = operator
@@ -563,59 +560,52 @@ class RIPCondition:
 
 	def get_category(self):
 		"""
-		:return: constraint or observation
+		:return: either "constraint" or "observation";
 		"""
 		return self.category
 
 	def get_operator(self):
 		"""
-		:return: annotation type to refine the condition type
+		:return: annotation name to refine the type;
 		"""
 		return self.operator
 
 	def get_validate(self):
 		"""
-		:return: 	True 	(definitively reachable)
-					False 	(definitively non-reachable)
-					None	(might-be reachable)
+		:return: True (satisfied); False (not-satisfied); None (unknown).
 		"""
 		return self.validate
 
 	def get_execution(self):
 		"""
-		:return: the execution point where the condition is defined
+		:return: the statement point where the condition is evaluated;
 		"""
 		return self.execution
 
 	def get_location(self):
 		"""
-		:return:  the C-intermediate representation location being described
+		:return: the C-intermediate element where the condition is defined;
 		"""
 		return self.location
 
 	def get_parameter(self):
 		"""
-		:return: symbolic expression to refine the condition or None
+		:return: None or symbolic expression to refine the condition;
 		"""
 		return self.parameter
 
 
 class RIPExecution:
 	"""
-	The execution path annotated with conditions required for killing a mutant using RIP analysis.
-		(1) document: where the execution path is preserved.
-		(2) mutant: the mutation as target for being killed.
-		(3) test: the test case being executed or None if the execution path is extracted using static analysis
-		(4) conditions: the sequence of RIP-conditions required for killing the target mutation in execution.
-		(5) words: the sequence of words that encode the RIP-conditions required for killing that mutant.
+	It describes the testing execution of mutation and test case with respect to a set of conditions required.
 	"""
 
-	def __init__(self, document, mutant: Mutant, test: TestCase, words):
+	def __init__(self, document, mutant: Mutant, test, words):
 		"""
-		:param document: where the execution path is preserved.
-		:param mutant: the mutation as target for being killed.
-		:param test: the test case being executed or None if the execution path is extracted using static analysis
-		:param words: the sequence of words that encode the RIP-conditions required for killing that mutant.
+		:param document: document where the execution is created
+		:param mutant: mutation being killed as the target of the testing execution.
+		:param test: test case used to execute the mutation testing execution.
+		:param words: the set of words encoding the RIP-conditions required within.
 		"""
 		document: RIPDocument
 		self.document = document
@@ -629,69 +619,55 @@ class RIPExecution:
 
 	def get_document(self):
 		"""
-		:return: where the execution path is preserved.
+		:return:  document where the execution is created
 		"""
 		return self.document
 
 	def get_mutant(self):
 		"""
-		:return: the mutation as target for being killed.
+		:return: mutation being killed as the target of the testing execution.
 		"""
 		return self.mutant
 
+	def has_test(self):
+		"""
+		:return: True if the execution is generated using dynamic analysis or static analysis alternatively.
+		"""
+		return not(self.test is None)
+
 	def get_test(self):
 		"""
-		:return: the test case being executed or None if the execution path is extracted using static analysis
+		:return: test case used to execute the mutation testing execution.
 		"""
 		return self.test
 
 	def get_words(self):
 		"""
-		:return: the sequence of words that encode the RIP-conditions required for killing that mutant.
+		:return: the set of words encoding the RIP-conditions required within.
 		"""
 		return self.words
 
 	def get_conditions(self):
 		"""
-		:return: the sequence of RIP-conditions required for killing the target mutation in execution.
+		:return: the RIP-conditions required within the testing execution process.
 		"""
 		conditions = list()
 		for word in self.words:
-			conditions.append(self.document.decode(word))
+			conditions.append(self.document.get_condition(word))
 		return conditions
-
-	def get_results(self):
-		"""
-		:return: [coverage_result, weak_result, strong_result]
-				(1) whether the mutated statement is reached
-				(2) whether the mutation infects program state
-				(3) whether the mutant is detected by the test
-		"""
-		s_result = self.mutant.get_result()
-		w_result = self.mutant.get_weak_mutant().get_result()
-		c_result = self.mutant.get_coverage_mutant().get_result()
-		if self.test is None:
-			return c_result.is_killable(), w_result.is_killable(), s_result.is_killable()
-		else:
-			return c_result.is_killed_by(self.test), w_result.is_killed_by(self.test), s_result.is_killed_by(self.test)
 
 
 class RIPDocument:
 	"""
-	The document preserves the RIP-execution paths for killing each mutant in the project.
-		(1) project: it provides contextual information to generate RIP-condition(s) by decoding words;
-		(2) corpus: the set of words encoding the conditions required in RIP execution path for mutant;
-		(3) exec_list: the set of RIP-execution paths for killing each mutant in the project;
-		(4) muta_exec: the mapping from mutant to the set of RIP execution paths for killing that mutant;
-		(5) test_exec: the mapping from test case to the set of RIP execution paths whether it is used.
+	The document with mutation testing executions and conditions required & bind with them
 	"""
 
 	def __init__(self, project: CProject):
-		self.project = project
-		self.corpus = set()
-		self.exec_list = list()
-		self.muta_exec = dict()
-		self.test_exec = dict()
+		self.project = project		# it provides original data to instantiate the conditions used.
+		self.corpus = set()			# set of words encoding RIP-conditions in the mutation testing.
+		self.exec_list = list()		# the set of mutation test executions being recorded in document.
+		self.muta_exec = dict()		# mapping from mutation to the executions where it is executed.
+		self.test_exec = dict()		# mapping from test case to the executions where it is used.
 		return
 
 	def get_project(self):
@@ -712,7 +688,7 @@ class RIPDocument:
 	def get_executions_of(self, key):
 		"""
 		:param key: Mutant or TestCase
-		:return: set of RIP execution paths w.r.t. the key
+		:return: set of executions related with the key
 		"""
 		if key in self.muta_exec:
 			executions = self.muta_exec[key]
@@ -723,39 +699,23 @@ class RIPDocument:
 		executions: set
 		return executions
 
-	def decode(self, word: str):
+	def __wording__(self, word: str, t_value, f_value, n_value):
 		"""
 		:param word: category$operator$validate$execution$location$parameter
-		:return: RIPCondition
-		"""
-		items = word.strip().split('$')
-		category = items[0].strip()
-		operator = items[1].strip()
-		validate = jcbase.CToken.parse(items[2].strip()).get_token_value()
-		exec_key = jcbase.CToken.parse(items[3].strip()).get_token_value()
-		loct_key = jcbase.CToken.parse(items[4].strip()).get_token_value()
-		execution = self.project.program.function_call_graph.get_execution(exec_key[0], exec_key[1])
-		location = self.project.program.cir_tree.get_cir_node(loct_key)
-		param_key = jcbase.CToken.parse(items[5].strip()).get_token_value()
-		if param_key is None:
-			parameter = None
-		else:
-			parameter = self.project.sym_tree.get_sym_node(items[5].strip())
-		return RIPCondition(category, operator, validate, execution, location, parameter)
-
-	def __filter__(self, word: str, t_value, f_value, n_value):
-		"""
-		:param word: category$operator$validate$execution$location$parameter
-		:param t_value: set if validation is True
-		:param f_value: set if validation is False
-		:param n_value: set if validation is None
-		:return: category$operator$<validate>$execution$location$parameter
+		:param t_value: value set to validate if it is True
+		:param f_value: value set to validate if it is False
+		:param n_value: value set to validate if it is None
+		:return: standard word being set with specified value of validate
 		"""
 		if len(word.strip()) > 0:
 			items = word.strip().split('$')
 			category = items[0].strip()
 			operator = items[1].strip()
 			bool_val = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			execution = items[3].strip()
+			location = items[4].strip()
+			parameter = items[5].strip()
+
 			if bool_val is None:
 				bool_val = n_value
 			elif bool_val:
@@ -768,68 +728,87 @@ class RIPDocument:
 				validate = "b@true"
 			else:
 				validate = "b@false"
-			execution = items[3].strip()
-			location = items[4].strip()
-			parameter = items[5].strip()
+
 			word = "{}${}${}${}${}${}".format(category, operator, validate, execution, location, parameter)
 			self.corpus.add(word)
-		else:
-			word = word.strip()
-		return word, len(word) > 0
+		return word.strip()
 
 	def __produce__(self, line: str, t_value, f_value, n_value):
 		"""
-		:param line: mid tid word+
-		:param t_value: set if validation is True
-		:param f_value: set if validation is False
-		:param n_value: set if validation is None
-		:return: RIP-execution or None
+		:param line:
+		:param t_value:
+		:param f_value:
+		:param n_value:
+		:return: mutation testing execution with condition words
 		"""
 		if len(line.strip()) > 0:
 			items = line.strip().split('\t')
 			mid = int(items[0].strip())
-			tid = int(items[1].strip())
 			mutant = self.project.mutant_space.get_mutant(mid)
+			tid = int(items[1].strip())
 			if tid < 0:
 				test = None
 			else:
 				test = self.project.test_space.get_test_case(tid)
-			words = list()
+			words = set()
 			for k in range(2, len(items)):
-				word, has_word = self.__filter__(items[k].strip(), t_value, f_value, n_value)
-				if has_word:
-					words.append(word)
+				word = items[k].strip()
+				if len(word) > 0:
+					word = self.__wording__(word, t_value, f_value, n_value)
+					words.add(word)
 			return RIPExecution(self, mutant, test, words)
 		return None
 
 	def __consume__(self, execution: RIPExecution):
 		"""
 		:param execution:
-		:return: add the execution in local document
+		:return:
 		"""
 		if not(execution is None):
-			if not(execution.get_mutant() in self.muta_exec):
-				self.muta_exec[execution.get_mutant()] = set()
-			self.muta_exec[execution.get_mutant()].add(execution)
-			if not(execution.get_test() in self.test_exec):
-				self.test_exec[execution.get_test()] = set()
-			self.test_exec[execution.get_test()].add(execution)
+			mutant = execution.get_mutant()
+			test = execution.get_test()
 			self.exec_list.append(execution)
+			if not(mutant in self.muta_exec):
+				self.muta_exec[mutant] = set()
+			if not(test in self.test_exec):
+				self.test_exec[test] = set()
+			self.muta_exec[mutant].add(execution)
+			self.test_exec[test].add(execution)
 		return
 
 	def load(self, file_path: str, t_value, f_value, n_value):
 		"""
-		:param file_path:	feature file
-		:param t_value: set if validation is True
-		:param f_value: set if validation is False
-		:param n_value: set if validation is None
-		:return:
+		:param file_path:
+		:param t_value: value set to validate if it is True
+		:param f_value: value set to validate if it is False
+		:param n_value: value set to validate if it is None
+		:return: load the execution and condition information into the document
 		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				execution = self.__produce__(line.strip(), t_value, f_value, n_value)
-				self.__consume__(execution)
+				self.__consume__(self.__produce__(line.strip(), t_value, f_value, n_value))
 		return
+
+	def get_condition(self, word: str):
+		"""
+		:param word: category$operator$validate$execution$location$parameter
+		:return: RIPCondition
+		"""
+		items = word.strip().split('$')
+		category = items[0].strip()
+		operator = items[1].strip()
+		validate = jcbase.CToken.parse(items[2].strip()).get_token_value()
+		exec_tok = jcbase.CToken.parse(items[3].strip()).get_token_value()
+		execution = self.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
+		loct_tok = jcbase.CToken.parse(items[4].strip()).get_token_value()
+		location = self.project.program.cir_tree.get_cir_node(loct_tok)
+		param_tok = jcbase.CToken.parse(items[5].strip()).get_token_value()
+		if param_tok is None:
+			parameter = None
+		else:
+			parameter = self.project.sym_tree.get_sym_node(items[5].strip())
+		return RIPCondition(category, operator, validate, execution, location, parameter)
+
 
 
 if __name__ == "__main__":
@@ -844,11 +823,11 @@ if __name__ == "__main__":
 		for sym_exec in c_document.get_executions():
 			sym_exec: RIPExecution
 			for rip_condition in sym_exec.get_conditions():
-				print("\t\t==>", rip_condition.get_category(),
-					  "\t", rip_condition.get_operator(),
-					  "\t", rip_condition.get_validate(),
-					  "\t", rip_condition.get_execution(),
-					  "\t\"", rip_condition.get_location().get_cir_code(),
-					  "\"\t{", rip_condition.get_parameter(), "}")
+				print("\t\t==>{}\t{}\t{}\t{}\t\"{}\"\t[{}]".format(rip_condition.get_category(),
+																	 rip_condition.get_operator(),
+																	 rip_condition.get_validate(),
+																	 rip_condition.get_execution(),
+																	 rip_condition.get_location().get_cir_code(),
+																	 rip_condition.get_parameter()))
 		print()
 
