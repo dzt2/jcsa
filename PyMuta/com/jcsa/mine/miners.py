@@ -95,7 +95,7 @@ class RIPMineContext:
 		:param word:
 		:return:
 		"""
-		return self.rip_factory.get_pattern(None, word)
+		return self.rip_factory.new_pattern(None, word)
 
 	def new_child(self, parent: jcpate.RIPPattern, word: str):
 		"""
@@ -103,7 +103,7 @@ class RIPMineContext:
 		:param word:
 		:return: unique instance of child pattern extended from parent by adding one word
 		"""
-		return self.rip_factory.get_pattern(parent, word)
+		return self.rip_factory.new_pattern(parent, word)
 
 	def get_patterns(self):
 		return self.rip_factory.patterns.values()
@@ -115,7 +115,7 @@ class RIPMineContext:
 		return pattern.classify(self.is_exe_or_mut())
 
 	def estimate(self, pattern: jcpate.RIPPattern):
-		return self.rip_factory.get_estimate(pattern)
+		return self.rip_factory.estimate(pattern)
 
 	def new_space(self, patterns):
 		"""
@@ -345,6 +345,7 @@ def get_rip_document(directory: str, file_name: str, t_value, f_value, n_value, 
 def do_frequent_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPFPTMiner()
+	output_directory.strip()
 	context = RIPMineContext(document, exe_or_mut, uk_or_cc, min_support,
 							 min_confidence, max_confidence, max_length)
 	return miner.mine(context)
@@ -394,7 +395,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str, t_val
 						  max_confidence=max_confidence, max_length=max_length, output_directory=output_directory)
 		space: jcpate.RIPPatternSpace
 		print("\t(2) Generate", len(space.get_patterns()), "patterns with",
-			  len(space.get_subsuming_patterns()), "subsuming ones.")
+			  len(space.get_subsuming_patterns(None)), "subsuming ones.")
 		# Step-III. Evaluate the performance of mining results
 		evaluate_results(space, output_directory, file_name, exe_or_mut, uk_or_cc)
 		print("\t(3) Output the pattern, test results to output file finally...")
@@ -405,6 +406,6 @@ def testing(inputs_directory: str, output_directory: str, model_name: str, t_val
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
-	# testing(prev_path, post_path, "decision_tree", True, False, True, True, True, 2, 0.70, 0.90, 8, do_decision_mine)
+	testing(prev_path, post_path, "decision_tree", True, False, True, True, True, 2, 0.70, 0.90, 8, do_decision_mine)
 	testing(prev_path, post_path, "frequent_mine", True, False, True, True, True, 2, 0.70, 0.90, 1, do_frequent_mine)
 
