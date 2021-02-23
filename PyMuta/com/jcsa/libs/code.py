@@ -9,6 +9,7 @@ import com.jcsa.libs.base as jcbase
 
 class CProgram:
 	def __init__(self, directory: str, file_name: str):
+		self.directory = directory
 		self.name = file_name
 		cpp_file_path = os.path.join(directory, file_name + ".c")
 		ast_file_path = os.path.join(directory, file_name + ".ast")

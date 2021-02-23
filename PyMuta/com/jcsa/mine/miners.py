@@ -1,135 +1,643 @@
 """
-This file implements the pattern mining algorithms to generated RIP execution patterns from its conditions as features.
+This file implements the IO-interfaces + pattern mining algorithms.
 """
 
 
+from typing import TextIO
+import com.jcsa.libs.base as jcbase
+import com.jcsa.libs.muta as jcmuta
+import com.jcsa.mine.pattern as jcpate
 import os
+import pydotplus
 from sklearn import tree
 from sklearn import metrics
 from scipy import sparse
-import com.jcsa.libs.muta as jcmuta
-import com.jcsa.mine.pattern as jcpate
-import pydotplus
-
-
-# pattern mining algorithms
 
 
 class RIPMineContext:
 	"""
-	It provides contextual (external) data used in pattern mining.
+	It provides the contextual information used for pattern mining and interfaces to produce unique instance of
+	RIP-patterns in project under test.
 	"""
 
-	def __init__(self, document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bool,
+	def __init__(self, document: jcpate.RIPDocument, exe_or_mut: bool, uk_or_cc: bool,
 				 min_support: int, min_confidence: float, max_confidence: float,
 				 max_length: int):
 		"""
-		:param document: it provides original data for being mined
-		:param exe_or_mut: True to count on execution or mutant
-		:param uk_or_cc: True to take non-killed as target or coincidental correctness
-		:param min_support: minimal number of samples being matched within the pattern
-		:param min_confidence: minimal confidence achieved by the generated patterns
-		:param max_confidence: maximal confidence to stop the searching of pattern mining
-		:param max_length: maximal number of t_words allowed in patterns generated
+		:param document: it provides the basic information for evaluating pattern mining
+		:param exe_or_mut: True to take executions as samples or mutants for estimations
+		:param uk_or_cc: True to take non-killed samples as support or coincidental correct
+		:param min_support: minimal number of supports needed to generate patterns
+		:param min_confidence: minimal confidence to select the better patterns generated
+		:param max_confidence: maximal confidence to terminate the pattern generations
+		:param max_length: maximal length of features in generated patterns
 		"""
-		self.rip_factory = jcpate.RIPPatternFactory(document, jcpate.RIPClassifier(), exe_or_mut, uk_or_cc)
+		self.document = document
+		self.classifier = jcpate.RIPClassifier()  # to estimate the patterns
+		self.patterns = dict()  # String ==> RIPPattern (unique instance)
+		self.solution = dict()  # RIPPattern ==> [total, support, confidence]
+		# parameters
+		self.exe_or_mut = exe_or_mut
+		self.uk_or_cc = uk_or_cc
 		self.min_support = min_support
 		self.min_confidence = min_confidence
 		self.max_confidence = max_confidence
 		self.max_length = max_length
 		return
 
+	# getters
+
 	def get_document(self):
-		"""
-		:return: it provides original data for being mined
-		"""
-		return self.rip_factory.get_document()
+		return self.document
 
 	def get_classifier(self):
-		"""
-		:return: the classifier used to evaluate generated patterns
-		"""
-		return self.rip_factory.get_classifier()
+		return self.classifier
 
 	def is_exe_or_mut(self):
-		"""
-		:return: True to count on execution or mutant
-		"""
-		return self.rip_factory.exe_or_mut
+		return self.exe_or_mut
 
 	def is_uk_or_cc(self):
-		"""
-		:return: True to take non-killed as target or coincidental correctness
-		"""
-		return self.rip_factory.uk_or_cc
+		return self.uk_or_cc
 
 	def get_min_support(self):
-		"""
-		:return: minimal number of samples being matched within the pattern
-		"""
 		return self.min_support
 
 	def get_min_confidence(self):
-		"""
-		:return: minimal confidence achieved by the generated patterns
-		"""
 		return self.min_confidence
 
 	def get_max_confidence(self):
-		"""
-		:return: maximal confidence to stop the searching of pattern mining
-		"""
 		return self.max_confidence
 
 	def get_max_length(self):
 		return self.max_length
 
-	def get_rip_factory(self):
-		"""
-		:return: it is used to generate unique encoded patterns
-		"""
-		return self.rip_factory
+	# factory
 
-	def new_root(self, word: str):
-		"""
-		:param word:
-		:return:
-		"""
-		return self.rip_factory.new_pattern(None, word)
-
-	def new_child(self, parent: jcpate.RIPPattern, word: str):
+	def __new_pattern__(self, parent, word: str):
 		"""
 		:param parent:
 		:param word:
-		:return: unique instance of child pattern extended from parent by adding one word
+		:return: the unique instance of pattern extended from parent by adding one word
 		"""
-		return self.rip_factory.new_pattern(parent, word)
+		if parent is None:
+			pattern = jcpate.RIPPattern(self.document, self.classifier)
+			pattern = pattern.extends(word)
+		else:
+			parent: jcpate.RIPPattern
+			pattern = parent.extends(word)
+		if not(str(pattern) in self.patterns):
+			self.patterns[str(pattern)] = pattern
+			pattern.set_samples(parent)
+		pattern = self.patterns[str(pattern)]
+		pattern: jcpate.RIPPattern
+		return pattern
 
-	def get_patterns(self):
-		return self.rip_factory.patterns.values()
+	def new_root(self, word: str):
+		return self.__new_pattern__(None, word)
 
-	def counting(self, pattern: jcpate.RIPPattern):
-		return pattern.counting(self.is_exe_or_mut())
-
-	def classify(self, pattern: jcpate.RIPPattern):
-		return pattern.classify(self.is_exe_or_mut())
+	def new_child(self, parent: jcpate.RIPPattern, word: str):
+		return self.__new_pattern__(parent, word)
 
 	def estimate(self, pattern: jcpate.RIPPattern):
-		return self.rip_factory.estimate(pattern)
-
-	def new_space(self, patterns):
 		"""
-		:param patterns:
-		:return: space of patterns that satisfy the metrics being specified in the program
+		:param pattern:
+		:return: total, support, confidence
+		"""
+		if not(pattern in self.solution):
+			total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
+			self.solution[pattern] = (total, support, confidence)
+		solution = self.solution[pattern]
+		total = solution[0]
+		support = solution[1]
+		confidence = solution[2]
+		total: int
+		support: int
+		confidence: float
+		return total, support, confidence
+
+	def extract_good_patterns(self):
+		"""
+		:return: the set of patterns available with the parameters in the context
 		"""
 		good_patterns = set()
+		for pattern, solution in self.solution.items():
+			pattern: jcpate.RIPPattern
+			support = solution[1]
+			confidence = solution[2]
+			length = len(pattern)
+			if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
+				good_patterns.add(pattern)
+		return good_patterns
+
+
+class RIPPatternSpace:
+	"""
+	The space preserves the patterns generated and selected from mining algorithms.
+	"""
+
+	def __init__(self, document: jcpate.RIPDocument, classifier: jcpate.RIPClassifier, good_patterns):
+		"""
+		:param document: it provides original data samples for being classified and mined
+		:param classifier: used to estimate the performance of generated RIP-patterns
+		:param good_patterns: set of RIP-testability pattern being generated from program
+		"""
+		self.document = document
+		self.doc_executions = set()
+		self.doc_mutants = set()
+		for execution in document.get_executions():
+			execution: jcpate.RIPExecution
+			self.doc_executions.add(execution)
+			self.doc_mutants.add(execution.get_mutant())
+		self.classifier = classifier
+		self.all_patterns = set()
+		self.pat_executions = set()
+		self.pat_mutants = set()
+		for pattern in good_patterns:
+			pattern: jcpate.RIPPattern
+			self.all_patterns.add(pattern)
+			for execution in pattern.get_executions():
+				execution: jcpate.RIPExecution
+				self.pat_executions.add(execution)
+				self.pat_mutants.add(execution.get_mutant())
+		return
+
+	# data getters
+
+	def get_document(self):
+		return self.document
+
+	def get_doc_executions(self):
+		return self.doc_executions
+
+	def get_doc_mutants(self):
+		return self.doc_mutants
+
+	def get_classifier(self):
+		return self.classifier
+
+	def get_patterns(self):
+		return self.all_patterns
+
+	def get_pat_executions(self):
+		return self.pat_executions
+
+	def get_pat_mutants(self):
+		return self.pat_mutants
+
+	# selecting methods
+
+	@staticmethod
+	def select_subsuming_patterns(patterns, uk_or_cc):
+		"""
+		:param patterns: set of RIP-testability patterns
+		:param uk_or_cc: None to consider all executions or select corresponding class
+		:return: minimal set of patterns that subsume the others
+		"""
+		remain_patterns, remove_patterns, minimal_patterns = set(), set(), set()
+		patterns = jcbase.rand_resort(patterns)
 		for pattern in patterns:
 			pattern: jcpate.RIPPattern
+			remain_patterns.add(pattern)
+		while len(remain_patterns) > 0:
+			subsume_pattern = None
+			remove_patterns.clear()
+			for pattern in remain_patterns:
+				if subsume_pattern is None:
+					subsume_pattern = pattern
+					remove_patterns.add(pattern)
+				elif subsume_pattern.subsume(pattern, uk_or_cc):
+					remove_patterns.add(pattern)
+				elif pattern.subsume(subsume_pattern, uk_or_cc):
+					subsume_pattern = pattern
+					remove_patterns.add(pattern)
+			for pattern in remove_patterns:
+				remain_patterns.remove(pattern)
+			if not (subsume_pattern is None):
+				minimal_pattern = subsume_pattern
+				minimal_pattern: jcpate.RIPPattern
+				minimal_patterns.add(minimal_pattern)
+		return minimal_patterns
+
+	@staticmethod
+	def remap_keys_patterns(patterns, exe_or_mut: bool):
+		"""
+		:param patterns:
+		:param exe_or_mut: True to use RIPExecution or Mutant as key
+		:return: Sample ==> set of RIPPattern
+		"""
+		results = dict()
+		for pattern in patterns:
+			pattern: jcpate.RIPPattern
+			samples = pattern.get_samples(exe_or_mut)
+			for sample in samples:
+				if not (sample in results):
+					results[sample] = set()
+				results[sample].add(pattern)
+		return results
+
+	@staticmethod
+	def select_best_pattern(patterns, exe_or_mut: bool, uk_or_cc: bool):
+		"""
+		:param patterns:
+		:param exe_or_mut:
+		:param uk_or_cc:
+		:return:
+		"""
+		remain_patterns, solutions = set(), dict()
+		for pattern in patterns:
+			pattern: jcpate.RIPPattern
+			remain_patterns.add(pattern)
+			total, support, confidence = pattern.estimate(exe_or_mut, uk_or_cc)
 			length = len(pattern)
-			total, support, confidence = self.estimate(pattern)
-			if support >= self.min_support and confidence >= self.min_confidence and length <= self.max_length:
-				good_patterns.add(pattern)
-		return jcpate.RIPPatternSpace(self.get_document(), self.get_classifier(), good_patterns)
+			solutions[pattern] = (length, support, confidence)
+
+		remain_length = max(1, int(len(remain_patterns) / 2))
+		while len(remain_patterns) > remain_length:
+			worst_confidence, worst_pattern = 1.0, None
+			for pattern in remain_patterns:
+				solution = solutions[pattern]
+				confidence = solution[2]
+				if worst_pattern is None or confidence <= worst_confidence:
+					worst_confidence = confidence
+					worst_pattern = pattern
+			remain_patterns.remove(worst_pattern)
+
+		remain_length = max(1, int(len(remain_patterns) / 2))
+		while len(remain_patterns) > remain_length:
+			worst_support, worst_pattern = 99999, None
+			for pattern in remain_patterns:
+				solution = solutions[pattern]
+				support = solution[1]
+				if worst_pattern is None or support <= worst_support:
+					worst_support = support
+					worst_pattern = pattern
+			remain_patterns.remove(worst_pattern)
+
+		remain_length = max(1, int(len(remain_patterns) / 2))
+		while len(remain_patterns) > remain_length:
+			worst_length, worst_pattern = 0, None
+			for pattern in remain_patterns:
+				solution = solutions[pattern]
+				length = solution[0]
+				if worst_pattern is None or length >= worst_length:
+					worst_length = length
+					worst_pattern = pattern
+			remain_patterns.remove(worst_pattern)
+
+		for pattern in remain_patterns:
+			return pattern
+		return None
+
+	@staticmethod
+	def select_minimal_patterns(patterns, exe_or_mut: bool):
+		"""
+		:param patterns:
+		:param exe_or_mut: True to cover RIPExecution or Mutant
+		:return: minimal set of patterns covering all the executions in the set
+		"""
+		keys_patterns = RIPPatternSpace.remap_keys_patterns(patterns, exe_or_mut)
+		minimal_patterns, removed_keys = set(), set()
+		while len(keys_patterns) > 0:
+			removed_keys.clear()
+			for sample, patterns in keys_patterns.items():
+				selected_pattern = jcbase.rand_select(patterns)
+				if not (selected_pattern is None):
+					pattern = selected_pattern
+					pattern: jcpate.RIPPattern
+					for pat_sample in pattern.get_samples(exe_or_mut):
+						removed_keys.add(pat_sample)
+					minimal_patterns.add(pattern)
+					break
+			for sample in removed_keys:
+				if sample in keys_patterns:
+					keys_patterns.pop(sample)
+		return minimal_patterns
+
+	# data inference
+
+	def get_subsuming_patterns(self, uk_or_cc):
+		"""
+		:param uk_or_cc: None to consider all executions or select corresponding class
+		:return:
+		"""
+		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns, uk_or_cc)
+
+	def get_minimal_patterns(self, exe_or_mut: bool):
+		"""
+		:param exe_or_mut:
+		:return: the minimal set of RIP patterns covering all the samples in the space
+		"""
+		return RIPPatternSpace.select_minimal_patterns(self.all_patterns, exe_or_mut)
+
+	def get_best_patterns(self, exe_or_mut: bool, uk_or_cc: bool):
+		"""
+		:param exe_or_mut: used to estimate
+		:param uk_or_cc: used to estimate
+		:return: mapping from mutant to the pattern that best matches with the mutant
+		"""
+		mutants_patterns = RIPPatternSpace.remap_keys_patterns(self.all_patterns, False)
+		best_patterns = dict()
+		for mutant, patterns in mutants_patterns.items():
+			mutant: jcmuta.Mutant
+			best_pattern = RIPPatternSpace.select_best_pattern(patterns, exe_or_mut, uk_or_cc)
+			if not (best_pattern is None):
+				best_pattern: jcpate.RIPPattern
+				best_patterns[mutant] = best_pattern
+		return best_patterns
+
+
+class RIPPatternWriter:
+	"""
+	It implements the writing of RIP conditions patterns.
+	"""
+
+	def __init__(self):
+		self.writer = None
+		return
+
+	def output(self, text: str):
+		self.writer: TextIO
+		self.writer.write(text)
+		return
+
+	@staticmethod
+	def __percentage__(ratio: float):
+		return int(ratio * 1000000) / 10000.0
+
+	@staticmethod
+	def __proportion__(x: int, y: int):
+		if x == 0:
+			ratio = 0.0
+		else:
+			ratio = x / (y + 0.0)
+		return RIPPatternWriter.__percentage__(ratio)
+
+	@staticmethod
+	def __f1_measure__(doc_samples: set, pat_samples: set):
+		"""
+		:param doc_samples: samples from document
+		:param pat_samples: samples matched with pattern
+		:return: precision, recall, f1_score
+		"""
+		int_samples = doc_samples & pat_samples
+		common = len(int_samples)
+		if common > 0:
+			precision = common / len(pat_samples)
+			recall = common / len(doc_samples)
+			f1_score = 2 * precision * recall / (precision + recall)
+		else:
+			precision = 0.0
+			recall = 0.0
+			f1_score = 0.0
+		return precision, recall, f1_score
+
+	# pattern writing
+
+	def __write_pattern_summary__(self, pattern: jcpate.RIPPattern):
+		"""
+		:param pattern:
+		:return:
+				Summary 	Length Executions Mutations
+				Counting	title UR UI UP KI UK CC
+				Estimate	title total support confidence
+		"""
+		# Summary Length Executions Mutants
+		length = len(pattern)
+		executions = len(pattern.get_executions())
+		mutants = len(pattern.get_mutants())
+		self.output("\t{}\t{}: {}\t{}: {}\t{}: {}\n".format("Summary",
+															"Length", length,
+															"Executions", executions,
+															"Mutants", mutants))
+		self.output("\n")
+
+		# Counting title UR UI UP KI UK CC
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Counting", "Title", "UR", "UI", "UP", "KI", "UK", "CC"))
+		ur, ui, up, ki, uk, cc = pattern.counting(True)
+		self.output(template.format("", "Executions", ur, ui, up, ki, uk, cc))
+		ur, ui, up, ki, uk, cc = pattern.counting(False)
+		self.output(template.format("", "Mutants", ur, ui, up, ki, uk, cc))
+		self.output("\n")
+
+		# Estimate title total support confidence(%)
+		template = "\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Estimate", "Title", "Total", "Support", "Confidence (%)"))
+		total, support, confidence = pattern.estimate(True, True)
+		self.output(template.format("", "UK_Executions", total, support, confidence))
+		total, support, confidence = pattern.estimate(True, False)
+		self.output(template.format("", "CC_Executions", total, support, confidence))
+		total, support, confidence = pattern.estimate(False, True)
+		self.output(template.format("", "UK_Mutants", total, support, confidence))
+		total, support, confidence = pattern.estimate(False, False)
+		self.output(template.format("", "CC_Mutants", total, support, confidence))
+		self.output("\n")
+
+		return
+
+	def __write_pattern_feature__(self, pattern: jcpate.RIPPattern):
+		"""
+		:param pattern:
+		:return: condition category operator validate execution statement location parameter
+		"""
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Condition", "Category", "Operator", "Validate",
+									"Execution", "Statement", "Location", "Parameter"))
+		index = 0
+		for feature in pattern.get_features():
+			index += 1
+			category = feature.get_category()
+			operator = feature.get_operator()
+			validate = feature.get_validate()
+			execution = feature.get_execution()
+			statement = feature.get_execution().get_statement().get_cir_code()
+			location = feature.get_location().get_cir_code()
+			if feature.get_parameter() is None:
+				parameter = ""
+			else:
+				parameter = feature.get_parameter().get_code()
+			self.output(template.format(index, category, operator, validate,
+										execution, statement, location, parameter))
+		self.output("\n")
+
+	def __write_pattern_mutants__(self, pattern: jcpate.RIPPattern):
+		"""
+		:param pattern:
+		:return: Mutant Result Class Operator Line Location Parameter
+		"""
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("ID", "Result", "Class", "Operator", "Line", "Location", "Parameter"))
+		for mutant in pattern.get_mutants():
+			mutant: jcmuta.Mutant
+			mutant_id = mutant.get_mut_id()
+			result = pattern.get_classifier().__classify__(mutant)
+			mutation_class = mutant.get_mutation().get_mutation_class()
+			operator = mutant.mutation.get_mutation_operator()
+			location = mutant.mutation.get_location()
+			parameter = mutant.mutation.get_parameter()
+			line = location.line_of(False)
+			code = location.get_code(True)
+			self.output(template.format(mutant_id, result, mutation_class, operator, line, code, parameter))
+		self.output("\n")
+
+	def __write_pattern__(self, pattern: jcpate.RIPPattern):
+		self.output("#BEG\n")
+		self.__write_pattern_summary__(pattern)
+		self.__write_pattern_feature__(pattern)
+		self.__write_pattern_mutants__(pattern)
+		self.output("#END\n")
+
+	def write_patterns(self, patterns, file_path: str):
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			for pattern in patterns:
+				self.__write_pattern__(pattern)
+				self.writer.write("\n")
+		return
+
+	def write_matching(self, space: RIPPatternSpace, file_path: str, exe_or_mut: bool, uk_or_cc: bool):
+		"""
+		:param space:
+		:param uk_or_cc:
+		:param exe_or_mut:
+		:param file_path:
+		:return: 	Mutant 	ID RESULT CLASS OPERATOR LINE LOCATION PARMETER
+					Pattern
+					Category Operator Validate Execution Statement Location Parameter*
+		"""
+		mutants_patterns = space.get_best_patterns(exe_or_mut, uk_or_cc)
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			for mutant, pattern in mutants_patterns.items():
+				mutant_id = mutant.get_mut_id()
+				result = pattern.get_classifier().__classify__(mutant)
+				mutation_class = mutant.get_mutation().get_mutation_class()
+				operator = mutant.get_mutation().get_mutation_operator()
+				location = mutant.get_mutation().get_location()
+				parameter = mutant.get_mutation().get_parameter()
+				line = location.line_of(False)
+				code = location.get_code(True)
+				self.output("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format("Mutant", mutant_id, result,
+																	  mutation_class, operator, line, code, parameter))
+				self.__write_pattern_feature__(pattern)
+				self.output("\n")
+		return
+
+	@staticmethod
+	def __evaluate__(document: jcpate.RIPDocument, patterns, exe_or_mut: bool, uk_or_cc: bool,
+					 classifier: jcpate.RIPClassifier):
+		"""
+		:param document:
+		:param patterns:
+		:return: length doc_samples pat_samples reduce precision recall f1_score
+		"""
+		length = len(patterns)
+		if exe_or_mut:
+			doc_samples = classifier.select(document.get_executions(), uk_or_cc)
+		else:
+			doc_samples = classifier.select(document.get_mutants(), uk_or_cc)
+		pat_samples = set()
+		for pattern in patterns:
+			pattern: jcpate.RIPPattern
+			samples = pattern.get_samples(exe_or_mut)
+			for sample in samples:
+				pat_samples.add(sample)
+		reduce = length / (len(doc_samples) + 0.0)
+		precision, recall, f1_score = RIPPatternWriter.__f1_measure__(doc_samples, pat_samples)
+		return length, len(doc_samples), len(pat_samples), reduce, precision, recall, f1_score
+
+	def __write_evaluate_all__(self, space: RIPPatternSpace, uk_or_cc):
+		document = space.get_document()
+		patterns = space.get_subsuming_patterns(uk_or_cc)
+		classifier = space.get_classifier()
+
+		self.output("# Cost-Effective Analysis #\n")
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("title", "LEN", "DOC", "PAT", "REDUCE(%)", "PRECISION(%)", "RECALL(%)", "F1_SCORE"))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPPatternWriter.__evaluate__(document, patterns, True, True, classifier)
+		self.output(template.format("UK_EXE", length, doc_number, pat_number,
+									RIPPatternWriter.__percentage__(reduce_rate),
+									RIPPatternWriter.__percentage__(precision),
+									RIPPatternWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPPatternWriter.__evaluate__(document, patterns, True, False, classifier)
+		self.output(template.format("CC_EXE", length, doc_number, pat_number,
+									RIPPatternWriter.__percentage__(reduce_rate),
+									RIPPatternWriter.__percentage__(precision),
+									RIPPatternWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPPatternWriter.__evaluate__(document, patterns, False, True, classifier)
+		self.output(template.format("UK_MUT", length, doc_number, pat_number,
+									RIPPatternWriter.__percentage__(reduce_rate),
+									RIPPatternWriter.__percentage__(precision),
+									RIPPatternWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPPatternWriter.__evaluate__(document, patterns, False, False, classifier)
+		self.output(template.format("CC_MUT", length, doc_number, pat_number,
+									RIPPatternWriter.__percentage__(reduce_rate),
+									RIPPatternWriter.__percentage__(precision),
+									RIPPatternWriter.__percentage__(recall),
+									f1_score))
+
+		self.output("\n")
+		return
+
+	def __write_evaluate_one__(self, index: int, pattern: jcpate.RIPPattern):
+		"""
+		:param pattern:
+		:return: index length executions mutants uk_exe_supp uk_exe_conf cc_exe_supp cc_exe_conf uk_mut_supp
+				uk_mut_conf cc_mut_supp cc_mut_conf
+		"""
+		executions = len(pattern.get_executions())
+		mutants = len(pattern.get_mutants())
+		_, uk_exe_supp, uk_exe_conf = pattern.estimate(True, True)
+		_, cc_exe_supp, cc_exe_conf = pattern.estimate(True, False)
+		_, uk_mut_supp, uk_mut_conf = pattern.estimate(False, True)
+		_, cc_mut_supp, cc_mut_conf = pattern.estimate(False, False)
+		self.output("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(index, executions, mutants,
+																			uk_exe_supp,
+																			RIPPatternWriter.__percentage__(uk_exe_conf),
+																			cc_exe_supp,
+																			RIPPatternWriter.__percentage__(cc_exe_conf),
+																			uk_mut_supp,
+																			RIPPatternWriter.__percentage__(uk_mut_conf),
+																			cc_mut_supp,
+																			RIPPatternWriter.__percentage__(cc_mut_conf)
+																			)
+					)
+		return
+
+	def write_evaluate(self, space: RIPPatternSpace, file_path: str):
+		"""
+		:param space:
+		:param file_path:
+		:return:
+			# Cost-Effective Analysis
+			title	LEN DOC PAT REDUCE(%) PRECISION(%) RECALL(%) F1_SCORE
+			UK_EXE
+			CC_EXE
+			UK_MUT
+			CC_MUT
+		"""
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			self.__write_evaluate_all__(space, None)
+			self.output("# Pattern Evaluate #\n")
+			self.output("\tindex\tlength\texecutions\tmutants\tuk_exe_supp\tuk_exe_conf(%)\tcc_exe_supp\tcc_exe_conf(%)"
+						"\tuk_mut_supp\tuk_mut_conf(%)\tcc_mut_supp\tcc_mut_conf(%)\n")
+			index = 0
+			for pattern in space.get_subsuming_patterns(None):
+				index += 1
+				self.__write_evaluate_one__(index, pattern)
+		return
 
 
 class RIPFPTMiner:
@@ -165,12 +673,13 @@ class RIPFPTMiner:
 		self.context = context
 		root_executions = context.get_classifier().select(context.get_document().get_executions(), context.is_uk_or_cc())
 		for root_execution in root_executions:
-			root_execution: jcmuta.RIPExecution
+			root_execution: jcpate.RIPExecution
 			words = root_execution.get_words()
 			for word in words:
 				root = context.new_root(word)
 				self.__mine__(root, words)
-		return context.new_space(context.get_patterns())
+		good_patterns = self.context.extract_good_patterns()
+		return RIPPatternSpace(self.context.get_document(), self.context.get_classifier(), good_patterns)
 
 
 class RIPDTTMiner:
@@ -197,7 +706,7 @@ class RIPDTTMiner:
 		self.Y.clear()
 		self.W.clear()
 		for execution in self.context.get_document().get_executions():
-			execution: jcmuta.RIPExecution
+			execution: jcpate.RIPExecution
 			if self.context.is_exe_or_mut():
 				sample = execution
 			else:
@@ -242,7 +751,7 @@ class RIPDTTMiner:
 		WN = list()
 		document = self.context.get_document()
 		for word in self.W:
-			condition = document.get_condition(word)
+			condition = document.get_feature(word)
 			category = condition.get_category()
 			operator = condition.get_operator()
 			execution = condition.get_execution()
@@ -323,11 +832,11 @@ class RIPDTTMiner:
 		YP = self.__fit_decisions__(tree_path)
 		leaf_path = self.__get_leaf_path__(YP)
 		patterns = self.__path_patterns__(leaf_path)
-		return context.new_space(patterns)
+		return RIPPatternSpace(self.context.get_document(), self.context.get_classifier(), patterns)
 
 
-def evaluate_results(space: jcpate.RIPPatternSpace, output_directory: str, name: str, exe_or_mut: bool, uk_or_cc: bool):
-	writer = jcpate.RIPPatternWriter()
+def evaluate_results(space: RIPPatternSpace, output_directory: str, name: str, exe_or_mut: bool, uk_or_cc: bool):
+	writer = RIPPatternWriter()
 	writer.write_evaluate(space, os.path.join(output_directory, name + ".sum"))
 	writer.write_matching(space, os.path.join(output_directory, name + ".bpt"), exe_or_mut, uk_or_cc)
 	writer.write_patterns(space.get_subsuming_patterns(uk_or_cc), os.path.join(output_directory, name + ".mpt"))
@@ -336,13 +845,13 @@ def evaluate_results(space: jcpate.RIPPatternSpace, output_directory: str, name:
 
 def get_rip_document(directory: str, file_name: str, t_value, f_value, n_value, output_directory: str):
 	c_project = jcmuta.CProject(directory, file_name)
-	document = c_project.load_static_document(directory, t_value, f_value, n_value)
+	document = jcpate.RIPDocument.load_static_document(c_project, t_value, f_value, n_value)
 	if not(os.path.exists(output_directory)):
 		os.mkdir(output_directory)
 	return document
 
 
-def do_frequent_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
+def do_frequent_mine(document: jcpate.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPFPTMiner()
 	output_directory.strip()
@@ -351,7 +860,7 @@ def do_frequent_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: b
 	return miner.mine(context)
 
 
-def do_decision_mine(document: jcmuta.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
+def do_decision_mine(document: jcpate.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPDTTMiner()
 	context = RIPMineContext(document, exe_or_mut, uk_or_cc, min_support,
@@ -393,7 +902,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str, t_val
 		space = do_mining(document=document, exe_or_mut=exe_or_mut, uk_or_cc=uk_or_cc, min_support=min_support,
 						  min_confidence=min_confidence,
 						  max_confidence=max_confidence, max_length=max_length, output_directory=output_directory)
-		space: jcpate.RIPPatternSpace
+		space: RIPPatternSpace
 		print("\t(2) Generate", len(space.get_patterns()), "patterns with",
 			  len(space.get_subsuming_patterns(None)), "subsuming ones.")
 		# Step-III. Evaluate the performance of mining results
