@@ -104,6 +104,8 @@ public class MuTestProjectFeatureWriter {
 	private File output_file;
 	/** output stream to write feature data to file **/
 	private FileWriter writer;
+	/** it preserves the set of symbolic nodes used to define parameters in symbolic features **/
+	private Set<SymbolNode> sym_nodes;
 	
 	/* constructor */
 	/**
@@ -125,6 +127,7 @@ public class MuTestProjectFeatureWriter {
 			this.output_directory = output_directory;
 			this.writer = null;
 			this.output_file = null;
+			this.sym_nodes = new HashSet<SymbolNode>();
 		}
 	}
 	
@@ -721,7 +724,212 @@ public class MuTestProjectFeatureWriter {
 		this.write_res();
 	}
 	
-	/* xxx.sft|dft xxx.sym */
+	/* xxx.sft, xxx.dft, xxx.sym */
+	/**
+	 * category$operator$validate$execution$location$parameter
+	 * --> to record the symbolic expression of parameter into local buffer
+	 * 
+	 * @param condition
+	 * @throws Exception
+	 */
+	private void write_sym_condition(Object condition) throws Exception {
+		/* 1. declarations */
+		String category, operator; Boolean validate;
+		CirExecution execution; CirNode location;
+		SymbolExpression parameter;
+		
+		/* Case-1. satisfaction$eval_stmt$validate$execution$statement$expression */
+		if(condition instanceof SymConstraint) {
+			category = "satisfaction";
+			operator = CirAnnotateType.eval_stmt.toString();
+			validate = ((SymConstraint) condition).validate(null);
+			execution = ((SymConstraint) condition).get_execution();
+			location = execution.get_statement();
+			parameter = ((SymConstraint) condition).get_condition();
+		}
+		/* Case-2. observation$mut_value$validate$execution$expression$mut_expr */
+		else if(condition instanceof SymExpressionError) {
+			category = "observation";
+			operator = CirAnnotateType.mut_value.toString();
+			validate = ((SymExpressionError) condition).validate(null);
+			execution = ((SymExpressionError) condition).get_execution();
+			location = ((SymExpressionError) condition).get_expression();
+			parameter = ((SymExpressionError) condition).get_mutation_value();
+		}
+		/* Case-3. observation$mut_refer$validate$execution$expression$mut_expr */
+		else if(condition instanceof SymReferenceError) {
+			category = "observation";
+			operator = CirAnnotateType.mut_refer.toString();
+			validate = ((SymReferenceError) condition).validate(null);
+			execution = ((SymReferenceError) condition).get_execution();
+			location = ((SymReferenceError) condition).get_expression();
+			parameter = ((SymReferenceError) condition).get_mutation_value();
+		}
+		/* Case-4. observation$mut_state$validate$execution$expression$mut_expr */
+		else if(condition instanceof SymStateValueError) {
+			category = "observation";
+			operator = CirAnnotateType.mut_state.toString();
+			validate = ((SymStateValueError) condition).validate(null);
+			execution = ((SymStateValueError) condition).get_execution();
+			location = ((SymStateValueError) condition).get_expression();
+			parameter = ((SymStateValueError) condition).get_mutation_value();
+		}
+		/* Case-4. observation$trap_error$True$execution$statement$null */
+		else if(condition instanceof SymTrapError) {
+			category = "observation";
+			operator = CirAnnotateType.trap_stmt.toString();
+			validate = Boolean.TRUE;
+			execution = ((SymTrapError) condition).get_execution();
+			location = execution.get_statement();
+			parameter = null;
+		}
+		/* Case-5. observation$mut_flow$True$execution$statement$target_stmt */
+		else if(condition instanceof SymFlowError) {
+			validate = ((SymFlowError) condition).validate(null);
+			category = "observation";
+			operator = "mut_flow";
+			execution = ((SymFlowError) condition).get_execution();
+			location = ((SymFlowError) condition).get_original_flow().get_source().get_statement();
+			parameter = SymbolFactory.sym_expression(((SymFlowError) condition).get_mutation_flow().get_target());
+		}
+		/* Case-6. category$type$validate$execution$location$parameter */
+		else if(condition instanceof CirAnnotation) {
+			CirAnnotation annotation = (CirAnnotation) condition;
+			validate = Boolean.TRUE;
+			switch(annotation.get_type()) {
+			case covr_stmt:
+			case eval_stmt:
+						category = "satisfaction";	break;
+			default: 	category = "observation";	break;
+			}
+			operator = annotation.get_type().toString();
+			execution = annotation.get_execution();
+			location = annotation.get_location();
+			parameter = (SymbolExpression) annotation.get_parameter();
+		}
+		/* Otherwise, the class of the condition is not supported to be used */
+		else {
+			throw new IllegalArgumentException("Invalid class: " + condition.getClass().getSimpleName());
+		}
+		
+		/* 3. output the condition to file stream writer */
+		this.writer.write(category + "$" + operator);
+		this.writer.write("$" + this.token_string(validate));
+		this.writer.write("$" + this.token_string(execution));
+		this.writer.write("$" + this.token_string(location));
+		this.writer.write("$" + this.token_string(parameter));
+		if(parameter != null) this.sym_nodes.add(parameter);
+	}
+	/**
+	 * improved_constraints + annotations
+	 * @param edge
+	 * @throws Exception
+	 */
+	private void write_sym_instance_edge(SymInstanceEdge edge) throws Exception {
+		CirMutations cir_mutations = edge.get_source().get_graph().get_cir_mutations();
+		SymConstraint constraint = edge.get_constraint(); 
+		constraint = cir_mutations.optimize(constraint, null);
+		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
+		/* improved_constraint* & const_annotation* */
+		for(SymConstraint improved_constraint : constraints) {
+			writer.write("\t");
+			this.write_sym_condition(improved_constraint);
+		}
+		for(CirAnnotation annotation : edge.get_status().get_cir_annotations()) {
+			writer.write("\t");
+			this.write_sym_condition(annotation);
+		}
+	}
+	/**
+	 * error + annotations
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_sym_instance_node(SymInstanceNode node) throws Exception {
+		/* error error_annotation */
+		if(node.has_state_error()) {
+			SymStateError state_error = node.get_state_error();
+			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
+			writer.write("\t"); 
+			this.write_sym_condition(state_error);
+			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
+				writer.write("\t");
+				this.write_sym_condition(annotation);
+			}
+		}
+	}
+	/**
+	 * mid tid condition*
+	 * @param mutant
+	 * @param test
+	 * @param path
+	 * @throws Exception
+	 */
+	private void write_sym_instance_path(Mutant mutant, TestInput test, List<SymInstanceEdge> path) throws Exception {
+		int mid = mutant.get_id();
+		int tid = (test == null) ? -1 : test.get_id();
+		this.writer.write(mid + "\t" + tid);
+		if(!path.isEmpty()) {
+			this.write_sym_instance_node(path.get(0).get_source());
+			for(SymInstanceEdge edge : path) {
+				this.write_sym_instance_edge(edge);
+				this.write_sym_instance_node(edge.get_target());
+			}
+		}
+		this.writer.write("\n");
+	}
+	/**
+	 * [mid tid path_conditions]+
+	 * @param graph
+	 * @param test
+	 * @throws Exception
+	 */
+	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test) throws Exception {
+		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
+		for(List<SymInstanceEdge> path : paths) {
+			this.write_sym_instance_path(graph.get_mutant(), test, path);
+		}
+	}
+	/**
+	 * @param dependence_graph
+	 * @param max_distance
+	 * @param test
+	 * @throws Exception
+	 */
+	private void write_sym_instance_graphs(CDependGraph dependence_graph, int max_distance, TestInput test) throws Exception {
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+		/* static analysis */
+		if(test == null) {
+			this.open(".sft");
+			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+				MuTestProjectTestResult result = tspace.get_test_result(mutant);
+				if(result == null) { continue; }
+				
+				SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
+				graph.evaluate();
+				this.write_sym_instance_graph(graph, null);
+			}
+			this.close();
+		}
+		/* dynamic analysis */
+		else {
+			CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
+			if(state_path != null) {
+				this.open("." + test.get_id() + ".dft");
+				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+					MuTestProjectTestResult result = tspace.get_test_result(mutant);
+					if(result == null) {
+						continue;
+					}
+					SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
+					graph.evaluate(state_path);
+					this.write_sym_instance_graph(graph, test);
+				}
+				this.close();
+			}
+		}
+	}
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
@@ -793,235 +1001,14 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
-	 * @param nodes
+	 * write all the symbolic expressions in the buffer
 	 * @throws Exception
 	 */
-	private void write_sym_nodes(Collection<SymbolNode> nodes) throws Exception {
+	private void write_sym_nodes() throws Exception {
 		this.open(".sym");
 		Set<String> records = new HashSet<String>();
-		for(SymbolNode node : nodes) {
+		for(SymbolNode node : this.sym_nodes) {
 			this.write_sym_node(node, records);
-		}
-		this.close();
-	}
-	/**
-	 * 	category$operator$validate$execution$location$parameter
-	 * 	=================================================================================
-	 * 	---	validate bool: 		True 		-- 	reached (definitive)
-	 * 							False		--	not-reachable
-	 * 							Null		--	reached (might-be)
-	 * 	---	category String:	constraint	--	as constraint being validated
-	 * 							observation	--	as state error being observed
-	 * 	---	operator String:	CirAnnotateType
-	 * 	---	execution	   :	The execution point where the characteristics is defined
-	 * 	---	location	   :	The C-intermediate representation location as subject be
-	 * 							described in the given characteristics.
-	 * 	---	parameter	   :	The symbolic expression to refine the characteristics.
-	 * 	=================================================================================
-	 * 
-	 * @param feature path characteristics as condition being satisfied
-	 * @param parameters 
-	 * @throws Exception
-	 */
-	private void write_sym_feature(Object feature, Collection<SymbolNode> parameters) throws Exception {
-		Boolean validate; String category, operator;
-		CirExecution execution; CirNode location;
-		SymbolNode parameter;
-		
-		if(feature instanceof SymConstraint) {
-			SymConstraint constraint = (SymConstraint) feature;
-			validate = constraint.validate(null);
-			category = "constraint";
-			operator = CirAnnotateType.eval_stmt.toString();
-			execution = constraint.get_execution();
-			location = constraint.get_statement();
-			parameter = constraint.get_condition();
-		}
-		else if(feature instanceof SymFlowError) {
-			SymFlowError error = (SymFlowError) feature;
-			validate = error.validate(null);
-			category = "observation";
-			operator = "mut_flow";
-			execution = error.get_execution();
-			location = error.get_original_flow().get_source().get_statement();
-			parameter = SymbolFactory.sym_expression(error.get_mutation_flow().get_target());
-		}
-		else if(feature instanceof SymTrapError) {
-			SymTrapError error = (SymTrapError) feature;
-			validate = ((SymTrapError) feature).validate(null);
-			category = "observation";
-			operator = CirAnnotateType.trap_stmt.toString();
-			execution = error.get_execution();
-			location = error.get_location();
-			parameter = null;
-		}
-		else if(feature instanceof SymExpressionError) {
-			SymExpressionError error = (SymExpressionError) feature;
-			validate = error.validate(null);
-			category = "observation";
-			operator = CirAnnotateType.mut_value.toString();
-			execution = error.get_execution();
-			location = error.get_location();
-			parameter = error.get_mutation_value();
-		}
-		else if(feature instanceof SymReferenceError) {
-			SymReferenceError error = (SymReferenceError) feature;
-			validate = error.validate(null);
-			category = "observation";
-			operator = CirAnnotateType.mut_refer.toString();
-			execution = error.get_execution();
-			location = error.get_location();
-			parameter = error.get_mutation_value();
-		}
-		else if(feature instanceof SymStateValueError) {
-			SymStateValueError error = (SymStateValueError) feature;
-			validate = error.validate(null);
-			category = "observation";
-			operator = CirAnnotateType.mut_state.toString();
-			execution = error.get_execution();
-			location = error.get_location();
-			parameter = error.get_mutation_value();
-		}
-		else if(feature instanceof CirAnnotation) {
-			CirAnnotation annotation = (CirAnnotation) feature;
-			validate = Boolean.TRUE;
-			switch(annotation.get_type()) {
-			case covr_stmt:
-			case eval_stmt:
-						category = "constraint";	break;
-			default: 	category = "observation";	break;
-			}
-			operator = annotation.get_type().toString();
-			execution = annotation.get_execution();
-			location = annotation.get_location();
-			parameter = (SymbolNode) annotation.get_parameter();
-		}
-		else {
-			throw new IllegalArgumentException(feature.getClass().getSimpleName());
-		}
-		
-		this.writer.write(category + "$" + operator);
-		this.writer.write("$" + this.token_string(validate));
-		this.writer.write("$" + this.token_string(execution));
-		this.writer.write("$" + this.token_string(location));
-		this.writer.write("$" + this.token_string(parameter));
-		if(parameter != null) { parameters.add(parameter); }
-	}
-	/**
-	 * improved(constraint[null]) + annotate(constraint)
-	 * @param edge
-	 * @throws Exception
-	 */
-	private void write_sym_instance_edge(SymInstanceEdge edge, Collection<SymbolNode> nodes) throws Exception {
-		CirMutations cir_mutations = edge.get_source().get_graph().get_cir_mutations();
-		SymConstraint constraint = edge.get_constraint(); 
-		constraint = cir_mutations.optimize(constraint, null);
-		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
-		/* improved_constraint* & const_annotation* */
-		for(SymConstraint improved_constraint : constraints) {
-			writer.write("\t");
-			this.write_sym_feature(improved_constraint, nodes);
-		}
-		for(CirAnnotation annotation : edge.get_status().get_cir_annotations()) {
-			writer.write("\t");
-			this.write_sym_feature(annotation, nodes);
-		}
-	}
-	/**
-	 * error[null] + annotate(error)
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_sym_instance_node(SymInstanceNode node, Collection<SymbolNode> nodes) throws Exception {
-		/* error error_annotation */
-		if(node.has_state_error()) {
-			SymStateError state_error = node.get_state_error();
-			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
-			writer.write("\t"); 
-			this.write_sym_feature(state_error, nodes);
-			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
-				writer.write("\t");
-				this.write_sym_feature(annotation, nodes);
-			}
-		}
-	}
-	/**
-	 * cons error annotation ...
-	 * @param path
-	 * @throws Exception
-	 */
-	private void write_sym_instance_path(List<SymInstanceEdge> path, Collection<SymbolNode> nodes) throws Exception {
-		if(!path.isEmpty()) {
-			this.write_sym_instance_node(path.get(0).get_source(), nodes);
-			for(SymInstanceEdge edge : path) {
-				this.write_sym_instance_edge(edge, nodes);
-				this.write_sym_instance_node(edge.get_target(), nodes);
-			}
-		}
-	}
-	/**
-	 * mid res ies pes {cons|erro|anno}*
-	 * @param graph
-	 * @param test_case
-	 * @throws Exception
-	 */
-	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test_case, Collection<SymbolNode> nodes) throws Exception {
-		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
-		int test_id;
-		if(test_case != null)
-			test_id = test_case.get_id();
-		else
-			test_id = -1;
-		for(List<SymInstanceEdge> path : paths) {
-			writer.write(graph.get_mutant().get_id() + "\t" + test_id);
-			this.write_sym_instance_path(path, nodes);
-			writer.write("\n");
-		}
-	}
-	/**
-	 * mid tid res node edge node edge ... edge node*
-	 * @param test_case
-	 * @throws Exception
-	 */
-	private void write_sym_instance_graphs(
-			TestInput test_case, CDependGraph dependence_graph, 
-			int max_distance, Collection<SymbolNode> nodes) throws Exception {
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-							this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
-		if(state_path != null) {
-			this.open("." + test_case.get_id() + ".dft");
-			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-				MuTestProjectTestResult result = tspace.get_test_result(mutant);
-				if(result == null) {
-					continue;
-				}
-				SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
-				graph.evaluate(state_path);
-				this.write_sym_instance_graph(graph, test_case, nodes);
-			}
-			this.close();
-		}
-	}
-	/**
-	 * 
-	 * @param dependence_graph
-	 * @param max_distance
-	 * @throws Exception
-	 */
-	private void write_sym_instance_graphs(CDependGraph dependence_graph, int max_distance, Collection<SymbolNode> nodes) throws Exception {
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		this.open(".sft");
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			MuTestProjectTestResult result = tspace.get_test_result(mutant);
-			if(result == null) {
-				continue;
-			}
-			
-			SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
-			graph.evaluate();
-			this.write_sym_instance_graph(graph, null, nodes);
 		}
 		this.close();
 	}
@@ -1031,19 +1018,25 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	public void write_features(int max_distance, Collection<TestInput> test_suite) throws Exception {
+		/* 0. initializations */
+		this.sym_nodes.clear();
+		
+		/* 1. xxx.ins + xxx.dep */
 		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
 				CirFunctionCallPathType.unique_path, -1));
 		this.write_stat(dependence_graph);
 		
-		Set<SymbolNode> sym_nodes = new HashSet<SymbolNode>();
-		this.write_sym_instance_graphs(dependence_graph, max_distance, sym_nodes);
+		/* 2. xxx.sft + xxx.y.dft */
+		this.write_sym_instance_graphs(dependence_graph, max_distance, null);
 		if(test_suite != null && !test_suite.isEmpty()) {
 			for(TestInput test_case : test_suite) 
-				this.write_sym_instance_graphs(test_case, dependence_graph, max_distance, sym_nodes);
+				this.write_sym_instance_graphs(dependence_graph, max_distance, test_case);
 		}
 		
-		this.write_sym_nodes(sym_nodes);
+		/* 3. xxx.sym */
+		this.write_sym_nodes();
+		this.sym_nodes.clear();
 	}
 	
 }

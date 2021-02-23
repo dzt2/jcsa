@@ -20,7 +20,7 @@ import com.jcsa.jcparse.test.file.TestInput;
 public class MuTestProjectFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
-	private static final String result_dir = "result/dfeatures/";
+	private static final String result_dir = "result/features/";
 	private static final int max_distance = 2;
 	private static final double random_test_ratio = 0.00250;
 	private static final int min_test_number = 12;
@@ -58,7 +58,7 @@ public class MuTestProjectFeatureWritings {
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); 
 		writer.write_muta();
-		selected_tests.clear();
+		selected_tests.clear();	// should be ignored if dynamic is used
 		writer.write_features(max_distance, selected_tests);
 		System.out.println();
 	}
