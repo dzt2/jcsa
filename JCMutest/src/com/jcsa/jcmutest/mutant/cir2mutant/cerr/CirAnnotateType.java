@@ -14,6 +14,7 @@ public enum CirAnnotateType {
 	/** add_stmt(statement, null) **/					add_stmt,
 	/** del_stmt(statement, null) **/					del_stmt,
 	/** trap_stmt(statement, null) **/					trap_stmt,
+	/** mut_flow(orig_flow, muta_flow) **/				mut_flow,
 	
 	/* boolean error annotations */
 	/** chg_bool(expression, null) **/					chg_bool,

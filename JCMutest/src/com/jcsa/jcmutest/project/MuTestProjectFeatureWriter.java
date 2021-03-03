@@ -106,6 +106,18 @@ public class MuTestProjectFeatureWriter {
 	private FileWriter writer;
 	/** it preserves the set of symbolic nodes used to define parameters in symbolic features **/
 	private Set<SymbolNode> sym_nodes;
+	/**
+	 * category of symbolic feature in mutant execution.
+	 * 
+	 * @author yukimula
+	 *
+	 */
+	protected static enum SymConditionCategory {
+		/** it refers to a context-constraint for being satisfied **/	
+		satisfaction,
+		/** it refers to a infected state in context for observed **/
+		observations,
+	}
 	
 	/* constructor */
 	/**
@@ -734,14 +746,17 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_condition(Object condition) throws Exception {
 		/* 1. declarations */
-		String category, operator; Boolean validate;
-		CirExecution execution; CirNode location;
+		SymConditionCategory category;
+		CirAnnotateType operator;
+		Boolean validate;
+		CirExecution execution; 
+		CirNode location;
 		SymbolExpression parameter;
 		
 		/* Case-1. satisfaction$eval_stmt$validate$execution$statement$expression */
 		if(condition instanceof SymConstraint) {
-			category = "satisfaction";
-			operator = CirAnnotateType.eval_stmt.toString();
+			category = SymConditionCategory.satisfaction;
+			operator = CirAnnotateType.eval_stmt;
 			validate = ((SymConstraint) condition).validate(null);
 			execution = ((SymConstraint) condition).get_execution();
 			location = execution.get_statement();
@@ -749,8 +764,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		/* Case-2. observation$mut_value$validate$execution$expression$mut_expr */
 		else if(condition instanceof SymExpressionError) {
-			category = "observation";
-			operator = CirAnnotateType.mut_value.toString();
+			category = SymConditionCategory.observations;
+			operator = CirAnnotateType.mut_value;
 			validate = ((SymExpressionError) condition).validate(null);
 			execution = ((SymExpressionError) condition).get_execution();
 			location = ((SymExpressionError) condition).get_expression();
@@ -758,8 +773,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		/* Case-3. observation$mut_refer$validate$execution$expression$mut_expr */
 		else if(condition instanceof SymReferenceError) {
-			category = "observation";
-			operator = CirAnnotateType.mut_refer.toString();
+			category = SymConditionCategory.observations;
+			operator = CirAnnotateType.mut_refer;
 			validate = ((SymReferenceError) condition).validate(null);
 			execution = ((SymReferenceError) condition).get_execution();
 			location = ((SymReferenceError) condition).get_expression();
@@ -767,8 +782,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		/* Case-4. observation$mut_state$validate$execution$expression$mut_expr */
 		else if(condition instanceof SymStateValueError) {
-			category = "observation";
-			operator = CirAnnotateType.mut_state.toString();
+			category = SymConditionCategory.observations;
+			operator = CirAnnotateType.mut_state;
 			validate = ((SymStateValueError) condition).validate(null);
 			execution = ((SymStateValueError) condition).get_execution();
 			location = ((SymStateValueError) condition).get_expression();
@@ -776,8 +791,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		/* Case-4. observation$trap_error$True$execution$statement$null */
 		else if(condition instanceof SymTrapError) {
-			category = "observation";
-			operator = CirAnnotateType.trap_stmt.toString();
+			category = SymConditionCategory.observations;
+			operator = CirAnnotateType.trap_stmt;
 			validate = Boolean.TRUE;
 			execution = ((SymTrapError) condition).get_execution();
 			location = execution.get_statement();
@@ -785,9 +800,9 @@ public class MuTestProjectFeatureWriter {
 		}
 		/* Case-5. observation$mut_flow$True$execution$statement$target_stmt */
 		else if(condition instanceof SymFlowError) {
+			category = SymConditionCategory.observations;
+			operator = CirAnnotateType.mut_flow;
 			validate = ((SymFlowError) condition).validate(null);
-			category = "observation";
-			operator = "mut_flow";
 			execution = ((SymFlowError) condition).get_execution();
 			location = ((SymFlowError) condition).get_original_flow().get_source().get_statement();
 			parameter = SymbolFactory.sym_expression(((SymFlowError) condition).get_mutation_flow().get_target());
@@ -799,10 +814,10 @@ public class MuTestProjectFeatureWriter {
 			switch(annotation.get_type()) {
 			case covr_stmt:
 			case eval_stmt:
-						category = "satisfaction";	break;
-			default: 	category = "observation";	break;
+						category = SymConditionCategory.satisfaction;	break;
+			default: 	category = SymConditionCategory.observations;	break;
 			}
-			operator = annotation.get_type().toString();
+			operator = annotation.get_type();
 			execution = annotation.get_execution();
 			location = annotation.get_location();
 			parameter = (SymbolExpression) annotation.get_parameter();
