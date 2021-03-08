@@ -147,7 +147,7 @@ public class SymbolFactory {
 	/**
 	 * @param data_type
 	 * @param def
-	 * @return return#function.id
+	 * @return special name
 	 * @throws Exception
 	 */
 	public static SymbolExpression identifier(CType data_type, String identifier) throws Exception {

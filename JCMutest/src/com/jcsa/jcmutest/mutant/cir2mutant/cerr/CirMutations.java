@@ -84,7 +84,7 @@ public class CirMutations {
 	 * @throws Exception
 	 */
 	private void verify_location(CirNode location) throws Exception {
-		if(this.cir_tree != location.get_tree())
+		if(location == null || this.cir_tree != location.get_tree())
 			throw new RuntimeException("Unable to match the program");
 	}
 	/**
