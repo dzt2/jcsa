@@ -560,32 +560,26 @@ public class SymInstancePathFinder {
 				init_mutations.get(cir_mutation.get_execution()).add(cir_mutation);
 			}
 		}
-		Collection<CirExecution> reachings = this.get_reached_executions(mutant, test_path);
 		
-		if(!reachings.isEmpty()) {
-			SymInstancePath sym_path = new SymInstancePath(test_path, cir_mutations);
-			
-			this.generate_R_conditions(sym_path);
-			for(CirExecution execution : reachings) {
-				this.generate_I_conditions(sym_path, execution, init_mutations.get(execution));
-				this.generate_P_conditions(sym_path, execution);
-			}
-			
-			SymbolStateContexts contexts = new SymbolStateContexts();
-			for(CirExecutionEdge edge : sym_path.get_execution_edges()) {
-				if(edge.get_annotation() instanceof CStateNode) {
-					CStateNode state_node = (CStateNode) edge.get_annotation();
-					contexts.accumulate(state_node);
-				}
-				sym_path.evaluate(edge, contexts);
-			}
-			
-			return sym_path;
+		Collection<CirExecution> reachings = this.get_reached_executions(mutant, test_path);
+		SymInstancePath sym_path = new SymInstancePath(test_path, cir_mutations);
+		
+		this.generate_R_conditions(sym_path);
+		for(CirExecution execution : reachings) {
+			this.generate_I_conditions(sym_path, execution, init_mutations.get(execution));
+			this.generate_P_conditions(sym_path, execution);
 		}
-		else {
-			return null;
+		
+		SymbolStateContexts contexts = new SymbolStateContexts();
+		for(CirExecutionEdge edge : sym_path.get_execution_edges()) {
+			if(edge.get_annotation() instanceof CStateNode) {
+				CStateNode state_node = (CStateNode) edge.get_annotation();
+				contexts.accumulate(state_node);
+			}
+			sym_path.evaluate(edge, contexts);
 		}
+		
+		return sym_path;
 	}
-	
 	
 }
