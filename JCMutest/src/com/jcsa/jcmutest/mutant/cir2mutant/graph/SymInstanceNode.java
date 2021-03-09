@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.path;
+package com.jcsa.jcmutest.mutant.cir2mutant.graph;
 
 import java.util.ArrayList;
 import java.util.Collection;

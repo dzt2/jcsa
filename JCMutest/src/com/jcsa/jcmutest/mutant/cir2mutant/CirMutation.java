@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CirMutation {
@@ -29,6 +30,7 @@ public class CirMutation {
 	}
 	
 	/* getters */
+	public CirExecution get_execution() { return this.state_error.get_execution(); }
 	/**
 	 * @return create the statement where the mutation is reached
 	 */

@@ -693,7 +693,7 @@ public class CirExecutionPathFinder {
 				this.vf_extend(path, state_node.get_execution());
 				CirExecutionEdge edge = path.get_final();
 				if(edge != null) {
-					edge.set_annotation(state_node.get_units());
+					edge.set_annotation(state_node);
 				}
 			}
 			return path;

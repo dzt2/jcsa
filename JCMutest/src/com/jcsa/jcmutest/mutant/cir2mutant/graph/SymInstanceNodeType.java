@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.path;
+package com.jcsa.jcmutest.mutant.cir2mutant.graph;
 
 /**
  * The type of symbolic instance node.

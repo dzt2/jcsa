@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.path;
+package com.jcsa.jcmutest.mutant.cir2mutant.graph;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 

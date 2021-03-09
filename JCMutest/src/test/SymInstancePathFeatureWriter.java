@@ -17,11 +17,11 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
 
-public class MuTestProjectKFeatureWritings {
-
+public class SymInstancePathFeatureWriter {
+	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/kfeatures/";
-	private static final int max_distance = 1;
+	private static final int max_distance = 2;
 	private static final double random_test_ratio = 0.00250;
 	private static final int min_test_number = 12;
 	private static final Random random = new Random(System.currentTimeMillis());
@@ -59,7 +59,7 @@ public class MuTestProjectKFeatureWritings {
 		writer.write_code(); 
 		writer.write_muta();
 		selected_tests.clear();	// should be ignored if dynamic is used
-		writer.write_killing_paths(max_distance, selected_tests);
+		writer.write_kfeatures(max_distance, selected_tests);
 		System.out.println();
 	}
 	
