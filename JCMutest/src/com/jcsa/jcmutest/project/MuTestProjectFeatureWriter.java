@@ -16,17 +16,13 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
-import com.jcsa.jcmutest.mutant.cir2mutant.graph.SymInstanceEdge;
-import com.jcsa.jcmutest.mutant.cir2mutant.graph.SymInstanceGraph;
-import com.jcsa.jcmutest.mutant.cir2mutant.graph.SymInstanceNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstancePath;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstancePathFinder;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceState;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTreeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTreeUtil;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
@@ -61,9 +57,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
@@ -87,6 +81,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolOperator;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
+
 
 /**
  * It implements to write the feature information to output file, including:<br>
@@ -834,7 +829,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		
 		/* 3. output the condition to file stream writer */
-		this.writer.write(category + "$" + operator);
+		this.writer.write("\t" + category + "$" + operator);
 		this.writer.write("$" + this.token_string(validate));
 		this.writer.write("$" + this.token_string(execution));
 		this.writer.write("$" + this.token_string(location));
@@ -842,74 +837,53 @@ public class MuTestProjectFeatureWriter {
 		if(parameter != null) this.sym_nodes.add(parameter);
 	}
 	/**
-	 * improved_constraints + annotations
-	 * @param edge
+	 * annotation + instance (improved)
+	 * @param state
 	 * @throws Exception
 	 */
-	private void write_sym_instance_edge(SymInstanceEdge edge) throws Exception {
-		CirMutations cir_mutations = edge.get_source().get_graph().get_cir_mutations();
-		SymConstraint constraint = edge.get_constraint(); 
-		constraint = cir_mutations.optimize(constraint, null);
-		Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
-		/* improved_constraint* & const_annotation* */
-		for(SymConstraint improved_constraint : constraints) {
-			writer.write("\t");
-			this.write_sym_condition(improved_constraint);
-		}
-		for(CirAnnotation annotation : edge.get_status().get_cir_annotations()) {
-			writer.write("\t");
-			this.write_sym_condition(annotation);
-		}
-	}
-	/**
-	 * error + annotations
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_sym_instance_node(SymInstanceNode node) throws Exception {
-		/* error error_annotation */
-		if(node.has_state_error()) {
-			SymStateError state_error = node.get_state_error();
-			state_error = node.get_graph().get_cir_mutations().optimize(state_error, null);
-			writer.write("\t"); 
-			this.write_sym_condition(state_error);
-			for(CirAnnotation annotation : node.get_status().get_cir_annotations()) {
-				writer.write("\t");
+	private void write_sym_instance_state(CirMutations cir_mutations, SymInstanceState state) throws Exception {
+		if(state.is_acceptable()) {	/* only for reachable state being printed */
+			this.write_sym_condition(state.get_source_instance());
+			for(CirAnnotation annotation : state.get_instance_annotations()) {
 				this.write_sym_condition(annotation);
+			}
+			
+			if(state.is_constraint()) {
+				SymConstraint constraint = (SymConstraint) state.get_source_instance();
+				Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
+				for(SymConstraint improved_constraint : constraints) {
+					writer.write("\t");
+					this.write_sym_condition(improved_constraint);
+				}
 			}
 		}
 	}
 	/**
-	 * mid tid condition*
-	 * @param mutant
-	 * @param test
-	 * @param path
+	 * @param tree_node
 	 * @throws Exception
 	 */
-	private void write_sym_instance_path(Mutant mutant, TestInput test, List<SymInstanceEdge> path) throws Exception {
+	private void write_sym_tree_node(SymInstanceTreeNode tree_node, CirMutations cir_mutations) throws Exception {
+		if(!tree_node.is_root()) {
+			SymInstanceState state = tree_node.get_edge_state();
+			this.write_sym_instance_state(cir_mutations, state);
+		}
+		this.write_sym_instance_state(cir_mutations, tree_node.get_node_state());
+	}
+	/**
+	 * mid tid word+
+	 * @param path
+	 * @param cir_mutations
+	 * @throws Exception
+	 */
+	private void write_sym_tree_path(Mutant mutant, TestInput test, 
+			List<SymInstanceTreeNode> path, CirMutations cir_mutations) throws Exception {
 		int mid = mutant.get_id();
 		int tid = (test == null) ? -1 : test.get_id();
 		this.writer.write(mid + "\t" + tid);
-		if(!path.isEmpty()) {
-			this.write_sym_instance_node(path.get(0).get_source());
-			for(SymInstanceEdge edge : path) {
-				this.write_sym_instance_edge(edge);
-				this.write_sym_instance_node(edge.get_target());
-			}
+		for(SymInstanceTreeNode tree_node : path) {
+			this.write_sym_tree_node(tree_node, cir_mutations);
 		}
 		this.writer.write("\n");
-	}
-	/**
-	 * [mid tid path_conditions]+
-	 * @param graph
-	 * @param test
-	 * @throws Exception
-	 */
-	private void write_sym_instance_graph(SymInstanceGraph graph, TestInput test) throws Exception {
-		Collection<List<SymInstanceEdge>> paths = graph.select_reachable_paths();
-		for(List<SymInstanceEdge> path : paths) {
-			this.write_sym_instance_path(graph.get_mutant(), test, path);
-		}
 	}
 	/**
 	 * @param dependence_graph
@@ -917,35 +891,34 @@ public class MuTestProjectFeatureWriter {
 	 * @param test
 	 * @throws Exception
 	 */
-	private void write_sym_instance_graphs(CDependGraph dependence_graph, int max_distance, TestInput test) throws Exception {
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		/* static analysis */
+	private void write_sym_trees(CDependGraph dependence_graph, int max_distance, TestInput test) throws Exception {
 		if(test == null) {
 			this.open(".sft");
 			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-				MuTestProjectTestResult result = tspace.get_test_result(mutant);
-				if(result == null) { continue; }
-				
-				SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
-				graph.evaluate();
-				this.write_sym_instance_graph(graph, null);
+				if(mutant.has_cir_mutations()) {
+					SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
+					Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.stat_evaluations(tree);
+					for(List<SymInstanceTreeNode> path : paths) {
+						this.write_sym_tree_path(tree.get_mutant(), null, path, tree.get_cir_mutations());
+					}
+				}
 			}
 			this.close();
 		}
-		/* dynamic analysis */
 		else {
-			CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
-			if(state_path != null) {
+			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+			CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+										this.source.get_ast_tree(), this.source.get_cir_tree(), test);
+			if(test_path != null) {
 				this.open("." + test.get_id() + ".dft");
 				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-					MuTestProjectTestResult result = tspace.get_test_result(mutant);
-					if(result == null) {
-						continue;
+					if(mutant.has_cir_mutations()) {
+						SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
+						Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.dyna_evaluations(tree, test_path);
+						for(List<SymInstanceTreeNode> path : paths) {
+							this.write_sym_tree_path(tree.get_mutant(), null, path, tree.get_cir_mutations());
+						}
 					}
-					SymInstanceGraph graph = SymInstanceGraph.new_graph(dependence_graph, mutant, max_distance);
-					graph.evaluate(state_path);
-					this.write_sym_instance_graph(graph, test);
 				}
 				this.close();
 			}
@@ -1049,10 +1022,10 @@ public class MuTestProjectFeatureWriter {
 		this.write_stat(dependence_graph);
 		
 		/* 2. xxx.sft + xxx.y.dft */
-		this.write_sym_instance_graphs(dependence_graph, max_distance, null);
+		this.write_sym_trees(dependence_graph, max_distance, null);
 		if(test_suite != null && !test_suite.isEmpty()) {
 			for(TestInput test_case : test_suite) 
-				this.write_sym_instance_graphs(dependence_graph, max_distance, test_case);
+				this.write_sym_trees(dependence_graph, max_distance, test_case);
 		}
 		
 		/* 3. xxx.sym */
@@ -1060,110 +1033,4 @@ public class MuTestProjectFeatureWriter {
 		this.sym_nodes.clear();
 	}
 	
-	/* xxx.sft, xxx.dft, xxx.sym */
-	private void write_sym_execution_edge(SymInstancePath path, CirExecutionEdge edge) throws Exception {
-		for(SymInstanceState state : path.get_state(edge).get_states()) {
-			if(state.has_instance()) {
-				writer.write("\t");
-				this.write_sym_condition(state.get_instance());
-				for(CirAnnotation annotation : state.get_cir_annotations()) {
-					writer.write("\t");
-					this.write_sym_condition(annotation);
-				}
-				
-				SymInstance instance = state.get_instance();
-				if(instance instanceof SymConstraint) {
-					SymConstraint constraint = (SymConstraint) instance;
-					constraint = path.get_cir_mutations().optimize(constraint, null);
-					writer.write("\t");
-					this.write_sym_condition(constraint);
-				}
-			}
-		}
-	}
-	/**
-	 * @param mutant
-	 * @param test
-	 * @param path
-	 * @throws Exception
-	 */
-	private void write_sym_execution_path(Mutant mutant, TestInput test, SymInstancePath path) throws Exception {
-		int mid = mutant.get_id();
-		int tid = (test == null) ? -1 : test.get_id();
-		this.writer.write(mid + "\t" + tid);
-		for(CirExecutionEdge edge : path.get_execution_edges()) {
-			this.write_sym_execution_edge(path, edge);
-		}
-		this.writer.write("\n");
-	}
-	/**
-	 * @param dependence_graph
-	 * @param max_distance
-	 * @param test
-	 * @throws Exception
-	 */
-	private void write_sym_execution_paths(CDependGraph dependence_graph, int max_distance, TestInput test, 
-			CirMutations cir_mutations) throws Exception {
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		
-		/* static analysis */
-		if(test == null) {
-			this.open(".sft");
-			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-				MuTestProjectTestResult result = tspace.get_test_result(mutant);
-				if(result == null) { continue; } 
-				
-				Collection<SymInstancePath> paths = SymInstancePathFinder.finder.
-						find(mutant, cir_mutations, dependence_graph, max_distance);
-				for(SymInstancePath path : paths) {
-					this.write_sym_execution_path(mutant, test, path);
-				}
-			}
-			this.close();
-		}
-		/* dynamic analysis */
-		else {
-			CirExecutionPath test_path = tspace.load_execution_path(this.source.get_sizeof_template(), 
-									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
-			if(test_path != null) {
-				this.open("." + test.get_id() + ".dft");
-				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-					MuTestProjectTestResult result = tspace.get_test_result(mutant);
-					if(result == null) {
-						continue;
-					}
-					SymInstancePath path = SymInstancePathFinder.finder.find(mutant, test_path, cir_mutations);
-					this.write_sym_execution_path(mutant, test, path);
-				}
-				this.close();
-			}
-		}
-	}
-	/**
-	 * xxx.sym, xxx.0.sym, ..., xxx.n.sym
-	 * @param max_distance
-	 * @throws Exception
-	 */
-	public void write_kfeatures(int max_distance, Collection<TestInput> test_suite) throws Exception {
-		/* 0. initializations */
-		this.sym_nodes.clear();
-		
-		/* 1. xxx.ins + xxx.dep */
-		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
-		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
-				CirFunctionCallPathType.unique_path, -1));
-		this.write_stat(dependence_graph);
-		
-		/* 2. xxx.sft + xxx.y.dft */
-		CirMutations cir_mutations = new CirMutations(this.source.get_cir_tree());
-		this.write_sym_execution_paths(dependence_graph, max_distance, null, cir_mutations);
-		if(test_suite != null && !test_suite.isEmpty()) {
-			for(TestInput test_case : test_suite) 
-				this.write_sym_execution_paths(dependence_graph, max_distance, test_case, cir_mutations);
-		}
-		
-		/* 3. xxx.sym */
-		this.write_sym_nodes();
-		this.sym_nodes.clear();
-	}
 }
