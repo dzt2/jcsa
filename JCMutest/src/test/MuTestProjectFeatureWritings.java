@@ -58,7 +58,7 @@ public class MuTestProjectFeatureWritings {
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
 		writer.write_code(); 
 		writer.write_muta();
-		selected_tests.clear();	// should be ignored if dynamic is used
+		// selected_tests.clear();	// should be ignored if dynamic is used
 		writer.write_features(max_distance, selected_tests);
 		System.out.println();
 	}
