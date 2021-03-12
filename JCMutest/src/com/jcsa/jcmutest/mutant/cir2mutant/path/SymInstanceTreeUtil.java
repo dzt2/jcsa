@@ -52,11 +52,11 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * @author yukimula
  *
  */
-public class SymInstanceTreeUtil {
+class SymInstanceTreeUtil {
 	
 	/* singleton */
 	private SymInstanceTreeUtil() { }
-	public static final SymInstanceTreeUtil utils = new SymInstanceTreeUtil();
+	protected static final SymInstanceTreeUtil utils = new SymInstanceTreeUtil();
 	
 	/* previous path construction */
 	/**
@@ -531,7 +531,7 @@ public class SymInstanceTreeUtil {
 	 * @param dependence_graph used to build path and data flow propagation
 	 * @throws Exception
 	 */
-	public SymInstanceTree build_sym_instance_tree(Mutant mutant, int propagation_distance, CDependGraph dependence_graph) throws Exception {
+	protected SymInstanceTree build_sym_instance_tree(Mutant mutant, int propagation_distance, CDependGraph dependence_graph) throws Exception {
 		SymInstanceTree tree = new SymInstanceTree(mutant);
 		
 		Map<CirExecution, Collection<CirMutation>> execution_infections
@@ -563,32 +563,10 @@ public class SymInstanceTreeUtil {
 		return tree;
 	}
 	
-	/* static evaluation methods */
+	/* state evaluation methods on tree */
 	/**
-	 * reset all state for nodes following the tree_node
 	 * @param tree_node
-	 * @throws Exception
-	 */
-	private void reset_tree_on(SymInstanceTreeNode tree_node) throws Exception {
-		if(!tree_node.is_root())
-			tree_node.get_edge_state().reset();
-		tree_node.get_node_state().reset();
-		for(SymInstanceTreeNode child : tree_node.get_children()) {
-			this.reset_tree_on(child);
-		}
-	}
-	/**
-	 * reset all the state on edges and nodes in each node in tree
-	 * @param tree
-	 * @throws Exception
-	 */
-	private void reset_tree(SymInstanceTree tree) throws Exception {
-		this.reset_tree_on(tree.get_root());
-	}
-	/**
-	 * evaluate the state from edge to node and return whether the evaluation passes through tree node
-	 * @param tree_node
-	 * @return
+	 * @return perform static evaluation on tree_node to update its edge and node state
 	 * @throws Exception
 	 */
 	private Boolean evaluate_tree_node(SymInstanceTreeNode tree_node, SymbolStateContexts contexts) throws Exception {
@@ -613,206 +591,135 @@ public class SymInstanceTreeUtil {
 		return node_result;
 	}
 	/**
-	 * @param leaf_node
-	 * @return path from root to leaf
-	 * @throws Exception
-	 */
-	private List<SymInstanceTreeNode> get_path_to(SymInstanceTreeNode leaf) throws Exception {
-		List<SymInstanceTreeNode> path = new ArrayList<SymInstanceTreeNode>();
-		while(leaf != null) {
-			path.add(leaf);
-			leaf = leaf.get_parent();
-		}
-		for(int k = 0; k < path.size() / 2; k++) {
-			SymInstanceTreeNode x = path.get(k);
-			SymInstanceTreeNode y = path.get(path.size() - k - 1);
-			path.set(k, y);
-			path.set(path.size() - k - 1, x);
-		}
-		return path;
-	}
-	/**
-	 * Perform static evaluation from tree_node to its children until failed
+	 * perform static evaluation on states of tree_node and all its children recursively
 	 * @param tree_node
-	 * @param paths the collection of paths including all reachable tree node among evaluations
 	 * @throws Exception
 	 */
-	private void stat_evaluate_from(SymInstanceTreeNode tree_node, 
-			Collection<List<SymInstanceTreeNode>> paths) throws Exception {
+	private void static_evaluate_from(SymInstanceTreeNode tree_node) throws Exception {
+		/* local evaluation on tree_node using null contexts */
 		Boolean result = this.evaluate_tree_node(tree_node, null);
+		
+		/* passing through this tree node, recursively solve */
 		if(result == null || result.booleanValue()) {
-			if(tree_node.is_leaf()) {
-				paths.add(this.get_path_to(tree_node));
+			for(SymInstanceTreeNode child : tree_node.get_children()) {
+				this.static_evaluate_from(child);
 			}
-			else {
-				for(SymInstanceTreeNode child : tree_node.get_children()) {
-					this.stat_evaluate_from(child, paths);
-				}
-			}
-		}
-		/* static evaluation fails at this node */
-		else {
-			paths.add(this.get_path_to(tree_node));
 		}
 	}
 	/**
+	 * perform static evaluations on given tree
 	 * @param tree
-	 * @return set of paths from root to reachable nodes in tree using static evaluations
 	 * @throws Exception
 	 */
-	public Collection<List<SymInstanceTreeNode>> stat_evaluations(SymInstanceTree tree) throws Exception {
+	protected void static_evaluations(SymInstanceTree tree) throws Exception {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
 		else {
-			this.reset_tree(tree);
-			Collection<List<SymInstanceTreeNode>> paths = new ArrayList<List<SymInstanceTreeNode>>();
-			this.stat_evaluate_from(tree.get_root(), paths);
-			return paths;
-		}
-	}
-	
-	/* dynamic evaluation methods */
-	/**
-	 * collect the mutation nodes under the tree_node where the mutant is seeded
-	 * @param tree_node
-	 * @param mutation_nodes
-	 * @throws Exception
-	 */
-	private void collect_mutation_tree_nodes_in(SymInstanceTreeNode tree_node, 
-			Set<SymInstanceTreeNode> mutation_nodes) throws Exception {
-		if(tree_node.get_node_state().is_state_error()) {
-			mutation_nodes.add(tree_node.get_parent());
-		}
-		else {
-			for(SymInstanceTreeNode child : tree_node.get_children()) {
-				this.collect_mutation_tree_nodes_in(child, mutation_nodes);
-			}
+			tree.reset();
+			this.static_evaluate_from(tree.get_root());
 		}
 	}
 	/**
+	 * update the states before mutation nodes using dynamic information
 	 * @param tree
-	 * @return the set of tree node referring to the coverage of mutation points
-	 * @throws Exception
-	 */
-	private Set<SymInstanceTreeNode> collect_mutation_tree_nodes(SymInstanceTree tree) throws Exception {
-		Set<SymInstanceTreeNode> mutation_nodes = new HashSet<SymInstanceTreeNode>();
-		this.collect_mutation_tree_nodes_in(tree.get_root(), mutation_nodes);
-		return mutation_nodes;
-	}
-	/**
-	 * @param mutation_node
 	 * @param test_path
-	 * @return evaluate on the previous part and return path from root to mutation node (updating
-	 * 		   all the state among the edges)
 	 * @throws Exception
 	 */
-	private void dyna_prev_evaluate_until(Set<SymInstanceTreeNode> mutation_nodes, 
-			SymInstanceTree tree, CStatePath test_path) throws Exception {
-		/* fetch all the states in tree nodes until the mutation nodes */
-		CirExecution execution; SymInstanceState state;
-		CirMutations cir_mutations = tree.get_cir_mutations();
-		Map<CirExecution, Collection<SymInstanceState>> execution_states = 
-				new HashMap<CirExecution, Collection<SymInstanceState>>();
+	private void dynamic_prev_evaluations(SymInstanceTree tree, CStatePath test_path) throws Exception {
+		/* collect all the nodes from root to mutation nodes */
+		Collection<SymInstanceTreeNode> mutation_nodes = tree.get_mutation_nodes();
+		Set<SymInstanceTreeNode> prev_nodes = new HashSet<SymInstanceTreeNode>();
 		for(SymInstanceTreeNode mutation_node : mutation_nodes) {
 			SymInstanceTreeNode tree_node = mutation_node;
 			while(tree_node != null) {
-				if(!tree_node.is_root()) {
-					state = tree_node.get_edge_state();
-					execution = state.get_execution();
-					if(!execution_states.containsKey(execution)) {
-						execution_states.put(execution, new ArrayList<SymInstanceState>());
-					}
-					execution_states.get(execution).add(state);
-				}
-				
-				state = tree_node.get_node_state();
-				execution = state.get_execution();
-				if(!execution_states.containsKey(execution)) {
-					execution_states.put(execution, new ArrayList<SymInstanceState>());
-				}
-				execution_states.get(execution).add(state);
-				
+				prev_nodes.add(tree_node);
 				tree_node = tree_node.get_parent();
 			}
 		}
 		
-		/* dynamic evaluations performed on every point */
+		/* divide the states to corresponding execution */
+		Map<CirExecution, Collection<SymInstanceState>> states = 
+				new HashMap<CirExecution, Collection<SymInstanceState>>();
+		SymInstanceState state; CirExecution execution;
+		for(SymInstanceTreeNode prev_node : prev_nodes) {
+			if(prev_node.get_edge_state() != null) {
+				state = prev_node.get_edge_state();
+				execution = state.get_execution();
+				if(!states.containsKey(execution)) {
+					states.put(execution, new ArrayList<SymInstanceState>());
+				}
+				states.get(execution).add(state);
+			}
+			state = prev_node.get_node_state();
+			execution = state.get_execution();
+			if(!states.containsKey(execution)) {
+				states.put(execution, new ArrayList<SymInstanceState>());
+			}
+			states.get(execution).add(state);
+		}
+		
+		/* perform dynamic evaluation on all prev-states */
 		SymbolStateContexts contexts = new SymbolStateContexts();
+		CirMutations cir_mutations = tree.get_cir_mutations();
 		for(CStateNode state_node : test_path.get_nodes()) {
 			contexts.accumulate(state_node);
-			
-			CirExecution target = state_node.get_execution();
-			if(execution_states.containsKey(target)) {
-				for(SymInstanceState target_state : execution_states.get(target)) {
-					target_state.evaluate(cir_mutations, contexts);
+			execution = state_node.get_execution();
+			if(states.containsKey(execution)) {
+				for(SymInstanceState prev_state : states.get(execution)) {
+					prev_state.evaluate(cir_mutations, contexts);
 				}
 			}
 		}
 	}
 	/**
-	 * update the state before mutation locations until first infection evaluate.
+	 * update the states after mutation nodes w.r.t. the given muta_execution node
 	 * @param tree
 	 * @param test_path
 	 * @throws Exception
 	 */
-	private void dyna_prev_evaluations_on(SymInstanceTree tree, CStatePath test_path) throws Exception {
-		Set<SymInstanceTreeNode> muta_nodes = this.collect_mutation_tree_nodes(tree);
-		this.dyna_prev_evaluate_until(muta_nodes, tree, test_path);
-	}
-	/**
-	 * collect all the states after the tree nodes (including tree_node itself)
-	 * @param tree
-	 * @param states
-	 * @throws Exception
-	 */
-	private void collect_tree_states_after(SymInstanceTreeNode tree_node, Set<SymInstanceState> states) throws Exception {
-		if(!tree_node.is_root()) {
-			states.add(tree_node.get_edge_state());
-		}
-		states.add(tree_node.get_node_state());
-		for(SymInstanceTreeNode child : tree_node.get_children()) {
-			this.collect_tree_states_after(child, states);
-		}
-	}
-	/**
-	 * update all the states following mutation nodes
-	 * @param execution
-	 * @param mutation_nodes
-	 * @param test_path
-	 * @throws Exception
-	 */
-	private void dyna_post_evaluate_from(CirExecution execution, 
-			Collection<SymInstanceTreeNode> mutation_nodes, 
-			SymInstanceTree tree,
-			CStatePath test_path) throws Exception {
-		/* collect mapping from execution to the leafs it propagate to */
-		Set<SymInstanceState> post_states = new HashSet<SymInstanceState>();
+	private void dynamic_post_evaluations(SymInstanceTree tree, CirExecution muta_execution, 
+			Iterable<SymInstanceTreeNode> mutation_nodes, CStatePath test_path) throws Exception {
+		/* collect nodes after reachable mutation nodes */
+		Collection<SymInstanceTreeNode> post_nodes = new HashSet<SymInstanceTreeNode>();
 		for(SymInstanceTreeNode mutation_node : mutation_nodes) {
-			this.collect_tree_states_after(mutation_node, post_states);
-		}
-		Map<CirExecution, Collection<SymInstanceState>> execution_states = 
-				new HashMap<CirExecution, Collection<SymInstanceState>>();
-		for(SymInstanceState post_state : post_states) {
-			if(!execution_states.containsKey(post_state.get_execution())) {
-				execution_states.put(post_state.get_execution(), new ArrayList<SymInstanceState>());
-			}
-			execution_states.get(post_state.get_execution()).add(post_state);
+			post_nodes.addAll(mutation_node.get_sub_tree());
 		}
 		
-		/* dynamic evaluation until the first occurrence of execution */
+		/* mapping from execution to corresponding state being updated */
+		Map<CirExecution, Collection<SymInstanceState>> states = 
+				new HashMap<CirExecution, Collection<SymInstanceState>>();
+		SymInstanceState state; CirExecution execution;
+		for(SymInstanceTreeNode post_node : post_nodes) {
+			if(post_node.get_edge_state() != null) {
+				state = post_node.get_edge_state();
+				execution = state.get_execution();
+				if(!states.containsKey(execution)) {
+					states.put(execution, new ArrayList<SymInstanceState>());
+				}
+				states.get(execution).add(state);
+			}
+			state = post_node.get_node_state();
+			execution = state.get_execution();
+			if(!states.containsKey(execution)) {
+				states.put(execution, new ArrayList<SymInstanceState>());
+			}
+			states.get(execution).add(state);
+		}
+		
+		/* perform dynamic evaluation on all prev-states */
 		SymbolStateContexts contexts = new SymbolStateContexts();
 		boolean reached = false;
 		CirMutations cir_mutations = tree.get_cir_mutations();
 		for(CStateNode state_node : test_path.get_nodes()) {
 			/* update contexts and reached tag */
 			contexts.accumulate(state_node);
-			if(state_node.get_execution() == execution) { reached = true; }
+			if(state_node.get_execution() == muta_execution) { reached = true; }
 			
 			/* since mutation nodes is reached */
 			if(reached) {
 				CirExecution target = state_node.get_execution();
-				if(execution_states.containsKey(target)) {
-					for(SymInstanceState post_state : execution_states.get(target)) {
+				if(states.containsKey(target)) {
+					for(SymInstanceState post_state : states.get(target)) {
 						post_state.evaluate(cir_mutations, contexts);
 					}
 				}
@@ -820,16 +727,17 @@ public class SymInstanceTreeUtil {
 		}
 	}
 	/**
+	 * perform dynamic evaluation on post part after mutation nodes
 	 * @param tree
 	 * @param test_path
 	 * @throws Exception
 	 */
-	private void dyna_post_evaluations_on(SymInstanceTree tree, CStatePath test_path) throws Exception {
-		Set<SymInstanceTreeNode> mutation_nodes = this.collect_mutation_tree_nodes(tree);
+	private void dynamic_post_evaluations(SymInstanceTree tree, CStatePath test_path) throws Exception {
+		Collection<SymInstanceTreeNode> mutation_nodes = tree.get_mutation_nodes();
 		Map<CirExecution, Collection<SymInstanceTreeNode>> execution_nodes = 
 				new HashMap<CirExecution, Collection<SymInstanceTreeNode>>();
 		for(SymInstanceTreeNode mutation_node : mutation_nodes) {
-			if(mutation_node.get_node_state().is_acceptable()) {	/* only reached will perform */
+			if(mutation_node.is_acceptable()) {
 				CirExecution execution = mutation_node.get_execution();
 				if(!execution_nodes.containsKey(execution)) {
 					execution_nodes.put(execution, new ArrayList<SymInstanceTreeNode>());
@@ -839,75 +747,57 @@ public class SymInstanceTreeUtil {
 		}
 		
 		for(CirExecution execution : execution_nodes.keySet()) {
-			this.dyna_post_evaluate_from(execution, execution_nodes.get(execution), tree, test_path);
+			this.dynamic_post_evaluations(tree, execution, execution_nodes.get(execution), test_path);
 		}
 	}
 	/**
-	 * collect the reachable parts of paths from root to reachable nodes in tree
-	 * @param tree_node
-	 * @param paths
-	 * @throws Exception
-	 */
-	private void collect_reachable_paths(SymInstanceTreeNode tree_node, Collection<List<SymInstanceTreeNode>> paths) throws Exception {
-		boolean pass_edge;
-		if(!tree_node.is_root()) {
-			SymInstanceState edge_state = tree_node.get_edge_state();
-			if(edge_state.is_acceptable()) {
-				pass_edge = true;
-			}
-			else {
-				pass_edge = false;
-			}
-		}
-		else {
-			pass_edge = true;
-		}
-		
-		boolean pass_node;
-		if(pass_edge) {
-			SymInstanceState node_state = tree_node.get_node_state();
-			if(node_state.is_acceptable()) {
-				pass_node = true;
-			}
-			else {
-				pass_node = false;
-			}
-		}
-		else {
-			pass_node = false;
-		}
-		
-		if(pass_node) {
-			if(tree_node.is_leaf()) {
-				paths.add(this.get_path_to(tree_node));
-			}
-			else {
-				for(SymInstanceTreeNode child : tree_node.get_children()) {
-					this.collect_reachable_paths(child, paths);
-				}
-			}
-		}
-		else {
-			paths.add(this.get_path_to(tree_node));
-		}
-	}
-	/**
-	 * dynamic evaluation on 
+	 * perform dynamic evaluation to update states on given test path with information at runtime
 	 * @param tree
 	 * @param test_path
-	 * @return reachable path in tree collected
 	 * @throws Exception
 	 */
-	public Collection<List<SymInstanceTreeNode>> dyna_evaluations(SymInstanceTree tree, CStatePath test_path) throws Exception {
+	protected void dynamic_evaluation(SymInstanceTree tree, CStatePath test_path) throws Exception {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
 		else if(test_path == null)
 			throw new IllegalArgumentException("Invalid test_path");
 		else {
-			this.reset_tree(tree);
-			this.dyna_prev_evaluations_on(tree, test_path);
-			this.dyna_post_evaluations_on(tree, test_path);
-			
+			tree.reset();
+			this.dynamic_prev_evaluations(tree, test_path);
+			this.dynamic_post_evaluations(tree, test_path);
+		}
+	}
+	
+	/* reachable path finding algorithm */
+	/**
+	 * collect paths reachable from the node
+	 * @param node
+	 * @param paths
+	 */
+	private void collect_reachable_paths(SymInstanceTreeNode node, Collection<List<SymInstanceTreeNode>> paths) {
+		if(node.is_acceptable()) {
+			if(node.is_leaf()) {
+				paths.add(node.path_to_this());
+			}
+			else {
+				for(SymInstanceTreeNode child : node.get_children()) {
+					this.collect_reachable_paths(child, paths);
+				}
+			}
+		}
+		else {
+			paths.add(node.path_to_this());
+		}
+	}
+	/**
+	 * @param tree
+	 * @return
+	 * @throws Exception
+	 */
+	protected Collection<List<SymInstanceTreeNode>> collect_reachable_paths(SymInstanceTree tree) {
+		if(tree == null)
+			throw new IllegalArgumentException("Invalid tree: null");
+		else {
 			Collection<List<SymInstanceTreeNode>> paths = new ArrayList<List<SymInstanceTreeNode>>();
 			this.collect_reachable_paths(tree.get_root(), paths);
 			return paths;

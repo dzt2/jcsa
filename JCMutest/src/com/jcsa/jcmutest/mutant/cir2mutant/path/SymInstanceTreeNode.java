@@ -1,7 +1,11 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -127,9 +131,51 @@ public class SymInstanceTreeNode {
 	 * @return the execution of statement node in control flow graph, where the tree node was defined.
 	 */
 	public CirExecution get_execution() { return this.node_state.get_execution(); }
+	
+	/* inferring */
 	/**
-	 * @return whether this tree node contains state error in node state
+	 * collect all the nodes under the node
+	 * @param node
+	 * @param nodes
 	 */
-	public boolean is_state_error_node() { return this.node_state.is_state_error(); }
+	private void collect_children(SymInstanceTreeNode node, Collection<SymInstanceTreeNode> nodes) {
+		nodes.add(node);
+		for(SymInstanceTreeNode child : node.children) {
+			this.collect_children(child, nodes);
+		}
+	}
+	/**
+	 * @return all the nodes under the node
+	 */
+	public Collection<SymInstanceTreeNode> get_sub_tree() {
+		Set<SymInstanceTreeNode> nodes = new HashSet<SymInstanceTreeNode>();
+		this.collect_children(this, nodes);
+		return nodes;
+	}
+	/**
+	 * @return path from root to this one
+	 */
+	public List<SymInstanceTreeNode> path_to_this() {
+		List<SymInstanceTreeNode> path = new ArrayList<SymInstanceTreeNode>();
+		
+		SymInstanceTreeNode node = this;
+		while(node != null) {
+			path.add(node);
+			node = node.parent;
+		}
+		
+		for(int k = 0; k < path.size() / 2; k++) {
+			SymInstanceTreeNode x = path.get(k);
+			SymInstanceTreeNode y = path.get(path.size() - 1 - k);
+			path.set(k, y);
+			path.set(path.size() - 1 - k, x);
+		}
+		
+		return path;
+	}
+	/**
+	 * @return whether the node is acceptable (reached ever)
+	 */
+	public boolean is_acceptable() { return this.node_state.is_acceptable(); } 
 	
 }

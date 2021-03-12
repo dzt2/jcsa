@@ -21,7 +21,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceState;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTreeNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.path.SymInstanceTreeUtil;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
@@ -895,8 +894,9 @@ public class MuTestProjectFeatureWriter {
 			this.open(".sft");
 			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 				if(mutant.has_cir_mutations()) {
-					SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
-					Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.stat_evaluations(tree);
+					SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
+					tree.evaluate();
+					Collection<List<SymInstanceTreeNode>> paths = tree.get_reachable_paths();
 					for(List<SymInstanceTreeNode> path : paths) {
 						this.write_sym_tree_path(tree.get_mutant(), null, path);
 					}
@@ -912,8 +912,9 @@ public class MuTestProjectFeatureWriter {
 				this.open("." + test.get_id() + ".dft");
 				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 					if(mutant.has_cir_mutations()) {
-						SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
-						Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.dyna_evaluations(tree, test_path);
+						SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
+						tree.evaluate(test_path);
+						Collection<List<SymInstanceTreeNode>> paths = tree.get_reachable_paths();
 						for(List<SymInstanceTreeNode> path : paths) {
 							this.write_sym_tree_path(tree.get_mutant(), null, path);
 						}
