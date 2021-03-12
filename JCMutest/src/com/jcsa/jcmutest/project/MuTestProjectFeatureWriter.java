@@ -12,6 +12,7 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotateType;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
@@ -839,13 +840,13 @@ public class MuTestProjectFeatureWriter {
 	 * @param state
 	 * @throws Exception
 	 */
-	private void write_sym_instance_state(SymInstanceState state) throws Exception {
+	private void write_sym_instance_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
 		if(state.is_acceptable()) {	/* only for reachable state being printed */
 			this.write_sym_condition(state.get_source_instance());
 			for(CirAnnotation annotation : state.get_instance_annotations()) {
 				this.write_sym_condition(annotation);
 			}
-			/*
+			
 			if(state.is_constraint()) {
 				SymConstraint constraint = (SymConstraint) state.get_source_instance();
 				Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
@@ -854,7 +855,6 @@ public class MuTestProjectFeatureWriter {
 					this.write_sym_condition(improved_constraint);
 				}
 			}
-			*/
 		}
 	}
 	/**
@@ -862,10 +862,11 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_tree_node(SymInstanceTreeNode tree_node) throws Exception {
+		CirMutations cir_mutations = tree_node.get_tree().get_cir_mutations();
 		if(!tree_node.is_root()) {
-			this.write_sym_instance_state(tree_node.get_edge_state());
+			this.write_sym_instance_state(tree_node.get_edge_state(), cir_mutations);
 		}
-		this.write_sym_instance_state(tree_node.get_node_state());
+		this.write_sym_instance_state(tree_node.get_node_state(), cir_mutations);
 	}
 	/**
 	 * mid tid word+
