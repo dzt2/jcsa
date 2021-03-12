@@ -829,11 +829,13 @@ public class SymInstanceTreeUtil {
 		Map<CirExecution, Collection<SymInstanceTreeNode>> execution_nodes = 
 				new HashMap<CirExecution, Collection<SymInstanceTreeNode>>();
 		for(SymInstanceTreeNode mutation_node : mutation_nodes) {
-			CirExecution execution = mutation_node.get_execution();
-			if(!execution_nodes.containsKey(execution)) {
-				execution_nodes.put(execution, new ArrayList<SymInstanceTreeNode>());
+			if(mutation_node.get_node_state().is_acceptable()) {	/* only reached will perform */
+				CirExecution execution = mutation_node.get_execution();
+				if(!execution_nodes.containsKey(execution)) {
+					execution_nodes.put(execution, new ArrayList<SymInstanceTreeNode>());
+				}
+				execution_nodes.get(execution).add(mutation_node);
 			}
-			execution_nodes.get(execution).add(mutation_node);
 		}
 		
 		for(CirExecution execution : execution_nodes.keySet()) {
