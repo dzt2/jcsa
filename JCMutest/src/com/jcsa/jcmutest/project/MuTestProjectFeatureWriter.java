@@ -840,20 +840,20 @@ public class MuTestProjectFeatureWriter {
 	 * @param state
 	 * @throws Exception
 	 */
-	private void write_sym_instance_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
-		if(state.is_acceptable()) {	/* only for reachable state being printed */
-			this.write_sym_condition(state.get_source_instance());
-			for(CirAnnotation annotation : state.get_instance_annotations()) {
-				this.write_sym_condition(annotation);
-			}
-			
-			if(state.is_constraint()) {
-				SymConstraint constraint = (SymConstraint) state.get_source_instance();
-				Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
-				for(SymConstraint improved_constraint : constraints) {
-					writer.write("\t");
-					this.write_sym_condition(improved_constraint);
-				}
+	private void write_sym_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
+		/* source_instance + annotations */
+		this.write_sym_condition(state.get_source_instance());
+		for(CirAnnotation annotation : state.get_instance_annotations()) {
+			this.write_sym_condition(annotation);
+		}
+		
+		/* improved_constraints */
+		if(state.is_constraint()) {
+			SymConstraint constraint = (SymConstraint) state.get_source_instance();
+			Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
+			for(SymConstraint improved_constraint : constraints) {
+				writer.write("\t");
+				this.write_sym_condition(improved_constraint);
 			}
 		}
 	}
@@ -864,9 +864,9 @@ public class MuTestProjectFeatureWriter {
 	private void write_sym_tree_node(SymInstanceTreeNode tree_node) throws Exception {
 		CirMutations cir_mutations = tree_node.get_tree().get_cir_mutations();
 		if(!tree_node.is_root()) {
-			this.write_sym_instance_state(tree_node.get_edge_state(), cir_mutations);
+			this.write_sym_state(tree_node.get_edge_state(), cir_mutations);
 		}
-		this.write_sym_instance_state(tree_node.get_node_state(), cir_mutations);
+		this.write_sym_state(tree_node.get_node_state(), cir_mutations);
 	}
 	/**
 	 * mid tid word+
