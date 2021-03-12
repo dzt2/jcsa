@@ -12,7 +12,6 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotateType;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
@@ -841,13 +840,13 @@ public class MuTestProjectFeatureWriter {
 	 * @param state
 	 * @throws Exception
 	 */
-	private void write_sym_instance_state(CirMutations cir_mutations, SymInstanceState state) throws Exception {
+	private void write_sym_instance_state(SymInstanceState state) throws Exception {
 		if(state.is_acceptable()) {	/* only for reachable state being printed */
 			this.write_sym_condition(state.get_source_instance());
 			for(CirAnnotation annotation : state.get_instance_annotations()) {
 				this.write_sym_condition(annotation);
 			}
-			
+			/*
 			if(state.is_constraint()) {
 				SymConstraint constraint = (SymConstraint) state.get_source_instance();
 				Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
@@ -856,18 +855,18 @@ public class MuTestProjectFeatureWriter {
 					this.write_sym_condition(improved_constraint);
 				}
 			}
+			*/
 		}
 	}
 	/**
 	 * @param tree_node
 	 * @throws Exception
 	 */
-	private void write_sym_tree_node(SymInstanceTreeNode tree_node, CirMutations cir_mutations) throws Exception {
+	private void write_sym_tree_node(SymInstanceTreeNode tree_node) throws Exception {
 		if(!tree_node.is_root()) {
-			SymInstanceState state = tree_node.get_edge_state();
-			this.write_sym_instance_state(cir_mutations, state);
+			this.write_sym_instance_state(tree_node.get_edge_state());
 		}
-		this.write_sym_instance_state(cir_mutations, tree_node.get_node_state());
+		this.write_sym_instance_state(tree_node.get_node_state());
 	}
 	/**
 	 * mid tid word+
@@ -876,12 +875,12 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_tree_path(Mutant mutant, TestInput test, 
-			List<SymInstanceTreeNode> path, CirMutations cir_mutations) throws Exception {
+			List<SymInstanceTreeNode> path) throws Exception {
 		int mid = mutant.get_id();
 		int tid = (test == null) ? -1 : test.get_id();
 		this.writer.write(mid + "\t" + tid);
 		for(SymInstanceTreeNode tree_node : path) {
-			this.write_sym_tree_node(tree_node, cir_mutations);
+			this.write_sym_tree_node(tree_node);
 		}
 		this.writer.write("\n");
 	}
@@ -899,7 +898,7 @@ public class MuTestProjectFeatureWriter {
 					SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
 					Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.stat_evaluations(tree);
 					for(List<SymInstanceTreeNode> path : paths) {
-						this.write_sym_tree_path(tree.get_mutant(), null, path, tree.get_cir_mutations());
+						this.write_sym_tree_path(tree.get_mutant(), null, path);
 					}
 				}
 			}
@@ -916,7 +915,7 @@ public class MuTestProjectFeatureWriter {
 						SymInstanceTree tree = SymInstanceTreeUtil.utils.build_sym_instance_tree(mutant, max_distance, dependence_graph);
 						Collection<List<SymInstanceTreeNode>> paths = SymInstanceTreeUtil.utils.dyna_evaluations(tree, test_path);
 						for(List<SymInstanceTreeNode> path : paths) {
-							this.write_sym_tree_path(tree.get_mutant(), null, path, tree.get_cir_mutations());
+							this.write_sym_tree_path(tree.get_mutant(), null, path);
 						}
 					}
 				}

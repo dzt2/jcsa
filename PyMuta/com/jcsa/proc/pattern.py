@@ -1093,6 +1093,6 @@ def testing(inputs_directory: str, output_directory: str, model_name: str, t_val
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
-	testing(prev_path, post_path, "decision_tree", True, False, True, True, True, 2, 0.70, 0.90, 8, do_decision_mine)
+	# testing(prev_path, post_path, "decision_tree", True, False, True, True, True, 2, 0.70, 0.90, 8, do_decision_mine)
 	testing(prev_path, post_path, "frequent_mine", True, False, True, True, True, 2, 0.70, 0.90, 1, do_frequent_mine)
 
