@@ -340,12 +340,28 @@ class RIPDocument:
 		:param t_value: the value set to validate part if it is True
 		:param f_value: the value set to validate part if it is False
 		:param n_value: the value set to validate part if it is None
-		:return: document loaded from xxx.sft files
+		:return: document loaded from xxx.dfx files
 		"""
 		document = RIPDocument(project)
 		directory = project.program.directory
 		for file_name in os.listdir(directory):
 			if file_name.endswith(".dft"):
+				document.__loading__(os.path.join(directory, file_name), t_value, f_value, n_value)
+		return document
+
+	@staticmethod
+	def load_execute_documents(project: jcmuta.CProject, t_value, f_value, n_value):
+		"""
+		:param project:
+		:param t_value: the value set to validate part if it is True
+		:param f_value: the value set to validate part if it is False
+		:param n_value: the value set to validate part if it is None
+		:return: document loaded from xxx.dfp files
+		"""
+		document = RIPDocument(project)
+		directory = project.program.directory
+		for file_name in os.listdir(directory):
+			if file_name.endswith(".dfp"):
 				document.__loading__(os.path.join(directory, file_name), t_value, f_value, n_value)
 		return document
 
