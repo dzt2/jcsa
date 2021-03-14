@@ -154,5 +154,29 @@ public class SymInstanceStatus {
 		}
 		return false;
 	}
+	/**
+	 * @return	True if any concrete state evaluated is True
+	 * 			False if all concrete states evaluated as False
+	 * 			null if all the concrete states are null
+	 */
+	public Boolean get_evaluation_result() {
+		int rejection = 0, execution = 0;
+		for(SymInstanceState state : this.states) {
+			Boolean state_result = state.get_evaluation_result();
+			if(state_result != null) {
+				if(state_result.booleanValue())
+					return Boolean.TRUE;
+				else
+					rejection++;
+			}
+			execution++;
+		}
+		if(execution > rejection) {
+			return null;
+		}
+		else {
+			return Boolean.FALSE;
+		}
+	}
 	
 }

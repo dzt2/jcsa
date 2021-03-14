@@ -745,11 +745,10 @@ public class MuTestProjectFeatureWriter {
 	 * @param condition
 	 * @throws Exception
 	 */
-	private void write_sym_condition(Object condition) throws Exception {
+	private void write_sym_condition(Object condition, Boolean validate) throws Exception {
 		/* 1. declarations */
 		SymConditionCategory category;
 		CirAnnotateType operator;
-		Boolean validate;
 		CirExecution execution; 
 		CirNode location;
 		SymbolExpression parameter;
@@ -758,7 +757,6 @@ public class MuTestProjectFeatureWriter {
 		if(condition instanceof SymConstraint) {
 			category = SymConditionCategory.satisfaction;
 			operator = CirAnnotateType.eval_stmt;
-			validate = ((SymConstraint) condition).validate(null);
 			execution = ((SymConstraint) condition).get_execution();
 			location = execution.get_statement();
 			parameter = ((SymConstraint) condition).get_condition();
@@ -767,7 +765,6 @@ public class MuTestProjectFeatureWriter {
 		else if(condition instanceof SymExpressionError) {
 			category = SymConditionCategory.observations;
 			operator = CirAnnotateType.mut_value;
-			validate = ((SymExpressionError) condition).validate(null);
 			execution = ((SymExpressionError) condition).get_execution();
 			location = ((SymExpressionError) condition).get_expression();
 			parameter = ((SymExpressionError) condition).get_mutation_value();
@@ -776,7 +773,6 @@ public class MuTestProjectFeatureWriter {
 		else if(condition instanceof SymReferenceError) {
 			category = SymConditionCategory.observations;
 			operator = CirAnnotateType.mut_refer;
-			validate = ((SymReferenceError) condition).validate(null);
 			execution = ((SymReferenceError) condition).get_execution();
 			location = ((SymReferenceError) condition).get_expression();
 			parameter = ((SymReferenceError) condition).get_mutation_value();
@@ -785,7 +781,6 @@ public class MuTestProjectFeatureWriter {
 		else if(condition instanceof SymStateValueError) {
 			category = SymConditionCategory.observations;
 			operator = CirAnnotateType.mut_state;
-			validate = ((SymStateValueError) condition).validate(null);
 			execution = ((SymStateValueError) condition).get_execution();
 			location = ((SymStateValueError) condition).get_expression();
 			parameter = ((SymStateValueError) condition).get_mutation_value();
@@ -794,7 +789,6 @@ public class MuTestProjectFeatureWriter {
 		else if(condition instanceof SymTrapError) {
 			category = SymConditionCategory.observations;
 			operator = CirAnnotateType.trap_stmt;
-			validate = Boolean.TRUE;
 			execution = ((SymTrapError) condition).get_execution();
 			location = execution.get_statement();
 			parameter = null;
@@ -803,7 +797,6 @@ public class MuTestProjectFeatureWriter {
 		else if(condition instanceof SymFlowError) {
 			category = SymConditionCategory.observations;
 			operator = CirAnnotateType.mut_flow;
-			validate = ((SymFlowError) condition).validate(null);
 			execution = ((SymFlowError) condition).get_execution();
 			location = ((SymFlowError) condition).get_original_flow().get_source().get_statement();
 			parameter = SymbolFactory.sym_expression(((SymFlowError) condition).get_mutation_flow().get_target());
@@ -811,7 +804,6 @@ public class MuTestProjectFeatureWriter {
 		/* Case-6. category$type$validate$execution$location$parameter */
 		else if(condition instanceof CirAnnotation) {
 			CirAnnotation annotation = (CirAnnotation) condition;
-			validate = Boolean.TRUE;
 			switch(annotation.get_type()) {
 			case covr_stmt:
 			case eval_stmt:
@@ -927,9 +919,10 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
 		/* source_instance + annotations */
-		this.write_sym_condition(state.get_abstract_instance());
+		Boolean validate = state.get_evaluation_result();
+		this.write_sym_condition(state.get_abstract_instance(), validate);
 		for(CirAnnotation annotation : state.get_annotations()) {
-			this.write_sym_condition(annotation);
+			this.write_sym_condition(annotation, validate);
 		}
 		
 		/* improved_constraints */
@@ -937,7 +930,7 @@ public class MuTestProjectFeatureWriter {
 			SymConstraint constraint = (SymConstraint) state.get_abstract_instance();
 			Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
 			for(SymConstraint improved_constraint : constraints) {
-				this.write_sym_condition(improved_constraint);
+				this.write_sym_condition(improved_constraint, validate);
 			}
 		}
 	}
@@ -949,9 +942,10 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_status(SymInstanceStatus status, CirMutations cir_mutations) throws Exception {
 		/* source_instance + annotations */
-		this.write_sym_condition(status.get_instance());
+		Boolean validate = status.get_evaluation_result();
+		this.write_sym_condition(status.get_instance(), validate);
 		for(CirAnnotation annotation : status.get_annotations()) {
-			this.write_sym_condition(annotation);
+			this.write_sym_condition(annotation, validate);
 		}
 		
 		/* improved_constraints */
@@ -959,7 +953,7 @@ public class MuTestProjectFeatureWriter {
 			SymConstraint constraint = (SymConstraint) status.get_instance();
 			Collection<SymConstraint> constraints = cir_mutations.improve_constraints(constraint);
 			for(SymConstraint improved_constraint : constraints) {
-				this.write_sym_condition(improved_constraint);
+				this.write_sym_condition(improved_constraint, validate);
 			}
 		}
 	}
