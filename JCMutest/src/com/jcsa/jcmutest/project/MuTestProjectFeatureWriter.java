@@ -1032,7 +1032,7 @@ public class MuTestProjectFeatureWriter {
 				this.close();
 				
 				/* xxx.tid.dfp for sequence of states in dynamic evaluation on test */
-				this.open("." + test.get_id() + ".dfp");
+				this.open("." + test.get_id() + ".pft");
 				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 					if(mutant.has_cir_mutations()) {
 						SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
