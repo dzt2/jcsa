@@ -1073,8 +1073,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		
 		/* 3. xxx.sym */
-		this.write_sym_nodes();
-		this.sym_nodes.clear();
+		this.write_sym_nodes(); this.sym_nodes.clear();
 	}
 	
 }
