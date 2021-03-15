@@ -1,498 +1,19 @@
 """
-This file implements the pattern recognition for mutation testing due to transaction model of execution paths.
+This file implements frequent pattern mining and evaluation part for mining interesting patterns
+from executions of mutation testing.
 """
 
 
 import os
 from typing import TextIO
+
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
+import com.jcsa.mine.feature as jcfeat
 import pydotplus
 from sklearn import tree
 from sklearn import metrics
 from scipy import sparse
-
-
-class RIPExecution:
-	"""
-	It describes the execution path annotated with a set of symbolic conditions required using transaction form.
-	"""
-
-	def __init__(self, document, path: jcmuta.SymInstancePath):
-		"""
-		:param document: It preserves the execution being created.
-		:param path: The execution path which this one represents.
-		"""
-		document: RIPDocument
-		self.document = document
-		self.mutant = path.get_mutant()
-		self.test = path.get_test()
-		self.conditions = list()
-		for node in path.get_nodes():
-			node: jcmuta.SymInstanceNode
-			for instance in node.get_instances():
-				instance: jcmuta.SymInstance
-				condition = instance.get_condition()
-				if not(condition in self.conditions):
-					self.conditions.append(condition)
-		self.words = list()
-		for condition in self.conditions:
-			self.words.append(str(condition))
-		return
-
-	def get_document(self):
-		"""
-		:return: the document where it is preserved.
-		"""
-		return self.document
-
-	def get_words(self):
-		return self.words
-
-	def get_mutant(self):
-		"""
-		:return: mutation as objective to be killed
-		"""
-		return self.mutant
-
-	def get_test(self):
-		"""
-		:return: the test case being executed
-		"""
-		return self.test
-
-	def get_conditions(self):
-		"""
-		:return: the set of symbolic conditions required for killing mutant in the execution
-		"""
-		return self.conditions
-
-
-class RIPDocument:
-	"""
-	The document preserves the set of mutation executions for analysis.
-	"""
-
-	def __init__(self, project: jcmuta.CProject, postfix: str):
-		"""
-		:param project: It is the original project for being tested and analysis.
-		:param postfix: The postfix of feature files to be loaded from the project.
-		"""
-		self.project = project		# The project on which the document is loaded from.
-		self.conditions = dict()	# Mapping from key to unique conditions used among.
-		self.executions = list()	# The collection of transactions for being mined.
-		self.muta_execs = dict()	# Mapping from mutant to the executions they are performed.
-		self.test_execs = dict()	# Mapping from test case to the executions being used in.
-
-		document = self.project.load_documents(postfix)
-		for path in document.get_paths():
-			path: jcmuta.SymInstancePath
-			execution = RIPExecution(self, path)
-			self.executions.append(execution)
-			mutant = execution.get_mutant()
-			test = execution.get_test()
-			if not(mutant in self.muta_execs):
-				self.muta_execs[mutant] = set()
-			self.muta_execs[mutant].add(execution)
-			if not(test is None):
-				if not(test in self.test_execs):
-					self.test_execs[test] = set()
-				self.test_execs[test].add(execution)
-			for condition in execution.get_conditions():
-				self.conditions[str(condition)] = condition
-		return
-
-	def get_project(self):
-		return self.project
-
-	def get_words(self):
-		return self.conditions.keys()
-
-	def get_conditions(self):
-		return self.conditions.values()
-
-	def get_condition(self, word: str):
-		return self.conditions[word]
-
-	def get_executions(self):
-		return self.executions
-
-	def get_executions_of(self, key):
-		"""
-		:param key: Mutant or TestCase
-		:return:
-		"""
-		if key in self.muta_execs:
-			executions = self.muta_execs[key]
-		elif key in self.test_execs:
-			executions = self.test_execs[key]
-		else:
-			executions = set()
-		return executions
-
-	def get_mutants(self):
-		return self.muta_execs.keys()
-
-	def get_tests(self):
-		return self.test_execs.keys()
-
-
-NR_CLASS = "NR"			# testing that fails to reach the mutation
-NI_CLASS = "NI"			# testing that fails to infect but reaches
-NP_CLASS = "NP"			# testing that fails to kill but infect it
-KI_CLASS = "KI"			# testing that manages to kill the mutants
-
-
-class RIPClassifier:
-	"""
-	It is used to evaluate the performance of a group of executions matched by the pattern based on RIP model.
-	"""
-
-	def __init__(self):
-		self.solutions = dict()		# Mapping from string to [nr, ni, np, ki]
-		return
-
-	# single solution
-
-	@staticmethod
-	def __key_solution__(mutant: jcmuta.Mutant, test):
-		if test is None:
-			return "{}".format(mutant.get_mut_id())
-		else:
-			test: jcmuta.TestCase
-			return "{}#{}".format(mutant.get_mut_id(), test.get_test_id())
-
-	def __get_solution__(self, key: str):
-		"""
-		:param key:
-		:return: the solution w.r.t. the given key
-		"""
-		solution = self.solutions[key]
-		nr = solution[0]
-		ni = solution[1]
-		np = solution[2]
-		ki = solution[3]
-		nr: int
-		ni: int
-		np: int
-		ki: int
-		return nr, ni, np, ki
-
-	def __set_solution__(self, mutant: jcmuta.Mutant, test, key: str):
-		"""
-		:param mutant:
-		:param test:
-		:param key:
-		:return: update the solution w.r.t. key under the execution between mutant-test
-		"""
-		s_result = mutant.get_result()
-		w_result = mutant.get_weak_mutant().get_result()
-		c_result = mutant.get_coverage_mutant().get_result()
-		nr, ni, np, ki = 0, 0, 0, 0
-		if test is None:
-			if s_result.is_killable():
-				ki += 1
-			elif w_result.is_killable():
-				np += 1
-			elif c_result.is_killable():
-				ni += 1
-			else:
-				nr += 1
-		else:
-			test: jcmuta.TestCase
-			if s_result.is_killed_by(test):
-				ki += 1
-			elif w_result.is_killed_by(test):
-				np += 1
-			elif c_result.is_killed_by(test):
-				ni += 1
-			else:
-				nr += 1
-		self.solutions[key] = (nr, ni, np, ki)
-		return
-
-	def __counting__(self, sample):
-		"""
-		:param sample: either Mutant or RIPExecution
-		:return: 	nr, ni, np, ki
-					(1) nr: the number of testing that fail to reach the mutant
-					(2) ni: the number of testing that reach but fail to infect
-					(3) np: the number of testing that infect but fail to kill
-					(4) ki: the number of testing to kill
-		"""
-		if isinstance(sample, jcmuta.Mutant):
-			sample: jcmuta.Mutant
-			mutant = sample
-			test = None
-		else:
-			sample: RIPExecution
-			mutant = sample.get_mutant()
-			test = sample.get_test()
-		key = RIPClassifier.__key_solution__(mutant, test)
-		if not(key in self.solutions):
-			self.__set_solution__(mutant, test, key)
-		return self.__get_solution__(key)
-
-	def __classify__(self, sample):
-		"""
-		:param sample: Mutant or TestCase
-		:return:	NR -- the testing fail to reach the mutant
-					NI -- the testing reach but fail to infect
-					NP -- the testing infect but fail to kill
-					KI -- the testing managed to kill the mutant
-		"""
-		nr, ni, np, ki = self.__counting__(sample)
-		if ki > 0:
-			return KI_CLASS
-		elif np > 0:
-			return NP_CLASS
-		elif ni > 0:
-			return NI_CLASS
-		else:
-			return NR_CLASS
-
-	# collection operators
-
-	def counting(self, samples):
-		"""
-		:param samples: the collection of mutants or executions
-		:return: nr, ni, np, ki, uk, cc
-					(1) nr: the number of testing that fail to reach the mutant
-					(2) ni: the number of testing that reach but fail to infect
-					(3) np: the number of testing that infect but fail to kill
-					(4) ki: the number of testing to kill
-					(5) uk: the number of testing that fail to kill
-					(6) cc: the number of testing that reach but fail to kill
-		"""
-		nr, ni, np, ki = 0, 0, 0, 0
-		for sample in samples:
-			lnr, lni, lnp, lki = self.__counting__(sample)
-			nr += lnr
-			ni += lni
-			np += lnp
-			ki += lki
-		return nr, ni, np, ki, nr + ni + np, ni + np
-
-	def classify(self, samples):
-		"""
-		:param samples: the collection of mutants or executions
-		:return: Mapping from class name to the samples it match with
-		"""
-		results = dict()
-		results[NR_CLASS] = set()
-		results[NI_CLASS] = set()
-		results[NP_CLASS] = set()
-		results[KI_CLASS] = set()
-		for sample in samples:
-			results[self.__classify__(sample)].add(sample)
-		return results
-
-	def estimate(self, samples, uk_or_cc: bool):
-		"""
-		:param samples: the collection of mutants or executions
-		:param uk_or_cc: True to take non-killed or coincidental correct as support
-		:return: total, support, confidence (0.0 -- 1.0)
-		"""
-		nr, ni, np, ki, uk, cc = self.counting(samples)
-		if uk_or_cc:
-			support = uk
-		else:
-			support = cc
-		total = support + ki
-		if support == 0:
-			confidence = 0.0
-		else:
-			confidence = support / (total + 0.0)
-		return total, support, confidence
-
-	def select(self, samples, uk_or_cc: bool):
-		"""
-		:param samples: the collection of mutants or executions
-		:param uk_or_cc: True to select non-killed or coincidental correct ones
-		:return:
-		"""
-		results = self.classify(samples)
-		selects = results[NI_CLASS] | results[NP_CLASS]
-		if uk_or_cc:
-			selects = selects | results[NR_CLASS]
-		return selects
-
-
-class RIPPattern:
-	"""
-	It describes the structure of patterns to match RIP-based executions in mutation testing.
-	"""
-
-	def __init__(self, document: RIPDocument, classifier: RIPClassifier):
-		"""
-		:param document: It provides the entire dataset for being matched by the pattern
-		:param classifier: It is used to estimate the performance of the pattern matching
-		"""
-		self.document = document		# It provides the entire dataset for being matched by the pattern
-		self.classifier = classifier	# It is used to evaluate the performance of the pattern in mining
-		self.words = list()				# It defines the conditions being required in executions matched
-		self.executions = set()			# The set of executions in RIP terms being matched by this ones
-		self.mutants = set()			# The set of mutants of which executions are matched by this one
-		return
-
-	# data getters
-
-	def get_document(self):
-		"""
-		:return: It provides the entire dataset for being matched by the pattern
-		"""
-		return self.document
-
-	def get_executions(self):
-		"""
-		:return: The set of executions in RIP terms being matched by this ones
-		"""
-		return self.executions
-
-	def get_mutants(self):
-		"""
-		:return: The set of mutants of which executions are matched by this one
-		"""
-		return self.mutants
-
-	def get_samples(self, exe_or_mut: bool):
-		"""
-		:param exe_or_mut: True to return executions or mutants
-		:return:
-		"""
-		if exe_or_mut:
-			return self.executions
-		else:
-			return self.mutants
-
-	# estimations
-
-	def get_classifier(self):
-		"""
-		:return: It is used to evaluate the performance of the pattern in mining
-		"""
-		return self.classifier
-
-	def counting(self, exe_or_mut: bool):
-		"""
-		:param exe_or_mut: True to count on executions or mutants
-		:return: nr, ni, np, ki, uk, cc
-		"""
-		return self.classifier.counting(self.get_samples(exe_or_mut))
-
-	def classify(self, exe_or_mut: bool):
-		"""
-		:param exe_or_mut: True to classify executions or mutants
-		:return: Mapping from class name to the samples it match with
-		"""
-		return self.classifier.classify(self.get_samples(exe_or_mut))
-
-	def estimate(self, exe_or_mut: bool, uk_or_cc: bool):
-		"""
-		:param exe_or_mut: True to estimate on executions or mutants
-		:param uk_or_cc: True to take non-killed or coincidental correct as supports
-		:return: total, support, confidence
-		"""
-		return self.classifier.estimate(self.get_samples(exe_or_mut), uk_or_cc)
-
-	def select(self, exe_or_mut: bool, uk_or_cc: bool):
-		"""
-		:param exe_or_mut: True to select on executions or mutants
-		:param uk_or_cc: True to select non-killed or coincidental correct ones
-		:return:
-		"""
-		return self.classifier.select(self.get_samples(exe_or_mut), uk_or_cc)
-
-	# features
-
-	def get_words(self):
-		"""
-		:return: It defines the conditions being required in executions matched
-		"""
-		return self.words
-
-	def get_conditions(self):
-		"""
-		:return: It defines the conditions being required in executions matched
-		"""
-		conditions = list()
-		for word in self.words:
-			conditions.append(self.document.get_condition(word))
-		return conditions
-
-	def __str__(self):
-		return str(self.words)
-
-	def __len__(self):
-		return len(self.words)
-
-	# parent setters
-
-	def extends(self, word: str):
-		"""
-		:param word: new word being added to the pattern
-		:return: an empty child pattern extended from this one by adding one word (samples are not updated)
-		"""
-		word = word.strip()
-		if len(word) > 0 and not(word in self.words):
-			child = RIPPattern(self.document, self.classifier)
-			for old_word in self.words:
-				child.words.append(old_word)
-			child.words.append(word)
-			child.words.sort()
-			return child
-		return self
-
-	def __matching__(self, execution: RIPExecution):
-		"""
-		:param execution:
-		:return: True if all the conditions in the pattern are included in the execution
-		"""
-		for word in self.words:
-			if not(word in execution.get_words()):
-				return False
-		return True
-
-	def set_samples(self, parent):
-		"""
-		:param parent: pattern to update samples or None to update on all the document
-		:return:
-		"""
-		if parent is None:
-			executions = self.document.get_executions()
-		else:
-			parent: RIPPattern
-			executions = parent.get_executions()
-		self.executions.clear()
-		self.mutants.clear()
-		for execution in executions:
-			execution: RIPExecution
-			if self.__matching__(execution):
-				self.executions.add(execution)
-				self.mutants.add(execution.get_mutant())
-		return
-
-	def subsume(self, pattern, uk_or_cc: bool):
-		"""
-		:param pattern:
-		:param uk_or_cc: 	True to match on non-killed
-							False to match on coincidental correct ones
-							None to match on the entire executions
-		:return: True if all the executions matched by pattern are matched by this one
-		"""
-		pattern: RIPPattern
-		if uk_or_cc is None:
-			ori_executions = self.executions
-			sub_executions = pattern.get_executions()
-		else:
-			ori_executions = self.select(True, uk_or_cc)
-			sub_executions = pattern.select(True, uk_or_cc)
-		for execution in sub_executions:
-			if not (execution in ori_executions):
-				return False
-		if len(ori_executions) == len(sub_executions):
-			return len(self) <= len(pattern)  # equivalence
-		return True  # strictly subsumes
 
 
 class RIPMineContext:
@@ -501,7 +22,7 @@ class RIPMineContext:
 	RIP-patterns in project under test.
 	"""
 
-	def __init__(self, document: RIPDocument, exe_or_mut: bool, uk_or_cc: bool,
+	def __init__(self, document: jcfeat.RIPDocument, exe_or_mut: bool, uk_or_cc: bool,
 				 min_support: int, min_confidence: float, max_confidence: float,
 				 max_length: int):
 		"""
@@ -514,7 +35,7 @@ class RIPMineContext:
 		:param max_length: maximal length of features in generated patterns
 		"""
 		self.document = document
-		self.classifier = RIPClassifier()  # to estimate the patterns
+		self.classifier = jcfeat.RIPClassifier()  # to estimate the patterns
 		self.patterns = dict()  # String ==> RIPPattern (unique instance)
 		self.solution = dict()  # RIPPattern ==> [total, support, confidence]
 		# parameters
@@ -561,25 +82,25 @@ class RIPMineContext:
 		:return: the unique instance of pattern extended from parent by adding one word
 		"""
 		if parent is None:
-			pattern = RIPPattern(self.document, self.classifier)
+			pattern = jcfeat.RIPPattern(self.document, self.classifier)
 			pattern = pattern.extends(word)
 		else:
-			parent: RIPPattern
+			parent: jcfeat.RIPPattern
 			pattern = parent.extends(word)
 		if not(str(pattern) in self.patterns):
 			self.patterns[str(pattern)] = pattern
 			pattern.set_samples(parent)
 		pattern = self.patterns[str(pattern)]
-		pattern: RIPPattern
+		pattern: jcfeat.RIPPattern
 		return pattern
 
 	def new_root(self, word: str):
 		return self.__new_pattern__(None, word)
 
-	def new_child(self, parent: RIPPattern, word: str):
+	def new_child(self, parent: jcfeat.RIPPattern, word: str):
 		return self.__new_pattern__(parent, word)
 
-	def estimate(self, pattern: RIPPattern):
+	def estimate(self, pattern: jcfeat.RIPPattern):
 		"""
 		:param pattern:
 		:return: total, support, confidence
@@ -596,18 +117,26 @@ class RIPMineContext:
 		confidence: float
 		return total, support, confidence
 
-	def extract_good_patterns(self):
+	def extract_good_patterns(self, patterns=None):
 		"""
 		:return: the set of patterns available with the parameters in the context
 		"""
 		good_patterns = set()
-		for pattern, solution in self.solution.items():
-			pattern: RIPPattern
-			support = solution[1]
-			confidence = solution[2]
-			length = len(pattern)
-			if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
-				good_patterns.add(pattern)
+		if patterns is None:
+			for pattern, solution in self.solution.items():
+				pattern: jcfeat.RIPPattern
+				support = solution[1]
+				confidence = solution[2]
+				length = len(pattern)
+				if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
+					good_patterns.add(pattern)
+		else:
+			for pattern in patterns:
+				pattern: jcfeat.RIPPattern
+				total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
+				length = len(pattern)
+				if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
+					good_patterns.add(pattern)
 		return good_patterns
 
 
@@ -616,7 +145,7 @@ class RIPPatternSpace:
 	The space preserves the patterns generated and selected from mining algorithms.
 	"""
 
-	def __init__(self, document: RIPDocument, classifier: RIPClassifier, good_patterns):
+	def __init__(self, document: jcfeat.RIPDocument, classifier: jcfeat.RIPClassifier, good_patterns):
 		"""
 		:param document: it provides original data samples for being classified and mined
 		:param classifier: used to estimate the performance of generated RIP-patterns
@@ -626,7 +155,7 @@ class RIPPatternSpace:
 		self.doc_executions = set()
 		self.doc_mutants = set()
 		for execution in document.get_executions():
-			execution: RIPExecution
+			execution: jcfeat.RIPExecution
 			self.doc_executions.add(execution)
 			self.doc_mutants.add(execution.get_mutant())
 		self.classifier = classifier
@@ -634,10 +163,10 @@ class RIPPatternSpace:
 		self.pat_executions = set()
 		self.pat_mutants = set()
 		for pattern in good_patterns:
-			pattern: RIPPattern
+			pattern: jcfeat.RIPPattern
 			self.all_patterns.add(pattern)
 			for execution in pattern.get_executions():
-				execution: RIPExecution
+				execution: jcfeat.RIPExecution
 				self.pat_executions.add(execution)
 				self.pat_mutants.add(execution.get_mutant())
 		return
@@ -668,16 +197,15 @@ class RIPPatternSpace:
 	# selecting methods
 
 	@staticmethod
-	def select_subsuming_patterns(patterns, uk_or_cc):
+	def select_subsuming_patterns(patterns):
 		"""
 		:param patterns: set of RIP-testability patterns
-		:param uk_or_cc: None to consider all executions or select corresponding class
 		:return: minimal set of patterns that subsume the others
 		"""
 		remain_patterns, remove_patterns, minimal_patterns = set(), set(), set()
 		patterns = jcbase.rand_resort(patterns)
 		for pattern in patterns:
-			pattern: RIPPattern
+			pattern: jcfeat.RIPPattern
 			remain_patterns.add(pattern)
 		while len(remain_patterns) > 0:
 			subsume_pattern = None
@@ -686,16 +214,16 @@ class RIPPatternSpace:
 				if subsume_pattern is None:
 					subsume_pattern = pattern
 					remove_patterns.add(pattern)
-				elif subsume_pattern.subsume(pattern, uk_or_cc):
+				elif subsume_pattern.subsume(pattern):
 					remove_patterns.add(pattern)
-				elif pattern.subsume(subsume_pattern, uk_or_cc):
+				elif pattern.subsume(subsume_pattern):
 					subsume_pattern = pattern
 					remove_patterns.add(pattern)
 			for pattern in remove_patterns:
 				remain_patterns.remove(pattern)
 			if not (subsume_pattern is None):
 				minimal_pattern = subsume_pattern
-				minimal_pattern: RIPPattern
+				minimal_pattern: jcfeat.RIPPattern
 				minimal_patterns.add(minimal_pattern)
 		return minimal_patterns
 
@@ -708,7 +236,7 @@ class RIPPatternSpace:
 		"""
 		results = dict()
 		for pattern in patterns:
-			pattern: RIPPattern
+			pattern: jcfeat.RIPPattern
 			samples = pattern.get_samples(exe_or_mut)
 			for sample in samples:
 				if not (sample in results):
@@ -726,7 +254,7 @@ class RIPPatternSpace:
 		"""
 		remain_patterns, solutions = set(), dict()
 		for pattern in patterns:
-			pattern: RIPPattern
+			pattern: jcfeat.RIPPattern
 			remain_patterns.add(pattern)
 			total, support, confidence = pattern.estimate(exe_or_mut, uk_or_cc)
 			length = len(pattern)
@@ -784,7 +312,7 @@ class RIPPatternSpace:
 				selected_pattern = jcbase.rand_select(patterns)
 				if not (selected_pattern is None):
 					pattern = selected_pattern
-					pattern: RIPPattern
+					pattern: jcfeat.RIPPattern
 					for pat_sample in pattern.get_samples(exe_or_mut):
 						removed_keys.add(pat_sample)
 					minimal_patterns.add(pattern)
@@ -796,12 +324,11 @@ class RIPPatternSpace:
 
 	# data inference
 
-	def get_subsuming_patterns(self, uk_or_cc):
+	def get_subsuming_patterns(self):
 		"""
-		:param uk_or_cc: None to consider all executions or select corresponding class
 		:return:
 		"""
-		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns, uk_or_cc)
+		return RIPPatternSpace.select_subsuming_patterns(self.all_patterns)
 
 	def get_minimal_patterns(self, exe_or_mut: bool):
 		"""
@@ -822,7 +349,7 @@ class RIPPatternSpace:
 			mutant: jcmuta.Mutant
 			best_pattern = RIPPatternSpace.select_best_pattern(patterns, exe_or_mut, uk_or_cc)
 			if not (best_pattern is None):
-				best_pattern: RIPPattern
+				best_pattern: jcfeat.RIPPattern
 				best_patterns[mutant] = best_pattern
 		return best_patterns
 
@@ -874,7 +401,7 @@ class RIPPatternWriter:
 
 	# pattern writing
 
-	def __write_pattern_summary__(self, pattern: RIPPattern):
+	def __write_pattern_summary__(self, pattern: jcfeat.RIPPattern):
 		"""
 		:param pattern:
 		:return:
@@ -916,7 +443,7 @@ class RIPPatternWriter:
 
 		return
 
-	def __write_pattern_feature__(self, pattern: RIPPattern):
+	def __write_pattern_feature__(self, pattern: jcfeat.RIPPattern):
 		"""
 		:param pattern:
 		:return: condition category operator validate execution statement location parameter
@@ -940,7 +467,7 @@ class RIPPatternWriter:
 										execution, statement, location, parameter))
 		self.output("\n")
 
-	def __write_pattern_mutants__(self, pattern: RIPPattern):
+	def __write_pattern_mutants__(self, pattern: jcfeat.RIPPattern):
 		"""
 		:param pattern:
 		:return: Mutant Result Class Operator Line Location Parameter
@@ -960,7 +487,7 @@ class RIPPatternWriter:
 			self.output(template.format(mutant_id, result, mutation_class, operator, line, code, parameter))
 		self.output("\n")
 
-	def __write_pattern__(self, pattern: RIPPattern):
+	def __write_pattern__(self, pattern: jcfeat.RIPPattern):
 		self.output("#BEG\n")
 		self.__write_pattern_summary__(pattern)
 		self.__write_pattern_feature__(pattern)
@@ -1004,8 +531,8 @@ class RIPPatternWriter:
 		return
 
 	@staticmethod
-	def __evaluate__(document: RIPDocument, patterns, exe_or_mut: bool, uk_or_cc: bool,
-					 classifier: RIPClassifier):
+	def __evaluate__(document: jcfeat.RIPDocument, patterns, exe_or_mut: bool, uk_or_cc: bool,
+					 classifier: jcfeat.RIPClassifier):
 		"""
 		:param document:
 		:param patterns:
@@ -1018,7 +545,7 @@ class RIPPatternWriter:
 			doc_samples = classifier.select(document.get_mutants(), uk_or_cc)
 		pat_samples = set()
 		for pattern in patterns:
-			pattern: RIPPattern
+			pattern: jcfeat.RIPPattern
 			samples = pattern.get_samples(exe_or_mut)
 			for sample in samples:
 				pat_samples.add(sample)
@@ -1026,9 +553,9 @@ class RIPPatternWriter:
 		precision, recall, f1_score = RIPPatternWriter.__f1_measure__(doc_samples, pat_samples)
 		return length, len(doc_samples), len(pat_samples), reduce, precision, recall, f1_score
 
-	def __write_evaluate_all__(self, space: RIPPatternSpace, uk_or_cc):
+	def __write_evaluate_all__(self, space: RIPPatternSpace):
 		document = space.get_document()
-		patterns = space.get_subsuming_patterns(uk_or_cc)
+		patterns = space.get_subsuming_patterns()
 		classifier = space.get_classifier()
 
 		self.output("# Cost-Effective Analysis #\n")
@@ -1070,7 +597,7 @@ class RIPPatternWriter:
 		self.output("\n")
 		return
 
-	def __write_evaluate_one__(self, index: int, pattern: RIPPattern):
+	def __write_evaluate_one__(self, index: int, pattern: jcfeat.RIPPattern):
 		"""
 		:param pattern:
 		:return: index length executions mutants uk_exe_supp uk_exe_conf cc_exe_supp cc_exe_conf uk_mut_supp
@@ -1109,12 +636,12 @@ class RIPPatternWriter:
 		"""
 		with open(file_path, 'w') as writer:
 			self.writer = writer
-			self.__write_evaluate_all__(space, None)
+			self.__write_evaluate_all__(space)
 			self.output("# Pattern Evaluate #\n")
 			self.output("\tindex\tlength\texecutions\tmutants\tuk_exe_supp\tuk_exe_conf(%)\tcc_exe_supp\tcc_exe_conf(%)"
 						"\tuk_mut_supp\tuk_mut_conf(%)\tcc_mut_supp\tcc_mut_conf(%)\n")
 			index = 0
-			for pattern in space.get_subsuming_patterns(None):
+			for pattern in space.get_subsuming_patterns():
 				index += 1
 				self.__write_evaluate_one__(index, pattern)
 		return
@@ -1129,7 +656,7 @@ class RIPFPTMiner:
 		self.context = None
 		return
 
-	def __mine__(self, parent: RIPPattern, words):
+	def __mine__(self, parent: jcfeat.RIPPattern, words):
 		"""
 		:param parent:
 		:param words:
@@ -1153,7 +680,7 @@ class RIPFPTMiner:
 		self.context = context
 		root_executions = context.get_classifier().select(context.get_document().get_executions(), context.is_uk_or_cc())
 		for root_execution in root_executions:
-			root_execution: RIPExecution
+			root_execution: jcfeat.RIPExecution
 			words = root_execution.get_words()
 			for word in words:
 				root = context.new_root(word)
@@ -1186,7 +713,7 @@ class RIPDTTMiner:
 		self.Y.clear()
 		self.W.clear()
 		for execution in self.context.get_document().get_executions():
-			execution: RIPExecution
+			execution: jcfeat.RIPExecution
 			if self.context.is_exe_or_mut():
 				sample = execution
 			else:
@@ -1312,26 +839,27 @@ class RIPDTTMiner:
 		YP = self.__fit_decisions__(tree_path)
 		leaf_path = self.__get_leaf_path__(YP)
 		patterns = self.__path_patterns__(leaf_path)
-		return RIPPatternSpace(self.context.get_document(), self.context.get_classifier(), patterns)
+		good_patterns = context.extract_good_patterns(patterns)
+		return RIPPatternSpace(self.context.get_document(), self.context.get_classifier(), good_patterns)
 
 
 def evaluate_results(space: RIPPatternSpace, output_directory: str, name: str, exe_or_mut: bool, uk_or_cc: bool):
 	writer = RIPPatternWriter()
 	writer.write_evaluate(space, os.path.join(output_directory, name + ".sum"))
 	writer.write_matching(space, os.path.join(output_directory, name + ".bpt"), exe_or_mut, uk_or_cc)
-	writer.write_patterns(space.get_subsuming_patterns(uk_or_cc), os.path.join(output_directory, name + ".mpt"))
+	writer.write_patterns(space.get_subsuming_patterns(), os.path.join(output_directory, name + ".mpt"))
 	return
 
 
 def get_rip_document(directory: str, file_name: str, output_directory: str):
 	c_project = jcmuta.CProject(directory, file_name)
-	document = RIPDocument(c_project, ".sft")
+	document = jcfeat.RIPDocument(c_project, ".sft")
 	if not(os.path.exists(output_directory)):
 		os.mkdir(output_directory)
 	return document
 
 
-def do_frequent_mine(document: RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
+def do_frequent_mine(document: jcfeat.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPFPTMiner()
 	output_directory.strip()
@@ -1340,7 +868,7 @@ def do_frequent_mine(document: RIPDocument, exe_or_mut: bool, uk_or_cc: bool, mi
 	return miner.mine(context)
 
 
-def do_decision_mine(document: RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
+def do_decision_mine(document: jcfeat.RIPDocument, exe_or_mut: bool, uk_or_cc: bool, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
 	miner = RIPDTTMiner()
 	context = RIPMineContext(document, exe_or_mut, uk_or_cc, min_support,
@@ -1380,7 +908,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 						  max_confidence=max_confidence, max_length=max_length, output_directory=output_directory)
 		space: RIPPatternSpace
 		print("\t(2) Generate", len(space.get_patterns()), "patterns with",
-			  len(space.get_subsuming_patterns(None)), "subsuming ones.")
+			  len(space.get_subsuming_patterns()), "subsuming ones.")
 		# Step-III. Evaluate the performance of mining results
 		evaluate_results(space, output_directory, file_name, exe_or_mut, uk_or_cc)
 		print("\t(3) Output the pattern, test results to output file finally...")
@@ -1391,6 +919,6 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
-	testing(prev_path, post_path, "frequent_mine", True, False, 2, 0.70, 0.90, 1, do_frequent_mine)
 	testing(prev_path, post_path, "decision_tree", True, False, 2, 0.70, 0.90, 8, do_decision_mine)
+	testing(prev_path, post_path, "frequent_mine", True, False, 2, 0.70, 0.90, 1, do_frequent_mine)
 

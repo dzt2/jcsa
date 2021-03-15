@@ -853,6 +853,9 @@ class SymDocument:
 		"""
 		return self.conditions.values()
 
+	def get_condition(self, word: str):
+		return self.conditions[word]
+
 	def __produce__(self, line: str):
 		"""
 		:param line: mid tid {[ condition+ ]}*
