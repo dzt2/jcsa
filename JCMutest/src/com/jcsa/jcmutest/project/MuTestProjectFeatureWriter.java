@@ -907,7 +907,8 @@ public class MuTestProjectFeatureWriter {
 			throw new IllegalArgumentException("Invalid class: " + instance.getClass().getSimpleName());
 		}
 		
-		/* 3. preserve parameter */ if(parameter != null) this.sym_nodes.add(parameter);
+		/* 3. preserve parameter */ 
+		if(parameter != null) this.sym_nodes.add(parameter);
 		
 		/* 4. \trole@category@operator@execution@location@parameter */
 		this.writer.write("\t" + role.toString());
