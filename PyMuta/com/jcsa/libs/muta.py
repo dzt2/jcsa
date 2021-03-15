@@ -26,7 +26,7 @@ class CProject:
 		self.evaluation = MutationTestEvaluation(self)
 		return
 
-	def __load_documents__(self, post: str):
+	def load_documents(self, post: str):
 		"""
 		:param post:
 		:return: document w.r.t. given postfix
@@ -38,24 +38,6 @@ class CProject:
 				file_path = os.path.join(directory, file_name)
 				document.__loading__(file_path)
 		return document
-
-	def load_stat_documents(self):
-		"""
-		:return: xxx.sft
-		"""
-		return self.__load_documents__(".sft")
-
-	def load_test_documents(self):
-		"""
-		:return: xxx.sft
-		"""
-		return self.__load_documents__(".dft")
-
-	def load_exec_documents(self):
-		"""
-		:return: xxx.sft
-		"""
-		return self.__load_documents__(".dfp")
 
 
 class TestCase:
@@ -946,7 +928,7 @@ if __name__ == "__main__":
 	for filename in os.listdir(root_path):
 		directory_path = os.path.join(root_path, filename)
 		c_project = CProject(directory_path, filename)
-		document = c_project.load_stat_documents()
+		document = c_project.load_documents(".sft")
 		print(c_project.program.name, ": Load", len(document.get_mutants()), "mutants with", len(document.get_paths()),
 			  "paths using", len(document.get_conditions()), "symbolic conditions required for them and against",
 			  len(document.get_tests()), "tests.")
