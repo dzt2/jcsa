@@ -894,5 +894,5 @@ if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
 	testing(prev_path, post_path, "frequent_mine", True, False, 2, 0.70, 0.95, 1, do_frequent_mine)
-	testing(prev_path, post_path, "decision_tree", True, False, 2, 0.70, 0.95, 8, do_decision_mine)
+	testing(prev_path, post_path, "decision_tree", True, False, 2, 0.80, 0.95, 8, do_decision_mine)
 
