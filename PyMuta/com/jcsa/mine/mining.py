@@ -1,12 +1,5 @@
-"""
-This file implements frequent pattern mining and evaluation part for mining interesting patterns
-from executions of mutation testing.
-"""
-
-
 import os
 from typing import TextIO
-
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
 import com.jcsa.mine.feature as jcfeat
@@ -34,10 +27,8 @@ class RIPMineContext:
 		:param max_confidence: maximal confidence to terminate the pattern generations
 		:param max_length: maximal length of features in generated patterns
 		"""
-		self.document = document
-		self.classifier = jcfeat.RIPClassifier()  # to estimate the patterns
-		self.patterns = dict()  # String ==> RIPPattern (unique instance)
-		self.solution = dict()  # RIPPattern ==> [total, support, confidence]
+		self.patterns = jcfeat.RIPPatterns(document)
+		self.solution = dict()
 		# parameters
 		self.exe_or_mut = exe_or_mut
 		self.uk_or_cc = uk_or_cc
@@ -50,10 +41,10 @@ class RIPMineContext:
 	# getters
 
 	def get_document(self):
-		return self.document
+		return self.patterns.get_document()
 
 	def get_classifier(self):
-		return self.classifier
+		return self.patterns.get_classifier()
 
 	def is_exe_or_mut(self):
 		return self.exe_or_mut
@@ -75,30 +66,14 @@ class RIPMineContext:
 
 	# factory
 
-	def __new_pattern__(self, parent, word: str):
-		"""
-		:param parent:
-		:param word:
-		:return: the unique instance of pattern extended from parent by adding one word
-		"""
-		if parent is None:
-			pattern = jcfeat.RIPPattern(self.document, self.classifier)
-			pattern = pattern.extends(word)
-		else:
-			parent: jcfeat.RIPPattern
-			pattern = parent.extends(word)
-		if not(str(pattern) in self.patterns):
-			self.patterns[str(pattern)] = pattern
-			pattern.set_samples(parent)
-		pattern = self.patterns[str(pattern)]
-		pattern: jcfeat.RIPPattern
-		return pattern
+	def get_patterns(self):
+		return self.patterns
 
-	def new_root(self, word: str):
-		return self.__new_pattern__(None, word)
+	def get_root(self, word: str):
+		return self.patterns.get_root(word)
 
-	def new_child(self, parent: jcfeat.RIPPattern, word: str):
-		return self.__new_pattern__(parent, word)
+	def get_child(self, parent: jcfeat.RIPPattern, word: str):
+		return self.patterns.get_child(parent, word)
 
 	def estimate(self, pattern: jcfeat.RIPPattern):
 		"""
@@ -123,17 +98,16 @@ class RIPMineContext:
 		"""
 		good_patterns = set()
 		if patterns is None:
-			for pattern, solution in self.solution.items():
+			for pattern in self.patterns.get_patterns():
 				pattern: jcfeat.RIPPattern
-				support = solution[1]
-				confidence = solution[2]
+				total, support, confidence = self.estimate(pattern)
 				length = len(pattern)
 				if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
 					good_patterns.add(pattern)
 		else:
 			for pattern in patterns:
 				pattern: jcfeat.RIPPattern
-				total, support, confidence = pattern.estimate(self.exe_or_mut, self.uk_or_cc)
+				total, support, confidence = self.estimate(pattern)
 				length = len(pattern)
 				if length <= self.max_length and support >= self.min_support and confidence >= self.min_confidence:
 					good_patterns.add(pattern)
@@ -667,7 +641,7 @@ class RIPFPTMiner:
 		length = len(parent.get_words())
 		if support >= self.context.get_min_support() and confidence <= self.context.get_max_confidence() and length < self.context.get_max_length():
 			for word in words:
-				child = self.context.new_child(parent, word)
+				child = self.context.get_child(parent, word)
 				if child != parent:
 					self.__mine__(child, words)
 		return
@@ -683,7 +657,7 @@ class RIPFPTMiner:
 			root_execution: jcfeat.RIPExecution
 			words = root_execution.get_words()
 			for word in words:
-				root = context.new_root(word)
+				root = context.get_root(word)
 				self.__mine__(root, words)
 		good_patterns = self.context.extract_good_patterns()
 		return RIPPatternSpace(self.context.get_document(), self.context.get_classifier(), good_patterns)
@@ -828,9 +802,9 @@ class RIPDTTMiner:
 					word: str
 					if X[exec_id, features[node_id]] > thresholds[node_id]:
 						words.append(word)		# select True-branch words
-			pattern = self.context.new_root("")
+			pattern = self.context.get_root("")
 			for word in words:
-				pattern = self.context.new_child(pattern, word)
+				pattern = self.context.get_child(pattern, word)
 			patterns.add(pattern)
 		return patterns
 
@@ -919,6 +893,6 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
-	testing(prev_path, post_path, "decision_tree", True, False, 2, 0.70, 0.90, 8, do_decision_mine)
-	testing(prev_path, post_path, "frequent_mine", True, False, 2, 0.70, 0.90, 1, do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine", True, False, 2, 0.70, 0.95, 1, do_frequent_mine)
+	testing(prev_path, post_path, "decision_tree", True, False, 2, 0.70, 0.95, 8, do_decision_mine)
 

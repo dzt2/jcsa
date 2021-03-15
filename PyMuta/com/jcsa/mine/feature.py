@@ -484,6 +484,55 @@ class RIPPattern:
 		return True
 
 
+class RIPPatterns:
+	"""
+	It manages the structure of RIPPattern(s) generated from mining algorithms
+	"""
+
+	def __init__(self, document: RIPDocument):
+		self.document = document			# It provides entire dataset for document.
+		self.classifier = RIPClassifier()	# It is used as classification and estimate.
+		self.patterns = dict()				# Mapping from String to Unique Pattern be created.
+		return
+
+	def get_document(self):
+		return self.document
+
+	def get_classifier(self):
+		return self.classifier
+
+	def get_patterns(self):
+		return self.patterns.values()
+
+	def __new_pattern__(self, parent, word: str):
+		"""
+		:param parent: pattern from which the pattern is extended or None for root.
+		:param word:
+		:return: the pattern extended from parent with one word appended in the set
+		"""
+		if parent is None:
+			pattern = RIPPattern(self.document, self.classifier)
+			pattern = pattern.extends(word)
+		else:
+			parent: RIPPattern
+			pattern = parent.extends(word)
+		if not(str(pattern) in self.patterns):
+			self.patterns[str(pattern)] = pattern
+			pattern.set_samples(parent)
+			created = True
+		else:
+			created = False
+		pattern = self.patterns[str(pattern)]
+		pattern: RIPPattern
+		return pattern
+
+	def get_root(self, word: str):
+		return self.__new_pattern__(None, word)
+
+	def get_child(self, parent: RIPPattern, word: str):
+		return self.__new_pattern__(parent, word)
+
+
 def test_load_documents(root_directory: str):
 	for filename in os.listdir(root_directory):
 		directory_path = os.path.join(root_directory, filename)
