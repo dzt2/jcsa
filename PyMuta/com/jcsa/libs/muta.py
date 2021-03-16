@@ -514,355 +514,260 @@ class MutationTestEvaluation:
 
 class SymCondition:
 	"""
-	It represents an instance that symbolically describes the condition required for being met during
-	testing such that the specified objective of revealing mutation can be achieved in the context of
-	program under test, which is modeled as following attributes.
-		(1)	category: 	either satisfaction for constraint or observation for state error.
-		(2) operator: 	refined type to describe what instance it was, such as "chg_bool".
-		(3) execution:	the statement node in control flow graph in which it is evaluated.
-		(4) location:	the location in C-intermediate code, where instance is defined on.
-		(5) parameter:	the symbolic expression to refine description or none if not need.
+	It describes the symbolic condition evaluated at some point of program, such that for killing the mutation,
+	the condition specified needs to be met as a premise, which is modeled as following.
+		---	category: 	either "satisfaction" for constraint or "observation" for state error
+		---	operator: 	the refined type to define the condition under test, e.g. "neg_value"
+		---	execution:	the statement node in the control flow graph where the condition is evaluated.
+		---	location:	the code location in C-intermediate representation where it is defined.
+		---	parameter:	the symbolic expression to refine the description or None if it is not needed.
 	"""
 
 	def __init__(self, category: str, operator: str, execution: jcparse.CirExecution,
 				 location: jcparse.CirNode, parameter: jcbase.SymNode):
 		"""
-		:param category:	either satisfaction for constraint or observation for state error.
-		:param operator:	refined type to describe what instance it was, such as "chg_bool".
-		:param execution:	the statement node in control flow graph in which it is evaluated.
-		:param location:	the location in C-intermediate code, where instance is defined on.
-		:param parameter:	the symbolic expression to refine description or none if not need.
+		:param category:	either "satisfaction" for constraint or "observation" for state error
+		:param operator:	the refined type to define the condition under test, e.g. "neg_value"
+		:param execution:	the statement node in the control flow graph where the condition is evaluated.
+		:param location:	the code location in C-intermediate representation where it is defined.
+		:param parameter:	the symbolic expression to refine the description or None if it is not needed.
 		"""
-		self.category = category
-		self.operator = operator
-		self.execution= execution
-		self.location = location
-		self.parameter= parameter
+		self.category 	= category
+		self.operator	= operator
+		self.execution	= execution
+		self.location	= location
+		self.parameter 	= parameter
 		return
 
 	def get_category(self):
 		"""
-		:return: either satisfaction for constraint or observation for state error.
+		:return: either "satisfaction" for constraint or "observation" for state error
 		"""
 		return self.category
 
 	def get_operator(self):
 		"""
-		:return: refined type to describe what instance it was, such as "chg_bool".
+		:return: the refined type to define the condition under test, e.g. "neg_value"
 		"""
 		return self.operator
 
 	def get_execution(self):
 		"""
-		:return: the statement node in control flow graph in which it is evaluated.
+		:return: the statement node in the control flow graph where the condition is evaluated.
 		"""
 		return self.execution
 
 	def get_location(self):
 		"""
-		:return: the location in C-intermediate code, where instance is defined on.
+		:return: the code location in C-intermediate representation where it is defined.
 		"""
 		return self.location
 
 	def get_parameter(self):
 		"""
-		:return: the symbolic expression to refine description or none if not need.
+		:return: the symbolic expression to refine the description or None if it is not needed.
 		"""
 		return self.parameter
 
 	def has_parameter(self):
-		"""
-		:return: whether the parameter is symbolic expression
-		"""
 		return not(self.parameter is None)
 
-	@staticmethod
-	def encode(instance):
-		"""
-		:param instance:
-		:return: encode the symbolic instance as category$operator$execution$location$parameter
-		"""
-		instance: SymCondition
-		category = instance.category
-		operator = instance.operator
-		execution = "exe@{}@{}".format(instance.execution.get_function().get_name(), instance.execution.get_exe_id())
-		location = "cir@{}".format(instance.location.get_cir_id())
+	def __str__(self):
+		category = self.category
+		operator = self.operator
+		execution = "exe@{}@{}".format(self.execution.get_function().get_name(), self.execution.get_exe_id())
+		location = "cir@{}".format(self.location.get_cir_id())
 		parameter = "n@null"
-		if instance.has_parameter():
-			parameter = "sym@{}@{}".format(instance.parameter.get_class_name(), instance.parameter.get_class_id())
+		if self.has_parameter():
+			parameter = "sym@{}@{}".format(self.parameter.get_class_name(), self.parameter.get_class_id())
 		return "{}${}${}${}${}".format(category, operator, execution, location, parameter)
 
 	@staticmethod
-	def decode(word: str, project: CProject):
+	def decode(project: CProject, word: str):
 		"""
-		:param word: category$operator$execution$location$parameter
-		:param project: used to decode the word into structural description
-		:return: SymInstance being decoded or None if word is invalid
+		:param project: It is used to decode the word into symbolic condition.
+		:param word: category@operator@execution@location@parameter
+		:return: symbolic condition w.r.t. the given word
 		"""
 		if len(word.strip()) > 0:
 			items = word.strip().split('$')
 			category = items[0].strip()
 			operator = items[1].strip()
-			exec_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			loct_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-			para_token = jcbase.CToken.parse(items[4].strip()).get_token_value()
-			execution = project.program.function_call_graph.get_execution(exec_token[0], exec_token[1])
-			location = project.program.cir_tree.get_cir_node(loct_token)
-			if para_token is None:
+			exec_tok = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			loct_tok = jcbase.CToken.parse(items[3].strip()).get_token_value()
+			para_tok = jcbase.CToken.parse(items[4].strip()).get_token_value()
+			execution = project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
+			location = project.program.cir_tree.get_cir_node(loct_tok)
+			if para_tok is None:
 				parameter = None
 			else:
 				parameter = project.sym_tree.get_sym_node(items[4].strip())
 			return SymCondition(category, operator, execution, location, parameter)
-		else:
-			return None
-
-	def __str__(self):
-		return SymCondition.encode(self)
-
-
-INSTANCE_KEY = "instance"		# as source condition being evaluated and defined in testing
-ANNOTATE_KEY = "annotate"		# as annotation to describe the semantics of condition under test
-INFERRED_KEY = "inferred"		# as conditions inferred from the source symbolic condition
+		return None
 
 
 class SymInstance:
 	"""
-	The instance of the symbolic condition evaluated at some point during testing.
-		(1)	condition: symbolic condition as the source being evaluated in testing.
-		(2)	role: 	"instance" as the original source of condition being evaluated.
-					"annotate" as the annotation generated from the context for refining evaluation.
-					"inferred" as the conditions inferred from the input condition instance.
-		(3) result:	True	--- if the condition is actually evaluated as true.
-					False	---	if the condition is actually evaluated as false.
-					None	---	the satisfaction of the condition is unknown.
+	The instance of a symbolic condition with an evaluation result during testing such that:
+		True	---	The condition is actually satisfied during testing
+		False	---	The condition remains not satisfied during testing
+		None	---	The satisfaction of the condition remains unknown.
 	"""
 
-	def __init__(self, role: str, condition: SymCondition, result: bool):
+	def __init__(self, condition: SymCondition, result: bool):
 		"""
-		:param role:	"instance" as the original source of condition being evaluated.
-						"annotate" as the annotation generated from the context for refining evaluation.
-						"inferred" as the conditions inferred from the input condition instance.
-		:param condition: symbolic condition as the source being evaluated in testing.
-		:param result:	True	--- if the condition is actually evaluated as true.
-						False	---	if the condition is actually evaluated as false.
-						None	---	the satisfaction of the condition is unknown.
+		:param condition:
+		:param result:
 		"""
-		self.role = role
 		self.condition = condition
 		self.result = result
 		return
 
-	def get_role(self):
-		"""
-		:return:	"instance" as the original source of condition being evaluated.
-					"annotate" as the annotation generated from the context for refining evaluation.
-					"inferred" as the conditions inferred from the input condition instance.
-		"""
-		return self.role
-
-	def get_condition(self):
-		"""
-		:return: symbolic condition as the source being evaluated in testing.
-		"""
-		return self.condition
-
 	def get_result(self):
 		"""
-		:return:	True	--- if the condition is actually evaluated as true.
-					False	---	if the condition is actually evaluated as false.
-					None	---	the satisfaction of the condition is unknown.
+		:return:	True	---	The condition is actually satisfied during testing
+					False	---	The condition remains not satisfied during testing
+					None	---	The satisfaction of the condition remains unknown.
 		"""
 		return self.result
 
+	def get_condition(self):
+		"""
+		:return: the condition defined in code location being evaluated in the instance
+		"""
+		return self.condition
 
-class SymInstanceNode:
+	def get_execution(self):
+		"""
+		:return: the statement node where the condition is evaluated
+		"""
+		return self.condition.get_execution()
+
+
+class SymExecution:
 	"""
-	The node in execution path with conditions annotated at each point, denoted as:
-		---	instances: the collection of instances of symbolic conditions being met
-	"""
-
-	def __init__(self, path):
-		"""
-		:param path:
-		"""
-		path: SymInstancePath
-		self.path = path
-		self.instances = list()
-		return
-
-	def get_path(self):
-		"""
-		:return: the path where the state node is defined
-		"""
-		return self.path
-
-	def get_instances(self):
-		"""
-		:return: the collection of instances of symbolic conditions being met
-		"""
-		return self.instances
-
-	def get_instances_of(self, key: str):
-		"""
-		:param key: instance or annotate or inferred
-		:return: the set of instances w.r.t. the given key
-		"""
-		instances = list()
-		for instance in self.instances:
-			instance: SymInstance
-			if instance.get_role() == key:
-				instances.append(instance)
-		return instances
-
-	def __add_word__(self, word: str):
-		"""
-		:param word: role$result$category$operator$execution$location$parameter
-		:return: add the instance of condition into the node
-		"""
-		if '$' in word:
-			items = word.strip().split('$')
-			role = items[0].strip()
-			result = jcbase.CToken.parse(items[1].strip()).get_token_value()
-			category = items[2].strip()
-			operator = items[3].strip()
-			execution = items[4].strip()
-			location = items[5].strip()
-			parameter = items[6].strip()
-			project = self.path.get_document().project
-			word = "{}${}${}${}${}".format(category, operator, execution, location, parameter)
-			if word in self.path.get_document().conditions:
-				condition = self.path.get_document().conditions[word]
-			else:
-				condition = SymCondition.decode(word, project)
-				self.path.get_document().conditions[word] = condition
-			condition: SymCondition
-			instance = SymInstance(role, condition, result)
-			self.instances.append(instance)
-		return
-
-
-class SymInstancePath:
-	"""
-	The execution path w.r.t. a mutant and test case annotated with a set of condition instances defined.
+	It represents the execution between a mutation and a test case annotated with a sequence of instances
+	of symbolic conditions required for the mutation being killed on the given path.
 	"""
 
 	def __init__(self, document, mutant: Mutant, test: TestCase):
 		"""
-		:param document: where the path is created
-		:param mutant: the mutation being revealed
-		:param test: the test case executed or none
+		:param document: where the execution line is created and preserved.
+		:param mutant: the mutation as objective for being revealed
+		:param test: the test case used in execution or None if the execution is generated abstractly
 		"""
-		document: SymDocument
 		self.document = document
 		self.mutant = mutant
 		self.test = test
-		self.nodes = list()
+		self.instances = list()
 		return
 
 	def get_document(self):
 		"""
-		:return: where the path is created
+		:return: where the execution line is created and preserved.
 		"""
 		return self.document
 
 	def get_mutant(self):
 		"""
-		:return: the mutation being revealed
+		:return: the mutation as objective for being revealed
 		"""
 		return self.mutant
 
-	def has_test(self):
-		"""
-		:return: whether the path is generated from a test or static
-		"""
-		return not(self.test is None)
-
 	def get_test(self):
 		"""
-		:return: the test case executed or none
+		:return: the test case used in execution or None if the execution is generated abstractly
 		"""
 		return self.test
 
-	def get_nodes(self):
+	def has_test(self):
 		"""
-		:return: sequence of state node of symbolic condition instances required in the path
+		:return: False if the execution is generated abstractly
 		"""
-		return self.nodes
+		return not(self.test is None)
+
+	def get_instances(self):
+		"""
+		:return: the set of instances of conditions required on the execution path
+		"""
+		return self.instances
 
 
 class SymDocument:
 	"""
-	The document to describe execution paths annotated with symbolic conditions and evaluation instances.
+	The document preserves all the executions between each mutant and test case involved.
 	"""
 
 	def __init__(self, project: CProject):
-		self.project = project		# It provides original entire dataset for mutation execution states.
-		self.paths = list()			# The collection of symbolic execution paths performed, for testing.
-		self.muta_paths = dict()	# Mapping from Mutant to the set of execution paths where it is used.
-		self.test_paths = dict()	# Mapping from TestCase to set of execution paths where it is applied.
-		self.conditions = dict()	# Mapping from string key to the unique instance of symbolic condition used.
+		self.project = project
+		self.executions = list()
+		self.muta_execs = dict()
+		self.test_execs = dict()
+		self.conditions = dict()
 		return
 
 	def get_project(self):
 		"""
-		:return: It provides original entire dataset for mutation execution states.
+		:return: It provides original data for analysis and representation
 		"""
 		return self.project
 
-	def get_paths(self):
+	def get_executions(self):
 		"""
-		:return: The collection of symbolic execution paths performed, for testing.
+		:return: the set of executions between mutants and tests annotated with conditions
 		"""
-		return self.paths
+		return self.executions
 
-	def get_paths_of(self, key):
+	def get_executions_of(self, key):
 		"""
 		:param key: Mutant or TestCase
-		:return: the set of execution paths where the key is performed
+		:return: set of executions where the key is used
 		"""
-		if key in self.muta_paths:
-			paths = self.muta_paths[key]
-		elif key in self.test_paths:
-			paths = self.test_paths[key]
+		if key in self.muta_execs:
+			executions = self.muta_execs[key]
+		elif key in self.test_execs:
+			executions = self.test_execs[key]
 		else:
-			paths = set()
-		paths: set
-		return paths
+			executions = set()
+		executions: set
+		return executions
 
 	def get_mutants(self):
-		"""
-		:return: The set of mutations used in testing
-		"""
-		return self.muta_paths.keys()
+		return self.muta_execs.keys()
 
 	def get_tests(self):
-		"""
-		:return: The set of test cases used in testing
-		"""
-		return self.test_paths.keys()
+		return self.test_execs.keys()
 
 	def get_words(self):
 		"""
-		:return: the set of words encoding the conditions used
+		:return: set of words encoding the symbolic conditions defined in mutation testing
 		"""
 		return self.conditions.keys()
 
 	def get_conditions(self):
 		"""
-		:return: the set of conditions used in mutation testing
+		:return: set of the symbolic conditions defined in mutation testing
 		"""
 		return self.conditions.values()
 
-	def get_condition(self, word: str):
-		return self.conditions[word]
+	def __condition__(self, word: str):
+		"""
+		:param word:
+		:return: create a condition w.r.t. the word uniquely
+		"""
+		if not(word in self.conditions):
+			self.conditions[word] = SymCondition.decode(self.project, word)
+		condition = self.conditions[word]
+		condition: SymCondition
+		return condition
 
 	def __produce__(self, line: str):
 		"""
-		:param line: mid tid {[ condition+ ]}*
-		:return: SymInstancePath or None
+		:param line: mid tid {result condition+ ;}
+		:return:
 		"""
 		if len(line.strip()) > 0:
-			items = line.strip().split("\t")
+			items = line.strip().split('\t')
 			mid = int(items[0].strip())
 			tid = int(items[1].strip())
 			mutant = self.project.mutant_space.get_mutant(mid)
@@ -870,60 +775,42 @@ class SymDocument:
 				test = None
 			else:
 				test = self.project.test_space.get_test_case(tid)
-			path = SymInstancePath(self, mutant, test)
+			execution = SymExecution(self, mutant, test)
+			result, start = False, True
 			for k in range(2, len(items)):
 				word = items[k].strip()
 				if len(word) > 0:
-					if word == "[":
-						path.nodes.append(SymInstanceNode(path))
-					elif word == "]":
-						pass
+					if word == ";":
+						start = True
+					elif start:
+						start = False
+						result = jcbase.CToken.parse(word).get_token_value()
 					else:
-						node = path.nodes[-1]
-						node: SymInstanceNode
-						node.__add_word__(word)
-			return path
-		else:
-			return None
+						condition = self.__condition__(word)
+						execution.instances.append(SymInstance(condition, result))
+			return execution
+		return None
 
-	def __consume__(self, path):
-		"""
-		:param path:
-		:return: update the library using new path
-		"""
-		if not(path is None):
-			path: SymInstancePath
-			mutant = path.get_mutant()
-			test = path.get_test()
-			self.paths.append(path)
-			if not(mutant in self.muta_paths):
-				self.muta_paths[mutant] = set()
-			self.muta_paths[mutant].add(path)
-			if not(test is None):
-				if not(test in self.test_paths):
-					self.test_paths[test] = set()
-				self.test_paths[test].add(path)
+	def __consume__(self, execution):
+		if not(execution is None):
+			execution: SymExecution
+			self.executions.append(execution)
+			mutant = execution.get_mutant()
+			test = execution.get_test()
+			if not(mutant in self.muta_execs):
+				self.muta_execs[mutant] = set()
+			self.muta_execs[mutant].add(execution)
+			if execution.has_test():
+				if not(test in self.test_execs):
+					self.test_execs[test] = set()
+				self.test_execs[test].add(execution)
 		return
 
 	def __loading__(self, file_path: str):
-		"""
-		:param file_path:
-		:return: load the execution paths recorded in mutation testing.
-		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				self.__consume__(self.__produce__(line))
+				self.__consume__(self.__produce__(line.strip()))
 		return
-
-
-def print_sym_instance(instance: SymInstance):
-	print("\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(instance.get_role(), instance.get_result(),
-												instance.get_condition().get_category(),
-												instance.get_condition().get_operator(),
-												instance.get_condition().get_execution(),
-												instance.get_condition().get_location().get_cir_code(),
-												instance.get_condition().get_parameter()))
-	return
 
 
 if __name__ == "__main__":
@@ -932,15 +819,19 @@ if __name__ == "__main__":
 		directory_path = os.path.join(root_path, filename)
 		c_project = CProject(directory_path, filename)
 		document = c_project.load_documents(".sft")
-		print(c_project.program.name, ": Load", len(document.get_mutants()), "mutants with", len(document.get_paths()),
-			  "paths using", len(document.get_conditions()), "symbolic conditions required for them and against",
+		print(c_project.program.name, ": Load", len(document.get_mutants()), "mutants,", len(document.get_executions()),
+			  "executions using", len(document.get_conditions()), "symbolic conditions required for them, and against",
 			  len(document.get_tests()), "tests.")
-		for path in document.get_paths():
-			path: SymInstancePath
-			for node in path.get_nodes():
-				node: SymInstanceNode
-				for instance in node.get_instances():
-					instance: SymInstance
-					# print_sym_instance(instance)
+		for execution in document.get_executions():
+			execution: SymExecution
+			for instance in execution.get_instances():
+				instance: SymInstance
+				condition = instance.get_condition()
+				print("\t{}\t{}\t{}\t{}\t{}\t{}".format(instance.get_result(),
+														condition.get_category(),
+														condition.get_operator(),
+														condition.get_execution(),
+														condition.get_location().get_cir_code(),
+														condition.get_parameter()))
 		print()
 
