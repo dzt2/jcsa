@@ -942,24 +942,6 @@ public class MuTestProjectFeatureWriter {
 		this.write_sym_instances(instances, status.get_evaluation_result());
 	}
 	/**
-	 * mid tid {[ result {condition}+ ]}* \n
-	 * @param mutant
-	 * @param test
-	 * @param tree
-	 * @throws Exception
-	 */
-	private void write_sym_instance_status_path(Mutant mutant, TestInput test, List<SymInstanceTreeNode> path) throws Exception {
-		int mid = mutant.get_id(), tid = (test == null) ? -1 : test.get_id();
-		this.writer.write(mid + "\t" + tid);
-		for(SymInstanceTreeNode node : path) {
-			if(node.has_edge_status()) {
-				this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
-			}
-			this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
-		}
-		this.writer.write("\n");
-	}
-	/**
 	 * \tresult (instance)+ ;
 	 * @param state
 	 * @param cir_mutations
@@ -983,10 +965,28 @@ public class MuTestProjectFeatureWriter {
 	 * mid tid {[ result {condition}+ ]}* \n
 	 * @param mutant
 	 * @param test
+	 * @param tree
+	 * @throws Exception
+	 */
+	private void write_sym_instance_status_path(Mutant mutant, TestInput test, List<SymInstanceTreeNode> path) throws Exception {
+		int mid = mutant.get_id(), tid = (test == null) ? -1 : test.get_id();
+		this.writer.write(mid + "\t" + tid);
+		for(SymInstanceTreeNode node : path) {
+			if(node.has_edge_status()) {
+				this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
+			}
+			this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
+		}
+		this.writer.write("\n");
+	}
+	/**
+	 * mid tid {[ result {condition}+ ]}* \n
+	 * @param mutant
+	 * @param test
 	 * @param states
 	 * @throws Exception
 	 */
-	private void write_sym_instance_state_path(Mutant mutant, TestInput test, 
+	private void write_sym_instance_states_path(Mutant mutant, TestInput test, 
 			Iterable<SymInstanceState> states, CirMutations cir_mutations) throws Exception {
 		int mid = mutant.get_id(), tid = (test == null) ? -1 : test.get_id();
 		this.writer.write(mid + "\t" + tid);
@@ -1023,6 +1023,7 @@ public class MuTestProjectFeatureWriter {
 			CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
 										this.source.get_ast_tree(), this.source.get_cir_tree(), test);
 			if(test_path != null) {
+				/* xxx.dft */
 				this.open("." + test.get_id() + ".dft");
 				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 					if(mutant.has_cir_mutations()) {
@@ -1034,13 +1035,13 @@ public class MuTestProjectFeatureWriter {
 					}
 				}
 				this.close();
-				
+				/* xxx.dfp */
 				this.open("." + test.get_id() + ".dfp");
 				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 					if(mutant.has_cir_mutations()) {
 						SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
 						tree.evaluate(test_path);
-						this.write_sym_instance_state_path(mutant, test, tree.get_global_states(), tree.get_cir_mutations());
+						this.write_sym_instance_states_path(mutant, test, tree.get_global_states(), tree.get_cir_mutations());
 					}
 				}
 				this.close();
