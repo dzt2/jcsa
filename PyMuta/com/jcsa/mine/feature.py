@@ -12,23 +12,21 @@ class RIPExecution:
 	The execution in RIP model is modeled as s set of symbolic conditions required w.r.t. a mutant and given test.
 	"""
 
-	def __init__(self, document, path: jcmuta.SymInstancePath):
+	def __init__(self, document, execution: jcmuta.SymExecution):
 		"""
 		:param document: where the execution record is created and preserved
-		:param path: the structural execution path annotated with conditions
+		:param execution: the structural execution annotated with conditions
 		"""
 		document: RIPDocument
 		self.document = document
-		self.mutant = path.get_mutant()
-		self.test = path.get_test()
+		self.mutant = execution.get_mutant()
+		self.test = execution.get_test()
 		self.words = list()
 		conditions = set()
-		for node in path.get_nodes():
-			node: jcmuta.SymInstanceNode
-			for instance in node.get_instances():
-				instance: jcmuta.SymInstance
-				condition = instance.get_condition()
-				conditions.add(condition)
+		for instance in execution.get_instances():
+			instance: jcmuta.SymInstance
+			condition = instance.get_condition()
+			conditions.add(condition)
 		for condition in conditions:
 			if not(condition is None):
 				word = str(condition)
@@ -94,7 +92,7 @@ class RIPDocument:
 
 		# construction based on symbolic document
 		document = project.load_documents(postfix)
-		for path in document.get_paths():
+		for path in document.get_executions():
 			execution = RIPExecution(self, path)
 			self.executions.append(execution)
 			mutant = execution.get_mutant()
