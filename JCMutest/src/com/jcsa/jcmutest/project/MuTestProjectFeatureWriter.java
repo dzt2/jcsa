@@ -972,7 +972,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		else {
 			instances.addAll(cir_mutations.improve_constraints(
-						(SymConstraint) state.get_abstract_instance()));
+				(SymConstraint) state.get_abstract_instance()));
 		}
 		for(CirAnnotation annotation : state.get_annotations()) {
 			instances.add(annotation);
