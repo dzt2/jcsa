@@ -830,7 +830,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param instance SymInstance or CirAnnotation
 	 * @throws Exception
 	 */
-	private void write_sym_instance(Object condition) throws Exception {
+	private void write_sym_condition(Object condition) throws Exception {
 		/* 1. declarations */
 		SymConditionCategory category; CirAnnotateType operator;
 		CirExecution execution; CirNode location; SymbolNode parameter;
@@ -908,16 +908,17 @@ public class MuTestProjectFeatureWriter {
 		this.writer.write("$" + this.token_string(parameter));
 	}
 	/**
-	 * \tresult (instance)+ ;
+	 * \tstage result (instance)+ ;
 	 * @param instances
 	 * @param result
 	 * @throws Exception
 	 */
-	private void write_sym_instances(Iterable<Object> instances, Boolean result) throws Exception {
+	private void write_sym_instances(boolean stage, Iterable<Object> instances, Boolean result) throws Exception {
+		this.writer.write("\t" + this.token_string(stage));
 		this.writer.write("\t" + this.token_string(result));
 		for(Object instance : instances) {
 			this.writer.write("\t");
-			this.write_sym_instance(instance);
+			this.write_sym_condition(instance);
 		}
 		this.writer.write("\t;");
 	}
@@ -929,17 +930,20 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_instance_status(SymInstanceStatus status, CirMutations cir_mutations) throws Exception {
 		Collection<Object> instances = new ArrayList<Object>();
+		boolean stage;
 		if(status.is_state_error()) {
 			instances.add(status.get_instance());
+			stage = false;	/* false means after mutation */
 		}
 		else {
 			instances.addAll(cir_mutations.improve_constraints(
 						(SymConstraint) status.get_instance()));
+			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : status.get_annotations()) {
 			instances.add(annotation);
 		}
-		this.write_sym_instances(instances, status.get_evaluation_result());
+		this.write_sym_instances(stage, instances, status.get_evaluation_result());
 	}
 	/**
 	 * \tresult (instance)+ ;
@@ -949,17 +953,20 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_instance_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
 		Collection<Object> instances = new ArrayList<Object>();
+		boolean stage;
 		if(state.is_state_error()) {
 			instances.add(state.get_abstract_instance());
+			stage = false;	/* false means after mutation */
 		}
 		else {
 			instances.addAll(cir_mutations.improve_constraints(
 				(SymConstraint) state.get_abstract_instance()));
+			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : state.get_annotations()) {
 			instances.add(annotation);
 		}
-		this.write_sym_instances(instances, state.get_evaluation_result());
+		this.write_sym_instances(stage, instances, state.get_evaluation_result());
 	}
 	/**
 	 * mid tid {[ result {condition}+ ]}* \n

@@ -58,6 +58,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
@@ -71,6 +72,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+
 
 
 /**
@@ -125,315 +127,6 @@ public class SymInstanceUtils {
 	}
 	/** the singleton of symbolic instance utility for algorithms **/
 	private static final SymInstanceUtils utils = new SymInstanceUtils();
-	
-	/* symbolic constraint optimization */
-	/**
-	 * @param expression
-	 * @return whether the expression is logical AND
-	 */
-	private boolean is_conjunction(SymbolExpression expression) {
-		if(expression instanceof SymbolBinaryExpression) {
-			return ((SymbolBinaryExpression) expression).get_operator().get_operator() == COperator.logic_and;
-		}
-		else {
-			return false;
-		}
-	}
-	/**
-	 * collect the conditions in the conjunction
-	 * @param expression
-	 * @param conditions
-	 * @throws Exception
-	 */
-	private boolean collect_conditions_in(SymbolExpression expression, Collection<SymbolExpression> conditions) throws Exception {
-		if(expression instanceof SymbolConstant) {
-			if(((SymbolConstant) expression).get_bool()) {
-				return true;
-			}
-			else {
-				conditions.clear();
-				conditions.add(SymbolFactory.sym_expression(Boolean.FALSE));
-				return false;
-			}
-		}
-		else if(this.is_conjunction(expression)) {
-			if(this.collect_conditions_in(((SymbolBinaryExpression) expression).get_loperand(), conditions)) {
-				return this.collect_conditions_in(((SymbolBinaryExpression) expression).get_roperand(), conditions);
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			conditions.add(SymbolFactory.sym_condition(expression, true));
-			return true;
-		}
-	}
-	/**
-	 * @param cir_mutations
-	 * @param constraint
-	 * @return the set of constraints as elemental conditions in the constraint of source
-	 * @throws Exception
-	 */
-	private Collection<SymConstraint> divide_in_constraints(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
-		if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations: null");
-		else if(constraint == null)
-			throw new IllegalArgumentException("Invalid constraint as null");
-		else {
-			/* 1. collect the conditions in the conjunction of expression */
-			Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
-			this.collect_conditions_in(constraint.get_condition(), conditions);
-			
-			/* 2. generate the set of symbolic constraints w.r.t. the conditions */
-			Set<SymConstraint> constraints = new HashSet<SymConstraint>();
-			for(SymbolExpression condition : conditions) {
-				constraints.add(cir_mutations.expression_constraint(
-						constraint.get_statement(), condition, true));
-			}
-			constraints.add(cir_mutations.statement_constraint(constraint.get_statement(), 1));
-			return constraints;
-		}
-	}
-	/**
-	 * @param condition
-	 * @param statement
-	 * @return whether the symbolic expression in condition is defined in the statement
-	 * @throws Exception
-	 */
-	private boolean is_defined(SymbolExpression condition, CirStatement statement) throws Exception {
-		if(statement instanceof CirAssignStatement) {
-			SymbolExpression definition = SymbolFactory.sym_expression(
-					((CirAssignStatement) statement).get_lvalue());
-			
-			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(condition); SymbolNode sym_node;
-			while(!queue.isEmpty()) {
-				sym_node = queue.poll();
-				for(SymbolNode child : sym_node.get_children()) {
-					queue.add(child);
-				}
-				if(sym_node.equals(definition)) {
-					return true;
-				}
-			}
-			
-			return false;
-		}
-		else {
-			return false;
-		}
-	}
-	/**
-	 * whether the condition is in form of statement_ID >= times(integer_Constant)
-	 * @param condition
-	 * @return the times required for execution the target statement or -1 if it is not
-	 * @throws Exception
-	 */
-	private boolean is_statement_condition(SymbolExpression condition) throws Exception {
-		if(condition instanceof SymbolBinaryExpression) {
-			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
-			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
-				return true;
-			}
-			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			return false;
-		}
-	}
-	/**
-	 * @param condition
-	 * @return the execution to which the operand in condition refers to or null if it is not
-	 * @throws Exception
-	 */
-	private CirExecution execution_in_condition(SymbolExpression condition) throws Exception {
-		if(condition instanceof SymbolBinaryExpression) {
-			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
-			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
-				return (CirExecution) loperand.get_source();
-			}
-			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
-				return (CirExecution) roperand.get_source();
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
-	}
-	/**
-	 * @param condition
-	 * @return the times that the execution in condition is required
-	 * @throws Exception
-	 */
-	private int int_times_of_condition(SymbolExpression condition) throws Exception {
-		if(condition instanceof SymbolBinaryExpression) {
-			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
-			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
-			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
-				return ((SymbolConstant) roperand).get_int();
-			}
-			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
-				return ((SymbolConstant) loperand).get_int();
-			}
-			else {
-				return -1;
-			}
-		}
-		else {
-			return -1;
-		}
-	}
-	/**
-	 * @param execution
-	 * @param condition
-	 * @return the statement point where the condition can reach to prior
-	 * @throws Exception
-	 */
-	private CirExecution prev_reach_point(CirExecution execution, SymbolExpression condition) throws Exception {
-		if(condition instanceof SymbolConstant) {
-			return execution.get_graph().get_entry();
-		}
-		else if(this.is_statement_condition(condition)) {
-			return this.execution_in_condition(condition);
-		}
-		else {
-			CirExecutionPath path = CirExecutionPathFinder.finder.db_extend(execution);
-			Iterator<CirExecutionEdge> iterator = path.get_reverse_edges();
-			while(iterator.hasNext()) {
-				CirExecutionEdge edge = iterator.next();
-				CirExecution prev_node = edge.get_source();
-				if(this.is_defined(condition, prev_node.get_statement())) {
-					return edge.get_target();
-				}
-			}
-			return path.get_source();
-		}
-	}
-	/**
-	 * @param cir_mutations
-	 * @param constraint
-	 * @return the constraint is improved to the statement where the condition can be evaluated earliest.
-	 * @throws Exception
-	 */
-	private SymConstraint path_improvement(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
-		if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations as null");
-		else if(constraint == null)
-			throw new IllegalArgumentException("Invalid constraint as null");
-		else {
-			CirExecution execution = this.prev_reach_point(
-					constraint.get_execution(), constraint.get_condition());
-			return cir_mutations.expression_constraint(execution.
-					get_statement(), constraint.get_condition(), true);
-		}
-	}
-	/**
-	 * generate the set of conditions subsuming the expression
-	 * @param expression
-	 * @param conditions
-	 * @throws Exception
-	 */
-	private void generate_subsume_set(SymbolExpression expression, Collection<SymbolExpression> conditions) throws Exception {
-		if(expression instanceof SymbolBinaryExpression) {
-			SymbolBinaryExpression bin_expression = (SymbolBinaryExpression) expression;
-			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
-			switch(operator) {
-			case smaller_tn:
-			{
-				conditions.add(bin_expression);
-				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				conditions.add(SymbolFactory.not_equals(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				break;
-			}
-			case smaller_eq:
-			{
-				conditions.add(bin_expression);
-				break;
-			}
-			case greater_tn:
-			{
-				conditions.add(SymbolFactory.smaller_tn(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				break;
-			}
-			case greater_eq:
-			{
-				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				break;
-			}
-			case equal_with:
-			{
-				conditions.add(bin_expression);
-				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
-				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				break;
-			}
-			case not_equals:
-			{
-				conditions.add(bin_expression);
-				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
-				break;
-			}
-			default:
-			{
-				conditions.add(expression);
-				break;
-			}
-			}
-		}
-		else {
-			conditions.add(expression);
-		}
-	}
-	/**
-	 * @param cir_mutations
-	 * @param constraint
-	 * @return the set of constraints subsumed from the original conditions (extended)
-	 * @throws Exception
-	 */
-	private Collection<SymConstraint> subsume_constraints(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
-		if(cir_mutations == null)
-			throw new IllegalArgumentException("Invalid cir_mutations as null");
-		else if(constraint == null)
-			throw new IllegalArgumentException("Invalid constraint as null");
-		else {
-			Set<SymConstraint> constraints = new HashSet<SymConstraint>();
-			Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
-			this.generate_subsume_set(constraint.get_condition(), conditions);
-			for(SymbolExpression condition : conditions) {
-				constraints.add(cir_mutations.expression_constraint(constraint.get_statement(), condition, true));
-			}
-			return constraints;
-		}
-	}
-	/**
-	 * @param cir_mutations
-	 * @param constraint
-	 * @return the set of symbolic constraints improved from the given one
-	 * @throws Exception
-	 */
-	public static Collection<SymConstraint> improve_constraints(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
-		Collection<SymConstraint> divide_constraints = utils.divide_in_constraints(cir_mutations, constraint);
-		Collection<SymConstraint> improv_constraints = new HashSet<SymConstraint>();
-		for(SymConstraint divide_constraint : divide_constraints) 
-			improv_constraints.add(utils.path_improvement(cir_mutations, divide_constraint));
-		Collection<SymConstraint> subsum_constraints = new HashSet<SymConstraint>();
-		for(SymConstraint improv_constraint : improv_constraints) 
-			subsum_constraints.addAll(utils.subsume_constraints(cir_mutations, improv_constraint));
-		return subsum_constraints;
-	}
 	
 	/* annotation methods as supporting */
 	/**
@@ -717,29 +410,41 @@ public class SymInstanceUtils {
 			
 			/* 	*********************************************************
 			 * 	|-- stmt_id >= times 	--> covr_stmt(statement, times)	|
+			 * 	|							in {1, 2, 4, ... ==> times}	|
 			 * 	|--	(execution, TRUE)	-->	covr_stmt(statement, 1) 	|
+			 * 	|--	(execution, FASLE)	--> eval_stmt(statement, false)	|
+			 * 	|--	(execution, other)	--> eval_stmt(statement, other)	|
 			 * 	*********************************************************/
-			int times;
 			if(condition instanceof SymbolConstant) {
 				if(((SymbolConstant) condition).get_bool()) {
-					times = 1;
+					annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, 
+							execution.get_statement(), 
+							SymbolFactory.sym_expression(Integer.valueOf(1))));
 				}
 				else {
-					times = -1;
+					annotations.add(new CirAnnotation(CirAnnotateType.eval_stmt,
+							execution.get_statement(),
+							SymbolFactory.sym_expression(Boolean.FALSE)));
 				}
 			}
 			else {
-				times = this.int_times_of_condition(condition);
-			}
-			if(times > 0) {
-				annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, 
-						execution.get_statement(), 
-						SymbolFactory.sym_expression(Integer.valueOf(times))));
-			}
-			/* |--	(execution, other)	--> eval_stmt(statement, expression) */
-			else {
-				annotations.add(new CirAnnotation(CirAnnotateType.eval_stmt,
-						execution.get_statement(), condition));
+				Object[] exec_time_oprt = this.decode_statement_expression(condition);
+				if(exec_time_oprt != null) {
+					execution = (CirExecution) exec_time_oprt[0];
+					int times = ((Integer) exec_time_oprt[1]).intValue();
+					for(int k = 1; k <= times; k = k * 2) {
+						annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt,
+								execution.get_statement(),
+								SymbolFactory.sym_expression(Integer.valueOf(k))));
+					}
+					annotations.add(new CirAnnotation(CirAnnotateType.covr_stmt, 
+							execution.get_statement(), 
+							SymbolFactory.sym_expression(Integer.valueOf(times))));
+				}
+				else {
+					annotations.add(new CirAnnotation(CirAnnotateType.eval_stmt,
+							execution.get_statement(), condition));
+				}
 			}
 		}
 	}
@@ -938,6 +643,343 @@ public class SymInstanceUtils {
 			}
 			return next_mutations;
 		}
+	}
+	
+	/* symbolic constraint improvement */
+	/* Stage-I. Local Improvement on Constraint itself */
+	/**
+	 * @param expression
+	 * @return whether the expression is logical AND
+	 */
+	private boolean is_conjunction(SymbolExpression expression) {
+		if(expression instanceof SymbolBinaryExpression) {
+			return ((SymbolBinaryExpression) expression).get_operator().get_operator() == COperator.logic_and;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * 	It collect useful expression that are conjected to construct the source expression as given.
+	 * 	(1)	If the expression is True constant, it is ignored to be added to conjunctions and return true.
+	 * 	(2) If the expression is False constant, it will clear the conjunctions and return false.
+	 * 	(3) If the expression is Logical-And Binary, its children will be collected recursively.
+	 * @param expression
+	 * @param conjunctions
+	 * @throws Exception
+	 */
+	private boolean collect_in_conjunctions(SymbolExpression expression, Collection<SymbolExpression> conjunctions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			/* (1) True constant is ignored and does not influence on others */
+			if(((SymbolConstant) expression).get_bool()) {
+				return true;		
+			}
+			/* (2) False constant returns false to inform the clean of outputs */
+			else {
+				return false;		
+			}
+		}
+		/* (3) Logical-And expression is recursively collected in its children */
+		else if(this.is_conjunction(expression)) {	
+			SymbolBinaryExpression bin_expression = (SymbolBinaryExpression) expression;
+			if(this.collect_in_conjunctions(bin_expression.get_loperand(), conjunctions)) {
+				if(this.collect_in_conjunctions(bin_expression.get_roperand(), conjunctions)) {
+					return true;	/* Return true if all the children are correctly inserted */
+				}
+			}
+			return false;
+		}
+		/* (4) Otherwise, the boolean representation of input is inserted */
+		else {
+			conjunctions.add(SymbolFactory.sym_condition(expression, true));
+			return true;			/* Return true to inform the insertion successful */
+		}
+	}
+	/**
+	 * 	Stage-I. Condition Improvement
+	 * 	In this stage, the expression in constraint is translated into a collection of new expressions as the basic
+	 * 	items in the conjunction of X1 && X2 && X3 ... && Xn --> {X1, X2, ..., Xn}, such that the outputs include:
+	 * 		(1)	coverage constraint on statement.
+	 * 		(2) constraints improved from local conditions collected from conjunction form.
+	 * 
+	 * @param constraint
+	 * @param cir_mutations
+	 * @return
+	 * @throws Exception
+	 */
+	private Collection<SymConstraint> improve_I(SymConstraint constraint, CirMutations cir_mutations) throws Exception {
+		if(cir_mutations == null)
+			throw new IllegalArgumentException("Invalid cir_mutations: null");
+		else if(constraint == null)
+			throw new IllegalArgumentException("Invalid constraint as null");
+		else {
+			/* 1. collect the conditions in the conjunction of expression */
+			Set<SymbolExpression> conjunctions = new HashSet<SymbolExpression>();
+			boolean pass = this.collect_in_conjunctions(constraint.get_condition(), conjunctions);
+			Collection<SymConstraint> local_constraints = new HashSet<SymConstraint>();
+			CirStatement statement = constraint.get_execution().get_statement();
+			
+			/* 2. when available conditions are collected in the conjunctions */
+			if(pass) {
+				for(SymbolExpression conjunction : conjunctions) {
+					local_constraints.add(cir_mutations.expression_constraint(statement, conjunction, true));
+				}
+				local_constraints.add(cir_mutations.statement_constraint(statement, 1));
+			}
+			/* 3. when false constant is included, return only false constant */
+			else {
+				local_constraints.add(cir_mutations.expression_constraint(statement, Boolean.FALSE, true));
+			}
+			
+			/* 3. return the local constraints improved from source */
+			return local_constraints;
+		}
+	}
+	/* Stage-II. Path Improvement on Decidable Prefix */
+	/**
+	 * @param condition
+	 * @param execution
+	 * @return whether the symbolic expression in condition is defined in the statement
+	 * @throws Exception
+	 */
+	private boolean is_defined_in(SymbolExpression condition, CirExecution execution) throws Exception {
+		CirStatement statement = execution.get_statement();
+		if(statement instanceof CirAssignStatement) {
+			SymbolExpression definition = SymbolFactory.sym_expression(
+					((CirAssignStatement) statement).get_lvalue());
+			
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(condition); SymbolNode sym_node;
+			while(!queue.isEmpty()) {
+				sym_node = queue.poll();
+				for(SymbolNode child : sym_node.get_children()) {
+					queue.add(child);
+				}
+				if(sym_node.equals(definition)) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * divide the statement-expression in form of "execution >= times" or "execution < times" as 
+	 * tuple of [execution, times, operator]
+	 * @param expression
+	 * @return	[CirExecution, Integer, COperator] to represent "execution operator integer" or 
+	 * 			null if the expression is not statement-oriented
+	 * @throws Exception
+	 */
+	private Object[] decode_statement_expression(SymbolExpression expression) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			
+			if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
+				CirExecution execution = (CirExecution) loperand.get_source();
+				int times = ((SymbolConstant) roperand).get_int().intValue();
+				switch(operator) {
+				case greater_tn:
+				case greater_eq:
+				case smaller_tn:
+				case smaller_eq:
+				case equal_with:
+				case not_equals: 	break;
+				default: throw new IllegalArgumentException("Unsupport: " + operator);
+				}
+				return new Object[] { execution, Integer.valueOf(times), operator };
+			}
+			else if(roperand instanceof SymbolIdentifier && roperand.get_source() instanceof CirExecution) {
+				CirExecution execution = (CirExecution) roperand.get_source();
+				int times = ((SymbolConstant) loperand).get_int().intValue();
+				switch(operator) {
+				case greater_tn:	operator = COperator.smaller_tn;	break;
+				case greater_eq:	operator = COperator.smaller_eq;	break;
+				case smaller_tn:	operator = COperator.greater_tn;	break;
+				case smaller_eq:	operator = COperator.greater_eq;	break;
+				case equal_with:	operator = COperator.equal_with;	break;
+				case not_equals: 	operator = COperator.not_equals;	break;
+				default: throw new IllegalArgumentException("Unsupport: " + operator);
+				}
+				return new Object[] { execution, Integer.valueOf(times), operator };
+			}
+		}
+		return null;	/* when the expression is not statement-oriented */
+	}
+	/**
+	 * 	In Stage-II, the constraint is improved over the prefix decidable path reaching to the target execution.
+	 * 	
+	 * @param constraint
+	 * @param cir_mutations
+	 * @return 
+	 * @throws Exception
+	 */
+	private void improve_on_path(SymConstraint constraint, CirMutations cir_mutations, 
+			Collection<SymConstraint> constraints) throws Exception {
+		/* declarations */
+		CirExecution execution = constraint.get_execution(), source;
+		SymbolExpression condition = constraint.get_condition();
+		
+		/* for constant constraint, improve it to program or function entry */
+		if(condition instanceof SymbolConstant) {
+			CirFunction function = execution.get_graph().get_function().get_graph().get_main_function();
+			if(function == null) { function = execution.get_graph().get_function(); }
+			constraints.add(cir_mutations.expression_constraint(
+					function.get_flow_graph().get_entry().get_statement(), condition, true));
+		}
+		else {
+			Object[] exec_time_oprt = this.decode_statement_expression(condition);
+			/* for statement coverage constraint, fix the constraint on the given point */ 
+			if(exec_time_oprt != null) {
+				execution = (CirExecution) exec_time_oprt[0];
+				constraints.add(cir_mutations.expression_constraint(
+						execution.get_statement(), condition, true));
+			}
+			/* otherwise, improve the condition to an available point in prefix paths */
+			else {
+				CirExecutionPath path = CirExecutionPathFinder.finder.db_extend(execution);
+				Iterator<CirExecutionEdge> iterator = path.get_reverse_edges();
+				source = execution;
+				while(iterator.hasNext()) {
+					CirExecutionEdge edge = iterator.next();
+					CirExecution prev_node = edge.get_source();
+					if(this.is_defined_in(condition, prev_node)) {
+						source = edge.get_target(); break;	// find definition point
+					}
+					else {
+						source = prev_node;
+					}
+				}
+				constraints.add(cir_mutations.expression_constraint(
+							source.get_statement(), condition, true));
+			}
+		}
+	}
+	/**
+	 * In Stage-II, the constraint is improved over the prefix decidable path reaching to the target execution.
+	 * @param source_constraints
+	 * @param cir_mutations
+	 * @return set of constraints improved from the stage II by improving on path
+	 * @throws Exception
+	 */
+	private Collection<SymConstraint> improve_II(Iterable<SymConstraint> source_constraints, CirMutations cir_mutations) throws Exception {
+		Collection<SymConstraint> target_constraints = new HashSet<SymConstraint>();
+		for(SymConstraint source_constraint : source_constraints) {
+			this.improve_on_path(source_constraint, cir_mutations, target_constraints);
+		}
+		return target_constraints;
+	}
+	/* Stage-III. Subsumption-based Constraint Extension */
+	/**
+	 * generate the set of conditions subsuming the expression
+	 * @param expression
+	 * @param conditions
+	 * @throws Exception
+	 */
+	private void extend_subsumption_set(SymbolExpression expression, Collection<SymbolExpression> conditions) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			SymbolBinaryExpression bin_expression = (SymbolBinaryExpression) expression;
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			switch(operator) {
+			case smaller_tn:
+			{
+				conditions.add(bin_expression);
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				break;
+			}
+			case smaller_eq:
+			{
+				conditions.add(bin_expression);
+				break;
+			}
+			case greater_tn:
+			{
+				conditions.add(SymbolFactory.smaller_tn(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				break;
+			}
+			case greater_eq:
+			{
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				break;
+			}
+			case equal_with:
+			{
+				conditions.add(bin_expression);
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_loperand(), bin_expression.get_roperand()));
+				conditions.add(SymbolFactory.smaller_eq(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				break;
+			}
+			case not_equals:
+			{
+				conditions.add(bin_expression);
+				conditions.add(SymbolFactory.not_equals(bin_expression.get_roperand(), bin_expression.get_loperand()));
+				break;
+			}
+			default:
+			{
+				conditions.add(expression);
+				break;
+			}
+			}
+		}
+		else {
+			conditions.add(expression);
+		}
+		conditions.add(expression);
+	}
+	/**
+	 * Extend the constraint to generate its subsumption set
+	 * @param constraint
+	 * @param cir_mutations
+	 * @param subsumptions
+	 * @throws Exception
+	 */
+	private void extend_subsumption_constraints(SymConstraint constraint, 
+			CirMutations cir_mutations, Collection<SymConstraint> subsumptions) throws Exception {
+		Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
+		this.extend_subsumption_set(constraint.get_condition(), conditions);
+		for(SymbolExpression condition : conditions) {
+			subsumptions.add(cir_mutations.expression_constraint(constraint.get_statement(), condition, true));
+		}
+	}
+	/**
+	 * @param source_constraints
+	 * @param cir_mutations
+	 * @return the set of constraints as subsuming the source constraints
+	 * @throws Exception
+	 */
+	private Collection<SymConstraint> improve_III(Iterable<SymConstraint> source_constraints, CirMutations cir_mutations) throws Exception {
+		if(cir_mutations == null)
+			throw new IllegalArgumentException("Invalid cir_mutations as null");
+		else if(source_constraints == null)
+			throw new IllegalArgumentException("Invalid constraint as null");
+		else {
+			Collection<SymConstraint> target_constraints = new HashSet<SymConstraint>();
+			for(SymConstraint source_constraint : source_constraints) {
+				this.extend_subsumption_constraints(source_constraint, cir_mutations, target_constraints);
+			}
+			return target_constraints;
+		}
+	}
+	/**
+	 * @param cir_mutations
+	 * @param constraint
+	 * @return the set of symbolic constraints improved from the given one
+	 * @throws Exception
+	 */
+	public static Collection<SymConstraint> improve_constraints(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
+		Collection<SymConstraint> local_constraints = utils.improve_I(constraint, cir_mutations);
+		Collection<SymConstraint> paths_constraints = utils.improve_II(local_constraints, cir_mutations);
+		Collection<SymConstraint> exted_constraints = utils.improve_III(paths_constraints, cir_mutations);
+		return exted_constraints;
 	}
 	
 }
