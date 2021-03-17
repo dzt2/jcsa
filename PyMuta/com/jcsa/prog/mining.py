@@ -865,7 +865,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 	:param min_confidence:
 	:param max_confidence:
 	:param max_length:
-	:param select: True to select tests, False to use all the tests or None for no context set
+	:param select: True to select tests, False to use all the tests
 	:param do_mining:
 	:return:
 	"""
@@ -885,12 +885,10 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 		print("\t\t==>Select", len(selected_tests), "test cases with",
 			  evaluation.evaluate_mutation_score(document.get_mutants(), selected_tests), "of mutation score.")
 		# Step-II. Perform pattern mining algorithms
-		if select is None:
-			tests = None
-		elif select:
+		if select:
 			tests = selected_tests
 		else:
-			tests = document.get_project().test_space.get_test_cases()
+			tests = None
 		space = do_mining(document=document, exe_or_mut=exe_or_mut, uk_or_cc=uk_or_cc, min_support=min_support,
 						  min_confidence=min_confidence, max_confidence=max_confidence, max_length=max_length,
 						  output_directory=output_directory, tests=tests)
@@ -908,11 +906,9 @@ if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
 	print("Testing start from here.")
-	testing(prev_path, post_path, "decision_tree_0", True, True, 2, 0.70, 0.95, 8, None, 	do_decision_mine)
 	testing(prev_path, post_path, "decision_tree_s", True, True, 2, 0.70, 0.95, 8, True, 	do_decision_mine)
-	testing(prev_path, post_path, "decision_tree_t", True, True, 2, 0.70, 0.95, 8, False, 	do_decision_mine)
-	testing(prev_path, post_path, "frequent_mine_0", True, True, 2, 0.70, 0.90, 1, None, 	do_frequent_mine)
+	testing(prev_path, post_path, "decision_tree_a", True, True, 2, 0.70, 0.95, 8, False, 	do_decision_mine)
 	testing(prev_path, post_path, "frequent_mine_s", True, True, 2, 0.70, 0.90, 1, True, 	do_frequent_mine)
-	testing(prev_path, post_path, "frequent_mine_t", True, True, 2, 0.70, 0.90, 1, False, 	do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine_a", True, True, 2, 0.70, 0.90, 1, False, 	do_frequent_mine)
 	print("Testing end for all.")
 
