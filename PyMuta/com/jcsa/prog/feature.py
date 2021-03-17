@@ -214,32 +214,21 @@ class RIPClassifier:
 		w_result = mutant.get_weak_mutant().get_result()
 		c_result = mutant.get_coverage_mutant().get_result()
 		nr, ni, np, ki = 0, 0, 0, 0
-		if test is None:
-			if s_result.is_killable():
-				ki += 1
-			elif w_result.is_killable():
-				np += 1
-			elif c_result.is_killable():
-				ni += 1
-			else:
-				nr += 1
-		elif not(self.tests is None):
-			for test in self.tests:
-				if s_result.is_killable():
-					ki += 1
-				elif w_result.is_killable():
-					np += 1
-				elif c_result.is_killable():
-					ni += 1
-				else:
-					nr += 1
-		else:
-			test: jcmuta.TestCase
+		if not(test is None):							# dynamic test case determines
 			if s_result.is_killed_by(test):
 				ki += 1
 			elif w_result.is_killed_by(test):
 				np += 1
 			elif c_result.is_killed_by(test):
+				ni += 1
+			else:
+				nr += 1
+		else:											# static evaluation in context of tests
+			if s_result.is_killed_in(self.tests):
+				ki += 1
+			elif w_result.is_killed_in(self.tests):
+				np += 1
+			elif c_result.is_killed_in(self.tests):
 				ni += 1
 			else:
 				nr += 1

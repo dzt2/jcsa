@@ -251,10 +251,13 @@ class MutationResult:
 		:param tests: collection of TestCase(s) or their Integer ID
 		:return: whether be killed by any test in the inputs collection
 		"""
-		for test in tests:
-			if self.is_killed_by(test):
-				return True
-		return False
+		if tests is None:
+			return self.is_killable()
+		else:
+			for test in tests:
+				if self.is_killed_by(test):
+					return True
+			return False
 
 	def is_killable(self):
 		"""
