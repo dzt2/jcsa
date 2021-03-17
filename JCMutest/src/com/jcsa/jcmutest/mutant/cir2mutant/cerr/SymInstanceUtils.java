@@ -976,6 +976,7 @@ public class SymInstanceUtils {
 	 * @throws Exception
 	 */
 	public static Collection<SymConstraint> improve_constraints(CirMutations cir_mutations, SymConstraint constraint) throws Exception {
+		constraint = cir_mutations.optimize(constraint, null);
 		Collection<SymConstraint> local_constraints = utils.improve_I(constraint, cir_mutations);
 		Collection<SymConstraint> paths_constraints = utils.improve_II(local_constraints, cir_mutations);
 		Collection<SymConstraint> exted_constraints = utils.improve_III(paths_constraints, cir_mutations);
