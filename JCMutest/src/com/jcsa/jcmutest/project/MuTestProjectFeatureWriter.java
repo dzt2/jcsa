@@ -107,7 +107,7 @@ public class MuTestProjectFeatureWriter {
 	/** output stream to write feature data to file **/
 	private FileWriter writer;
 	/** it preserves the set of symbolic nodes used to define parameters in symbolic features **/
-	private Set<SymbolNode> sym_nodes;
+	private Set<SymbolNode> sym_nodes; 
 	
 	/* classes */
 	/**
