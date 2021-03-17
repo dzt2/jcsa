@@ -740,7 +740,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_res();
 	}
 	
-	/* xxx.sym */
+	/* xxx.sym */ 
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
