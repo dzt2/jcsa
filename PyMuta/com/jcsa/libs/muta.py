@@ -614,14 +614,23 @@ class SymInstance:
 		None	---	The satisfaction of the condition remains unknown.
 	"""
 
-	def __init__(self, condition: SymCondition, result: bool):
+	def __init__(self, stage: bool, result: bool, condition: SymCondition):
 		"""
-		:param condition:
-		:param result:
+		:param stage:		the time when the condition is evaluated during testing
+		:param condition:	the condition as source to be evaluated and instanciate
+		:param result:		the boolean result that specifies whether the condition is satisfied
+							(True) or not (False) or unknown (None).
 		"""
+		self.stage = stage
 		self.condition = condition
 		self.result = result
 		return
+
+	def get_stage(self):
+		"""
+		:return: True as before mutation and False after mutation
+		"""
+		return self.stage
 
 	def get_result(self):
 		"""
@@ -686,11 +695,28 @@ class SymExecution:
 		"""
 		return not(self.test is None)
 
-	def get_instances(self):
+	def get_instances(self, stage=None):
 		"""
+		:param stage: True to select instances before mutation, or False to select
+						instances after mutation, or None to select all of them.
 		:return: the set of instances of conditions required on the execution path
 		"""
-		return self.instances
+		if stage is None:
+			return self.instances
+		elif stage:
+			instances = list()
+			for instance in self.instances:
+				instance: SymInstance
+				if instance.get_stage():
+					instances.append(instance)
+			return instances
+		else:
+			instances = list()
+			for instance in self.instances:
+				instance: SymInstance
+				if not instance.get_stage():
+					instances.append(instance)
+			return instances
 
 
 class SymDocument:
@@ -776,18 +802,19 @@ class SymDocument:
 			else:
 				test = self.project.test_space.get_test_case(tid)
 			execution = SymExecution(self, mutant, test)
-			result, start = False, True
+			words = list()
 			for k in range(2, len(items)):
 				word = items[k].strip()
 				if len(word) > 0:
 					if word == ";":
-						start = True
-					elif start:
-						start = False
-						result = jcbase.CToken.parse(word).get_token_value()
+						stage = jcbase.CToken.parse(words[0].strip()).get_token_value()
+						result = jcbase.CToken.parse(words[1].strip()).get_token_value()
+						for i in range(2, len(words)):
+							condition = self.__condition__(words[i])
+							execution.instances.append(SymInstance(stage, result, condition))
+						words.clear()
 					else:
-						condition = self.__condition__(word)
-						execution.instances.append(SymInstance(condition, result))
+						words.append(word)
 			return execution
 		return None
 
@@ -827,11 +854,12 @@ if __name__ == "__main__":
 			for instance in execution.get_instances():
 				instance: SymInstance
 				condition = instance.get_condition()
-				print("\t{}\t{}\t{}\t{}\t{}\t{}".format(instance.get_result(),
-														condition.get_category(),
-														condition.get_operator(),
-														condition.get_execution(),
-														condition.get_location().get_cir_code(),
-														condition.get_parameter()))
+				print("\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(instance.get_stage(),
+															instance.get_result(),
+															condition.get_category(),
+															condition.get_operator(),
+															condition.get_execution(),
+															condition.get_location().get_cir_code(),
+															condition.get_parameter()))
 		print()
 
