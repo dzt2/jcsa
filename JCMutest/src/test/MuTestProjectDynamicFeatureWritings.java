@@ -17,13 +17,19 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
 
-public class MuTestProjectFeatureWritings {
+/**
+ * Write the dynamic features of xxx.cov and xxx.dft + xxx.dfp using a randomly selected test suite.
+ * 
+ * @author yukimula
+ *
+ */
+public class MuTestProjectDynamicFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/features/";
 	private static final int max_distance = 2;
-	private static final double random_test_ratio = 0.00300;
-	private static final int min_test_number = 18;
+	private static final double random_test_ratio = 0.005;
+	private static final int min_test_number = 20;
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
@@ -51,15 +57,10 @@ public class MuTestProjectFeatureWritings {
 		Set<TestInput> selected_tests = select_tests(selected_mutants, project.get_test_space());
 		System.out.println("\t==> Select " + selected_tests.size() + " test cases from " + 
 							project.get_test_space().number_of_test_inputs() + " inputs.");
-		project.execute_instrumental(selected_tests);
-		System.out.println("\t==@ Generate instrumental files for " + selected_tests.size() + " test cases");
 		
 		/* 3. write feature information to output directory */
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_code(); 
-		writer.write_muta();
-		selected_tests.clear();	// should be ignored if dynamic is used
-		writer.write_features(max_distance, selected_tests);
+		writer.write_d_features(max_distance, selected_tests);
 		System.out.println();
 	}
 	
@@ -72,7 +73,9 @@ public class MuTestProjectFeatureWritings {
 		File[] files = directory.listFiles();
 		if(files != null) {
 			for(File file : files) {
-				FileOperations.delete(file);
+				String name = file.getName();
+				if(name.endsWith(".dft") || name.endsWith(".dfp") || name.endsWith(".cov"))
+					FileOperations.delete(file);
 			}
 		}
 	}

@@ -6,11 +6,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotateType;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
@@ -24,6 +27,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceState;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTreeNode;
+import com.jcsa.jcparse.base.BitSequence;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
@@ -81,6 +85,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolOperator;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
+import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 
@@ -504,7 +509,7 @@ public class MuTestProjectFeatureWriter {
 	 * xxx.cpp, xxx.ast, xxx.cir, xxx.flw
 	 * @throws Exception
 	 */
-	public void write_code() throws Exception {
+	private void write_code() throws Exception {
 		this.write_cpp();
 		this.write_ast();
 		this.write_cir();
@@ -734,7 +739,7 @@ public class MuTestProjectFeatureWriter {
 	 * xxx.tst; xxx.mut; xxx.res;
 	 * @throws Exception
 	 */
-	public void write_muta() throws Exception {
+	private void write_muta() throws Exception {
 		this.write_tst();
 		this.write_mut();
 		this.write_res();
@@ -1060,7 +1065,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param max_distance
 	 * @throws Exception
 	 */
-	public void write_features(int max_distance, Collection<TestInput> test_suite) throws Exception {
+	private void write_syms(int max_distance, Collection<TestInput> test_suite) throws Exception {
 		/* 0. initializations */
 		this.sym_nodes.clear();
 		
@@ -1080,6 +1085,119 @@ public class MuTestProjectFeatureWriter {
 		/* 3. xxx.sym */
 		this.write_sym_nodes(); 
 		this.sym_nodes.clear();
+	}
+	
+	/* xxx.cov */
+	/**
+	 * @return initialize the mapping from execution point to the bit-string representing
+	 * 		   of which test cover the corresponding execution node in control flow graph
+	 * @throws Exception
+	 */
+	private Map<CirExecution, BitSequence> new_coverage_matrix() throws Exception {
+		Map<CirExecution, BitSequence> cmat = new HashMap<CirExecution, BitSequence>();
+		int test_number = this.source.get_code_space().get_project().get_test_space().number_of_test_inputs();
+		for(CirFunction function : this.source.get_cir_tree().get_function_call_graph().get_functions()) {
+			if(!function.get_name().equals("#init")) {
+				for(CirExecution execution : function.get_flow_graph().get_executions()) {
+					cmat.put(execution, new BitSequence(test_number));
+				}
+			}
+		}
+		return cmat;
+	}
+	/**
+	 * update the matrix by loading instrumental path
+	 * @param cmat
+	 * @param test
+	 * @throws Exception
+	 */
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, TestInput test) throws Exception {
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+		CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
+		if(test_path != null) {
+			System.out.println("\t\t~~> Update Coverage Matrics for Test#" + test.get_id() + 
+								" among " + tspace.number_of_test_inputs() + " test cases.");
+			for(CStateNode state_node : test_path.get_nodes()) {
+				cmat.get(state_node.get_execution()).set(test.get_id(), BitSequence.BIT1);
+			}
+		}
+	}
+	/**
+	 * update the matrix by loading STRP or ETRP or BTRP using their seeded statement
+	 * @param cmat
+	 * @param mutant
+	 * @throws Exception
+	 */
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant) throws Exception {
+		if(mutant.has_cir_mutations()) {
+			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+			MuTestProjectTestResult result = tspace.get_test_result(mutant);
+			if(result != null) {
+				System.out.println("\t\t~~> Update Coverage Matrics for Mutant#" + 
+						mutant.get_id() + " among " + mutant.get_space().size() + " mutations.");
+				BitSequence killings = result.get_kill_set();
+				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
+					BitSequence coverage = cmat.get(cir_mutation.get_execution());
+					for(int k = 0; k < killings.length(); k++) {
+						if(killings.get(k)) {
+							coverage.set(k, BitSequence.BIT1);
+						}
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * xxx.cov
+	 * @throws Exception
+	 */
+	private void write_covs(Collection<TestInput> test_cases) throws Exception {
+		this.open(".cov");
+		
+		Map<CirExecution, BitSequence> cmat = this.new_coverage_matrix();
+		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+			this.set_coverage_matrix(cmat, mutant);
+		}
+		
+		if(test_cases != null) {
+			for(TestInput test_case : test_cases) {
+				this.set_coverage_matrix(cmat, test_case);
+			}
+		}
+		
+		for(CirExecution execution : cmat.keySet()) {
+			BitSequence coverage = cmat.get(execution);
+			this.writer.write(this.token_string(execution) + "\t" + coverage.toString() + "\n");
+		}
+		
+		this.close();
+	}
+	
+	/* interfaces for utility */
+	/**
+	 * xxx.ast xxx.cir xxx.exe xxx.mut xxx.tst xxx.res 
+	 * {xxx.dep xxx.ins xxx.sft xxx.sym}
+	 * @throws Exception
+	 */
+	public void write_s_features(int max_distance) throws Exception {
+		this.write_code();
+		this.write_muta();
+		this.write_syms(max_distance, null);
+		this.write_covs(null);
+	}
+	/**
+	 * {xxx.dep xxx.ins xxx.sft xxx.dft xxx.dfp xxx.cov xxx.sym}
+	 * @param max_distance
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	public void write_d_features(int max_distance, Collection<TestInput> test_cases) throws Exception {
+		if(test_cases != null) {
+			this.source.get_code_space().get_project().execute_instrumental(test_cases);
+			this.write_covs(test_cases);
+			this.write_syms(max_distance, test_cases);
+		}
 	}
 	
 }
