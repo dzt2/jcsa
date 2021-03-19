@@ -62,7 +62,10 @@ import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
@@ -1149,6 +1152,33 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
+	 * generate extension set from each execution node covered
+	 * @param cmat
+	 * @throws Exception
+	 */
+	private void ext_coverage_matrix(Map<CirExecution, BitSequence> cmat) throws Exception {
+		for(CirExecution execution : cmat.keySet()) {
+			CirExecutionPath path = new CirExecutionPath(execution);
+			CirExecutionPathFinder.finder.db_extend(path);
+			CirExecutionPathFinder.finder.df_extend(path);
+			Set<CirExecution> extensions = new HashSet<CirExecution>();
+			for(CirExecutionEdge edge : path.get_edges()) {
+				extensions.add(edge.get_source());
+				extensions.add(edge.get_target());
+			}
+			
+			BitSequence source = cmat.get(execution);
+			for(CirExecution extension : extensions) {
+				BitSequence target = cmat.get(extension);
+				for(int k = 0; k < source.length(); k++) {
+					if(source.get(k)) {
+						target.set(k, BitSequence.BIT1);
+					}
+				}
+			}
+		}
+	}
+	/**
 	 * xxx.cov
 	 * @throws Exception
 	 */
@@ -1165,6 +1195,8 @@ public class MuTestProjectFeatureWriter {
 				this.set_coverage_matrix(cmat, test_case);
 			}
 		}
+		
+		this.ext_coverage_matrix(cmat);
 		
 		for(CirExecution execution : cmat.keySet()) {
 			BitSequence coverage = cmat.get(execution);
