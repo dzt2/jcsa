@@ -737,7 +737,103 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
-	/* xxx.tst; xxx.mut; xxx.res; */
+	/* xxx.cov */
+	/**
+	 * @return initialize the mapping from execution point to the bit-string representing
+	 * 		   of which test cover the corresponding execution node in control flow graph
+	 * @throws Exception
+	 */
+	private Map<CirExecution, BitSequence> new_coverage_matrix() throws Exception {
+		Map<CirExecution, BitSequence> cmat = new HashMap<CirExecution, BitSequence>();
+		int test_number = this.source.get_code_space().get_project().get_test_space().number_of_test_inputs();
+		for(CirFunction function : this.source.get_cir_tree().get_function_call_graph().get_functions()) {
+			if(!function.get_name().equals("#init")) {
+				for(CirExecution execution : function.get_flow_graph().get_executions()) {
+					cmat.put(execution, new BitSequence(test_number));
+				}
+			}
+		}
+		return cmat;
+	}
+	/**
+	 * update the matrix by loading STRP or ETRP or BTRP using their seeded statement
+	 * @param cmat
+	 * @param mutant
+	 * @throws Exception
+	 */
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant) throws Exception {
+		if(mutant.has_cir_mutations()) {
+			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+			MuTestProjectTestResult result = tspace.get_test_result(mutant);
+			if(result != null) {
+				System.out.println("\t\t~~> Update Coverage Matrics for Mutant#" + 
+						mutant.get_id() + " among " + mutant.get_space().size() + " mutations.");
+				BitSequence killings = result.get_kill_set();
+				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
+					BitSequence coverage = cmat.get(cir_mutation.get_execution());
+					for(int k = 0; k < killings.length(); k++) {
+						if(killings.get(k)) {
+							coverage.set(k, BitSequence.BIT1);
+						}
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * generate extension set from each execution node covered
+	 * @param cmat
+	 * @throws Exception
+	 */
+	private void ext_coverage_matrix(Map<CirExecution, BitSequence> cmat) throws Exception {
+		for(CirExecution execution : cmat.keySet()) {
+			CirExecutionPath path = new CirExecutionPath(execution);
+			CirExecutionPathFinder.finder.db_extend(path);
+			CirExecutionPathFinder.finder.df_extend(path);
+			Set<CirExecution> extensions = new HashSet<CirExecution>();
+			for(CirExecutionEdge edge : path.get_edges()) {
+				extensions.add(edge.get_source());
+				extensions.add(edge.get_target());
+			}
+			
+			BitSequence source = cmat.get(execution);
+			for(CirExecution extension : extensions) {
+				BitSequence target = cmat.get(extension);
+				for(int k = 0; k < source.length(); k++) {
+					if(source.get(k)) {
+						target.set(k, BitSequence.BIT1);
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * [execution bits \n]+
+	 * @param cmat
+	 * @throws Exception
+	 */
+	private void put_coverage_matrix(Map<CirExecution, BitSequence> cmat) throws Exception {
+		for(CirExecution execution : cmat.keySet()) {
+			BitSequence coverage = cmat.get(execution);
+			this.writer.write(this.token_string(execution) + "\t" + coverage.toString() + "\n");
+		}
+	}
+	/**
+	 * xxx.cov by static analysis on mutation
+	 * @throws Exception
+	 */
+	private void write_cov() throws Exception {
+		this.open(".cov");
+		Map<CirExecution, BitSequence> cmat;
+		cmat = this.new_coverage_matrix();
+		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+			this.set_coverage_matrix(cmat, mutant);
+		}
+		this.ext_coverage_matrix(cmat);
+		this.put_coverage_matrix(cmat);
+		this.close();
+	}
+	/* xxx.tst; xxx.mut; xxx.res; xxx.cov; */
 	/**
 	 * xxx.tst; xxx.mut; xxx.res;
 	 * @throws Exception
@@ -746,9 +842,10 @@ public class MuTestProjectFeatureWriter {
 		this.write_tst();
 		this.write_mut();
 		this.write_res();
+		this.write_cov();
 	}
 	
-	/* xxx.sym */ 
+	/* xxx.sft xxx.sfp xxx.sym */ 
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
@@ -831,8 +928,6 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
-	
-	/* xxx.sft, xxx.dft, xxx.dfp */
 	/**
 	 * category$operator$execution$location$parameter
 	 * @param instance SymInstance or CirAnnotation
@@ -916,198 +1011,153 @@ public class MuTestProjectFeatureWriter {
 		this.writer.write("$" + this.token_string(parameter));
 	}
 	/**
-	 * \tstage result (instance)+ ;
-	 * @param instances
+	 * exec$stage$result {condition}* ;
+	 * @param execution
+	 * @param stage
 	 * @param result
+	 * @param conditions
 	 * @throws Exception
 	 */
-	private void write_sym_instances(boolean stage, Iterable<Object> instances, Boolean result) throws Exception {
-		this.writer.write("\t" + this.token_string(stage));
-		this.writer.write("\t" + this.token_string(result));
-		for(Object instance : instances) {
+	private void write_sym_instances(CirExecution execution, boolean stage, 
+			Boolean result, Iterable<Object> conditions) throws Exception {
+		/* execution$stage$result */
+		this.writer.write("\t" + this.token_string(execution) + 
+							"$" + this.token_string(stage) + 
+							"$" + this.token_string(result));
+		
+		/* (\t{condition})* */
+		for(Object condition : conditions) {
 			this.writer.write("\t");
-			this.write_sym_condition(instance);
+			this.write_sym_condition(condition);
 		}
-		this.writer.write("\t;");
+		
+		/* END TAG ; */	this.writer.write("\t;");
 	}
 	/**
-	 * \tresult (instance)+ ;
+	 * exec$stage$result (condition)+ ;
 	 * @param status
 	 * @param cir_mutations
 	 * @throws Exception
 	 */
 	private void write_sym_instance_status(SymInstanceStatus status, CirMutations cir_mutations) throws Exception {
-		Collection<Object> instances = new ArrayList<Object>();
+		Collection<Object> conditions = new ArrayList<Object>();
 		boolean stage;
 		if(status.is_state_error()) {
-			instances.add(status.get_instance());
+			conditions.add(status.get_instance());
 			stage = false;	/* false means after mutation */
 		}
 		else {
-			instances.addAll(cir_mutations.improve_constraints(
+			conditions.addAll(cir_mutations.improve_constraints(
 						(SymConstraint) status.get_instance()));
 			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : status.get_annotations()) {
-			instances.add(annotation);
+			conditions.add(annotation);
 		}
-		this.write_sym_instances(stage, instances, status.get_evaluation_result());
+		this.write_sym_instances(status.get_execution(), stage, status.get_evaluation_result(), conditions);
 	}
 	/**
-	 * \tresult (instance)+ ;
+	 * exec$stage$result (condition)+ ;
 	 * @param state
 	 * @param cir_mutations
 	 * @throws Exception
 	 */
 	private void write_sym_instance_state(SymInstanceState state, CirMutations cir_mutations) throws Exception {
-		Collection<Object> instances = new ArrayList<Object>();
+		Collection<Object> conditions = new ArrayList<Object>();
 		boolean stage;
 		if(state.is_state_error()) {
-			instances.add(state.get_abstract_instance());
+			conditions.add(state.get_abstract_instance());
 			stage = false;	/* false means after mutation */
 		}
 		else {
-			instances.addAll(cir_mutations.improve_constraints(
-				(SymConstraint) state.get_abstract_instance()));
+			conditions.addAll(cir_mutations.improve_constraints(
+						(SymConstraint) state.get_abstract_instance()));
 			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : state.get_annotations()) {
-			instances.add(annotation);
+			conditions.add(annotation);
 		}
-		this.write_sym_instances(stage, instances, state.get_evaluation_result());
+		this.write_sym_instances(state.get_execution(), stage, state.get_evaluation_result(), conditions);
 	}
 	/**
-	 * mid tid {[ result {condition}+ ]}* \n
-	 * @param mutant
-	 * @param test
+	 * [mid {exec$stage$result {condition}+ ;}+\n]+
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_sym_instance_status_path(Mutant mutant, TestInput test, List<SymInstanceTreeNode> path) throws Exception {
-		int mid = mutant.get_id(), tid = (test == null) ? -1 : test.get_id();
-		this.writer.write(mid + "\t" + tid);
-		for(SymInstanceTreeNode node : path) {
-			if(node.has_edge_status()) {
-				this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
+	private void write_sym_instance_status_paths(SymInstanceTree tree) throws Exception {
+		Collection<List<SymInstanceTreeNode>> paths = tree.get_reachable_paths();
+		Mutant mutant = tree.get_mutant();
+		for(List<SymInstanceTreeNode> path : paths) {
+			this.writer.write("\t" + mutant.get_id());
+			for(SymInstanceTreeNode node : path) {
+				if(node.has_edge_status()) {
+					this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
+				}
+				this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
 			}
-			this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
+			this.writer.write("\n");
 		}
-		this.writer.write("\n");
 	}
 	/**
-	 * mid tid {[ result {condition}+ ]}* \n
-	 * @param mutant
-	 * @param test
-	 * @param states
+	 * mid {exec$stage$result {condition}+ ;}+ \n
+	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_sym_instance_states_path(Mutant mutant, TestInput test, 
-			Iterable<SymInstanceState> states, CirMutations cir_mutations) throws Exception {
-		int mid = mutant.get_id(), tid = (test == null) ? -1 : test.get_id();
-		this.writer.write(mid + "\t" + tid);
+	private void write_sym_instance_states_paths(SymInstanceTree tree) throws Exception {
+		Iterable<SymInstanceState> states = tree.get_global_states();
+		this.writer.write("\t" + tree.get_mutant().get_id());
 		for(SymInstanceState state : states) {
-			this.write_sym_instance_state(state, cir_mutations);
+			this.write_sym_instance_state(state, tree.get_cir_mutations());
 		}
 		this.writer.write("\n");
 	}
 	/**
-	 * write on xxx.sft and xxx.tid.dft, xxx.dfp if test is non-null
+	 * xxx.sft xxx.sfp
 	 * @param dependence_graph
 	 * @param max_distance
-	 * @param test
 	 * @throws Exception
 	 */
-	private void write_sym_instance_status_trees(CDependGraph dependence_graph, int max_distance, TestInput test) throws Exception {
-		/* xxx.sft */
-		if(test == null) {
-			this.open(".sft");
-			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-				if(mutant.has_cir_mutations()) {
-					SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
-					tree.evaluate();
-					for(List<SymInstanceTreeNode> path : tree.get_reachable_paths()) {
-						this.write_sym_instance_status_path(mutant, test, path);
-					}
-				}
-			}
-			this.close();
-		}
-		/* xxx.tid.dft + xxx.tid.dfp */
-		else {
-			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-			CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-										this.source.get_ast_tree(), this.source.get_cir_tree(), test);
-			if(test_path != null) {
-				/* xxx.dft */
-				this.open("." + test.get_id() + ".dft");
-				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-					if(mutant.has_cir_mutations()) {
-						SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
-						tree.evaluate(test_path);
-						for(List<SymInstanceTreeNode> path : tree.get_reachable_paths()) {
-							this.write_sym_instance_status_path(mutant, test, path);
-						}
-					}
-				}
-				this.close();
-				/* xxx.dfp */
-				this.open("." + test.get_id() + ".dfp");
-				for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-					if(mutant.has_cir_mutations()) {
-						SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
-						tree.evaluate(test_path);
-						this.write_sym_instance_states_path(mutant, test, tree.get_global_states(), tree.get_cir_mutations());
-					}
-				}
-				this.close();
+	private void write_sym_instance_trees(CDependGraph dependence_graph, int max_distance) throws Exception {
+		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
+		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+			if(mutant.has_cir_mutations()) {
+				SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
+				tree.evaluate();
+				trees.add(tree);
 			}
 		}
-	}
-	/**
-	 * xxx.ins, xxx.dep, xxx.sft, xxx.dtf, xxx.dfp, xxx.sym
-	 * @param max_distance
-	 * @throws Exception
-	 */
-	private void write_syms(int max_distance, Collection<TestInput> test_suite) throws Exception {
-		/* 0. initializations */
-		this.sym_nodes.clear();
 		
-		/* 1. xxx.ins + xxx.dep */
-		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
-		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
-				CirFunctionCallPathType.unique_path, -1));
-		this.write_stat(dependence_graph);
+		this.open(".sft");
+		for(SymInstanceTree tree : trees) { this.write_sym_instance_status_paths(tree); }
+		this.close();
 		
-		/* 2. xxx.sft, xxx.y.dft, xxx.y.dfp */
-		this.write_sym_instance_status_trees(dependence_graph, max_distance, null);
-		if(test_suite != null && !test_suite.isEmpty()) {
-			for(TestInput test_case : test_suite) 
-				this.write_sym_instance_status_trees(dependence_graph, max_distance, test_case);
-		}
-		
-		/* 3. xxx.sym */
-		this.write_sym_nodes(); 
-		this.sym_nodes.clear();
+		this.open(".sfp");
+		for(SymInstanceTree tree : trees) { this.write_sym_instance_states_paths(tree); }
+		this.close();
 	}
 	
-	/* xxx.cov */
+	/* xxx.dts */
 	/**
-	 * @return initialize the mapping from execution point to the bit-string representing
-	 * 		   of which test cover the corresponding execution node in control flow graph
+	 * generate instrumental files for given test cases in the source project by dynamic testing
+	 * @param test_cases
 	 * @throws Exception
 	 */
-	private Map<CirExecution, BitSequence> new_coverage_matrix() throws Exception {
-		Map<CirExecution, BitSequence> cmat = new HashMap<CirExecution, BitSequence>();
-		int test_number = this.source.get_code_space().get_project().get_test_space().number_of_test_inputs();
-		for(CirFunction function : this.source.get_cir_tree().get_function_call_graph().get_functions()) {
-			if(!function.get_name().equals("#init")) {
-				for(CirExecution execution : function.get_flow_graph().get_executions()) {
-					cmat.put(execution, new BitSequence(test_number));
-				}
-			}
-		}
-		return cmat;
+	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
+		this.source.get_code_space().get_project().execute_instrumental(test_cases);
 	}
+	/**
+	 * write id of selected test cases to xxx.dts
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void write_dts(Collection<TestInput> test_cases) throws Exception {
+		this.open(".dts");
+		for(TestInput test_case : test_cases) {
+			this.writer.write(test_case.get_id() + "\n");
+		}
+		this.close();
+	}
+	/* xxx.dov */
 	/**
 	 * update the matrix by loading instrumental path
 	 * @param cmat
@@ -1127,12 +1177,13 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * update the matrix by loading STRP or ETRP or BTRP using their seeded statement
+	 * update the coverage metrics using results of mutant against a test suite
 	 * @param cmat
 	 * @param mutant
+	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant) throws Exception {
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant, Collection<TestInput> test_cases) throws Exception {
 		if(mutant.has_cir_mutations()) {
 			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
@@ -1142,93 +1193,132 @@ public class MuTestProjectFeatureWriter {
 				BitSequence killings = result.get_kill_set();
 				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
 					BitSequence coverage = cmat.get(cir_mutation.get_execution());
-					for(int k = 0; k < killings.length(); k++) {
-						if(killings.get(k)) {
-							coverage.set(k, BitSequence.BIT1);
+					for(TestInput test_case : test_cases) {
+						if(killings.get(test_case.get_id())) {
+							coverage.set(test_case.get_id(), BitSequence.BIT1);
 						}
 					}
 				}
 			}
 		}
 	}
-	/**
-	 * generate extension set from each execution node covered
-	 * @param cmat
+	/***
+	 * xxx.dov for coverage under given test cases
+	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void ext_coverage_matrix(Map<CirExecution, BitSequence> cmat) throws Exception {
-		for(CirExecution execution : cmat.keySet()) {
-			CirExecutionPath path = new CirExecutionPath(execution);
-			CirExecutionPathFinder.finder.db_extend(path);
-			CirExecutionPathFinder.finder.df_extend(path);
-			Set<CirExecution> extensions = new HashSet<CirExecution>();
-			for(CirExecutionEdge edge : path.get_edges()) {
-				extensions.add(edge.get_source());
-				extensions.add(edge.get_target());
-			}
-			
-			BitSequence source = cmat.get(execution);
-			for(CirExecution extension : extensions) {
-				BitSequence target = cmat.get(extension);
-				for(int k = 0; k < source.length(); k++) {
-					if(source.get(k)) {
-						target.set(k, BitSequence.BIT1);
-					}
-				}
-			}
-		}
-	}
-	/**
-	 * xxx.cov
-	 * @throws Exception
-	 */
-	private void write_covs(Collection<TestInput> test_cases) throws Exception {
-		this.open(".cov");
-		
-		Map<CirExecution, BitSequence> cmat = this.new_coverage_matrix();
+	private void write_dov(Collection<TestInput> test_cases) throws Exception {
+		this.open(".dov");
+		Map<CirExecution, BitSequence> cmat;
+		cmat = this.new_coverage_matrix();
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			this.set_coverage_matrix(cmat, mutant);
+			this.set_coverage_matrix(cmat, mutant, test_cases);
 		}
-		
-		if(test_cases != null) {
-			for(TestInput test_case : test_cases) {
-				this.set_coverage_matrix(cmat, test_case);
-			}
+		for(TestInput test_case : test_cases) {
+			this.set_coverage_matrix(cmat, test_case);
 		}
-		
 		this.ext_coverage_matrix(cmat);
-		
-		for(CirExecution execution : cmat.keySet()) {
-			BitSequence coverage = cmat.get(execution);
-			this.writer.write(this.token_string(execution) + "\t" + coverage.toString() + "\n");
-		}
-		
+		this.put_coverage_matrix(cmat);
 		this.close();
 	}
-	
-	/* interfaces for utility */
+	/* xxx.dym */
 	/**
-	 * xxx.ast xxx.cir xxx.exe xxx.mut xxx.tst xxx.res 
-	 * {xxx.dep xxx.ins xxx.sft xxx.sym}
+	 * write all the symbolic expressions in the buffer
 	 * @throws Exception
 	 */
-	public void write_s_features(int max_distance) throws Exception {
-		this.write_code();
-		this.write_muta();
-		this.write_syms(max_distance, null);
-		this.write_covs(null);
+	private void write_dym_nodes() throws Exception {
+		this.open(".dym");
+		Set<String> records = new HashSet<String>();
+		for(SymbolNode node : this.sym_nodes) {
+			this.write_sym_node(node, records);
+		}
+		this.close();
 	}
+	/* xxx.dft xxx.dfp */
 	/**
-	 * {xxx.dep xxx.ins xxx.sft xxx.dft xxx.dfp xxx.cov xxx.sym}
+	 * xxx.dft xxx.dfp
+	 * @param dependence_graph
 	 * @param max_distance
 	 * @param test_cases
 	 * @throws Exception
 	 */
-	public void write_d_features(int max_distance, Collection<TestInput> test_cases) throws Exception {
-		if(test_cases != null) {
-			this.source.get_code_space().get_project().execute_instrumental(test_cases);
-			this.write_covs(test_cases);
-			this.write_syms(max_distance, test_cases);
+	private void write_sym_instance_trees(CDependGraph dependence_graph, int 
+			max_distance, Collection<TestInput> test_cases) throws Exception {
+		/* 1. construct symbolic instance trees for each mutant to evaluate */
+		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
+		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+			if(mutant.has_cir_mutations()) {
+				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
+			}
+		}
+		
+		/* 2. perform dynamic evaluation on every selected test case */
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+		for(TestInput test_case : test_cases) {
+			CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+					this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
+			if(state_path != null) {
+				for(SymInstanceTree tree : trees) { tree.evaluate(state_path); }
+			}
+		}
+		
+		/* 3. xxx.dft */
+		this.open(".dft");
+		for(SymInstanceTree tree : trees) { this.write_sym_instance_status_paths(tree); }
+		this.close();
+		
+		/* 4. xxx.dfp */
+		this.open(".dfp");
+		for(SymInstanceTree tree : trees) { this.write_sym_instance_states_paths(tree); }
+		this.close();
+	}
+	
+	/* feature writers */
+	/**
+	 * 	xxx.c
+	 * 	xxx.ast xxx.cir xxx.exe xxx.flw
+	 * 	xxx.tst xxx.mut xxx.res xxx.cov
+	 * 	xxx.ins xxx.dep
+	 * 	xxx.sft xxx.sfp xxx.sym
+	 * @param max_distance
+	 * @throws Exception
+	 */
+	public void write_sfeatures(int max_distance) throws Exception {
+		this.sym_nodes.clear();
+		
+		this.write_code();
+		this.write_muta();
+		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
+		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
+				CirFunctionCallPathType.unique_path, -1));
+		this.write_stat(dependence_graph);
+		this.write_sym_instance_trees(dependence_graph, max_distance);
+		this.write_sym_nodes();
+		
+		this.sym_nodes.clear();
+	}
+	/**
+	 * xxx.dts xxx.dov xxx.dft xxx.dfp xxx.dym
+	 * @param test_cases
+	 * @param max_distance
+	 * @throws Exception
+	 */
+	public void write_dfeatures(Collection<TestInput> test_cases, int max_distance) throws Exception {
+		if(test_cases == null || test_cases.isEmpty()) 
+			throw new IllegalArgumentException("Invalid test_cases: null");
+		else {
+			this.sym_nodes.clear();
+			
+			this.generate_instrument_files(test_cases);
+			this.write_dts(test_cases);
+			this.write_dov(test_cases);
+			CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
+			CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
+					CirFunctionCallPathType.unique_path, -1));
+			this.write_sym_instance_trees(dependence_graph, max_distance, test_cases);
+			this.write_dym_nodes();
+			
+			this.sym_nodes.clear();
 		}
 	}
 	

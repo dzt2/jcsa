@@ -602,7 +602,6 @@ class SymInstanceTreeUtils {
 		if(tree == null)
 			throw new IllegalArgumentException("Invalid tree: null");
 		else {
-			tree.reset();
 			this.static_evaluate_from(tree.get_root());
 		}
 	}
@@ -748,7 +747,6 @@ class SymInstanceTreeUtils {
 		else if(test_path == null)
 			throw new IllegalArgumentException("Invalid test_path");
 		else {
-			tree.reset();
 			this.dynamic_prev_evaluations(tree, test_path);
 			this.dynamic_post_evaluations(tree, test_path);
 		}

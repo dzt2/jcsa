@@ -17,13 +17,7 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
 
-/**
- * Write the dynamic features of xxx.cov and xxx.dft + xxx.dfp using a randomly selected test suite.
- * 
- * @author yukimula
- *
- */
-public class MuTestProjectDynamicFeatureWritings {
+public class MuTestProjectFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/features/";
@@ -34,14 +28,15 @@ public class MuTestProjectDynamicFeatureWritings {
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			testing(root);
+			stesting(root);
+			// dtesting(root);
 		} 
 	}
 	
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
-	protected static void testing(File root) throws Exception {
+	protected static void dtesting(File root) throws Exception {
 		/* 1. open project and get data interface */
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());
@@ -50,7 +45,6 @@ public class MuTestProjectDynamicFeatureWritings {
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
 		
 		/* 2. select test cases and generate instrumental files. */
-		clear_output_directory(output_directory);
 		Collection<MutaClass> classes = new HashSet<MutaClass>();
 		classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
 		Set<Mutant> selected_mutants = select_mutants(code_file, classes);
@@ -60,25 +54,24 @@ public class MuTestProjectDynamicFeatureWritings {
 		
 		/* 3. write feature information to output directory */
 		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_d_features(max_distance, selected_tests);
+		writer.write_dfeatures(selected_tests, max_distance);
+		System.out.println();
+	}
+	protected static void stesting(File root) throws Exception {
+		/* 1. open project and get data interface */
+		MuTestProject project = get_project(root);
+		File output_directory = new File(result_dir + project.get_name());
+		FileOperations.mkdir(output_directory);
+		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
+		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
+		
+		/* 2. write feature information to output directory */
+		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
+		writer.write_sfeatures(max_distance);
 		System.out.println();
 	}
 	
 	/* dynamic test cases selection and generation */
-	/**
-	 * @param directory
-	 * @throws Exception
-	 */
-	private static void clear_output_directory(File directory) throws Exception {
-		File[] files = directory.listFiles();
-		if(files != null) {
-			for(File file : files) {
-				String name = file.getName();
-				if(name.endsWith(".dft") || name.endsWith(".dfp") || name.endsWith(".cov"))
-					FileOperations.delete(file);
-			}
-		}
-	}
 	/**
 	 * select mutants w.r.t. the given mutation operators
 	 * @param code_file
