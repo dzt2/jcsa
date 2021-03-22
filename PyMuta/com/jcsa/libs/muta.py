@@ -9,6 +9,7 @@ This file defines the basic data model for representing test case, mutation and 
 
 
 import os
+import random
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.code as jccode
 
@@ -34,24 +35,6 @@ class CProject:
 		self.sym_tree = jcbase.SymTree(sym_file)
 		return
 
-	def measure_score(self, mutants=None, tests=None):
-		"""
-		:param mutants:
-		:param tests:
-		:return: total_mutants, killed_mutants, score
-		"""
-		if mutants is None:
-			mutants = self.muta_space.get_mutants()
-		killed_mutants = list()
-		for mutant in mutants:
-			mutant: Mutant
-			if mutant.get_result().is_killed_in(tests):
-				killed_mutants.append(mutant)
-		if len(killed_mutants) > 0:
-			score = len(killed_mutants) / len(mutants)
-		else:
-			score = 0.0
-		return mutants, killed_mutants, score
 
 
 class TestCase:
@@ -165,6 +148,8 @@ class TestCaseSpace:
 					test_case = self.test_cases[test_id]
 					test_case: TestCase
 					self.used_tests.append(test_case)
+		if len(self.used_tests) == 0:
+			self.used_tests = self.test_cases
 		return
 
 
@@ -423,6 +408,98 @@ class MutantSpace:
 					mutant: Mutant
 					mutant.get_result().result = items[1].strip()
 		return
+
+
+class MutationTestEvaluation:
+	def __init__(self, project: CProject):
+		self.project = project
+		return
+
+	def select_mutants_by_classes(self, class_names):
+		mutants = list()
+		for mutant in self.project.muta_space.get_mutants():
+			mutant: Mutant
+			if mutant.get_mutation().get_mutation_class() in class_names:
+				mutants.append(mutant)
+		return mutants
+
+	def __random_test_for__(self, mutant):
+		"""
+		:param mutant: None for random test case
+		:return: a random test for killing target mutant
+		"""
+		if mutant is None:
+			number = len(self.project.test_space.test_cases)
+			return random.randint(0, number - 1)
+		else:
+			mutant: Mutant
+			tests = mutant.get_result().get_killing_set(None)
+			if len(tests) > 0:
+				count = random.randint(0, len(tests) - 1)
+				for test in tests:
+					if count <= 0:
+						return test
+					count = count - 1
+				return tests[-1]
+			else:
+				return None
+
+	def select_tests_for_mutants(self, mutants):
+		"""
+		:param mutants:
+		:return: set of tests that kill the target mutants
+		"""
+		remain, remove = set(), set()
+		for mutant in mutants:
+			mutant: Mutant
+			remain.add(mutant)
+		tests = set()
+		while len(remain) > 0:
+			select_mutant = None
+			for mutant in remain:
+				select_mutant = mutant
+				break
+			if select_mutant is None:
+				break
+			remove.add(select_mutant)
+			test = self.__random_test_for__(select_mutant)
+			if not(test is None):
+				tests.add(test)
+				for mutant in remain:
+					if mutant.get_result().is_killed_by(test):
+						remove.add(mutant)
+			for mutant in remove:
+				if mutant in remain:
+					remain.remove(mutant)
+		return tests
+
+	def select_tests_for_random(self, min_number):
+		tests = set()
+		while len(tests) < min_number:
+			test = self.__random_test_for__(None)
+			if not(test is None):
+				test: int
+				tests.add(test)
+		return tests
+
+	def measure_score(self, mutants=None, tests=None):
+		"""
+		:param mutants:
+		:param tests:
+		:return: total_mutants, killed_mutants, score
+		"""
+		if mutants is None:
+			mutants = self.project.muta_space.get_mutants()
+		killed_mutants = list()
+		for mutant in mutants:
+			mutant: Mutant
+			if mutant.get_result().is_killed_in(tests):
+				killed_mutants.append(mutant)
+		if len(killed_mutants) > 0:
+			score = len(killed_mutants) / len(mutants)
+		else:
+			score = 0.0
+		return int(score * 1000000) / 10000.0
 
 
 if __name__ == "__main__":

@@ -53,6 +53,7 @@ class CDocument:
 			return self.muta_procs[mutant]
 		return list()
 
+
 class CoverageMatrix:
 	"""
 	It describes the matrix with coverage information, in which each line refers to the coverage vector
