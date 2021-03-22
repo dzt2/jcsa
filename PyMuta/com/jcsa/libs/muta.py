@@ -1,279 +1,367 @@
 """
-This file defines the mutation project data
+This file defines the basic data model for representing test case, mutation and symbolic instance, including:
+	---	xxx.tst: the collection of test cases defined in project.
+	---	xxx.stc: the collection of test cases applied in the context of being executed and analyzed.
+	---	xxx.mut: the collection of mutations and mutants defined in mutation project for testing.
+	---	xxx.res: the collection of test results to record of which mutant is killed by which test case.
+	---	xxx.sym: the library of symbolic expression in structural description for being parsed in project.
 """
 
 
 import os
-import random
 import com.jcsa.libs.base as jcbase
-import com.jcsa.libs.code as jcparse
+import com.jcsa.libs.code as jccode
 
 
 class CProject:
 	"""
-	Mutation Testing Project
+	It represents the mutation test project for analysis and execution.
 	"""
 
 	def __init__(self, directory: str, file_name: str):
-		self.program = jcparse.CProgram(directory, file_name)
-		tst_file_path = os.path.join(directory, file_name + ".tst")
-		mut_file_path = os.path.join(directory, file_name + ".mut")
-		res_file_path = os.path.join(directory, file_name + ".res")
-		self.test_space = TestSpace(self, tst_file_path)
-		self.mutant_space = MutantSpace(self, mut_file_path, res_file_path)
-		self.evaluation = MutationTestEvaluation(self)
+		"""
+		:param directory: the directory where xxx.tst, xxx.stc, xxx.mut and xxx.res are generated
+		:param file_name: xxx to obtian feature files
+		"""
+		self.program = jccode.CProgram(directory, file_name)
+		tst_file = os.path.join(directory, file_name + ".tst")
+		stc_file = os.path.join(directory, file_name + ".stc")
+		mut_file = os.path.join(directory, file_name + ".mut")
+		res_file = os.path.join(directory, file_name + ".res")
+		sym_file = os.path.join(directory, file_name + ".sym")
+		self.test_space = TestCaseSpace(self, tst_file, stc_file)
+		self.muta_space = MutantSpace(self, mut_file, res_file)
+		self.sym_tree = jcbase.SymTree(sym_file)
 		return
+
+	def measure_score(self, mutants=None, tests=None):
+		"""
+		:param mutants:
+		:param tests:
+		:return: total_mutants, killed_mutants, score
+		"""
+		if mutants is None:
+			mutants = self.muta_space.get_mutants()
+		killed_mutants = list()
+		for mutant in mutants:
+			mutant: Mutant
+			if mutant.get_result().is_killed_in(tests):
+				killed_mutants.append(mutant)
+		if len(killed_mutants) > 0:
+			score = len(killed_mutants) / len(mutants)
+		else:
+			score = 0.0
+		return mutants, killed_mutants, score
 
 
 class TestCase:
 	"""
-	test case with parameter
+	Each test case is defined as a tuple of [id, parameter] where id is integer identifier and parameter
+	is the String command parameter used.
 	"""
+
 	def __init__(self, space, test_id: int, parameter: str):
-		space: TestSpace
+		"""
+		:param space: the space of test cases where it is defined
+		:param test_id: the unique integer of the test case used
+		:param parameter: the parameter to execute the test case
+		"""
+		space: TestCaseSpace
 		self.space = space
 		self.test_id = test_id
 		self.parameter = parameter.strip()
 		return
 
 	def get_space(self):
+		"""
+		:return: the space of test cases where it is defined
+		"""
 		return self.space
 
 	def get_test_id(self):
+		"""
+		:return: the unique integer of the test case used
+		"""
 		return self.test_id
 
 	def get_parameter(self):
+		"""
+		:return: the parameter to execute the test case
+		"""
 		return self.parameter
 
-	def get_killing_mutants(self, mutants=None):
-		"""
-		:param mutants: the set of mutants or None for all the mutants in project
-		:return: the set of mutants killed by this test
-		"""
-		if mutants is None:
-			mutants = self.space.get_project().mutant_space.get_mutants()
-		killed_mutants = set()
-		for mutant in mutants:
-			mutant: Mutant
-			if mutant.get_result().is_killed_by(self):
-				killed_mutants.add(mutant)
-		return killed_mutants
+	def __str__(self):
+		return "test@{}".format(self.test_id)
 
 
-class TestSpace:
-	def __init__(self, project: CProject, tst_file_path: str):
+class TestCaseSpace:
+	"""
+	The space of test cases defined and used in execution.
+	"""
+
+	def __init__(self, project: CProject, tst_file_path: str, stc_file_path: str):
+		"""
+		:param project:
+		:param tst_file_path: file that provides definition of each test case in space
+		:param stc_file_path: file that provides integer identifiers of tests used in project
+		"""
 		self.project = project
 		self.test_cases = list()
-		self.__parse__(tst_file_path)
+		self.used_tests = list()
+		self.__parse__(tst_file_path, stc_file_path)
 		return
 
 	def get_project(self):
+		"""
+		:return: The mutation testing project where the space is created
+		"""
 		return self.project
 
 	def get_test_cases(self):
+		"""
+		:return: the set of all test cases defined in the space
+		"""
 		return self.test_cases
 
 	def get_test_case(self, test_id: int):
 		"""
 		:param test_id:
-		:return:
+		:return: the test case w.r.t. the unique identified in the space
 		"""
 		test_case = self.test_cases[test_id]
 		test_case: TestCase
 		return test_case
 
-	def __parse__(self, tst_file_path: str):
-		test_case_dict = dict()
-		with open(tst_file_path, 'r') as reader:
+	def get_used_tests(self):
+		"""
+		:return: the collection of test cases used in execution
+		"""
+		return self.used_tests
+
+	def __parse__(self, tst_file: str, stc_file: str):
+		"""
+		:param tst_file:
+		:param stc_file:
+		:return:
+		"""
+		self.test_cases.clear()
+		self.used_tests.clear()
+		test_dict = dict()
+		with open(tst_file, 'r') as reader:
 			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
+				if len(line.strip()) > 0:
+					items = line.strip().split('\t')
 					test_id = int(items[0].strip())
 					parameter = jcbase.CToken.parse(items[1].strip()).get_token_value()
 					test_case = TestCase(self, test_id, parameter)
-					test_case_dict[test_case.get_test_id()] = test_case
-		self.test_cases.clear()
-		for k in range(0, len(test_case_dict)):
-			self.test_cases.append(test_case_dict[k])
+					test_dict[test_case.get_test_id()] = test_case
+		for test_id in range(0, len(test_dict)):
+			test_case = test_dict[test_id]
+			self.test_cases.append(test_case)
+		with open(stc_file, 'r') as reader:
+			for line in reader:
+				if len(line.strip()) > 0:
+					test_id = int(line.strip())
+					test_case = self.test_cases[test_id]
+					test_case: TestCase
+					self.used_tests.append(test_case)
 		return
 
 
 class Mutation:
 	"""
-	syntactic mutation
+	The syntactic mutation seeded in source code is defined as:
+		{mutant, class, operator, location, parameter}
+	which is the definition body of a given mutant.
 	"""
-	def __init__(self, mutant, mutation_class: str, mutation_operator: str, location: jcparse.AstNode,
-				 parameter: jcbase.CToken):
+
+	def __init__(self, mutation_class: str, mutation_operator: str, location: jccode.AstNode, parameter):
 		"""
-		:param mutant:
-		:param mutation_class:
-		:param mutation_operator:
-		:param location:
-		:param parameter:
+		:param mutation_class: the class name of mutation operator applied to generate this one
+		:param mutation_operator: the name of mutation operator applied to generate this mutant
+		:param location: the location in AST where the mutation is injected
+		:param parameter: the parameter might be None if no parameter is necessary for definition
 		"""
-		mutant: Mutant
-		self.mutant = mutant
-		self.mutation_class = mutation_class
-		self.mutation_operator = mutation_operator
-		self.location = location
-		self.parameter = parameter
+		self.__category__ = mutation_class
+		self.__operator__ = mutation_operator
+		self.__location__ = location
+		self.__parameter__ = parameter
 		return
 
-	def get_mutant(self):
-		"""
-		:return: mutant that is defined by this mutation
-		"""
-		return self.mutant
-
 	def get_mutation_class(self):
-		return self.mutation_class
+		"""
+		:return: the class name of mutation operator applied to generate this one
+		"""
+		return self.__category__
 
 	def get_mutation_operator(self):
-		return self.mutation_operator
+		"""
+		:return: the name of mutation operator applied to generate this mutant
+		"""
+		return self.__operator__
 
 	def get_location(self):
-		return self.location
+		"""
+		:return: the location in AST where the mutation is injected
+		"""
+		return self.__location__
 
 	def get_parameter(self):
-		return self.parameter
+		"""
+		:return: the parameter might be None if no parameter is necessary for definition
+		"""
+		return self.__parameter__
+
+	def has_parameter(self):
+		"""
+		:return: False if no parameter is needed for defining this mutation
+		"""
+		return not(self.__parameter__ is None)
 
 
 class Mutant:
 	"""
-	space, ID, mutation, result, coverage, weak, strong
+	A mutant instance for being seeded, analyzed or executed
 	"""
-	def __init__(self, space, mut_id: int, mutation: Mutation):
-		space: MutantSpace
+
+	def __init__(self, space, muta_id: int, mutation: Mutation):
+		"""
+		:param space: the mutation space where the mutant is defined
+		:param muta_id: unique integer ID to tag this mutant in space
+		:param mutation: the syntactic mutation to define this mutant
+		"""
 		self.space = space
-		self.mut_id = mut_id
+		self.muta_id = muta_id
 		self.mutation = mutation
-		self.c_mutant = None		# coverage mutation
-		self.w_mutant = None		# weak mutation
-		self.s_mutant = None		# strong mutation
-		self.result = MutationResult(self)
+		self.result = MutationResult(self, "")
+		self.c_mutant = None
+		self.w_mutant = None
+		self.s_mutant = None
 		return
 
 	def get_space(self):
+		"""
+		:return: the mutation space where the mutant is defined
+		"""
 		return self.space
 
-	def get_mut_id(self):
-		return self.mut_id
+	def get_muta_id(self):
+		"""
+		:return: unique integer ID to tag this mutant in space
+		"""
+		return self.muta_id
 
 	def get_mutation(self):
+		"""
+		:return: the syntactic mutation to define this mutant
+		"""
 		return self.mutation
 
-	def has_result(self):
-		return not(self.result is None)
-
 	def get_result(self):
-		self.result: MutationResult
+		"""
+		:return: test result of this mutant during execution
+		"""
 		return self.result
 
-	def get_coverage_mutant(self):
+	def get_c_mutant(self):
+		"""
+		:return: Mutant of which killing ensures the coverage of this mutant
+		"""
 		self.c_mutant: Mutant
 		return self.c_mutant
 
-	def get_weak_mutant(self):
+	def get_w_mutant(self):
+		"""
+		:return: Mutant of which killing ensures the infection of this mutant
+		"""
 		self.w_mutant: Mutant
 		return self.w_mutant
 
-	def get_strong_mutant(self):
+	def get_s_mutant(self):
+		"""
+		:return: Mutant of which killing ensures the killing of this mutant
+		"""
 		self.s_mutant: Mutant
 		return self.s_mutant
-
-	def get_killing_tests(self, tests=None):
-		"""
-		:param tests: set of test cases or None for all the tests in space
-		:return: test cases that kill this mutant
-		"""
-		test_cases = set()
-		if tests is None:
-			tests = self.space.get_project().test_space.get_test_cases()
-		for test in tests:
-			test: TestCase
-			if self.result.is_killed_by(test):
-				test_cases.add(test)
-		return test_cases
 
 
 class MutationResult:
 	"""
-	It preserves the test results for each mutant.
+	It records the result in form of bit-string to describe of which test case(s) kill the target mutant.
 	"""
-	def __init__(self, mutant: Mutant):
+
+	def __init__(self, mutant: Mutant, result: str):
 		"""
-		create an empty test result for mutant
-		:param mutant:
+		:param mutant: the mutant for being killed by the test results
+		:param result: the bit-string of the test cases for killing it
 		"""
 		self.mutant = mutant
-		self.kill_string = ""
+		self.result = result
 		return
 
 	def get_mutant(self):
 		return self.mutant
 
-	def get_length(self):
-		return len(self.kill_string)
-
 	def is_killed_by(self, test):
 		"""
-		:param test: TestCase or its Integer ID
-		:return:
+		:param test: TestCase or int
+		:return: True if the test kills the mutant
 		"""
 		if isinstance(test, TestCase):
-			test: TestCase
-			test_id = test.get_test_id()
+			tid = test.get_test_id()
 		else:
 			test: int
-			test_id = test
-		if test_id < len(self.kill_string):
-			return self.kill_string[test_id] == '1'
-		return False
+			tid = test
+		if tid < 0 or tid >= len(self.result):
+			return False
+		else:
+			return self.result[tid] == '1'
 
-	def is_killed_in(self, tests):
+	def is_killed_in(self, tests=None):
 		"""
-		:param tests: collection of TestCase(s) or their Integer ID
-		:return: whether be killed by any test in the inputs collection
+		:param tests: collection of test cases or their integer IDs or None to represent all of tests in project
+		:return: whether mutant is killed by any test in the set
 		"""
 		if tests is None:
-			return self.is_killable()
+			return '1' in self.result
 		else:
 			for test in tests:
 				if self.is_killed_by(test):
 					return True
 			return False
 
-	def is_killable(self):
+	def get_killing_set(self, tests=None):
 		"""
-		:return: whether killed by any tests in the space
+		:param tests: the set of test cases selected in which tests are selected for killing it or None if
+					  the entire test cases in the space of the project are under considerations.
+		:return: set of test cases (ID) that kill the target mutant
 		"""
-		return '1' in self.kill_string
-
-	def __str__(self):
-		return self.kill_string
-
-	def set_result(self, kill_string: str):
-		"""
-		:param kill_string:
-		:return: set the results of the instance
-		"""
-		self.kill_string = kill_string
-		return
+		killing_set = list()
+		if tests is None:
+			for test_id in range(0, len(self.result)):
+				if self.result[test_id] == '1':
+					killing_set.append(test_id)
+		else:
+			for test in tests:
+				if isinstance(test, TestCase):
+					test_id = test.get_test_id()
+				else:
+					test: int
+					test_id = test
+				if self.result[test_id] == '1':
+					killing_set.append(test_id)
+		return killing_set
 
 
 class MutantSpace:
-	def __init__(self, project: CProject, mut_file_path: str, res_file_path: str):
-		"""
-		:param project:
-		:param mut_file_path:
-		:param res_file_path:
-		"""
+	"""
+	The space where the mutants are defined and under consideration.
+	"""
+
+	def __init__(self, project: CProject, mut_file: str, res_file: str):
 		self.project = project
 		self.mutants = list()
-		self.results = dict()	# String --> String, Set[MutationResult]
-		self.__parse__(mut_file_path)
-		self.__loads__(res_file_path)
+		self.__parse__(mut_file, res_file)
 		return
 
 	def get_project(self):
@@ -282,228 +370,77 @@ class MutantSpace:
 	def get_mutants(self):
 		return self.mutants
 
-	def get_mutant(self, mut_id: int):
-		mutant = self.mutants[mut_id]
+	def get_mutant(self, muta_id: int):
+		mutant = self.mutants[muta_id]
 		mutant: Mutant
 		return mutant
 
-	def __parse__(self, mut_file_path: str):
+	def __parse__(self, mut_file: str, res_file: str):
+		"""
+		:param mut_file: file to provide definition of mutations
+		:param res_file: file to provide test results of mutants
+		:return:
+		"""
 		mutant_dict = dict()
-		with open(mut_file_path, 'r') as reader:
+		with open(mut_file, 'r') as reader:
 			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					mut_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
-					mutation_class = items[1].strip()
-					mutation_operator = items[2].strip()
-					ast_id = jcbase.CToken.parse(items[3].strip()).get_token_value()
-					location = self.project.program.ast_tree.get_ast_node(ast_id)
-					parameter = jcbase.CToken.parse(items[4].strip())
-					mutation = Mutation(None, mutation_class, mutation_operator, location, parameter)
-					mutant = Mutant(self, mut_id, mutation)
-					mutation.mutant = mutant
-					mutant_dict[mutant.get_mut_id()] = mutant
-		with open(mut_file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					mut_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
-					mutant = mutant_dict[mut_id]
-					cov_id = jcbase.CToken.parse(items[5].strip()).get_token_value()
-					wek_id = jcbase.CToken.parse(items[6].strip()).get_token_value()
-					sto_id = jcbase.CToken.parse(items[7].strip()).get_token_value()
-					mutant.c_mutant = mutant_dict[cov_id]
-					mutant.w_mutant = mutant_dict[wek_id]
-					mutant.s_mutant = mutant_dict[sto_id]
+				if len(line.strip()) > 0:
+					items = line.strip().split('\t')
+					muta_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
+					m_class = items[1].strip()
+					m_operator = items[2].strip()
+					loct_id = jcbase.CToken.parse(items[3].strip()).get_token_value()
+					location = self.project.program.ast_tree.get_ast_node(loct_id)
+					parameter = jcbase.CToken.parse(items[4].strip()).get_token_value()
+					mutation = Mutation(m_class, m_operator, location, parameter)
+					mutant = Mutant(self, muta_id, mutation)
+					mutant_dict[mutant.get_muta_id()] = mutant
+
 		self.mutants.clear()
-		for mut_id in range(0, len(mutant_dict)):
-			self.mutants.append(mutant_dict[mut_id])
-		return
+		for muta_id in range(0, len(mutant_dict)):
+			mutant = mutant_dict[muta_id]
+			self.mutants.append(mutant)
 
-	def __loads__(self, res_file_path: str):
-		self.results.clear()
-		with open(res_file_path, 'r') as reader:
+		with open(mut_file, 'r') as reader:
 			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					mutant = self.get_mutant(int(items[0].strip()))
-					kill_string = items[1].strip()
-					if not(kill_string in self.results):
-						self.results[kill_string] = (kill_string, set())
-					solution = self.results[kill_string]
-					kill_string = solution[0]
-					kill_result = solution[1]
-					mutant.get_result().set_result(kill_string)
-					kill_result.add(mutant.get_result())
+				if len(line.strip()) > 0:
+					items = line.strip().split('\t')
+					mid = jcbase.CToken.parse(items[0].strip()).get_token_value()
+					cid = jcbase.CToken.parse(items[5].strip()).get_token_value()
+					wid = jcbase.CToken.parse(items[6].strip()).get_token_value()
+					sid = jcbase.CToken.parse(items[7].strip()).get_token_value()
+					mutant = mutant_dict[mid]
+					mutant.c_mutant = mutant_dict[cid]
+					mutant.w_mutant = mutant_dict[wid]
+					mutant.s_mutant = mutant_dict[sid]
+
+		with open(res_file, 'r') as reader:
+			for line in reader:
+				if len(line.strip()) > 0:
+					items = line.strip().split('\t')
+					mid = int(items[0].strip())
+					mutant = self.mutants[mid]
+					mutant: Mutant
+					mutant.get_result().result = items[1].strip()
 		return
-
-
-class MutationTestEvaluation:
-	"""
-	It implements the selection of mutation and test case and their evaluation of mutation score.
-	"""
-	def __init__(self, project: CProject):
-		self.project = project
-		return
-
-	def __mutants__(self, mutants):
-		if mutants is None:
-			mutants = self.project.mutant_space.get_mutants()
-		return mutants
-
-	def __test_cases__(self, tests):
-		if tests is None:
-			tests = self.project.test_space.get_test_cases()
-		return tests
-
-	@staticmethod
-	def __rand_select__(samples):
-		"""
-		:param samples:
-		:return: a sample randomly selected from samples or none
-		"""
-		counter = random.randint(0, len(samples))
-		selected_sample = None
-		for sample in samples:
-			selected_sample = sample
-			counter = counter - 1
-			if counter < 0:
-				break
-		return selected_sample
-
-	@staticmethod
-	def __find_test_for__(tests, mutant: Mutant):
-		"""
-		:param tests: find a random test that kill the mutant
-		:param mutant:
-		:return: None if no such tests exist in the given inputs
-		"""
-		mutant.get_killing_tests(tests)
-
-	''' mutation selection '''
-	def select_mutants_by_classes(self, classes, mutants=None):
-		"""
-		:param mutants: collection of mutants from which are selected
-		:param classes: set of mutation operator classes
-		:return: set of mutants of which class is in the given inputs
-		"""
-		selected_mutants = set()
-		mutants = self.__mutants__(mutants)
-		for mutant in mutants:
-			mutant: Mutant
-			if mutant.get_mutation().get_mutation_class() in classes:
-				selected_mutants.add(mutant)
-		return selected_mutants
-
-	def select_mutants_by_results(self, killed: bool, mutants=None, tests=None):
-		"""
-		:param killed: true to select mutants that are killed
-		:param mutants: from which the outputs are selected
-		:param tests: the set of tests for killing the mutants
-		:return: the set of mutants being killed (True) or not (False) by the given tests
-		"""
-		selected_mutants = set()
-		mutants = self.__mutants__(mutants)
-		for mutant in mutants:
-			mutant: Mutant
-			if tests is None:
-				result = mutant.get_result().is_killable()
-			else:
-				result = mutant.get_result().is_killed_in(tests)
-			if result == killed:
-				selected_mutants.add(mutant)
-		return selected_mutants
-
-	''' test case selection '''
-	def select_tests_for_random(self, min_number: int, tests=None):
-		"""
-		:param min_number: minimal number of selected tests
-		:param tests: test cases from which the tests are selected
-		:return: the set of test cases randomly selected from project or inputs
-		"""
-		tests = self.__test_cases__(tests)
-		remain_tests = set()
-		for test in tests:
-			test: TestCase
-			remain_tests.add(test)
-		selected_tests = set()
-		while len(selected_tests) < min_number and len(remain_tests) > 0:
-			selected_test = MutationTestEvaluation.__rand_select__(remain_tests)
-			selected_test: TestCase
-			remain_tests.remove(selected_test)
-			selected_tests.add(selected_test)
-		return selected_tests
-
-	def select_tests_for_mutants(self, mutants, tests=None):
-		"""
-		:param mutants: the mutants being killed by selected tests
-		:param tests: test cases from which the tests are selected
-		:return: selected_tests, remain_mutants
-		"""
-		''' 1. initialization '''
-		remain_mutants = self.select_mutants_by_results(True, mutants, None)		# killable mutants among inputs
-		tests = self.__test_cases__(tests)
-		remain_tests, selected_tests = set(), set()
-		for test in tests:
-			test: TestCase
-			remain_tests.add(test)
-
-		''' 2. test case selection based on mutation '''
-		while len(remain_tests) > 0 and len(remain_mutants) > 0:
-			''' 2.1. select a random mutant for being killed '''
-			mutant = MutationTestEvaluation.__rand_select__(remain_mutants)
-			mutant: Mutant
-			remain_mutants.remove(mutant)
-
-			''' 2.2. select a random test for killing the mutants '''
-			killing_tests = mutant.get_killing_tests(remain_tests)
-			selected_test = MutationTestEvaluation.__rand_select__(killing_tests)
-			selected_test: TestCase
-			remain_tests.remove(selected_test)
-			selected_tests.add(selected_test)
-
-			''' 2.3. update the remaining mutants '''
-			killed_mutants = selected_test.get_killing_mutants(remain_mutants)
-			for killed_mutant in killed_mutants:
-				remain_mutants.remove(killed_mutant)
-
-		''' 3. return the test cases selected for killing all the mutants '''
-		return selected_tests, remain_mutants
-
-	''' mutation score evaluation '''
-	def evaluate_mutation_score(self, mutants, tests):
-		"""
-		:param mutants:
-		:param tests:
-		:return: killed_number, over_score (on all mutants), valid_score (on killable mutants)
-		"""
-		mutants = self.__mutants__(mutants)
-		total, valid, killed = 0, 0, 0
-		for mutant in mutants:
-			mutant: Mutant
-			if tests is None:
-				result = mutant.get_result().is_killable()
-			else:
-				result = mutant.get_result().is_killed_in(tests)
-			if result:
-				killed += 1
-			if mutant.get_result().is_killable():
-				valid += 1
-			total += 1
-		over_score, valid_score = 0.0, 0.0
-		if killed > 0:
-			over_score = killed / (total + 0.0)
-			valid_score = killed / (valid + 0.0)
-		return killed, over_score, valid_score
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	for filename in os.listdir(root_path):
-		directory_path = os.path.join(root_path, filename)
-		c_project = CProject(directory_path, filename)
-		print(c_project)
+	for file_name in os.listdir(root_path):
+		directory = os.path.join(root_path, file_name)
+		c_project = CProject(directory, file_name)
+		print(file_name, "loads", len(c_project.muta_space.get_mutants()), "mutations",
+			  "and", len(c_project.test_space.get_test_cases()), "test cases in which",
+			  len(c_project.test_space.get_used_tests()), "test cases are used.")
+		for mutant in c_project.muta_space.get_mutants():
+			mutant: Mutant
+			mutation = mutant.get_mutation()
+			print("\t{}\t{}\t{}\t{}\t{}\t{}".format(mutant.get_muta_id(),
+													mutation.get_mutation_class(),
+													mutation.get_mutation_operator(),
+													mutation.get_location().get_code(True),
+													mutation.get_parameter(),
+													mutant.get_result().is_killed_in()))
+		print()
 
