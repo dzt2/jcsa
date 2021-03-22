@@ -19,9 +19,7 @@ class CProject:
 		tst_file_path = os.path.join(directory, file_name + ".tst")
 		mut_file_path = os.path.join(directory, file_name + ".mut")
 		res_file_path = os.path.join(directory, file_name + ".res")
-		sym_file_path = os.path.join(directory, file_name + ".sym")
 		self.test_space = TestSpace(self, tst_file_path)
-		self.sym_tree = jcbase.SymTree(sym_file_path)
 		self.mutant_space = MutantSpace(self, mut_file_path, res_file_path)
 		self.evaluation = MutationTestEvaluation(self)
 		return

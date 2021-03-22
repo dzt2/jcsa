@@ -91,17 +91,35 @@ import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
-
 /**
- * It implements to write the feature information to output file, including:<br>
- * 	1. xxx.cpp; xxx.ast; xxx.cir; xxx.flw;	[code]
- * 	2. xxx.tst; xxx.mut; xxx.res; xxx.sft;	[muta]
- * 	3. xxx.tid.dft;							[test]
- * 
- * @author yukimula
+ * 	It performs unified feature encoding and outputs for PyMuta to read and parse, including:
+ * 	<br>
+ * 	<code>
+ * 	+-------------------------------------------------------------------------------------------+	<br>
+ * 	|	static information																		|	<br>
+ * 	|	---	xxx.cpp: the source code file with text for being read and review.					|	<br>
+ * 	|	---	xxx.ast: the abstract syntactic tree nodes information to parse.					|	<br>
+ * 	|	---	xxx.cir: the C-intermediate representation code for data flow analysis.				|	<br>
+ * 	|	---	xxx.flw: the control flow graph in static form for dependence analysis.				|	<br>
+ * 	|	---	xxx.ins: the instance of control flow graph for inter-procedural analysis.			|	<br>
+ * 	|	---	xxx.dep: the C dependence graph based on C-intermediate representation code.		|	<br>
+ * 	|	---	xxx.mut: the syntactic mutation information for analysis and review.				|	<br>
+ * 	|	---	xxx.tst: the parameters used to formalize and execute each test case in project.	|	<br>
+ * 	|	---	xxx.res: the test results obtained between every mutation and every test input.		|	<br>
+ * 	+-------------------------------------------------------------------------------------------+	<br>
+ * 	|	Dynamic information		{test suite is applied}											|	<br>
+ * 	|	---	xxx.stc: the collection of test cases selected for mining algorithm to assume.		|	<br>
+ * 	|	---	xxx.cov: the coverage matrix of which statement covered by which test case.			|	<br>
+ * 	|	---	xxx.sit: the information to preserve status of each symbolic instance tree node.	|	<br>
+ * 	|	---	xxx.sip: the information to preserve state for each symbolic instance state in tree.|	<br>
+ * 	|	---	xxx.sym: the information of structural description for symbolic expression or node.	|	<br>
+ * 	+-------------------------------------------------------------------------------------------+	<br>
+ * 	</code>
+ * 	<br>	
+ * 	@author yukimula
  *
  */
-public class MuTestProjectFeatureWriter {
+public class MuTestProjectFeaturesWriter {
 	
 	/* definitions */
 	/** it provides the data source for featuring **/
@@ -116,20 +134,8 @@ public class MuTestProjectFeatureWriter {
 	private FileWriter writer;
 	/** it preserves the set of symbolic nodes used to define parameters in symbolic features **/
 	private Set<SymbolNode> sym_nodes; 
-	
-	/* classes */
-	/**
-	 * category of symbolic feature in mutant execution.
-	 * 
-	 * @author yukimula
-	 *
-	 */
-	protected static enum SymConditionCategory {
-		/** it refers to a context-constraint for being satisfied **/	
-		satisfaction,
-		/** it refers to a infected state in context for observed **/
-		observations,
-	}
+	/** used to represent category of symbolic condition defined in track-break of RIP models **/
+	private static final String SATISFACTION = "satisfaction", OBSERVATIONS = "observations";
 	
 	/* constructor */
 	/**
@@ -138,7 +144,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param file_name
 	 * @throws IllegalArgumentException
 	 */
-	public MuTestProjectFeatureWriter(MuTestProjectCodeFile source, File output_directory) throws IllegalArgumentException {
+	public MuTestProjectFeaturesWriter(MuTestProjectCodeFile source, File output_directory) throws IllegalArgumentException {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source as null");
 		else if(output_directory == null || !output_directory.isDirectory())
@@ -155,7 +161,7 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	
-	/* output stream methods */
+	/* basic methods */
 	/**
 	 * close the output stream
 	 * @throws IOException
@@ -178,8 +184,6 @@ public class MuTestProjectFeatureWriter {
 		this.writer = new FileWriter(this.output_file);
 		System.out.println("\t==> Write to file: " + this.output_file.getAbsolutePath()); /* WARN inform the users */
 	}
-	
-	/* basic data method */
 	/**
 	 * @ --> \a; space --> \s; $ --> \p;
 	 * @param text
@@ -262,6 +266,127 @@ public class MuTestProjectFeatureWriter {
 		else
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
 	}
+	/**
+	 * @param test_cases
+	 * @return True if test cases have been selected or False to evaluate under static analysis
+	 */
+	private boolean is_selected(Collection<TestInput> test_cases) {
+		return (test_cases != null) && !(test_cases.isEmpty());
+	}
+	/**
+	 * category$operator$execution$location$parameter
+	 * @param instance SymInstance or CirAnnotation
+	 * @throws Exception
+	 */
+	private void write_sym_condition(Object condition) throws Exception {
+		/* 1. declarations */
+		String category; CirAnnotateType operator;
+		CirExecution execution; CirNode location; SymbolNode parameter;
+		
+		/* 2. determination */
+		if(condition instanceof SymConstraint) {
+			category = MuTestProjectFeaturesWriter.SATISFACTION;
+			operator = CirAnnotateType.eval_stmt;
+			execution = ((SymConstraint) condition).get_execution();
+			location = execution.get_statement();
+			parameter = ((SymConstraint) condition).get_condition();
+		}
+		else if(condition instanceof SymExpressionError) {
+			category = MuTestProjectFeaturesWriter.OBSERVATIONS;
+			operator = CirAnnotateType.mut_value;
+			execution = ((SymExpressionError) condition).get_execution();
+			location = ((SymExpressionError) condition).get_expression();
+			parameter = ((SymExpressionError) condition).get_mutation_value();
+		}
+		else if(condition instanceof SymReferenceError) {
+			category = MuTestProjectFeaturesWriter.OBSERVATIONS;
+			operator = CirAnnotateType.mut_refer;
+			execution = ((SymReferenceError) condition).get_execution();
+			location = ((SymReferenceError) condition).get_expression();
+			parameter = ((SymReferenceError) condition).get_mutation_value();
+		}
+		else if(condition instanceof SymStateValueError) {
+			category = MuTestProjectFeaturesWriter.OBSERVATIONS;
+			operator = CirAnnotateType.mut_state;
+			execution = ((SymStateValueError) condition).get_execution();
+			location = ((SymStateValueError) condition).get_expression();
+			parameter = ((SymStateValueError) condition).get_mutation_value();
+		}
+		else if(condition instanceof SymTrapError) {
+			category = MuTestProjectFeaturesWriter.OBSERVATIONS;
+			operator = CirAnnotateType.trap_stmt;
+			execution = ((SymTrapError) condition).get_execution();
+			location = execution.get_statement();
+			parameter = null;
+		}
+		else if(condition instanceof SymFlowError) {
+			category = MuTestProjectFeaturesWriter.OBSERVATIONS;
+			operator = CirAnnotateType.mut_flow;
+			execution = ((SymFlowError) condition).get_execution();
+			location = ((SymFlowError) condition).get_original_flow().get_source().get_statement();
+			parameter = SymbolFactory.sym_expression(((SymFlowError) condition).get_mutation_flow().get_target());
+		}
+		else if(condition instanceof CirAnnotation) {
+			CirAnnotation annotation = (CirAnnotation) condition;
+			switch(annotation.get_type()) {
+			case covr_stmt:
+			case eval_stmt:
+						category = MuTestProjectFeaturesWriter.SATISFACTION;	break;
+			default: 	category = MuTestProjectFeaturesWriter.OBSERVATIONS;	break;
+			}
+			operator = annotation.get_type();
+			execution = annotation.get_execution();
+			location = annotation.get_location();
+			parameter = (SymbolExpression) annotation.get_parameter();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid class: " + condition.getClass().getSimpleName());
+		}
+		
+		/* 3. preserve parameter */ 
+		if(parameter != null) {
+			this.sym_nodes.add(parameter);
+		}
+		
+		/* 4. \trole@category@operator@execution@location@parameter */
+		this.writer.write(category.toString());
+		this.writer.write("$" + operator.toString());
+		this.writer.write("$" + this.token_string(execution));
+		this.writer.write("$" + this.token_string(location));
+		this.writer.write("$" + this.token_string(parameter));
+	}
+	/**
+	 * \t stage$execution$result {condition}* ;
+	 * @param execution
+	 * @param stage
+	 * @param result
+	 * @param conditions
+	 * @throws Exception
+	 */
+	private void write_sym_instances(CirExecution execution, boolean stage, 
+			Boolean result, Iterable<Object> conditions) throws Exception {
+		/* stage$execution$result */
+		this.writer.write("\t" + this.token_string(stage)
+					+ "$" + this.token_string(execution)
+					+ "$" + this.token_string(result));
+		
+		/* (\t{condition})* */
+		for(Object condition : conditions) {
+			this.writer.write("\t");
+			this.write_sym_condition(condition);
+		}
+		
+		/* END TAG ; */	this.writer.write("\t;");
+	}
+	/**
+	 * generate instrumental files for given test cases in the source project by dynamic testing
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
+		if(this.is_selected(test_cases))
+			this.source.get_code_space().get_project().execute_instrumental(test_cases);
+	}
 	
 	/* xxx.cpp */
 	/**
@@ -277,6 +402,7 @@ public class MuTestProjectFeatureWriter {
 		reader.close();
 		this.close();
 	}
+	
 	/* xxx.ast */
 	/**
 	 * ID class beg_index end_index data_type token [ child child ... child ]
@@ -348,6 +474,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
 	/* xxx.cir */
 	/**
 	 * ID class ast_id data_type token [ child child ... child ] code
@@ -436,6 +563,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
 	/* xxx.flw */ 
 	/**
 	 * [edge] type source target
@@ -507,19 +635,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
-	/* xxx.cpp, xxx.ast, xxx.cir, xxx.flw */
-	/**
-	 * xxx.cpp, xxx.ast, xxx.cir, xxx.flw
-	 * @throws Exception
-	 */
-	private void write_code() throws Exception {
-		this.write_cpp();
-		this.write_ast();
-		this.write_cir();
-		this.write_flw();
-	}
 	
-	/* xxx.ins xxx.dep */
+	/* xxx.ins */
 	/**
 	 * #node ID context execution
 	 * @param node
@@ -550,7 +667,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param graph
 	 * @throws Exception
 	 */
-	private void write_instance_graph(CirInstanceGraph graph) throws Exception {
+	private void write_ins(CirInstanceGraph graph) throws Exception {
 		this.open(".ins");
 		for(Object context : graph.get_contexts()) {
 			for(CirInstance instance : graph.get_instances(context)) {
@@ -565,6 +682,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
+	/* xxx.ins */
 	/**
 	 * #node dependence_ID instance_ID
 	 * @param node
@@ -643,7 +762,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param graph
 	 * @throws Exception
 	 */
-	private void write_dependence_graph(CDependGraph graph) throws Exception {
+	private void write_dep(CDependGraph graph) throws Exception {
 		this.open(".dep");
 		for(CDependNode node : graph.get_nodes()) {
 			this.write_dependence_node(node);
@@ -652,15 +771,6 @@ public class MuTestProjectFeatureWriter {
 			}
 		}
 		this.close();
-	}
-	/**
-	 * static information from dependence graph
-	 * @param graph
-	 * @throws Exception
-	 */
-	private void write_stat(CDependGraph graph) throws Exception {
-		this.write_instance_graph(graph.get_program_graph());
-		this.write_dependence_graph(graph);
 	}
 	
 	/* xxx.tst */
@@ -684,6 +794,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
 	/* xxx.mut */
 	/**
 	 * ID class operator location parameter coverage weak strong
@@ -714,6 +825,7 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
 	/* xxx.res */
 	/**
 	 * MID bit_string
@@ -737,6 +849,23 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
+	
+	/* xxx.stc */
+	/**
+	 * Id of the selected test cases as context under asssumption for each line.
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void write_stc(Collection<TestInput> test_cases) throws Exception {
+		this.open(".stc");
+		if(this.is_selected(test_cases)) {
+			for(TestInput test_case : test_cases) {
+				this.writer.write(test_case.get_id() + "\n");
+			}
+		}
+		this.close();
+	}
+	
 	/* xxx.cov */
 	/**
 	 * @return initialize the mapping from execution point to the bit-string representing
@@ -819,33 +948,76 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
-	 * xxx.cov by static analysis on mutation
+	 * update the matrix by loading instrumental path
+	 * @param cmat
+	 * @param test
 	 * @throws Exception
 	 */
-	private void write_cov() throws Exception {
-		this.open(".cov");
-		Map<CirExecution, BitSequence> cmat;
-		cmat = this.new_coverage_matrix();
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			this.set_coverage_matrix(cmat, mutant);
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, TestInput test) throws Exception {
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+		CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
+		if(test_path != null) {
+			System.out.println("\t\t~~> Update Coverage Matrics for Test#" + test.get_id() + 
+								" among " + tspace.number_of_test_inputs() + " test cases.");
+			for(CStateNode state_node : test_path.get_nodes()) {
+				cmat.get(state_node.get_execution()).set(test.get_id(), BitSequence.BIT1);
+			}
 		}
+	}
+	/**
+	 * update the coverage metrics using results of mutant against a test suite
+	 * @param cmat
+	 * @param mutant
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant, Collection<TestInput> test_cases) throws Exception {
+		if(mutant.has_cir_mutations()) {
+			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+			MuTestProjectTestResult result = tspace.get_test_result(mutant);
+			if(result != null) {
+				System.out.println("\t\t~~> Update Coverage Matrics for Mutant#" + 
+						mutant.get_id() + " among " + mutant.get_space().size() + " mutations.");
+				BitSequence killings = result.get_kill_set();
+				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
+					BitSequence coverage = cmat.get(cir_mutation.get_execution());
+					for(TestInput test_case : test_cases) {
+						if(killings.get(test_case.get_id())) {
+							coverage.set(test_case.get_id(), BitSequence.BIT1);
+						}
+					}
+				}
+			}
+		}
+	}
+	/**
+	 * xxx.cov
+	 * @param test_cases null to count on mutation only
+	 * @throws Exception
+	 */
+	private void write_cov(Collection<TestInput> test_cases) throws Exception {
+		Map<CirExecution, BitSequence> cmat = this.new_coverage_matrix();
+		
+		if(this.is_selected(test_cases)) {
+			for(TestInput test_case : test_cases) 
+				this.set_coverage_matrix(cmat, test_case);
+			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) 
+				this.set_coverage_matrix(cmat, mutant, test_cases);
+		}
+		else {
+			for(Mutant mutant : this.source.get_mutant_space().get_mutants()) 
+				this.set_coverage_matrix(cmat, mutant);
+		}
+		
 		this.ext_coverage_matrix(cmat);
+		
+		this.open(".cov");
 		this.put_coverage_matrix(cmat);
 		this.close();
 	}
-	/* xxx.tst; xxx.mut; xxx.res; xxx.cov; */
-	/**
-	 * xxx.tst; xxx.mut; xxx.res;
-	 * @throws Exception
-	 */
-	private void write_muta() throws Exception {
-		this.write_tst();
-		this.write_mut();
-		this.write_res();
-		this.write_cov();
-	}
 	
-	/* xxx.sft xxx.sfp xxx.sym */ 
+	/* xxx.sym */
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
@@ -928,111 +1100,8 @@ public class MuTestProjectFeatureWriter {
 		}
 		this.close();
 	}
-	/**
-	 * category$operator$execution$location$parameter
-	 * @param instance SymInstance or CirAnnotation
-	 * @throws Exception
-	 */
-	private void write_sym_condition(Object condition) throws Exception {
-		/* 1. declarations */
-		SymConditionCategory category; CirAnnotateType operator;
-		CirExecution execution; CirNode location; SymbolNode parameter;
-		
-		/* 2. determination */
-		if(condition instanceof SymConstraint) {
-			category = SymConditionCategory.satisfaction;
-			operator = CirAnnotateType.eval_stmt;
-			execution = ((SymConstraint) condition).get_execution();
-			location = execution.get_statement();
-			parameter = ((SymConstraint) condition).get_condition();
-		}
-		else if(condition instanceof SymExpressionError) {
-			category = SymConditionCategory.observations;
-			operator = CirAnnotateType.mut_value;
-			execution = ((SymExpressionError) condition).get_execution();
-			location = ((SymExpressionError) condition).get_expression();
-			parameter = ((SymExpressionError) condition).get_mutation_value();
-		}
-		else if(condition instanceof SymReferenceError) {
-			category = SymConditionCategory.observations;
-			operator = CirAnnotateType.mut_refer;
-			execution = ((SymReferenceError) condition).get_execution();
-			location = ((SymReferenceError) condition).get_expression();
-			parameter = ((SymReferenceError) condition).get_mutation_value();
-		}
-		else if(condition instanceof SymStateValueError) {
-			category = SymConditionCategory.observations;
-			operator = CirAnnotateType.mut_state;
-			execution = ((SymStateValueError) condition).get_execution();
-			location = ((SymStateValueError) condition).get_expression();
-			parameter = ((SymStateValueError) condition).get_mutation_value();
-		}
-		else if(condition instanceof SymTrapError) {
-			category = SymConditionCategory.observations;
-			operator = CirAnnotateType.trap_stmt;
-			execution = ((SymTrapError) condition).get_execution();
-			location = execution.get_statement();
-			parameter = null;
-		}
-		else if(condition instanceof SymFlowError) {
-			category = SymConditionCategory.observations;
-			operator = CirAnnotateType.mut_flow;
-			execution = ((SymFlowError) condition).get_execution();
-			location = ((SymFlowError) condition).get_original_flow().get_source().get_statement();
-			parameter = SymbolFactory.sym_expression(((SymFlowError) condition).get_mutation_flow().get_target());
-		}
-		else if(condition instanceof CirAnnotation) {
-			CirAnnotation annotation = (CirAnnotation) condition;
-			switch(annotation.get_type()) {
-			case covr_stmt:
-			case eval_stmt:
-						category = SymConditionCategory.satisfaction;	break;
-			default: 	category = SymConditionCategory.observations;	break;
-			}
-			operator = annotation.get_type();
-			execution = annotation.get_execution();
-			location = annotation.get_location();
-			parameter = (SymbolExpression) annotation.get_parameter();
-		}
-		else {
-			throw new IllegalArgumentException("Invalid class: " + condition.getClass().getSimpleName());
-		}
-		
-		/* 3. preserve parameter */ 
-		if(parameter != null) {
-			this.sym_nodes.add(parameter);
-		}
-		
-		/* 4. \trole@category@operator@execution@location@parameter */
-		this.writer.write(category.toString());
-		this.writer.write("$" + operator.toString());
-		this.writer.write("$" + this.token_string(execution));
-		this.writer.write("$" + this.token_string(location));
-		this.writer.write("$" + this.token_string(parameter));
-	}
-	/**
-	 * exec$stage$result {condition}* ;
-	 * @param execution
-	 * @param stage
-	 * @param result
-	 * @param conditions
-	 * @throws Exception
-	 */
-	private void write_sym_instances(CirExecution execution, boolean stage, 
-			Boolean result, Iterable<Object> conditions) throws Exception {
-		/* execution$stage$result */
-		this.writer.write("\t" + this.token_string(execution) + 
-							"$" + this.token_string(stage) + 
-							"$" + this.token_string(result));
-		
-		/* (\t{condition})* */
-		for(Object condition : conditions) {
-			this.writer.write("\t");
-			this.write_sym_condition(condition);
-		}
-		
-		/* END TAG ; */	this.writer.write("\t;");
-	}
+	
+	/* xxx.sit, xxx.sip xxx.sym */
 	/**
 	 * exec$stage$result (condition)+ ;
 	 * @param status
@@ -1057,7 +1126,26 @@ public class MuTestProjectFeatureWriter {
 		this.write_sym_instances(status.get_execution(), stage, status.get_evaluation_result(), conditions);
 	}
 	/**
-	 * exec$stage$result (condition)+ ;
+	 * [mid {stage$execution$result {condition}+ ;}+\n]+
+	 * @param tree
+	 * @throws Exception
+	 */
+	private void write_sym_instance_status_paths(SymInstanceTree tree) throws Exception {
+		Collection<List<SymInstanceTreeNode>> paths = tree.get_reachable_paths();
+		Mutant mutant = tree.get_mutant();
+		for(List<SymInstanceTreeNode> path : paths) {
+			this.writer.write("\t" + mutant.get_id());
+			for(SymInstanceTreeNode node : path) {
+				if(node.has_edge_status()) {
+					this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
+				}
+				this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
+			}
+			this.writer.write("\n");
+		}
+	}
+	/**
+	 * stage$execution$result (condition)+ ;
 	 * @param state
 	 * @param cir_mutations
 	 * @throws Exception
@@ -1080,26 +1168,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_sym_instances(state.get_execution(), stage, state.get_evaluation_result(), conditions);
 	}
 	/**
-	 * [mid {exec$stage$result {condition}+ ;}+\n]+
-	 * @param tree
-	 * @throws Exception
-	 */
-	private void write_sym_instance_status_paths(SymInstanceTree tree) throws Exception {
-		Collection<List<SymInstanceTreeNode>> paths = tree.get_reachable_paths();
-		Mutant mutant = tree.get_mutant();
-		for(List<SymInstanceTreeNode> path : paths) {
-			this.writer.write("\t" + mutant.get_id());
-			for(SymInstanceTreeNode node : path) {
-				if(node.has_edge_status()) {
-					this.write_sym_instance_status(node.get_edge_status(), node.get_tree().get_cir_mutations());
-				}
-				this.write_sym_instance_status(node.get_node_status(), node.get_tree().get_cir_mutations());
-			}
-			this.writer.write("\n");
-		}
-	}
-	/**
-	 * mid {exec$stage$result {condition}+ ;}+ \n
+	 * mid {stage$execution$result {condition}+ ;}+ \n
 	 * @param tree
 	 * @throws Exception
 	 */
@@ -1112,139 +1181,15 @@ public class MuTestProjectFeatureWriter {
 		this.writer.write("\n");
 	}
 	/**
-	 * xxx.sft xxx.sfp
-	 * @param dependence_graph
-	 * @param max_distance
+	 * xxx.sit and xxx.sip and xxx.sym
+	 * @param dependence_graph used to generate symbolic instance tree
+	 * @param max_distance maximal error propagation distance from infection point
+	 * @param test_cases the set of test cases selected as context for analysis
 	 * @throws Exception
 	 */
-	private void write_sym_instance_trees(CDependGraph dependence_graph, int max_distance) throws Exception {
-		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			if(mutant.has_cir_mutations()) {
-				SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
-				tree.evaluate();
-				trees.add(tree);
-			}
-		}
-		
-		this.open(".sft");
-		for(SymInstanceTree tree : trees) { this.write_sym_instance_status_paths(tree); }
-		this.close();
-		
-		this.open(".sfp");
-		for(SymInstanceTree tree : trees) { this.write_sym_instance_states_paths(tree); }
-		this.close();
-	}
-	
-	/* xxx.dts */
-	/**
-	 * generate instrumental files for given test cases in the source project by dynamic testing
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
-		this.source.get_code_space().get_project().execute_instrumental(test_cases);
-	}
-	/**
-	 * write id of selected test cases to xxx.dts
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_dts(Collection<TestInput> test_cases) throws Exception {
-		this.open(".dts");
-		for(TestInput test_case : test_cases) {
-			this.writer.write(test_case.get_id() + "\n");
-		}
-		this.close();
-	}
-	/* xxx.dov */
-	/**
-	 * update the matrix by loading instrumental path
-	 * @param cmat
-	 * @param test
-	 * @throws Exception
-	 */
-	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, TestInput test) throws Exception {
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		CStatePath test_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-									this.source.get_ast_tree(), this.source.get_cir_tree(), test);
-		if(test_path != null) {
-			System.out.println("\t\t~~> Update Coverage Matrics for Test#" + test.get_id() + 
-								" among " + tspace.number_of_test_inputs() + " test cases.");
-			for(CStateNode state_node : test_path.get_nodes()) {
-				cmat.get(state_node.get_execution()).set(test.get_id(), BitSequence.BIT1);
-			}
-		}
-	}
-	/**
-	 * update the coverage metrics using results of mutant against a test suite
-	 * @param cmat
-	 * @param mutant
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void set_coverage_matrix(Map<CirExecution, BitSequence> cmat, Mutant mutant, Collection<TestInput> test_cases) throws Exception {
-		if(mutant.has_cir_mutations()) {
-			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-			MuTestProjectTestResult result = tspace.get_test_result(mutant);
-			if(result != null) {
-				System.out.println("\t\t~~> Update Coverage Matrics for Mutant#" + 
-						mutant.get_id() + " among " + mutant.get_space().size() + " mutations.");
-				BitSequence killings = result.get_kill_set();
-				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-					BitSequence coverage = cmat.get(cir_mutation.get_execution());
-					for(TestInput test_case : test_cases) {
-						if(killings.get(test_case.get_id())) {
-							coverage.set(test_case.get_id(), BitSequence.BIT1);
-						}
-					}
-				}
-			}
-		}
-	}
-	/***
-	 * xxx.dov for coverage under given test cases
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_dov(Collection<TestInput> test_cases) throws Exception {
-		this.open(".dov");
-		Map<CirExecution, BitSequence> cmat;
-		cmat = this.new_coverage_matrix();
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			this.set_coverage_matrix(cmat, mutant, test_cases);
-		}
-		for(TestInput test_case : test_cases) {
-			this.set_coverage_matrix(cmat, test_case);
-		}
-		this.ext_coverage_matrix(cmat);
-		this.put_coverage_matrix(cmat);
-		this.close();
-	}
-	/* xxx.dym */
-	/**
-	 * write all the symbolic expressions in the buffer
-	 * @throws Exception
-	 */
-	private void write_dym_nodes() throws Exception {
-		this.open(".dym");
-		Set<String> records = new HashSet<String>();
-		for(SymbolNode node : this.sym_nodes) {
-			this.write_sym_node(node, records);
-		}
-		this.close();
-	}
-	/* xxx.dft xxx.dfp */
-	/**
-	 * xxx.dft xxx.dfp
-	 * @param dependence_graph
-	 * @param max_distance
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_sym_instance_trees(CDependGraph dependence_graph, int 
+	private void write_sit_sip(CDependGraph dependence_graph, int 
 			max_distance, Collection<TestInput> test_cases) throws Exception {
-		/* 1. construct symbolic instance trees for each mutant to evaluate */
+		/* 1. generate symbolic instance tree for each mutation under analysis */
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 			if(mutant.has_cir_mutations()) {
@@ -1252,74 +1197,61 @@ public class MuTestProjectFeatureWriter {
 			}
 		}
 		
-		/* 2. perform dynamic evaluation on every selected test case */
+		/* 2. perform evaluation over the selected test cases or statically */
 		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		for(TestInput test_case : test_cases) {
-			CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-					this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
-			if(state_path != null) {
-				for(SymInstanceTree tree : trees) { tree.evaluate(state_path); }
+		if(!this.is_selected(test_cases)) {
+			for(SymInstanceTree tree : trees) tree.evaluate();
+		}
+		else {
+			for(TestInput test_case : test_cases) {
+				CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+									this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
+				if(state_path != null) { for(SymInstanceTree tree : trees) tree.evaluate(state_path); }
 			}
 		}
 		
-		/* 3. xxx.dft */
-		this.open(".dft");
+		/* 3. write information to xxx.sit and xxx.sip */
+		this.open(".sit");
 		for(SymInstanceTree tree : trees) { this.write_sym_instance_status_paths(tree); }
 		this.close();
-		
-		/* 4. xxx.dfp */
-		this.open(".dfp");
+		this.open(".sip");
 		for(SymInstanceTree tree : trees) { this.write_sym_instance_states_paths(tree); }
 		this.close();
+		
+		/* 4. preserving symbolic nodes */	this.write_sym_nodes(); this.sym_nodes.clear();
 	}
 	
-	/* feature writers */ 
+	/* API interface for utilization */
 	/**
-	 * 	xxx.c
-	 * 	xxx.ast xxx.cir xxx.exe xxx.flw
-	 * 	xxx.tst xxx.mut xxx.res xxx.cov
-	 * 	xxx.ins xxx.dep
-	 * 	xxx.sft xxx.sfp xxx.sym
-	 * @param max_distance
+	 * @param test_cases the collection of test cases selected in context of program analysis
+	 * @param max_distance maximal error propagation distance for constructing symbolic trees
 	 * @throws Exception
 	 */
-	public void write_sfeatures(int max_distance) throws Exception {
-		this.sym_nodes.clear();
+	public void write_features(Collection<TestInput> test_cases, int max_distance) throws Exception {
+		/* CODE */
+		this.write_cpp();
+		this.write_ast();
+		this.write_cir();
 		
-		this.write_code();
-		this.write_muta();
+		/* FLOW */
+		this.write_flw();
 		CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
-		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
-				CirFunctionCallPathType.unique_path, -1));
-		this.write_stat(dependence_graph);
-		this.write_sym_instance_trees(dependence_graph, max_distance);
-		this.write_sym_nodes();
+		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.
+						graph(root_function, CirFunctionCallPathType.unique_path, -1));
+		this.write_ins(dependence_graph.get_program_graph());
+		this.write_dep(dependence_graph);
 		
-		this.sym_nodes.clear();
-	}
-	/**
-	 * xxx.dts xxx.dov xxx.dft xxx.dfp xxx.dym
-	 * @param test_cases
-	 * @param max_distance
-	 * @throws Exception
-	 */
-	public void write_dfeatures(Collection<TestInput> test_cases, int max_distance) throws Exception {
-		if(test_cases == null || test_cases.isEmpty()) 
-			throw new IllegalArgumentException("Invalid test_cases: null");
-		else {
-			this.sym_nodes.clear();
-			
-			this.generate_instrument_files(test_cases);
-			this.write_dts(test_cases);
-			this.write_dov(test_cases);
-			CirFunction root_function = source.get_cir_tree().get_function_call_graph().get_main_function();
-			CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.graph(root_function, 
-					CirFunctionCallPathType.unique_path, -1));
-			this.write_sym_instance_trees(dependence_graph, max_distance, test_cases);
-			this.write_dym_nodes();
-			
-			this.sym_nodes.clear();
-		}
+		/* PROJ */
+		this.write_mut();
+		this.write_tst();
+		this.write_res();
+		
+		/* TEST */
+		this.generate_instrument_files(test_cases);
+		this.write_stc(test_cases);
+		this.write_cov(test_cases);
+		this.write_sit_sip(dependence_graph, max_distance, test_cases);
+		
 	}
 	
 }

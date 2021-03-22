@@ -10,7 +10,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
-import com.jcsa.jcmutest.project.MuTestProjectFeatureWriter;
+import com.jcsa.jcmutest.project.MuTestProjectFeaturesWriter;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -28,15 +28,14 @@ public class MuTestProjectFeatureWritings {
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			stesting(root);
-			// dtesting(root);
+			testing(root, false);
 		} 
 	}
 	
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
-	protected static void dtesting(File root) throws Exception {
+	protected static void testing(File root, boolean selected) throws Exception {
 		/* 1. open project and get data interface */
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());
@@ -45,30 +44,20 @@ public class MuTestProjectFeatureWritings {
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
 		
 		/* 2. select test cases and generate instrumental files. */
-		Collection<MutaClass> classes = new HashSet<MutaClass>();
-		classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
-		Set<Mutant> selected_mutants = select_mutants(code_file, classes);
-		Set<TestInput> selected_tests = select_tests(selected_mutants, project.get_test_space());
-		System.out.println("\t==> Select " + selected_tests.size() + " test cases from " + 
-							project.get_test_space().number_of_test_inputs() + " inputs.");
+		Collection<TestInput> test_cases;
+		if(selected) {
+			Collection<MutaClass> classes = new HashSet<MutaClass>();
+			classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
+			Set<Mutant> selected_mutants = select_mutants(code_file, classes);
+			test_cases = select_tests(selected_mutants, project.get_test_space());
+			System.out.println("\t==> Select " + test_cases.size() + " test cases from " + 
+								project.get_test_space().number_of_test_inputs() + " inputs.");
+		}
+		else { test_cases = null; }
 		
-		/* 3. write feature information to output directory */
-		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_dfeatures(selected_tests, max_distance);
-		System.out.println();
-	}
-	protected static void stesting(File root) throws Exception {
-		/* 1. open project and get data interface */
-		MuTestProject project = get_project(root);
-		File output_directory = new File(result_dir + project.get_name());
-		FileOperations.mkdir(output_directory);
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
-		
-		/* 2. write feature information to output directory */
-		MuTestProjectFeatureWriter writer = new MuTestProjectFeatureWriter(code_file, output_directory);
-		writer.write_sfeatures(max_distance);
-		System.out.println();
+		/* 3. Generate feature information to output directory finally */
+		MuTestProjectFeaturesWriter writer = new MuTestProjectFeaturesWriter(code_file, output_directory);
+		writer.write_features(test_cases, max_distance); System.out.println();
 	}
 	
 	/* dynamic test cases selection and generation */
