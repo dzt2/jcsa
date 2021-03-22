@@ -328,6 +328,7 @@ class SymExecution:
 		self.document = document
 		self.mutant = mutant
 		self.instances = list()
+		self.words = list()
 		return
 
 	def get_document(self):
@@ -341,6 +342,12 @@ class SymExecution:
 		:return: the sequence of execution nodes annotated with conditions required for killing mutant
 		"""
 		return self.instances
+
+	def get_words(self):
+		"""
+		:return: the set of words encoding symbolic conditions involved in process
+		"""
+		return self.words
 
 	@staticmethod
 	def __parse__(document: CDocument, line: str):
@@ -367,6 +374,11 @@ class SymExecution:
 						words.clear()
 					else:
 						words.append(word)
+			for instance in execution.get_instances():
+				for word in instance.get_words():
+					word: str
+					if not(word in execution.words):
+						execution.words.append(word)
 			return execution
 		return None
 
