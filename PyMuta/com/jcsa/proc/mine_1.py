@@ -148,7 +148,7 @@ if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
 	print("Testing start from here.")
-	testing(prev_path, post_path, "frequent_mine_s", True, True, 2, 0.70, 0.90, 1, True, 	do_frequent_mine)
-	testing(prev_path, post_path, "frequent_mine_a", True, True, 2, 0.70, 0.90, 1, False, 	do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine_s1", True, True, 2, 0.70, 0.90, 1, True, 	do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine_a1", True, True, 2, 0.70, 0.90, 1, False, 	do_frequent_mine)
 	print("Testing end for all.")
 
