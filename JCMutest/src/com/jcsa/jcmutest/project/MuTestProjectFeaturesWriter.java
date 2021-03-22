@@ -1101,7 +1101,7 @@ public class MuTestProjectFeaturesWriter {
 		this.close();
 	}
 	
-	/* xxx.sit, xxx.sip xxx.sym */
+	/* xxx.sit, xxx.sip xxx.sym */ 
 	/**
 	 * exec$stage$result (condition)+ ;
 	 * @param status
