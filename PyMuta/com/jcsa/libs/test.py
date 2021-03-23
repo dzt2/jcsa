@@ -23,35 +23,41 @@ class CDocument:
 		self.cmatrix = CoverageMatrix(self, cov_file_path)
 		self.conditions = SymConditions(self)
 		self.executions = list()
-		self.muta_procs = dict()
+		self.muta_execs = dict()
 		with open(sit_file_path, 'r') as reader:
 			for line in reader:
-				process = SymExecution.__parse__(self, line)
-				if not(process is None):
-					process: SymExecution
-					self.executions.append(process)
-					mutant = process.get_mutant()
-					if not(mutant in self.muta_procs):
-						self.muta_procs[mutant] = list()
-					self.muta_procs[mutant].append(process)
+				execution = SymExecution.__parse__(self, line.strip())
+				if not(execution is None):
+					execution: SymExecution
+					self.executions.append(execution)
+					mutant = execution.get_mutant()
+					if not(mutant in self.muta_execs):
+						self.muta_execs[mutant] = set()
+					self.muta_execs[mutant].add(execution)
 		return
+
+	def get_project(self):
+		return self.project
+
+	def get_program(self):
+		return self.project.program
 
 	def get_coverage_matrix(self):
 		return self.cmatrix
 
-	def get_condition_libs(self):
+	def get_conditions_lib(self):
 		return self.conditions
 
-	def get_mutants(self):
-		return self.muta_procs.keys()
-
-	def get_processes(self):
+	def get_executions(self):
 		return self.executions
 
-	def get_processes_of(self, mutant: jcmuta.Mutant):
-		if mutant in self.muta_procs:
-			return self.muta_procs[mutant]
-		return list()
+	def get_mutants(self):
+		return self.muta_execs.keys()
+
+	def get_executions_of(self, mutant: jcmuta.Mutant):
+		if mutant in self.muta_execs:
+			return self.muta_execs[mutant]
+		return set()
 
 
 class CoverageMatrix:
@@ -255,73 +261,78 @@ class SymConditions:
 
 class SymInstance:
 	"""
-	It represents an execution node on the sequence for killing a mutant, which is annotated with a
-	collection of symbolic conditions required.
+	It represents an instance of execution point defined in the process of revealing a mutant,
+	which is annotated with a collection of symbolic conditions, using their encoding words.
 	"""
 
-	def __init__(self, process, stage: bool, execution: jccode.CirExecution, result: bool):
+	def __init__(self, execution, stage: bool, location: jccode.CirExecution, result: bool, words):
 		"""
-		:param stage: True before the mutation point is reached or otherwise False
-		:param execution: the execution point where the instance is checked upon.
-		:param result: 		True if the instance passes through the check-point
-							False if the instance fails to pass through checking
-							None if the satisfaction of the instance is unknown.
+		:param execution: symbolic execution where the instance of point is created
+		:param stage: True before infection or False after propagation
+		:param location: the C-intermediate point where the instance is defined
+		:param result: 	True 	--- the instance is actually passed through
+						False 	--- the instance failed to be passed through
+						None	--- whether it is passed through remains unknown
+		:param words: the collection of words encoding the symbolic conditions required
 		"""
-		process: SymExecution
-		self.process = process
-		self.stage = stage
+		execution: SymExecution
 		self.execution = execution
+		self.stage = stage
+		self.location = location
 		self.result = result
 		self.words = list()
+		for word in words:
+			word: str
+			self.words.append(word)
 		return
-
-	def get_process(self):
-		"""
-		:return: the sequence of execution points annoted with conditions for killing mutant
-		"""
-		return self.process
-
-	def get_stage(self):
-		"""
-		:return: True before the mutation point is reached or otherwise False
-		"""
-		return self.stage
 
 	def get_execution(self):
 		"""
-		:return: the execution point where the instance is checked upon.
+		:return: symbolic execution where the instance of point is created
 		"""
 		return self.execution
 
+	def get_stage(self):
+		"""
+		:return: True before infection or False after propagation
+		"""
+		return self.stage
+
+	def get_location(self):
+		"""
+		:return: the C-intermediate point where the instance is defined
+		"""
+		return self.location
+
 	def get_result(self):
 		"""
-		:return: 	True if the instance passes through the check-point
-					False if the instance fails to pass through checking
-					None if the satisfaction of the instance is unknown.
+		:return: 	True 	--- the instance is actually passed through
+					False 	--- the instance failed to be passed through
+					None	--- whether it is passed through remains unknown
 		"""
 		return self.result
 
 	def get_words(self):
 		"""
-		:return: the set of words encoding the symbolic conditions required for being met.
+		:return: the collection of words encoding the symbolic conditions required
 		"""
 		return self.words
 
 	def get_conditions(self):
 		"""
-		:return: the set of the symbolic conditions required for being met.
+		:return: the collection of the symbolic conditions required
 		"""
 		conditions = list()
-		document = self.process.document
+		document = self.execution.document
 		document: CDocument
 		for word in self.words:
-			conditions.append(document.conditions.get_condition(word))
+			conditions.append(document.get_conditions_lib().get_condition(word))
 		return conditions
 
 
 class SymExecution:
 	"""
-	It describes an execution sequence of which nodes annotated with a sequence of
+	It describes the process for killing a mutant in form of symbolic conditions.
 	"""
 
 	def __init__(self, document: CDocument, mutant: jcmuta.Mutant):
@@ -338,45 +349,63 @@ class SymExecution:
 		return self.mutant
 
 	def get_instances(self):
-		"""
-		:return: the sequence of execution nodes annotated with conditions required for killing mutant
-		"""
 		return self.instances
 
+	def get_instance(self, condition):
+		"""
+		:param condition: either SymCondition or its word
+		:return: SymInstance if exists or None
+		"""
+		if isinstance(condition, SymCondition):
+			key = str(condition)
+		else:
+			condition: str
+			key = condition
+		for instance in self.instances:
+			instance: SymInstance
+			if key in instance.get_words():
+				return instance
+		return None
+
 	def get_words(self):
-		"""
-		:return: the set of words encoding symbolic conditions involved in process
-		"""
 		return self.words
+
+	def get_conditions(self):
+		conditions = list()
+		for word in self.words:
+			conditions.append(self.document.get_conditions_lib().get_condition(word))
+		return conditions
 
 	@staticmethod
 	def __parse__(document: CDocument, line: str):
+		"""
+		:param document:
+		:param line: mid {stage$execution$result (condition)+ ;}+
+		:return: symbolic execution
+		"""
 		if len(line.strip()) > 0:
 			items = line.strip().split('\t')
-			mid = int(items[0].strip())
-			mutant = document.project.muta_space.get_mutant(mid)
+			mutant = document.get_project().muta_space.get_mutant(int(items[0].strip()))
 			execution = SymExecution(document, mutant)
 			words = list()
 			for i in range(1, len(items)):
-				word = items[i].strip()
-				if len(word) > 0:
-					if word == ';':
-						keys = words[0].strip().split('$')
+				item = items[i].strip()
+				if len(item) > 0:
+					if item == ';':
+						head = words[0].strip()
+						keys = head.strip().split('$')
 						stage = jcbase.CToken.parse(keys[0].strip()).get_token_value()
+						exect = jcbase.CToken.parse(keys[1].strip()).get_token_value()
+						location = document.get_program().function_call_graph.get_execution(exect[0], exect[1])
 						result = jcbase.CToken.parse(keys[2].strip()).get_token_value()
-						exec_tok = jcbase.CToken.parse(keys[1].strip()).get_token_value()
-						point = document.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
-						instance = SymInstance(execution, stage, point, result)
-						for j in range(1, len(words)):
-							document.conditions.get_condition(words[j].strip())
-							instance.words.append(words[j].strip())
-						execution.instances.append(instance)
+						instance = SymInstance(execution, stage, location, result, words[1:])
 						words.clear()
+						execution.instances.append(instance)
 					else:
-						words.append(word)
+						words.append(item)
 			for instance in execution.get_instances():
+				instance: SymInstance
 				for word in instance.get_words():
-					word: str
 					if not(word in execution.words):
 						execution.words.append(word)
 			return execution
@@ -390,21 +419,16 @@ if __name__ == "__main__":
 		directory = os.path.join(root_path, file_name)
 		c_document = CDocument(directory, file_name)
 		print(file_name, "loads", len(c_document.get_mutants()), "mutants used and",
-			  len(c_document.get_processes()), "symbolic procedures annotated with",
-			  len(c_document.get_condition_libs().get_conditions()), "conditions.")
-		for process in c_document.get_processes():
-			mutant = process.get_mutant()
-			for instance in process.get_instances():
-				instance: SymInstance
-				for condition in instance.get_conditions():
-					print("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(mutant.get_muta_id(),
-																		instance.get_stage(),
-																		instance.get_result(),
-																		instance.get_execution(),
-																		condition.get_category(),
-																		condition.get_operator(),
-																		condition.get_execution(),
-																		condition.get_location().get_cir_code(),
-																		condition.get_parameter()))
+			  len(c_document.get_executions()), "symbolic executions annotated with",
+			  len(c_document.get_conditions_lib().get_conditions()), "conditions.")
+		for execution in c_document.get_executions():
+			mutant = execution.get_mutant()
+			for condition in execution.get_conditions():
+				print("\t{}\t{}\t{}\t{}\t{}\t{}".format(mutant.get_muta_id(),
+														condition.get_category(),
+														condition.get_operator(),
+														condition.get_execution(),
+														condition.get_location().get_cir_code(),
+														condition.get_parameter()))
 		print()
 

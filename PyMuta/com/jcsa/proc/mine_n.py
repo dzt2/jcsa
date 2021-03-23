@@ -47,7 +47,7 @@ class RIPFPTMiner:
 		:return:
 		"""
 		self.context = context
-		root_executions = context.get_classifier().select(context.get_document().get_processes(), context.is_uk_or_cc())
+		root_executions = context.get_classifier().select(context.get_document().get_executions(), context.is_uk_or_cc())
 		for root_execution in root_executions:
 			root_execution: jctest.SymExecution
 			for instance in root_execution.get_instances():
@@ -83,7 +83,7 @@ class RIPDTTMiner:
 		D = dict()
 		self.Y.clear()
 		self.W.clear()
-		for execution in self.context.get_document().get_processes():
+		for execution in self.context.get_document().get_executions():
 			execution: jctest.SymExecution
 			if self.context.is_exe_or_mut():
 				sample = execution
@@ -102,7 +102,7 @@ class RIPDTTMiner:
 						self.W.append(word)
 		rows, columns, dataset = list(), list(), list()
 		line = 0
-		for execution in self.context.get_document().get_processes():
+		for execution in self.context.get_document().get_executions():
 			execution_words = set()
 			for instance in execution.get_instances():
 				instance: jctest.SymInstance
@@ -115,7 +115,7 @@ class RIPDTTMiner:
 				dataset.append(1)
 			line += 1
 		self.X = sparse.coo_matrix((dataset, (rows, columns)),
-								   shape=(len(self.context.get_document().get_processes()), len(self.W)))
+								   shape=(len(self.context.get_document().get_executions()), len(self.W)))
 		return
 
 	@staticmethod
@@ -177,7 +177,7 @@ class RIPDTTMiner:
 		X_array = self.X.toarray()
 		node_indicators = self.classifier.decision_path(X_array)
 		leave_ids = self.classifier.apply(X_array)
-		for exec_id in range(0, len(self.context.get_document().get_processes())):
+		for exec_id in range(0, len(self.context.get_document().get_executions())):
 			if YP[exec_id] == 1:
 				leaf_node_id = leave_ids[exec_id]
 				node_index = node_indicators.indices[
@@ -283,7 +283,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 		selected_mutants = evaluation.select_mutants_by_classes(["STRP", "BTRP"])
 		selected_tests = evaluation.select_tests_for_mutants(selected_mutants)
 		selected_tests = selected_tests | evaluation.select_tests_for_random(30)
-		print("\t(1) Load", len(document.get_processes()), "lines of", len(document.get_mutants()),
+		print("\t(1) Load", len(document.get_executions()), "lines of", len(document.get_mutants()),
 			  "mutants with", len(document.conditions.get_words()), "words of symbolic conditions.")
 		print("\t\t==>Select", len(selected_tests), "test cases with",
 			  evaluation.measure_score(document.get_mutants(), selected_tests), "of mutation score.")
@@ -309,9 +309,9 @@ if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/"
 	print("Testing start from here.")
+	testing(prev_path, post_path, "frequent_mine_sn", True, True, 2, 0.70, 0.90, 1, True, do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine_an", True, True, 2, 0.70, 0.90, 1, False, do_frequent_mine)
 	testing(prev_path, post_path, "decision_tree_sn", True, True, 2, 0.70, 0.95, 8, True, 	do_decision_mine)
 	testing(prev_path, post_path, "decision_tree_an", True, True, 2, 0.70, 0.95, 8, False, 	do_decision_mine)
-	testing(prev_path, post_path, "frequent_mine_sn", True, True, 2, 0.70, 0.90, 1, True, 	do_frequent_mine)
-	testing(prev_path, post_path, "frequent_mine_an", True, True, 2, 0.70, 0.90, 1, False, 	do_frequent_mine)
 	print("Testing end for all.")
 

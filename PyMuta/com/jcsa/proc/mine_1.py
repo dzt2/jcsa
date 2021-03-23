@@ -53,7 +53,7 @@ class RIPFPTMiner:
 		:return:
 		"""
 		self.context = context
-		root_executions = context.get_classifier().select(context.get_document().get_processes(), context.is_uk_or_cc())
+		root_executions = context.get_classifier().select(context.get_document().get_executions(), context.is_uk_or_cc())
 		all_patterns = set()
 		while len(root_executions) > 0:
 			root_execution = jcbase.rand_select(root_executions)
@@ -122,7 +122,7 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 		selected_mutants = evaluation.select_mutants_by_classes(["STRP", "BTRP"])
 		selected_tests = evaluation.select_tests_for_mutants(selected_mutants)
 		selected_tests = selected_tests | evaluation.select_tests_for_random(30)
-		print("\t(1) Load", len(document.get_processes()), "lines of", len(document.get_mutants()),
+		print("\t(1) Load", len(document.get_executions()), "lines of", len(document.get_mutants()),
 			  "mutants with", len(document.conditions.get_words()), "words of symbolic conditions.")
 		print("\t\t==>Select", len(selected_tests), "test cases with",
 			  evaluation.measure_score(document.get_mutants(), selected_tests), "of mutation score.")

@@ -211,7 +211,7 @@ class RIPPattern:
 		:return: update the data samples matched by this pattern under the parent context
 		"""
 		if parent is None:
-			executions = self.document.get_processes()
+			executions = self.document.get_executions()
 		else:
 			parent: RIPPattern
 			executions = parent.executions
@@ -460,7 +460,7 @@ class RIPPatternSpace:
 		self.document = document
 		self.doc_executions = set()
 		self.doc_mutants = set()
-		for execution in document.get_processes():
+		for execution in document.get_executions():
 			execution: jctest.SymExecution
 			self.doc_executions.add(execution)
 			self.doc_mutants.add(execution.get_mutant())
@@ -847,7 +847,7 @@ class RIPPatternWriter:
 		"""
 		length = len(patterns)
 		if exe_or_mut:
-			doc_samples = classifier.select(document.get_processes(), uk_or_cc)
+			doc_samples = classifier.select(document.get_executions(), uk_or_cc)
 		else:
 			doc_samples = classifier.select(document.get_mutants(), uk_or_cc)
 		pat_samples = set()
