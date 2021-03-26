@@ -22,18 +22,9 @@ class CDocument:
 		sit_file_path = os.path.join(directory, file_name + ".sit")
 		self.cmatrix = CoverageMatrix(self, cov_file_path)
 		self.conditions = SymConditions(self)
-		self.executions = list()
-		self.muta_execs = dict()
-		with open(sit_file_path, 'r') as reader:
-			for line in reader:
-				execution = SymExecution.__parse__(self, line.strip())
-				if not(execution is None):
-					execution: SymExecution
-					self.executions.append(execution)
-					mutant = execution.get_mutant()
-					if not(mutant in self.muta_execs):
-						self.muta_execs[mutant] = set()
-					self.muta_execs[mutant].add(execution)
+		self.sequences = list()
+		self.muta_seqs = dict()
+		self.__loading__(sit_file_path)
 		return
 
 	def get_project(self):
@@ -48,16 +39,96 @@ class CDocument:
 	def get_conditions_lib(self):
 		return self.conditions
 
-	def get_executions(self):
-		return self.executions
+	def get_sequences(self):
+		"""
+		:return: the collection of sequence of execution nodes annotated with symbolic conditions
+		"""
+		return self.sequences
 
 	def get_mutants(self):
-		return self.muta_execs.keys()
+		return self.muta_seqs.keys()
 
-	def get_executions_of(self, mutant: jcmuta.Mutant):
-		if mutant in self.muta_execs:
-			return self.muta_execs[mutant]
+	def get_sequences_of(self, mutant: jcmuta.Mutant):
+		"""
+		:param mutant:
+		:return: the set of symbolic sequence of execution nodes w.r.t. the mutant
+		"""
+		if mutant in self.muta_seqs:
+			return self.muta_seqs[mutant]
 		return set()
+
+	def __wording__(self, word: str):
+		"""
+		:param word:
+		:return: generate the condition w.r.t. the word
+		"""
+		word = word.strip()
+		if len(word) > 0:
+			self.conditions.get_condition(word)
+		return word
+
+	def __produce__(self, sequence, head: str, words):
+		"""
+		:param sequence:
+		:param words: {stage$exec$result {condition_word}+ ;}
+		:return: SymExecution
+		"""
+		items = head.strip().split('$')
+		stage = jcbase.CToken.parse(items[0].strip()).get_token_value()
+		exec_tok = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		result = jcbase.CToken.parse(items[2].strip()).get_token_value()
+		execution = self.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
+		condition_words = list()
+		for word in words:
+			word = self.__wording__(word)
+			if len(word) > 0:
+				condition_words.append(word)
+		return SymExecution(sequence, stage, execution, result, condition_words)
+
+	def __consume__(self, line: str):
+		"""
+		:param line: mid {head condition+ ;}+
+		:return:
+		"""
+		line = line.strip()
+		if len(line) > 0:
+			items = line.split('\t')
+			mutant = self.project.muta_space.get_mutant(int(items[0].strip()))
+			sequence = SymSequence(self, mutant)
+			exec_list = list()
+			for i in range(1, len(items)):
+				item = items[i].strip()
+				if len(item) > 0:
+					if item != ';':
+						exec_list.append(item)
+					else:
+						head = exec_list[0]
+						words = exec_list[1:]
+						execution = self.__produce__(sequence, head, words)
+						for word in execution.get_words():
+							if not(word in sequence.get_words()):
+								sequence.words.append(word)
+						sequence.executions.append(execution)
+						exec_list.clear()
+			return sequence
+		return None
+
+	def __loading__(self, file_path: str):
+		"""
+		:param file_path:
+		:return:
+		"""
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				sequence = self.__consume__(line.strip())
+				if not(sequence is None):
+					sequence: SymSequence
+					self.sequences.append(sequence)
+					mutant = sequence.get_mutant()
+					if not(mutant in self.muta_seqs):
+						self.muta_seqs[mutant] = set()
+					self.muta_seqs[mutant].add(sequence)
+		return
 
 
 class CoverageMatrix:
@@ -225,14 +296,23 @@ class SymConditions:
 	"""
 
 	def __init__(self, document: CDocument):
+		"""
+		:param document: the original data document as database
+		"""
 		self.document = document
 		self.conditions = dict()
 		return
 
-	def get_words(self):
+	def get_all_words(self):
+		"""
+		:return: the set of words encoding all the symbolic conditions defined in library
+		"""
 		return self.conditions.keys()
 
-	def get_conditions(self):
+	def get_all_conditions(self):
+		"""
+		:return: the set of all symbolic conditions encoded in the library
+		"""
 		return self.conditions.values()
 
 	def get_condition(self, word: str):
@@ -258,158 +338,137 @@ class SymConditions:
 		condition: SymCondition
 		return condition
 
-
-class SymInstance:
-	"""
-	It represents an instance of execution point defined in the process of revealing a mutant,
-	which is annotated with a collection of symbolic conditions, using their encoding words.
-	"""
-
-	def __init__(self, execution, stage: bool, location: jccode.CirExecution, result: bool, words):
+	def get_conditions(self, words):
 		"""
-		:param execution: symbolic execution where the instance of point is created
-		:param stage: True before infection or False after propagation
-		:param location: the C-intermediate point where the instance is defined
-		:param result: 	True 	--- the instance is actually passed through
-						False 	--- the instance failed to be passed through
-						None	--- whether it is passed through remains unknown
-		:param words: the collection of words encoding the symbolic conditions required
-		"""
-		execution: SymExecution
-		self.execution = execution
-		self.stage = stage
-		self.location = location
-		self.result = result
-		self.words = list()
-		for word in words:
-			word: str
-			self.words.append(word)
-		return
-
-	def get_execution(self):
-		"""
-		:return: symbolic execution where the instance of point is created
-		"""
-		return self.execution
-
-	def get_stage(self):
-		"""
-		:return: True before infection or False after propagation
-		"""
-		return self.stage
-
-	def get_location(self):
-		"""
-		:return: the C-intermediate point where the instance is defined
-		"""
-		return self.location
-
-	def get_result(self):
-		"""
-		:return: 	True 	--- the instance is actually passed through
-					False 	--- the instance failed to be passed through
-					None	--- whether it is passed through remains unknown
-		"""
-		return self.result
-
-	def get_words(self):
-		"""
-		:return: the collection of words encoding the symbolic conditions required
-		"""
-		return self.words
-
-	def get_conditions(self):
-		"""
-		:return: the collection of the symbolic conditions required
+		:param words: the collection of words encoding the symbolic conditions being extracted
+		:return: the collection of symbolic conditions being extracted from the input words
 		"""
 		conditions = list()
-		document = self.execution.document
-		document: CDocument
-		for word in self.words:
-			conditions.append(document.get_conditions_lib().get_condition(word))
+		for word in words:
+			word: str
+			conditions.append(self.get_condition(word.strip()))
 		return conditions
 
 
 class SymExecution:
 	"""
-	It describes the process for killing a mutant in form of symbolic conditions.
+	It represents an execution point annotated with a series of symbolic conditions being met in an execution sequence.
+	"""
+
+	def __init__(self, sequence, stage: bool, execution: jccode.CirExecution, result: bool, words):
+		"""
+		:param sequence: 	the sequence of symbolic executions where the node is preserved
+		:param stage: 		True  ---	if the execution is performed before reaching the mutated point
+							False ---	if the execution is performed after the mutated point is reached
+		:param execution:	the execution point in control flow graph in form of C-intermediate representation
+		:param result:		True  ---	if the conditions among the node must be satisfied by any tests
+							False ---	if the conditions among the node be non-satisfiable by any test
+							None  ---	if the satisfaction of the conditions among depends on the test
+		:param words:		the collection of words encoding the symbolic conditions annotated with this node
+		"""
+		sequence: SymSequence
+		self.sequence = sequence
+		self.stage = stage
+		self.execution = execution
+		self.result = result
+		self.words = list()
+		for word in words:
+			word: str
+			self.words.append(word.strip())
+		return
+
+	def get_sequence(self):
+		"""
+		:return: the sequence of symbolic executions where the node is preserved
+		"""
+		return self.sequence
+
+	def get_stage(self):
+		"""
+		:return: 	True  ---	if the execution is performed before reaching the mutated point
+					False ---	if the execution is performed after the mutated point is reached
+		"""
+		return self.stage
+
+	def get_execution(self):
+		"""
+		:return: 	the execution point in control flow graph in form of C-intermediate representation
+		"""
+		return self.execution
+
+	def get_result(self):
+		"""
+		:return:	True  ---	if the conditions among the node must be satisfied by any tests
+					False ---	if the conditions among the node be non-satisfiable by any test
+					None  ---	if the satisfaction of the conditions among depends on the test
+		"""
+		return self.result
+
+	def get_words(self):
+		"""
+		:return: the collection of words encoding the symbolic conditions annotated with this node
+		"""
+		return self.words
+
+	def get_conditions(self):
+		"""
+		:return: the collection of the symbolic conditions annotated with this node
+		"""
+		document = self.sequence.document
+		return document.get_conditions_lib().get_conditions(self.words)
+
+
+class SymSequence:
+	"""
+	The sequence of execution nodes annotated with symbolic conditions required for killing a specific mutation
 	"""
 
 	def __init__(self, document: CDocument, mutant: jcmuta.Mutant):
+		"""
+		:param document: the document that provides entire database
+		:param mutant: the mutation as target for being detected by tests
+		"""
 		self.document = document
 		self.mutant = mutant
-		self.instances = list()
+		self.executions = list()
 		self.words = list()
 		return
 
 	def get_document(self):
+		"""
+		:return: the document that provides entire database
+		"""
 		return self.document
 
 	def get_mutant(self):
+		"""
+		:return: the mutation as target for being detected by tests
+		"""
 		return self.mutant
 
-	def get_instances(self):
-		return self.instances
+	def get_executions(self):
+		"""
+		:return: the set of execution nodes annotated with symbolic conditions in the program
+		"""
+		return self.executions
 
-	def get_instance(self, condition):
+	def get_execution(self, k: int):
 		"""
-		:param condition: either SymCondition or its word
-		:return: SymInstance if exists or None
+		:param k:
+		:return: the kth execution node annotated with symbolic conditions in the sequence
 		"""
-		if isinstance(condition, SymCondition):
-			key = str(condition)
-		else:
-			condition: str
-			key = condition
-		for instance in self.instances:
-			instance: SymInstance
-			if key in instance.get_words():
-				return instance
-		return None
+		execution = self.executions[k]
+		execution: SymExecution
+		return execution
 
 	def get_words(self):
+		"""
+		:return: the set of words encoding the symbolic conditions among the execution nodes in the sequence
+		"""
 		return self.words
 
 	def get_conditions(self):
-		conditions = list()
-		for word in self.words:
-			conditions.append(self.document.get_conditions_lib().get_condition(word))
-		return conditions
-
-	@staticmethod
-	def __parse__(document: CDocument, line: str):
-		"""
-		:param document:
-		:param line: mid {stage$execution$result (condition)+ ;}+
-		:return: symbolic execution
-		"""
-		if len(line.strip()) > 0:
-			items = line.strip().split('\t')
-			mutant = document.get_project().muta_space.get_mutant(int(items[0].strip()))
-			execution = SymExecution(document, mutant)
-			words = list()
-			for i in range(1, len(items)):
-				item = items[i].strip()
-				if len(item) > 0:
-					if item == ';':
-						head = words[0].strip()
-						keys = head.strip().split('$')
-						stage = jcbase.CToken.parse(keys[0].strip()).get_token_value()
-						exect = jcbase.CToken.parse(keys[1].strip()).get_token_value()
-						location = document.get_program().function_call_graph.get_execution(exect[0], exect[1])
-						result = jcbase.CToken.parse(keys[2].strip()).get_token_value()
-						instance = SymInstance(execution, stage, location, result, words[1:])
-						words.clear()
-						execution.instances.append(instance)
-					else:
-						words.append(item)
-			for instance in execution.get_instances():
-				instance: SymInstance
-				for word in instance.get_words():
-					if not(word in execution.words):
-						execution.words.append(word)
-			return execution
-		return None
+		return self.document.get_conditions_lib().get_conditions(self.words)
 
 
 if __name__ == "__main__":
@@ -419,11 +478,12 @@ if __name__ == "__main__":
 		directory = os.path.join(root_path, file_name)
 		c_document = CDocument(directory, file_name)
 		print(file_name, "loads", len(c_document.get_mutants()), "mutants used and",
-			  len(c_document.get_executions()), "symbolic executions annotated with",
-			  len(c_document.get_conditions_lib().get_conditions()), "conditions.")
-		for execution in c_document.get_executions():
-			mutant = execution.get_mutant()
-			for condition in execution.get_conditions():
+			  len(c_document.get_sequences()), "symbolic sequences annotated with",
+			  len(c_document.get_conditions_lib().get_all_conditions()), "conditions.")
+		for sequence in c_document.get_sequences():
+			sequence: SymSequence
+			mutant = sequence.get_mutant()
+			for condition in sequence.get_conditions():
 				print("\t{}\t{}\t{}\t{}\t{}\t{}".format(mutant.get_muta_id(),
 														condition.get_category(),
 														condition.get_operator(),

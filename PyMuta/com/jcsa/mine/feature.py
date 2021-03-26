@@ -1,108 +1,91 @@
 """
-This file defines the data model for describing patterns of symbolic executions being mined.
+This file defines the data model for describing the inputs segment of mining algorithm (pre-processing)
 """
-
+from typing import TextIO
 
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.muta as jcmuta
 import com.jcsa.libs.test as jctest
 
 
-UR_CLASS = "UR"		# testing that failed to reach mutation
-UI_CLASS = "UI"		# testing that reach but fail to infect
-UP_CLASS = "UP"		# testing that infect but fail to kills
-KI_CLASS = "KI"		# testing that fail to kill the mutants
+UR_CLASS = "UR"		# the testing failed to reach the faulty point
+UI_CLASS = "UI"		# the testing reach but failed to infect state
+UP_CLASS = "UP"		# the testing infect but failed to kill mutant
+KI_CLASS = "KI"		# the testing manage to kill the target mutant
 
 
 class RIPClassifier:
 	"""
-	It implements the estimation, classification and evaluation on selected samples (either SymExecution or Mutant)
-	in form of reachability, infection and propagation during testing and fault detection procedure.
+	It defines the classification and evaluation system for data mining
 	"""
 
-	def __init__(self, used_tests, support_classes):
+	def __init__(self, tests):
 		"""
-		:param used_tests:
-					(1) collection of test cases or their unique integer IDs, in which we assume that the
-						mutants are executed against the given set of test cases.
-					(2) if established as None, we consider the mutants are executed against the entire
-						test inputs defined in the space.
-		:param support_classes:
-					The collection of classes of samples taken as supporting of patterns
+		:param tests:
+				1. the collection of test cases (or their unique integer ID) used to decide whether mutant is killed
+				2. None to establish the entire test cases in space used in experiment as tests
 		"""
-		self.__tests__ = used_tests
-		self.__all_classes__ = { UR_CLASS, UI_CLASS, UP_CLASS, KI_CLASS }
-		self.__sup_classes__ = set()
-		for class_name in support_classes:
-			class_name: str
-			if class_name in self.__all_classes__:
-				self.__sup_classes__.add(class_name)
-		self.__solutions__ = dict()
-		self.__solutions__[-1] = KI_CLASS
+		self.tests = tests
+		self.solutions = dict()		# muta_id --> [UR|UI|UP|KI]
 		return
 
 	def __solving__(self, mutant: jcmuta.Mutant):
 		"""
-		:param mutant: the mutant being classified
-		:return:	UR_CLASS: if the mutant cannot be reached by any test in self.__tests__
-					UI_CLASS: if the mutant is reachable but can never be infected by test in self.__tests__
-					UP_CLASS: if the mutant is infected but cannot be killed by any test in self.__tests__
-					KI_CLASS: if the mutant is killed by any test in self.__tests__
+		:param mutant:
+		:return: 	UR	---	if the mutant is not reached by any tests
+					UI	---	if the mutant is reached but not infected
+					UP	---	if the mutant is infected but not killed
+					KI	--- if the mutant is successfully killed by given tests
 		"""
-		key = mutant.get_muta_id()
-		if not(key in self.__solutions__):
-			c_result = mutant.get_c_mutant().get_result()
-			w_result = mutant.get_w_mutant().get_result()
+		if not(mutant.get_muta_id() in self.solutions):
 			s_result = mutant.get_result()
-			if s_result.is_killed_in(self.__tests__):
-				label = KI_CLASS			# mutant is killed by the tests
-			elif w_result.is_killed_in(self.__tests__):
-				label = UP_CLASS			# mutant is not killed but infected by the tests
-			elif c_result.is_killed_in(self.__tests__):
-				label = UI_CLASS			# mutant is not infected but reached by tests
+			w_result = mutant.get_w_mutant().get_result()
+			c_result = mutant.get_c_mutant().get_result()
+			if s_result.is_killed_in(self.tests):
+				label = KI_CLASS
+			elif w_result.is_killed_in(self.tests):
+				label = UP_CLASS
+			elif c_result.is_killed_in(self.tests):
+				label = UI_CLASS
 			else:
-				label = UR_CLASS			# mutant is not reached by the tests
-			self.__solutions__[key] = label
-		label = self.__solutions__[key]
+				label = UR_CLASS
+			self.solutions[mutant.get_muta_id()] = label
+		label = self.solutions[mutant.get_muta_id()]
 		label: str
 		return label
 
 	def __classify__(self, sample):
-		"""
-		:param sample: either Mutant or SymExecution
-		:return: 	UR_CLASS: if the mutant cannot be reached by any test in self.__tests__
-					UI_CLASS: if the mutant is reachable but can never be infected by test in self.__tests__
-					UP_CLASS: if the mutant is infected but cannot be killed by any test in self.__tests__
-					KI_CLASS: if the mutant is killed by any test in self.__tests__
-		"""
-		if isinstance(sample, jctest.SymExecution):
-			sample: jctest.SymExecution
-			return self.__solving__(sample.get_mutant())
+		if isinstance(sample, jctest.SymSequence):
+			mutant = sample.get_mutant()
 		else:
 			sample: jcmuta.Mutant
-			return self.__solving__(sample)
+			mutant = sample
+		return self.__solving__(mutant)
 
 	def classify(self, samples):
 		"""
-		:param samples: the collection of Mutant or SymExecution to be classified according to RIP framework
-		:return: the mapping from UR_CLASS|UI_CLASS|UP_CLASS|KI_CLASS ==> set{sample} it corresponding to
+		:param samples: the collection of Mutant or SymSequence
+		:return: mapping from {UR|UI|UP|KI} --> set of samples w.r.t.
 		"""
-		solutions = dict()
-		for class_name in self.__all_classes__:
-			solutions[class_name] = set()
+		results = dict()
+		results[UR_CLASS] = set()
+		results[UI_CLASS] = set()
+		results[UP_CLASS] = set()
+		results[KI_CLASS] = set()
 		for sample in samples:
-			label = self.__classify__(sample)
-			solutions[label].add(sample)
-		return solutions
+			results[self.__classify__(sample)].add(sample)
+		return results
 
 	def counting(self, samples):
 		"""
-		:param samples: the collection of Mutant or SymExecution to be counted according to RIP framework
-		:return: 	ur, ui, up, ki
-					ur --- the number of samples that cannot be reached by the tests
-					ui --- the number of samples that cannot be infected but reached by the tests
-					up --- the number of samples that cannot be killed but infected by the tests
-					ki --- the number of samples that can be killed by the tests
+		:param samples:
+		:return: 	ur, ui, up, ki, uk, cc
+					ur --- the number of samples failed to be reached
+					ui --- the number of samples failed to be infected but reached
+					up --- the number of samples failed to be killed but infected
+					ki --- the number of samples successfully to be killed by tests
+					uk --- the number of samples failed to be killed {ur + ui + up}
+					cc --- the number of samples with coincidental correct {ui + up}
 		"""
 		ur, ui, up, ki = 0, 0, 0, 0
 		for sample in samples:
@@ -115,160 +98,150 @@ class RIPClassifier:
 				ui += 1
 			else:
 				ur += 1
-		return ur, ui, up, ki
+		return ur, ui, up, ki, ur + ui + up, ui + up
 
-	def estimate(self, samples):
+	def estimate(self, samples, supp_class):
 		"""
-		:param samples: samples: the collection of Mutant or SymExecution to be estimated according to RIP framework
-						as well as the support-confidence framework of data mining.
-		:return: 	total, support, confidence
-					total	--- the total number of samples under analysis
-					support	---	the number of samples of which class is in supporting
-					confidence --- support / total * 100%
+		:param samples:
+		:param supp_class:
+				1. True to take strong coincidental correctness (only UP_CLASS are under consideration)
+				2. False to take weak coincidental correctness (union of UP_CLASS and UI_CLASS account)
+				3. None to take all the undetected samples in support (UR + UI + UP)
+		:return: total, support, confidence
 		"""
-		total, support = 0, 0
-		for sample in samples:
-			total += 1
-			label = self.__classify__(sample)
-			if label in self.__sup_classes__:
-				support += 1
-		confidence = 0.0
+		ur, ui, up, ki, uk, cc = self.counting(samples)
+		if supp_class is None:
+			support = uk
+		elif supp_class:
+			support = up
+		else:
+			support = cc
+		total = support + ki
 		if support > 0:
 			confidence = support / total
+		else:
+			confidence = 0.0
 		return total, support, confidence
 
-	def division(self, samples):
+	def select(self, samples, supp_class):
 		"""
-		:param samples: the collection of Mutant or SymExecution to be selected according to RIP framework
-		:return: supports, negatives
+		:param samples:
+		:param supp_class:
+				1. True to take strong coincidental correctness (only UP_CLASS are under consideration)
+				2. False to take weak coincidental correctness (union of UP_CLASS and UI_CLASS account)
+				3. None to take all the undetected samples in support (UR + UI + UP)
+		:return: the set of samples w.r.t. the supporting class as established
 		"""
-		supports, negatives = set(), set()
-		for sample in samples:
-			label = self.__classify__(sample)
-			if label in self.__sup_classes__:
-				supports.add(sample)
-			else:
-				negatives.add(sample)
-		return supports, negatives
+		results = self.classify(samples)
+		if supp_class is None:
+			return results[UP_CLASS] | results[UI_CLASS] | results[UR_CLASS]
+		elif supp_class:
+			return results[UP_CLASS]
+		else:
+			return results[UP_CLASS] | results[UI_CLASS]
 
 
 class RIPPattern:
 	"""
-	The pattern of mutation kill-ability in terms of symbolic conditions required in process and
-	estimated against the reachability-infection-propagation framework.
+	Each pattern is described as a set of symbolic conditions annotated in execution and sequence of mutant
 	"""
 
 	def __init__(self, document: jctest.CDocument, classifier: RIPClassifier):
-		"""
-		:param document: it provides original data samples for being matched
-		:param classifier: it is used to estimate the performance of this one
-		"""
-		self.document = document		# it provides original data samples for being matched
-		self.classifier = classifier	# it is used to estimate the performance of this one
-		self.executions = set()			# the set of SymExecution(s) matching with this one
-		self.mutants = set()			# the set of Mutant(s) of which execution(s) match with this one
-		self.words = list()				# the sorted sequence of words encoding the symbolic conditions included
+		self.document = document
+		self.classifier = classifier
+		self.words = list()
+		self.sequences = set()
+		self.mutants = set()
 		return
-
-	# data samples
 
 	def get_document(self):
 		"""
-		:return: it provides original data samples for being matched
+		:return: it provides original dataset for interpretation
 		"""
 		return self.document
 
-	def get_executions(self):
+	def get_sequences(self):
 		"""
-		:return: it is used to estimate the performance of this one
+		:return: the set of SymSequence matched by this pattern
 		"""
-		return self.executions
+		return self.sequences
 
 	def get_mutants(self):
 		"""
-		:return: the set of Mutant(s) of which execution(s) match with this one
+		:return: the set of Mutant of which sequences is matched by this pattern
 		"""
 		return self.mutants
 
-	def get_samples(self, exe_or_mut: bool):
+	def get_samples(self, seq_or_mut: bool):
 		"""
-		:param exe_or_mut: True to select executions or False for mutants
+		:param seq_or_mut: True to take SymSequence or Mutant as samples
 		:return:
 		"""
-		if exe_or_mut:
-			return self.executions
+		if seq_or_mut:
+			return self.sequences
 		else:
 			return self.mutants
 
-	def __matching__(self, execution: jctest.SymExecution):
+	def __matching__(self, sequence: jctest.SymSequence):
 		"""
-		:param execution:
-		:return: True if all the conditions among the pattern are required by execution
+		:param sequence:
+		:return: True if the conditions in the pattern are included by the sequence
 		"""
 		for word in self.words:
-			if not(word in execution.get_words()):
+			if not(word in sequence.get_words()):
 				return False
 		return True
 
 	def set_samples(self, parent):
 		"""
-		:param parent: RIPPattern as direct pattern or None to update on entire document
+		:param parent: parent pattern from which this one is directly extended or None to set this one on document
 		:return:
 		"""
 		if parent is None:
-			executions = self.document.get_executions()
+			sequences = self.document.get_sequences()
 		else:
 			parent: RIPPattern
-			executions = parent.get_executions()
-		self.executions.clear()
+			sequences = parent.get_sequences()
+		self.sequences.clear()
 		self.mutants.clear()
-		for execution in executions:
-			execution: jctest.SymExecution
-			if self.__matching__(execution):
-				self.executions.add(execution)
-				self.mutants.add(execution.get_mutant())
+		for sequence in sequences:
+			sequence: jctest.SymSequence
+			if self.__matching__(sequence):
+				self.sequences.add(sequence)
+				self.mutants.add(sequence.get_mutant())
 		return
-
-	# estimations
 
 	def get_classifier(self):
 		return self.classifier
 
-	def classify(self, exe_or_mut: bool):
-		return self.classifier.classify(self.get_samples(exe_or_mut))
+	def classify(self, seq_or_mut: bool):
+		return self.classifier.classify(self.get_samples(seq_or_mut))
 
-	def counting(self, exe_or_mut: bool):
-		return self.classifier.counting(self.get_samples(exe_or_mut))
+	def counting(self, seq_or_mut: bool):
+		return self.classifier.counting(self.get_samples(seq_or_mut))
 
-	def division(self, exe_or_mut: bool):
-		return self.classifier.division(self.get_samples(exe_or_mut))
+	def estimate(self, seq_or_mut: bool, supp_class):
+		return self.classifier.estimate(self.get_samples(seq_or_mut), supp_class)
 
-	def estimate(self, exe_or_mut: bool):
-		return self.classifier.estimate(self.get_samples(exe_or_mut))
-
-	# feature model
+	def select(self, seq_or_mut: bool, supp_class):
+		return self.classifier.select(self.get_samples(seq_or_mut), supp_class)
 
 	def get_words(self):
 		return self.words
 
 	def get_conditions(self):
-		conditions = list()
-		for word in self.words:
-			conditions.append(self.document.get_conditions_lib().get_condition(word))
-		return conditions
-
-	def __str__(self):
-		return str(self.words)
+		return self.document.get_conditions_lib().get_conditions(self.words)
 
 	def __len__(self):
 		return len(self.words)
 
-	# comparison
+	def __str__(self):
+		return str(self.words)
 
 	def extends(self, word: str):
 		"""
 		:param word:
-		:return: child pattern extended from this one by adding one new word
+		:return: the child pattern directly extended from this one by adding one new word
 		"""
 		word = word.strip()
 		if len(word) > 0 and not(word in self.words):
@@ -278,51 +251,52 @@ class RIPPattern:
 			child.words.append(word)
 			child.words.sort()
 			return child
-		else:
-			return self
+		return self
 
-	def subsume(self, pattern, strict: bool):
+	def subsume(self, pattern, strip: bool):
 		"""
 		:param pattern:
-		:param strict: True to compute strict subsumption
-		:return: True if all the executions of target pattern are included by this one
+		:param strip: true to compute strict subsumption or non-strict one
+		:return:
 		"""
 		pattern: RIPPattern
-		for execution in pattern.executions:
-			if not(execution in self.executions):
+		for sequence in pattern.get_sequences():
+			if not(sequence in self.sequences):
 				return False
-		if strict:
-			return len(self.executions) > len(pattern.executions)
+		if strip:
+			return len(self.sequences) > len(pattern.sequences)
 		else:
 			return True
 
 
 class RIPMineInputs:
 	"""
-	It defines metrics for generating good patterns and interfaces to ensure the uniqueness
+	The inputs dataset for data mining.
 	"""
 
-	def __init__(self, document: jctest.CDocument, used_tests, support_classes,
-				 exe_or_mut: bool, min_support: int, min_confidence: float,
-				 max_confidence: float, max_length: int):
+	def __init__(self, document: jctest.CDocument, used_tests, seq_or_mut: bool, supp_class,
+				 max_length: int, min_support: int, min_confidence: float, max_confidence: float):
 		"""
-		:param document: it provides original dataset for data mining
-		:param used_tests: the set of test cases assumed being used
-		:param support_classes: set of names of supporting classes
-		:param exe_or_mut: True to take executions or mutants as samples
-		:param min_support: minimal number of samples to support good patterns
-		:param min_confidence: minimal confidence to confide the good patterns
-		:param max_confidence: maximal confidence to terminate the data mining
-		:param max_length: the maximal length of words allowed to be included
+		:param document: the original dataset
+		:param used_tests: the set of tests used in classifier
+		:param seq_or_mut: true to take SymSequence or Mutant as samples
+		:param supp_class:
+				1. True to take strong coincidental correctness (only UP_CLASS are under consideration)
+				2. False to take weak coincidental correctness (union of UP_CLASS and UI_CLASS account)
+				3. None to take all the undetected samples in support (UR + UI + UP)
+		:param max_length: the maximal length of patterns allowed to be selected
+		:param min_support: the minimal support of samples being matched by good patterns
+		:param min_confidence: the minimal confidence required to be achieved by patterns
+		:param max_confidence: the maximal confidence to terminate recursive search space
 		"""
 		self.document = document
-		self.classifier = RIPClassifier(used_tests, support_classes)
-		self.exe_or_mut = exe_or_mut
+		self.classifier = RIPClassifier(used_tests)
+		self.seq_or_mut = seq_or_mut
+		self.supp_class = supp_class
+		self.max_length = max_length
 		self.min_support = min_support
 		self.min_confidence = min_confidence
 		self.max_confidence = max_confidence
-		self.max_length = max_length
-		self.unique_patterns = dict()	# String ==> RIPPattern
 		return
 
 	def get_document(self):
@@ -331,8 +305,11 @@ class RIPMineInputs:
 	def get_classifier(self):
 		return self.classifier
 
-	def is_exe_or_mut(self):
-		return self.exe_or_mut
+	def is_seq_or_mut(self):
+		return self.seq_or_mut
+
+	def get_supp_class(self):
+		return self.supp_class
 
 	def get_min_support(self):
 		return self.min_support
@@ -346,21 +323,41 @@ class RIPMineInputs:
 	def get_max_length(self):
 		return self.max_length
 
+
+class RIPMineMiddle:
+	"""
+	It preserves the intermediate generation of objects such as patterns and estimation data.
+	"""
+
+	def __init__(self, inputs: RIPMineInputs):
+		self.inputs = inputs
+		self.patterns = dict()		# String --> RIPPattern (Unique)
+		self.estimate = dict()		# RIPPattern --> [length, support, confidence]
+		return
+
+	def get_document(self):
+		return self.inputs.get_document()
+
+	def get_classifier(self):
+		return self.inputs.get_classifier()
+
 	def __new_pattern__(self, parent, word: str):
 		"""
-		:param parent: pattern from which the new one is extended or None for root
+		:param parent: None to create root pattern
 		:param word:
-		:return:
+		:return: unique pattern as parent::word
 		"""
 		if parent is None:
-			parent = RIPPattern(self.document, self.classifier)
+			child = RIPPattern(self.inputs.get_document(), self.inputs.get_classifier())
+			child = child.extends(word)
 		else:
 			parent: RIPPattern
-		child = parent.extends(word)
-		if not(str(child) in self.unique_patterns):
-			self.unique_patterns[str(child)] = child
+			child = parent.extends(word)
+		if not(str(child) in self.patterns):
+			self.patterns[str(child)] = child
 			child.set_samples(parent)
-		child = self.unique_patterns[str(child)]
+			self.get_estimate(child)
+		child = self.patterns[str(child)]
 		child: RIPPattern
 		return child
 
@@ -370,40 +367,94 @@ class RIPMineInputs:
 	def get_child(self, parent: RIPPattern, word: str):
 		return self.__new_pattern__(parent, word)
 
-	def get_all_patterns(self):
-		return self.unique_patterns.values()
+	def get_estimate(self, pattern: RIPPattern):
+		if not(pattern in self.estimate):
+			length = len(pattern)
+			total, support, confidence = pattern.estimate(self.inputs.is_seq_or_mut(), self.inputs.get_supp_class())
+			self.estimate[pattern] = (length, support, confidence)
+		solution = self.estimate[pattern]
+		length = solution[0]
+		support = solution[1]
+		confidence = solution[2]
+		length: int
+		support: int
+		confidence: float
+		return length, support, confidence
 
-
-class RIPPatternSelection:
-	"""
-	It implements selection on RIPPattern(s)
-	"""
-
-	@staticmethod
-	def select_good_patterns(patterns, exe_or_mut: bool, max_length: int, min_support: int, min_confidence: float):
+	def get_good_patterns(self):
 		"""
-		:param patterns: the set of patterns from which the goods are found
-		:param exe_or_mut: True to take executions or mutants as samples to estimate
-		:param max_length: the maximal length of words allowed be included
-		:param min_support: the minimal support of samples that support good patterns
-		:param min_confidence: minimal confidence required for good patterns
-		:return: the collection of 'good' patterns selected from input set
+		:return: the collection of good patterns w.r.t. given metrics
 		"""
 		good_patterns = set()
-		for pattern in patterns:
+		for pattern, estimate in self.estimate.items():
 			pattern: RIPPattern
 			length = len(pattern)
-			total, support, confidence = pattern.estimate(exe_or_mut)
-			if length <= max_length and support >= min_support and confidence >= min_confidence:
+			support = estimate[1]
+			confidence = estimate[2]
+			if length <= self.inputs.get_max_length() and support >= self.inputs.get_min_support() and \
+					confidence >= self.inputs.get_min_confidence():
 				good_patterns.add(pattern)
 		return good_patterns
+
+
+class RIPMineOutput:
+	"""
+	The output segment of RIPPattern(s)
+	"""
+
+	def __init__(self, inputs: RIPMineInputs, good_patterns):
+		"""
+		:param inputs:
+		:param good_patterns: set of good patterns generated from
+		"""
+		self.inputs = inputs
+		self.document = inputs.get_document()
+		self.classifier = inputs.get_classifier()
+		self.doc_seqs = set()
+		self.doc_muta = set()
+		for sequence in self.document.get_sequences():
+			sequence: jctest.SymSequence
+			self.doc_seqs.add(sequence)
+			self.doc_muta.add(sequence.get_mutant())
+		self.patterns = set()
+		self.pat_seqs = set()
+		self.pat_muta = set()
+		for pattern in good_patterns:
+			pattern: RIPPattern
+			self.patterns.add(pattern)
+			for sequence in pattern.get_sequences():
+				sequence: jctest.SymSequence
+				self.pat_seqs.add(sequence)
+				self.pat_muta.add(sequence.get_mutant())
+		return
+
+	def get_document(self):
+		return self.document
+
+	def get_doc_sequences(self):
+		return self.doc_seqs
+
+	def get_doc_mutants(self):
+		return self.doc_muta
+
+	def get_classifier(self):
+		return self.classifier
+
+	def get_patterns(self):
+		return self.patterns
+
+	def get_pat_sequences(self):
+		return self.pat_seqs
+
+	def get_pat_mutants(self):
+		return self.pat_muta
 
 	@staticmethod
 	def select_subsuming_patterns(patterns, strict: bool):
 		"""
-		:param patterns:
-		:param strict: True to select minimal set of patterns that strictly subsume the other removed
-		:return: the minimal set of patterns that subsume all the others that are removed from.
+		:param strict: whether to generate strictly subsuming set
+		:param patterns: set of RIP-testability patterns
+		:return: minimal set of patterns that subsume the others
 		"""
 		remain_patterns, remove_patterns, minimal_patterns = set(), set(), set()
 		patterns = jcbase.rand_resort(patterns)
@@ -431,55 +482,16 @@ class RIPPatternSelection:
 		return minimal_patterns
 
 	@staticmethod
-	def select_coverage_patterns(patterns, exe_or_mut: bool):
+	def remap_keys_patterns(patterns, seq_or_mut: bool):
 		"""
 		:param patterns:
-		:param exe_or_mut: True to take executions or mutants as coverage samples
-		:return: the minimal subset of patterns randomly selected from inputs until it covers all the samples
-		"""
-		# initialization
-		remain_samples, remain_pattern = set(), set()
-		for pattern in patterns:
-			pattern: RIPPattern
-			remain_pattern.add(pattern)
-			for sample in pattern.get_samples(exe_or_mut):
-				remain_samples.add(sample)
-		cover_patterns, remove_patterns = set(), set()
-
-		# selection-parts
-		while len(remain_samples) > 0:
-			# 1. select a random next pattern from remaining
-			next_pattern = jcbase.rand_select(remain_pattern)
-			next_pattern: RIPPattern
-			cover_patterns.add(next_pattern)
-
-			# 2. remove all the samples matched by selected
-			for sample in next_pattern.get_samples(exe_or_mut):
-				if sample in remain_samples:
-					remain_samples.remove(sample)
-
-			# 3. remove useless patterns from remaining set
-			remove_patterns.clear()
-			for pattern in remain_pattern:
-				has_samples = len(pattern.get_samples(exe_or_mut) & remain_samples) > 0
-				if not has_samples:
-					remove_patterns.add(pattern)
-			for pattern in remove_patterns:
-				remain_pattern.remove(pattern)
-
-		return cover_patterns
-
-	@staticmethod
-	def remap_keys_patterns(patterns, exe_or_mut: bool):
-		"""
-		:param patterns:
-		:param exe_or_mut: True to use RIPExecution or Mutant as key
+		:param seq_or_mut: True to use SymSequence or Mutant as key
 		:return: Sample ==> set of RIPPattern
 		"""
 		results = dict()
 		for pattern in patterns:
 			pattern: RIPPattern
-			samples = pattern.get_samples(exe_or_mut)
+			samples = pattern.get_samples(seq_or_mut)
 			for sample in samples:
 				if not (sample in results):
 					results[sample] = set()
@@ -487,17 +499,18 @@ class RIPPatternSelection:
 		return results
 
 	@staticmethod
-	def select_best_pattern(patterns, exe_or_mut: bool):
+	def select_best_pattern(patterns, seq_or_mut: bool, supp_class):
 		"""
 		:param patterns:
-		:param exe_or_mut:
-		:return: the best pattern with best performance in given set.
+		:param seq_or_mut:
+		:param supp_class:
+		:return:
 		"""
 		remain_patterns, solutions = set(), dict()
 		for pattern in patterns:
 			pattern: RIPPattern
 			remain_patterns.add(pattern)
-			total, support, confidence = pattern.estimate(exe_or_mut)
+			total, support, confidence = pattern.estimate(seq_or_mut, supp_class)
 			length = len(pattern)
 			solutions[pattern] = (length, support, confidence)
 
@@ -538,97 +551,350 @@ class RIPPatternSelection:
 			return pattern
 		return None
 
-
-class RIPMineOutput:
-	"""
-	It preserves the set of generated 'good' patterns and provide their subset based on
-	subsumption, coverage, best-matching ways.
-	"""
-
-	def __init__(self, inputs: RIPMineInputs):
-		self.document = inputs.get_document()
-		self.classifier = inputs.get_classifier()
-		self.doc_executions = set()
-		self.doc_mutants = set()
-		for execution in self.document.get_executions():
-			execution: jctest.SymExecution
-			self.doc_executions.add(execution)
-			self.doc_mutants.add(execution.get_mutant())
-		self.all_patterns = RIPPatternSelection.select_good_patterns(inputs.get_all_patterns(),
-																	 inputs.is_exe_or_mut(),
-																	 inputs.get_max_length(),
-																	 inputs.get_min_support(),
-																	 inputs.get_min_confidence())
-		self.pat_executions = set()
-		self.pat_mutants = set()
-		for pattern in self.all_patterns:
-			for execution in pattern.get_executions():
-				execution: jctest.SymExecution
-				self.pat_executions.add(execution)
-				self.pat_mutants.add(execution.get_mutant())
-		return
-
-	def get_document(self):
-		return self.document
-
-	def get_doc_executions(self):
-		return self.doc_executions
-
-	def get_doc_mutants(self):
-		return self.doc_mutants
-
-	def get_classifier(self):
-		return self.classifier
-
-	def get_patterns(self):
-		return self.all_patterns
-
-	def get_pat_executions(self):
-		return self.pat_executions
-
-	def get_pat_mutants(self):
-		return self.pat_mutants
+	@staticmethod
+	def select_minimal_patterns(patterns, seq_or_mut: bool):
+		"""
+		:param patterns:
+		:param seq_or_mut: True to cover RIPExecution or Mutant
+		:return: minimal set of patterns covering all the executions in the set
+		"""
+		keys_patterns = RIPMineOutput.remap_keys_patterns(patterns, seq_or_mut)
+		minimal_patterns, removed_keys = set(), set()
+		while len(keys_patterns) > 0:
+			removed_keys.clear()
+			for sample, patterns in keys_patterns.items():
+				selected_pattern = jcbase.rand_select(patterns)
+				if not (selected_pattern is None):
+					pattern = selected_pattern
+					pattern: RIPPattern
+					for pat_sample in pattern.get_samples(seq_or_mut):
+						removed_keys.add(pat_sample)
+					minimal_patterns.add(pattern)
+					break
+			for sample in removed_keys:
+				if sample in keys_patterns:
+					keys_patterns.pop(sample)
+		return minimal_patterns
 
 	def get_subsuming_patterns(self, strict: bool):
-		return RIPPatternSelection.select_subsuming_patterns(self.all_patterns, strict)
+		"""
+		:return:
+		"""
+		return RIPMineOutput.select_subsuming_patterns(self.patterns, strict)
 
-	def get_patterns_on_executions(self):
+	def get_minimal_patterns(self, seq_or_mut: bool):
 		"""
-		:return: the set of good patterns that cover all the executions included.
+		:param seq_or_mut:
+		:return: the minimal set of RIP patterns covering all the samples in the space
 		"""
-		return RIPPatternSelection.select_coverage_patterns(self.all_patterns, True)
+		return RIPMineOutput.select_minimal_patterns(self.patterns, seq_or_mut)
 
-	def get_patterns_on_mutants(self):
+	def get_best_patterns(self, seq_or_mut: bool, supp_class):
 		"""
-		:return: the set of good patterns that cover all the mutants included.
-		"""
-		return RIPPatternSelection.select_coverage_patterns(self.all_patterns, False)
-
-	def get_executions_and_best_patterns(self):
-		"""
-		:return: mapping from execution to the pattern that best matches with the mutant
-		"""
-		exec_patterns = RIPPatternSelection.remap_keys_patterns(self.all_patterns, False)
-		best_patterns = dict()
-		for execution, patterns in exec_patterns.items():
-			execution: jctest.SymExecution
-			best_pattern = RIPPatternSelection.select_best_pattern(patterns, True)
-			if not (best_pattern is None):
-				best_pattern: RIPPattern
-				best_patterns[execution] = best_pattern
-		return best_patterns
-
-	def get_mutants_and_best_patterns(self):
-		"""
+		:param seq_or_mut: used to estimate
+		:param supp_class: used to estimate
 		:return: mapping from mutant to the pattern that best matches with the mutant
 		"""
-		mutants_patterns = RIPPatternSelection.remap_keys_patterns(self.all_patterns, False)
+		mutants_patterns = RIPMineOutput.remap_keys_patterns(self.patterns, False)
 		best_patterns = dict()
 		for mutant, patterns in mutants_patterns.items():
 			mutant: jcmuta.Mutant
-			best_pattern = RIPPatternSelection.select_best_pattern(patterns, True)
+			best_pattern = RIPMineOutput.select_best_pattern(patterns, seq_or_mut, supp_class)
 			if not (best_pattern is None):
 				best_pattern: RIPPattern
 				best_patterns[mutant] = best_pattern
 		return best_patterns
+
+
+class RIPMineWriter:
+	"""
+	It implements the writing of RIP conditions patterns.
+	"""
+
+	def __init__(self):
+		self.writer = None
+		return
+
+	def output(self, text: str):
+		self.writer: TextIO
+		self.writer.write(text)
+		return
+
+	@staticmethod
+	def __percentage__(ratio: float):
+		return int(ratio * 1000000) / 10000.0
+
+	@staticmethod
+	def __proportion__(x: int, y: int):
+		if x == 0:
+			ratio = 0.0
+		else:
+			ratio = x / (y + 0.0)
+		return RIPMineWriter.__percentage__(ratio)
+
+	@staticmethod
+	def __f1_measure__(doc_samples: set, pat_samples: set):
+		"""
+		:param doc_samples: samples from document
+		:param pat_samples: samples matched with pattern
+		:return: precision, recall, f1_score
+		"""
+		int_samples = doc_samples & pat_samples
+		common = len(int_samples)
+		if common > 0:
+			precision = common / len(pat_samples)
+			recall = common / len(doc_samples)
+			f1_score = 2 * precision * recall / (precision + recall)
+		else:
+			precision = 0.0
+			recall = 0.0
+			f1_score = 0.0
+		return precision, recall, f1_score
+
+	# pattern writing
+
+	def __write_pattern_summary__(self, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return:
+				Summary 	Length Executions Mutations
+				Counting	title UR UI UP KI UK CC
+				Estimate	title total support confidence
+		"""
+		# Summary Length Executions Mutants
+		length = len(pattern)
+		sequences = len(pattern.get_sequences())
+		mutants = len(pattern.get_mutants())
+		self.output("\t{}\t{}: {}\t{}: {}\t{}: {}\n".format("Summary",
+															"Length", length,
+															"Sequences", sequences,
+															"Mutants", mutants))
+		self.output("\n")
+
+		# Counting title UR UI UP KI UK CC
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Counting", "Title", "UR", "UI", "UP", "KI", "UK", "CC"))
+		ur, ui, up, ki, uk, cc = pattern.counting(True)
+		self.output(template.format("", "Executions", ur, ui, up, ki, uk, cc))
+		ur, ui, up, ki, uk, cc = pattern.counting(False)
+		self.output(template.format("", "Mutants", ur, ui, up, ki, uk, cc))
+		self.output("\n")
+
+		# Estimate title total support confidence(%)
+		template = "\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Estimate", "Title", "Total", "Support", "Confidence (%)"))
+		total, support, confidence = pattern.estimate(True, None)
+		self.output(template.format("", "UK_Executions", total, support, confidence))
+		total, support, confidence = pattern.estimate(True, False)
+		self.output(template.format("", "CC_Executions", total, support, confidence))
+		total, support, confidence = pattern.estimate(False, None)
+		self.output(template.format("", "UK_Mutants", total, support, confidence))
+		total, support, confidence = pattern.estimate(False, False)
+		self.output(template.format("", "CC_Mutants", total, support, confidence))
+		self.output("\n")
+
+		return
+
+	def __write_pattern_feature__(self, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return: condition category operator validate execution statement location parameter
+		"""
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("Condition", "Category", "Operator", "Validate",
+									"Execution", "Statement", "Location", "Parameter"))
+		index = 0
+		for feature in pattern.get_conditions():
+			index += 1
+			category = feature.get_category()
+			operator = feature.get_operator()
+			execution = feature.get_execution()
+			statement = feature.get_execution().get_statement().get_cir_code()
+			location = feature.get_location().get_cir_code()
+			if feature.get_parameter() is None:
+				parameter = ""
+			else:
+				parameter = feature.get_parameter().get_code()
+			self.output(template.format(index, category, operator, True,
+										execution, statement, location, parameter))
+		self.output("\n")
+
+	def __write_pattern_mutants__(self, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return: Mutant Result Class Operator Line Location Parameter
+		"""
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("ID", "Result", "Class", "Operator", "Line", "Location", "Parameter"))
+		for mutant in pattern.get_mutants():
+			mutant: jcmuta.Mutant
+			mutant_id = mutant.get_muta_id()
+			result = pattern.get_classifier().__classify__(mutant)
+			mutation_class = mutant.get_mutation().get_mutation_class()
+			operator = mutant.mutation.get_mutation_operator()
+			location = mutant.mutation.get_location()
+			parameter = mutant.mutation.get_parameter()
+			line = location.line_of(False)
+			code = location.get_code(True)
+			self.output(template.format(mutant_id, result, mutation_class, operator, line, code, parameter))
+		self.output("\n")
+
+	def __write_pattern__(self, pattern: RIPPattern):
+		self.output("#BEG\n")
+		self.__write_pattern_summary__(pattern)
+		self.__write_pattern_feature__(pattern)
+		self.__write_pattern_mutants__(pattern)
+		self.output("#END\n")
+
+	def write_patterns(self, patterns, file_path: str):
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			for pattern in patterns:
+				self.__write_pattern__(pattern)
+				self.writer.write("\n")
+		return
+
+	def write_matching(self, output: RIPMineOutput, file_path: str, seq_or_mut: bool, supp_class):
+		"""
+		:param output:
+		:param uk_or_cc:
+		:param exe_or_mut:
+		:param file_path:
+		:return: 	Mutant 	ID RESULT CLASS OPERATOR LINE LOCATION PARMETER
+					Pattern
+					Category Operator Validate Execution Statement Location Parameter*
+		"""
+		mutants_patterns = output.get_best_patterns(seq_or_mut, supp_class)
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			for mutant, pattern in mutants_patterns.items():
+				mutant_id = mutant.get_muta_id()
+				result = pattern.get_classifier().__classify__(mutant)
+				mutation_class = mutant.get_mutation().get_mutation_class()
+				operator = mutant.get_mutation().get_mutation_operator()
+				location = mutant.get_mutation().get_location()
+				parameter = mutant.get_mutation().get_parameter()
+				line = location.line_of(False)
+				code = location.get_code(True)
+				self.output("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format("Mutant", mutant_id, result,
+																	  mutation_class, operator, line, code, parameter))
+				self.__write_pattern_feature__(pattern)
+				self.output("\n")
+		return
+
+	@staticmethod
+	def __evaluate__(document: jctest.CDocument, patterns, seq_or_mut: bool, supp_class,
+					 classifier: RIPClassifier):
+		"""
+		:param document:
+		:param patterns:
+		:return: length doc_samples pat_samples reduce precision recall f1_score
+		"""
+		length = len(patterns)
+		if seq_or_mut:
+			doc_samples = classifier.select(document.get_sequences(), supp_class)
+		else:
+			doc_samples = classifier.select(document.get_mutants(), supp_class)
+		pat_samples = set()
+		for pattern in patterns:
+			pattern: RIPPattern
+			samples = pattern.get_samples(seq_or_mut)
+			for sample in samples:
+				pat_samples.add(sample)
+		reduce = length / (len(doc_samples) + 0.0)
+		precision, recall, f1_score = RIPMineWriter.__f1_measure__(doc_samples, pat_samples)
+		return length, len(doc_samples), len(pat_samples), reduce, precision, recall, f1_score
+
+	def __write_evaluate_all__(self, output: RIPMineOutput):
+		document = output.get_document()
+		patterns = output.get_subsuming_patterns(False)
+		classifier = output.get_classifier()
+
+		self.output("# Cost-Effective Analysis #\n")
+		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.output(template.format("title", "LEN", "DOC", "PAT", "REDUCE(%)", "PRECISION(%)", "RECALL(%)", "F1_SCORE"))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPMineWriter.__evaluate__(document, patterns, True, None, classifier)
+		self.output(template.format("UK_EXE", length, doc_number, pat_number,
+									RIPMineWriter.__percentage__(reduce_rate),
+									RIPMineWriter.__percentage__(precision),
+									RIPMineWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPMineWriter.__evaluate__(document, patterns, True, False, classifier)
+		self.output(template.format("CC_EXE", length, doc_number, pat_number,
+									RIPMineWriter.__percentage__(reduce_rate),
+									RIPMineWriter.__percentage__(precision),
+									RIPMineWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPMineWriter.__evaluate__(document, patterns, False, None, classifier)
+		self.output(template.format("UK_MUT", length, doc_number, pat_number,
+									RIPMineWriter.__percentage__(reduce_rate),
+									RIPMineWriter.__percentage__(precision),
+									RIPMineWriter.__percentage__(recall),
+									f1_score))
+
+		length, doc_number, pat_number, reduce_rate, precision, recall, f1_score = \
+			RIPMineWriter.__evaluate__(document, patterns, False, False, classifier)
+		self.output(template.format("CC_MUT", length, doc_number, pat_number,
+									RIPMineWriter.__percentage__(reduce_rate),
+									RIPMineWriter.__percentage__(precision),
+									RIPMineWriter.__percentage__(recall),
+									f1_score))
+
+		self.output("\n")
+		return
+
+	def __write_evaluate_one__(self, index: int, pattern: RIPPattern):
+		"""
+		:param pattern:
+		:return: index length executions mutants uk_exe_supp uk_exe_conf cc_exe_supp cc_exe_conf uk_mut_supp
+				uk_mut_conf cc_mut_supp cc_mut_conf
+		"""
+		executions = len(pattern.get_sequences())
+		mutants = len(pattern.get_mutants())
+		_, uk_exe_supp, uk_exe_conf = pattern.estimate(True, None)
+		_, cc_exe_supp, cc_exe_conf = pattern.estimate(True, False)
+		_, uk_mut_supp, uk_mut_conf = pattern.estimate(False, None)
+		_, cc_mut_supp, cc_mut_conf = pattern.estimate(False, False)
+		self.output("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(index, executions, mutants,
+																			uk_exe_supp,
+																			RIPMineWriter.__percentage__(uk_exe_conf),
+																			cc_exe_supp,
+																			RIPMineWriter.__percentage__(cc_exe_conf),
+																			uk_mut_supp,
+																			RIPMineWriter.__percentage__(uk_mut_conf),
+																			cc_mut_supp,
+																			RIPMineWriter.__percentage__(cc_mut_conf)
+																			)
+					)
+		return
+
+	def write_evaluate(self, space: RIPMineOutput, file_path: str):
+		"""
+		:param space:
+		:param file_path:
+		:return:
+			# Cost-Effective Analysis
+			title	LEN DOC PAT REDUCE(%) PRECISION(%) RECALL(%) F1_SCORE
+			UK_EXE
+			CC_EXE
+			UK_MUT
+			CC_MUT
+		"""
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			self.__write_evaluate_all__(space)
+			self.output("# Pattern Evaluate #\n")
+			self.output("\tindex\tlength\texecutions\tmutants\tuk_exe_supp\tuk_exe_conf(%)\tcc_exe_supp\tcc_exe_conf(%)"
+						"\tuk_mut_supp\tuk_mut_conf(%)\tcc_mut_supp\tcc_mut_conf(%)\n")
+			index = 0
+			for pattern in space.get_subsuming_patterns(False):
+				index += 1
+				self.__write_evaluate_one__(index, pattern)
+		return
 
