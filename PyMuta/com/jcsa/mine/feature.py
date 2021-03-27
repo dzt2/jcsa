@@ -620,6 +620,9 @@ class RIPMineWriter:
 		self.writer.write(text)
 		return
 
+	def __write__(self, text: str):
+		self.output(text)
+
 	@staticmethod
 	def __percentage__(ratio: float):
 		return int(ratio * 1000000) / 10000.0
@@ -661,38 +664,39 @@ class RIPMineWriter:
 				Counting	title UR UI UP KI UK CC
 				Estimate	title total support confidence
 		"""
-		# Summary Length Executions Mutants
-		length = len(pattern)
-		sequences = len(pattern.get_sequences())
-		mutants = len(pattern.get_mutants())
-		self.output("\t{}\t{}: {}\t{}: {}\t{}: {}\n".format("Summary",
-															"Length", length,
-															"Sequences", sequences,
-															"Mutants", mutants))
-		self.output("\n")
-
+		self.__write__("\tBEG_SUMMARY\n")
+		# Attribute Length Sequences Mutations
+		self.__write__("\t\t{}\t{}\n".format("ATTRIBUTE", "VALUE"))
+		self.__write__("\t\t{}\t{}\n".format("length", len(pattern)))
+		self.__write__("\t\t{}\t{}\n".format("seq_num", len(pattern.get_sequences())))
+		self.__write__("\t\t{}\t{}\n".format("mut_num", len(pattern.get_mutants())))
 		# Counting title UR UI UP KI UK CC
-		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
-		self.output(template.format("Counting", "Title", "UR", "UI", "UP", "KI", "UK", "CC"))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\t{}\n".format("COUNTING", "UR", "UI", "UP", "KI", "UK", "CC"))
 		ur, ui, up, ki, uk, cc = pattern.counting(True)
-		self.output(template.format("", "Executions", ur, ui, up, ki, uk, cc))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\t{}\n".format("seq_cot", ur, ui, up, ki, uk, cc))
 		ur, ui, up, ki, uk, cc = pattern.counting(False)
-		self.output(template.format("", "Mutants", ur, ui, up, ki, uk, cc))
-		self.output("\n")
-
-		# Estimate title total support confidence(%)
-		template = "\t{}\t{}\t{}\t{}\t{}\n"
-		self.output(template.format("Estimate", "Title", "Total", "Support", "Confidence (%)"))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\t{}\n".format("mut_cot", ur, ui, up, ki, uk, cc))
+		# Estimate	title total support negative confidence
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("ESTIMATE", "TOTAL", "SUPPORT", "NEGATIVE", "CONFIDENCE(%)"))
 		total, support, confidence = pattern.estimate(True, None)
-		self.output(template.format("", "UK_Executions", total, support, confidence))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("uk_seq", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(True, False)
-		self.output(template.format("", "CC_Executions", total, support, confidence))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("wc_seq", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
+		total, support, confidence = pattern.estimate(True, True)
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("sc_seq", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(False, None)
-		self.output(template.format("", "UK_Mutants", total, support, confidence))
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("uk_mut", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
 		total, support, confidence = pattern.estimate(False, False)
-		self.output(template.format("", "CC_Mutants", total, support, confidence))
-		self.output("\n")
-
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("wc_mut", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
+		total, support, confidence = pattern.estimate(False, True)
+		self.__write__("\t\t{}\t{}\t{}\t{}\t{}\n".format("sc_mut", total, support, total - support,
+														 RIPMineWriter.__percentage__(confidence)))
+		self.__write__("\tEND_SUMMARY\n")
 		return
 
 	def __write_pattern_feature__(self, pattern: RIPPattern):
@@ -700,32 +704,37 @@ class RIPMineWriter:
 		:param pattern:
 		:return: condition category operator validate execution statement location parameter
 		"""
-		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
-		self.output(template.format("Condition", "Category", "Operator", "Validate",
-									"Execution", "Statement", "Location", "Parameter"))
+		self.__write__("\t#BEG_FEATURES\n")
+		template = "\t\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.__write__(template.format("Condition", "Category", "Operator", "Validate",
+									   "Execution", "Statement", "Location", "Parameter"))
 		index = 0
-		for feature in pattern.get_conditions():
+		for condition in pattern.get_conditions():
 			index += 1
-			category = feature.get_category()
-			operator = feature.get_operator()
-			execution = feature.get_execution()
-			statement = feature.get_execution().get_statement().get_cir_code()
-			location = feature.get_location().get_cir_code()
-			if feature.get_parameter() is None:
-				parameter = ""
+			category = condition.get_category()
+			operator = condition.get_operator()
+			execution = condition.get_execution()
+			statement = execution.get_statement()
+			location = condition.get_location()
+			if condition.has_parameter():
+				parameter = condition.get_parameter().get_code()
 			else:
-				parameter = feature.get_parameter().get_code()
-			self.output(template.format(index, category, operator, True,
-										execution, statement, location, parameter))
-		self.output("\n")
+				parameter = "None"
+			self.__write__(template.format(index, category, operator, True, execution,
+										   "\"" + statement.get_cir_code() + "\"",
+										   "\"" + location.get_cir_code() + "\"",
+										   "{" + parameter + "}"))
+		self.__write__("\t#END_FEATURES\n")
+		return
 
 	def __write_pattern_mutants__(self, pattern: RIPPattern):
 		"""
 		:param pattern:
 		:return: Mutant Result Class Operator Line Location Parameter
 		"""
-		template = "\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
-		self.output(template.format("ID", "Result", "Class", "Operator", "Line", "Location", "Parameter"))
+		self.__write__("\t#BEG_MUTATIONS\n")
+		template = "\t\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n"
+		self.__write__(template.format("ID", "Result", "Class", "Operator", "Line", "Location", "Parameter"))
 		for mutant in pattern.get_mutants():
 			mutant: jcmuta.Mutant
 			mutant_id = mutant.get_muta_id()
@@ -736,8 +745,9 @@ class RIPMineWriter:
 			parameter = mutant.mutation.get_parameter()
 			line = location.line_of(False)
 			code = location.get_code(True)
-			self.output(template.format(mutant_id, result, mutation_class, operator, line, code, parameter))
-		self.output("\n")
+			self.__write__(template.format(mutant_id, result, mutation_class, operator, line, code, parameter))
+		self.__write__("\t#END_MUTATIONS\n")
+		return
 
 	def __write_pattern__(self, pattern: RIPPattern):
 		self.output("#BEG\n")

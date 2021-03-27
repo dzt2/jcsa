@@ -12,7 +12,7 @@ from com.jcsa.mine.feature import RIPMineOutput
 from com.jcsa.mine.feature import RIPMineWriter
 
 
-class RIPFPTMiner:
+class RIPSPMine:
 	"""
 	It implements frequent pattern mining on RIP execution conditions (selected as True) features.
 	"""
@@ -56,7 +56,7 @@ class RIPFPTMiner:
 		return RIPMineOutput(inputs, good_patterns)
 
 
-class RIPSPTMine:
+class RIPFPMine:
 	def __init__(self):
 		self.middle = None
 		return
@@ -94,7 +94,7 @@ class RIPSPTMine:
 		return RIPMineOutput(inputs, good_patterns)
 
 
-class RIPDTTMiner:
+class RIPDTMine:
 	"""
 	It implements the pattern mining using decision tree model
 	"""
@@ -181,7 +181,7 @@ class RIPDTTMiner:
 			else:
 				parameter = condition.get_parameter().get_code()
 			norm_word = "[{}, {}, {}, \"{}\", {}]".format(category, operator, execution, location, parameter)
-			WN.append(RIPDTTMiner.__normalize__(norm_word))
+			WN.append(RIPDTMine.__normalize__(norm_word))
 		return WN
 
 	def __fit_decisions__(self, tree_file: str):
@@ -277,7 +277,7 @@ def get_rip_document(directory: str, file_name: str, output_directory: str):
 
 def do_frequent_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPFPTMiner()
+	miner = RIPFPMine()
 	output_directory.strip()
 	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
 						   max_confidence)
@@ -288,7 +288,7 @@ def do_frequent_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_c
 
 def do_sequence_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPSPTMine()
+	miner = RIPSPMine()
 	output_directory.strip()
 	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
 						   max_confidence)
@@ -299,7 +299,7 @@ def do_sequence_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_c
 
 def do_decision_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
 					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPDTTMiner()
+	miner = RIPDTMine()
 	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
 						   max_confidence)
 	print("\t* Parameters:", inputs.is_seq_or_mut(), inputs.get_supp_class(), inputs.get_max_length(),
@@ -360,12 +360,12 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	post_path = "/home/dzt2/Development/Data/"
+	post_path = "/home/dzt2/Development/Data/patterns"
 	print("Testing start from here.")
-	testing(prev_path, post_path, "decision_tree_sn", True, None, 2, 0.70, 0.95, 8, True,  do_decision_mine)
-	testing(prev_path, post_path, "decision_tree_an", True, None, 2, 0.70, 0.95, 8, False, do_decision_mine)
-	testing(prev_path, post_path, "frequent_mine_s1", True, None, 2, 0.70, 0.90, 1, True,  do_sequence_mine)
-	testing(prev_path, post_path, "frequent_mine_s1", True, None, 2, 0.70, 0.90, 1, False, do_sequence_mine)
-	testing(prev_path, post_path, "frequent_mine_sn", True, None, 2, 0.70, 0.90, 1, True,  do_frequent_mine)
-	testing(prev_path, post_path, "frequent_mine_sn", True, None, 2, 0.70, 0.90, 1, False, do_frequent_mine)
+	testing(prev_path, post_path, "decision_tree_s", True, None, 2, 0.70, 0.95, 8, True,  do_decision_mine)
+	testing(prev_path, post_path, "decision_tree_a", True, None, 2, 0.70, 0.95, 8, False, do_decision_mine)
+	testing(prev_path, post_path, "frequent_mine_s", True, None, 2, 0.70, 0.90, 1, True,  do_frequent_mine)
+	testing(prev_path, post_path, "frequent_mine_a", True, None, 2, 0.70, 0.90, 1, False, do_frequent_mine)
+	testing(prev_path, post_path, "sequence_mine_s", True, None, 2, 0.70, 0.90, 1, True,  do_sequence_mine)
+	testing(prev_path, post_path, "sequence_mine_a", True, None, 2, 0.70, 0.90, 1, False, do_sequence_mine)
 	print("Testing end for all.")

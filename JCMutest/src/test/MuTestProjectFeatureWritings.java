@@ -53,7 +53,7 @@ public class MuTestProjectFeatureWritings {
 			System.out.println("\t==> Select " + test_cases.size() + " test cases from " + 
 								project.get_test_space().number_of_test_inputs() + " inputs.");
 		}
-		else { test_cases = null; }
+		else { test_cases = null; }		/* no test case is used for dynamic generation */
 		
 		/* 3. Generate feature information to output directory finally */
 		MuTestProjectFeaturesWriter writer = new MuTestProjectFeaturesWriter(code_file, output_directory);
