@@ -329,11 +329,11 @@ if __name__ == "__main__":
 
 	# Decision Tree Pattern Minings
 	do_testing(prev_path, post_path, "dtm_exe_unk_s", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 8, True, do_decision_mining)
+			   2, 0.70, 0.95, 8, True,  do_decision_mining)
 	do_testing(prev_path, post_path, "dtm_seq_unk_s", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 8, True, do_decision_mining)
+			   2, 0.70, 0.95, 8, True,  do_decision_mining)
 	do_testing(prev_path, post_path, "dtm_mut_unk_s", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 8, True, do_decision_mining)
+			   2, 0.70, 0.95, 8, True,  do_decision_mining)
 	do_testing(prev_path, post_path, "dtm_exe_unk_u", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
 			   2, 0.70, 0.95, 8, False, do_decision_mining)
 	do_testing(prev_path, post_path, "dtm_seq_unk_u", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
@@ -343,11 +343,11 @@ if __name__ == "__main__":
 
 	# Frequent Pattern Mining Groups
 	do_testing(prev_path, post_path, "fpm_seq_unk_s", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+			   2, 0.70, 0.95, 1, True,  do_frequent_mining)
 	do_testing(prev_path, post_path, "fpm_mut_unk_s", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+			   2, 0.70, 0.95, 1, True,  do_frequent_mining)
 	do_testing(prev_path, post_path, "fpm_exe_unk_s", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+			   2, 0.70, 0.95, 1, True,  do_frequent_mining)
 	do_testing(prev_path, post_path, "fpm_seq_unk_u", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
 			   2, 0.70, 0.95, 1, False, do_frequent_mining)
 	do_testing(prev_path, post_path, "fpm_mut_unk_u", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,

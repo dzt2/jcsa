@@ -365,11 +365,11 @@ class RIPPattern:
 		:return:
 		"""
 		pattern: RIPPattern
-		for execution in pattern.get_executions():
-			if not(execution in self.executions):
+		for sequence in pattern.get_sequences():
+			if not(sequence in self.sequences):
 				return False
 		if strict:
-			return len(self.executions) > len(pattern.get_executions())
+			return len(self.sequences) > len(pattern.sequences)
 		else:
 			return True
 
@@ -848,11 +848,6 @@ class RIPMineWriter:
 		self.__output__("\t\t{}\t{}\t{}\t{}\t{}\n".format("attribute", "length", "exe_num", "seq_num", "mut_num"))
 		self.__output__("\t\t{}\t{}\t{}\t{}\t{}\n".format("value", len(pattern), len(pattern.get_executions()),
 														  len(pattern.get_sequences()), len(pattern.get_mutants())))
-
-		self.__output__("\t\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format("length",  len(pattern),
-																	  "exe_num", len(pattern.get_executions()),
-																	  "seq_num", len(pattern.get_sequences()),
-																	  "mut_num", len(pattern.get_mutants())))
 		# Counting	title UR UI UP KI UK CC
 		self.__output__("\t{}\n".format("@COUNTING"))
 		self.__output__("\t\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format("sample_class", "UR", "UI", "UP", "KI", "UK", "CC"))
