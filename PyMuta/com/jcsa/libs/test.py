@@ -16,14 +16,14 @@ class CDocument:
 	It preserves the feature information for data mining directly from each project
 	"""
 
-	def __init__(self, directory: str, file_name: str):
-		self.project = jcmuta.CProject(directory, file_name)
-		cov_file_path = os.path.join(directory, file_name + ".cov")
-		sit_file_path = os.path.join(directory, file_name + ".sit")
-		self.cmatrix = CoverageMatrix(self, cov_file_path)
+	def __init__(self, directory: str, name: str):
+		self.project = jcmuta.CProject(directory, name)
+		cov_file_path = os.path.join(directory, name + ".cov")
+		sit_file_path = os.path.join(directory, name + ".sit")
+		self.coverage_matrix = CoverageMatrix(self, cov_file_path)
 		self.conditions = SymConditions(self)
 		self.sequences = list()
-		self.muta_seqs = dict()
+		self.mutant_sequences = dict()
 		self.__loading__(sit_file_path)
 		return
 
@@ -34,7 +34,7 @@ class CDocument:
 		return self.project.program
 
 	def get_coverage_matrix(self):
-		return self.cmatrix
+		return self.coverage_matrix
 
 	def get_conditions_lib(self):
 		return self.conditions
@@ -46,16 +46,17 @@ class CDocument:
 		return self.sequences
 
 	def get_mutants(self):
-		return self.muta_seqs.keys()
+		return self.mutant_sequences.keys()
 
-	def get_sequences_of(self, mutant: jcmuta.Mutant):
+	def get_sequences_of(self, target_mutant: jcmuta.Mutant):
 		"""
-		:param mutant:
+		:param target_mutant:
 		:return: the set of symbolic sequence of execution nodes w.r.t. the mutant
 		"""
-		if mutant in self.muta_seqs:
-			return self.muta_seqs[mutant]
-		return set()
+		if target_mutant in self.mutant_sequences:
+			return self.mutant_sequences[target_mutant]
+		else:
+			return set()
 
 	def __wording__(self, word: str):
 		"""
@@ -67,9 +68,9 @@ class CDocument:
 			self.conditions.get_condition(word)
 		return word
 
-	def __produce__(self, sequence, head: str, words):
+	def __produce__(self, seq, head: str, words):
 		"""
-		:param sequence:
+		:param seq:
 		:param words: {stage$exec$result {condition_word}+ ;}
 		:return: SymExecution
 		"""
@@ -83,7 +84,7 @@ class CDocument:
 			word = self.__wording__(word)
 			if len(word) > 0:
 				condition_words.append(word)
-		return SymExecution(sequence, stage, execution, result, condition_words)
+		return SymExecution(seq, stage, execution, result, condition_words)
 
 	def __consume__(self, line: str):
 		"""
@@ -93,8 +94,8 @@ class CDocument:
 		line = line.strip()
 		if len(line) > 0:
 			items = line.split('\t')
-			mutant = self.project.muta_space.get_mutant(int(items[0].strip()))
-			sequence = SymSequence(self, mutant)
+			mutation = self.project.muta_space.get_mutant(int(items[0].strip()))
+			seq = SymSequence(self, mutation)
 			exec_list = list()
 			for i in range(1, len(items)):
 				item = items[i].strip()
@@ -104,13 +105,13 @@ class CDocument:
 					else:
 						head = exec_list[0]
 						words = exec_list[1:]
-						execution = self.__produce__(sequence, head, words)
+						execution = self.__produce__(seq, head, words)
 						for word in execution.get_words():
-							if not(word in sequence.get_words()):
-								sequence.words.append(word)
-						sequence.executions.append(execution)
+							if not(word in seq.get_words()):
+								seq.words.append(word)
+						seq.executions.append(execution)
 						exec_list.clear()
-			return sequence
+			return seq
 		return None
 
 	def __loading__(self, file_path: str):
@@ -120,14 +121,14 @@ class CDocument:
 		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				sequence = self.__consume__(line.strip())
-				if not(sequence is None):
-					sequence: SymSequence
-					self.sequences.append(sequence)
-					mutant = sequence.get_mutant()
-					if not(mutant in self.muta_seqs):
-						self.muta_seqs[mutant] = set()
-					self.muta_seqs[mutant].add(sequence)
+				seq = self.__consume__(line.strip())
+				if not(seq is None):
+					seq: SymSequence
+					self.sequences.append(seq)
+					mutation = seq.get_mutant()
+					if not(mutation in self.mutant_sequences):
+						self.mutant_sequences[mutation] = set()
+					self.mutant_sequences[mutation].add(seq)
 		return
 
 
@@ -334,9 +335,9 @@ class SymConditions:
 			else:
 				parameter = self.document.project.sym_tree.get_sym_node(items[4].strip())
 			self.conditions[word] = SymCondition(category, operator, execution, location, parameter)
-		condition = self.conditions[word]
-		condition: SymCondition
-		return condition
+		cond_instance = self.conditions[word]
+		cond_instance: SymCondition
+		return cond_instance
 
 	def get_conditions(self, words):
 		"""
@@ -355,9 +356,9 @@ class SymExecution:
 	It represents an execution point annotated with a series of symbolic conditions being met in an execution sequence.
 	"""
 
-	def __init__(self, sequence, stage: bool, execution: jccode.CirExecution, result: bool, words):
+	def __init__(self, seq, stage: bool, execution: jccode.CirExecution, result: bool, words):
 		"""
-		:param sequence: 	the sequence of symbolic executions where the node is preserved
+		:param seq: 		the sequence of symbolic executions where the node is preserved
 		:param stage: 		True  ---	if the execution is performed before reaching the mutated point
 							False ---	if the execution is performed after the mutated point is reached
 		:param execution:	the execution point in control flow graph in form of C-intermediate representation
@@ -366,8 +367,8 @@ class SymExecution:
 							None  ---	if the satisfaction of the conditions among depends on the test
 		:param words:		the collection of words encoding the symbolic conditions annotated with this node
 		"""
-		sequence: SymSequence
-		self.sequence = sequence
+		seq: SymSequence
+		self.sequence = seq
 		self.stage = stage
 		self.execution = execution
 		self.result = result
@@ -423,13 +424,13 @@ class SymSequence:
 	The sequence of execution nodes annotated with symbolic conditions required for killing a specific mutation
 	"""
 
-	def __init__(self, document: CDocument, mutant: jcmuta.Mutant):
+	def __init__(self, document: CDocument, target_mutant: jcmuta.Mutant):
 		"""
-		:param document: the document that provides entire database
-		:param mutant: the mutation as target for being detected by tests
+		:param document: 		the document that provides entire database
+		:param target_mutant: 	the mutation as target for being detected by tests
 		"""
 		self.document = document
-		self.mutant = mutant
+		self.mutant = target_mutant
 		self.executions = list()
 		self.words = list()
 		return
@@ -475,8 +476,8 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
-		directory = os.path.join(root_path, file_name)
-		c_document = CDocument(directory, file_name)
+		c_directory = os.path.join(root_path, file_name)
+		c_document = CDocument(c_directory, file_name)
 		print(file_name, "loads", len(c_document.get_mutants()), "mutants used and",
 			  len(c_document.get_sequences()), "symbolic sequences annotated with",
 			  len(c_document.get_conditions_lib().get_all_conditions()), "conditions.")

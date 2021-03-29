@@ -1,3 +1,6 @@
+"""This file implements the mining algorithm for finding good patterns from mutation testing."""
+
+
 import os
 import com.jcsa.libs.muta as jcmuta
 import com.jcsa.libs.test as jctest
@@ -5,98 +8,58 @@ import pydotplus
 from sklearn import tree
 from sklearn import metrics
 from scipy import sparse
-from com.jcsa.mine.feature import RIPPattern
-from com.jcsa.mine.feature import RIPMineInputs
-from com.jcsa.mine.feature import RIPMineMiddle
-from com.jcsa.mine.feature import RIPMineOutput
-from com.jcsa.mine.feature import RIPMineWriter
+import com.jcsa.mine.feature as jcfeature
 
 
-class RIPSPMine:
+class RIPFPMiner:
 	"""
-	It implements frequent pattern mining on RIP execution conditions (selected as True) features.
+	It implements the pattern mining using frequent pattern mining.
 	"""
 
 	def __init__(self):
 		self.middle = None
 		return
 
-	def __mine__(self, parent: RIPPattern, words):
+	def __mine__(self, parent: jcfeature.RIPPattern, words: list):
 		"""
 		:param parent:
 		:param words:
 		:return:
 		"""
-		self.middle: RIPMineMiddle
+		self.middle: jcfeature.RIPMineMiddle
 		inputs = self.middle.inputs
-		length, support, confidence = self.middle.get_estimate(parent)
-		if support >= inputs.get_min_support() and confidence <= inputs.get_max_confidence() and length < inputs.get_max_length():
-			for word in words:
+		length, support, confidence = self.middle.estimate(parent)
+		if length < inputs.get_max_length() and support >= inputs.get_min_support() and \
+				confidence <= inputs.get_max_confidence():
+			for k in range(0, len(words)):
+				word = words[k].strip()
 				child = self.middle.get_child(parent, word)
 				if child != parent:
-					self.__mine__(child, words)
+					self.__mine__(child, words[k + 1:])
 		return
 
-	def mine(self, inputs: RIPMineInputs):
+	def mine(self, inputs: jcfeature.RIPMineInputs):
 		"""
 		:param inputs:
-		:return:
+		:return: RIPMineOutput
 		"""
-		self.middle = RIPMineMiddle(inputs)
-		root_executions = inputs.get_classifier().select(inputs.get_document().get_sequences(), inputs.get_supp_class())
-		for root_execution in root_executions:
-			root_execution: jctest.SymSequence
-			for instance in root_execution.get_executions():
-				instance: jctest.SymExecution
-				words = instance.get_words()
-				for word in words:
-					root = self.middle.get_root(word)
-					self.__mine__(root, words)
-		good_patterns = self.middle.get_good_patterns()
-		return RIPMineOutput(inputs, good_patterns)
+		self.middle = jcfeature.RIPMineMiddle(inputs)
+		support_sequences = inputs.get_classifier().select(inputs.get_document().get_sequences(),
+														   inputs.get_support_class())
+		for support_sequence in support_sequences:
+			support_sequence: jctest.SymSequence
+			words = support_sequence.get_words()
+			for i in range(0, len(words)):
+				word = words[i].strip()
+				root_pattern = self.middle.get_root(word)
+				self.__mine__(root_pattern, words[i + 1:])
+		good_patterns = self.middle.extract_good_patterns()
+		return jcfeature.RIPMineOutput(inputs, good_patterns)
 
 
-class RIPFPMine:
-	def __init__(self):
-		self.middle = None
-		return
-
-	def __mine__(self, parent: RIPPattern, words):
-		"""
-		:param parent:
-		:param words:
-		:return:
-		"""
-		self.middle: RIPMineMiddle
-		inputs = self.middle.inputs
-		length, support, confidence = self.middle.get_estimate(parent)
-		if support >= inputs.get_min_support() and confidence <= inputs.get_max_confidence() and length < inputs.get_max_length():
-			for word in words:
-				child = self.middle.get_child(parent, word)
-				if child != parent:
-					self.__mine__(child, words)
-		return
-
-	def mine(self, inputs: RIPMineInputs):
-		"""
-		:param inputs:
-		:return:
-		"""
-		self.middle = RIPMineMiddle(inputs)
-		root_executions = inputs.get_classifier().select(inputs.get_document().get_sequences(), inputs.get_supp_class())
-		for root_execution in root_executions:
-			root_execution: jctest.SymSequence
-			words = root_execution.get_words()
-			for word in words:
-				root = self.middle.get_root(word)
-				self.__mine__(root, words)
-		good_patterns = self.middle.get_good_patterns()
-		return RIPMineOutput(inputs, good_patterns)
-
-
-class RIPDTMine:
+class RIPDTMiner:
 	"""
-	It implements the pattern mining using decision tree model
+	It implements the pattern mining via decision tree model
 	"""
 
 	def __init__(self):
@@ -107,33 +70,27 @@ class RIPDTMine:
 		self.W = list()
 		return
 
-	def __input_context__(self, inputs: RIPMineInputs):
+	def __input_context__(self, inputs: jcfeature.RIPMineInputs):
 		"""
 		:param inputs:
 		:return:	(1) update context information
 					(2) update X, Y, W to train the decision tree
 		"""
-		self.middle = RIPMineMiddle(inputs)
+		self.middle = jcfeature.RIPMineMiddle(inputs)
 		D = dict()
 		self.Y.clear()
 		self.W.clear()
-		for execution in inputs.get_document().get_sequences():
-			execution: jctest.SymSequence
-			if inputs.is_seq_or_mut():
-				sample = execution
-			else:
-				sample = execution.get_mutant()
-			total, support, confidence = inputs.get_classifier().estimate([sample], inputs.get_supp_class())
+		for sequence in inputs.get_document().get_sequences():
+			sequence: jctest.SymSequence
+			total, support, confidence = inputs.get_classifier().estimate([sequence], inputs.get_support_class())
 			if support > 0:
 				self.Y.append(1)
 			else:
 				self.Y.append(0)
-			for instance in execution.get_executions():
-				instance: jctest.SymExecution
-				for word in instance.get_words():
-					if not (word in D):
-						D[word] = len(self.W)
-						self.W.append(word)
+			for word in sequence.get_words():
+				if not (word in D):
+					D[word] = len(self.W)
+					self.W.append(word)
 		rows, columns, dataset = list(), list(), list()
 		line = 0
 		for execution in inputs.get_document().get_sequences():
@@ -167,7 +124,7 @@ class RIPDTMine:
 		"""
 		:return: sequence of normalized words to describe the RIP conditions.
 		"""
-		self.middle: RIPMineMiddle
+		self.middle: jcfeature.RIPMineMiddle
 		WN = list()
 		document = self.middle.inputs.get_document()
 		for word in self.W:
@@ -181,7 +138,7 @@ class RIPDTMine:
 			else:
 				parameter = condition.get_parameter().get_code()
 			norm_word = "[{}, {}, {}, \"{}\", {}]".format(category, operator, execution, location, parameter)
-			WN.append(RIPDTMine.__normalize__(norm_word))
+			WN.append(RIPDTMiner.__normalize__(norm_word))
 		return WN
 
 	def __fit_decisions__(self, tree_file: str):
@@ -189,7 +146,7 @@ class RIPDTMine:
 		:param tree_file:
 		:return: create a classifier and training it using the context data and return the predicted results
 		"""
-		self.middle: RIPMineMiddle
+		self.middle: jcfeature.RIPMineMiddle
 		inputs = self.middle.inputs
 		self.classifier = tree.DecisionTreeClassifier(min_samples_leaf=inputs.get_min_support())
 		self.classifier.fit(self.X, self.Y)
@@ -207,7 +164,7 @@ class RIPDTMine:
 		"""
 		:return: selecting leaf that decides type as equivalent and their corresponding path in the program
 		"""
-		self.middle: RIPMineMiddle
+		self.middle: jcfeature.RIPMineMiddle
 		inputs = self.middle.inputs
 		self.classifier: tree.DecisionTreeClassifier
 		leaf_path = dict()	# exec_id --> leaf_id, node_path
@@ -228,7 +185,7 @@ class RIPDTMine:
 		:param leaf_path:
 		:return: leaf_node_id, node_id_list
 		"""
-		self.middle: RIPMineMiddle
+		self.middle: jcfeature.RIPMineMiddle
 		X = self.X.toarray()
 		patterns = set()
 		features = self.classifier.tree_.feature
@@ -250,78 +207,46 @@ class RIPDTMine:
 			patterns.add(pattern)
 		return patterns
 
-	def mine(self, inputs: RIPMineInputs, tree_path: str):
+	def mine(self, inputs: jcfeature.RIPMineInputs, tree_path: str):
 		self.__input_context__(inputs)
 		YP = self.__fit_decisions__(tree_path)
 		leaf_path = self.__get_leaf_path__(YP)
 		patterns = self.__path_patterns__(leaf_path)
-		self.middle: RIPMineMiddle
-		good_patterns = self.middle.get_good_patterns()
-		return RIPMineOutput(inputs, good_patterns)
+		self.middle: jcfeature.RIPMineMiddle
+		good_patterns = self.middle.extract_good_patterns()
+		return jcfeature.RIPMineOutput(inputs, good_patterns)
 
 
-def evaluate_results(space: RIPMineOutput, output_directory: str, name: str, seq_or_mut: bool, supp_class):
-	writer = RIPMineWriter()
-	writer.write_evaluate(space, os.path.join(output_directory, name + ".sum"))
-	writer.write_matching(space, os.path.join(output_directory, name + ".bpt"), seq_or_mut, supp_class)
-	writer.write_patterns(space.get_subsuming_patterns(True), os.path.join(output_directory, name + ".mpt"))
-	return
+# proceeding methods
 
 
-def get_rip_document(directory: str, file_name: str, output_directory: str):
+def new_rip_document(directory: str, file_name: str, output_directory: str):
+	"""
+	:param directory:
+	:param file_name:
+	:param output_directory:
+	:return: create a C project document and output directory in disk
+	"""
 	document = jctest.CDocument(directory, file_name)
-	if not(os.path.exists(output_directory)):
+	if not (os.path.exists(output_directory)):
 		os.mkdir(output_directory)
 	return document
 
 
-def do_frequent_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
-					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPFPMine()
-	output_directory.strip()
-	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
-						   max_confidence)
-	print("\t* Parameters:", inputs.is_seq_or_mut(), inputs.get_supp_class(), inputs.get_max_length(),
-		  inputs.get_min_support(), inputs.get_min_confidence())
-	return miner.mine(inputs)
-
-
-def do_sequence_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
-					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPSPMine()
-	output_directory.strip()
-	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
-						   max_confidence)
-	print("\t* Parameters:", inputs.is_seq_or_mut(), inputs.get_supp_class(), inputs.get_max_length(),
-		  inputs.get_min_support(), inputs.get_min_confidence())
-	return miner.mine(inputs)
-
-
-def do_decision_mine(document: jctest.CDocument, tests, seq_or_mut: bool, supp_class, min_support: int,
-					 min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	miner = RIPDTMine()
-	inputs = RIPMineInputs(document, tests, seq_or_mut, supp_class, max_length, min_support, min_confidence,
-						   max_confidence)
-	print("\t* Parameters:", inputs.is_seq_or_mut(), inputs.get_supp_class(), inputs.get_max_length(),
-		  inputs.get_min_support(), inputs.get_min_confidence())
-	name = document.project.program.name
-	return miner.mine(inputs, os.path.join(output_directory, name + ".pdf"))
-
-
-def testing(inputs_directory: str, output_directory: str, model_name: str,
-			seq_or_mut: bool, supp_class, min_support: int, min_confidence: float,
-			max_confidence: float, max_length: int, select, do_mining):
+def do_testing(inputs_directory: str, output_directory: str, model_name: str,
+			   sample_class: bool, support_class, min_support: int, min_confidence: float,
+			   max_confidence: float, max_length: int, select, do_mining):
 	"""
 	:param inputs_directory:
 	:param output_directory:
 	:param model_name:
-	:param seq_or_mut:
-	:param supp_class:
+	:param sample_class:
+	:param support_class:
 	:param min_support:
 	:param min_confidence:
 	:param max_confidence:
 	:param max_length:
-	:param select: True to select tests, False to use all the tests
+	:param select:
 	:param do_mining:
 	:return:
 	"""
@@ -331,41 +256,104 @@ def testing(inputs_directory: str, output_directory: str, model_name: str,
 	for file_name in os.listdir(inputs_directory):
 		print("Testing on", file_name)
 		# Step-I. Load features from data files
-		document = get_rip_document(os.path.join(inputs_directory, file_name), file_name, output_directory)
-		evaluation = jcmuta.MutationTestEvaluation(document.project)
+		feature_directory = os.path.join(inputs_directory, file_name)
+		c_document = new_rip_document(feature_directory, file_name, output_directory)
+		evaluation = jcmuta.MutationTestEvaluation(c_document.project)
 		selected_mutants = evaluation.select_mutants_by_classes(["STRP", "BTRP"])
 		selected_tests = evaluation.select_tests_for_mutants(selected_mutants)
 		selected_tests = selected_tests | evaluation.select_tests_for_random(30)
-		print("\t(1) Load", len(document.get_sequences()), "lines of", len(document.get_mutants()),
-			  "mutants with", len(document.conditions.get_all_words()), "words of symbolic conditions.")
+		print("\t(1) Load", len(c_document.get_sequences()), "lines of", len(c_document.get_mutants()),
+			  "mutants with", len(c_document.conditions.get_all_words()), "words of symbolic conditions.")
 		print("\t\t==>Select", len(selected_tests), "test cases with",
-			  evaluation.measure_score(document.get_mutants(), selected_tests), "of mutation score.")
-		# Step-II. Perform pattern mining algorithms
+			  evaluation.measure_score(c_document.get_mutants(), selected_tests), "of mutation score.")
+		# Step-II. Perform Data Mining Algorithm and Output
 		if select:
-			tests = selected_tests
+			used_tests = selected_tests
 		else:
-			tests = None
-		space = do_mining(document=document, seq_or_mut=seq_or_mut, supp_class=supp_class, min_support=min_support,
-						  min_confidence=min_confidence, max_confidence=max_confidence, max_length=max_length,
-						  output_directory=output_directory, tests=tests)
-		space: RIPMineOutput
-		print("\t(2) Generate", len(space.get_patterns()), "patterns with",
-			  len(space.get_subsuming_patterns(False)), "subsuming ones.")
-		# Step-III. Evaluate the performance of mining results
-		evaluate_results(space, output_directory, file_name, seq_or_mut, supp_class)
-		print("\t(3) Output the pattern, test results to output file finally...")
-		print()
+			used_tests = None
+		output = do_mining(document=c_document, used_tests=used_tests, sample_class=sample_class,
+						   min_support=min_support, support_class=support_class, max_length=max_length,
+						   min_confidence=min_confidence, max_confidence=max_confidence,
+						   output_directory=output_directory)
+		output: jcfeature.RIPMineOutput
+		print("\t(2) Generate", len(output.get_patterns()), "patterns with",
+			  len(output.get_subsuming_patterns(False)), "subsuming ones.")
+		writer = jcfeature.RIPMineWriter()
+		writer.write_to(output, output_directory)
+		print("\t(3) Output pattern information to", output_directory, "\n")
 	return
+
+
+# list of performing data mining algorithms
+
+
+def do_frequent_mining(document: jctest.CDocument, used_tests, sample_class, support_class, min_support: int,
+					   min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
+	"""
+	:return:
+	"""
+	miner = RIPFPMiner()
+	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class, max_length,
+									 min_support, min_confidence, max_confidence)
+	print("\t\t*-- parameters:", inputs.get_sample_class(), inputs.get_support_class(), inputs.get_max_length(),
+		  inputs.get_min_support(), inputs.get_min_confidence(), inputs.get_max_confidence())
+	return miner.mine(inputs)
+
+
+def do_decision_mining(document: jctest.CDocument, used_tests, sample_class, support_class, min_support: int,
+					   min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
+	"""
+	:param document:
+	:param used_tests:
+	:param sample_class:
+	:param support_class:
+	:param min_support:
+	:param min_confidence:
+	:param max_confidence:
+	:param max_length:
+	:param output_directory:
+	:return:
+	"""
+	miner = RIPDTMiner()
+	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class, max_length,
+									 min_support, min_confidence, max_confidence)
+	print("\t\t*-- parameters:", inputs.get_sample_class(), inputs.get_support_class(), inputs.get_max_length(),
+		  inputs.get_min_support(), inputs.get_min_confidence(), inputs.get_max_confidence())
+	return miner.mine(inputs, os.path.join(output_directory, document.get_program().name + ".pdf"))
 
 
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/patterns"
 	print("Testing start from here.")
-	testing(prev_path, post_path, "decision_tree_s", True, None, 2, 0.70, 0.95, 8, True,  do_decision_mine)
-	testing(prev_path, post_path, "decision_tree_a", True, None, 2, 0.70, 0.95, 8, False, do_decision_mine)
-	testing(prev_path, post_path, "frequent_mine_s", True, None, 2, 0.70, 0.90, 1, True,  do_frequent_mine)
-	testing(prev_path, post_path, "frequent_mine_a", True, None, 2, 0.70, 0.90, 1, False, do_frequent_mine)
-	testing(prev_path, post_path, "sequence_mine_s", True, None, 2, 0.70, 0.90, 1, True,  do_sequence_mine)
-	testing(prev_path, post_path, "sequence_mine_a", True, None, 2, 0.70, 0.90, 1, False, do_sequence_mine)
+
+	# Decision Tree Pattern Minings
+	do_testing(prev_path, post_path, "dtm_exe_unk_s", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, True, do_decision_mining)
+	do_testing(prev_path, post_path, "dtm_seq_unk_s", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, True, do_decision_mining)
+	do_testing(prev_path, post_path, "dtm_mut_unk_s", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, True, do_decision_mining)
+	do_testing(prev_path, post_path, "dtm_exe_unk_u", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, False, do_decision_mining)
+	do_testing(prev_path, post_path, "dtm_seq_unk_u", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, False, do_decision_mining)
+	do_testing(prev_path, post_path, "dtm_mut_unk_u", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 8, False, do_decision_mining)
+
+	# Frequent Pattern Mining Groups
+	do_testing(prev_path, post_path, "fpm_seq_unk_s", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+	do_testing(prev_path, post_path, "fpm_mut_unk_s", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+	do_testing(prev_path, post_path, "fpm_exe_unk_s", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, True, do_frequent_mining)
+	do_testing(prev_path, post_path, "fpm_seq_unk_u", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, False, do_frequent_mining)
+	do_testing(prev_path, post_path, "fpm_mut_unk_u", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, False, do_frequent_mining)
+	do_testing(prev_path, post_path, "fpm_exe_unk_u", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			   2, 0.70, 0.95, 1, False, do_frequent_mining)
+
 	print("Testing end for all.")
+
