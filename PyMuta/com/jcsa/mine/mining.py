@@ -6,7 +6,6 @@ import com.jcsa.libs.muta as jcmuta
 import com.jcsa.libs.test as jctest
 import pydotplus
 from sklearn import tree
-from sklearn import metrics
 from scipy import sparse
 import com.jcsa.mine.feature as jcfeature
 
@@ -20,30 +19,12 @@ class RIPFPMiner:
 		self.middle = None
 		return
 
-	def __mine__(self, parent: jcfeature.RIPPattern, words: list):
+	def __root_words__(self):
 		"""
-		:param parent:
-		:param words:
-		:return:
+		:return: The set of all possible words occurring in the given sequences of target samples.
 		"""
 		self.middle: jcfeature.RIPMineMiddle
 		inputs = self.middle.inputs
-		length, support, confidence = self.middle.estimate(parent)
-		if length < inputs.get_max_length() and support >= inputs.get_min_support() and \
-				confidence <= inputs.get_max_confidence():
-			for k in range(0, len(words)):
-				word = words[k].strip()
-				child = self.middle.get_child(parent, word)
-				if child != parent:
-					self.__mine__(child, words[k + 1:])
-		return
-
-	def mine(self, inputs: jcfeature.RIPMineInputs):
-		"""
-		:param inputs:
-		:return: RIPMineOutput
-		"""
-		# 1. collect all the words w.r.t. supporting class of sequences
 		support_sequences = inputs.get_classifier().select(inputs.get_document().get_sequences(),
 														   inputs.get_support_class())
 		support_words = set()
@@ -56,14 +37,49 @@ class RIPFPMiner:
 		for support_word in support_words:
 			if len(support_word) > 0:
 				words.append(support_word)
+		return words
+
+	def __pass_mine__(self, pattern: jcfeature.RIPPattern):
+		"""
+		:param pattern:
+		:return: whether the mining should pass through the node
+		"""
+		self.middle: jcfeature.RIPMineMiddle
+		inputs = self.middle.inputs
+		length, support, confidence = self.middle.estimate(pattern)
+		return length < inputs.get_max_length() and \
+			   support >= inputs.get_min_support() and \
+			   confidence <= inputs.get_max_confidence()
+
+	def __recur_mine__(self, parent: jcfeature.RIPPattern, words: list):
+		"""
+		:param parent:
+		:param words:
+		:return: recursively solve the frequent pattern mining
+		"""
+		if self.__pass_mine__(parent):
+			for j in range(0, len(words)):
+				word = words[j].strip()
+				child = self.middle.get_child(parent, word)
+				if child != parent:
+					self.__recur_mine__(child, words[j + 1:])
+		return
+
+	def mine(self, inputs: jcfeature.RIPMineInputs):
+		"""
+		:param inputs:
+		:return: RIPMineOutput
+		"""
+		# 1. collect all the words w.r.t. supporting class of sequences
+		self.middle = jcfeature.RIPMineMiddle(inputs)
+		words = self.__root_words__()
 
 		# 2. ready to mine within global words library
-		self.middle = jcfeature.RIPMineMiddle(inputs)
 		print("\t\t*-- Frequent pattern mining over", len(words), "symbolic words.")
 		for i in range(0, len(words)):
-			word = words[i]
+			word = words[i].strip()
 			root = self.middle.get_root(word)
-			self.__mine__(root, words[i + 1:])
+			self.__recur_mine__(root, words[i + 1:])
 
 		# 3. generate good patterns for producing outputs
 		good_patterns = self.middle.extract_good_patterns()
@@ -175,7 +191,7 @@ class RIPDTMiner:
 		self.classifier = tree.DecisionTreeClassifier(min_samples_leaf=inputs.get_min_support())
 		self.classifier.fit(self.X, self.Y)
 		YP = self.classifier.predict(self.X)
-		print(metrics.classification_report(self.Y, YP, target_names=["Killable", "Equivalent"]))
+		# print(metrics.classification_report(self.Y, YP, target_names=["Killable", "Equivalent"]))
 		if not(tree_file is None):
 			W = self.__gen_normal_WN__()
 			dot_data = tree.export_graphviz(self.classifier, out_file=None, feature_names=W,
@@ -294,7 +310,7 @@ def do_mining(document: jctest.CDocument, output_directory: str, model_name: str
 	:return:
 	"""
 	model_name = new_model_name(model_name, sample_class, support_class)
-	print("Do Mining on", document.get_program().name, "for model of", model_name)
+	print("\tDo Mining on", document.get_program().name, "for model of", model_name)
 	# 1. create inputs of mining algorithm
 	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class,
 									 max_length, min_support, min_confidence, max_confidence)
