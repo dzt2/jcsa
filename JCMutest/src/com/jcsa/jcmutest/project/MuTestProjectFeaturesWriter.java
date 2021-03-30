@@ -1112,7 +1112,7 @@ public class MuTestProjectFeaturesWriter {
 		Collection<Object> conditions = new ArrayList<Object>();
 		boolean stage;
 		if(status.is_state_error()) {
-			conditions.add(status.get_instance());
+			// conditions.add(status.get_instance());
 			stage = false;	/* false means after mutation */
 		}
 		else {
@@ -1154,7 +1154,7 @@ public class MuTestProjectFeaturesWriter {
 		Collection<Object> conditions = new ArrayList<Object>();
 		boolean stage;
 		if(state.is_state_error()) {
-			conditions.add(state.get_abstract_instance());
+			// conditions.add(state.get_abstract_instance());
 			stage = false;	/* false means after mutation */
 		}
 		else {

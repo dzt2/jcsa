@@ -70,6 +70,17 @@ class RIPFPMiner:
 		return jcfeature.RIPMineOutput(inputs, good_patterns)
 
 
+def do_frequent_mining(mine_inputs: jcfeature.RIPMineInputs, output_directory: str):
+	"""
+	:param mine_inputs:
+	:param output_directory:
+	:return: Perform frequent pattern mining algorithm
+	"""
+	output_directory.strip()
+	miner = RIPFPMiner()
+	return miner.mine(mine_inputs)
+
+
 class RIPDTMiner:
 	"""
 	It implements the pattern mining via decision tree model
@@ -230,159 +241,149 @@ class RIPDTMiner:
 		return jcfeature.RIPMineOutput(inputs, good_patterns)
 
 
-# process methods
-
-
-def do_process(document: jctest.CDocument, output_directory: str, model_name: str,
-			   sample_class, support_class, used_tests, max_length: int,
-			   min_support: int, min_confidence: float, max_confidence: float,
-			   do_mining):
+def do_decision_mining(mine_inputs: jcfeature.RIPMineInputs, output_directory: str):
 	"""
-	:param document:
+	:param mine_inputs:
 	:param output_directory:
-	:param model_name:
-	:param sample_class:
-	:param support_class:
-	:param used_tests:
-	:param max_length:
-	:param min_support:
-	:param min_confidence:
-	:param max_confidence:
-	:param do_mining:
+	:return: Perform decision tree based pattern mining algorithm
+	"""
+	miner = RIPDTMiner()
+	filename = mine_inputs.get_document().get_program().name + ".pdf"
+	return miner.mine(mine_inputs, os.path.join(output_directory, filename))
+
+
+# main procedure methods
+
+
+def new_model_name(model_name: str, sample_class, support_class):
+	if sample_class == jcfeature.MU_SAMPLE_CLASS:
+		sample_class = "mut"
+	elif sample_class == jcfeature.SQ_SAMPLE_CLASS:
+		sample_class = "seq"
+	elif sample_class == jcfeature.EX_SAMPLE_CLASS:
+		sample_class = "exe"
+	else:
+		sample_class = "xxx"
+	if support_class == jcfeature.UK_SUPPORT_CLASS:
+		support_class = "unk"
+	elif support_class == jcfeature.WC_SUPPORT_CLASS:
+		support_class = "wcc"
+	elif support_class == jcfeature.SC_SUPPORT_CLASS:
+		support_class = "scc"
+	else:
+		support_class = "yyy"
+	return "{}_{}_{}".format(model_name, sample_class, support_class)
+
+
+def do_mining(document: jctest.CDocument, output_directory: str, model_name: str,
+			  sample_class, support_class, used_tests, max_length: int,
+			  min_support: int, min_confidence: float, max_confidence: float,
+			  do_model_mining):
+	"""
+	:param document:			It provides original and entire dataset for being mined.
+	:param output_directory:	The directory where output-directory is created for.
+	:param model_name:			The output files are preserved in output_directory/model_name
+	:param sample_class:		MU_SAMPLE_CLASS, SQ_SAMPLE_CLASS, EX_SAMPLE_CLASS
+	:param support_class:		UK_SUPPORT_CLASS, WC_SUPPORT_CLASS, SC_SUPPORT_CLASS
+	:param used_tests:			The set of test cases assumed to be used during testing.
+	:param max_length:			The maximal length of generated patterns for presentation.
+	:param min_support:			The minimal number of supporting samples required for each pattern.
+	:param min_confidence:		The minimal confidence achieved by the good patterns produced.
+	:param max_confidence:		The maximal confidence achieved to terminate the searching on tree.
+	:param do_model_mining:		do_frequent_mining, do_decision_mining, ...
 	:return:
 	"""
-	print("\tTesting on", document.get_program().name + "with", len(document.get_mutants()),
-		  "mutants and", len(document.get_sequences()), "sequences of",
-		  len(document.get_conditions_lib().get_all_conditions()), "symbolic conditions involved.")
-	# 1. create output_directory/name/model_name/
-	output_directory = os.path.join(output_directory, document.get_program().name)
+	model_name = new_model_name(model_name, sample_class, support_class)
+	print("Do Mining on", document.get_program().name, "for model of", model_name)
+	# 1. create inputs of mining algorithm
+	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class,
+									 max_length, min_support, min_confidence, max_confidence)
+	print("\t\t1. Create data mining inputs for", inputs.get_document().get_program().name)
+	print("\t\t*-- parameters: {", inputs.get_sample_class(), inputs.get_support_class(), inputs.get_max_length(),
+		  inputs.get_min_support(), inputs.get_min_confidence(), inputs.get_max_confidence())
+
+	# 2. perform data mining algorithms on
 	if not os.path.exists(output_directory):
 		os.mkdir(output_directory)
 	output_directory = os.path.join(output_directory, model_name)
 	if not os.path.exists(output_directory):
 		os.mkdir(output_directory)
-	print("\t\t(1) Pattern mining on", output_directory)
-
-	# 2. perform pattern mining and produce outputs
-	output = do_mining(document=document, used_tests=used_tests, sample_class=sample_class,
-					   support_class=support_class, max_length=max_length, min_support=min_support,
-					   min_confidence=min_confidence, max_confidence=max_confidence,
-					   output_directory=output_directory)
+	output = do_model_mining(mine_inputs=inputs, output_directory=output_directory)
 	output: jcfeature.RIPMineOutput
-	print("\t\t(2) Generate", len(output.get_patterns()), "patterns with",
-		  len(output.get_subsuming_patterns(False)), "subsuming ones.")
+	print("\t\t2. Produce", len(output.get_patterns()), "good patterns from", inputs.get_document().get_program().name)
 
-	# 3. write the generated patterns on output directory
+	# 3. Write the pattern outputs to specified directory
 	writer = jcfeature.RIPMineWriter()
 	writer.write_to(output, output_directory)
-	print("\t\t(3) Output pattern information to", output_directory, '\n')
+	print("\t\t3. Consume", len(output.get_subsuming_patterns(False)), "subsuming patterns to", output_directory)
 	return
 
 
-def do_entire_mining(feature_directory: str, filename: str, output_directory: str):
-	"""
-	:param filename:
-	:param feature_directory:
-	:param output_directory:
-	:return:
-	"""
-	c_document = jctest.CDocument(feature_directory, filename)
-	print("Testing start for program:", c_document.get_program().name)
-
-	# Decision Tree Model Mining {MUT + SEQ + EXE} {UK}
-	do_process(c_document, output_directory, "dtm_mut_unk", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_seq_unk", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_exe_unk", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-
-	# Decision Tree Model Mining {MUT + SEQ + EXE} {WC}
-	do_process(c_document, output_directory, "dtm_mut_wcc", jcfeature.MU_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_seq_wcc", jcfeature.SQ_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_exe_wcc", jcfeature.EX_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-
-	# Decision Tree Model Mining {MUT + SEQ + EXE} {SC}
-	do_process(c_document, output_directory, "dtm_mut_scc", jcfeature.MU_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_seq_scc", jcfeature.SQ_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-	do_process(c_document, output_directory, "dtm_exe_scc", jcfeature.EX_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 8, 2, 0.70, 0.95, do_decision_mining)
-
-	# Frequent Pattern Mining Groups {MUT + SEQ + EXE} {UK}
-	do_process(c_document, output_directory, "fpm_mut_unk", jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_seq_unk", jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_exe_unk", jcfeature.EX_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-
-	# Frequent Pattern Mining Groups {MUT + SEQ + EXE} {WC}
-	do_process(c_document, output_directory, "fpm_mut_wcc", jcfeature.MU_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_seq_wcc", jcfeature.SQ_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_exe_wcc", jcfeature.EX_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-
-	# Frequent Pattern Mining Groups {MUT + SEQ + EXE} {SC}
-	do_process(c_document, output_directory, "fpm_mut_scc", jcfeature.MU_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_seq_scc", jcfeature.SQ_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-	do_process(c_document, output_directory, "fpm_exe_scc", jcfeature.EX_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
-			   None, 1, 2, 0.70, 0.95, do_frequent_mining)
-
-	print("Testing end for program at", c_document.get_program().name)
-	print()
-	return
-
-
-# list of performing data mining algorithms
-
-
-def do_frequent_mining(document: jctest.CDocument, used_tests, sample_class, support_class, min_support: int,
-					   min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
-	"""
-	:return:
-	"""
-	miner = RIPFPMiner()
-	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class, max_length,
-									 min_support, min_confidence, max_confidence)
-	print("\t\t*-- parameters:", inputs.get_sample_class(), inputs.get_support_class(), inputs.get_max_length(),
-		  inputs.get_min_support(), inputs.get_min_confidence(), inputs.get_max_confidence())
-	return miner.mine(inputs)
-
-
-def do_decision_mining(document: jctest.CDocument, used_tests, sample_class, support_class, min_support: int,
-					   min_confidence: float, max_confidence: float, max_length: int, output_directory: str):
+def do_mining_on_classes(document: jctest.CDocument, output_directory: str, model_name: str,
+						 used_tests, max_length: int, min_support: int, min_confidence: float,
+						 max_confidence: float, do_model_mining):
 	"""
 	:param document:
+	:param output_directory:
+	:param model_name:
 	:param used_tests:
-	:param sample_class:
-	:param support_class:
+	:param max_length:
 	:param min_support:
 	:param min_confidence:
 	:param max_confidence:
-	:param max_length:
-	:param output_directory:
+	:param do_model_mining:
 	:return:
 	"""
-	miner = RIPDTMiner()
-	inputs = jcfeature.RIPMineInputs(document, used_tests, sample_class, support_class, max_length,
-									 min_support, min_confidence, max_confidence)
-	print("\t\t*-- parameters:", inputs.get_sample_class(), inputs.get_support_class(), inputs.get_max_length(),
-		  inputs.get_min_support(), inputs.get_min_confidence(), inputs.get_max_confidence())
-	return miner.mine(inputs, os.path.join(output_directory, document.get_program().name + ".pdf"))
+	do_mining(document, output_directory, model_name, jcfeature.MU_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	do_mining(document, output_directory, model_name, jcfeature.MU_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	do_mining(document, output_directory, model_name, jcfeature.MU_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	do_mining(document, output_directory, model_name, jcfeature.SQ_SAMPLE_CLASS, jcfeature.UK_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	do_mining(document, output_directory, model_name, jcfeature.SQ_SAMPLE_CLASS, jcfeature.WC_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	do_mining(document, output_directory, model_name, jcfeature.SQ_SAMPLE_CLASS, jcfeature.SC_SUPPORT_CLASS,
+			  used_tests, max_length, min_support, min_confidence, max_confidence, do_model_mining)
+	return
+
+
+def do_testing(inputs_directory: str, output_directory: str, select_tests: bool):
+	"""
+	:param inputs_directory:
+	:param output_directory:
+	:param select_tests: True to use randomly selected test suite for classifier
+	:return:
+	"""
+	for file_name in os.listdir(inputs_directory):
+		c_document = jctest.CDocument(os.path.join(inputs_directory, file_name), file_name)
+		print("Perform testing for", file_name, "with", len(c_document.get_mutants()), "mutants and",
+			  len(c_document.get_project().test_space.get_test_cases()), "test cases annotated with",
+			  len(c_document.get_conditions_lib().get_all_conditions()), "symbolic conditions used.")
+
+		if select_tests:
+			evaluator = jcmuta.MutationTestEvaluation(c_document.get_project())
+			selected_mutants = evaluator.select_mutants_by_classes(["STRP", "BTRP"])
+			mutation_tests = evaluator.select_tests_for_mutants(selected_mutants)
+			random_number = int(len(c_document.get_project().test_space.get_test_cases()) * 0.01)
+			random_tests = evaluator.select_tests_for_random(random_number)
+			used_tests = random_tests | mutation_tests
+			score = evaluator.measure_score(None, used_tests)
+			print("\t==> Select", len(used_tests), "test cases with", int(score * 1000000) / 10000.0, "score.")
+		else:
+			used_tests = None
+			print("\t==> Select all the possible test inputs from mutation test project...")
+
+		# mining on all classes
+		do_mining_on_classes(c_document, output_directory, "dtm", used_tests, 32, 2, 0.70, 0.95, do_decision_mining)
+		do_mining_on_classes(c_document, output_directory, "fpm", used_tests, 1,  2, 0.70, 0.95, do_frequent_mining)
+		print()
+	return
 
 
 if __name__ == "__main__":
 	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_path = "/home/dzt2/Development/Data/patterns"
-	for file_name in os.listdir(prev_path):
-		do_entire_mining(os.path.join(prev_path, file_name), file_name, post_path)
+	do_testing(prev_path, post_path, False)
 

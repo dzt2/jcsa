@@ -21,14 +21,14 @@ public class MuTestProjectFeatureWritings {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/rprojects/"; 
 	private static final String result_dir = "result/features/";
-	private static final int max_distance = 2;
+	private static final int max_distance = 1;
 	private static final double random_test_ratio = 0.005;
 	private static final int min_test_number = 20;
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, true);
+			testing(root, false);
 		} 
 	}
 	
