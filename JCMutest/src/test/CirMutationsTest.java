@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
@@ -46,7 +47,7 @@ public class CirMutationsTest {
 	 */
 	private static void output_opt_constraints(FileWriter writer, CirMutations 
 			cir_mutations, SymConstraint constraint) throws Exception {
-		for(SymConstraint opt_const : cir_mutations.improve_constraints(constraint)) {
+		for(SymConstraint opt_const : SymInstanceUtils.improve_constraints(cir_mutations, constraint)) {
 			writer.write("\t\t==> " + opt_const.get_condition() + "\tat \"" + 
 					strip_code(opt_const.get_statement().generate_code(true)) + "\"\n");
 		}

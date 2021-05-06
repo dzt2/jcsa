@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 

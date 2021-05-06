@@ -13,20 +13,21 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotateType;
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymExpressionError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymFlowError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymReferenceError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateValueError;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymTrapError;
+import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceState;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceStatus;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTreeNode;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymFlowError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateValueError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymTrapError;
 import com.jcsa.jcparse.base.BitSequence;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -1116,8 +1117,8 @@ public class MuTestProjectFeaturesWriter {
 			stage = false;	/* false means after mutation */
 		}
 		else {
-			conditions.addAll(cir_mutations.improve_constraints(
-						(SymConstraint) status.get_instance()));
+			conditions.addAll(SymInstanceUtils.improve_constraints(
+					cir_mutations, (SymConstraint) status.get_instance()));
 			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : status.get_annotations()) {
@@ -1158,8 +1159,8 @@ public class MuTestProjectFeaturesWriter {
 			stage = false;	/* false means after mutation */
 		}
 		else {
-			conditions.addAll(cir_mutations.improve_constraints(
-						(SymConstraint) state.get_abstract_instance()));
+			conditions.addAll(SymInstanceUtils.improve_constraints(
+					cir_mutations, (SymConstraint) state.get_abstract_instance()));
 			stage = true;	/* true means before mutation */
 		}
 		for(CirAnnotation annotation : state.get_annotations()) {

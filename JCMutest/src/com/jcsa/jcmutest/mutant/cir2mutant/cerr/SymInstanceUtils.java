@@ -11,37 +11,46 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAddressOfPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArgumentListPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithAddPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithDivPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithModPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithMulPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithNegPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirArithSubPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirAssignPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsAndPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsIorPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsLshPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRshPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsRsvPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirBitwsXorPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirDereferencePropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirEqualWithPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirErrorPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirFieldOfPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterEqPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirGreaterTnPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirInitializerPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicAndPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicIorPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirLogicNotPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirNotEqualsPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerEqPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirSmallerTnPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirTypeCastPropagator;
-import com.jcsa.jcmutest.mutant.cir2mutant.gate.CirWaitValuePropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymFlowError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateValueError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymTrapError;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirAddressOfPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArgumentListPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithAddPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithDivPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithModPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithMulPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithNegPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithSubPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirAssignPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsAndPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsIorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsLshPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsRshPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsRsvPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsXorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirDereferencePropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirEqualWithPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirErrorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirFieldOfPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirGreaterEqPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirGreaterTnPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirInitializerPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicAndPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicIorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicNotPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirNotEqualsPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirSmallerEqPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirSmallerTnPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirTypeCastPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirWaitValuePropagator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -874,7 +883,7 @@ public class SymInstanceUtils {
 		}
 		return target_constraints;
 	}
-	/* Stage-III. Subsumption-based Constraint Extension */
+	/* Stage-III. Subsume-based Constraint Extension */
 	/**
 	 * generate the set of conditions subsuming the expression
 	 * @param expression

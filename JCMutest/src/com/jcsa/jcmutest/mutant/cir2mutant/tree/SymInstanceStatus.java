@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirMutations;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstance;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
