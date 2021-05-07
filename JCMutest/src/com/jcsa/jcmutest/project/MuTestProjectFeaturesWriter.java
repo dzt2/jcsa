@@ -13,15 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotateType;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceState;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceStatus;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTree;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.SymInstanceTreeNode;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymFlowError;
@@ -274,6 +266,9 @@ public class MuTestProjectFeaturesWriter {
 	private boolean is_selected(Collection<TestInput> test_cases) {
 		return (test_cases != null) && !(test_cases.isEmpty());
 	}
+	
+	
+	
 	/**
 	 * category$operator$execution$location$parameter
 	 * @param instance SymInstance or CirAnnotation

@@ -1,6 +1,8 @@
 package com.jcsa.jcmutest.mutant.sym2mutant.tree;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
@@ -90,6 +92,45 @@ public class SymInstanceTreeNode extends SymInstanceNode {
 	 * @return the node is leaf when output edges are none
 	 */
 	public boolean is_leaf() { return this.ou_edges.isEmpty(); }
+	/**
+	 * @return the sequence of edges from root to this node
+	 */
+	public List<SymInstanceTreeEdge> get_prev_path() {
+		List<SymInstanceTreeEdge> edges = new ArrayList<SymInstanceTreeEdge>();
+		
+		SymInstanceTreeNode node = this;
+		while(!node.is_root()) {
+			edges.add(node.in_edge);
+			node = node.in_edge.get_parent();
+		}
+		
+		for(int k = 0; k < edges.size() / 2; k++) {
+			int i = k, j = edges.size() - 1 - k;
+			SymInstanceTreeEdge ei = edges.get(i);
+			SymInstanceTreeEdge ej = edges.get(j);
+			edges.set(i, ej); edges.set(j, ei);
+		}
+		
+		return edges;
+	}
+	/**
+	 * collect all the children under the node
+	 * @param nodes
+	 */
+	private void get_all_children(Collection<SymInstanceTreeNode> nodes) {
+		nodes.add(this);
+		for(SymInstanceTreeEdge edge : this.ou_edges) {
+			edge.get_child().get_all_children(nodes);
+		}
+	}
+	/**
+	 * @return the set of all the children nodes under the node (including itself)
+	 */
+	public Collection<SymInstanceTreeNode> get_all_children() {
+		Collection<SymInstanceTreeNode> nodes = new HashSet<SymInstanceTreeNode>();
+		this.get_all_children(nodes);
+		return nodes;
+	}
 	
 	/* setter */
 	/**
