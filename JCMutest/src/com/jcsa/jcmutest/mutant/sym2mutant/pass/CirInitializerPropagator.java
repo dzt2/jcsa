@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
@@ -18,7 +18,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 public class CirInitializerPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirInitializerBody target = (CirInitializerBody) target_location;
@@ -51,9 +51,9 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 			muta_value = SymbolFactory.initializer_list(elements);
 			
 			/* 4. construct the constraint-error pair */
-			constraint = cir_mutations.expression_constraint(
+			constraint = SymInstanceUtils.expr_constraint(
 					target.statement_of(), Boolean.TRUE, true);
-			state_error = cir_mutations.expr_error(target, muta_value);
+			state_error = SymInstanceUtils.expr_error(target, muta_value);
 			propagations.put(state_error, constraint);
 		}
 	}

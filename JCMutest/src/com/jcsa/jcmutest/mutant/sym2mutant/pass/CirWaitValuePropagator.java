@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
@@ -22,7 +22,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 public class CirWaitValuePropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirWaitExpression target = (CirWaitExpression) target_location;
@@ -44,7 +44,7 @@ public class CirWaitValuePropagator implements CirErrorPropagator {
 			
 			/* 3. find the call-statement */
 			CirStatement wait_statement = target.statement_of();
-			CirExecution wait_execution = cir_mutations.get_cir_tree().
+			CirExecution wait_execution = source_location.get_tree().
 					get_localizer().get_execution(wait_statement);
 			CirExecution call_execution = wait_execution.
 					get_graph().get_execution(wait_execution.get_id() - 1);
@@ -60,9 +60,9 @@ public class CirWaitValuePropagator implements CirErrorPropagator {
 			muta_value = SymbolFactory.call_expression(muta_operand, arguments);
 			
 			/* 5. construct the error propagation pair */
-			constraint = cir_mutations.
-					expression_constraint(wait_statement, Boolean.TRUE, true);
-			state_error = cir_mutations.expr_error(target, muta_value);
+			constraint = SymInstanceUtils.
+					expr_constraint(wait_statement, Boolean.TRUE, true);
+			state_error = SymInstanceUtils.expr_error(target, muta_value);
 			propagations.put(state_error, constraint);
 		}
 	}

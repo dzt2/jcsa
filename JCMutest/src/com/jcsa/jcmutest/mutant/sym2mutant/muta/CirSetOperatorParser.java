@@ -5,9 +5,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -34,8 +34,6 @@ public abstract class CirSetOperatorParser {
 	protected CirExpression roperand;
 	/** true for cmp_operator; false for set_operator **/
 	protected boolean compare_or_mutate;
-	/** used to generate constraints and state errors **/
-	private CirMutations mutations;
 	/** mapping from state errors to the constraints for killing mutation **/
 	private Map<SymStateError, SymConstraint> infections;
 	
@@ -55,7 +53,6 @@ public abstract class CirSetOperatorParser {
 	public boolean generate_infections(AstMutation mutation, 
 			CirStatement statement, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
-			CirMutations mutations,
 			Map<SymStateError, SymConstraint> infection) throws Exception {
 		/* declarations */
 		this.mutation = mutation;
@@ -67,7 +64,6 @@ public abstract class CirSetOperatorParser {
 			this.compare_or_mutate = true;
 		else
 			this.compare_or_mutate = false;
-		this.mutations = mutations;
 		this.infections = infection;
 		
 		/* operator */ 
@@ -143,14 +139,14 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymConstraint get_constraint(Object condition) throws Exception {
-		return this.mutations.expression_constraint(statement, condition, true);
+		return SymInstanceUtils.expr_constraint(statement, condition, true);
 	}
 	/**
 	 * @return trp_stmt(this.statement)
 	 * @throws Exception
 	 */
 	protected SymStateError trap_statement() throws Exception {
-		return this.mutations.trap_error(statement);
+		return SymInstanceUtils.trap_error(statement);
 	}
 	
 	/* exception handles */
@@ -176,7 +172,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError set_expression(Object muta_expression) throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.sym_expression(muta_expression));
+		return SymInstanceUtils.expr_error(expression, muta_expression);
 	}
 	/**
 	 * @param operand
@@ -184,7 +180,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError add_expression(Object operand) throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
+		return SymInstanceUtils.expr_error(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @param operand
@@ -192,28 +188,28 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError sub_expression(Object operand) throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
+		return SymInstanceUtils.expr_error(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @return uny_expr(this.expression, -)
 	 * @throws Exception
 	 */
 	protected SymStateError neg_expression() throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.arith_neg(expression));
+		return SymInstanceUtils.expr_error(expression, SymbolFactory.arith_neg(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, ~)
 	 * @throws Exception
 	 */
 	protected SymStateError rsv_expression() throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.bitws_rsv(expression));
+		return SymInstanceUtils.expr_error(expression, SymbolFactory.bitws_rsv(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, !)
 	 * @throws Exception
 	 */
 	protected SymStateError not_expression() throws Exception {
-		return mutations.expr_error(expression, SymbolFactory.logic_not(expression));
+		return SymInstanceUtils.expr_error(expression, SymbolFactory.logic_not(expression));
 	}
 	/**
 	 * @param operand
@@ -222,7 +218,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymStateError ins_expression(Object operand, COperator operator) throws Exception {
-		return mutations.expr_error(expression, this.sym_expression(operator, operand, expression));
+		return SymInstanceUtils.expr_error(expression, this.sym_expression(operator, operand, expression));
 	}
 	
 	/* symbolic operations */
@@ -311,7 +307,7 @@ public abstract class CirSetOperatorParser {
 	 */
 	protected SymConstraint conjunct(Collection<SymConstraint> constraints) throws Exception {
 		if(constraints.isEmpty())
-			return mutations.expression_constraint(statement, Boolean.TRUE, true);
+			return SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
@@ -322,7 +318,7 @@ public abstract class CirSetOperatorParser {
 				else
 					condition = SymbolFactory.logic_and(condition, constraint.get_condition());
 			}
-			return mutations.expression_constraint(statement, condition, true);
+			return SymInstanceUtils.expr_constraint(statement, condition, true);
 		}
 	}
 	/**
@@ -332,7 +328,7 @@ public abstract class CirSetOperatorParser {
 	 */
 	protected SymConstraint disjunct(Collection<SymConstraint> constraints) throws Exception {
 		if(constraints.isEmpty())
-			return mutations.expression_constraint(statement, Boolean.FALSE, true);
+			return SymInstanceUtils.expr_constraint(statement, Boolean.FALSE, true);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
@@ -343,7 +339,7 @@ public abstract class CirSetOperatorParser {
 				else
 					condition = SymbolFactory.logic_ior(condition, constraint.get_condition());
 			}
-			return mutations.expression_constraint(statement, condition, true);
+			return SymInstanceUtils.expr_constraint(statement, condition, true);
 		}
 	}
 	

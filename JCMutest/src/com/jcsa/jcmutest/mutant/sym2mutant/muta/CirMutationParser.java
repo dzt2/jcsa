@@ -8,9 +8,9 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -39,7 +39,7 @@ public abstract class CirMutationParser {
 	 * @param infections
 	 * @throws Exception
 	 */
-	protected abstract void generate_infections(CirMutations mutations,
+	protected abstract void generate_infections(
 			CirTree cir_tree, CirStatement statement, AstMutation mutation, 
 			Map<SymStateError, SymConstraint> infections) throws Exception;
 	/**
@@ -48,24 +48,21 @@ public abstract class CirMutationParser {
 	 * @return It parses the mutation in AST into CIR versions
 	 * @throws Exception 
 	 */
-	protected Iterable<CirMutation> parse(CirMutations 
-			mutations, AstMutation mutation) throws Exception {
-		if(mutations == null)
-			throw new IllegalArgumentException("Invalid mutations: null");
+	protected Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else if(mutation == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else {
 			Set<CirMutation> cir_mutations = new HashSet<CirMutation>();
-			CirStatement statement = 
-					this.get_location(mutations.get_cir_tree(), mutation);
+			CirStatement statement = this.get_location(cir_tree, mutation);
 			if(statement != null) {
 				Map<SymStateError, SymConstraint> infections = 
 						new HashMap<SymStateError, SymConstraint>();
-				this.generate_infections(mutations, mutations.
-						get_cir_tree(), statement, mutation, infections);
+				this.generate_infections(cir_tree, statement, mutation, infections);
 				for(SymStateError state_error : infections.keySet()) {
 					SymConstraint constraint = infections.get(state_error);
-					cir_mutations.add(mutations.new_mutation(constraint, state_error));
+					cir_mutations.add(SymInstanceUtils.cir_mutation(constraint, state_error));
 				}
 			}
 			return cir_mutations;

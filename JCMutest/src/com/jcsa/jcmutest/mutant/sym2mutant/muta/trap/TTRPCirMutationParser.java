@@ -3,16 +3,17 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class TTRPCirMutationParser extends CirMutationParser {
 
@@ -23,7 +24,7 @@ public class TTRPCirMutationParser extends CirMutationParser {
 	}
 
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirStatement if_statement = (CirStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirIfStatement.class);
@@ -37,8 +38,8 @@ public class TTRPCirMutationParser extends CirMutationParser {
 		}
 		int times = ((Integer) mutation.get_parameter()).intValue();
 		
-		SymConstraint constraint = mutations.statement_constraint(true_branch.get_statement(), times);
-		infections.put(mutations.trap_error(true_branch.get_statement()), constraint);
+		SymConstraint constraint = SymInstanceUtils.stmt_constraint(true_branch, COperator.greater_eq, times);
+		infections.put(SymInstanceUtils.trap_error(true_branch.get_statement()), constraint);
 	}
 
 }

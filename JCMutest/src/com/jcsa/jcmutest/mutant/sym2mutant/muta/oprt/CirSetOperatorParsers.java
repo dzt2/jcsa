@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirSetOperatorParser;
@@ -58,11 +57,10 @@ public class CirSetOperatorParsers {
 	public static boolean generate_infections(AstMutation mutation, 
 			CirStatement statement, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
-			CirMutations mutations,
 			Map<SymStateError, SymConstraint> infections) throws Exception {
 		AstBinaryExpression location = (AstBinaryExpression) mutation.get_location();
 		return map.get(location.get_operator().get_operator()).generate_infections(
-					mutation, statement, expression, loperand, roperand, mutations, infections);
+					mutation, statement, expression, loperand, roperand, infections);
 	}
 	
 }

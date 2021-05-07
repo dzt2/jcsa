@@ -3,10 +3,10 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -60,7 +60,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 	}
 	
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		CType data_type = expression.get_data_type();
@@ -104,8 +104,8 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		
-		SymConstraint constraint = mutations.expression_constraint(statement, condition, true);
-		SymStateError state_error = mutations.trap_error(statement);
+		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
+		SymStateError state_error = SymInstanceUtils.trap_error(statement);
 		infections.put(state_error, constraint);
 	}
 

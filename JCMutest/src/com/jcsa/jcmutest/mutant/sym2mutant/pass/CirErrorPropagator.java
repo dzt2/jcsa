@@ -2,7 +2,6 @@ package com.jcsa.jcmutest.mutant.sym2mutant.pass;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -24,7 +23,7 @@ public interface CirErrorPropagator {
 	 * @param propagations mapping from target errors to constraints required
 	 * @throws Exception
 	 */
-	public void propagate(CirMutations cir_mutations, SymStateError error,
+	public void propagate(SymStateError error,
 			CirNode source_location, CirNode target_location,
 			Map<SymStateError, SymConstraint> propagations) throws Exception;
 	

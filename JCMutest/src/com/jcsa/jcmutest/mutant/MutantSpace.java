@@ -14,7 +14,6 @@ import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParsers;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -30,8 +29,6 @@ public class MutantSpace {
 	private List<Mutant> mutants;
 	/** mapping from the mutation to its mutant **/
 	private Map<String, Mutant> index;
-	/** the library to construct cir-mutations **/
-	private CirMutations cir_mutations;
 	/**
 	 * create an empty space for mutants seeded in AST
 	 * @param ast_tree
@@ -47,7 +44,6 @@ public class MutantSpace {
 			this.cir_tree = cir_tree;
 			this.mutants = new ArrayList<Mutant>();
 			this.index = new HashMap<String, Mutant>();
-			this.cir_mutations = new CirMutations(cir_tree);
 		}
 	}
 	
@@ -96,10 +92,6 @@ public class MutantSpace {
 			return this.index.get(mutation.toString());
 		}
 	}
-	/**
-	 * @return the library to preserve cir-mutations being created
-	 */
-	public CirMutations get_cir_mutations() { return this.cir_mutations; }
 	
 	/* setters */
 	/**
@@ -224,7 +216,7 @@ public class MutantSpace {
 	 * @throws Exception
 	 */
 	protected Iterable<CirMutation> generate_cir_mutation(AstMutation mutation) throws Exception {
-		return CirMutationParsers.parse(cir_mutations, mutation);
+		return CirMutationParsers.parse(this.cir_tree, mutation);
 	}
 	
 }

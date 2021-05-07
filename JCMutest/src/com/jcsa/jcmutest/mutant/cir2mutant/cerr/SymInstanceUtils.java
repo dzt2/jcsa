@@ -12,7 +12,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymFlowError;

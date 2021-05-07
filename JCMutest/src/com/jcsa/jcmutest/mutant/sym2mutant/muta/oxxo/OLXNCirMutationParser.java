@@ -3,7 +3,6 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
@@ -22,7 +21,7 @@ public class OLXNCirMutationParser extends CirMutationParser {
 	}
 
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		
@@ -33,7 +32,7 @@ public class OLXNCirMutationParser extends CirMutationParser {
 		
 		CirExpression loperand = save1.get_rvalue(), roperand = save2.get_rvalue();
 		CirSetOperatorParsers.generate_infections(mutation, 
-				statement, expression, loperand, roperand, mutations, infections);
+				statement, expression, loperand, roperand, infections);
 	}
 
 }

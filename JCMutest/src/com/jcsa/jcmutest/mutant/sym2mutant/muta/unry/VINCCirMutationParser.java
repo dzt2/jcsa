@@ -3,10 +3,10 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.unry;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -21,11 +21,11 @@ public class VINCCirMutationParser extends CirMutationParser {
 	}
 
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymbolExpression muta_value; 
-		SymConstraint constraint = mutations.expression_constraint(statement, Boolean.TRUE, true);
+		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true);
 		switch(mutation.get_operator()) {
 		case inc_constant:
 		{
@@ -39,7 +39,7 @@ public class VINCCirMutationParser extends CirMutationParser {
 		}
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
-		infections.put(mutations.expr_error(expression, muta_value), constraint);
+		infections.put(SymInstanceUtils.expr_error(expression, muta_value), constraint);
 	}
 
 }

@@ -2,11 +2,11 @@ package com.jcsa.jcmutest.mutant.sym2mutant.pass;
 
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -16,7 +16,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 public class CirArithNegPropagator implements CirErrorPropagator {
 
 	@Override
-	public void propagate(CirMutations cir_mutations, SymStateError error, CirNode source_location,
+	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirComputeExpression target = (CirComputeExpression) target_location;
@@ -39,9 +39,9 @@ public class CirArithNegPropagator implements CirErrorPropagator {
 			/* 3. construct the muta_value */
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.arith_neg(muta_operand);
-				constraint = cir_mutations.expression_constraint(
+				constraint = SymInstanceUtils.expr_constraint(
 						target.statement_of(), Boolean.TRUE, true);
-				state_error = cir_mutations.expr_error(target, muta_value);
+				state_error = SymInstanceUtils.expr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}
 		}

@@ -3,10 +3,10 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.stmt;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
@@ -41,7 +41,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 	}
 	
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExecution source = cir_tree.get_localizer().get_execution(statement);
 		CirExecutionFlow orig_flow = source.get_ou_flow(0);
@@ -64,7 +64,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
 		
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
-		infections.put(mutations.flow_error(orig_flow, muta_flow), mutations.expression_constraint(statement, Boolean.TRUE, true));
+		infections.put(SymInstanceUtils.flow_error(orig_flow, muta_flow), SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true));
 	}
 
 }

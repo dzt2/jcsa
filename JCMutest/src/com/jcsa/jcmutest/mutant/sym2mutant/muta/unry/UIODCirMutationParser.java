@@ -3,10 +3,10 @@ package com.jcsa.jcmutest.mutant.sym2mutant.muta.unry;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
+import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -24,7 +24,7 @@ public class UIODCirMutationParser extends CirMutationParser {
 	}
 	
 	@Override
-	protected void generate_infections(CirMutations mutations, CirTree cir_tree, CirStatement statement,
+	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		switch(mutation.get_operator()) {
 		case delete_prev_inc:
@@ -36,8 +36,8 @@ public class UIODCirMutationParser extends CirMutationParser {
 					get_cir_node(cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 			CirComputeExpression expression = (CirComputeExpression) inc_statement.get_rvalue();
 			CirExpression loperand = expression.get_operand(0);
-			SymConstraint constraint = mutations.expression_constraint(inc_statement, Boolean.TRUE, true);
-			SymStateError state_error = mutations.expr_error(expression, SymbolFactory.sym_expression(loperand));
+			SymConstraint constraint = SymInstanceUtils.expr_constraint(inc_statement, Boolean.TRUE, true);
+			SymStateError state_error = SymInstanceUtils.expr_error(expression, SymbolFactory.sym_expression(loperand));
 			infections.put(state_error, constraint);
 			break;
 		}

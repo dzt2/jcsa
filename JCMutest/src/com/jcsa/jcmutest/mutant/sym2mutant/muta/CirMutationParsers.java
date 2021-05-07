@@ -6,7 +6,6 @@ import java.util.Map;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OAXACirMutationParser;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OAXNCirMutationParser;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OBXACirMutationParser;
@@ -34,6 +33,7 @@ import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UIORCirMutationParser;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UNODCirMutationParser;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UNOICirMutationParser;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.VINCCirMutationParser;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 
 public class CirMutationParsers {
 	
@@ -96,14 +96,13 @@ public class CirMutationParsers {
 		parsers.put(MutaClass.RTRP, new RTRPCirMutationParser());
 	}
 	
-	public static Iterable<CirMutation> parse(CirMutations 
-			mutations, AstMutation mutation) throws Exception {
-		if(mutations == null)
-			throw new IllegalArgumentException("Invalid mutations: null");
+	public static Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+		if(cir_tree == null)
+			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else if(mutation == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else
-			return parsers.get(mutation.get_class()).parse(mutations, mutation);
+			return parsers.get(mutation.get_class()).parse(cir_tree, mutation);
 	}
 	
 }
