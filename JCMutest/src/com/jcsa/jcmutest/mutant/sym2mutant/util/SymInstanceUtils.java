@@ -1,5 +1,11 @@
 package com.jcsa.jcmutest.mutant.sym2mutant.util;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
@@ -10,10 +16,52 @@ import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateValueError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymTrapError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymValueError;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirAddressOfPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArgumentListPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithAddPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithDivPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithModPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithMulPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithNegPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirArithSubPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirAssignPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsAndPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsIorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsLshPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsRshPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsRsvPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirBitwsXorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirDereferencePropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirEqualWithPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirErrorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirFieldOfPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirGreaterEqPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirGreaterTnPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirInitializerPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicAndPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicIorPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirLogicNotPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirNotEqualsPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirSmallerEqPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirSmallerTnPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirTypeCastPropagator;
+import com.jcsa.jcmutest.mutant.sym2mutant.pass.CirWaitValuePropagator;
+import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -328,6 +376,143 @@ public class SymInstanceUtils {
 		return new CirMutation(
 				SymInstanceUtils.optimize(mutation.get_constraint(), contexts),
 				SymInstanceUtils.optimize(mutation.get_state_error(), contexts));
+	}
+	
+	/* singleton mode */
+	/** mapping from expression operator to the propagator for generating state error **/
+	static private Map<COperator, CirErrorPropagator> propagators;
+	static {
+		propagators = new HashMap<COperator, CirErrorPropagator>();
+		
+		propagators.put(COperator.arith_add, new CirArithAddPropagator());
+		propagators.put(COperator.arith_sub, new CirArithSubPropagator());
+		propagators.put(COperator.arith_mul, new CirArithMulPropagator());
+		propagators.put(COperator.arith_div, new CirArithDivPropagator());
+		propagators.put(COperator.arith_mod, new CirArithModPropagator());
+		propagators.put(COperator.negative, new CirArithNegPropagator());
+		
+		propagators.put(COperator.bit_not, new CirBitwsRsvPropagator());
+		propagators.put(COperator.bit_and, new CirBitwsAndPropagator());
+		propagators.put(COperator.bit_or, new CirBitwsIorPropagator());
+		propagators.put(COperator.bit_xor, new CirBitwsXorPropagator());
+		propagators.put(COperator.left_shift, new CirBitwsLshPropagator());
+		propagators.put(COperator.righ_shift, new CirBitwsRshPropagator());
+		
+		propagators.put(COperator.assign, new CirAssignPropagator());
+		propagators.put(COperator.address_of, new CirAddressOfPropagator());
+		propagators.put(COperator.dereference, new CirDereferencePropagator());
+		
+		propagators.put(COperator.greater_eq, new CirGreaterEqPropagator());
+		propagators.put(COperator.greater_tn, new CirGreaterTnPropagator());
+		propagators.put(COperator.smaller_eq, new CirSmallerEqPropagator());
+		propagators.put(COperator.smaller_tn, new CirSmallerTnPropagator());
+		propagators.put(COperator.equal_with, new CirEqualWithPropagator());
+		propagators.put(COperator.not_equals, new CirNotEqualsPropagator());
+		
+		propagators.put(COperator.logic_and, new CirLogicAndPropagator());
+		propagators.put(COperator.logic_or, new CirLogicIorPropagator());
+		propagators.put(COperator.logic_not, new CirLogicNotPropagator());
+		
+		propagators.put(COperator.arith_add_assign, new CirFieldOfPropagator());
+		propagators.put(COperator.arith_sub_assign, new CirTypeCastPropagator());
+		propagators.put(COperator.arith_mul_assign, new CirInitializerPropagator());
+		propagators.put(COperator.arith_div_assign, new CirArgumentListPropagator());
+		propagators.put(COperator.arith_mod_assign, new CirWaitValuePropagator());
+	}
+	/* state error propagations */
+	/**
+	 * generate the error-constraint pair in local propagation from source error and append
+	 * them in the propagations table.
+	 * @param cir_mutations
+	 * @param source_error
+	 * @param propagations
+	 * @throws Exception
+	 */
+	private static void propagate_on(SymStateError source_error, Map<SymStateError, SymConstraint> propagations) throws Exception {
+		/* get the next location for error of propagation */
+		CirExpression location;
+		if(source_error instanceof SymExpressionError) {
+			location = ((SymExpressionError) source_error).get_expression();
+		}
+		else if(source_error instanceof SymReferenceError) {
+			location = ((SymReferenceError) source_error).get_expression();
+		}
+		else {
+			location = null;
+		}
+		
+		/* syntax-directed error propagation algorithms */
+		if(location != null) {
+			CirNode parent = location.get_parent();
+			
+			if(parent instanceof CirDeferExpression) {
+				propagators.get(COperator.dereference).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirFieldExpression) {
+				propagators.get(COperator.arith_add_assign).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirAddressExpression) {
+				propagators.get(COperator.address_of).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirCastExpression) {
+				propagators.get(COperator.arith_sub_assign).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirInitializerBody) {
+				propagators.get(COperator.arith_mul_assign).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirWaitExpression) {
+				propagators.get(COperator.arith_mod_assign).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirComputeExpression) {
+				propagators.get(((CirComputeExpression) parent).get_operator()).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirArgumentList) {
+				propagators.get(COperator.arith_div_assign).propagate(source_error, location, parent, propagations);
+			}
+			else if(parent instanceof CirIfStatement
+					|| parent instanceof CirCaseStatement) {
+				CirStatement statement = (CirStatement) parent;
+				CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+				CirExecutionFlow true_flow = execution.get_ou_flow(0);
+				CirExecutionFlow fals_flow = execution.get_ou_flow(1);
+				
+				CirExpression condition;
+				if(statement instanceof CirIfStatement) {
+					condition = ((CirIfStatement) statement).get_condition();
+				}
+				else {
+					condition = ((CirCaseStatement) statement).get_condition();
+				}
+				
+				propagations.put(SymInstanceUtils.flow_error(true_flow, fals_flow), 
+						SymInstanceUtils.expr_constraint(statement, condition, true));
+				propagations.put(SymInstanceUtils.flow_error(fals_flow, true_flow), 
+						SymInstanceUtils.expr_constraint(statement, condition, false));
+			}
+			else if(parent instanceof CirAssignStatement) {
+				propagators.get(COperator.assign).propagate(source_error, location, parent, propagations);
+			}
+		}
+	}
+	/**
+	 * @param cir_mutations
+	 * @param source_error
+	 * @return the set of CirMutation generated from source error as its next propagation gender
+	 * @throws Exception
+	 */
+	public static Collection<CirMutation> propagate(SymStateError source_error) throws Exception {
+		if(source_error == null)
+			throw new IllegalArgumentException("Invalid source_error: null");
+		else {
+			List<CirMutation> next_mutations = new ArrayList<CirMutation>();
+			Map<SymStateError, SymConstraint> propagations = new HashMap<SymStateError, SymConstraint>();
+			SymInstanceUtils.propagate_on(source_error, propagations);
+			for(SymStateError next_error : propagations.keySet()) {
+				SymConstraint constraint = propagations.get(next_error);
+				next_mutations.add(SymInstanceUtils.cir_mutation(constraint, next_error));
+			}
+			return next_mutations;
+		}
 	}
 	
 }

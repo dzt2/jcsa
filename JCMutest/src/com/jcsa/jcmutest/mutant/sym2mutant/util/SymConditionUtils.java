@@ -268,14 +268,11 @@ public class SymConditionUtils {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else {
-			/* 1. generate standard constraint in the format */
-			constraint = (SymConstraint) SymInstanceUtils.optimize(constraint, null);
-			
-			/* 2. collect the sub-expressions in its conjunction */
+			/* 1. collect the sub-expressions in its conjunction */
 			Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
 			SymConditionUtils.divide_in_conjunctions(constraint.get_condition(), expressions);
 			
-			/* 3. translate the sub-expressions into initial conditions */
+			/* 2. translate the sub-expressions into initial conditions */
 			CirExecution execution = constraint.get_execution();
 			Set<SymCondition> conditions = new HashSet<SymCondition>();
 			for(SymbolExpression expression : expressions) {
@@ -292,7 +289,7 @@ public class SymConditionUtils {
 			}
 			conditions.add(SymCondition.cov_stmt(execution, COperator.greater_eq, 1));
 			
-			/* 4. return initial set of conditions from constraint */	return conditions;
+			/* 3. return initial set of conditions from constraint */	return conditions;
 		}
 	}
 	/**
