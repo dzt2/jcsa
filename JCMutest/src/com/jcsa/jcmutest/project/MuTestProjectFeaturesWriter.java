@@ -1094,7 +1094,7 @@ public class MuTestProjectFeaturesWriter {
 			number_of_paths += this.write_sym_instance_tree(tree); 
 		}
 		this.close();
-		/* TODO output complexity information */
+		/* output complexity information */
 		System.out.println("\t\t\tWrite " + number_of_trees + " mutants with " + number_of_paths + 
 						" symbolic paths using " + this.sym_nodes.size() + " expression nodes.");
 		
