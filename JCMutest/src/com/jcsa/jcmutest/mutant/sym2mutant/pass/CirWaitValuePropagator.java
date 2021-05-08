@@ -6,9 +6,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
@@ -60,9 +60,9 @@ public class CirWaitValuePropagator implements CirErrorPropagator {
 			muta_value = SymbolFactory.call_expression(muta_operand, arguments);
 			
 			/* 5. construct the error propagation pair */
-			constraint = SymInstanceUtils.
+			constraint = SymInstances.
 					expr_constraint(wait_statement, Boolean.TRUE, true);
-			state_error = SymInstanceUtils.expr_error(target, muta_value);
+			state_error = SymInstances.expr_error(target, muta_value);
 			propagations.put(state_error, constraint);
 		}
 	}

@@ -5,7 +5,7 @@ import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
 
 public class SymTrapError extends SymStateError {
 
-	public SymTrapError(CirExecution execution) throws IllegalArgumentException {
+	protected SymTrapError(CirExecution execution) throws IllegalArgumentException {
 		super(SymInstanceType.trap_error, execution, execution.get_statement());
 	}
 

@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -32,23 +32,23 @@ public class CirArithModPropagator implements CirErrorPropagator {
 		if(source == target.get_operand(0)) {
 			muta_value = SymbolFactory.arith_mod(target.get_data_type(), 
 					muta_operand, target.get_operand(1));
-			constraint = SymInstanceUtils.expr_constraint(
+			constraint = SymInstances.expr_constraint(
 					target.statement_of(), Boolean.TRUE, true);
-			state_error = SymInstanceUtils.expr_error(target, muta_value);
+			state_error = SymInstances.expr_error(target, muta_value);
 			propagations.put(state_error, constraint);
 		}
 		/* x / muta_operand */
 		else if(source == target.get_operand(1)) {
-			constraint = SymInstanceUtils.expr_constraint(target.statement_of(), 
+			constraint = SymInstances.expr_constraint(target.statement_of(), 
 					SymbolFactory.equal_with(muta_operand, Integer.valueOf(0)), true);
-			state_error = SymInstanceUtils.trap_error(target.statement_of());
+			state_error = SymInstances.trap_error(target.statement_of());
 			propagations.put(state_error, constraint);
 			
-			constraint = SymInstanceUtils.expr_constraint(target.statement_of(), 
+			constraint = SymInstances.expr_constraint(target.statement_of(), 
 					SymbolFactory.not_equals(muta_operand, Integer.valueOf(0)), true);
 			muta_value = SymbolFactory.arith_mod(
 					target.get_data_type(), target.get_operand(0), muta_operand);
-			state_error = SymInstanceUtils.expr_error(target, muta_value);
+			state_error = SymInstances.expr_error(target, muta_value);
 			propagations.put(state_error, constraint);
 		}
 		else {

@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -104,8 +104,8 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		
-		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
-		SymStateError state_error = SymInstanceUtils.trap_error(statement);
+		SymConstraint constraint = SymInstances.expr_constraint(statement, condition, true);
+		SymStateError state_error = SymInstances.trap_error(statement);
 		infections.put(state_error, constraint);
 	}
 

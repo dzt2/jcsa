@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -27,8 +27,8 @@ public class VCRPCirMutationParser extends CirMutationParser {
 		SymbolExpression muta_value = SymbolFactory.sym_expression(mutation.get_parameter());
 		
 		SymbolExpression condition = SymbolFactory.not_equals(expression, muta_value);
-		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
-		SymStateError state_error = SymInstanceUtils.expr_error(expression, muta_value);
+		SymConstraint constraint = SymInstances.expr_constraint(statement, condition, true);
+		SymStateError state_error = SymInstances.expr_error(expression, muta_value);
 		infections.put(state_error, constraint);
 	}
 	

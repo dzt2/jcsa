@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateValueError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -61,8 +61,8 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 		muta_value = SymbolFactory.call_expression(call_statement.get_function(), arguments);
 		
 		/* 3. construct constraint-error pair */
-		SymStateError state_error = SymInstanceUtils.expr_error(target, muta_value);
-		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true);
+		SymStateError state_error = SymInstances.expr_error(target, muta_value);
+		SymConstraint constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);
 		propagations.put(state_error, constraint);
 	}
 

@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.sym2mutant.pass;
 
 import java.util.Map;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -40,9 +40,9 @@ public class CirAddressOfPropagator implements CirErrorPropagator {
 			/* 4. constraint the constraint-error propagation */
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.address_of(muta_operand);
-				constraint = SymInstanceUtils.
+				constraint = SymInstances.
 						expr_constraint(target.statement_of(), Boolean.TRUE, true);
-				state_error = SymInstanceUtils.expr_error(target, muta_value);
+				state_error = SymInstances.expr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}
 		}

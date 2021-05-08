@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
@@ -36,12 +36,12 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 			if(error instanceof SymExpressionError) {
 				muta_operand = ((SymExpressionError) error).get_mutation_value();
 				muta_value = SymbolFactory.field_expression(muta_operand, target.get_field().get_name());
-				state_error = SymInstanceUtils.expr_error(target, muta_value);
+				state_error = SymInstances.expr_error(target, muta_value);
 			}
 			else if(error instanceof SymReferenceError) {
 				muta_operand = ((SymReferenceError) error).get_mutation_value();
 				muta_value = SymbolFactory.field_expression(muta_operand, target.get_field().get_name());
-				state_error = SymInstanceUtils.refr_error(target, muta_value);
+				state_error = SymInstances.refr_error(target, muta_value);
 			}
 			else {
 				state_error = null;
@@ -49,7 +49,7 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 			
 			/* 4. generate constraint-error pair */
 			if(state_error != null) {
-				constraint = SymInstanceUtils.expr_constraint(
+				constraint = SymInstances.expr_constraint(
 						target.statement_of(), Boolean.TRUE, true);
 				propagations.put(state_error, constraint);
 			}

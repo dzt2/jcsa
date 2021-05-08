@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -39,9 +39,9 @@ public class CirArithNegPropagator implements CirErrorPropagator {
 			/* 3. construct the muta_value */
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.arith_neg(muta_operand);
-				constraint = SymInstanceUtils.expr_constraint(
+				constraint = SymInstances.expr_constraint(
 						target.statement_of(), Boolean.TRUE, true);
-				state_error = SymInstanceUtils.expr_error(target, muta_value);
+				state_error = SymInstances.expr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}
 		}

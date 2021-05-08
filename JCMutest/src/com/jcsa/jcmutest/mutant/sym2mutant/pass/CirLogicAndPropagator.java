@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -33,12 +33,12 @@ public class CirLogicAndPropagator implements CirErrorPropagator {
 		}
 		
 		if(source == target.get_operand(0)) {
-			constraint = SymInstanceUtils.expr_constraint(
+			constraint = SymInstances.expr_constraint(
 					target.statement_of(), 
 					target.get_operand(1), true);
 		}
 		else if(source == target.get_operand(1)) {
-			constraint = SymInstanceUtils.expr_constraint(
+			constraint = SymInstances.expr_constraint(
 					target.statement_of(), 
 					target.get_operand(0), true);
 		}
@@ -46,7 +46,7 @@ public class CirLogicAndPropagator implements CirErrorPropagator {
 			throw new IllegalArgumentException(target.generate_code(true));
 		}
 		muta_value = muta_operand;
-		state_error = SymInstanceUtils.expr_error(target, muta_value);
+		state_error = SymInstances.expr_error(target, muta_value);
 		
 		propagations.put(state_error, constraint);
 	}

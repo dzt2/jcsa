@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -36,25 +36,25 @@ public class UNOICirMutationParser extends CirMutationParser {
 		case insert_arith_neg:
 		{
 			condition = SymbolFactory.not_equals(expression, Integer.valueOf(0));
-			constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
+			constraint = SymInstances.expr_constraint(statement, condition, true);
 			muta_value = SymbolFactory.arith_neg(expression);
-			state_error = SymInstanceUtils.expr_error(expression, muta_value);
+			state_error = SymInstances.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
 		case insert_bitws_rsv:
 		{
-			constraint = SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true);
+			constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);
 			muta_value = SymbolFactory.bitws_rsv(expression);
-			state_error = SymInstanceUtils.expr_error(expression, muta_value);
+			state_error = SymInstances.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
 		case insert_logic_not:
 		{
-			constraint = SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true);
+			constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);
 			muta_value = SymbolFactory.logic_not(expression);
-			state_error = SymInstanceUtils.expr_error(expression, muta_value);
+			state_error = SymInstances.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
@@ -66,9 +66,9 @@ public class UNOICirMutationParser extends CirMutationParser {
 			else {
 				condition = SymbolFactory.smaller_tn(expression, Integer.valueOf(0));
 			}
-			constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
+			constraint = SymInstances.expr_constraint(statement, condition, true);
 			muta_value = SymbolFactory.arith_neg(expression);
-			state_error = SymInstanceUtils.expr_error(expression, muta_value);
+			state_error = SymInstances.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}
@@ -80,9 +80,9 @@ public class UNOICirMutationParser extends CirMutationParser {
 			else {
 				condition = SymbolFactory.greater_tn(expression, Integer.valueOf(0));
 			}
-			constraint = SymInstanceUtils.expr_constraint(statement, condition, true);
+			constraint = SymInstances.expr_constraint(statement, condition, true);
 			muta_value = SymbolFactory.arith_neg(expression);
-			state_error = SymInstanceUtils.expr_error(expression, muta_value);
+			state_error = SymInstances.expr_error(expression, muta_value);
 			infections.put(state_error, constraint);
 			break;
 		}

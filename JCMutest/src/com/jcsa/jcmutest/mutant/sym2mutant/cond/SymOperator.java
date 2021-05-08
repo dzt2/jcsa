@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sym2mutant.tree;
+package com.jcsa.jcmutest.mutant.sym2mutant.cond;
 
 /**
  * The operator used to refine the symbolic condition description in the program context.

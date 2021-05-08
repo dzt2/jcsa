@@ -22,7 +22,7 @@ public class SymConstraint extends SymInstance {
 	 * @param condition
 	 * @throws IllegalArgumentException
 	 */
-	public SymConstraint(CirExecution execution, 
+	protected SymConstraint(CirExecution execution, 
 			SymbolExpression condition) throws IllegalArgumentException {
 		super(SymInstanceType.constraint, execution);
 		if(condition == null)

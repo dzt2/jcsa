@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -43,10 +43,10 @@ public class CirDereferencePropagator implements CirErrorPropagator {
 			
 			/* 2. true --> set_refer(*muta_operand) */
 			if(muta_operand != null) {
-				constraint = SymInstanceUtils.expr_constraint(
+				constraint = SymInstances.expr_constraint(
 						target.statement_of(), Boolean.TRUE, true);
 				muta_value = SymbolFactory.dereference(muta_operand);
-				state_error = SymInstanceUtils.refr_error(target, muta_value);
+				state_error = SymInstances.refr_error(target, muta_value);
 				propagations.put(state_error, constraint);
 			}
 		}

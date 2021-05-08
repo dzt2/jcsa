@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class SymStateValueError extends SymValueError {
 
-	public SymStateValueError(CirExecution execution, CirExpression expression,
+	protected SymStateValueError(CirExecution execution, CirExpression expression,
 			SymbolExpression orig_expression, SymbolExpression muta_expression) throws Exception {
 		super(SymInstanceType.stat_error, execution, expression, orig_expression, muta_expression);
 	}

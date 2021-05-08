@@ -17,7 +17,7 @@ public class SymFlowError extends SymStateError {
 	 * @param muta_flow
 	 * @throws IllegalArgumentException
 	 */
-	public SymFlowError(CirExecution execution, CirExecutionFlow orig_flow, CirExecutionFlow muta_flow) throws IllegalArgumentException {
+	protected SymFlowError(CirExecution execution, CirExecutionFlow orig_flow, CirExecutionFlow muta_flow) throws IllegalArgumentException {
 		super(SymInstanceType.flow_error, execution, execution.get_statement());
 		if(orig_flow == null || orig_flow.get_source() != execution)
 			throw new IllegalArgumentException("Invalid orig_flow: " + orig_flow);

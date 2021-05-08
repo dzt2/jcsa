@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
@@ -80,9 +80,9 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		SymbolExpression condition2 = SymbolFactory.sym_expression(statement2);
 		condition2 = SymbolFactory.greater_eq(statement2, Integer.valueOf(1));
 		SymbolExpression condition = SymbolFactory.logic_and(condition1, condition2);
-		SymConstraint constraint = SymInstanceUtils.expr_constraint(statement2, condition, true);
+		SymConstraint constraint = SymInstances.expr_constraint(statement2, condition, true);
 		
-		infections.put(SymInstanceUtils.trap_error(statement1), constraint);
+		infections.put(SymInstances.trap_error(statement1), constraint);
 	}
 
 }

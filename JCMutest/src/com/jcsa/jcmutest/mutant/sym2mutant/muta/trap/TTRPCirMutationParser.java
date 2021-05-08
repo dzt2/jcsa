@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
@@ -38,8 +38,8 @@ public class TTRPCirMutationParser extends CirMutationParser {
 		}
 		int times = ((Integer) mutation.get_parameter()).intValue();
 		
-		SymConstraint constraint = SymInstanceUtils.stmt_constraint(true_branch, COperator.greater_eq, times);
-		infections.put(SymInstanceUtils.trap_error(true_branch.get_statement()), constraint);
+		SymConstraint constraint = SymInstances.stmt_constraint(true_branch, COperator.greater_eq, times);
+		infections.put(SymInstances.trap_error(true_branch.get_statement()), constraint);
 	}
 
 }

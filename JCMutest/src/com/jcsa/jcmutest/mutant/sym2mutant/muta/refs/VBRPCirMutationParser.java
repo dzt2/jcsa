@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -28,16 +28,16 @@ public class VBRPCirMutationParser extends CirMutationParser {
 		switch(mutation.get_operator()) {
 		case set_true: 	
 		{
-			constraint = SymInstanceUtils.expr_constraint(statement, expression, false);
+			constraint = SymInstances.expr_constraint(statement, expression, false);
 			muta_value = SymbolFactory.sym_expression(Boolean.TRUE);
-			infections.put(SymInstanceUtils.expr_error(expression, muta_value), constraint);
+			infections.put(SymInstances.expr_error(expression, muta_value), constraint);
 			break;
 		}
 		case set_false:	
 		{
-			constraint = SymInstanceUtils.expr_constraint(statement, expression, true);
+			constraint = SymInstances.expr_constraint(statement, expression, true);
 			muta_value = SymbolFactory.sym_expression(Boolean.FALSE);
-			infections.put(SymInstanceUtils.expr_error(expression, muta_value), constraint);
+			infections.put(SymInstances.expr_error(expression, muta_value), constraint);
 			break;
 		}
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());

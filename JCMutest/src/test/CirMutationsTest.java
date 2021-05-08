@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.cerr.SymInstanceUtils;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymCondition;
+import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymConditions;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
@@ -45,11 +45,9 @@ public class CirMutationsTest {
 	 * @param constraint
 	 * @throws Exception
 	 */
-	private static void output_opt_constraints(FileWriter writer, CirMutations 
-			cir_mutations, SymConstraint constraint) throws Exception {
-		for(SymConstraint opt_const : SymInstanceUtils.improve_constraints(cir_mutations, constraint)) {
-			writer.write("\t\t==> " + opt_const.get_condition() + "\tat \"" + 
-					strip_code(opt_const.get_statement().generate_code(true)) + "\"\n");
+	private static void output_opt_constraints(FileWriter writer, SymConstraint constraint) throws Exception {
+		for(SymCondition opt_const : SymConditions.generate(constraint)) {
+			writer.write("\t\t==> " + opt_const + "\n");
 		}
 	}
 	/**
@@ -59,12 +57,11 @@ public class CirMutationsTest {
 	 * @param cir_mutation
 	 * @throws Exception
 	 */
-	private static void output_cir_mutation(FileWriter writer, 
-			CirMutations cir_mutations, CirMutation cir_mutation) throws Exception {
+	private static void output_cir_mutation(FileWriter writer, CirMutation cir_mutation) throws Exception {
 		SymConstraint constraint = cir_mutation.get_constraint();
 		writer.write("\t\t" + constraint.get_condition() + "\tat \"" + 
 				strip_code(constraint.get_statement().generate_code(true)) + "\"\n");
-		output_opt_constraints(writer, cir_mutations, constraint);
+		output_opt_constraints(writer, constraint);
 		writer.write("\t\t" + cir_mutation.get_state_error().toString() + "\n");
 	}
 	private static void output_mutant(FileWriter writer, Mutant mutant) throws Exception {
@@ -78,7 +75,7 @@ public class CirMutationsTest {
 		}
 		if(mutant.has_cir_mutations()) {
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
-				output_cir_mutation(writer, mutant.get_space().get_cir_mutations(), cir_mutation);
+				output_cir_mutation(writer, cir_mutation);
 			}
 		}
 		writer.write("#EndMutant\n");

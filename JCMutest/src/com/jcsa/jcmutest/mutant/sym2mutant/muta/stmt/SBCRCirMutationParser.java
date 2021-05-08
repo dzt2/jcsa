@@ -4,9 +4,9 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
+import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.util.SymInstanceUtils;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
@@ -64,7 +64,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
 		
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
-		infections.put(SymInstanceUtils.flow_error(orig_flow, muta_flow), SymInstanceUtils.expr_constraint(statement, Boolean.TRUE, true));
+		infections.put(SymInstances.flow_error(orig_flow, muta_flow), SymInstances.expr_constraint(statement, Boolean.TRUE, true));
 	}
 
 }
