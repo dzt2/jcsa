@@ -159,19 +159,12 @@ public class SymInstanceTrees {
 				node_instance = SymInstances.expr_constraint(flow.get_target(), Boolean.TRUE, true);
 				break;
 			}
-			case call_flow:
-			case retr_flow:
+			default:
 			{
 				CirStatement source_statement = flow.get_source().get_statement();
 				CirStatement target_statement = flow.get_target().get_statement();
 				edge_instance = SymInstances.expr_constraint(source_statement, Boolean.TRUE, true);
 				node_instance = SymInstances.expr_constraint(target_statement, Boolean.TRUE, true);
-				break;
-			}
-			default:
-			{
-				node_instance = null; 
-				edge_instance = null;
 				break;
 			}
 			}
@@ -554,16 +547,16 @@ public class SymInstanceTrees {
 	
 	/* evaluation methods */
 	private static void static_evaluate(SymInstanceTreeNode node) throws Exception {
-		Boolean result = node.add_status(null);
-		if(result == null || result.booleanValue()) {
+		node.add_status(null);
+		if(node.get_status().is_acceptable()) {
 			for(SymInstanceTreeEdge edge : node.get_ou_edges()) {
 				SymInstanceTrees.static_evaluate(edge);
 			}
 		}
 	}
 	private static void static_evaluate(SymInstanceTreeEdge edge) throws Exception {
-		Boolean result = edge.add_status(null);
-		if(result == null || result.booleanValue()) {
+		edge.add_status(null);
+		if(edge.get_status().is_acceptable()) {
 			SymInstanceTrees.static_evaluate(edge.get_target());
 		}
 	}

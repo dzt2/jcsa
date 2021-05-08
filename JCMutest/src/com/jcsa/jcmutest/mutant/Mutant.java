@@ -106,6 +106,6 @@ public class Mutant {
 	/**
 	 * @return the set of cir-mutations parsed from the AST location
 	 */
-	public Iterable<CirMutation> get_cir_mutations() { return this.cir_mutations; }
+	public List<CirMutation> get_cir_mutations() { return this.cir_mutations; }
 	
 }

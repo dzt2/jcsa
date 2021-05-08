@@ -769,8 +769,10 @@ public class MuTestProjectFeaturesWriter {
 			MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
 			if(result != null) {
+				/*
 				System.out.println("\t\t~~> Update Coverage Matrics for Mutant#" + 
 						mutant.get_id() + " among " + mutant.get_space().size() + " mutations.");
+				*/
 				BitSequence killings = result.get_kill_set();
 				for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
 					BitSequence coverage = cmat.get(cir_mutation.get_execution());
@@ -1023,7 +1025,7 @@ public class MuTestProjectFeaturesWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_instance_path(Mutant mutant, List<SymInstanceTreeEdge> path) throws Exception {
-		this.writer.write(mutant.get_id());
+		this.writer.write(mutant.get_id() + "");
 		
 		SymInstanceContent last_node = null;
 		for(SymInstanceTreeEdge edge : path) {
@@ -1070,7 +1072,8 @@ public class MuTestProjectFeaturesWriter {
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 			if(mutant.has_cir_mutations()) {
-				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
+				SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
+				trees.add(tree);
 			}
 		}
 		
@@ -1089,7 +1092,9 @@ public class MuTestProjectFeaturesWriter {
 		
 		/* 3. write information to xxx.sit and xxx.sip */
 		this.open(".sip");
-		for(SymInstanceTree tree : trees) { this.write_sym_instance_tree(tree); }
+		for(SymInstanceTree tree : trees) { 
+			this.write_sym_instance_tree(tree); 
+		}
 		this.close();
 		
 		/* 4. preserving symbolic nodes */	this.write_sym_nodes(); this.sym_nodes.clear();

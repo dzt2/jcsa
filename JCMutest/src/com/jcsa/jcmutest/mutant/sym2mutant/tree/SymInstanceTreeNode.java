@@ -52,7 +52,6 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 			this.tree = parent.tree;
 			this.in_edge = new SymInstanceTreeEdge(parent, this, edge_instance);
 			this.ou_edges = new ArrayList<SymInstanceTreeEdge>();
-			parent.ou_edges.add(this.in_edge);
 		}
 	}
 	/**
@@ -62,7 +61,9 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 	 * @throws Exception
 	 */
 	protected SymInstanceTreeNode add_child(SymInstance edge_instance, SymInstance node_instance) throws Exception {
-		return new SymInstanceTreeNode(this, edge_instance, node_instance);
+		SymInstanceTreeNode child = new SymInstanceTreeNode(this, edge_instance, node_instance);
+		this.ou_edges.add(child.get_in_edge());
+		return child;
 	}
 	
 	/* getters */
