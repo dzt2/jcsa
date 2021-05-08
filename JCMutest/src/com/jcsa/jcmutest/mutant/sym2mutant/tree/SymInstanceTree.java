@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
@@ -93,13 +92,6 @@ public class SymInstanceTree {
 	 */
 	public void evaluate(CStatePath path) throws Exception {
 		SymInstanceTrees.dynamic_evaluate(this, path);
-	}
-	public int size() { 
-		Set<SymInstanceTreeEdge> edges = new HashSet<SymInstanceTreeEdge>();
-		for(List<SymInstanceTreeEdge> path : this.root.get_post_paths()) {
-			edges.addAll(path);
-		}
-		return edges.size();
 	}
 	
 	/* inference */

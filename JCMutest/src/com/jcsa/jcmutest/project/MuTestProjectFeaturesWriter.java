@@ -1024,17 +1024,13 @@ public class MuTestProjectFeaturesWriter {
 	 * @param path
 	 * @throws Exception
 	 */
-	private void write_sym_instance_path(Mutant mutant, List<SymInstanceTreeEdge> path) throws Exception {
-		this.writer.write(mutant.get_id() + "");
+	private void write_sym_instance_path(SymInstanceTree tree, List<SymInstanceTreeEdge> path) throws Exception {
+		this.writer.write(tree.get_mutant().get_id() + "");
 		
-		SymInstanceContent last_node = null;
+		this.write_sym_content(tree.get_root());
 		for(SymInstanceTreeEdge edge : path) {
-			this.write_sym_content(edge.get_source());
 			this.write_sym_content(edge);
-			last_node = edge.get_target();
-		}
-		if(last_node != null) {
-			this.write_sym_content(last_node);
+			this.write_sym_content(edge.get_target());
 		}
 		
 		this.writer.write("\n");
@@ -1047,7 +1043,7 @@ public class MuTestProjectFeaturesWriter {
 	private void write_sym_instance_tree(SymInstanceTree tree) throws Exception {
 		Collection<List<SymInstanceTreeEdge>> paths = tree.get_reachable_paths();
 		for(List<SymInstanceTreeEdge> path : paths) {
-			this.write_sym_instance_path(tree.get_mutant(), path);
+			this.write_sym_instance_path(tree, path);
 		}
 	}
 	/**
