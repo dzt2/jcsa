@@ -1040,11 +1040,12 @@ public class MuTestProjectFeaturesWriter {
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_sym_instance_tree(SymInstanceTree tree) throws Exception {
+	private int write_sym_instance_tree(SymInstanceTree tree) throws Exception {
 		Collection<List<SymInstanceTreeEdge>> paths = tree.get_reachable_paths();
 		for(List<SymInstanceTreeEdge> path : paths) {
 			this.write_sym_instance_path(tree, path);
 		}
+		return paths.size();
 	}
 	/**
 	 * generate instrumental files for given test cases in the source project by dynamic testing
@@ -1088,12 +1089,17 @@ public class MuTestProjectFeaturesWriter {
 		
 		/* 3. write information to xxx.sit and xxx.sip */
 		this.open(".sip");
+		int number_of_trees = trees.size(), number_of_paths = 0;
 		for(SymInstanceTree tree : trees) { 
-			this.write_sym_instance_tree(tree); 
+			number_of_paths += this.write_sym_instance_tree(tree); 
 		}
 		this.close();
+		/* TODO output complexity information */
+		System.out.println("\t\t\tWrite " + number_of_trees + " mutants with " + number_of_paths + 
+						" symbolic paths using " + this.sym_nodes.size() + " expression nodes.");
 		
-		/* 4. preserving symbolic nodes */	this.write_sym_nodes(); this.sym_nodes.clear();
+		/* 4. preserving symbolic nodes */	
+		this.write_sym_nodes(); this.sym_nodes.clear();
 	}
 	
 	/* API interface for utilization */
@@ -1126,7 +1132,6 @@ public class MuTestProjectFeaturesWriter {
 		this.write_stc(test_cases);
 		this.write_cov(test_cases);
 		this.write_sip(dependence_graph, max_distance, test_cases);
-		
 	}
 	
 }

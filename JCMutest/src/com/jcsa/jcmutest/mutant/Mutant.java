@@ -102,7 +102,7 @@ public class Mutant {
 	/**
 	 * @return the cir-mutations is null if the mutant is syntactically error
 	 */
-	public boolean has_cir_mutations() { return this.cir_mutations != null; }
+	public boolean has_cir_mutations() { return this.cir_mutations != null && !this.cir_mutations.isEmpty(); }
 	/**
 	 * @return the set of cir-mutations parsed from the AST location
 	 */
