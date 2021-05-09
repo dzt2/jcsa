@@ -898,88 +898,6 @@ public class MuTestProjectFeaturesWriter {
 	
 	/* symbolic writers */
 	/**
-	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_sym_node(SymbolNode node, Set<String> records) throws Exception {
-		String node_key = this.token_string(node);
-		
-		if(!records.contains(node_key)) {
-			this.writer.write(this.token_string(node));
-			
-			String class_name = node.getClass().getSimpleName();
-			this.writer.write("\t" + class_name.substring(6));
-			this.writer.write("\t" + this.token_string(node.get_source()));
-			
-			CType data_type;
-			if(node instanceof SymbolExpression) {
-				data_type = ((SymbolExpression) node).get_data_type();
-			}
-			else {
-				data_type = null;
-			}
-			this.writer.write("\t" + this.token_string(data_type));
-			
-			Object content;
-			if(node instanceof SymbolField) {
-				content = ((SymbolField) node).get_name();
-			}
-			else if(node instanceof SymbolOperator) {
-				content = ((SymbolOperator) node).get_operator();
-			}
-			else if(node instanceof SymbolIdentifier) {
-				content = ((SymbolIdentifier) node).get_name();
-			}
-			else if(node instanceof SymbolConstant) {
-				content = ((SymbolConstant) node).get_constant();
-			}
-			else if(node instanceof SymbolLiteral) {
-				content = ((SymbolLiteral) node).get_literal();
-			}
-			else if(node instanceof SymbolBinaryExpression) {
-				content = ((SymbolBinaryExpression) node).get_operator().get_operator();
-			}
-			else if(node instanceof SymbolUnaryExpression) {
-				content = ((SymbolUnaryExpression) node).get_operator().get_operator();
-			}
-			else if(node instanceof SymbolFieldExpression) {
-				content = CPunctuator.dot;
-			}
-			else {
-				content = null;
-			}
-			this.writer.write("\t" + this.token_string(content));
-			
-			this.writer.write("\t" + this.token_string(node.generate_code(true)));
-			
-			this.writer.write("\t[");
-			for(SymbolNode child : node.get_children()) {
-				this.writer.write(" " + this.token_string(child));
-			}
-			this.writer.write(" ]");
-			
-			this.writer.write("\n");
-		}
-		records.add(node_key);
-		
-		for(SymbolNode child : node.get_children()) {
-			this.write_sym_node(child, records);
-		}
-	}
-	/**
-	 * write all the symbolic expressions in the buffer
-	 * @throws Exception
-	 */
-	private void write_sym_nodes() throws Exception {
-		this.open(".sym");
-		Set<String> records = new HashSet<String>();
-		for(SymbolNode node : this.sym_nodes) {
-			this.write_sym_node(node, records);
-		}
-		this.close();
-	}
-	/**
 	 * category$operator$execution$location$parameter
 	 * @param condition
 	 * @throws Exception
@@ -1216,6 +1134,88 @@ public class MuTestProjectFeaturesWriter {
 		System.out.println("\t\t\tWrite " + number_of_trees + " mutants with " + number_of_paths + 
 				" symbolic paths using " + this.sym_nodes.size() + " expression nodes.");
 		this.write_sym_nodes(); this.sym_nodes.clear();
+	}
+	/**
+	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_sym_node(SymbolNode node, Set<String> records) throws Exception {
+		String node_key = this.token_string(node);
+		
+		if(!records.contains(node_key)) {
+			this.writer.write(this.token_string(node));
+			
+			String class_name = node.getClass().getSimpleName();
+			this.writer.write("\t" + class_name.substring(6));
+			this.writer.write("\t" + this.token_string(node.get_source()));
+			
+			CType data_type;
+			if(node instanceof SymbolExpression) {
+				data_type = ((SymbolExpression) node).get_data_type();
+			}
+			else {
+				data_type = null;
+			}
+			this.writer.write("\t" + this.token_string(data_type));
+			
+			Object content;
+			if(node instanceof SymbolField) {
+				content = ((SymbolField) node).get_name();
+			}
+			else if(node instanceof SymbolOperator) {
+				content = ((SymbolOperator) node).get_operator();
+			}
+			else if(node instanceof SymbolIdentifier) {
+				content = ((SymbolIdentifier) node).get_name();
+			}
+			else if(node instanceof SymbolConstant) {
+				content = ((SymbolConstant) node).get_constant();
+			}
+			else if(node instanceof SymbolLiteral) {
+				content = ((SymbolLiteral) node).get_literal();
+			}
+			else if(node instanceof SymbolBinaryExpression) {
+				content = ((SymbolBinaryExpression) node).get_operator().get_operator();
+			}
+			else if(node instanceof SymbolUnaryExpression) {
+				content = ((SymbolUnaryExpression) node).get_operator().get_operator();
+			}
+			else if(node instanceof SymbolFieldExpression) {
+				content = CPunctuator.dot;
+			}
+			else {
+				content = null;
+			}
+			this.writer.write("\t" + this.token_string(content));
+			
+			this.writer.write("\t" + this.token_string(node.generate_code(true)));
+			
+			this.writer.write("\t[");
+			for(SymbolNode child : node.get_children()) {
+				this.writer.write(" " + this.token_string(child));
+			}
+			this.writer.write(" ]");
+			
+			this.writer.write("\n");
+		}
+		records.add(node_key);
+		
+		for(SymbolNode child : node.get_children()) {
+			this.write_sym_node(child, records);
+		}
+	}
+	/**
+	 * write all the symbolic expressions in the buffer
+	 * @throws Exception
+	 */
+	private void write_sym_nodes() throws Exception {
+		this.open(".sym");
+		Set<String> records = new HashSet<String>();
+		for(SymbolNode node : this.sym_nodes) {
+			this.write_sym_node(node, records);
+		}
+		this.close();
 	}
 	
 	/* API interface for utilization */
