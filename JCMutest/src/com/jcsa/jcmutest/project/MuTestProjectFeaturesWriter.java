@@ -1003,18 +1003,16 @@ public class MuTestProjectFeaturesWriter {
 		if(parameter != null) { this.sym_nodes.add(parameter); }
 	}
 	/**
-	 * \texec$cover$accept$reject$unknown [condition]+ ;
+	 * exec$accp$rejc [condition]+ ;
 	 * @param content
 	 * @throws Exception
 	 */
 	private void write_sym_content(SymInstanceContent content) throws Exception {
-		/* exec@coverage@accept@reject@unknown */
-		this.writer.write("\t" + this.token_string(content.get_execution()));
+		/* exec$accp$rejc */
 		int executions = content.get_status().number_of_executions();
 		int acceptions = content.get_status().number_of_acceptions();
 		int rejections = content.get_status().number_of_rejections();
-		int unknowns = executions - acceptions - rejections;
-		this.writer.write("$" + executions + "$" + acceptions + "$" + rejections + "$" + unknowns);
+		this.writer.write(executions + "$" + acceptions + "$" + rejections);
 		
 		/* [\t category@operator@execution@location@parameter]+ */
 		for(SymCondition condition : content.get_status().get_conditions()) {
@@ -1034,6 +1032,7 @@ public class MuTestProjectFeaturesWriter {
 		this.writer.write("" + mutant.get_id());
 		for(SymInstanceContent content : contents) {
 			if(content.get_status().is_executed()) {
+				this.writer.write("\t");
 				this.write_sym_content(content);
 			}
 		}
@@ -1072,18 +1071,8 @@ public class MuTestProjectFeaturesWriter {
 			List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
 			contents.add(tree.get_root());
 			for(SymInstanceTreeEdge edge : path) {
-				if(edge.get_status().is_executed()) {
-					contents.add(edge); 
-					if(edge.get_target().get_status().is_executed()) {
-						contents.add(edge.get_target());
-					}
-					else {
-						break;
-					}
-				}
-				else {
-					break;
-				}
+				contents.add(edge);
+				contents.add(edge.get_target());
 			}
 			if(!contents.isEmpty()) {
 				counters++;
