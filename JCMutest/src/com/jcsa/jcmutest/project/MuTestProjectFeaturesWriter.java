@@ -1037,6 +1037,7 @@ public class MuTestProjectFeaturesWriter {
 			}
 		}
 		this.writer.write("\n");
+		this.writer.flush();	/* update the feature line to file */
 	}
 	/**
 	 * mid {all nodes and edges}
