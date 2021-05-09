@@ -1003,7 +1003,7 @@ public class MuTestProjectFeaturesWriter {
 		if(parameter != null) { this.sym_nodes.add(parameter); }
 	}
 	/**
-	 * \texec@cover$accept@reject@unknown [condition]+ ;
+	 * \texec$cover$accept$reject$unknown [condition]+ ;
 	 * @param content
 	 * @throws Exception
 	 */
@@ -1014,7 +1014,7 @@ public class MuTestProjectFeaturesWriter {
 		int acceptions = content.get_status().number_of_acceptions();
 		int rejections = content.get_status().number_of_rejections();
 		int unknowns = executions - acceptions - rejections;
-		this.writer.write("@" + executions + "@" + acceptions + "@" + rejections + "@" + unknowns);
+		this.writer.write("$" + executions + "$" + acceptions + "$" + rejections + "$" + unknowns);
 		
 		/* [\t category@operator@execution@location@parameter]+ */
 		for(SymCondition condition : content.get_status().get_conditions()) {
@@ -1066,6 +1066,7 @@ public class MuTestProjectFeaturesWriter {
 	 */
 	private int write_sym_instance_path(SymInstanceTree tree) throws Exception {
 		Collection<SymInstanceTreeNode> leafs = tree.get_leafs();
+		int counters = 0;
 		for(SymInstanceTreeNode leaf : leafs) {
 			List<SymInstanceTreeEdge> path = leaf.get_prev_path();
 			List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
@@ -1084,9 +1085,12 @@ public class MuTestProjectFeaturesWriter {
 					break;
 				}
 			}
-			this.write_sym_contents(tree.get_mutant(), contents);
+			if(!contents.isEmpty()) {
+				counters++;
+				this.write_sym_contents(tree.get_mutant(), contents);
+			}
 		}
-		return leafs.size();
+		return counters;
 	}
 	/**
 	 * generate instrumental files for given test cases in the source project by dynamic testing
