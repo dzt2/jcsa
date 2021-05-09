@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
@@ -60,6 +61,24 @@ public class SymInstanceTree {
 	 * @return the root node of the tree
 	 */
 	public SymInstanceTreeNode get_root() { return this.root; }
+	private void get_leafs(SymInstanceTreeNode node, Collection<SymInstanceTreeNode> leafs) {
+		if(node.is_leaf()) {
+			leafs.add(node);
+		}
+		else {
+			for(SymInstanceTreeEdge edge : node.get_ou_edges()) {
+				this.get_leafs(edge.get_target(), leafs);
+			}
+		}
+	}
+	/**
+	 * @return get all the leafs under the tree
+	 */
+	public Collection<SymInstanceTreeNode> get_leafs() {
+		Set<SymInstanceTreeNode> leafs = new HashSet<SymInstanceTreeNode>();
+		this.get_leafs(this.root, leafs);
+		return leafs;
+	}
 	
 	/* evaluation */
 	private void clc_status(SymInstanceTreeNode node) {

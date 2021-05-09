@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -18,6 +20,7 @@ import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymCondition;
 import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceContent;
 import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceTree;
 import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceTreeEdge;
+import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceTreeNode;
 import com.jcsa.jcparse.base.BitSequence;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -100,8 +103,8 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * 	|	Dynamic information		{test suite is applied}											|	<br>
  * 	|	---	xxx.stc: the collection of test cases selected for mining algorithm to assume.		|	<br>
  * 	|	---	xxx.cov: the coverage matrix of which statement covered by which test case.			|	<br>
- * 	|	---	xxx.sit: the information to preserve status of each symbolic instance tree node.	|	<br>
- * 	|	---	xxx.sip: the information to preserve state for each symbolic instance state in tree.|	<br>
+ * 	|	---	xxx.sit: the information to preserve status of each symbolic instance among tree.	|	<br>
+ * 	|	---	xxx.sip: the information to preserve status of each symbolic instance in tree path.|	<br>
  * 	|	---	xxx.sym: the information of structural description for symbolic expression or node.	|	<br>
  * 	+-------------------------------------------------------------------------------------------+	<br>
  * 	</code>
@@ -1000,52 +1003,79 @@ public class MuTestProjectFeaturesWriter {
 		if(parameter != null) { this.sym_nodes.add(parameter); }
 	}
 	/**
-	 * ""@execution$executed$accepted@rejected condition(+) ;
+	 * \texec@cover$accept@reject@unknown [condition]+ ;
 	 * @param content
 	 * @throws Exception
 	 */
 	private void write_sym_content(SymInstanceContent content) throws Exception {
-		this.writer.write("\t");
-		/* ""@execution$executed$accepted@rejected */
-		this.writer.write("$" + this.token_string(content.get_execution()));
-		this.writer.write("$" + this.token_string(content.get_status().is_executed()));
-		this.writer.write("$" + this.token_string(content.get_status().is_accepted()));
-		this.writer.write("$" + this.token_string(content.get_status().is_rejected()));
-		/* condition(+) */
+		/* exec@coverage@accept@reject@unknown */
+		this.writer.write("\t" + this.token_string(content.get_execution()));
+		int executions = content.get_status().number_of_executions();
+		int acceptions = content.get_status().number_of_acceptions();
+		int rejections = content.get_status().number_of_rejections();
+		int unknowns = executions - acceptions - rejections;
+		this.writer.write("@" + executions + "@" + acceptions + "@" + rejections + "@" + unknowns);
+		
+		/* [\t category@operator@execution@location@parameter]+ */
 		for(SymCondition condition : content.get_status().get_conditions()) {
 			this.writer.write("\t");
 			this.write_sym_condition(condition);
 		}
-		/* ; */
-		this.writer.write("\t;");
+		
+		/* \t; */	this.writer.write("\t;");
 	}
 	/**
-	 * mid {head condition+ ;}
-	 * @param path
+	 * mid {head {condition}+ ;}*		[only executions > 0 be printed]
+	 * @param mutant
+	 * @param contents
 	 * @throws Exception
 	 */
-	private void write_sym_instance_path(SymInstanceTree tree, List<SymInstanceTreeEdge> path) throws Exception {
-		this.writer.write(tree.get_mutant().get_id() + "");
-		
-		this.write_sym_content(tree.get_root());
-		for(SymInstanceTreeEdge edge : path) {
-			this.write_sym_content(edge);
-			this.write_sym_content(edge.get_target());
+	private void write_sym_contents(Mutant mutant, Iterable<SymInstanceContent> contents) throws Exception {
+		this.writer.write("" + mutant.get_id());
+		for(SymInstanceContent content : contents) {
+			if(content.get_status().is_executed()) {
+				this.write_sym_content(content);
+			}
 		}
-		
 		this.writer.write("\n");
 	}
 	/**
-	 * [mid [head condition+ ;]+]+
+	 * mid {all nodes and edges}
 	 * @param tree
 	 * @throws Exception
 	 */
-	private int write_sym_instance_tree(SymInstanceTree tree) throws Exception {
-		Collection<List<SymInstanceTreeEdge>> paths = tree.get_reachable_paths();
-		for(List<SymInstanceTreeEdge> path : paths) {
-			this.write_sym_instance_path(tree, path);
+	private void write_sym_instance_tree(SymInstanceTree tree) throws Exception {
+		List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
+		Queue<SymInstanceTreeNode> queue = new LinkedList<SymInstanceTreeNode>();
+		
+		queue.add(tree.get_root());
+		while(!queue.isEmpty()) {
+			SymInstanceTreeNode tree_node = queue.poll();
+			contents.add(tree_node);
+			for(SymInstanceTreeEdge edge : tree_node.get_ou_edges()) {
+				contents.add(edge); queue.add(edge.get_target());
+			}
 		}
-		return paths.size();
+		
+		this.write_sym_contents(tree.get_mutant(), contents);
+	}
+	/**
+	 * mid {nodes and edges in one path from root to a leaf}
+	 * @param tree
+	 * @throws Exception
+	 */
+	private int write_sym_instance_path(SymInstanceTree tree) throws Exception {
+		Collection<SymInstanceTreeNode> leafs = tree.get_leafs();
+		for(SymInstanceTreeNode leaf : leafs) {
+			List<SymInstanceTreeEdge> path = leaf.get_prev_path();
+			List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
+			contents.add(tree.get_root());
+			for(SymInstanceTreeEdge edge : path) {
+				contents.add(edge); contents.add(edge.get_target());
+			}
+			this.write_sym_contents(tree.get_mutant(), contents);
+		}
+		return leafs.size();
 	}
 	/**
 	 * generate instrumental files for given test cases in the source project by dynamic testing
@@ -1063,14 +1093,13 @@ public class MuTestProjectFeaturesWriter {
 	 * @param test_cases the set of test cases selected as context for analysis
 	 * @throws Exception
 	 */
-	private void write_sip(CDependGraph dependence_graph, int 
+	private void write_sit_sip_sym(CDependGraph dependence_graph, int 
 			max_distance, Collection<TestInput> test_cases) throws Exception {
 		/* 1. generate symbolic instance tree for each mutation under analysis */
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
 			if(mutant.has_cir_mutations()) {
-				SymInstanceTree tree = SymInstanceTree.new_tree(mutant, max_distance, dependence_graph);
-				trees.add(tree);
+				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
 			}
 		}
 		
@@ -1088,17 +1117,25 @@ public class MuTestProjectFeaturesWriter {
 		}
 		
 		/* 3. write information to xxx.sit and xxx.sip */
-		this.open(".sip");
-		int number_of_trees = trees.size(), number_of_paths = 0;
-		for(SymInstanceTree tree : trees) { 
-			number_of_paths += this.write_sym_instance_tree(tree); 
+		int number_of_trees = 0;
+		this.open(".sit");
+		for(SymInstanceTree tree : trees) {
+			this.write_sym_instance_tree(tree);
+			number_of_trees++;
 		}
 		this.close();
-		/* output complexity information */
+		int number_of_paths = 0;
+		this.open(".sip");
+		for(SymInstanceTree tree : trees) {
+			number_of_paths += this.write_sym_instance_path(tree);
+		}
+		this.close();
+		
+		/* 4. print the feature complexity information */
 		System.out.println("\t\t\tWrite " + number_of_trees + " mutants with " + number_of_paths + 
 						" symbolic paths using " + this.sym_nodes.size() + " expression nodes.");
 		
-		/* 4. preserving symbolic nodes */	
+		/* 4. preserving symbolic nodes into xxx.sym */	
 		this.write_sym_nodes(); this.sym_nodes.clear();
 	}
 	
@@ -1131,7 +1168,7 @@ public class MuTestProjectFeaturesWriter {
 		this.generate_instrument_files(test_cases);
 		this.write_stc(test_cases);
 		this.write_cov(test_cases);
-		this.write_sip(dependence_graph, max_distance, test_cases);
+		this.write_sit_sip_sym(dependence_graph, max_distance, test_cases);
 	}
 	
 }
