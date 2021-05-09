@@ -1071,7 +1071,18 @@ public class MuTestProjectFeaturesWriter {
 			List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
 			contents.add(tree.get_root());
 			for(SymInstanceTreeEdge edge : path) {
-				contents.add(edge); contents.add(edge.get_target());
+				if(edge.get_status().is_executed()) {
+					contents.add(edge); 
+					if(edge.get_target().get_status().is_executed()) {
+						contents.add(edge.get_target());
+					}
+					else {
+						break;
+					}
+				}
+				else {
+					break;
+				}
 			}
 			this.write_sym_contents(tree.get_mutant(), contents);
 		}
@@ -1097,14 +1108,15 @@ public class MuTestProjectFeaturesWriter {
 			max_distance, Collection<TestInput> test_cases) throws Exception {
 		/* 1. generate symbolic instance tree for each mutation under analysis */
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			if(mutant.has_cir_mutations()) {
+			/* only output features for mutant that has cir-mutations and tested before */
+			if(mutant.has_cir_mutations() && tspace.get_test_result(mutant) != null) {
 				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
 			}
 		}
 		
 		/* 2. perform evaluation over the selected test cases or statically */
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
 		if(!this.is_selected(test_cases)) {
 			for(SymInstanceTree tree : trees) tree.evaluate();
 		}
