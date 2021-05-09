@@ -159,7 +159,8 @@ public class SymInstanceTrees {
 				node_instance = SymInstances.expr_constraint(flow.get_target(), Boolean.TRUE, true);
 				break;
 			}
-			default:
+			case call_flow:
+			case retr_flow:
 			{
 				CirStatement source_statement = flow.get_source().get_statement();
 				CirStatement target_statement = flow.get_target().get_statement();
@@ -167,9 +168,16 @@ public class SymInstanceTrees {
 				node_instance = SymInstances.expr_constraint(target_statement, Boolean.TRUE, true);
 				break;
 			}
+			default: {
+				node_instance = null;
+				edge_instance = null;
+				break;
+			}
 			}
 			/* construct the child node from current tree node */
-			tree_node = tree_node.add_child(edge_instance, node_instance);
+			if(node_instance != null && edge_instance != null) {
+				tree_node = tree_node.add_child(edge_instance, node_instance);
+			}
 		}
 		
 		if(tree_node.get_execution() != muta_execution) {
