@@ -1019,7 +1019,7 @@ public class SymConditions {
 					Object y = ((SymbolConstant) muta_value).get_number();
 					if(x instanceof Long) {
 						if(y instanceof Long) {
-							if(Math.abs(((Long) x).doubleValue()) > Math.abs(((Long) y).doubleValue())) {
+							if(Math.abs(((Long) x).doubleValue()) < Math.abs(((Long) y).doubleValue())) {
 								conditions.add(SymConditions.ext_scop(location));
 							}
 							else {
@@ -1027,7 +1027,7 @@ public class SymConditions {
 							}
 						}
 						else {
-							if(Math.abs(((Long) x).doubleValue()) > Math.abs(((Double) y).doubleValue())) {
+							if(Math.abs(((Long) x).doubleValue()) < Math.abs(((Double) y).doubleValue())) {
 								conditions.add(SymConditions.ext_scop(location));
 							}
 							else {
@@ -1037,7 +1037,7 @@ public class SymConditions {
 					}
 					else {
 						if(y instanceof Long) {
-							if(Math.abs(((Double) x).doubleValue()) > Math.abs(((Long) y).doubleValue())) {
+							if(Math.abs(((Double) x).doubleValue()) < Math.abs(((Long) y).doubleValue())) {
 								conditions.add(SymConditions.ext_scop(location));
 							}
 							else {
@@ -1045,7 +1045,7 @@ public class SymConditions {
 							}
 						}
 						else {
-							if(Math.abs(((Double) x).doubleValue()) > Math.abs(((Double) y).doubleValue())) {
+							if(Math.abs(((Double) x).doubleValue()) < Math.abs(((Double) y).doubleValue())) {
 								conditions.add(SymConditions.ext_scop(location));
 							}
 							else {
