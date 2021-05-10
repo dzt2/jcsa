@@ -60,6 +60,7 @@ public class SymInstanceTrees {
 	 * 		   the instance of execution node (statement) in program as coverage target.
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private static List<CirExecutionFlow> extract_prev_flows(CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
 		List<CirExecutionFlow> dependence_flows = new ArrayList<CirExecutionFlow>();
 		CirExecutionPath dependence_path;
@@ -196,29 +197,10 @@ public class SymInstanceTrees {
 	private static Collection<SymInstanceTreeNode> construct_prev_paths(SymInstanceTree tree, 
 			CirExecution mutation_execution, CDependGraph dependence_graph) throws Exception {
 		/* declarations */
+		List<CirExecutionFlow> coverage_flows = SymInstanceTrees.extract_prev_flows(dependence_graph, mutation_execution);
 		Collection<SymInstanceTreeNode> muta_nodes = new ArrayList<SymInstanceTreeNode>();
-		List<CirExecutionFlow> coverage_flows;
-		
-		/* dependence-based coverage paths from root the nodes covering the faulty statement */
-		if(dependence_graph != null) {
-			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
-			if(instance_graph.has_instances_of(mutation_execution)) {
-				for(CirInstanceNode instance : instance_graph.get_instances_of(mutation_execution)) {
-					if(dependence_graph.has_node(instance)) {
-						coverage_flows = SymInstanceTrees.extract_prev_flows(dependence_graph, instance);
-						muta_nodes.add(SymInstanceTrees.construct_prev_paths(tree, coverage_flows, mutation_execution));
-					}
-				}
-			}
-		}
-		
-		/* non-dependence based coverage path construction from root to mutation statement */
-		if(muta_nodes.isEmpty()) {
-			coverage_flows = SymInstanceTrees.extract_prev_flows(dependence_graph, mutation_execution);
-			muta_nodes.add(SymInstanceTrees.construct_prev_paths(tree, coverage_flows, mutation_execution));
-		}
-		
-		/* the collection of tree nodes representing mutation being reached */	return muta_nodes;
+		muta_nodes.add(SymInstanceTrees.construct_prev_paths(tree, coverage_flows, mutation_execution));
+		return muta_nodes;
 	}
 	/* data flow construction */
 	/**

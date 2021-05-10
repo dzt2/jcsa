@@ -257,13 +257,6 @@ public class MuTestProjectFeaturesWriter {
 		else
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
 	}
-	/**
-	 * @param test_cases
-	 * @return True if test cases have been selected or False to evaluate under static analysis
-	 */
-	private boolean is_selected(Collection<TestInput> test_cases) {
-		return (test_cases != null) && !(test_cases.isEmpty());
-	}
 	
 	/* xxx.cpp */
 	/**
@@ -896,6 +889,44 @@ public class MuTestProjectFeaturesWriter {
 		this.close();
 	}
 	
+	/* symbolic evaluation */
+	/**
+	 * @param test_cases
+	 * @return True if test cases have been selected or False to evaluate under static analysis
+	 */
+	private boolean is_selected(Collection<TestInput> test_cases) {
+		return (test_cases != null) && !(test_cases.isEmpty());
+	}
+	/**
+	 * generate instrumental files for given test cases in the source project by dynamic testing
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
+		if(this.is_selected(test_cases))
+			this.source.get_code_space().get_project().execute_instrumental(test_cases);
+	}
+	/**
+	 * perform static or dynamic evaluation on the specified test cases.
+	 * @param trees the collection of symbolic instance trees to be evaluated
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void evaluate_sym_instance_trees(Collection<SymInstanceTree> trees, 
+			Collection<TestInput> test_cases) throws Exception {
+		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
+		if(this.is_selected(test_cases)) {				/* CASE-I. DYNAMIC EVALUATION USED */
+			for(TestInput test_case : test_cases) {
+				CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
+									this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
+				if(state_path != null) { for(SymInstanceTree tree : trees) tree.evaluate(state_path); }
+			}
+		}
+		else {											/* CASE-II. STATIS EVALUATION USED */
+			for(SymInstanceTree tree : trees) { tree.evaluate(); }
+		}
+	}
+	
 	/* symbolic writers */
 	/**
 	 * category$operator$execution$location$parameter
@@ -960,7 +991,7 @@ public class MuTestProjectFeaturesWriter {
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_sym_instance_tree(SymInstanceTree tree) throws Exception {
+	private int write_sym_instance_tree(SymInstanceTree tree) throws Exception {
 		List<SymInstanceContent> contents = new ArrayList<SymInstanceContent>();
 		Queue<SymInstanceTreeNode> queue = new LinkedList<SymInstanceTreeNode>();
 		
@@ -974,28 +1005,17 @@ public class MuTestProjectFeaturesWriter {
 		}
 		
 		this.write_sym_contents(tree.get_mutant(), contents);
+		return 1;
 	}
 	/**
-	 * write the features in set of trees in form of node and edges rather than path
 	 * @param trees
+	 * @return write the nodes and edges in symbolic trees to each line of the output file
 	 * @throws Exception
 	 */
-	private int write_sym_instance_trees(MuTestProjectTestSpace tspace, 
-			Collection<SymInstanceTree> trees, Collection<TestInput> test_cases) throws Exception {
-		/* evaluate each tree on specified contexts (statically or dynamically) */
-		if(!this.is_selected(test_cases)) {
-			for(SymInstanceTree tree : trees) tree.evaluate();
+	private int write_sym_instance_trees(Collection<SymInstanceTree> trees) throws Exception {
+		for(SymInstanceTree tree : trees) {
+			this.write_sym_instance_tree(tree);
 		}
-		else {
-			for(TestInput test_case : test_cases) {
-				CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-									this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
-				if(state_path != null) { for(SymInstanceTree tree : trees) tree.evaluate(state_path); }
-			}
-		}
-		
-		/* output feature information */	
-		for(SymInstanceTree tree : trees) { this.write_sym_instance_tree(tree); }
 		return trees.size();
 	}
 	/**
@@ -1022,118 +1042,16 @@ public class MuTestProjectFeaturesWriter {
 		return counters;
 	}
 	/**
-	 * write the features in set of trees in form of node and edges rather than path
-	 * @param tspace
 	 * @param trees
-	 * @param test_cases
-	 * @throws Exception
+	 * @return write all the paths of each symbolic trees to each line of the output file
+	 * @throws Exeption
 	 */
-	private int write_sym_instance_paths(MuTestProjectTestSpace tspace, 
-			Collection<SymInstanceTree> trees, Collection<TestInput> test_cases) throws Exception {
-		/* evaluate each tree on specified contexts (statically or dynamically) */
-		if(!this.is_selected(test_cases)) {
-			for(SymInstanceTree tree : trees) tree.evaluate();
-		}
-		else {
-			for(TestInput test_case : test_cases) {
-				CStatePath state_path = tspace.load_instrumental_path(this.source.get_sizeof_template(), 
-									this.source.get_ast_tree(), this.source.get_cir_tree(), test_case);
-				if(state_path != null) { for(SymInstanceTree tree : trees) tree.evaluate(state_path); }
-			}
-		}
-		
-		/* output feature information */
+	private int write_sym_instance_paths(Collection<SymInstanceTree> trees) throws Exception {
 		int counter = 0;
-		for(SymInstanceTree tree : trees) { counter += this.write_sym_instance_path(tree); }
+		for(SymInstanceTree tree : trees) {
+			counter += this.write_sym_instance_path(tree);
+		}
 		return counter;
-	}
-	
-	/* xxx.sit xxx.sip xxx.sym */
-	/**
-	 * generate instrumental files for given test cases in the source project by dynamic testing
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
-		if(this.is_selected(test_cases))
-			this.source.get_code_space().get_project().execute_instrumental(test_cases);
-	}
-	/** the size of buffer to preserve symbolic trees generated and evaluated in feature writing **/
-	private static final int SYM_TREE_BUFFER_SIZE = 128;
-	/**
-	 * xxx.sit
-	 * @param dependence_graph used to generate symbolic instance tree
-	 * @param max_distance maximal error propagation distance from infection point
-	 * @param test_cases the set of test cases selected as context for analysis
-	 * @throws Exception
-	 */
-	private int write_sit(CDependGraph dependence_graph, int max_distance, Collection<TestInput> test_cases) throws Exception {
-		this.open(".sit");
-		
-		/* 1. declarations */
-		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>(); int counters = 0;
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		
-		/* 2. generate all the trees and evaluate and write features on fly */
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			if(mutant.has_cir_mutations() && tspace.get_test_result(mutant) != null) {
-				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
-			}
-			
-			if(trees.size() >= SYM_TREE_BUFFER_SIZE) {
-				counters += this.write_sym_instance_trees(tspace, trees, test_cases);
-				trees.clear();
-			}
-		}
-		if(!trees.isEmpty()) { counters += this.write_sym_instance_trees(tspace, trees, test_cases); }
-		
-		this.close();
-		return counters;
-	}
-	/**
-	 * xxx.sip
-	 * @param dependence_graph used to generate symbolic instance tree
-	 * @param max_distance maximal error propagation distance from infection point
-	 * @param test_cases the set of test cases selected as context for analysis
-	 * @throws Exception
-	 */
-	private int write_sip(CDependGraph dependence_graph, int max_distance, Collection<TestInput> test_cases) throws Exception {
-		this.open(".sip");
-		
-		/* 1. declarations */
-		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>(); int counters = 0;
-		MuTestProjectTestSpace tspace = this.source.get_code_space().get_project().get_test_space();
-		
-		/* 2. generate all the trees and evaluate and write features on fly */
-		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
-			if(mutant.has_cir_mutations() && tspace.get_test_result(mutant) != null) {
-				trees.add(SymInstanceTree.new_tree(mutant, max_distance, dependence_graph));
-			}
-			
-			if(trees.size() >= SYM_TREE_BUFFER_SIZE) {
-				counters += this.write_sym_instance_paths(tspace, trees, test_cases);
-				trees.clear();
-			}
-		}
-		if(!trees.isEmpty()) { counters += this.write_sym_instance_paths(tspace, trees, test_cases); }
-		
-		this.close();
-		return counters;
-	}
-	/**
-	 * xxx.sip and xxx.sym
-	 * @param dependence_graph used to generate symbolic instance tree
-	 * @param max_distance maximal error propagation distance from infection point
-	 * @param test_cases the set of test cases selected as context for analysis
-	 * @throws Exception
-	 */
-	private void write_sit_sip_sym(CDependGraph dependence_graph, int 
-			max_distance, Collection<TestInput> test_cases) throws Exception {
-		int number_of_trees = this.write_sit(dependence_graph, max_distance, test_cases);
-		int number_of_paths = this.write_sip(dependence_graph, max_distance, test_cases);
-		System.out.println("\t\t\tWrite " + number_of_trees + " mutants with " + number_of_paths + 
-				" symbolic paths using " + this.sym_nodes.size() + " expression nodes.");
-		this.write_sym_nodes(); this.sym_nodes.clear();
 	}
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
@@ -1206,16 +1124,75 @@ public class MuTestProjectFeaturesWriter {
 		}
 	}
 	/**
-	 * write all the symbolic expressions in the buffer
+	 * write the symbolic expression nodes in this.sym_nodes to writer and output the number
+	 * of symbolic expression nodes being printed to output file.
+	 * @return
 	 * @throws Exception
 	 */
-	private void write_sym_nodes() throws Exception {
-		this.open(".sym");
+	private int write_sym_nodes() throws Exception {
 		Set<String> records = new HashSet<String>();
 		for(SymbolNode node : this.sym_nodes) {
 			this.write_sym_node(node, records);
 		}
-		this.close();
+		return records.size();
+	}
+	
+	/* xxx.sit xxx.sip xxx.sym */
+	/**
+	 * @param mutant
+	 * @return whether the mutant is available for being printed
+	 * @throws Exception
+	 */
+	private boolean is_available_mutant(Mutant mutant) throws Exception {
+		if(mutant == null) {
+			return false;
+		}
+		else if(!mutant.has_cir_mutations()) {
+			return false;
+		}
+		else if(this.source.get_code_space().get_project().get_test_space().get_test_result(mutant) == null) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	/**
+	 * xxx.sit, xxx.sip, xxx.sym
+	 * @param dependence_graph
+	 * @param distance
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void write_sit_sip_sym(CDependGraph dependence_graph, int distance, Collection<TestInput> test_cases) throws Exception {
+		/* 1. declarations */
+		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>();
+		int number_of_trees = 0, number_of_paths = 0, number_of_nodes = 0, number_of_mutants;
+		
+		/* 2. generate symbolic instance trees for each available mutant */
+		number_of_mutants = this.source.get_mutant_space().size();
+		for(Mutant mutant : this.source.get_mutant_space().get_mutants()) {
+			/* NOTE only output features for mutant that has cir-mutation and tested */
+			if(this.is_available_mutant(mutant)) {
+				trees.add(SymInstanceTree.new_tree(mutant, distance, dependence_graph));
+			}
+		}
+		
+		/* 3. perform evaluation */ this.evaluate_sym_instance_trees(trees, test_cases);
+		
+		/* 4. xxx.sit */	
+		this.open(".sit"); number_of_trees = this.write_sym_instance_trees(trees); this.close();
+		
+		/* 5. xxx.sip */
+		this.open(".sip"); number_of_paths = this.write_sym_instance_paths(trees); this.close();
+		
+		/* 6. xxx.sym */
+		this.open(".sym"); number_of_nodes = this.write_sym_nodes(); this.close();
+		
+		/* 7. output summary information */
+		System.out.println("\t\t\t--> Print Features for " + number_of_mutants + " mutants using:"
+				+ "\t" + number_of_trees + " trees\t" + number_of_paths + " paths\t" + number_of_nodes + " expressions.");
+		return;
 	}
 	
 	/* API interface for utilization */
