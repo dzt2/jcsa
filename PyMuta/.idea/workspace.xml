@@ -59,7 +59,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.feature">
+  <component name="RunManager" selected="Python.feature2">
     <configuration name="code" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -81,7 +81,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="feature" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="feature2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -93,7 +93,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/mine2/feature.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/__backup__/feature2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -123,7 +123,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="mining (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="mining" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -135,7 +135,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/mine/mining.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/__backup__/mining.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -188,11 +188,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.feature" />
+        <item itemvalue="Python.feature2" />
         <item itemvalue="Python.test" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.code" />
-        <item itemvalue="Python.mining (1)" />
       </list>
     </recent_temporary>
   </component>

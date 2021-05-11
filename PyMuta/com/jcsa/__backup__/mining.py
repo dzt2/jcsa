@@ -8,7 +8,7 @@ import com.jcsa.libs.test as jctest
 import pydotplus
 from sklearn import tree
 from scipy import sparse
-import com.jcsa.mine.feature as jcfeature
+import com.jcsa.__backup__.feature as jcfeature
 
 
 # writer module for presentation
