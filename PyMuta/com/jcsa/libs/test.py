@@ -14,15 +14,15 @@ class CDocument:
 	It preserves the feature information for data mining directly from each project
 	"""
 
-	def __init__(self, directory: str, name: str, feature_postfix: str):
+	def __init__(self, directory: str, name: str, file_postfix: str):
 		"""
 		:param directory: feature directory with project data
 		:param name: project name
-		:param feature_postfix: ".sip" or ".sit"
+		:param file_postfix: ".sip" or ".sit"
 		"""
 		self.project = jcmuta.CProject(directory, name)
 		cov_file_path = os.path.join(directory, name + ".cov")
-		sip_file_path = os.path.join(directory, name + feature_postfix)
+		sip_file_path = os.path.join(directory, name + file_postfix)
 		self.coverage_matrix = CoverageMatrix(self, cov_file_path)
 		self.conditions = SymConditions(self)
 		self.executions = list()		# the collection of executions for killing mutant
@@ -74,6 +74,24 @@ class CDocument:
 			return list()
 		else:
 			return self.muta_executions[mutant]
+
+	@staticmethod
+	def sip_document(directory: str, name: str):
+		"""
+		:param directory: feature directory with project data
+		:param name: project name
+		:return: document with execution paths of each mutant
+		"""
+		return CDocument(directory, name, ".sip")
+
+	@staticmethod
+	def sit_document(directory: str, name: str):
+		"""
+				:param directory: feature directory with project data
+				:param name: project name
+				:return: document with execution sets for each mutant
+				"""
+		return CDocument(directory, name, ".sit")
 
 
 class CoverageMatrix:
@@ -549,11 +567,10 @@ class SymExecution:
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	print_condition = False
-	feature_postfix = ".sip"
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
-		c_document = CDocument(c_directory, file_name, feature_postfix)
+		c_document = CDocument.sip_document(c_directory, file_name)
 		print(file_name, "loads", len(c_document.get_mutants()), "mutants used and",
 			  len(c_document.get_executions()), "symbolic instance paths annotated with",
 			  len(c_document.get_conditions_lib().get_all_conditions()), "conditions.")
