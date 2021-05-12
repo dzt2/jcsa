@@ -678,6 +678,45 @@ class MerPredictionMineOutput:
 				self.__output__("\n")
 		return
 
+	def write_prediction_summary(self, file_path: str):
+		"""
+		:param file_path:
+		:return: rules mutants support confidence
+		"""
+		with open(file_path, 'w') as writer:
+			self.writer = writer
+			rule_evaluation_dict = self.miner.inputs.find_prediction_rules(None, None)
+			mutant_rule_dict, total_confidence = dict(), 0.0
+			for rule, evaluation in rule_evaluation_dict.items():
+				mutants = rule.get_mutants()
+				for mutant in mutants:
+					if not (mutant in mutant_rule_dict):
+						mutant_rule_dict[mutant] = set()
+					mutant_rule_dict[mutant].add(rule)
+				total_confidence += evaluation[2]
+			if total_confidence > 0:
+				total_confidence = total_confidence / len(rule_evaluation_dict)
+			self.__output__("Summary\t{} rules;\t{} mutants; \t{}% confidence.\n".format(len(rule_evaluation_dict),
+																						 len(mutant_rule_dict),
+																						 int(total_confidence * 10000) / 100.0))
+			self.__output__("\n")
+			self.__output__("Mutant\tRules\tLength\tSupports\tConfidence(%)\tExecutions\tMutants\tFeatureKey\n")
+			for mutant, rules in mutant_rule_dict.items():
+				mutant: jcenco.MerMutant
+				good_rules = sort_prediction_rules_in_support(rule_evaluation_dict, rules)
+				best_rule = good_rules[0]
+				evaluation = rule_evaluation_dict[best_rule]
+				self.__output__("{}\t{}\t{}\t{}\t{}%\t{}\t{}\t{}\n".format(mutant.get_mid(),
+																		   len(rules),
+																		   evaluation[0],
+																		   evaluation[1],
+																		   int(evaluation[2] * 10000) / 100.0,
+																		   len(best_rule.get_executions()),
+																		   len(best_rule.get_mutants()),
+																		   str(best_rule.get_features())))
+		self.__output__("\n")
+		return
+
 
 def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_alive: bool):
 	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.70, 0.95
@@ -709,6 +748,7 @@ def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_
 		## 3. output prediction rules
 		output.write_mutant_rules(os.path.join(output_path, file_name + ".mur"), mutants, max_print_size)
 		output.write_prediction_rules(os.path.join(output_path, file_name + ".prr"))
+		output.write_prediction_summary(os.path.join(output_path, file_name + ".sum"))
 		print("\t\t2. Output rules to final output directory...")
 		print()
 	print()
