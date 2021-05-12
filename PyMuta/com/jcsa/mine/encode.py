@@ -1,4 +1,23 @@
-"""This file defines the encoded model to represent mutant, test and symbolic condition etc."""
+"""
+This file defines the memory-reduced (Mer) model for:
+
+	---	MerDocument:		it maps to the com.jcsa.libs.test.CDocument
+
+	---	MerTestCase:		it maps to the com.jcsa.libs.muta.TestCase		{tid: int}
+	---	MerTestCaseSpace:	it maps to the com.jcsa.libs.muta.TestSpace		{test_cases: list[MerTestCase]}
+
+	---	MerMutantSpace:		it maps to the com.jcsa.libs.muta.MutantSpace	{mutants: list[MerMutant]}
+	---	MerMutant:			it maps to the com.jcsa.libs.muta.Mutant		{cov_mutant, wek_mutant, str_mutant, result}
+	---	MerMutantResult:	it maps to the com.jcsa.libs.muta.MutationResult	{mutant, result (String)}
+
+	---	MerCondition:		it maps to the com.jcsa.libs.test.SymCondition	{cid, code (String)}
+	---	MerConditions:		it maps to the com.jcsa.libs.test.SymConditionLibrary	{conditions: list[MerCondition]}
+
+	---	MerFeatureLine:		it represents the sorted sequence of integers encoding symbolic conditions.
+	---	MerExecution:		it maps to the com.jcsa.libs.test.SymExecution	{eid, mutant, features}
+	---	MerExecutionSpace:	it manages the data model of {executions: list[MerExecution]; muta_executions}
+
+"""
 
 
 import os
@@ -6,172 +25,149 @@ import com.jcsa.libs.muta as jcmuta
 import com.jcsa.libs.test as jctest
 
 
-class EncDocument:
+### document
+
+
+class MerDocument:
 	"""
-	The document preserves the information encoded from CDocument in a predefined project
+	It provides the memory-reduced model of CDocument
 	"""
 
 	def __init__(self, directory: str, file_name: str):
 		"""
-		:param directory: where the encoded feature files are directly preserved
-		:param file_name: the file name of the program name
+		:param directory: encoding directory where the encoded features are preserved
+		:param file_name:
 		"""
-		self.name = file_name				# program name
-		self.test_space = EncTestSpace(self, os.path.join(directory, file_name + ".tst"))
-		self.muta_space = EncMutantSpace(self, os.path.join(directory, file_name + ".mut"))
-		self.conditions = EncConditionSpace(self, os.path.join(directory, file_name + ".sym"))
-		self.exec_space = EncExecutionSpace(self, os.path.join(directory, file_name + ".lin"))
+		self.name = file_name
+		tst_file_path = os.path.join(directory, file_name + ".tst")
+		mut_file_path = os.path.join(directory, file_name + ".mut")
+		res_file_path = os.path.join(directory, file_name + ".res")
+		sym_file_path = os.path.join(directory, file_name + ".sym")
+		exe_file_path = os.path.join(directory, file_name + ".exc")
+		self.test_space = MerTestCaseSpace(self, tst_file_path)
+		self.muta_space = MerMutantSpace(self, mut_file_path, res_file_path)
+		self.cond_space = MerConditionSpace(self, sym_file_path)
+		self.exec_space = MerExecutionSpace(self, exe_file_path)
+		return
+
+	@staticmethod
+	def encode_mer_document(c_document: jctest.CDocument, directory: str):
+		"""
+		:param c_document:
+		:param directory:
+		:return: translate the original document to the memory-reduced in specified directory
+		"""
+		file_name = c_document.project.program.name
+		directory = os.path.join(directory, file_name)
+		if not os.path.exists(directory):
+			os.mkdir(directory)
+
+		## xxx.tst
+		with open(os.path.join(directory, file_name + ".tst"), 'w') as writer:
+			for test in c_document.project.test_space.get_test_cases():
+				test: jcmuta.TestCase
+				writer.write("{}\n".format(test.get_test_id()))
+
+		## xxx.mut
+		with open(os.path.join(directory, file_name + ".mut"), 'w') as writer:
+			for mutant in c_document.project.muta_space.get_mutants():
+				mutant: jcmuta.Mutant
+				writer.write("{}\t{}\t{}\t{}\n".format(mutant.get_muta_id(),
+													   mutant.get_c_mutant().get_muta_id(),
+													   mutant.get_w_mutant().get_muta_id(),
+													   mutant.get_s_mutant().get_muta_id()))
+
+		### xxx.res
+		with open(os.path.join(directory, file_name + ".res"), 'w') as writer:
+			for mutant in c_document.project.muta_space.get_mutants():
+				mutant: jcmuta.Mutant
+				result = mutant.get_result()
+				writer.write("{}\t{}\n".format(mutant.get_muta_id(), result.result))
+
+		### xxx.sym
+		cid, condition_index_dict = 0, dict()
+		with open(os.path.join(directory, file_name + ".sym"), 'w') as writer:
+			for condition in c_document.get_conditions_lib().get_all_conditions():
+				writer.write("{}\n".format(str(condition)))
+				condition_index_dict[condition] = cid
+				cid += 1
+
+		### xxx.exc
+		with open(os.path.join(directory, file_name + ".exc"), 'w') as writer:
+			for execution in c_document.get_executions():
+				execution: jctest.SymExecution
+				writer.write("{}".format(execution.get_mutant().get_muta_id()))
+				for condition in execution.get_conditions():
+					cid = condition_index_dict[condition]
+					writer.write("\t{}".format(cid))
+				writer.write("\n")
 		return
 
 
-class EncMutant:
+### test case
+
+class MerTestCase:
 	"""
-	The encoded mutation is a pair [id, result]
+	It refers to the integer ID of the TestCase.
 	"""
 
-	def __init__(self, space, mut_id: int, result: str):
+	def __init__(self, space, tid: int):
 		"""
-		:param space:  the space of encoded mutants used in
-		:param mut_id: the unique ID of mutant being encoded
-		:param result: the 01 string representing test result
+		:param space: the space where the test case is defined
+		:param tid: integer ID of TestCase
 		"""
-		space: EncMutantSpace
+		space: MerTestCaseSpace
 		self.space = space
-		self.mut_id = mut_id
-		self.result = result
+		self.tid = tid
 		return
 
 	def get_space(self):
 		"""
-		:return: the space of encoded mutants used in
+		:return: the space where the test case is defined
 		"""
 		return self.space
 
-	def get_mut_id(self):
+	def get_tid(self):
 		"""
-		:return: the unique ID of mutant being encoded
+		:return: integer ID of TestCase
 		"""
-		return self.mut_id
+		return self.tid
 
-	def get_result(self):
-		"""
-		:return: the 01 string representing test result
-		"""
-		return self.result
-
-	def is_killed_by(self, test):
-		"""
-		:param test: the integer ID of test case encoded in the project
-		:return: whether the mutant is killed by the test or None if unknown
-		"""
-		if isinstance(test, EncTestCase):
-			tid = test.get_test_id()
-		else:
-			test: int
-			tid = test
-		if (tid < 0) or (tid >= len(self.result)):
-			return None
-		else:
-			return self.result[tid] == '1'
-
-	def is_killed_in(self, tests):
-		"""
-		:param tests: the collection of encoded test cases (as integer) to kill
-		:return: whether the mutant is killed by any test within the collection
-		"""
-		if tests is None:
-			return '1' in self.result
-		else:
-			for test in tests:
-				if self.is_killed_by(test):
-					return True
-			return False
+	def __str__(self):
+		return str(self.tid)
 
 
-class EncMutantSpace:
+class MerTestCaseSpace:
 	"""
-	The space where encoded mutations are preserved
+	The space of test cases
 	"""
 
-	def __init__(self, document: EncDocument, file_path: str):
+	def __init__(self, document: MerDocument, file_path: str):
 		"""
 		:param document:
-		:param file_path: xxx.mut to preserve encoded mutants and their results
+		:param file_path: xxx.tst [each line is an integer or empty]
 		"""
-		self.document = document
-		self.mutants = list()
-		mutants_dict = dict()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				if len(line.strip()) > 0:
-					items = line.split('\t')
-					mid = int(items[0].strip())
-					result = items[1].strip()
-					mutants_dict[mid] = EncMutant(self, mid, result)
-		for mid in range(0, len(mutants_dict)):
-			self.mutants.append(mutants_dict[mid])
-		return
-
-	def get_document(self):
-		"""
-		:return: the document where the mutant space is defined
-		"""
-		return self.document
-
-	def get_mutants(self):
-		"""
-		:return: the collection of encoded mutants within the space
-		"""
-		return self.mutants
-
-	def get_mutant(self, mut_id: int):
-		"""
-		:param mut_id:
-		:return: the encoded mutant w.r.t. given integer ID
-		"""
-		return self.mutants[mut_id]
-
-
-class EncTestCase:
-	"""
-	The encoded test case is only an integer
-	"""
-
-	def __init__(self, space, test_id: int):
-		space: EncTestSpace
-		self.test_id = test_id
-		self.space = space
-		return
-
-	def get_space(self):
-		"""
-		:return: space where the test case is created
-		"""
-		return self.space
-
-	def get_test_id(self):
-		"""
-		:return: the integer ID of the test in space
-		"""
-		return self.test_id
-
-
-class EncTestSpace:
-	"""
-	The space records the encoded test case (only integer)
-	"""
-
-	def __init__(self, document: EncDocument, file_path: str):
 		self.document = document
 		self.test_cases = list()
-		tests_dict = dict()
+		self.__load__(file_path)
+		return
+
+	def __load__(self, file_path: str):
+		"""
+		:param file_path: xxx.tst [each line is an integer]
+		:return:
+		"""
+		self.test_cases.clear()
+		test_cases_dict = dict()
 		with open(file_path, 'r') as reader:
 			for line in reader:
-				if len(line.strip()) > 0:
-					test_id = int(line.strip())
-					tests_dict[test_id] = EncTestCase(self, test_id)
-		for test_id in range(0, len(tests_dict)):
-			self.test_cases.append(tests_dict[test_id])
+				line = line.strip()
+				if len(line) > 0:
+					tid = int(line)
+					test_cases_dict[tid] = MerTestCase(self, tid)
+		for tid in range(0, len(test_cases_dict)):
+			test_case = test_cases_dict[tid]
+			self.test_cases.append(test_case)
 		return
 
 	def get_document(self):
@@ -181,63 +177,287 @@ class EncTestSpace:
 		return self.document
 
 	def get_test_cases(self):
+		"""
+		:return: the collection of test cases defined in the space
+		"""
 		return self.test_cases
 
-	def get_test_case(self, test_id: int):
-		return self.test_cases[test_id]
+	def get_test_case(self, tid: int):
+		"""
+		:param tid: the unique integer ID of the test case in the space
+		:return:
+		"""
+		test_case = self.test_cases[tid]
+		test_case: MerTestCase
+		return test_case
 
 
-class EncCondition:
+### mutant
+
+
+class MerMutant:
 	"""
-	Encoded symbolic condition is a pair [id, word]
+	The memory-reduced mutant contains [space, mid, cov_mutant, wek_mutant, str_mutant, result]
 	"""
 
-	def __init__(self, space, cid: int, word: str):
-		space: EncConditionSpace
+	def __init__(self, space, mid: int):
+		"""
+		:param space: the mutation space
+		:param mid: the unique integer ID
+		"""
+		space: MerMutantSpace
 		self.space = space
-		self.cid = cid
-		self.word = word
+		self.mid = mid
+		self.c_mutant = None
+		self.w_mutant = None
+		self.s_mutant = None
+		self.result = MerMutantResult(self, "")
 		return
 
 	def get_space(self):
 		"""
-		:return: space where the condition is created
+		:return: the mutation space
 		"""
+		return self.space
+
+	def get_mid(self):
+		"""
+		:return: the unique integer ID
+		"""
+		return self.mid
+
+	def get_coverage_mutant(self):
+		"""
+		:return: the mutant is covered if this mutant is killed
+		"""
+		self.c_mutant: MerMutant
+		return self.c_mutant
+
+	def get_weak_mutant(self):
+		"""
+		:return: the mutant is weakly killed if this mutant is killed
+		"""
+		self.w_mutant: MerMutant
+		return self.w_mutant
+
+	def get_strong_mutant(self):
+		"""
+		:return: the mutant is strongly killed if this one is killed
+		"""
+		self.s_mutant: MerMutant
+		return self.s_mutant
+
+	def get_result(self):
+		"""
+		:return: the test result of the mutation
+		"""
+		self.result: MerMutantResult
+		return self.result
+
+
+class MerMutantResult:
+	"""
+	It represents the result of a mutant.
+	"""
+
+	def __init__(self, mutant: MerMutant, result: str):
+		"""
+		:param mutant:
+		:param result: the 0-1 sequence to denote whether a mutant is killed by which test in space
+		"""
+		self.mutant = mutant
+		self.result = result
+		return
+
+	def get_mutant(self):
+		"""
+		:return: the mutant that the result describes
+		"""
+		return self.mutant
+
+	def get_result(self):
+		"""
+		:return: the 0-1 sequence to denote whether a mutant is killed by which test in space
+		"""
+		return self.result
+
+	def is_killed_by(self, test):
+		"""
+		:param test: either MerTestCase or int
+		:return: None if unknown
+		"""
+		if isinstance(test, MerTestCase):
+			tid = test.tid
+		else:
+			test: int
+			tid = test
+		if (tid >= 0) or (tid < len(self.result)):
+			return self.result[tid] == '1'
+		else:
+			return None
+
+	def is_killed_in(self, tests):
+		"""
+		:param tests: the collection of test case (or tid) used to kill the mutant
+		:return:
+		"""
+		if tests is None:
+			return '1' in self.result
+		else:
+			for test in tests:
+				if self.is_killed_by(test):
+					return True
+			return False
+
+	def __str__(self):
+		return self.result
+
+	def __len__(self):
+		return len(self.result)
+
+
+class MerMutantSpace:
+	"""
+	The mutation space
+	"""
+
+	def __init__(self, document: MerDocument, mut_file_path: str, res_file_path: str):
+		"""
+		:param document:
+		:param mut_file_path: mid cid wid sid
+		:param res_file_path: mid result_string
+		"""
+		self.document = document
+		self.mutants = list()
+		self.__load_mut__(mut_file_path)
+		self.__link_mut__(mut_file_path)
+		self.__kill_mut__(res_file_path)
+		return
+
+	def get_document(self):
+		return self.document
+
+	def get_mutants(self):
+		"""
+		:return: the collection of mutants defined in the space
+		"""
+		return self.mutants
+
+	def get_mutant(self, mid: int):
+		"""
+		:param mid:
+		:return: the mutant w.r.t. unique ID in the space
+		"""
+		mutant = self.mutants[mid]
+		mutant: MerMutant
+		return mutant
+
+	def __load_mut__(self, mut_file_path: str):
+		"""
+		:param mut_file_path: mid cid wid sid
+		:return:
+		"""
+		mutants_dict = dict()
+		with open(mut_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mid = int(items[0].strip())
+					mutant = MerMutant(self, mid)
+					mutants_dict[mid] = mutant
+		self.mutants.clear()
+		for mid in range(0, len(mutants_dict)):
+			self.mutants.append(mutants_dict[mid])
+		return
+
+	def __link_mut__(self, mut_file_path: str):
+		"""
+		:param mut_file_path: mid cid wid sid
+		:return:
+		"""
+		with open(mut_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mid = int(items[0].strip())
+					cid = int(items[1].strip())
+					wid = int(items[2].strip())
+					sid = int(items[3].strip())
+					mutant = self.mutants[mid]
+					mutant: MerMutant
+					mutant.c_mutant = self.mutants[cid]
+					mutant.w_mutant = self.mutants[wid]
+					mutant.s_mutant = self.mutants[sid]
+		return
+
+	def __kill_mut__(self, res_file_path: str):
+		"""
+		:param res_file_path: mid result
+		:return:
+		"""
+		with open(res_file_path, 'r') as reader:
+			for line in reader:
+				if len(line.strip()) > 0:
+					items = line.split('\t')
+					mid = int(items[0].strip())
+					res = items[1].strip()
+					mutant = self.mutants[mid]
+					mutant: MerMutant
+					mutant.get_result().result = res
+		return
+
+
+### condition
+
+
+class MerCondition:
+	"""
+	It represents memory-reduced symbolic condition.
+	"""
+
+	def __init__(self, space, cid: int, code: str):
+		"""
+		:param space:
+		:param cid:
+		:param code:
+		"""
+		space: MerConditionSpace
+		self.space = space
+		self.cid = cid
+		self.code = code
+		return
+
+	def get_space(self):
 		return self.space
 
 	def get_cid(self):
 		"""
-		:return: the index of the condition in the space
+		:return: integer ID of the symbolic condition
 		"""
 		return self.cid
 
-	def get_word(self):
-		"""
-		:return: string word encoding the condition used
-		"""
-		return self.word
+	def get_code(self):
+		return self.code
 
 	def __str__(self):
-		return self.word
+		return self.code
 
 
-class EncConditionSpace:
+class MerConditionSpace:
 	"""
-	The space of symbolic conditions being encoded
+	It manages the symbolic conditions used in project
 	"""
 
-	def __init__(self, document: EncDocument, file_path: str):
-		"""
-		:param document: where the space is created
-		:param file_path: xxx.sym that preserves the symbolic conditions
-		"""
+	def __init__(self, document: MerDocument, sym_file_path: str):
 		self.document = document
 		self.conditions = list()
-		with open(file_path, 'r') as reader:
-			for word in reader:
-				word = word.strip()
-				if len(word) > 0:
-					condition = EncCondition(self, len(self.conditions), word)
+		with open(sym_file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					condition = MerCondition(self, len(self.conditions), line)
 					self.conditions.append(condition)
 		return
 
@@ -245,73 +465,123 @@ class EncConditionSpace:
 		return self.document
 
 	def get_conditions(self):
+		"""
+		:return: the collection of symbolic conditions defined
+		"""
 		return self.conditions
 
 	def get_condition(self, cid: int):
+		"""
+		:param cid:
+		:return: the symbolic condition w.r.t. integer ID
+		"""
 		return self.conditions[cid]
 
+	def __len__(self):
+		"""
+		:return: the number of conditions defined in space
+		"""
+		return len(self.conditions)
 
-class EncExecution:
+	def encode(self, conditions):
+		"""
+		:param conditions: the collection of MerCondition
+		:return:
+		"""
+		self.conditions = self.conditions
+		features = list()
+		for condition in conditions:
+			condition: MerCondition
+			feature = condition.get_cid()
+			if not (feature in features):
+				features.append(feature)
+		features.sort()
+		return features
+
+	def decode(self, features: list):
+		"""
+		:param features: the sequence of integers encoding symbolic conditions
+		:return:
+		"""
+		conditions = list()
+		for feature in features:
+			feature: int
+			conditions.append(self.get_condition(feature))
+		return conditions
+
+
+### execution
+
+
+class MerExecution:
 	"""
-	It encodes the symbolic execution in the project
+	It represents the memory-reduced execution for killing mutant.
 	"""
 
-	def __init__(self, space, eid: int, mutant: EncMutant, conditions):
+	def __init__(self, space, eid: int, mutant: MerMutant, features):
 		"""
 		:param space:
-		:param mutant: the mutant to be killed
-		:param conditions: the collection of symbolic conditions required
+		:param mutant:
+		:param features: the collection of integers encoding the conditions used in this execution
 		"""
-		space: EncExecutionSpace
+		space: MerExecutionSpace
 		self.space = space
 		self.eid = eid
 		self.mutant = mutant
-		self.conditions = list()
-		for condition in conditions:
-			condition: EncCondition
-			self.conditions.append(condition)
+		self.features = list()
+		for feature in features:
+			feature: int
+			self.features.append(feature)
+		self.features.sort()
 		return
 
 	def get_space(self):
 		return self.space
 
-	def get_exec_id(self):
+	def get_eid(self):
 		return self.eid
 
 	def get_mutant(self):
 		return self.mutant
 
-	def get_conditions(self):
-		return self.conditions
-
-	def get_condition(self, k: int):
-		return self.conditions[k]
-
-
-class EncExecutionSpace:
-	"""
-	It preserves the symbolic executions as feature inputs
-	"""
-
-	def __init__(self, document: EncDocument, file_path: str):
+	def get_features(self):
 		"""
-		:param document:
-		:param file_path: xxx.lin
+		:return: feature vector of the execution line
+		"""
+		return self.features
+
+	def get_conditions(self):
+		"""
+		:return: the set of condition instances used in the execution process.
+		"""
+		document = self.space.document
+		document: MerDocument
+		return document.cond_space.decode(self.features)
+
+
+class MerExecutionSpace:
+	"""
+	The execution space
+	"""
+
+	def __init__(self, document: MerDocument, exe_file_path: str):
+		"""
+		:param document: where the execution space is created
+		:param exe_file_path: mid [cid]+
 		"""
 		self.document = document
 		self.executions = list()
 		self.muta_execs = dict()
-		with open(file_path, 'r') as reader:
+		with open(exe_file_path, 'r') as reader:
 			for line in reader:
-				if len(line.strip()) > 0:
-					items = line.strip().split('\t')
-					mid = int(items[0].strip())
-					mutant = self.document.muta_space.get_mutant(mid)
-					conditions = list()
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mutant = self.document.muta_space.get_mutant(int(items[0].strip()))
+					features = set()
 					for k in range(1, len(items)):
-						condition = self.document.conditions.get_condition(int(items[k].strip()))
-						conditions.append(condition)
-					execution = EncExecution(self, len(self.executions), mutant, conditions)
+						features.add(int(items[k].strip()))
+					execution = MerExecution(self, len(self.executions), mutant, features)
 					self.executions.append(execution)
 					if not (mutant in self.muta_execs):
 						self.muta_execs[mutant] = list()
@@ -330,84 +600,62 @@ class EncExecutionSpace:
 	def get_execution(self, eid: int):
 		return self.executions[eid]
 
-	def get_executions_of(self, mutant: EncMutant):
-		if not (mutant in self.muta_execs):
-			return list()
-		else:
+	def get_executions_of(self, mutant: MerMutant):
+		if mutant in self.muta_execs:
 			return self.muta_execs[mutant]
+		else:
+			return list()
 
 
-def encoding_c_document(c_document: jctest.CDocument, encode_directory: str):
+### encoding-decoding
+
+
+def encode_c_documents(prev_path: str, post_path: str, postfix: str):
 	"""
-	:param c_document:
-	:param encode_directory:
-	:return: xxx.mut xxx.tst xxx.sym xxx.lin
-	"""
-	output_directory = os.path.join(encode_directory, c_document.project.program.name)
-	if not os.path.exists(output_directory):
-		os.mkdir(output_directory)
-	file_name = c_document.project.program.name
-	# 1. xxx.mut
-	with open(os.path.join(output_directory, file_name + ".mut"), 'w') as writer:
-		for mutant in c_document.project.muta_space.get_mutants():
-			mutant: jcmuta.Mutant
-			if mutant.get_result() is None:
-				result = ""
-			else:
-				result = mutant.get_result().result
-			writer.write("{}\t{}\n".format(mutant.get_muta_id(), result))
-	# 2. xxx.tst
-	with open(os.path.join(output_directory, file_name + ".tst"), 'w') as writer:
-		for test in c_document.project.test_space.get_test_cases():
-			test: jcmuta.TestCase
-			writer.write("{}\n".format(test.get_test_id()))
-	# 3. xxx.sym
-	index, cid = dict(), 0
-	with open(os.path.join(output_directory, file_name + ".sym"), 'w') as writer:
-		for condition in c_document.get_conditions_lib().get_all_conditions():
-			writer.write("{}\n".format(str(condition)))
-			index[str(condition)] = cid
-			cid += 1
-	# 4. xxx.lin
-	with open(os.path.join(output_directory, file_name + ".lin"), 'w') as writer:
-		for execution in c_document.get_executions():
-			writer.write(str(execution.get_mutant().get_muta_id()))
-			for condition in execution.get_conditions():
-				cid = index[str(condition)]
-				writer.write("\t{}".format(cid))
-			writer.write("\n")
-	return
-
-
-def encoding_c_documents(inputs_directory: str, output_directory: str, file_postfix: str):
-	"""
-	:param inputs_directory: original project directory
-	:param output_directory: output directory to encode
-	:param file_postfix:
+	:param prev_path:
+	:param post_path:
+	:param postfix: .sip or .sit
 	:return:
 	"""
-	for file_name in os.listdir(inputs_directory):
-		c_document = jctest.CDocument(os.path.join(inputs_directory, file_name), file_name, file_postfix)
-		encoding_c_document(c_document, output_directory)
-		print("Encoding", file_name, "to output directory.")
+	for file_name in os.listdir(prev_path):
+		inputs_directory = os.path.join(prev_path, file_name)
+		c_document = jctest.CDocument(inputs_directory, file_name, postfix)
+		MerDocument.encode_mer_document(c_document, post_path)
+		print("Encode project for", file_name)
+	print()
 	return
 
 
-def testing_e_documents(encode_directory: str):
-	for file_name in os.listdir(encode_directory):
-		directory = os.path.join(encode_directory, file_name)
-		e_document = EncDocument(directory, file_name)
-		print("Load", len(e_document.muta_space.get_mutants()), "mutants and",
-			  len(e_document.test_space.get_test_cases()), "test cases and",
-			  len(e_document.exec_space.get_executions()), "executions with",
-			  len(e_document.conditions.get_conditions()), "conditions.")
+def decode_m_documents(post_path: str):
+	"""
+	:param post_path:
+	:return:
+	"""
+	for file_name in os.listdir(post_path):
+		encode_directory = os.path.join(post_path, file_name)
+		m_document = MerDocument(encode_directory, file_name)
+		print("Load", file_name, "using:\t",
+			  len(m_document.test_space.get_test_cases()), "test cases;",
+			  len(m_document.muta_space.get_mutants()), "mutants;",
+			  len(m_document.exec_space.get_executions()), "executions;",
+			  len(m_document.cond_space.get_conditions()), "conditions.")
+	print()
 	return
 
+
+def main(prev_path: str, post_path: str, postfix: str):
+	encode_c_documents(prev_path, post_path, postfix)
+	decode_m_documents(post_path)
+	return 0
+
+
+## main testing
 
 
 if __name__ == "__main__":
-	prev_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
-	post_path = "/home/dzt2/Development/Data/encodes"
-	# encoding_c_documents(prev_path, post_path, ".sip")
-	testing_e_documents(post_path)
+	prev_directory = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	post_directory = "/home/dzt2/Development/Data/encodes"
+	file_postfix = ".sip"
+	exit_code = main(prev_directory, post_directory, file_postfix)
+	exit(exit_code)
 
