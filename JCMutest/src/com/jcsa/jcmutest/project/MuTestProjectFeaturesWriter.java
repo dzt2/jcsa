@@ -104,8 +104,9 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * 	|	---	xxx.stc: the collection of test cases selected for mining algorithm to assume.		|	<br>
  * 	|	---	xxx.cov: the coverage matrix of which statement covered by which test case.			|	<br>
  * 	|	---	xxx.sit: the information to preserve status of each symbolic instance among tree.	|	<br>
- * 	|	---	xxx.sip: the information to preserve status of each symbolic instance in tree path.|	<br>
+ * 	|	---	xxx.sip: the information to preserve status of each symbolic instance in tree path.	|	<br>
  * 	|	---	xxx.sym: the information of structural description for symbolic expression or node.	|	<br>
+ * 	|	---	xxx.wod: the sequence of words encoding symbolic conditions used in the library.	|	<br>
  * 	+-------------------------------------------------------------------------------------------+	<br>
  * 	</code>
  * 	<br>	
