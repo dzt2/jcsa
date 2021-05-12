@@ -393,7 +393,7 @@ class MerPredictionMineInputs:
 	"""
 
 	def __init__(self, document: jcenco.MerDocument, exe_or_mut: bool, support_classes,
-				 max_length: int, min_support: int, min_confidence: float):
+				 max_length: int, min_support: int, min_confidence: float, max_confidence: float):
 		"""
 		:param document: data source of context inputs
 		:param max_length: maximal length allowed
@@ -410,6 +410,7 @@ class MerPredictionMineInputs:
 		self.max_length = max_length
 		self.min_support = min_support
 		self.min_confidence = min_confidence
+		self.max_confidence = max_confidence
 		return
 
 	# data space
@@ -445,6 +446,9 @@ class MerPredictionMineInputs:
 
 	def get_min_confidence(self):
 		return self.min_confidence
+
+	def get_max_confidence(self):
+		return self.max_confidence
 
 	# rules
 
@@ -507,7 +511,8 @@ class MerPredictionRulesMiner:
 		length, support, confidence = self.inputs.evaluate(rule, used_tests)
 		self.solutions.add(rule)
 		## 2. recursively mining on
-		if length < self.inputs.get_max_length() and support >= self.inputs.get_min_support():
+		if length < self.inputs.get_max_length() and support >= self.inputs.get_min_support() and \
+				confidence < self.inputs.get_max_confidence():
 			for k in range(0, len(features)):
 				child = self.inputs.get_child(rule, features[k])
 				if child != rule:
@@ -521,9 +526,9 @@ class MerPredictionRulesMiner:
 		"""
 		used_tests = self.__get_used_tests__(mutant)
 		features = self.__get_features__(mutant)
-		print("\t\t\t-->Start: mutant#{} using {} tests and {} features.".format(mutant.get_mid(),
-																				 len(used_tests),
-																				 len(features)))
+		print("\t\t\t--> Start: mutant#{} using {} tests and {} features.".format(mutant.get_mid(),
+																				  len(used_tests),
+																				  len(features)))
 		self.solutions.clear()
 		root_rule = self.inputs.get_root()
 		self.__mine__(root_rule, used_tests, features)
@@ -550,59 +555,87 @@ class MerPredictionMineOutput:
 		self.writer.flush()
 		return
 
-	## mutant mining
+	## information text
 
-	def __write_mutant_head__(self, mutant: jcenco.MerMutant):
+	def __mut2str__(self, mutant):
 		"""
-		:param mutant:
-		:return: ID result class operator line code parameter
+		:param mutant: either MerMutant or original Mutant
+		:return: id result class operator function line code parameter
 		"""
-		orig_mutant = self.c_document.project.muta_space.get_mutant(mutant.get_mid())
+		if isinstance(mutant, jcenco.MerMutant):
+			mutant = self.c_document.project.muta_space.get_mutant(mutant.get_mid())
+		else:
+			mutant: jcmuta.Mutant
+		mid = mutant.get_muta_id()
 		result = mutant.get_result().is_killed_in(None)
 		if result:
-			result = "KILLED"
+			result = "Killed"
 		else:
-			result = "SURVIVE"
-		line = orig_mutant.get_mutation().get_location().line_of(tail=False) + 1
-		code = "\"{}\"".format(orig_mutant.get_mutation().get_location().get_code(True))
-		head = "Mutant\t{}\t{}\t{}\t{}\t{}\t{}\t[{}]".format(mutant.get_mid(), result,
-															 orig_mutant.get_mutation().get_mutation_class(),
-															 orig_mutant.get_mutation().get_mutation_operator(),
-															 line, code, orig_mutant.get_mutation().get_parameter())
-		self.__output__(head)
-		self.__output__("\n")
-		return
+			result = "Survive"
+		m_class = mutant.get_mutation().get_mutation_class()
+		operator = mutant.get_mutation().get_mutation_operator()
+		location = mutant.get_mutation().get_location()
+		line = location.line_of(tail=False) + 1
+		definition = location.function_definition_of()
+		code = "\"{}\"".format(location.get_code(True))
+		def_code = definition.get_code(True)
+		index = def_code.index('(')
+		fun_code = def_code[0: index].strip()
+		parameter = mutant.get_mutation().get_parameter()
+		return "{}\t{}\t{}\t{}\t{}\t{}\t{}\t[{}]".format(mid, result, m_class, operator, fun_code, line, code, parameter)
 
-	def __write_rules_in_mutant__(self, mutant: jcenco.MerMutant):
+	def __rul2str__(self, rule: MerPredictRule, support: int, confidence: float):
+		"""
+		:param rule:
+		:return: length executions mutants support confidence [specialized]
+		"""
+		self.c_document = self.c_document
+		return "{}\t{}\t{}\t{}\t{}%".format(len(rule), len(rule.get_executions()), len(rule.get_mutants()),
+											support, int(confidence * 100000) / 1000.0)
+
+	def __con2str__(self, condition):
+		"""
+		:param condition: either MerCondition or SymCondition
+		:return: category operator execution statement location parameter
+		"""
+		if isinstance(condition, jcenco.MerCondition):
+			condition = self.c_document.conditions.get_condition(condition.get_code())
+		else:
+			condition: jctest.SymCondition
+		return "{}\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]".format(condition.get_category(), condition.get_operator(),
+														 condition.get_execution(),
+														 condition.get_execution().get_statement().get_cir_code(),
+														 condition.get_location().get_cir_code(),
+														 condition.get_parameter())
+
+	## output methods
+
+	def __write_mutant_rules__(self, mutant, max_size: int):
 		"""
 		:param mutant:
+		:param max_size: the maximal number of rules being printed
 		:return:
 		"""
-		## mutant head
-		self.__write_mutant_head__(mutant)
-		## rule generation
 		rule_evaluation_dict = self.miner.mine(mutant)
-		for rule, evaluation in rule_evaluation_dict.items():
-			rule_head = "Rule\tlength\t{}\tsupport\t{}\tconfidence\t{}%\n".format(evaluation[0], evaluation[1],
-																				  int(evaluation[2] * 10000) / 100.0)
-			self.__output__(rule_head)
-			## condition outputs
+		good_rules = sort_prediction_rules_in_support(rule_evaluation_dict, None)
+		if (len(good_rules) > max_size) and (max_size > 0):
+			good_rules = good_rules[0: max_size]
+		self.__output__("Mutant\t{}\n".format(self.__mut2str__(mutant)))
+		for rule in good_rules:
+			evaluation = rule_evaluation_dict[rule]
+			self.__output__("\tRule\t{}\n".format(self.__rul2str__(rule, evaluation[1], evaluation[2])))
+			index = 0
 			for condition in rule.get_conditions():
-				sym_condition = self.c_document.get_conditions_lib().get_condition(condition.get_code())
-				rule_line = "\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]\n".format(sym_condition.get_category(),
-																		  sym_condition.get_operator(),
-																		  sym_condition.get_execution(),
-																		  sym_condition.get_execution().get_statement().get_cir_code(),
-																		  sym_condition.get_location().get_cir_code(),
-																		  sym_condition.get_parameter())
-				self.__output__(rule_line)
+				self.__output__("\tR.C[{}]\t{}\n".format(index, self.__con2str__(condition)))
+				index += 1
 		self.__output__("\n")
 		return
 
-	def write_mutant_rules(self, file_path: str, mutants):
+	def write_mutant_rules(self, file_path: str, mutants, max_size: int):
 		"""
+		:param max_size:
 		:param file_path:
-		:param mutants: the set of MerMutant to be printed
+		:param mutants:
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
@@ -611,11 +644,27 @@ class MerPredictionMineOutput:
 				if isinstance(mutant, jcmuta.Mutant):
 					mutant = self.m_document.muta_space.get_mutant(mutant.get_muta_id())
 				else:
-					mutant: jcenco.MerMutant
-				self.__write_rules_in_mutant__(mutant)
-			return
+					pass
+				self.__write_mutant_rules__(mutant, max_size)
+		return
 
-	def write_alive_rules(self, file_path: str):
+	def __write_predict_rule__(self, rule: MerPredictRule):
+		"""
+		:param rule:
+		:return:
+		"""
+		length, support, confidence = self.miner.inputs.evaluate(rule, None)
+		self.__output__("Rule\t{}\n".format(self.__rul2str__(rule, support, confidence)))
+		self.__output__("\tMutants\n")
+		for mutant in rule.get_mutants():
+			self.__output__("\t{}\n".format(self.__mut2str__(mutant)))
+		self.__output__("\tConditions\n")
+		for condition in rule.get_conditions():
+			self.__output__("\t{}\n".format(self.__con2str__(condition)))
+		self.__output__("End Rule\n")
+		return
+
+	def write_prediction_rules(self, file_path: str):
 		"""
 		:param file_path:
 		:return:
@@ -623,27 +672,16 @@ class MerPredictionMineOutput:
 		with open(file_path, 'w') as writer:
 			self.writer = writer
 			rule_evaluation_dict = self.miner.inputs.find_prediction_rules(None, None)
-			for rule, evaluation in rule_evaluation_dict.items():
-				head = "Rule\tlength\t{}\tsupport\t{}\tconfidence\t{}%\n".format(evaluation[0],
-																				 evaluation[1],
-																				 int(evaluation[2] * 10000) / 100.0)
-				self.__output__(head)
-				for condition in rule.get_conditions():
-					sym_condition = self.c_document.get_conditions_lib().get_condition(condition.get_code())
-					rule_line = "\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]\n".format(sym_condition.get_category(),
-																			  sym_condition.get_operator(),
-																			  sym_condition.get_execution(),
-																			  sym_condition.get_execution().get_statement().get_cir_code(),
-																			  sym_condition.get_location().get_cir_code(),
-																			  sym_condition.get_parameter())
-					self.__output__(rule_line)
+			good_rules = sort_prediction_rules_in_support(rule_evaluation_dict, None)
+			for rule in good_rules:
+				self.__write_predict_rule__(rule)
 				self.__output__("\n")
 		return
 
 
 def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_alive: bool):
-	max_length, min_support, min_confidence, exe_or_mut = 1, 2, 0.70, True
-	support_classes = UNK_SUPPORT_CLASSES
+	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.70, 0.95
+	exe_or_mut, support_classes, max_print_size = True, UNK_SUPPORT_CLASSES, 8
 	for file_name in os.listdir(prev_path):
 		## 1. load documents
 		inputs_directory = os.path.join(prev_path, file_name)
@@ -655,7 +693,8 @@ def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_
 																		   len(m_document.exec_space.get_executions()),
 																		   len(m_document.cond_space.get_conditions())))
 		## 2. construct mining machine
-		inputs = MerPredictionMineInputs(m_document, exe_or_mut, support_classes, max_length, min_support, min_confidence)
+		inputs = MerPredictionMineInputs(m_document, exe_or_mut, support_classes, max_length,
+										 min_support, min_confidence, max_confidence)
 		miner = MerPredictionRulesMiner(inputs)
 		output = MerPredictionMineOutput(c_document, m_document, miner)
 		mutants = set()
@@ -668,8 +707,8 @@ def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_
 		print("\t\t1. Output prediction rules for", len(mutants), "mutants in project.")
 
 		## 3. output prediction rules
-		output.write_mutant_rules(os.path.join(output_path, file_name + ".mr"), mutants)
-		output.write_alive_rules(os.path.join(output_path, file_name + ".alr"))
+		output.write_mutant_rules(os.path.join(output_path, file_name + ".mur"), mutants, max_print_size)
+		output.write_prediction_rules(os.path.join(output_path, file_name + ".prr"))
 		print("\t\t2. Output rules to final output directory...")
 		print()
 	print()
@@ -679,6 +718,6 @@ def main(prev_path: str, post_path: str, output_path: str, postfix: str, select_
 if __name__ == "__main__":
 	prev_directory = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
 	post_directory = "/home/dzt2/Development/Data/encodes"
-	output_directory = "/home/dzt2/Development/Data/premises"
+	output_directory = "/home/dzt2/Development/Data/rules"
 	main(prev_directory, post_directory, output_directory, ".sip", True)
 

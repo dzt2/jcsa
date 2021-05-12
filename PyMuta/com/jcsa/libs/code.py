@@ -232,6 +232,22 @@ class AstNode:
 		self.children.append(child)
 		return
 
+	def statement_of(self):
+		node = self
+		while not (node is None):
+			if node.class_name.endswith("Statement"):
+				return node
+			node = node.get_parent()
+		return None
+
+	def function_definition_of(self):
+		node = self
+		while not (node is None):
+			if node.class_name.endswith("Definition"):
+				return node
+			node = node.get_parent()
+		return None
+
 
 class AstTree:
 	def __init__(self, program: CProgram, ast_file: str):
