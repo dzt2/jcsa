@@ -59,7 +59,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.mining">
+  <component name="RunManager" selected="Python.encode">
     <configuration name="encode" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -188,8 +188,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.mining" />
         <item itemvalue="Python.encode" />
+        <item itemvalue="Python.mining" />
         <item itemvalue="Python.mining2" />
         <item itemvalue="Python.predict" />
         <item itemvalue="Python.feature2" />

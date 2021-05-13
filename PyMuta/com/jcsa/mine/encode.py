@@ -893,7 +893,7 @@ class MerPredictRuleNode:
 			result = None
 		total = killed + alive
 		if total > 0:
-			confidence = alive / total
+			confidence = max(killed, alive) / total
 		else:
 			confidence = 0.0
 		return result, killed, alive, confidence
