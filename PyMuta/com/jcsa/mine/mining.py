@@ -225,7 +225,7 @@ class MerPredictionMiner:
 		feature_list = jcenco.MerPredictRuleTree.__get_feature_list__(features)
 		self.solutions.clear()
 		if used_tests is None:
-			used_tests_size = len(self.memory.get_inputs().get_document().test_space.get_test_cases())
+			used_tests_size = None
 		else:
 			used_tests_size = len(used_tests)
 		print("\t\t\tMining:\tIN[{}, {}]".format(len(feature_list), used_tests_size), end="")
@@ -390,6 +390,7 @@ class MerPredictionOutput:
 					index += 1
 					self.__output__("\t\t[M.{}]\t{}\n".format(index, self.__mut2str__(mutant)))
 				self.__output__("END_RULE\n")
+				self.__output__("\n")
 		return miner
 
 	def write_predict_trees(self, file_path: str, middle: MerPredictionMemory):
@@ -443,7 +444,7 @@ def main(features_directory: str, encoding_directory: str, postfix: str, output_
 	:param select_alive:
 	:return:
 	"""
-	max_length, min_support, min_confidence, max_confidence, min_good_rules, max_print_size = 1, 1, 0.75, 0.95, 3, 8
+	max_length, min_support, min_confidence, max_confidence, min_good_rules, max_print_size = 1, 2, 0.75, 0.95, 3, 8
 	for file_name in os.listdir(features_directory):
 		## 1. load documents
 		inputs_directory = os.path.join(features_directory, file_name)
@@ -457,7 +458,7 @@ def main(features_directory: str, encoding_directory: str, postfix: str, output_
 		## 2. construct mining machine
 		inputs = MerPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, min_good_rules)
 		mutants = set()
-		for mutant in m_document.muta_space.get_mutants():
+		for mutant in m_document.exec_space.get_mutants():
 			mutant: jcenco.MerMutant
 			if select_alive:
 				if not (mutant.get_result().is_killed_in(None)):
