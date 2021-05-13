@@ -114,6 +114,10 @@ def sort_prediction_rules_by_keys(node_evaluation_dict: dict, key_index: int, re
 	for node, evaluation in node_evaluation_dict.items():
 		node: jcenco.MerPredictRuleNode
 		key = evaluation[key_index]
+		if isinstance(key, float):
+			key = int(key * 10000)
+		else:
+			key: int
 		if not (key in key_dict):
 			key_dict[key] = set()
 			key_list.append(key)
@@ -204,7 +208,7 @@ class MerPredictionMiner:
 			sort_node_list = sort_prediction_rules_by_confidence(self.solutions)
 			sort_node_size = max(1, self.memory.get_inputs().get_min_good_rules())
 			if len(sort_node_list) > sort_node_size:
-				sort_node_list = sort_node_list[0: sort_node_size]
+				sort_node_list = sort_node_list[0: sort_node_size + 1]
 			for node in sort_node_list:
 				evaluation = self.solutions[node]
 				length = evaluation[0]
