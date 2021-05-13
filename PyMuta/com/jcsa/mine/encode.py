@@ -631,7 +631,7 @@ class MerExecutionSpace:
 
 class MerPredictRuleTree:
 	"""
-	The hierarchical structural model to manages the killable prediction rules (uniquely).
+	It provides a hierarchical model to manage the construction and description of killable-prediction-rules.
 	"""
 
 	def __init__(self, document: MerDocument):
@@ -642,21 +642,15 @@ class MerPredictRuleTree:
 	def get_document(self):
 		return self.document
 
-	def get_node(self, features):
+	def __unique_node__(self, features):
 		"""
-		:param features: the set of integers encoding the symbolic conditions from root to unique child under the tree
+		:param features:
 		:return:
 		"""
-		feature_list = list()
-		for feature in features:
-			feature: int
-			if not (feature in feature_list):
-				feature_list.append(feature)
-		feature_list.sort()
+		feature_list = MerPredictRuleTree.__get_feature_list__(features)
 		tree_node = self.root
 		for feature in feature_list:
 			tree_node = tree_node.__extend__(feature)
-		tree_node: MerPredictRuleNode
 		return tree_node
 
 	def get_root(self):
@@ -668,51 +662,68 @@ class MerPredictRuleTree:
 		:param feature:
 		:return:
 		"""
-		parent: MerPredictRuleNode
-		parent = self.get_node(parent.get_features())
+		parent = self.__unique_node__(parent.get_features())
 		return parent.__extend__(feature)
+
+	def get_node(self, features):
+		return self.__unique_node__(features)
+
+	def __len__(self):
+		return MerPredictRuleTree.__count_on_node__(self.root)
+
+	def get_nodes(self):
+		nodes = set()
+		MerPredictRuleTree.__collect_nodes__(self.root, nodes)
+		return nodes
+
+	# utility methods
+
+	@staticmethod
+	def __get_feature_list__(features):
+		"""
+		:param features:
+		:return:
+		"""
+		feature_list = list()
+		for feature in features:
+			feature: int
+			if not (feature in feature_list):
+				feature_list.append(feature)
+		feature_list.sort()
+		return feature_list
+
+	@staticmethod
+	def __count_on_node__(node):
+		node: MerPredictRuleNode
+		counter = 1
+		for ou_edge in node.get_ou_edges():
+			ou_edge: MerPredictRuleEdge
+			counter += MerPredictRuleTree.__count_on_node__(ou_edge.get_target())
+		return counter
 
 	@staticmethod
 	def __collect_nodes__(node, nodes: set):
 		node: MerPredictRuleNode
 		nodes.add(node)
-		for edge in node.get_ou_edges():
-			edge: MerPredictRuleEdge
-			MerPredictRuleTree.__collect_nodes__(edge.get_target(), nodes)
-		return
-
-	def get_nodes(self):
-		"""
-		:return: all the nodes under the tree
-		"""
-		nodes = set()
-		MerPredictRuleTree.__collect_nodes__(self.root, nodes)
-		return nodes
-
-	@staticmethod
-	def __count_in__(node):
-		node: MerPredictRuleNode
-		counter = 1
 		for ou_edge in node.get_ou_edges():
 			ou_edge: MerPredictRuleEdge
-			counter += MerPredictRuleTree.__count_in__(ou_edge.get_target())
-		return counter
-
-	def __len__(self):
-		return MerPredictRuleTree.__count_in__(self.root)
+			MerPredictRuleTree.__collect_nodes__(ou_edge.get_target(), nodes)
+		return
 
 
 class MerPredictRuleEdge:
 	"""
-	The edge in prediction rule construction tree is modeled as [source, target: feature]
+	The edge from parent to child in prediction rule tree
 	"""
 
 	def __init__(self, source, target, feature: int):
 		"""
-		:param source:	the source node (parent) from which the edge is pointed
-		:param target:	the target node (child) to which this edge points.
-		:param feature: the local integer encoding the symbolic condition included in the rule path.
+		:param source: 	parent
+		:param target: 	child
+		:param feature: local feature encoding the symbolic condition incorporated
 		"""
+		source: MerPredictRuleNode
+		target: MerPredictRuleNode
 		self.source = source
 		self.target = target
 		self.feature = feature
@@ -720,49 +731,47 @@ class MerPredictRuleEdge:
 
 	def get_tree(self):
 		"""
-		:return: the prediction rule tree where the edge is created
+		:return: tree where the edge is created
 		"""
-		return self.get_source().get_tree()
+		return self.source.get_tree()
 
 	def get_source(self):
 		"""
-		:return: parent
+		:return: parent rule
 		"""
-		self.source: MerPredictRuleNode
 		return self.source
 
 	def get_target(self):
 		"""
-		:return: child
+		:return: child rule
 		"""
-		self.target: MerPredictRuleNode
 		return self.target
 
 	def get_feature(self):
 		"""
-		:return: local feature encoding symbolic condition
+		:return: local feature encoding the symbolic condition incorporated
 		"""
 		return self.feature
 
 	def get_condition(self):
 		"""
-		:return: the local symbolic condition encoded
+		:return: local symbolic condition incorporated
 		"""
-		document = self.get_tree().get_document()
+		document = self.get_tree().document
 		document: MerDocument
 		return document.cond_space.get_condition(self.feature)
 
 
 class MerPredictRuleNode:
 	"""
-	The node in prediction rule construction tree is the core model of mining
+	Each node in prediction rule tree is a rule.
 	"""
 
 	def __init__(self, tree: MerPredictRuleTree, parent, feature: int):
 		"""
-		:param tree: 	the hierarchical model to construct prediction rules
-		:param parent: 	None to create a root node where feature is not used
-		:param feature:	the feature to extend this child from its parent
+		:param tree: 	the tree where the node is created
+		:param parent: 	the parent or None if it is a root
+		:param feature: the local feature of input edge or not used if parent is None
 		"""
 		self.tree = tree
 		if parent is None:
@@ -776,23 +785,23 @@ class MerPredictRuleNode:
 		self.__update__()
 		return
 
-	# parent getters
-
 	def get_tree(self):
 		"""
-		:return: the hierarchical model to construct prediction rule
+		:return: where the tree node is created
 		"""
 		return self.tree
 
+	# parent
+
 	def is_root(self):
 		"""
-		:return: the node is root without input edge from any parent
+		:return: whether the node is a root without parent
 		"""
 		return self.in_edge is None
 
 	def get_in_edge(self):
 		"""
-		:return: the edge point from parent to this child or None if it is root
+		:return: input edge from parent to this child or None
 		"""
 		if self.in_edge is None:
 			return None
@@ -802,34 +811,38 @@ class MerPredictRuleNode:
 
 	def get_parent(self):
 		"""
-		:return: the parent node from which this rule is extended
+		:return: the parent node of this node or None if it is root
 		"""
 		if self.in_edge is None:
 			return None
 		else:
 			return self.in_edge.get_source()
 
-	# child getters
+	# child
 
 	def is_leaf(self):
 		"""
-		:return: the rule is leaf without any child
+		:return: whether the node is leaf without children
 		"""
 		return len(self.ou_edges) == 0
 
 	def get_ou_degree(self):
 		"""
-		:return: the number of edges from this node to its children
+		:return: the number of children
 		"""
 		return len(self.ou_edges)
 
 	def get_ou_edges(self):
 		"""
-		:return: the collection of edges from this node to its children
+		:return: the set of edges from this node to its children
 		"""
 		return self.ou_edges
 
 	def get_ou_edge(self, k: int):
+		"""
+		:param k:
+		:return: the edge pointing to its kth child
+		"""
 		edge = self.ou_edges[k]
 		edge: MerPredictRuleEdge
 		return edge
@@ -837,31 +850,21 @@ class MerPredictRuleNode:
 	def get_child(self, k: int):
 		"""
 		:param k:
-		:return: the kth child created under the rule
+		:return: the kth child under the node
 		"""
 		return self.get_ou_edge(k).get_target()
 
-	def get_children(self):
-		"""
-		:return: the children node under this one
-		"""
-		children = list()
-		for edge in self.ou_edges:
-			edge: MerPredictRuleEdge
-			children.append(edge.get_target())
-		return children
-
-	# data getters
+	# samples
 
 	def get_executions(self):
 		"""
-		:return: the symbolic executions match with this rule
+		:return: the set of executions matching with this rule
 		"""
 		return self.executions
 
 	def get_mutants(self):
 		"""
-		:return: the mutants of which executions match with this rule
+		:return: the set of mutants of which executions match with this rule
 		"""
 		mutants = set()
 		for execution in self.executions:
@@ -869,17 +872,110 @@ class MerPredictRuleNode:
 			mutants.add(execution.get_mutant())
 		return mutants
 
+	# features
+
+	def get_features(self):
+		"""
+		:return: the sequence of features from root until this node
+		"""
+		features = list()
+		edge = self.get_in_edge()
+		while not (edge is None):
+			features.append(edge.get_feature())
+			edge = edge.get_source().get_in_edge()
+		features.reverse()
+		return features
+
+	def get_conditions(self):
+		"""
+		:return:
+		"""
+		conditions = set()
+		edge = self.get_in_edge()
+		while not (edge is None):
+			conditions.add(edge.get_condition())
+			edge = edge.get_source().get_in_edge()
+		return conditions
+
+	def __len__(self):
+		edge = self.get_in_edge()
+		length = 0
+		while not (edge is None):
+			length += 1
+			edge = edge.get_source().get_in_edge()
+		return length
+
+	def __str__(self):
+		return str(self.get_features())
+
+	# setters
+
+	def __match__(self, execution: MerExecution):
+		"""
+		:param execution:
+		:return:
+		"""
+		edge = self.get_in_edge()
+		while not (edge is None):
+			if not (edge.get_feature() in execution.get_features()):
+				return False
+			else:
+				edge = edge.get_source().get_in_edge()
+		return True
+
+	def __update__(self):
+		"""
+		:return:
+		"""
+		parent = self.get_parent()
+		if parent is None:
+			executions = self.get_tree().get_document().exec_space.get_executions()
+		else:
+			executions = parent.get_executions()
+		self.executions.clear()
+		for execution in executions:
+			execution: MerExecution
+			if self.__match__(execution):
+				self.executions.add(execution)
+		return
+
+	def __extend__(self, feature: int):
+		"""
+		:param feature:
+		:return: 	1. if feature is not greater than input edge, return None
+					2. if feature is greater than input edge, and in root path, return the node itself
+					3. if feature is greater than input edge, and in output edges, return existing child
+					4. otherwise, create a new child and return
+		"""
+		# 1. out of range for feature
+		if not (self.get_in_edge() is None) and (feature < self.get_in_edge().get_feature()):
+			return None
+		# 2. in root-path return itself
+		edge = self.get_in_edge()
+		while not (edge is None):
+			if edge.get_feature() == feature:
+				return self
+			else:
+				edge = edge.get_source().get_in_edge()
+		# 3. in ou-edges, return existing child
+		for edge in self.ou_edges:
+			edge: MerPredictRuleEdge
+			if edge.get_feature() == feature:
+				return edge.get_target()
+		# 4. create new child under this node
+		return MerPredictRuleNode(self.tree, self, feature)
+
 	def predict(self, used_tests):
 		"""
-		:param used_tests: the set of tests to predict the kill-ability of the rule
+		:param used_tests: the collection of test cases to predict test result
 		:return: 	result, killed, alive, confidence
-					1. result:	True if the rule predicts killed or alive if its False.
-					2. killed:	the number of executions that are killed by used_tests.
-					3. alive:	the number of executions surviving from the used_tests.
-					4. confidence: the probability the result is correct in tree space.
+					1. result: 	whether the mutant is killable
+					2. killed: 	the number of samples being killed by used_tests
+					3. alive:	the number of samples surviving from used_tests
+					4. confidence:	the probability to ensure prediction correct
 		"""
 		killed, alive = 0, 0
-		for execution in self.get_executions():
+		for execution in self.executions:
 			execution: MerExecution
 			if execution.get_mutant().get_result().is_killed_in(used_tests):
 				killed += 1
@@ -897,93 +993,6 @@ class MerPredictRuleNode:
 		else:
 			confidence = 0.0
 		return result, killed, alive, confidence
-
-	## setters
-
-	def __match__(self, execution: MerExecution):
-		edge = self.get_in_edge()
-		while not (edge is None):
-			if not (edge.get_feature() in execution.get_features()):
-				return False
-			else:
-				edge = edge.get_source().get_in_edge()
-		return True
-
-	def __update__(self):
-		"""
-		:return: update the executions under this node using executions of its parent
-		"""
-		parent = self.get_parent()
-		if parent is None:
-			executions = self.tree.get_document().exec_space.get_executions()
-		else:
-			executions = parent.get_executions()
-		self.executions.clear()
-		for execution in executions:
-			execution: MerExecution
-			if self.__match__(execution):
-				self.executions.add(execution)
-		return
-
-	def __extend__(self, feature: int):
-		"""
-		:param feature:
-		:return: 	(1) if feature is greater than the sequence of its parent, return None
-					(2) if feature is in its parent path, return the node itself
-					(3) if feature is in one of its output edges, return the existing child
-					(4) otherwise, create a new child and append in the output edges
-		"""
-		## 1. remove the feature if it is greater than its parent
-		if not (self.get_in_edge() is None) and (feature > self.get_in_edge().get_feature()):
-			return None
-		## 2. return the node itself if the feature is in the path from root to this one
-		edge = self.get_in_edge()
-		while not (edge is None):
-			if edge.get_feature() == feature:
-				return self
-			else:
-				edge = edge.get_source().get_in_edge()
-		## 3. return the existing child w.r.t. the input feature
-		for ou_edge in self.ou_edges:
-			ou_edge: MerPredictRuleEdge
-			if ou_edge.get_feature() == feature:
-				return ou_edge.get_target()
-		## 4, create new child using the input feature
-		child = MerPredictRuleNode(self.get_tree(), self, feature)
-		return child
-
-	## features
-
-	def get_features(self):
-		"""
-		:return: the sequence of features from root to this node
-		"""
-		features = list()
-		edge = self.get_in_edge()
-		while not (edge is None):
-			features.append(edge.get_feature())
-			edge = edge.get_source().get_in_edge()
-		features.reverse()
-		return features
-
-	def get_conditions(self):
-		"""
-		:return: the set of symbolic conditions included in the path from root to this node
-		"""
-		conditions = set()
-		edge = self.get_in_edge()
-		document = self.get_tree().get_document()
-		while not (edge is None):
-			condition = document.cond_space.get_condition(edge.get_feature())
-			conditions.add(condition)
-			edge = edge.get_source().get_in_edge()
-		return conditions
-
-	def __len__(self):
-		return len(self.get_features())
-
-	def __str__(self):
-		return str(self.get_features())
 
 
 ### encoding-decoding

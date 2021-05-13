@@ -1,33 +1,33 @@
-"""This file implements the mining algorithm to find killable prediction rules."""
+"""This file implements the mining algorithm for discovering killable prediction rules"""
 
 
 import os
-
 from typing.io import TextIO
 import com.jcsa.libs.test as jctest
 import com.jcsa.mine.encode as jcenco
 
 
-class MerPredictInputs:
+class MerPredictionInputs:
 	"""
-	The inputs manage the parameters used for mining killable prediction rules.
+	It maintains the input parameters for mining killable prediction rules.
 	"""
 
-	def __init__(self, document: jcenco.MerDocument,
-				 max_length: int, min_support: int,
-				 min_confidence: float, max_confidence: float):
+	def __init__(self, m_document: jcenco.MerDocument, max_length: int, min_support: int, min_confidence: float,
+				 max_confidence: float, min_good_rules: int):
 		"""
-		:param document: 		the document provides memory-reduced model to fetch data source
-		:param max_length: 		the maximal length of rule being allowed
-		:param min_support:		the minimal support required
-		:param min_confidence:	the minimal confidence required
-		:param max_confidence:	the maximal confidence to stop mining
+		:param m_document: 		the document provides memory-reduced data source
+		:param max_length: 		the maximal length of prediction rules
+		:param min_support: 	the minimal support to select good rules
+		:param min_confidence: 	the minimal confidence required
+		:param max_confidence: 	the maximal confidence to stop mining
+		:param min_good_rules: 	the minimal number of rules being printed
 		"""
-		self.document = document
+		self.document = m_document
 		self.max_length = max_length
 		self.min_support = min_support
 		self.min_confidence = min_confidence
 		self.max_confidence = max_confidence
+		self.min_good_rules = min_good_rules
 		return
 
 	def get_document(self):
@@ -45,15 +45,18 @@ class MerPredictInputs:
 	def get_max_confidence(self):
 		return self.max_confidence
 
+	def get_min_good_rules(self):
+		return self.min_good_rules
 
-class MerPredictMiddle:
+
+class MerPredictionMemory:
 	"""
-	The middle preserves generated rules and evaluation results.
+	It provides memory to manage the prediction rule tree used in mining algorithm.
 	"""
 
-	def __init__(self, inputs: MerPredictInputs):
+	def __init__(self, inputs: MerPredictionInputs):
 		self.inputs = inputs
-		self.tree = jcenco.MerPredictRuleTree(self.inputs.get_document())
+		self.__tree__ = jcenco.MerPredictRuleTree(self.inputs.get_document())
 		return
 
 	def get_inputs(self):
@@ -63,166 +66,46 @@ class MerPredictMiddle:
 		return self.inputs.get_document()
 
 	def get_tree(self):
-		return self.tree
+		return self.__tree__
 
 	def get_root(self):
-		return self.tree.get_root()
+		return self.__tree__.get_root()
 
 	def get_child(self, parent: jcenco.MerPredictRuleNode, feature: int):
-		return self.tree.get_child(parent, feature)
+		return self.__tree__.get_child(parent, feature)
 
 	def get_node(self, features):
-		return self.tree.get_node(features)
+		return self.__tree__.get_node(features)
 
 	def evaluate(self, node: jcenco.MerPredictRuleNode, used_tests):
 		"""
-		:param node:
+		:param node: the prediction rule to be evaluated
 		:param used_tests:
 		:return: length, support, confidence
 		"""
 		node = self.get_node(node.get_features())
 		result, killed, alive, p_confidence = node.predict(used_tests)
-		length, support, total = len(node), alive, killed + alive
+		length = len(node)
+		support = alive
+		total = alive + killed
 		if total > 0:
 			confidence = support / total
 		else:
 			confidence = 0.0
 		return length, support, confidence
 
-	def extract_good_nodes(self, used_tests):
-		tree_nodes = set()
-		for tree_node in self.tree.get_nodes():
-			tree_node: jcenco.MerPredictRuleNode
-			length, support, confidence = self.evaluate(tree_node, used_tests)
-			if length <= self.inputs.get_max_length() and support >= self.inputs.get_min_support() and confidence >= self.inputs.get_min_confidence():
-				tree_nodes.add(tree_node)
-		return tree_nodes
-
-
-class MerPredictMiner:
-	"""
-	It exploits association rule mining to find useful prediction rules from tree
-	"""
-
-	def __init__(self, inputs: MerPredictInputs):
-		self.middle = MerPredictMiddle(inputs)
-		self.solutions = dict()		# MerPredictTreeNode --> (length, support, confidence)
-		return
-
-	def __get_mutant_features__(self, mutant: jcenco.MerMutant):
+	def extract_good_rules(self, used_tests):
 		"""
-		:param mutant:
-		:return: the sorted sequence of integers encoding the conditions required for killing the mutant
-		"""
-		features = set()
-		for execution in self.middle.get_document().exec_space.get_executions_of(mutant):
-			execution: jcenco.MerExecution
-			for feature in execution.get_features():
-				features.add(feature)
-		feature_list = list()
-		for feature in features:
-			feature_list.append(feature)
-		feature_list.sort()
-		return feature_list
-
-	def __get_mutants_features__(self, mutants):
-		features = set()
-		for mutant in mutants:
-			for execution in self.middle.get_document().exec_space.get_executions_of(mutant):
-				execution: jcenco.MerExecution
-				for feature in execution.get_features():
-					features.add(feature)
-		feature_list = list()
-		for feature in features:
-			feature_list.append(feature)
-		feature_list.sort()
-		return feature_list
-
-	def __mine__(self, parent: jcenco.MerPredictRuleNode, features: list, used_tests):
-		"""
-		:param parent:
-		:param features:
 		:param used_tests:
-		:return:
-		"""
-		parent = self.middle.get_node(parent.get_features())
-		if not (parent in self.solutions):
-			length, support, confidence = self.middle.evaluate(parent, used_tests)
-			self.solutions[parent] = (length, support, confidence)
-		solution = self.solutions[parent]
-		length = solution[0]
-		support = solution[1]
-		confidence = solution[2]
-		if length < self.middle.get_inputs().get_max_length() and \
-				support >= self.middle.get_inputs().get_min_support() and \
-				confidence <= self.middle.get_inputs().get_max_confidence():
-			for k in range(0, len(features)):
-				child = self.middle.get_child(parent, features[k])
-				if not (child is None) and (child != parent):
-					self.__mine__(child, features[k + 1: ], used_tests)
-		return
-
-	def __output_solutions__(self):
-		"""
 		:return:
 		"""
 		node_evaluation_dict = dict()
-		for input_node, evaluation in self.solutions.items():
-			input_node: jcenco.MerPredictRuleNode
-			length = evaluation[0]
-			support = evaluation[1]
-			confidence = evaluation[2]
-			length: int
-			support: int
-			confidence: float
-			if length <= self.middle.inputs.get_max_length() and \
-					support >= self.middle.inputs.get_min_support() and \
-					confidence >= self.middle.inputs.get_min_confidence():
-				node_evaluation_dict[input_node] = (length, support, confidence)
+		for node in self.__tree__.get_nodes():
+			node: jcenco.MerPredictRuleNode
+			length, support, confidence = self.evaluate(node, used_tests)
+			if length <= self.inputs.get_max_length() and support >= self.inputs.get_min_support() and confidence >= self.inputs.get_min_confidence():
+				node_evaluation_dict[node] = (length, support, confidence)
 		return node_evaluation_dict
-
-	def mine(self, features, used_tests):
-		"""
-		generate prediction rules on input feature space and used-tests to evaluate it
-		:param features:
-		:param used_tests:
-		:return: mapping from predict-tree-node to evaluation result
-		"""
-		feature_list = list()
-		for feature in features:
-			feature: int
-			if not (feature in feature_list):
-				feature_list.append(feature)
-		feature_list.sort()
-		if used_tests is None:
-			used_tests_size = len(self.middle.get_document().test_space.get_test_cases())
-		else:
-			used_tests_size = len(used_tests)
-		self.solutions.clear()
-		print("\t\t\tInput[{}, {}]".format(len(feature_list), used_tests_size), end="")
-		self.__mine__(self.middle.get_root(), feature_list, used_tests)
-		rule_evaluation_dict = self.__output_solutions__()
-		print("\t--> Output[{}, {}/{}]".format(len(rule_evaluation_dict), len(self.solutions), len(self.middle.get_tree())))
-		self.solutions.clear()
-		return rule_evaluation_dict
-
-	def mine_mutant(self, mutant: jcenco.MerMutant, used_tests):
-		"""
-		:param mutant:
-		:param used_tests:
-		:return:
-		"""
-		features = self.__get_mutant_features__(mutant)
-		return self.mine(features, used_tests)
-
-	def mine_mutants(self, mutants, used_tests):
-		"""
-		:param mutants:
-		:param used_tests:
-		:return:
-		"""
-		features = self.__get_mutants_features__(mutants)
-		return self.mine(features, used_tests)
 
 
 def sort_prediction_rules_by_keys(node_evaluation_dict: dict, key_index: int, reverse: bool):
@@ -248,6 +131,10 @@ def sort_prediction_rules_by_support(node_evaluation_dict: dict):
 	return sort_prediction_rules_by_keys(node_evaluation_dict, 1, True)
 
 
+def sort_prediction_rules_by_confidence(node_evaluation_dict: dict):
+	return sort_prediction_rules_by_keys(node_evaluation_dict, 2, True)
+
+
 def precision_recall_evaluate(orig_samples: set, pred_samples: set):
 	"""
 	:param orig_samples:
@@ -264,9 +151,113 @@ def precision_recall_evaluate(orig_samples: set, pred_samples: set):
 		return 0.0, 0.0, 0.0
 
 
-class MerPredictOutput:
+class MerPredictionMiner:
 	"""
-	It manages the writer to output information.
+	It implements the mining algorithm.
+	"""
+
+	def __init__(self, inputs: MerPredictionInputs):
+		"""
+		:param inputs:
+		"""
+		self.memory = MerPredictionMemory(inputs)
+		self.solutions = dict()	# MerPredictTreeNode --> {length, support, confidence}
+		return
+
+	def __mine__(self, parent: jcenco.MerPredictRuleNode, features: list, used_tests):
+		"""
+		:param parent:
+		:param features:
+		:param used_tests:
+		:return: recursively mining rules under the parent
+		"""
+		if not (parent in self.solutions):
+			length, support, confidence = self.memory.evaluate(parent, used_tests)
+			self.solutions[parent] = (length, support, confidence)
+		solution = self.solutions[parent]
+		length = solution[0]
+		support = solution[1]
+		confidence = solution[2]
+		if length < self.memory.get_inputs().get_max_length() and support >= self.memory.get_inputs().get_min_support() and confidence < self.memory.get_inputs().get_max_confidence():
+			for k in range(0, len(features)):
+				child = self.memory.get_child(parent, features[k])
+				if (child != parent) and not (child is None):
+					self.__mine__(child, features[k + 1: ], used_tests)
+		return
+
+	def __outs__(self):
+		"""
+		:return: good_node --> [length, support, confidence]
+		"""
+		node_evaluation_dict = dict()
+		for node, evaluation in self.solutions.items():
+			node: jcenco.MerPredictRuleNode
+			length = evaluation[0]
+			support = evaluation[1]
+			confidence = evaluation[2]
+			length: int
+			support: int
+			confidence: float
+			if length <= self.memory.get_inputs().get_max_length() and support >= self.memory.get_inputs().get_min_support() and confidence >= self.memory.get_inputs().get_min_confidence():
+				node_evaluation_dict[node] = (length, support, confidence)
+		if len(node_evaluation_dict) == 0:
+			sort_node_list = sort_prediction_rules_by_confidence(self.solutions)
+			sort_node_size = max(1, self.memory.get_inputs().get_min_good_rules())
+			if len(sort_node_list) > sort_node_size:
+				sort_node_list = sort_node_list[0: sort_node_size]
+			for node in sort_node_list:
+				evaluation = self.solutions[node]
+				length = evaluation[0]
+				support = evaluation[1]
+				confidence = evaluation[2]
+				length: int
+				support: int
+				confidence: float
+				node_evaluation_dict[node] = (length, support, confidence)
+		return node_evaluation_dict
+
+	def mine(self, features, used_tests):
+		"""
+		:param features:
+		:param used_tests:
+		:return:
+		"""
+		feature_list = jcenco.MerPredictRuleTree.__get_feature_list__(features)
+		self.solutions.clear()
+		if used_tests is None:
+			used_tests_size = len(self.memory.get_inputs().get_document().test_space.get_test_cases())
+		else:
+			used_tests_size = len(used_tests)
+		print("\t\t\tMining:\tIN[{}, {}]".format(len(feature_list), used_tests_size), end="")
+		self.__mine__(self.memory.get_root(), feature_list, used_tests)
+		node_evaluation_dict = self.__outs__()
+		print("\t--> OU[{}; {}/{}]".format(len(node_evaluation_dict), len(self.solutions), len(self.memory.get_tree())))
+		self.solutions.clear()
+		return node_evaluation_dict
+
+	def __get_features__(self, mutants):
+		features = set()
+		for mutant in mutants:
+			mutant: jcenco.MerMutant
+			for execution in self.memory.get_inputs().get_document().exec_space.get_executions_of(mutant):
+				execution: jcenco.MerExecution
+				for feature in execution.get_features():
+					features.add(feature)
+		return features
+
+	def mine_mutants(self, mutants, used_tests):
+		"""
+		:param mutants:
+		:param used_tests:
+		:return:
+		"""
+		features = self.__get_features__(mutants)
+		return self.mine(features, used_tests)
+
+
+class MerPredictionOutput:
+	"""
+	It manages the evaluation of rule outputs
 	"""
 
 	def __init__(self, c_document: jctest.CDocument, m_document: jcenco.MerDocument):
@@ -280,8 +271,6 @@ class MerPredictOutput:
 		self.writer.write(text)
 		self.writer.flush()
 		return
-
-	## string encoding
 
 	def __mut2str__(self, mutant: jcenco.MerMutant):
 		"""
@@ -335,16 +324,16 @@ class MerPredictOutput:
 														 sym_condition.get_location().get_cir_code(),
 														 sym_condition.get_parameter())
 
-	## mutant-->rule mapping
+	## write mutant-rules pair
 
-	def __write_mutant_rules__(self, miner: MerPredictMiner, mutant: jcenco.MerMutant, max_print_size: int):
+	def __write_mutant_rules__(self, miner: MerPredictionMiner, mutant: jcenco.MerMutant, max_print_size: int):
 		"""
 		:param miner:
 		:param mutant:
 		:param max_print_size: the maximal number of rules being printed
 		:return:
 		"""
-		node_evaluation_dict = miner.mine_mutant(mutant, mutant.get_result().get_tests_of(False))
+		node_evaluation_dict = miner.mine_mutants([mutant], mutant.get_result().get_tests_of(False))
 		good_rules = sort_prediction_rules_by_support(node_evaluation_dict)
 		if (max_print_size > 0) and (len(good_rules) > max_print_size):
 			good_rules = good_rules[0: max_print_size]
@@ -358,7 +347,7 @@ class MerPredictOutput:
 		self.__output__("\n")
 		return
 
-	def write_mutants_rules(self, file_path: str, inputs: MerPredictInputs, mutants, max_print_size=-1):
+	def write_mutants_rules(self, file_path: str, inputs: MerPredictionInputs, mutants, max_print_size=-1):
 		"""
 		:param file_path:
 		:param max_print_size:
@@ -366,24 +355,24 @@ class MerPredictOutput:
 		:param mutants: the set of mutants being used to generate prediction rules
 		:return:
 		"""
-		miner = MerPredictMiner(inputs)
+		miner = MerPredictionMiner(inputs)
 		with open(file_path, 'w') as writer:
 			self.writer = writer
 			index = 0
 			for mutant in mutants:
 				index += 1
-				print("\t\t--> Mining on progress: [{}/{}]".format(index, len(mutants)))
+				print("\t\t-->\tMining on progress: [{}/{}]".format(index, len(mutants)))
 				self.__write_mutant_rules__(miner, mutant, max_print_size)
 		return miner
 
-	def write_predict_rules(self, file_path: str, inputs: MerPredictInputs, mutants):
+	def write_predict_rules(self, file_path: str, inputs: MerPredictionInputs, mutants):
 		"""
 		:param file_path:
 		:param inputs:
 		:param mutants:
 		:return: the absolute prediction rules for undetected mutants
 		"""
-		miner = MerPredictMiner(inputs)
+		miner = MerPredictionMiner(inputs)
 		node_evaluation_dict = miner.mine_mutants(mutants, None)
 		with open(file_path, 'w') as writer:
 			self.writer = writer
@@ -403,7 +392,7 @@ class MerPredictOutput:
 				self.__output__("END_RULE\n")
 		return miner
 
-	def write_predict_trees(self, file_path: str, middle: MerPredictMiddle):
+	def write_predict_trees(self, file_path: str, middle: MerPredictionMemory):
 		"""
 		:param file_path:
 		:param middle:
@@ -416,9 +405,8 @@ class MerPredictOutput:
 				mutant: jcenco.MerMutant
 				if not (mutant.get_result().is_killed_in(None)):
 					orig_samples.add(mutant)
-			tree_nodes = middle.extract_good_nodes(None)
-			for tree_node in tree_nodes:
-				tree_node: jcenco.MerPredictRuleNode
+			tree_nodes = middle.extract_good_rules(None)
+			for tree_node in tree_nodes.keys():
 				for mutant in tree_node.get_mutants():
 					pred_samples.add(mutant)
 			precision, recall, f1_score = precision_recall_evaluate(orig_samples, pred_samples)
@@ -455,7 +443,7 @@ def main(features_directory: str, encoding_directory: str, postfix: str, output_
 	:param select_alive:
 	:return:
 	"""
-	max_length, min_support, min_confidence, max_confidence, max_print_size = 1, 1, 0.70, 0.95, 8
+	max_length, min_support, min_confidence, max_confidence, min_good_rules, max_print_size = 1, 1, 0.75, 0.95, 3, 8
 	for file_name in os.listdir(features_directory):
 		## 1. load documents
 		inputs_directory = os.path.join(features_directory, file_name)
@@ -467,7 +455,7 @@ def main(features_directory: str, encoding_directory: str, postfix: str, output_
 																		   len(m_document.exec_space.get_executions()),
 																		   len(m_document.cond_space.get_conditions())))
 		## 2. construct mining machine
-		inputs = MerPredictInputs(m_document, max_length, min_support, min_confidence, max_confidence)
+		inputs = MerPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, min_good_rules)
 		mutants = set()
 		for mutant in m_document.muta_space.get_mutants():
 			mutant: jcenco.MerMutant
@@ -476,12 +464,12 @@ def main(features_directory: str, encoding_directory: str, postfix: str, output_
 					mutants.add(mutant)
 			else:
 				mutants.add(mutant)
-		output = MerPredictOutput(c_document, m_document)
+		output = MerPredictionOutput(c_document, m_document)
 
 		## 3. output information to directory
 		output.write_mutants_rules(os.path.join(output_directory, file_name + ".mur"), inputs, mutants, max_print_size)
 		miner = output.write_predict_rules(os.path.join(output_directory, file_name + ".pur"), inputs, mutants)
-		output.write_predict_trees(os.path.join(output_directory, file_name + ".tur"), miner.middle)
+		output.write_predict_trees(os.path.join(output_directory, file_name + ".tur"), miner.memory)
 		print("\tOutput all prediction rules to directory...")
 		print()
 	return
