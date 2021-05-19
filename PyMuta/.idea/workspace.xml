@@ -39,6 +39,13 @@
     <option name="WARN_ABOUT_CRLF" value="false" />
     <option name="WARN_ABOUT_DETACHED_HEAD" value="false" />
   </component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="hiddenUrls">
+      <set>
+        <option value="https://github.com/dzt2/jcsa" />
+      </set>
+    </option>
+  </component>
   <component name="ProjectId" id="1l2FUtPdgzO156vFlUPJj77zEmT" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -48,7 +55,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -59,7 +66,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.predict">
+  <component name="RunManager" selected="Python.mining">
     <configuration name="encode" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -188,9 +195,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.mining" />
         <item itemvalue="Python.predict" />
         <item itemvalue="Python.encode" />
-        <item itemvalue="Python.mining" />
         <item itemvalue="Python.mining4" />
         <item itemvalue="Python.mining3" />
       </list>
