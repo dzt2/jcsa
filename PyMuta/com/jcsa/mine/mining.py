@@ -583,7 +583,7 @@ class KillPredictionMiner:
 		else:
 			used_tests_number = len(used_tests)
 
-		print("\t\t\tMine({}, {})".format(len(features), used_tests_number), end="")
+		print("\t\t\t\tMine({}, {})".format(len(features), used_tests_number), end="")
 		self.__mine__(root_node, features, used_tests)
 		rule_evaluation_dict = self.__outs__()
 		print("\t==> [{} rules & {} goods]".format(len(self.solutions), len(rule_evaluation_dict)))
@@ -711,7 +711,6 @@ class KillPredictionOutput:
 	def write_mutant_rules_file(self, inputs: KillPredictionInputs, mut_rule_path: str,
 								rule_mut_path: str, max_used_tests: int):
 		"""
-		:param max_print_size:
 		:param max_used_tests:
 		:param inputs:
 		:param mut_rule_path:	mutant --> rule(s)
@@ -725,7 +724,7 @@ class KillPredictionOutput:
 			proceed_counter, proceed_summary = 0, len(self.m_document.exec_space.get_mutants())
 			for mutant in self.m_document.exec_space.get_mutants():
 				proceed_counter += 1
-				print("\t\t\tProceeding at {}/{}".format(proceed_counter, proceed_summary))
+				print("\t\t\tProceeding at {}[{}/{}]".format(self.m_document.name, proceed_counter, proceed_summary))
 				self.__output__("[M]\t{}\n".format(self.__mut2str__(mutant)))
 				rule_index = 0
 				rule_evaluation_dict = self.__mine_one_mutant__(mutant, max_used_tests)
@@ -782,6 +781,7 @@ class KillPredictionOutput:
 				for feature in execution.get_features():
 					features.add(feature)
 				orig_mutants.add(execution.get_mutant())
+		self.miner.middle.get_inputs().max_output_number = len(features)
 		rule_evaluation_dict = self.miner.mine(features, None)
 
 		with open(file_path, 'w') as writer:
