@@ -687,6 +687,7 @@ class SymbolParser {
 	 */
 	protected SymbolNode parse_con(Object value) throws Exception {
 		CConstant constant = new CConstant();
+		SymbolNode expression;
 		if(value instanceof Boolean) {
 			constant.set_bool(((Boolean) value).booleanValue());
 		}
@@ -709,12 +710,16 @@ class SymbolParser {
 			constant.set_double(((Double) value).doubleValue());
 		}
 		else if(value instanceof String) {
-			return SymbolLiteral.create(value.toString());
+			expression = SymbolLiteral.create(value.toString());
+			expression.set_source(value);
+			return expression;
 		}
 		else {
 			throw new IllegalArgumentException(value.getClass().getSimpleName());
 		}
-		return SymbolConstant.create(constant);
+		expression = SymbolConstant.create(constant);
+		expression.set_source(value);
+		return expression;
 	}
 	
 	/* condition parser */

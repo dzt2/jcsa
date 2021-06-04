@@ -3,6 +3,7 @@ package com.jcsa.jcparse.lang.symbol;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.parse.code.SymbolCodeGenerator;
 
 /**
@@ -167,6 +168,32 @@ public abstract class SymbolNode {
 		}
 		else if(obj instanceof SymbolNode) {
 			return obj.toString().equals(this.toString());
+		}
+		else {
+			return false;
+		}
+	}
+	
+	/* verification methods */
+	/**
+	 * @return true for {identifier|field_expression|de_reference}
+	 */
+	public boolean is_reference() {
+		return SymbolNode.is_reference(this);
+	}
+	/**
+	 * @param node
+	 * @return true for {identifier|field_expression|de_reference}
+	 */
+	public static boolean is_reference(SymbolNode node) {
+		if(node instanceof SymbolIdentifier) {
+			return true;
+		}
+		else if(node instanceof SymbolFieldExpression) {
+			return true;
+		}
+		else if(node instanceof SymbolUnaryExpression) {
+			return ((SymbolUnaryExpression) node).get_operator().get_operator() == COperator.dereference;
 		}
 		else {
 			return false;
