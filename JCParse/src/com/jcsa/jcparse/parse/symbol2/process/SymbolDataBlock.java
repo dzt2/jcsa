@@ -91,7 +91,7 @@ public class SymbolDataBlock {
 	 */
 	public boolean save(Object key, SymbolExpression value) throws Exception {
 		SymbolExpression reference = this.stack.
-				get_process().get_symbol_factory().obj2expression(key);
+				get_process().get_symbol_factory().parse_to_expression(key);
 		if(reference.is_reference()) {
 			String reference_key = reference.generate_code(false);
 			this.table.put(reference_key, value);
@@ -109,7 +109,7 @@ public class SymbolDataBlock {
 	 */
 	public SymbolExpression load(Object key) throws Exception {
 		SymbolExpression reference = this.stack.
-				get_process().get_symbol_factory().obj2expression(key);
+				get_process().get_symbol_factory().parse_to_expression(key);
 		if(reference.is_reference()) {
 			String reference_key = reference.generate_code(false);
 			SymbolDataBlock block = this;

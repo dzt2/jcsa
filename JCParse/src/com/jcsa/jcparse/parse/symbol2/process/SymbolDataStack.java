@@ -66,7 +66,7 @@ public class SymbolDataStack {
 	 * @throws Exception
 	 */
 	public boolean save(Object key, Object value) throws Exception {
-		SymbolExpression sym_value = this.process.get_symbol_factory().obj2expression(value);
+		SymbolExpression sym_value = this.process.get_symbol_factory().parse_to_expression(value);
 		return this.top.save(key, sym_value);
 	}
 	/**

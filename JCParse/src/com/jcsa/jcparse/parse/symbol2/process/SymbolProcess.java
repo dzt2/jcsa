@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
-import com.jcsa.jcparse.lang.symbol.SymbolNodeFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * SymbolProcess is the basic top instance to represent a program process being executed symbolically by the engine,
@@ -22,7 +22,7 @@ public class SymbolProcess {
 	/** C-intermediate representative code of the program for execution **/
 	private CirTree cir_tree;
 	/** used to construct symbolic expression or value used in analysis **/
-	private SymbolNodeFactory symbol_factory;
+	private SymbolFactory symbol_factory;
 	/** the set of symbolic invocators used to evaluate call-expression **/
 	private Collection<SymbolInvoker> invokers;
 	/** it simulates the data stack used in local memory system **/
@@ -43,7 +43,7 @@ public class SymbolProcess {
 		else {
 			this.ast_tree = ast_tree;
 			this.cir_tree = cir_tree;
-			this.symbol_factory = new SymbolNodeFactory();
+			this.symbol_factory = new SymbolFactory();
 			this.invokers = new HashSet<SymbolInvoker>();
 			this.data_stack = new SymbolDataStack(this);
 		}
@@ -61,7 +61,7 @@ public class SymbolProcess {
 	/**
 	 * @return used to construct symbolic expression or value used in analysis
 	 */
-	public SymbolNodeFactory get_symbol_factory() { return this.symbol_factory; }
+	public SymbolFactory get_symbol_factory() { return this.symbol_factory; }
 	/**
 	 * @return the set of symbolic invocators used to evaluate call-expression
 	 */
