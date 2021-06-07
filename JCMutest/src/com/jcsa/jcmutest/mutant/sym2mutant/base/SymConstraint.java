@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * Symbolic constraint is a symbolic expression (boolean) evaluated at some point of the program.
@@ -40,7 +40,7 @@ public class SymConstraint extends SymInstance {
 	}
 
 	@Override
-	public Boolean validate(SymbolStateContexts contexts) throws Exception {
+	public Boolean validate(SymbolProcess contexts) throws Exception {
 		SymbolExpression expression = SymbolEvaluator.
 				evaluate_on(this.condition, contexts);
 		if(expression instanceof SymbolConstant) {

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbol2.process;
+package com.jcsa.jcparse.parse.symbol;
 
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;

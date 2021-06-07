@@ -60,7 +60,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 
 /**
@@ -93,7 +93,7 @@ public class SymInstances {
 	 * @return perform context insensitive evaluation to simplify the expression
 	 * @throws Exception
 	 */
-	public static SymbolExpression evaluate(SymbolExpression expression, SymbolStateContexts contexts) throws Exception {
+	public static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess contexts) throws Exception {
 		return SymbolEvaluator.evaluate_on(expression, contexts);
 	}
 	/**
@@ -372,7 +372,7 @@ public class SymInstances {
 	}
 	
 	/* optimizations */
-	private static SymConstraint opt_constraint(SymConstraint constraint, SymbolStateContexts contexts) throws Exception {
+	private static SymConstraint opt_constraint(SymConstraint constraint, SymbolProcess contexts) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
 		else {
@@ -381,17 +381,17 @@ public class SymInstances {
 			return new SymConstraint(constraint.get_execution(), condition);
 		}
 	}
-	private static SymFlowError  opt_flow_error(SymFlowError error, SymbolStateContexts contexts) throws Exception {
+	private static SymFlowError  opt_flow_error(SymFlowError error, SymbolProcess contexts) throws Exception {
 		if(error == null)
 			throw new IllegalArgumentException("Invalid error: null");
 		return error;
 	}
-	private static SymTrapError  opt_trap_error(SymTrapError error, SymbolStateContexts contexts) throws Exception {
+	private static SymTrapError  opt_trap_error(SymTrapError error, SymbolProcess contexts) throws Exception {
 		if(error == null)
 			throw new IllegalArgumentException("Invalid error: null");
 		return error;
 	}
-	private static SymStateError opt_expr_error(SymExpressionError error, SymbolStateContexts contexts) throws Exception {
+	private static SymStateError opt_expr_error(SymExpressionError error, SymbolProcess contexts) throws Exception {
 		if(error == null)
 			throw new IllegalArgumentException("Invalid error: null");
 		else {
@@ -406,7 +406,7 @@ public class SymInstances {
 			return new SymExpressionError(error.get_execution(), error.get_expression(), orig_value, muta_value);
 		}
 	}
-	private static SymStateError opt_refr_error(SymReferenceError error, SymbolStateContexts contexts) throws Exception {
+	private static SymStateError opt_refr_error(SymReferenceError error, SymbolProcess contexts) throws Exception {
 		if(error == null)
 			throw new IllegalArgumentException("Invalid error: null");
 		else {
@@ -421,7 +421,7 @@ public class SymInstances {
 			return new SymReferenceError(error.get_execution(), error.get_expression(), orig_value, muta_value);
 		}
 	}
-	private static SymStateError opt_stat_error(SymStateValueError error, SymbolStateContexts contexts) throws Exception {
+	private static SymStateError opt_stat_error(SymStateValueError error, SymbolProcess contexts) throws Exception {
 		if(error == null)
 			throw new IllegalArgumentException("Invalid error: null");
 		else {
@@ -442,7 +442,7 @@ public class SymInstances {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymInstance optimize(SymInstance instance, SymbolStateContexts contexts) throws Exception {
+	public static SymInstance optimize(SymInstance instance, SymbolProcess contexts) throws Exception {
 		if(instance == null)
 			throw new IllegalArgumentException("Invalid instance: null");
 		else if(instance instanceof SymConstraint)

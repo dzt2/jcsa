@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.mutant.sym2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * Symbolic instance in C-intermediate representation code.
@@ -83,6 +83,6 @@ public abstract class SymInstance {
 	 * 			null if we don't know whether it holds
 	 * @throws Exception
 	 */
-	public abstract Boolean validate(SymbolStateContexts contexts) throws Exception;
+	public abstract Boolean validate(SymbolProcess contexts) throws Exception;
 	
 }

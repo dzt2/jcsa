@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.symbol;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * <code>
@@ -49,8 +49,8 @@ public abstract class SymbolExpression extends SymbolNode {
 	 * @return evaluate the value of this expression w.r.t. the given context
 	 * @throws Exception
 	 */
-	public SymbolExpression evaluate(SymbolStateContexts contexts) throws Exception {
-		return SymbolEvaluator.evaluate_on(this, contexts);
+	public SymbolExpression evaluate(SymbolProcess process) throws Exception {
+		return SymbolEvaluator.evaluate_on(this, process);
 	}
 	
 }

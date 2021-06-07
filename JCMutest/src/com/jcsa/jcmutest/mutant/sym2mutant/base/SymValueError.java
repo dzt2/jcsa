@@ -10,7 +10,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
+
 
 public abstract class SymValueError extends SymStateError {
 	
@@ -96,7 +97,7 @@ public abstract class SymValueError extends SymStateError {
 				this.orig_value.generate_code(true) + ", " + this.muta_value.generate_code(true) + ")";
 	}
 	@Override
-	public Boolean validate(SymbolStateContexts contexts) throws Exception {
+	public Boolean validate(SymbolProcess contexts) throws Exception {
 		SymbolExpression orig_value = SymbolEvaluator.evaluate_on(this.orig_value, contexts);
 		SymbolExpression muta_value = SymbolEvaluator.evaluate_on(this.muta_value, contexts);
 		if(orig_value.generate_code(true).equals(muta_value.generate_code(true))) {

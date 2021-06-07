@@ -39,7 +39,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -588,7 +588,8 @@ public class SymInstanceTrees {
 		}
 		
 		/* perform dynamic evaluation on all prev-states */
-		SymbolStateContexts contexts = new SymbolStateContexts();
+		SymbolProcess contexts = new SymbolProcess(tree.get_mutant().get_space().get_ast_tree(),
+				tree.get_mutant().get_space().get_cir_tree());
 		for(CStateNode state_node : test_path.get_nodes()) {
 			contexts.accumulate(state_node);
 			CirExecution execution = state_node.get_execution();
@@ -637,7 +638,8 @@ public class SymInstanceTrees {
 		}
 		
 		/* perform dynamic evaluation on all post-states */
-		SymbolStateContexts contexts = new SymbolStateContexts();
+		SymbolProcess contexts = new SymbolProcess(tree.get_mutant().get_space().get_ast_tree(),
+				tree.get_mutant().get_space().get_cir_tree());
 		boolean reached = false;
 		for(CStateNode state_node : test_path.get_nodes()) {
 			/* update contexts and reached tag */

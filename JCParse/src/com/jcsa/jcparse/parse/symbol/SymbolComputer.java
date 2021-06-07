@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbol2.compute;
+package com.jcsa.jcparse.parse.symbol;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +14,13 @@ import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
-import com.jcsa.jcparse.parse.symbol2.process.SymbolInvoker;
 
+/**
+ * It implements the computation and simplification of symbolic expression on one-layer.
+ * 
+ * @author yukimula
+ *
+ */
 class SymbolComputer {
 	
 	/* definitions */
@@ -364,7 +369,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(((SymbolConstant) operand).get_int());
 			}
 			else {
-				return this.evaluator.get_symbol_factory().new_dereference(operand);
+				return this.evaluator.get_symbol_factory().new_type_casting(type, operand);
 			}
 		}
 		else {
@@ -646,7 +651,7 @@ class SymbolComputer {
 					return pos_expression;
 				}
 				else {
-					return this.evaluator.get_symbol_factory().new_arith_add(data_type, constant, pos_expression);
+					return this.evaluator.get_symbol_factory().new_arith_add(data_type, pos_expression, constant);
 				}
 			}
 			else {
@@ -654,7 +659,7 @@ class SymbolComputer {
 					return this.evaluator.get_symbol_factory().new_arith_sub(data_type, pos_expression, neg_expression);
 				}
 				else {
-					pos_expression = this.evaluator.get_symbol_factory().new_arith_add(data_type, constant, pos_expression);
+					pos_expression = this.evaluator.get_symbol_factory().new_arith_add(data_type, pos_expression, constant);
 					return this.evaluator.get_symbol_factory().new_arith_sub(data_type, pos_expression, neg_expression);
 				}
 			}
@@ -1072,7 +1077,811 @@ class SymbolComputer {
 		return this.evaluator.get_symbol_factory().new_arith_mod(data_type, loperand, roperand);
 	}
 	
+	/* bitwise and by & */
+	/**
+	 * @param lconstant
+	 * @param rconstant
+	 * @return lconstant & rconstant
+	 */
+	private SymbolConstant compute_const_bitws_and(SymbolConstant lconstant, SymbolConstant rconstant) throws Exception {
+		long lvalue = lconstant.get_long().longValue(), rvalue = rconstant.get_long().longValue();
+		return this.evaluator.get_symbol_factory().new_constant(lvalue & rvalue);
+	}
+	/**
+	 * @param expression
+	 * @param operands	to preserve the operands for bitwise-and (&)
+	 * @throws Exception
+	 */
+	private void extend_operands_in_bitws_and(SymbolExpression expression, List<SymbolExpression> operands) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.bit_and) {
+				this.extend_operands_in_bitws_and(((SymbolBinaryExpression) expression).get_loperand(), operands);
+				this.extend_operands_in_bitws_and(((SymbolBinaryExpression) expression).get_roperand(), operands);
+			}
+			else {
+				operands.add(expression);
+			}
+		}
+		else {
+			operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands
+	 * @param variables to preserve non-constant operands in &
+	 * @return to accumulate the constants in bitwise-and(&)
+	 * @throws Exception
+	 */
+	private SymbolConstant update_operands_in_bitws_and(Iterable<SymbolExpression> operands, List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(-1L);
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = this.compute_const_bitws_and(constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(operand);
+			}
+		}
+		return constant;
+	}
+	/**
+	 * remove duplicated operands for bitwise-operations
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void digest_operands_in_bitws_and(List<SymbolExpression> operands) throws Exception {
+		SymbolExpression removed_operand;
+		do {
+			removed_operand = null;
+			
+			for(int i = 0; i < operands.size(); i++) {
+				for(int j = i + 1; j < operands.size(); j++) {
+					if(operands.get(i).equals(operands.get(j))) {
+						removed_operand = operands.get(i);
+						break;
+					}
+				}
+				if(removed_operand != null) { break; }
+			}
+			
+			if(removed_operand != null) {
+				operands.remove(removed_operand);
+			}
+		} while(removed_operand != null);
+	}
+	/**
+	 * @param data_type
+	 * @param constant
+	 * @param operands
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression integrate_operands_in_bitws_and(CType data_type, 
+			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
+		SymbolExpression expression = null;
+		for(SymbolExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = this.evaluator.get_symbol_factory().new_bitws_and(data_type, expression, operand);
+			}
+		}
+		
+		if(expression == null) {
+			return constant;
+		}
+		else if(this.is_zero_constant(constant)) {
+			return constant;
+		}
+		else if(this.is_none_constant(constant)) {
+			return expression;
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_bitws_and(data_type, constant, expression);
+		}
+	}
+	/**
+	 * @param data_type
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand & roperand
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_bitws_and(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		/* 1. extend operands */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		this.extend_operands_in_bitws_and(loperand, operands);
+		this.extend_operands_in_bitws_and(roperand, operands);
+		
+		/* 2. update the operands into variables and constant */
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		SymbolConstant constant = this.update_operands_in_bitws_and(operands, variables);
+		this.digest_operands_in_bitws_and(variables); 
+		operands = variables;
+		
+		/* 3. integrate operands into expression (&) */
+		return this.integrate_operands_in_bitws_and(data_type, constant, operands);
+	}
 	
+	/* bitwise ior by | */
+	/**
+	 * @param lconstant
+	 * @param rconstant
+	 * @return lconstant | rconstant
+	 * @throws Exception
+	 */
+	private SymbolConstant compute_const_bitws_ior(SymbolConstant lconstant, SymbolConstant rconstant) throws Exception {
+		long lvalue = lconstant.get_long().longValue(), rvalue = rconstant.get_long().longValue();
+		return this.evaluator.get_symbol_factory().new_constant(lvalue | rvalue);
+	}
+	/**
+	 * @param expression
+	 * @param operands	to preserve the operands in bitwise-ior(|)
+	 * @throws Exception
+	 */
+	private void extend_operands_in_bitws_ior(SymbolExpression expression, List<SymbolExpression> operands) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.bit_or) {
+				this.extend_operands_in_bitws_ior(((SymbolBinaryExpression) expression).get_loperand(), operands);
+				this.extend_operands_in_bitws_ior(((SymbolBinaryExpression) expression).get_roperand(), operands);
+			}
+			else {
+				operands.add(expression);
+			}
+		}
+		else {
+			operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands
+	 * @param variables to preserve non-const operands
+	 * @return to accumulate constants in |
+	 * @throws Exception
+	 */
+	private SymbolConstant update_operands_in_bitws_ior(Iterable<SymbolExpression> operands, List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(0L);
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = this.compute_const_bitws_ior(constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(operand);
+			}
+		}
+		return constant;
+	}
+	/**
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void digest_operands_in_bitws_ior(List<SymbolExpression> operands) throws Exception {
+		SymbolExpression removed_operand;
+		do {
+			removed_operand = null;
+			
+			for(int i = 0; i < operands.size(); i++) {
+				for(int j = i + 1; j < operands.size(); j++) {
+					if(operands.get(i).equals(operands.get(j))) {
+						removed_operand = operands.get(i);
+						break;
+					}
+				}
+				if(removed_operand != null) { break; }
+			}
+			
+			if(removed_operand != null) {
+				operands.remove(removed_operand);
+			}
+		} while(removed_operand != null);
+	}
+	/**
+	 * @param data_type
+	 * @param constant
+	 * @param operands
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression integrate_operands_in_bitws_ior(CType data_type, 
+			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
+		SymbolExpression expression = null;
+		for(SymbolExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = this.evaluator.get_symbol_factory().new_bitws_ior(data_type, expression, operand);
+			}
+		}
+		
+		if(expression == null) {
+			return constant;
+		}
+		else if(this.is_zero_constant(constant)) {
+			return expression;
+		}
+		else if(this.is_none_constant(constant)) {
+			return constant;
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_bitws_ior(data_type, constant, expression);
+		}
+	}
+	/**
+	 * @param data_type
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand | roperand
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_bitws_ior(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		/* 1. extend operands */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		this.extend_operands_in_bitws_ior(loperand, operands);
+		this.extend_operands_in_bitws_ior(roperand, operands);
+		
+		/* 2. update the operands into variables and constant */
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		SymbolConstant constant = this.update_operands_in_bitws_ior(operands, variables);
+		this.digest_operands_in_bitws_ior(variables); 
+		operands = variables;
+		
+		/* 3. integrate operands into expression (&) */
+		return this.integrate_operands_in_bitws_ior(data_type, constant, operands);
+	}
 	
+	/* bitwise xor by ^ */
+	/**
+	 * @param lconstant
+	 * @param rconstant
+	 * @return lconstant ^ rconstant
+	 * @throws Exception
+	 */
+	private SymbolConstant compute_const_bitws_xor(SymbolConstant lconstant, SymbolConstant rconstant) throws Exception {
+		long lvalue = lconstant.get_long().longValue(), rvalue = rconstant.get_long().longValue();
+		return this.evaluator.get_symbol_factory().new_constant(lvalue ^ rvalue);
+	}
+	/**
+	 * @param expression
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void extend_operands_in_bitws_xor(SymbolExpression expression, List<SymbolExpression> operands) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.bit_xor) {
+				this.extend_operands_in_bitws_xor(((SymbolBinaryExpression) expression).get_loperand(), operands);
+				this.extend_operands_in_bitws_xor(((SymbolBinaryExpression) expression).get_roperand(), operands);
+			}
+			else {
+				operands.add(expression);
+			}
+		}
+		else {
+			operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands
+	 * @param variables
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant update_operands_in_bitws_xor(Iterable<SymbolExpression> operands, List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(0L);
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = this.compute_const_bitws_xor(constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(operand);
+			}
+		}
+		return constant;
+	}
+	/**
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void digest_operands_in_bitws_xor(List<SymbolExpression> operands) throws Exception {
+		SymbolExpression removed_operand;
+		do {
+			removed_operand = null; 
+			int removed_i = -1, removed_j = -1;
+			
+			for(int i = 0; i < operands.size(); i++) {
+				for(int j = i + 1; j < operands.size(); j++) {
+					if(operands.get(i).equals(operands.get(j))) {
+						removed_operand = operands.get(i);
+						removed_i = i; removed_j = j;
+						break;
+					}
+				}
+				if(removed_operand != null) { break; }
+			}
+			
+			if(removed_operand != null) {
+				operands.remove(removed_j);
+				operands.remove(removed_i);
+			}
+		} while(removed_operand != null);
+	}
+	/**
+	 * @param data_type
+	 * @param constant
+	 * @param operands
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression integrate_operands_in_bitws_xor(CType data_type, 
+			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
+		SymbolExpression expression = null;
+		for(SymbolExpression operand : operands) {
+			if(expression == null) {
+				expression = operand;
+			}
+			else {
+				expression = this.evaluator.get_symbol_factory().new_bitws_xor(data_type, expression, operand);
+			}
+		}
+		
+		if(expression == null) {
+			return constant;
+		}
+		else if(this.is_zero_constant(constant)) {
+			return expression;
+		}
+		else if(this.is_none_constant(constant)) {
+			return this.evaluator.get_symbol_factory().new_bitws_rsv(expression);
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_bitws_xor(data_type, constant, expression);
+		}
+	}
+	/**
+	 * @param data_type
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand ^ roperand
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_bitws_xor(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		/* 1. extend operands */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		this.extend_operands_in_bitws_xor(loperand, operands);
+		this.extend_operands_in_bitws_xor(roperand, operands);
+		
+		/* 2. update the operands into variables and constant */
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		SymbolConstant constant = this.update_operands_in_bitws_xor(operands, variables);
+		this.digest_operands_in_bitws_xor(variables); 
+		operands = variables;
+		
+		/* 3. integrate operands into expression (&) */
+		return this.integrate_operands_in_bitws_xor(data_type, constant, operands);
+	}
+	
+	/* bitwise shifting (<<, >>) */
+	private static final int MAX_SHIFT_WINDOW = 32;
+	/**
+	 * @param data_type
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute x << y based on:
+	 * 			(1)	x == 0 --> 0
+	 * 			(2) y == 0 --> x
+	 * 			(3) constant
+	 * 			(4) otherwise
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_bitws_lsh(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		if(loperand instanceof SymbolConstant) {
+			long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+			if(lvalue == 0L) {
+				return this.evaluator.get_symbol_factory().new_constant(0);
+			}
+		}
+		
+		if(roperand instanceof SymbolConstant) {
+			long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+			if(rvalue == 0) {
+				return loperand;
+			}
+			else if(rvalue >= MAX_SHIFT_WINDOW) {
+				return this.evaluator.get_symbol_factory().new_constant(0);
+			}
+		}
+		
+		if(loperand instanceof SymbolConstant) {
+			if(roperand instanceof SymbolConstant) {
+				long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+				long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+				return this.evaluator.get_symbol_factory().new_constant(lvalue << rvalue);
+			}
+		}
+		
+		return this.evaluator.get_symbol_factory().new_bitws_lsh(data_type, loperand, roperand);
+	}
+	/**
+	 * @param data_type
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute x << y based on:
+	 * 			(1)	x == 0 --> 0
+	 * 			(2) y == 0 --> x
+	 * 			(3) constant
+	 * 			(4) otherwise
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_bitws_rsh(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		if(loperand instanceof SymbolConstant) {
+			long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+			if(lvalue == 0L) {
+				return this.evaluator.get_symbol_factory().new_constant(0);
+			}
+		}
+		
+		if(roperand instanceof SymbolConstant) {
+			long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+			if(rvalue == 0) {
+				return loperand;
+			}
+			else if(rvalue >= MAX_SHIFT_WINDOW) {
+				return this.evaluator.get_symbol_factory().new_constant(0);
+			}
+		}
+		
+		if(loperand instanceof SymbolConstant) {
+			if(roperand instanceof SymbolConstant) {
+				long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+				long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+				return this.evaluator.get_symbol_factory().new_constant(lvalue >> rvalue);
+			}
+		}
+		
+		return this.evaluator.get_symbol_factory().new_bitws_rsh(data_type, loperand, roperand);
+	}
+	
+	/* logical and by && */
+	/**
+	 * @param lconstant
+	 * @param rconstant
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant compute_const_logic_and(SymbolConstant lconstant, SymbolConstant rconstant) throws Exception {
+		return this.evaluator.get_symbol_factory().new_constant(lconstant.get_bool() && rconstant.get_bool());
+	}
+	/**
+	 * @param expression
+	 * @param operands	to preserve the operands in logical conjunction
+	 * @throws Exception
+	 */
+	private void extend_operands_in_logic_and(SymbolExpression expression, List<SymbolExpression> operands) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.logic_and) {
+				this.extend_operands_in_logic_and(((SymbolBinaryExpression) expression).get_loperand(), operands);
+				this.extend_operands_in_logic_and(((SymbolBinaryExpression) expression).get_roperand(), operands);
+			}
+			else {
+				operands.add(expression);
+			}
+		}
+		else {
+			operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands
+	 * @param variables
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant update_operands_in_logic_and(Iterable<SymbolExpression> operands, 
+			List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(true);
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = this.compute_const_logic_and(constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(this.evaluator.get_symbol_factory().parse_to_condition(operand, true));
+			}
+		}
+		return constant;
+	}
+	/**
+	 * removed duplicated conditions from expression
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void digest_operands_in_logic_and(List<SymbolExpression> operands) throws Exception {
+		SymbolExpression removed_operand;
+		do {
+			removed_operand = null;
+			
+			for(int i = 0; i < operands.size(); i++) {
+				for(int j = i + 1; j < operands.size(); j++) {
+					if(operands.get(i).equals(operands.get(j))) {
+						removed_operand = operands.get(i);
+						break;
+					}
+				}
+				if(removed_operand != null) { break; }
+			}
+			
+			if(removed_operand != null) {
+				operands.remove(removed_operand);
+			}
+		} while(removed_operand != null);
+	}
+	/**
+	 * @param constant
+	 * @param operands
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression integrate_operands_in_logic_and(SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
+		if(constant.get_bool()) {
+			SymbolExpression expression = null;
+			for(SymbolExpression operand : operands) {
+				if(expression == null) {
+					expression = operand;
+				}
+				else {
+					expression = this.evaluator.get_symbol_factory().new_logic_and(expression, operand);
+				}
+			}
+			if(expression == null) {
+				return this.evaluator.get_symbol_factory().new_constant(true);
+			}
+			else {
+				return expression;
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_constant(false);
+		}
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_logic_and(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		/* extend operands in logical */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		this.extend_operands_in_logic_and(loperand, operands);
+		this.extend_operands_in_logic_and(roperand, operands);
+		
+		/* update constant and variables */
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		SymbolConstant constant = this.update_operands_in_logic_and(operands, variables);
+		this.digest_operands_in_logic_and(variables);
+		operands = variables;
+		
+		/* integrate on */	return this.integrate_operands_in_logic_and(constant, operands);
+	}
+	
+	/* logical ior by || */
+	/**
+	 * @param lconstant
+	 * @param rconstant
+	 * @return lconstant || rconstant
+	 * @throws Exception
+	 */
+	private SymbolConstant compute_const_logic_ior(SymbolConstant lconstant, SymbolConstant rconstant) throws Exception {
+		return this.evaluator.get_symbol_factory().new_constant(lconstant.get_bool() || rconstant.get_bool());
+	}
+	/**
+	 * @param expression
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void extend_operands_in_logic_ior(SymbolExpression expression, List<SymbolExpression> operands) throws Exception {
+		if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.logic_or) {
+				this.extend_operands_in_logic_ior(((SymbolBinaryExpression) expression).get_loperand(), operands);
+				this.extend_operands_in_logic_ior(((SymbolBinaryExpression) expression).get_roperand(), operands);
+			}
+			else {
+				operands.add(expression);
+			}
+		}
+		else {
+			operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands
+	 * @param variables
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolConstant update_operands_in_logic_ior(Iterable<SymbolExpression> operands, 
+			List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(false);
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = this.compute_const_logic_ior(constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(this.evaluator.get_symbol_factory().parse_to_condition(operand, true));
+			}
+		}
+		return constant;
+	}
+	/**
+	 * @param operands
+	 * @throws Exception
+	 */
+	private void digest_operands_in_logic_ior(List<SymbolExpression> operands) throws Exception {
+		SymbolExpression removed_operand;
+		do {
+			removed_operand = null;
+			
+			for(int i = 0; i < operands.size(); i++) {
+				for(int j = i + 1; j < operands.size(); j++) {
+					if(operands.get(i).equals(operands.get(j))) {
+						removed_operand = operands.get(i);
+						break;
+					}
+				}
+				if(removed_operand != null) { break; }
+			}
+			
+			if(removed_operand != null) {
+				operands.remove(removed_operand);
+			}
+		} while(removed_operand != null);
+	}
+	/**
+	 * @param constant
+	 * @param operands
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression integrate_operands_in_logic_ior(SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
+		if(!constant.get_bool()) {
+			SymbolExpression expression = null;
+			for(SymbolExpression operand : operands) {
+				if(expression == null) {
+					expression = operand;
+				}
+				else {
+					expression = this.evaluator.get_symbol_factory().new_logic_ior(expression, operand);
+				}
+			}
+			if(expression == null) {
+				return this.evaluator.get_symbol_factory().new_constant(false);
+			}
+			else {
+				return expression;
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_constant(true);
+		}
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_logic_ior(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		/* extend operands in logical */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		this.extend_operands_in_logic_ior(loperand, operands);
+		this.extend_operands_in_logic_ior(roperand, operands);
+		
+		/* update constant and variables */
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		SymbolConstant constant = this.update_operands_in_logic_ior(operands, variables);
+		this.digest_operands_in_logic_ior(variables);
+		operands = variables;
+		
+		/* integrate on */	return this.integrate_operands_in_logic_ior(constant, operands);
+	}
+	
+	/* relational expression part */
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute loperand < roperand based on:
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_smaller_tn(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		SymbolExpression expression = this.compute_arith_sub(loperand.get_data_type(), loperand, roperand);
+		if(expression instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) expression).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				return this.evaluator.get_symbol_factory().new_constant(value < 0L);
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				return this.evaluator.get_symbol_factory().new_constant(value < 0.0);
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_smaller_tn(expression, 0);
+		}
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute loperand <= roperand based on:
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_smaller_eq(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		SymbolExpression expression = this.compute_arith_sub(loperand.get_data_type(), loperand, roperand);
+		if(expression instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) expression).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				return this.evaluator.get_symbol_factory().new_constant(value <= 0L);
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				return this.evaluator.get_symbol_factory().new_constant(value <= 0.0);
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_smaller_eq(expression, 0);
+		}
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute loperand == roperand based on:
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_equal_with(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		SymbolExpression expression = this.compute_arith_sub(loperand.get_data_type(), loperand, roperand);
+		if(expression instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) expression).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				return this.evaluator.get_symbol_factory().new_constant(value == 0L);
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				return this.evaluator.get_symbol_factory().new_constant(value == 0.0);
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_equal_with(expression, 0);
+		}
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return	compute loperand != roperand based on:
+	 * @throws Exception
+	 */
+	protected SymbolExpression compute_not_equals(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		SymbolExpression expression = this.compute_arith_sub(loperand.get_data_type(), loperand, roperand);
+		if(expression instanceof SymbolConstant) {
+			Object number = ((SymbolConstant) expression).get_number();
+			if(number instanceof Long) {
+				long value = ((Long) number).longValue();
+				return this.evaluator.get_symbol_factory().new_constant(value != 0L);
+			}
+			else {
+				double value = ((Double) number).doubleValue();
+				return this.evaluator.get_symbol_factory().new_constant(value != 0.0);
+			}
+		}
+		else {
+			return this.evaluator.get_symbol_factory().new_not_equals(expression, 0);
+		}
+	}
 	
 }

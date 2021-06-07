@@ -8,7 +8,7 @@ import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymInstanceStatus;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It preserves the status for evaluating a symbolic instance.
@@ -81,7 +81,7 @@ public abstract class SymInstanceContent {
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected Boolean add_status(SymbolStateContexts contexts) throws Exception { 
+	protected Boolean add_status(SymbolProcess contexts) throws Exception { 
 		this.con_status.add(contexts); 
 		return this.con_status.get_result(this.con_status.length() - 1);
 	}

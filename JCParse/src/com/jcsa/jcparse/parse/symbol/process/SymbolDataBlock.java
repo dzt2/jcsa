@@ -1,9 +1,12 @@
-package com.jcsa.jcparse.parse.symbol2.process;
+package com.jcsa.jcparse.parse.symbol.process;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolInitializerList;
+import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 
 public class SymbolDataBlock {
 	
@@ -83,6 +86,18 @@ public class SymbolDataBlock {
 	 */
 	public void clear() { this.table.clear(); }
 	/**
+	 * @param reference
+	 * @return
+	 */
+	private boolean is_storage_class(SymbolExpression reference) {
+		if(reference instanceof SymbolConstant || reference instanceof SymbolLiteral || reference instanceof SymbolInitializerList) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	/**
 	 * save the symbolic value to the reference specified by key
 	 * @param key
 	 * @param value
@@ -92,9 +107,8 @@ public class SymbolDataBlock {
 	public boolean save(Object key, SymbolExpression value) throws Exception {
 		SymbolExpression reference = this.stack.
 				get_process().get_symbol_factory().parse_to_expression(key);
-		if(reference.is_reference()) {
-			String reference_key = reference.generate_code(false);
-			this.table.put(reference_key, value);
+		if(this.is_storage_class(reference)) {
+			this.table.put(reference.generate_code(false), value);
 			return true;
 		}
 		else {
@@ -110,7 +124,7 @@ public class SymbolDataBlock {
 	public SymbolExpression load(Object key) throws Exception {
 		SymbolExpression reference = this.stack.
 				get_process().get_symbol_factory().parse_to_expression(key);
-		if(reference.is_reference()) {
+		if(this.is_storage_class(reference)) {
 			String reference_key = reference.generate_code(false);
 			SymbolDataBlock block = this;
 			while(block != null) {
@@ -124,7 +138,7 @@ public class SymbolDataBlock {
 			return null;
 		}
 		else {
-			throw new IllegalArgumentException(reference.toString());
+			return null;
 		}
 	}
 	

@@ -91,7 +91,8 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else if(source instanceof Boolean || source instanceof Character || source instanceof Short ||
-				source instanceof Integer || source instanceof Double || source instanceof Float) {
+				source instanceof Integer || source instanceof Long || source instanceof Float || 
+				source instanceof Double) {
 			return (SymbolConstant) SymbolParser.parser.parse_con(source);
 		}
 		else if(source instanceof String) {
@@ -130,7 +131,8 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else if(source instanceof Boolean || source instanceof Character || source instanceof Short ||
-				source instanceof Integer || source instanceof Double || source instanceof Float) {
+				source instanceof Integer || source instanceof Long || source instanceof Float || 
+				source instanceof Double) {
 			return (SymbolConstant) SymbolParser.parser.parse_con(source);
 		}
 		else if(source instanceof String) {

@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.mutant.sym2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 public class SymFlowError extends SymStateError {
 	
@@ -46,7 +46,7 @@ public class SymFlowError extends SymStateError {
 				this.muta_flow.get_target() + ")";
 	}
 	@Override
-	public Boolean validate(SymbolStateContexts contexts) throws Exception {
+	public Boolean validate(SymbolProcess contexts) throws Exception {
 		return this.orig_flow.get_target() != this.muta_flow.get_target();
 	}
 	

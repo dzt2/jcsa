@@ -7,7 +7,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
-import com.jcsa.jcparse.parse.symbol.SymbolStateContexts;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It preserve the accumulated status of evaluation results w.r.t. one single symbolic instance.
@@ -74,7 +74,7 @@ public class SymInstanceStatus {
 	 * @throws Exception
 	 * @return the concrete instance optimized from input instance using the contexts
 	 */
-	public SymInstance add(SymbolStateContexts contexts) throws Exception {
+	public SymInstance add(SymbolProcess contexts) throws Exception {
 		SymInstance concrete_instance = SymInstances.optimize(this.instance, contexts);
 		this.results.add(concrete_instance.validate(null));
 		this.conditions.addAll(SymConditions.generate(concrete_instance));
