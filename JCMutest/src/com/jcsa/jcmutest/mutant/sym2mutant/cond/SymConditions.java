@@ -991,7 +991,7 @@ public class SymConditions {
 				}
 			}
 			
-			SymbolExpression diff = SymbolFactory.arith_sub(location.get_data_type(), orig_value, muta_value);
+			SymbolExpression diff = SymbolFactory.arith_sub(location.get_data_type(), muta_value, orig_value);
 			diff = SymInstances.evaluate(diff, null);
 			if(diff instanceof SymbolConstant) {
 				Object number = ((SymbolConstant) diff).get_number();
@@ -1071,7 +1071,7 @@ public class SymConditions {
 				conditions.add(SymConditions.set_invp(location));
 			}
 			
-			SymbolExpression diff = SymbolFactory.arith_sub(location.get_data_type(), orig_value, muta_value);
+			SymbolExpression diff = SymbolFactory.arith_sub(location.get_data_type(), muta_value, orig_value);
 			diff = SymInstances.evaluate(diff, null);
 			if(diff instanceof SymbolConstant) {
 				Object number = ((SymbolConstant) diff).get_number();
