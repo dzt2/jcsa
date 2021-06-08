@@ -7,13 +7,20 @@ import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolBasicExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFieldExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
+import com.jcsa.jcparse.lang.symbol.SymbolInitializerList;
+import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolInvoker;
+
 
 /**
  * It implements the computation and simplification of symbolic expression on one-layer.
@@ -26,7 +33,19 @@ class SymbolComputer {
 	/* definitions */
 	/** for which the computational unit serves to simplify or compute expressions **/
 	private SymbolEvaluator evaluator;
-	protected SymbolComputer(SymbolEvaluator evaluator) { this.evaluator = evaluator; }
+	/**
+	 * create a computational unit for symbolic computation
+	 * @param evaluator
+	 * @throws Exception
+	 */
+	protected SymbolComputer(SymbolEvaluator evaluator) { 
+		if(evaluator == null) {
+			throw new IllegalArgumentException("Invalid evaluator: null");
+		}
+		else {
+			this.evaluator = evaluator;
+		}
+	}
 	
 	/* basic operations */
 	/**
@@ -1465,6 +1484,7 @@ class SymbolComputer {
 	}
 	
 	/* bitwise shifting (<<, >>) */
+	/** the maximal limit of shifting operation **/
 	private static final int MAX_SHIFT_WINDOW = 32;
 	/**
 	 * @param data_type
@@ -1811,6 +1831,15 @@ class SymbolComputer {
 			}
 		}
 		else {
+			SymbolValueDomain domain = this.compute_domain(expression);
+			if(domain != null) {
+				if(!domain.is_minimal_infinite() && domain.get_minimal_value() >= 0) {
+					return this.evaluator.get_symbol_factory().new_constant(false);
+				}
+				else if(!domain.is_maximal_infinite() && domain.get_maximal_value() < 0) {
+					return this.evaluator.get_symbol_factory().new_constant(true);
+				}
+			}
 			return this.evaluator.get_symbol_factory().new_smaller_tn(expression, 0);
 		}
 	}
@@ -1834,6 +1863,15 @@ class SymbolComputer {
 			}
 		}
 		else {
+			SymbolValueDomain domain = this.compute_domain(expression);
+			if(domain != null) {
+				if(!domain.is_minimal_infinite() && domain.get_minimal_value() > 0) {
+					return this.evaluator.get_symbol_factory().new_constant(false);
+				}
+				else if(!domain.is_maximal_infinite() && domain.get_maximal_value() <= 0) {
+					return this.evaluator.get_symbol_factory().new_constant(true);
+				}
+			}
 			return this.evaluator.get_symbol_factory().new_smaller_eq(expression, 0);
 		}
 	}
@@ -1880,8 +1918,416 @@ class SymbolComputer {
 			}
 		}
 		else {
+			SymbolValueDomain domain = this.compute_domain(expression);
+			if(domain != null) {
+				if(!domain.is_minimal_infinite() && domain.get_minimal_value() > 0) {
+					return this.evaluator.get_symbol_factory().new_constant(true);
+				}
+				else if(!domain.is_maximal_infinite() && domain.get_maximal_value() < 0) {
+					return this.evaluator.get_symbol_factory().new_constant(true);
+				}
+			}
 			return this.evaluator.get_symbol_factory().new_not_equals(expression, 0);
 		}
+	}
+	
+	/* value domain analysis */
+	/**
+	 * @param expression
+	 * @return compute the domain of the expression or null if not numeric
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain(SymbolExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(expression instanceof SymbolIdentifier) {
+			return this.compute_domain_identifier((SymbolIdentifier) expression);
+		}
+		else if(expression instanceof SymbolConstant) {
+			return this.compute_domain_constant((SymbolConstant) expression);
+		}
+		else if(expression instanceof SymbolLiteral) {
+			return this.compute_domain_literal((SymbolLiteral) expression);
+		}
+		else if(expression instanceof SymbolInitializerList) {
+			return this.compute_domain_initializer_list((SymbolInitializerList) expression);
+		}
+		else if(expression instanceof SymbolFieldExpression) {
+			return this.compute_domain_field_expression((SymbolFieldExpression) expression);
+		}
+		else if(expression instanceof SymbolCallExpression) {
+			return this.compute_domain_call_expression((SymbolCallExpression) expression);
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_operator().get_operator();
+			switch(operator) {
+			case negative:		return this.compute_domain_arith_neg((SymbolUnaryExpression) expression);
+			case bit_not:		return this.compute_domain_bitws_rsv((SymbolUnaryExpression) expression);
+			case logic_not:		return this.compute_domain_logic_not((SymbolUnaryExpression) expression);
+			case address_of:	return this.compute_domain_address_of((SymbolUnaryExpression) expression);
+			case dereference:	return this.compute_domain_dereference((SymbolUnaryExpression) expression);
+			case assign:		return this.compute_domain_type_casting((SymbolUnaryExpression) expression);
+			default: 			throw new IllegalArgumentException("Unsupport: " + operator);
+			}
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			switch(operator) {
+			case arith_add:		return this.compute_domain_arith_add((SymbolBinaryExpression) expression);
+			case arith_sub:		return this.compute_domain_arith_sub((SymbolBinaryExpression) expression);
+			case arith_mul:		return this.compute_domain_arith_mul((SymbolBinaryExpression) expression);
+			case arith_div:		return this.compute_domain_arith_div((SymbolBinaryExpression) expression);
+			case arith_mod:
+			case bit_and:
+			case bit_or:
+			case bit_xor:
+			case left_shift:
+			case righ_shift:
+			case logic_and:
+			case logic_or:
+			case smaller_tn:
+			case smaller_eq:
+			case greater_tn:
+			case greater_eq:
+			case equal_with:
+			case not_equals:	return SymbolValueDomain.domain_of_type(expression.get_data_type());
+			default:			throw new IllegalArgumentException("Unsupport: " + operator);
+			}
+		}
+		else {
+			throw new IllegalArgumentException(expression.getClass().getSimpleName());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return compute by type
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_identifier(SymbolIdentifier expression) throws Exception {
+		return SymbolValueDomain.domain_of_type(expression.get_data_type());
+	}
+	/**
+	 * @param expression
+	 * @return [const, const]
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_constant(SymbolConstant expression) throws Exception {
+		return new SymbolValueDomain(expression.get_double(), expression.get_double());
+	}
+	/**
+	 * @param expression
+	 * @return null
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_literal(SymbolLiteral expression) throws Exception {
+		return null;
+	}
+	/**
+	 * @param expression
+	 * @return null
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_initializer_list(SymbolInitializerList expression) throws Exception {
+		return null;
+	}
+	/**
+	 * @param expression
+	 * @return by type
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_field_expression(SymbolFieldExpression expression) throws Exception {
+		return SymbolValueDomain.domain_of_type(expression.get_data_type());
+	}
+	/**
+	 * @param expression
+	 * @return function-based specialization
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_call_expression(SymbolCallExpression expression) throws Exception {
+		SymbolExpression function = expression.get_function();
+		if(function instanceof SymbolIdentifier) {
+			String name = function.generate_code(true);
+			/* implement your function specialization here... */
+			if(name.equals("sqrt") || name.equals("fabs") || name.equals("abs")
+				|| name.equals("printf") || name.equals("fprintf")) {
+				return new SymbolValueDomain(0.0, null);
+			}
+		}
+		return SymbolValueDomain.domain_of_type(expression.get_data_type());
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_arith_neg(SymbolUnaryExpression expression) throws Exception {
+		SymbolValueDomain sdomain = this.compute_domain(expression.get_operand());
+		if(sdomain == null) {
+			return SymbolValueDomain.domain_of_type(expression.get_data_type());
+		}
+		else {
+			Double minimal_value, maximal_value;
+			if(sdomain.is_maximal_infinite()) {
+				minimal_value = null;
+			}
+			else {
+				minimal_value = -sdomain.get_maximal_value();
+			}
+			if(sdomain.is_minimal_infinite()) {
+				maximal_value = null;
+			}
+			else {
+				maximal_value = -sdomain.get_minimal_value();
+			}
+			return new SymbolValueDomain(minimal_value, maximal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_bitws_rsv(SymbolUnaryExpression expression) throws Exception {
+		SymbolValueDomain sdomain = this.compute_domain(expression.get_operand());
+		if(sdomain == null) {
+			return SymbolValueDomain.domain_of_type(expression.get_data_type());
+		}
+		else {
+			long minimal_value, maximal_value;
+			if(sdomain.is_minimal_infinite()) {
+				minimal_value = Long.MIN_VALUE;
+			}
+			else {
+				minimal_value = sdomain.get_minimal_value().longValue();
+			}
+			if(sdomain.is_maximal_infinite()) {
+				maximal_value = Long.MAX_VALUE;
+			}
+			else {
+				maximal_value = sdomain.get_maximal_value().longValue();
+			}
+			return new SymbolValueDomain((double) ~maximal_value, (double) ~minimal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_logic_not(SymbolUnaryExpression expression) throws Exception {
+		SymbolValueDomain sdomain = this.compute_domain(expression.get_operand());
+		if(sdomain == null) {
+			return SymbolValueDomain.domain_of_type(CBasicTypeImpl.bool_type);
+		}
+		else {
+			long minimal_value, maximal_value;
+			if(sdomain.is_minimal_infinite()) {
+				minimal_value = Long.MIN_VALUE;
+			}
+			else {
+				minimal_value = sdomain.get_minimal_value().longValue();
+			}
+			if(sdomain.is_maximal_infinite()) {
+				maximal_value = Long.MAX_VALUE;
+			}
+			else {
+				maximal_value = sdomain.get_maximal_value().longValue();
+			}
+			
+			boolean has_true, has_false;
+			has_true = (0 >= minimal_value) && (0 <= maximal_value);
+			has_false = (minimal_value != 0) || (maximal_value != 0);
+			if(has_true) {
+				if(has_false) {
+					return new SymbolValueDomain(0.0, 1.0);
+				}
+				else {
+					return new SymbolValueDomain(1.0, 1.0);
+				}
+			}
+			else {
+				if(has_false) {
+					return new SymbolValueDomain(0.0, 0.0);
+				}
+				else {
+					return null;
+				}
+			}
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_address_of(SymbolUnaryExpression expression) throws Exception {
+		return new SymbolValueDomain((double) 0, (double) Long.MAX_VALUE);
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_dereference(SymbolUnaryExpression expression) throws Exception {
+		return SymbolValueDomain.domain_of_type(expression.get_data_type());
+	}
+	/**
+	 * @param expression
+	 * @return by type
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_type_casting(SymbolUnaryExpression expression) throws Exception {
+		SymbolValueDomain domain1 = this.compute_domain(expression.get_operand());
+		SymbolValueDomain domain2 = SymbolValueDomain.domain_of_type(expression.get_data_type());
+		if(domain1 == null) {
+			return domain2;
+		}
+		else if(domain2 == null) {
+			return domain1;
+		}
+		else {
+			Double minimal_value1 = domain1.get_minimal_value();
+			Double maximal_value1 = domain1.get_maximal_value();
+			Double minimal_value2 = domain2.get_minimal_value();
+			Double maximal_value2 = domain2.get_maximal_value();
+			Double minimal_value, maximal_value;
+			if(minimal_value1 == null) {
+				if(minimal_value2 == null) {
+					minimal_value = null;
+				}
+				else {
+					minimal_value = minimal_value2;
+				}
+			}
+			else {
+				if(minimal_value2 == null) {
+					minimal_value = minimal_value1;
+				}
+				else {
+					minimal_value = Math.max(minimal_value1, minimal_value2);
+				}
+			}
+			
+			if(maximal_value1 == null) {
+				if(maximal_value2 == null) {
+					maximal_value = null;
+				}
+				else {
+					maximal_value = maximal_value2;
+				}
+			}
+			else {
+				if(maximal_value2 == null) {
+					maximal_value = maximal_value1;
+				}
+				else {
+					maximal_value = Math.min(maximal_value1, maximal_value2);
+				}
+			}
+			return new SymbolValueDomain(minimal_value, maximal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_arith_add(SymbolBinaryExpression expression) throws Exception {
+		SymbolValueDomain ldomain = this.compute_domain(expression.get_loperand());
+		SymbolValueDomain rdomain = this.compute_domain(expression.get_roperand());
+		if(ldomain == null || rdomain == null) {
+			return SymbolValueDomain.domain_of_type(expression.get_data_type());
+		}
+		else {
+			Double minimal_value;
+			if(ldomain.is_minimal_infinite() || rdomain.is_minimal_infinite()) {
+				minimal_value = null;
+			}
+			else {
+				minimal_value = ldomain.get_minimal_value() + rdomain.get_minimal_value();
+			}
+			
+			Double maximal_value;
+			if(ldomain.is_maximal_infinite() || rdomain.is_maximal_infinite()) {
+				maximal_value = null;
+			}
+			else {
+				maximal_value = ldomain.get_maximal_value() + rdomain.get_maximal_value();
+			}
+			
+			return new SymbolValueDomain(minimal_value, maximal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_arith_sub(SymbolBinaryExpression expression) throws Exception {
+		SymbolValueDomain ldomain = this.compute_domain(expression.get_loperand());
+		SymbolValueDomain rdomain = this.compute_domain(expression.get_roperand());
+		if(ldomain == null || rdomain == null) {
+			return SymbolValueDomain.domain_of_type(expression.get_data_type());
+		}
+		else {
+			Double minimal_value;
+			if(ldomain.is_minimal_infinite() || rdomain.is_maximal_infinite()) {
+				minimal_value = null;
+			}
+			else {
+				minimal_value = ldomain.get_minimal_value() - rdomain.get_maximal_value();
+			}
+			
+			Double maximal_value;
+			if(ldomain.is_maximal_infinite() || rdomain.is_minimal_infinite()) {
+				maximal_value = null;
+			}
+			else {
+				maximal_value = ldomain.get_maximal_value() - rdomain.get_minimal_value();
+			}
+			
+			return new SymbolValueDomain(minimal_value, maximal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_arith_mul(SymbolBinaryExpression expression) throws Exception {
+		SymbolValueDomain ldomain = this.compute_domain(expression.get_loperand());
+		SymbolValueDomain rdomain = this.compute_domain(expression.get_roperand());
+		if(ldomain == null || rdomain == null) {
+			return SymbolValueDomain.domain_of_type(expression.get_data_type());
+		}
+		else {
+			Double minimal_value;
+			if(ldomain.is_minimal_infinite() || rdomain.is_minimal_infinite()) {
+				minimal_value = null;
+			}
+			else {
+				minimal_value = ldomain.get_minimal_value() * rdomain.get_minimal_value();
+			}
+			
+			Double maximal_value;
+			if(ldomain.is_maximal_infinite() || rdomain.is_maximal_infinite()) {
+				maximal_value = null;
+			}
+			else {
+				maximal_value = ldomain.get_maximal_value() * rdomain.get_maximal_value();
+			}
+			
+			return new SymbolValueDomain(minimal_value, maximal_value);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	private SymbolValueDomain compute_domain_arith_div(SymbolBinaryExpression expression) throws Exception {
+		return SymbolValueDomain.domain_of_type(expression.get_data_type());
 	}
 	
 }

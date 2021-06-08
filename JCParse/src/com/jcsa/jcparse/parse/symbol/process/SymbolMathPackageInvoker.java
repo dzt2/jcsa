@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbol.invoke;
+package com.jcsa.jcparse.parse.symbol.process;
 
 import java.util.ArrayList;
 
@@ -8,7 +8,6 @@ import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
-import com.jcsa.jcparse.parse.symbol.SymbolInvoker;
 
 public class SymbolMathPackageInvoker implements SymbolInvoker {
 
