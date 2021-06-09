@@ -1,10 +1,8 @@
-"""
-This file defines data model to represent SourceCode, AstTree, CirTree, CirExecution in CProgram
-"""
+""" This file defines the model of static program analysis, including ast, cir, flw. """
 
 
+import com.jcsa.base as jcbase
 import os
-import com.jcsa.libs.base as jcbase
 
 
 class CProgram:
@@ -15,14 +13,10 @@ class CProgram:
 		ast_file_path = os.path.join(directory, file_name + ".ast")
 		cir_file_path = os.path.join(directory, file_name + ".cir")
 		flw_file_path = os.path.join(directory, file_name + ".flw")
-		ins_file_path = os.path.join(directory, file_name + ".ins")
-		dep_file_path = os.path.join(directory, file_name + ".dep")
 		self.source_code = CSourceCode(self, cpp_file_path)
 		self.ast_tree = AstTree(self, ast_file_path)
 		self.cir_tree = CirTree(self, cir_file_path)
 		self.function_call_graph = CirFunctionCallGraph(self, flw_file_path)
-		self.instance_graph = CirInstanceGraph(self, ins_file_path)
-		self.dependence_graph = CDependenceGraph(self, dep_file_path)
 		return
 
 
@@ -684,254 +678,8 @@ class CirFunctionCallGraph:
 		return
 
 
-class CirInstanceEdge:
-	"""
-	type source target
-	"""
-	def __init__(self, flow_type: str, source, target):
-		source: CirInstanceNode
-		target: CirInstanceNode
-		self.flow_type = flow_type
-		self.source = source
-		self.target = target
-		return
-
-	def get_flow_type(self):
-		return self.flow_type
-
-	def get_source(self):
-		return self.source
-
-	def get_target(self):
-		return self.target
-
-
-class CirInstanceNode:
-	"""
-	graph, context, execution
-	"""
-	def __init__(self, graph, context: int, execution: CirExecution):
-		self.graph = graph
-		self.context = context
-		self.execution = execution
-		self.in_edges = list()
-		self.ou_edges = list()
-		return
-
-	def get_graph(self):
-		return self.graph
-
-	def get_context(self):
-		return self.context
-
-	def get_execution(self):
-		return self.execution
-
-	def get_statement(self):
-		return self.execution.get_statement()
-
-	def get_in_edges(self):
-		return self.in_edges
-
-	def get_ou_edges(self):
-		return self.ou_edges
-
-	def link_to(self, target, flow_type: str):
-		edge = CirInstanceEdge(flow_type, self, target)
-		target: CirInstanceNode
-		self.ou_edges.append(edge)
-		target.in_edges.append(edge)
-		return edge
-
-
-class CirInstanceGraph:
-	"""
-	instance of execution flow graph
-	"""
-	def __init__(self, program: CProgram, ins_file: str):
-		self.program = program
-		self.context_nodes = dict()
-		self.__parse__(ins_file)
-		return
-
-	def get_contexts(self):
-		return self.context_nodes.keys()
-
-	def get_instance_nodes(self, key: int):
-		execution_node_dict = self.context_nodes[key]
-		execution_node_dict: dict
-		return execution_node_dict.values()
-
-	def get_instance_node(self, key: int, execution: CirExecution):
-		"""
-		:param key:
-		:param execution:
-		:return:
-		"""
-		execution_node_dict = self.context_nodes[key]
-		execution_node_dict: dict
-		node = execution_node_dict[execution]
-		node: CirInstanceNode
-		return node
-
-	def __parse__(self, ins_file: str):
-		"""
-		:param ins_file:
-		:return:
-		"""
-		function_call_graph = self.program.function_call_graph
-		with open(ins_file, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				items = line.split('\t')
-				if line.startswith("#node"):
-					token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-					context = token[0]
-					name = token[1]
-					exe_id = token[2]
-					execution = function_call_graph.get_execution(name, exe_id)
-					if not(context in self.context_nodes):
-						self.context_nodes[context] = dict()
-					execution_node_dict = self.context_nodes[context]
-					execution_node_dict[execution] = CirInstanceNode(self, context, execution)
-		with open(ins_file, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				items = line.split('\t')
-				if line.startswith("#edge"):
-					flow_type = items[1].strip()
-					source_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-					target_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-					source = self.get_instance_node(source_token[0], function_call_graph.get_execution(source_token[1], source_token[2]))
-					target = self.get_instance_node(target_token[0], function_call_graph.get_execution(target_token[1], target_token[2]))
-					source.link_to(target, flow_type)
-		return
-
-
-class CDependenceEdge:
-	"""
-	depend_type, source, target, (param1, param2)
-	"""
-	def __init__(self, depend_type: str, source, target, parameter_0: jcbase.CToken, parameter_1: jcbase.CToken):
-		self.depend_type = depend_type
-		source: CDependenceNode
-		target: CDependenceNode
-		self.source = source
-		self.target = target
-		self.parameters = (parameter_0, parameter_1)
-		return
-
-	def get_depend_type(self):
-		return self.depend_type
-
-	def get_source(self):
-		return self.source
-
-	def get_target(self):
-		return self.target
-
-	def get_parameters(self):
-		return self.parameters
-
-	def get_parameter_0(self):
-		return self.parameters[0]
-
-	def get_parameter_1(self):
-		return self.parameters[1]
-
-
-class CDependenceNode:
-	"""
-	graph, instance, in_edges, ou_edges
-	"""
-	def __init__(self, graph, instance: CirInstanceNode):
-		self.graph = graph
-		self.instance = instance
-		self.in_edges = list()
-		self.ou_edges = list()
-		return
-
-	def get_graph(self):
-		return self.graph
-
-	def get_instance(self):
-		return self.instance
-
-	def get_in_edges(self):
-		return self.in_edges
-
-	def get_ou_edges(self):
-		return self.ou_edges
-
-	def link_to(self, target, depend_type: str, parameter_0, parameter_1):
-		edge = CDependenceEdge(depend_type, self, target, parameter_0, parameter_1)
-		self.ou_edges.append(edge)
-		target: CDependenceNode
-		target.in_edges.append(edge)
-		return edge
-
-
-class CDependenceGraph:
-	"""
-	dependence graph
-	"""
-	def __init__(self, program: CProgram, dep_file: str):
-		self.program = program
-		self.dependence_nodes = dict()
-		self.__parse__(dep_file)
-		return
-
-	def get_program(self):
-		return self.program
-
-	def get_instance_nodes(self):
-		return self.dependence_nodes.keys()
-
-	def get_dependence_nodes(self):
-		return self.dependence_nodes.values()
-
-	def get_dependence_node(self, instance: CirInstanceNode):
-		node = self.dependence_nodes[instance]
-		node: CDependenceNode
-		return node
-
-	def __parse__(self, dep_file: str):
-		function_call_graph = self.program.function_call_graph
-		instance_graph = self.program.instance_graph
-		self.dependence_nodes.clear()
-		with open(dep_file, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				items = line.split('\t')
-				if line.startswith("#node"):
-					dep_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-					instance = instance_graph.get_instance_node(
-						dep_token[0], function_call_graph.get_execution(dep_token[1], dep_token[2]))
-					node = CDependenceNode(self, instance)
-					self.dependence_nodes[instance] = node
-		with open(dep_file, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				items = line.split('\t')
-				if line.startswith("#edge"):
-					depend_type = items[1].strip()
-					source_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-					target_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-					source_instance = instance_graph.get_instance_node(
-						source_token[0], function_call_graph.get_execution(source_token[1], source_token[2]))
-					target_instance = instance_graph.get_instance_node(
-						target_token[0], function_call_graph.get_execution(target_token[1], target_token[2]))
-					source = self.dependence_nodes[source_instance]
-					target = self.dependence_nodes[target_instance]
-					source: CDependenceNode
-					parameter0 = jcbase.CToken.parse(items[4].strip())
-					parameter1 = jcbase.CToken.parse(items[5].strip())
-					source.link_to(target, depend_type, parameter0, parameter1)
-		return
-
-
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
 	for fname in os.listdir(root_path):
 		dir = os.path.join(root_path, fname)
 		c_program = CProgram(dir, fname)
@@ -946,4 +694,6 @@ if __name__ == "__main__":
 					c_flow: CirExecutionFlow
 					print("\t\t\t", c_flow.get_flow_type(), "==>", c_flow.get_target())
 			print("\tend def\n")
+		print()
+	print("Testing completes all.")
 

@@ -1,6 +1,4 @@
-"""
-This file defines basic element used, including CToken and SymNode
-"""
+""" This file defines the basic data model used in feature engineering to represent project information. """
 
 
 import enum
@@ -24,15 +22,15 @@ class CTokenType(enum.Enum):
 	Execution = 12
 	String = 13
 	DataType = 14
-	InstanceNode = 16
-	DependNode = 17
-	SymNode = 18
+	SymNode = 15
+	TestID = 16
 
 
 class CToken:
 	"""
-	type value
-	"""
+		type value
+		"""
+
 	def __init__(self, token_type: CTokenType, token_value):
 		"""
 		:param token_type:
@@ -108,8 +106,7 @@ class CToken:
 		:param text:
 		:return:
 			n@null, b@bool, c@int, i@int, f@float, x@float@float, key@string, pun@string, opr@string
-			ast@int, cir@int, mut@int, exe@string@int, s@string, typ@string,
-			ins@int@string@int, dep@int@string@int, sym@string@int,
+			ast@int, cir@int, mut@int, exe@string@int, s@string, typ@string, sym@string@int,
 		"""
 		items = text.strip().split('@')
 		title = items[0].strip()
@@ -125,6 +122,8 @@ class CToken:
 			return CToken(CTokenType(CTokenType.Float), float(items[1].strip()))
 		elif title == 'x':
 			return CToken(CTokenType(CTokenType.Complex), complex(float(items[1].strip()), float(items[2].strip())))
+		elif title == 's':
+			return CToken(CTokenType(CTokenType.String), CToken.__denormalize__(items[1].strip()))
 		elif title == "key":
 			return CToken(CTokenType(CTokenType.Keyword), CToken.__denormalize__(items[1].strip()))
 		elif title == "pun":
@@ -133,28 +132,53 @@ class CToken:
 			return CToken(CTokenType(CTokenType.Operator), CToken.__denormalize__(items[1].strip()))
 		elif title == "typ":
 			return CToken(CTokenType(CTokenType.DataType), CToken.__denormalize__(items[1].strip()))
-		elif title == 's':
-			return CToken(CTokenType(CTokenType.String), CToken.__denormalize__(items[1].strip()))
 		elif title == "ast":
 			return CToken(CTokenType(CTokenType.AstNode), int(items[1].strip()))
 		elif title == "cir":
 			return CToken(CTokenType(CTokenType.CirNode), int(items[1].strip()))
-		elif title == "mut":
-			return CToken(CTokenType(CTokenType.MutantID), int(items[1].strip()))
 		elif title == "exe":
 			value = (items[1].strip(), int(items[2].strip()))
 			return CToken(CTokenType(CTokenType.Execution), value)
-		elif title == "ins":
-			value = (int(items[1].strip()), items[2].strip(), int(items[3].strip()))
-			return CToken(CTokenType(CTokenType.InstanceNode), value)
-		elif title == "dep":
-			value = (int(items[1].strip()), items[2].strip(), int(items[3].strip()))
-			return CToken(CTokenType(CTokenType.DependNode), value)
+		elif title == "mut":
+			return CToken(CTokenType(CTokenType.MutantID), int(items[1].strip()))
+		elif title == "tst":
+			return CToken(CTokenType(CTokenType.TestID), int(items[1].strip()))
 		elif title == "sym":
 			value = (items[1].strip(), int(items[2].strip()))
 			return CToken(CTokenType(CTokenType.SymNode), value)
 		else:
 			return None
+
+
+def rand_select(objects):
+	"""
+	:param objects:
+	:return: select a random object from the collection
+	"""
+	counter = random.randint(0, len(objects))
+	selected_object = None
+	for item in objects:
+		selected_object = item
+		counter -= 1
+		if counter < 0:
+			break
+	return selected_object
+
+
+def rand_resort(objects):
+	"""
+	:param objects:
+	:return: list of objects randomly sorted from the inputs
+	"""
+	remains = set()
+	for obj in objects:
+		remains.add(obj)
+	rlist = list()
+	while len(remains) > 0:
+		obj = rand_select(remains)
+		remains.remove(obj)
+		rlist.append(obj)
+	return rlist
 
 
 class SymNode:
@@ -280,39 +304,8 @@ class SymTree:
 		return
 
 
-def rand_select(objects):
-	"""
-	:param objects:
-	:return: select a random object from the collection
-	"""
-	counter = random.randint(0, len(objects))
-	selected_object = None
-	for item in objects:
-		selected_object = item
-		counter -= 1
-		if counter < 0:
-			break
-	return selected_object
-
-
-def rand_resort(objects):
-	"""
-	:param objects:
-	:return: list of objects randomly sorted from the inputs
-	"""
-	remains = set()
-	for obj in objects:
-		remains.add(obj)
-	rlist = list()
-	while len(remains) > 0:
-		obj = rand_select(remains)
-		remains.remove(obj)
-		rlist.append(obj)
-	return rlist
-
-
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		sym_file = os.path.join(directory, file_name + ".sym")
@@ -320,5 +313,8 @@ if __name__ == "__main__":
 		print("Load", len(sym_tree.get_sym_nodes()), "symbolic nodes from", file_name)
 		for node in sym_tree.get_sym_nodes():
 			node: SymNode
-			print("\t", str(node), "\t", node.get_data_type(), "\t==>", node.get_code())
+			print("\t{}[{}]\t<{}>\t\"{}\"".format(node.get_class_name(),
+												  node.get_class_id(), node.get_data_type(), node.get_code()))
+		print("End of", file_name, "\n")
+	print()
 

@@ -1,12 +1,10 @@
-"""
-This file defines the data model of feature and coverage information.
-"""
+""" This file defines the model of symbolic features used for pattern mining. """
 
 
 import os
-import com.jcsa.libs.base as jcbase
-import com.jcsa.libs.code as jccode
-import com.jcsa.libs.muta as jcmuta
+import com.jcsa.base as jcbase
+import com.jcsa.code as jccode
+import com.jcsa.muta as jcmuta
 
 
 class CDocument:
@@ -21,9 +19,7 @@ class CDocument:
 		:param file_postfix: ".sip" or ".sit"
 		"""
 		self.project = jcmuta.CProject(directory, name)
-		cov_file_path = os.path.join(directory, name + ".cov")
 		sip_file_path = os.path.join(directory, name + file_postfix)
-		self.coverage_matrix = CoverageMatrix(self, cov_file_path)
 		self.conditions = SymConditions(self)
 		self.executions = list()		# the collection of executions for killing mutant
 		self.muta_executions = dict()	# mapping from each mutant to the executions for killing it
@@ -43,9 +39,6 @@ class CDocument:
 
 	def get_program(self):
 		return self.project.program
-
-	def get_coverage_matrix(self):
-		return self.coverage_matrix
 
 	def get_conditions_lib(self):
 		return self.conditions
@@ -92,92 +85,6 @@ class CDocument:
 				:return: document with execution sets for each mutant
 				"""
 		return CDocument(directory, name, ".sit")
-
-
-class CoverageMatrix:
-	"""
-	It describes the matrix with coverage information, in which each line refers to the coverage vector
-	of each execution point in control flow graph, while the column refers to the statement vector that
-	a given test case covers during testing.
-	"""
-
-	def __init__(self, document: CDocument, cov_file: str):
-		self.matrix = dict()
-		self.document = document
-		program = document.project.program
-		with open(cov_file, 'r') as reader:
-			for line in reader:
-				if len(line.strip()) > 0:
-					items = line.strip().split('\t')
-					exec_tok = jcbase.CToken.parse(items[0].strip()).get_token_value()
-					execution = program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
-					coverage = items[1].strip()
-					self.matrix[execution] = coverage
-		return
-
-	def get_document(self):
-		return self.document
-
-	def is_covered_by(self, execution: jccode.CirExecution, test):
-		"""
-		:param execution:
-		:param test: TestCase or int
-		:return: whether the execution point is covered by specified test
-		"""
-		if isinstance(test, jcmuta.TestCase):
-			test_id = test.get_test_id()
-		else:
-			test: int
-			test_id = test
-		if execution in self.matrix:
-			coverage = self.matrix[execution]
-			if test_id < 0 or test_id >= len(coverage):
-				return False
-			else:
-				return coverage[test_id] == '1'
-		else:
-			return False
-
-	def is_covered_in(self, execution: jccode.CirExecution, tests=None):
-		"""
-		:param execution:
-		:param tests: the selected tests under which the coverage is evaluated or None to represent all.
-		:return: Whether the execution point is covered by any test in set
-		"""
-		if execution in self.matrix:
-			coverage = self.matrix[execution]
-			if tests is None:
-				return '1' in coverage
-			else:
-				for test in tests:
-					if self.is_covered_by(execution, test):
-						return True
-				return False
-		return False
-
-	def get_line(self, execution: jccode.CirExecution):
-		"""
-		:param execution:
-		:return: the set of TestCase (ID) covering the target execution point
-		"""
-		covering_set = list()
-		if execution in self.matrix:
-			coverage = self.matrix[execution]
-			for test_id in range(0, len(coverage)):
-				if coverage[test_id] == '1':
-					covering_set.append(test_id)
-		return covering_set
-
-	def get_column(self, test):
-		"""
-		:param test: TestCase or int
-		:return: the set of executions covered by the test
-		"""
-		column = list()
-		for execution in self.matrix.keys():
-			if self.is_covered_by(execution, test):
-					column.append(execution)
-		return column
 
 
 class SymCondition:
@@ -565,7 +472,7 @@ class SymExecution:
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
 	print_condition = False
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
@@ -589,4 +496,5 @@ if __name__ == "__main__":
 															  condition.get_location().get_cir_code(),
 															  condition.get_parameter()))
 		print()
+	print("Testing end for all.")
 

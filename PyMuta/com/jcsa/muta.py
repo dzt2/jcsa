@@ -1,17 +1,10 @@
-"""
-This file defines the basic data model for representing test case, mutation and symbolic instance, including:
-	---	xxx.tst: the collection of test cases defined in project.
-	---	xxx.stc: the collection of test cases applied in the context of being executed and analyzed.
-	---	xxx.mut: the collection of mutations and mutants defined in mutation project for testing.
-	---	xxx.res: the collection of test results to record of which mutant is killed by which test case.
-	---	xxx.sym: the library of symbolic expression in structural description for being parsed in project.
-"""
+""" This file defines the model of testing data including xxx.tst, xxx.mut, xxx.res """
 
 
 import os
 import random
-import com.jcsa.libs.base as jcbase
-import com.jcsa.libs.code as jccode
+import com.jcsa.base as jcbase
+import com.jcsa.code as jccode
 
 
 class CProject:
@@ -134,7 +127,7 @@ class TestCaseSpace:
 			for line in reader:
 				if len(line.strip()) > 0:
 					items = line.strip().split('\t')
-					test_id = int(items[0].strip())
+					test_id = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					parameter = jcbase.CToken.parse(items[1].strip()).get_token_value()
 					test_case = TestCase(self, test_id, parameter)
 					test_dict[test_case.get_test_id()] = test_case
@@ -403,7 +396,7 @@ class MutantSpace:
 			for line in reader:
 				if len(line.strip()) > 0:
 					items = line.strip().split('\t')
-					mid = int(items[0].strip())
+					mid = jcbase.CToken.parse(items[0].strip()).get_token_value()
 					mutant = self.mutants[mid]
 					mutant: Mutant
 					mutant.get_result().result = items[1].strip()
@@ -503,7 +496,7 @@ class MutationTestEvaluation:
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Code/git/jcsa/JCMutest/result/features"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = CProject(directory, file_name)
@@ -520,4 +513,5 @@ if __name__ == "__main__":
 													mutation.get_parameter(),
 													mutant.get_result().is_killed_in()))
 		print()
+	print("Testing ends for all.")
 

@@ -1,28 +1,9 @@
-"""
-This file defines the memory-reduced (Mer) model for:
-
-	---	MerDocument:		it maps to the com.jcsa.libs.test.CDocument
-
-	---	MerTestCase:		it maps to the com.jcsa.libs.muta.TestCase		{tid: int}
-	---	MerTestCaseSpace:	it maps to the com.jcsa.libs.muta.TestSpace		{test_cases: list[MerTestCase]}
-
-	---	MerMutantSpace:		it maps to the com.jcsa.libs.muta.MutantSpace	{mutants: list[MerMutant]}
-	---	MerMutant:			it maps to the com.jcsa.libs.muta.Mutant		{cov_mutant, wek_mutant, str_mutant, result}
-	---	MerMutantResult:	it maps to the com.jcsa.libs.muta.MutationResult	{mutant, result (String)}
-
-	---	MerCondition:		it maps to the com.jcsa.libs.test.SymCondition	{cid, code (String)}
-	---	MerConditions:		it maps to the com.jcsa.libs.test.SymConditionLibrary	{conditions: list[MerCondition]}
-
-	---	MerFeatureLine:		it represents the sorted sequence of integers encoding symbolic conditions.
-	---	MerExecution:		it maps to the com.jcsa.libs.test.SymExecution	{eid, mutant, features}
-	---	MerExecutionSpace:	it manages the data model of {executions: list[MerExecution]; muta_executions}
-
-"""
+""" This file defines the memory-reduced model of CDocument """
 
 
 import os
-import com.jcsa.libs.muta as jcmuta
-import com.jcsa.libs.test as jctest
+import com.jcsa.muta as jcmuta
+import com.jcsa.test as jctest
 
 
 ### document

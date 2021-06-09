@@ -1,11 +1,11 @@
-"""This file defines the structural model of killable prediction rules and implement algorithm for mining them."""
+""" This file implements the model of killable prediction rules and mining algorithm. """
 
 
 import os
 from typing import TextIO
-import com.jcsa.libs.base 	as jcbase
-import com.jcsa.libs.test	as jctest
-import com.jcsa.mine.encode	as jcenco
+import com.jcsa.base as jcbase
+import com.jcsa.test as jctest
+import com.jcsa.merd as jcenco
 
 
 ## UTILITY METHODS
@@ -831,8 +831,6 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	"""
 	max_length, min_support, min_confidence, max_confidence, min_output_number, max_output_number = 1, 2, 0.70, 0.99, 4, 8
 	for file_name in os.listdir(project_directory):
-		if file_name == "calendar":
-			continue
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
 		o_directory = os.path.join(output_directory, file_name)
