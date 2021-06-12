@@ -661,10 +661,16 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_equal_with(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.equal_with), 
-				this.parse_to_expression(loperand), 
-				this.parse_to_expression(roperand));
+		SymbolExpression lexpression = this.parse_to_expression(loperand);
+		SymbolExpression rexpression = this.parse_to_expression(roperand);
+		if(lexpression.hashCode() < rexpression.hashCode()) {
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+					SymbolOperator.create(COperator.equal_with), lexpression, rexpression);
+		}
+		else {
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+					SymbolOperator.create(COperator.equal_with), rexpression, lexpression);
+		}
 	}
 	/**
 	 * @param loperand
@@ -673,10 +679,16 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_not_equals(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.not_equals), 
-				this.parse_to_expression(loperand), 
-				this.parse_to_expression(roperand));
+		SymbolExpression lexpression = this.parse_to_expression(loperand);
+		SymbolExpression rexpression = this.parse_to_expression(roperand);
+		if(lexpression.hashCode() < rexpression.hashCode()) {
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+					SymbolOperator.create(COperator.not_equals), lexpression, rexpression);
+		}
+		else {
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+					SymbolOperator.create(COperator.not_equals), rexpression, lexpression);
+		}
 	}
 	/**
 	 * @param operands
