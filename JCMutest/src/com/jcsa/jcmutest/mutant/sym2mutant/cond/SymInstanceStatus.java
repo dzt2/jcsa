@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sym2mutant.cond;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
@@ -19,6 +20,7 @@ public class SymInstanceStatus {
 	 * @throws Exception
 	 */
 	public SymInstanceStatus(SymInstance instance) throws Exception {
+		this.results = new ArrayList<Boolean>();
 		this.condition_tree = SymConditionTree.new_tree(instance);
 	}
 	
