@@ -6,7 +6,7 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymConditionTree;
+import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymInstanceStatus;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
@@ -22,7 +22,7 @@ public abstract class SymInstanceContent {
 	/** the symbolic instance being represented **/
 	private SymInstance instance;
 	/** the abstract status is not used for accumulation **/
-	private SymConditionTree status;
+	private SymInstanceStatus status;
 	/**
 	 * create a content node of symbolic instance
 	 * @param instance
@@ -33,7 +33,7 @@ public abstract class SymInstanceContent {
 			throw new IllegalArgumentException("Invalid instance: null");
 		else {
 			this.instance = instance;
-			this.status = SymConditionTree.new_tree(instance);
+			this.status = new SymInstanceStatus(instance);
 		}
 	}
 	
@@ -57,7 +57,7 @@ public abstract class SymInstanceContent {
 	/**
 	 * @return the abstract status is not used for accumulation
 	 */
-	public SymConditionTree get_status() { return this.status; }
+	public SymInstanceStatus get_status() { return this.status; }
 	
 	/* setters */
 	/**

@@ -20,21 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymCategory.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymCategory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymCondition.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymCondition.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymConditions.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymInstanceStatus.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymOperator.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymOperator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymCategory.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymCondition.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymConditionNode.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymConditionTree.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymConditionUtil.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/condition/SymOperator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymConditionTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/cond/SymConditionTree.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/tree/SymInstanceContent.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/sym2mutant/tree/SymInstanceContent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/CirMutationsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/CirMutationsTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/rule.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/rule.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
