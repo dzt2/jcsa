@@ -253,8 +253,7 @@ public class MuTestProjectFeatureWrite {
 			return "ins@" + name + "@" + exec_id + "@" + context;
 		}
 		else if(token instanceof SymbolNode) {
-			String name = token.getClass().getSimpleName();
-			return "sym@" + name + "@" + token.hashCode();
+			return "sym@" + token.getClass().getSimpleName().substring(6).strip() + "@" + token.hashCode();
 		}
 		else if(token instanceof Mutant) {
 			return "mut@" + ((Mutant) token).get_id();
@@ -550,7 +549,7 @@ public class MuTestProjectFeatureWrite {
 		this.close();
 	}
 	/**
-	 * [edge]	type	source	target	expression boolean|expression
+	 * [edge]	type	source	target	expression|null boolean|expression|null
 	 * @param edge
 	 * @throws Exception
 	 */
@@ -566,10 +565,14 @@ public class MuTestProjectFeatureWrite {
 			this.writer.write("\t" + this.encode_token(content.get_condition()));
 			this.writer.write("\t" + this.encode_token(content.get_predicate_value()));
 		}
-		else {
+		else if(element instanceof CDependReference) {
 			CDependReference content = (CDependReference) element;
 			this.writer.write("\t" + this.encode_token(content.get_def()));
 			this.writer.write("\t" + this.encode_token(content.get_use()));
+		}
+		else {
+			this.writer.write("\t" + this.encode_token(null));
+			this.writer.write("\t" + this.encode_token(null));
 		}
 		
 		this.writer.write("\n");
@@ -961,7 +964,6 @@ public class MuTestProjectFeatureWrite {
 	 */
 	private void write_sym_features(CDependGraph dependence_graph, int distance, Collection<TestInput> test_cases) throws Exception {
 		/* 1. declarations and initialization */
-		this.symbol_nodes.clear();
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>(); 
 		int number_of_trees = 0, number_of_paths = 0, number_of_nodes = 0, number_of_mutants;
 		
@@ -989,7 +991,7 @@ public class MuTestProjectFeatureWrite {
 		/* 7. output summary information */
 		System.out.println("\t\t\t--> Print Features for " + number_of_mutants + " mutants using:"
 				+ "\t" + number_of_trees + " trees\t" + number_of_paths + " paths\t" + number_of_nodes + " expressions.");
-		return;
+		this.symbol_nodes.clear(); return;
 	}
 	
 	/* public interfaces */
