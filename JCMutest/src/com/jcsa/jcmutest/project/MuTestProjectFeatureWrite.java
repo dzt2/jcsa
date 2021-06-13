@@ -19,9 +19,17 @@ import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceTreeEdge;
 import com.jcsa.jcmutest.mutant.sym2mutant.tree.SymInstanceTreeNode;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
+import com.jcsa.jcparse.flwa.CirInstance;
 import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
 import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.depend.CDependNode;
+import com.jcsa.jcparse.flwa.depend.CDependPredicate;
+import com.jcsa.jcparse.flwa.depend.CDependReference;
+import com.jcsa.jcparse.flwa.graph.CirInstanceEdge;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
@@ -69,116 +77,100 @@ import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * 	This implements the feature encoding for data prepared in each MuTestProject, and the output is organized as:
+ * 	It generates the feature files for describing program, test, mutation and result files in specified output directory.
  * 	<br>
  * 	<code>
- * 	[feature_directory]																										<br>
- * 	|--	xxx.c		Source code file with code after being pre-processed by compiler {xxx.i}								<br>
- * 	|--	xxx.ast		ID class beg_index end_index data_type token [ child child ... child ]									<br>
- * 	|--	xxx.cir		ID class ast_id data_type token [ child child ... child ] code											<br>
- * 	|--	xxx.flw		([beg] name) ([node] exe_id cir_id|[edge] type exe_id exe_id|[call] exe_id exe_id)+ ([end] name)		<br>
- * 	|--	xxx.tst		ID parameter																							<br>
- * 	|--	xxx.mut		ID class operator location parameter coverage weak strong												<br>
- * 	|--	xxx.res		ID bit_string																							<br>
- * 	|--	xxx.stc		test_ID	{selected test cases' ID for dynamic evaluation or None for static evaluation as a result}		<br>
- * 	|--	xxx.sit		the information to preserve status of each symbolic instance among tree.								<br>
- * 	|--	xxx.sip		the information to preserve status of each symbolic instance in tree path								<br>
- * 	|--	xxx.sym		ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]									<br>
+ * 	+-------------------------------------------------------------------------------------------------------------------+	<br>
+ * 	| xxx.c		|	The source code directly copied from the xxx.i being preprocessed for compilation.					|	<br>
+ * 	| xxx.ast	|	Abstract-Syntactic-Tree 	{key, class, beg_index, end_index, data_type, content, [child]*}		|	<br>
+ * 	| xxx.cir	|	C-Intermediate Represent 	{key, class, ast_source, data_type, content, [child]*}					|	<br>
+ * 	| xxx.flw	|	Control Flow Graph			{[beg:name] {[node]|[edge]|[call]}+ [end:name]}+						|	<br>
+ * 	+-------------------------------------------------------------------------------------------------------------------+	<br>
+ * 	| xxx.ins	|	Parameterized Flow Graph	{[node:inst] [edge:inst]}+												|	<br>
+ * 	| xxx.dep	|	
+ * 	+-------------------------------------------------------------------------------------------------------------------+	<br>
  * 	</code>
- * 
- * @author yukimula
+ * 	<br>
+ * 	@author yukimula
  *
  */
-public class MuTestProjectFeatureWriter {
+public class MuTestProjectFeatureWrite {
 	
-	/* Project-Level */
-	/** it provides the data source for feature **/
-	private MuTestProjectCodeFile source_file;
-	/** xxx as the name of output files' prefix **/
-	private String file_name;
-	/** directory where the output files are generated **/
+	/* definitions */
+	/** the input source code file for creating features **/
+	private MuTestProjectCodeFile inputs;
+	/** the directory where feature files were generated **/
 	private File output_directory;
-	/** it preserves the set of symbolic nodes used to define parameters in symbolic features **/
-	private Set<SymbolNode> symbolic_nodes;
-	
-	/* File-Level */
-	/** the file being written by now **/
-	private File output_file;
-	/** output stream to write feature data to file **/
+	/** it is used to output string text to current file **/
 	private FileWriter writer;
+	/** set to preserve symbolic nodes used for features **/
+	private Set<SymbolNode> symbol_nodes;
 	
-	/* singleton mode */
-	/**
-	 * private constructor for singleton mode
-	 */
-	private MuTestProjectFeatureWriter() {
-		this.source_file = null;
-		this.file_name = null;
-		this.output_directory = null;
-		this.symbolic_nodes = new HashSet<SymbolNode>();
-		this.output_file = null;
-		this.writer = null;
-	}
-	/** singleton for feature writing **/
-	public static final MuTestProjectFeatureWriter fwriter = new MuTestProjectFeatureWriter();
+	/* singleton pattern */
+	/** private constructor for singleton design pattern **/
+	private MuTestProjectFeatureWrite() { this.symbol_nodes = new HashSet<SymbolNode>(); }
+	/** the single instance for generating symbolic features of input source code file **/
+	private static final MuTestProjectFeatureWrite util = new MuTestProjectFeatureWrite();
 	
-	/* IO operations */
+	/* input-output methods */
 	/**
-	 * close the writer and file outputting
+	 * close writer
 	 * @throws Exception
 	 */
 	private void close() throws Exception {
 		if(this.writer != null) {
 			this.writer.close();
-			this.output_file = null;
 			this.writer = null;
 		}
 	}
 	/**
-	 * start openning write another in output_directory/xxx.postfix
+	 * open to new writer
 	 * @param postfix
 	 * @throws Exception
 	 */
 	private void open(String postfix) throws Exception {
-		this.close();
-		this.output_file = new File(this.output_directory.getAbsolutePath() + "/" + this.file_name + postfix);
-		this.writer = new FileWriter(this.output_file);
-		System.out.println("\t==> Write to file: " + this.output_file.getAbsolutePath()); /* WARN inform the users */
+		/* get the output file for writing */
+		String file_name; int index; File output_file;
+		file_name = inputs.get_name(); index = file_name.indexOf('.');
+		file_name = file_name.substring(0, index).strip();
+		output_file = new File(this.output_directory.getAbsolutePath() + "/" + file_name + postfix);
+		System.out.println("\t==> Start to Write \"" + output_file.getAbsolutePath() + "\"...");
+		
+		/* open a new writer */
+		this.close(); this.writer = new FileWriter(output_file);
 	}
 	/**
-	 * set the input and output
-	 * @param input
-	 * @param output
+	 * set the inputs and output directory for generating feature files
+	 * @param inputs
+	 * @param output_directory
 	 * @throws Exception
 	 */
-	private void set_IO(MuTestProjectCodeFile input, File output) throws Exception {
-		if(input == null) {
+	private void set_IO(MuTestProjectCodeFile inputs, File output_directory) throws Exception {
+		if(inputs == null) {
 			throw new IllegalArgumentException("Invalid input: null");
 		}
-		else if(output == null) {
+		else if(output_directory == null) {
 			throw new IllegalArgumentException("Invalid output: null");
 		}
-		else if(output.exists() && !output.isDirectory()) {
-			throw new IllegalArgumentException("Invalid: " + output.getAbsolutePath());
+		else if(output_directory.exists() && !output_directory.isDirectory()) {
+			throw new IllegalArgumentException("Invalid: " + output_directory.getAbsolutePath());
 		}
 		else {
-			if(!output.exists()) { FileOperations.mkdir(output); }
-			this.source_file = input;
-			this.file_name = input.get_name();
-			int index = this.file_name.lastIndexOf('.');
-			this.file_name = this.file_name.substring(0, index).strip();
-			this.output_directory = output;
+			if(!output_directory.exists()) { FileOperations.mkdir(output_directory); }
+			this.inputs = inputs;
+			this.output_directory = output_directory;
 			this.close();
 		}
 	}
 	
 	/* basic encoding methods */
 	/**
-	 * @ --> \a; space --> \s; $ --> \p;
+	 * translate special characters to specified format
 	 * @param text
-	 * @return
+	 * @return {@ --> \a; space --> \s; $ --> \p;}
+	 * @throws Exception
 	 */
-	private String normalize_string(String text) {
+	private String normalize_string(String text) throws Exception {
 		StringBuilder buffer = new StringBuilder();
 		for(int k = 0; k < text.length(); k++) {
 			char ch = text.charAt(k);
@@ -194,15 +186,14 @@ public class MuTestProjectFeatureWriter {
 		return buffer.toString();
 	}
 	/**
-	 * n@null, b@bool, c@char, i@int, f@real, x@r@i, 
-	 * key@str, pun@str, opr@str, 
-	 * ast@int, cir@int, mut@int, exe@str@int, tst@int,
-	 * s@str [identifier, literal, cir_code]
-	 * typ@str, sym@type@hashCode
 	 * @param token
-	 * @return
+	 * @return 	BASIC: 	n@null, b@bool, c@char, i@int, f@real, x@r@i, s@txt;
+	 * 			ENUMS:	key@keyword, opr@operator, pun@punctuator, typ@type;
+	 * 			OBJEC:	ast@int, cir@int, exe@txt@int, ins@txt@int@int;
+	 * 			FEATU:	sym@txt@int, mut@int, tst@int;
+	 * @throws Exception
 	 */
-	private String token_string(Object token) throws Exception {
+	private String encode_token(Object token) throws Exception {
 		if(token == null) {
 			return "n@null";
 		}
@@ -210,7 +201,8 @@ public class MuTestProjectFeatureWriter {
 			return "b@" + token.toString();
 		}
 		else if(token instanceof Character) {
-			return "c@" + ((int) ((Character) token).charValue());
+			int value = ((Character) token).charValue();
+			return "c@" + value;
 		}
 		else if(token instanceof Short || token instanceof Integer || token instanceof Long) {
 			return "i@" + token.toString();
@@ -225,16 +217,16 @@ public class MuTestProjectFeatureWriter {
 			return "s@" + this.normalize_string(token.toString());
 		}
 		else if(token instanceof CConstant) {
-			return this.token_string(((CConstant) token).get_object());
+			return this.encode_token(((CConstant) token).get_object());
 		}
 		else if(token instanceof CKeyword) {
 			return "key@" + token.toString();
 		}
-		else if(token instanceof CPunctuator) {
-			return "pun@" + token.toString();
-		}
 		else if(token instanceof COperator) {
 			return "opr@" + token.toString();
+		}
+		else if(token instanceof CPunctuator) {
+			return "pun@" + token.toString();
 		}
 		else if(token instanceof CType) {
 			return "typ@" + this.normalize_string(((CType) token).generate_code());
@@ -246,7 +238,23 @@ public class MuTestProjectFeatureWriter {
 			return "cir@" + ((CirNode) token).get_node_id();
 		}
 		else if(token instanceof CirExecution) {
-			return "exe@" + ((CirExecution) token).get_graph().get_function().get_name() + "@" + ((CirExecution) token).get_id();
+			String name = ((CirExecution) token).get_graph().get_function().get_name();
+			int key = ((CirExecution) token).get_id();
+			return "exe@" + name + "@" + key;
+		}
+		else if(token instanceof CirInstanceNode) {
+			CirExecution execution = ((CirInstanceNode) token).get_execution();
+			int context = 0;
+			if(((CirInstanceNode) token).get_context() != null) {
+				context = ((CirInstanceNode) token).get_context().hashCode();
+			}
+			String name = execution.get_graph().get_function().get_name();
+			int exec_id = execution.get_id();
+			return "ins@" + name + "@" + exec_id + "@" + context;
+		}
+		else if(token instanceof SymbolNode) {
+			String name = token.getClass().getSimpleName();
+			return "sym@" + name + "@" + token.hashCode();
 		}
 		else if(token instanceof Mutant) {
 			return "mut@" + ((Mutant) token).get_id();
@@ -254,22 +262,19 @@ public class MuTestProjectFeatureWriter {
 		else if(token instanceof TestInput) {
 			return "tst@" + ((TestInput) token).get_id();
 		}
-		else if(token instanceof SymbolNode) {
-			return "sym@" + token.getClass().getSimpleName().substring(6).strip() + "@" + token.hashCode();
-		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
 		}
 	}
 	
-	/* static code information writing **/
+	/* static code information */
 	/**
-	 * copy the code from ifile to xxx.cpp
+	 * xxx.c
 	 * @throws Exception
 	 */
 	private void write_cpp() throws Exception {
 		this.open(".c");
-		FileReader reader = new FileReader(this.source_file.get_ifile());
+		FileReader reader = new FileReader(this.inputs.get_ifile());
 		char[] buffer = new char[1024 * 1024 * 8]; int length;
 		while((length = reader.read(buffer)) >= 0) 
 			this.writer.write(buffer, 0, length);
@@ -277,17 +282,18 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 	}
 	/**
-	 * ID class beg_index end_index data_type token [ child child ... child ]
+	 * ast@key class_name beg_index end_index data_type content [ {ast@key}* ] 
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_ast_node(AstNode node) throws Exception {
-		String ast_id = this.token_string(node);
-		String class_name = node.getClass().getSimpleName().strip();
+	private void write_ast(AstNode node) throws Exception {
+		this.writer.write(this.encode_token(node));
+		
+		String class_name = node.getClass().getSimpleName();
 		class_name = class_name.substring(3, class_name.length() - 4).strip();
 		int beg_index = node.get_location().get_bias();
-		int end_index = node.get_location().get_bias() + node.get_location().get_length();
-		this.writer.write(ast_id + "\t" + class_name + "\t" + beg_index + "\t" + end_index);
+		int end_index = beg_index + node.get_location().get_length();
+		this.writer.write("\t" + class_name + "\t" + beg_index + "\t" + end_index);
 		
 		CType data_type;
 		if(node instanceof AstExpression) {
@@ -299,61 +305,60 @@ public class MuTestProjectFeatureWriter {
 		else {
 			data_type = null;
 		}
-		this.writer.write("\t" + this.token_string(data_type));
+		this.writer.write("\t" + this.encode_token(data_type));
 		
-		Object token;
+		Object content;
 		if(node instanceof AstIdentifier) {
-			token = ((AstIdentifier) node).get_name();
+			content = ((AstIdentifier) node).get_name();
 		}
 		else if(node instanceof AstConstant) {
-			token = ((AstConstant) node).get_constant();
+			content = ((AstConstant) node).get_constant();
 		}
 		else if(node instanceof AstKeyword) {
-			token = ((AstKeyword) node).get_keyword();
+			content = ((AstKeyword) node).get_keyword();
 		}
 		else if(node instanceof AstPunctuator) {
-			token = ((AstPunctuator) node).get_punctuator();
+			content = ((AstPunctuator) node).get_punctuator();
 		}
 		else if(node instanceof AstOperator) {
-			token = ((AstOperator) node).get_operator();
+			content = ((AstOperator) node).get_operator();
 		}
 		else {
-			token = null;
+			content = null;
 		}
-		this.writer.write("\t" + this.token_string(token));
+		this.writer.write("\t" + this.encode_token(content));
 		
 		this.writer.write("\t[");
 		for(int k = 0; k < node.number_of_children(); k++) {
-			this.writer.write(" " + this.token_string(node.get_child(k)));
+			this.writer.write(" " + this.encode_token(node.get_child(k)));
 		}
 		this.writer.write(" ]");
 		
 		this.writer.write("\n");
 	}
 	/**
-	 * ID class beg_index end_index data_type token [ child child ... child ]
+	 * ast@key class_name beg_index end_index data_type content [ {ast@key}* ] \n
 	 * @throws Exception
 	 */
 	private void write_ast() throws Exception {
 		this.open(".ast");
-		AstTree ast_tree = this.source_file.get_ast_tree();
+		AstTree ast_tree = this.inputs.get_ast_tree();
 		for(int k = 0; k < ast_tree.number_of_nodes(); k++) {
-			AstNode node = ast_tree.get_node(k);
-			this.write_ast_node(node);
+			this.write_ast(ast_tree.get_node(k));
 		}
 		this.close();
 	}
 	/**
-	 * ID class ast_id data_type token [ child child ... child ] code
+	 * cir@key class_name ast_source data_type content [ {cir@key}* ] code
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_cir_node(CirNode node) throws Exception {
-		String cir_id = this.token_string(node);
-		String class_name = node.getClass().getSimpleName().strip();
+	private void write_cir(CirNode node) throws Exception {
+		this.writer.write(this.encode_token(node));
+		
+		String class_name = node.getClass().getSimpleName();
 		class_name = class_name.substring(3, class_name.length() - 4).strip();
-		String ast_id = this.token_string(node.get_ast_source());
-		this.writer.write(cir_id + "\t" + class_name + "\t" + ast_id);
+		this.writer.write("\t" + class_name + "\t" + this.encode_token(node.get_ast_source()));
 		
 		CType data_type;
 		if(node instanceof CirExpression) {
@@ -365,45 +370,45 @@ public class MuTestProjectFeatureWriter {
 		else {
 			data_type = null;
 		}
-		this.writer.write("\t" + this.token_string(data_type));
+		this.writer.write("\t" + this.encode_token(data_type));
 		
-		Object token;
+		Object content;
 		if(node instanceof CirNameExpression) {
-			token = ((CirNameExpression) node).get_unique_name();
+			content = ((CirNameExpression) node).get_unique_name();
 		}
 		else if(node instanceof CirDeferExpression) {
-			token = COperator.dereference;
+			content = COperator.dereference;
 		}
 		else if(node instanceof CirFieldExpression) {
-			token = CPunctuator.dot;
+			content = CPunctuator.dot;
 		}
 		else if(node instanceof CirConstExpression) {
-			token = ((CirConstExpression) node).get_constant();
+			content = ((CirConstExpression) node).get_constant();
 		}
 		else if(node instanceof CirCastExpression) {
-			token = COperator.assign;
+			content = COperator.assign;
 		}
 		else if(node instanceof CirAddressExpression) {
-			token = COperator.address_of;
+			content = COperator.address_of;
 		}
 		else if(node instanceof CirComputeExpression) {
-			token = ((CirComputeExpression) node).get_operator();
+			content = ((CirComputeExpression) node).get_operator();
 		}
 		else if(node instanceof CirField) {
-			token = ((CirField) node).get_name();
+			content = ((CirField) node).get_name();
 		}
 		else if(node instanceof CirLabel) {
 			CirNode target = node.get_tree().get_node(((CirLabel) node).get_target_node_id());
-			token = target;
+			content = target;
 		}
 		else {
-			token = null;
+			content = null;
 		}
-		this.writer.write("\t" + this.token_string(token));
+		this.writer.write("\t" + this.encode_token(content));
 		
 		this.writer.write("\t[");
 		for(CirNode child : node.get_children()) {
-			this.writer.write(" " + this.token_string(child));
+			this.writer.write(" " + this.encode_token(child));
 		}
 		this.writer.write(" ]");
 		
@@ -413,18 +418,18 @@ public class MuTestProjectFeatureWriter {
 			|| node instanceof CirFunctionBody)) {
 			code = node.generate_code(true);
 		}
-		this.writer.write("\t" + this.token_string(code));
+		this.writer.write("\t" + this.encode_token(code));
 		
 		this.writer.write("\n");
 	}
 	/**
-	 * ID class ast_id data_type token [ child child ... child ] code
+	 * cir@key class_name ast_source data_type content [ {cir@key}* ] code \n
 	 * @throws Exception
 	 */
 	private void write_cir() throws Exception {
 		this.open(".cir");
-		for(CirNode node : this.source_file.get_cir_tree().get_nodes()) {
-			this.write_cir_node(node);
+		for(CirNode node : this.inputs.get_cir_tree().get_nodes()) {
+			this.write_cir(node);
 		}
 		this.close();
 	}
@@ -436,8 +441,8 @@ public class MuTestProjectFeatureWriter {
 	private void write_execution_flow(CirExecutionFlow flow) throws Exception {
 		this.writer.write("\t" + "[edge]");
 		this.writer.write("\t" + flow.get_type());
-		this.writer.write("\t" + this.token_string(flow.get_source()));
-		this.writer.write("\t" + this.token_string(flow.get_target()));
+		this.writer.write("\t" + this.encode_token(flow.get_source()));
+		this.writer.write("\t" + this.encode_token(flow.get_target()));
 		this.writer.write("\n"); 
 	}
 	/**
@@ -447,8 +452,8 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_execution_call(CirFunctionCall call) throws Exception {
 		this.writer.write("\t" + "[call]");
-		this.writer.write("\t" + this.token_string(call.get_call_execution()));
-		this.writer.write("\t" + this.token_string(call.get_wait_execution()));
+		this.writer.write("\t" + this.encode_token(call.get_call_execution()));
+		this.writer.write("\t" + this.encode_token(call.get_wait_execution()));
 		this.writer.write("\n");
 	}
 	/**
@@ -458,8 +463,8 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_execution_node(CirExecution execution) throws Exception {
 		this.writer.write("\t" + "[node]");
-		this.writer.write("\t" + this.token_string(execution));
-		this.writer.write("\t" + this.token_string(execution.get_statement()));
+		this.writer.write("\t" + this.encode_token(execution));
+		this.writer.write("\t" + this.encode_token(execution.get_statement()));
 		this.writer.write("\n");
 	}
 	/**
@@ -492,9 +497,104 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_flw() throws Exception {
 		this.open(".flw");
-		for(CirFunction function : this.source_file.get_cir_tree().get_function_call_graph().get_functions()) {
+		for(CirFunction function : this.inputs.get_cir_tree().get_function_call_graph().get_functions()) {
 			this.write_cir_function(function);
 			this.writer.write("\n");
+		}
+		this.close();
+	}
+	
+	/* dependence analysis */
+	/**
+	 * [edge] type source target
+	 * @param edge
+	 * @throws Exception
+	 */
+	private void write_instance_edge(CirInstanceEdge edge) throws Exception {
+		this.writer.write("[edge]\t" + edge.get_type());
+		this.writer.write("\t" + this.encode_token(edge.get_source()));
+		this.writer.write("\t" + this.encode_token(edge.get_target()));
+		this.writer.write("\n");
+	}
+	/**
+	 * [node] ins@txt@int@int execution context
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_instance_node(CirInstanceNode node) throws Exception {
+		this.writer.write("[node]");
+		this.writer.write("\t" + this.encode_token(node));
+		this.writer.write("\t" + this.encode_token(node.get_execution()));
+		int context = 0;
+		if(node.get_context() != null) context = node.get_context().hashCode();
+		this.writer.write("\t" + context);
+		this.writer.write("\n");
+	}
+	/**
+	 * [node] ins@txt@int@int 	execution 	context
+	 * [edge] type 				source 		target
+	 * @throws Exception
+	 */
+	private void write_instance_graph(CirInstanceGraph graph) throws Exception {
+		this.open(".ins");
+		for(Object context : graph.get_contexts()) {
+			for(CirInstance node : graph.get_instances(context)) {
+				if(node instanceof CirInstanceNode) {
+					this.write_instance_node((CirInstanceNode) node);
+					for(CirInstanceEdge edge : ((CirInstanceNode) node).get_ou_edges()) {
+						this.write_instance_edge(edge);
+					}
+				}
+			}
+		}
+		this.close();
+	}
+	/**
+	 * [edge]	type	source	target	expression boolean|expression
+	 * @param edge
+	 * @throws Exception
+	 */
+	private void write_dependence_edge(CDependEdge edge) throws Exception {
+		this.writer.write("[edge]");
+		this.writer.write("\t" + edge.get_type());
+		this.writer.write("\t" + this.encode_token(edge.get_source().get_instance()));
+		this.writer.write("\t" + this.encode_token(edge.get_target().get_instance()));
+		
+		Object element = edge.get_element();
+		if(element instanceof CDependPredicate) {
+			CDependPredicate content = (CDependPredicate) element;
+			this.writer.write("\t" + this.encode_token(content.get_condition()));
+			this.writer.write("\t" + this.encode_token(content.get_predicate_value()));
+		}
+		else {
+			CDependReference content = (CDependReference) element;
+			this.writer.write("\t" + this.encode_token(content.get_def()));
+			this.writer.write("\t" + this.encode_token(content.get_use()));
+		}
+		
+		this.writer.write("\n");
+	}
+	/**
+	 * [node] instance
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_dependence_node(CDependNode node) throws Exception {
+		this.writer.write("[node]\t" + this.encode_token(node.get_instance()) + "\n");
+	}
+	/**
+	 * [node] 	instance
+	 * [edge]	type	source	target	expression boolean|expression
+	 * @param graph
+	 * @throws Exception
+	 */
+	private void write_dependence_graph(CDependGraph graph) throws Exception {
+		this.open(".dep");
+		for(CDependNode node : graph.get_nodes()) {
+			this.write_dependence_node(node);
+			for(CDependEdge edge : node.get_ou_edges()) {
+				this.write_dependence_edge(edge);
+			}
 		}
 		this.close();
 	}
@@ -506,7 +606,7 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_tst(TestInput test) throws Exception {
-		this.writer.write(this.token_string(test) + "\t" + this.token_string(test.get_parameter()) + "\n");
+		this.writer.write(this.encode_token(test) + "\t" + this.encode_token(test.get_parameter()) + "\n");
 	}
 	/**
 	 * ID tst@parameter
@@ -514,7 +614,7 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_tst() throws Exception {
 		this.open(".tst");
-		MuTestProjectTestSpace tspace = this.source_file.get_code_space().get_project().get_test_space();
+		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
 		for(TestInput test : tspace.get_test_space().get_inputs()) {
 			this.write_tst(test);
 		}
@@ -526,15 +626,15 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_mut(Mutant mutant) throws Exception {
-		this.writer.write("" + this.token_string(mutant));
+		this.writer.write("" + this.encode_token(mutant));
 		this.writer.write("\t" + mutant.get_mutation().get_class());
 		this.writer.write("\t" + mutant.get_mutation().get_operator());
-		this.writer.write("\t" + this.token_string(mutant.get_mutation().get_location()));
-		this.writer.write("\t" + this.token_string(mutant.get_mutation().get_parameter()));
+		this.writer.write("\t" + this.encode_token(mutant.get_mutation().get_location()));
+		this.writer.write("\t" + this.encode_token(mutant.get_mutation().get_parameter()));
 		
-		this.writer.write("\t" + this.token_string(mutant.get_coverage_mutant()));
-		this.writer.write("\t" + this.token_string(mutant.get_weak_mutant()));
-		this.writer.write("\t" + this.token_string(mutant.get_strong_mutant()));
+		this.writer.write("\t" + this.encode_token(mutant.get_coverage_mutant()));
+		this.writer.write("\t" + this.encode_token(mutant.get_weak_mutant()));
+		this.writer.write("\t" + this.encode_token(mutant.get_strong_mutant()));
 		
 		this.writer.write("\n");
 	}
@@ -544,7 +644,7 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_mut() throws Exception {
 		this.open(".mut");
-		for(Mutant mutant : this.source_file.get_mutant_space().get_mutants()) {
+		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 			this.write_mut(mutant);
 		}
 		this.close();
@@ -555,7 +655,7 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_res(MuTestProjectTestResult result) throws Exception {
-		this.writer.write(this.token_string(result.get_mutant()) + "\t" + result.get_kill_set().toString() + "\n");
+		this.writer.write(this.encode_token(result.get_mutant()) + "\t" + result.get_kill_set().toString() + "\n");
 	}
 	/**
 	 * MID bit_string
@@ -563,8 +663,8 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_res() throws Exception {
 		this.open(".res");
-		MuTestProjectTestSpace tspace = this.source_file.get_code_space().get_project().get_test_space();
-		for(Mutant mutant : this.source_file.get_mutant_space().get_mutants()) {
+		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
+		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
 			if(result != null)
 				this.write_res(result);
@@ -585,7 +685,7 @@ public class MuTestProjectFeatureWriter {
 		else if(!mutant.has_cir_mutations()) {
 			return false;
 		}
-		else if(this.source_file.get_code_space().get_project().get_test_space().get_test_result(mutant) == null) {
+		else if(this.inputs.get_code_space().get_project().get_test_space().get_test_result(mutant) == null) {
 			return false;
 		}
 		else {
@@ -606,7 +706,7 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void generate_instrument_files(Collection<TestInput> test_cases) throws Exception {
 		if(this.is_selected(test_cases))
-			this.source_file.get_code_space().get_project().execute_instrumental(test_cases);
+			this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
 	}
 	/**
 	 * perform static or dynamic evaluation on the specified test cases.
@@ -616,11 +716,11 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void evaluate_sym_instance_trees(Collection<SymInstanceTree> trees, 
 			Collection<TestInput> test_cases) throws Exception {
-		MuTestProjectTestSpace tspace = this.source_file.get_code_space().get_project().get_test_space();
+		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
 		if(this.is_selected(test_cases)) {				/* CASE-I. DYNAMIC EVALUATION USED */
 			for(TestInput test_case : test_cases) {
-				CStatePath state_path = tspace.load_instrumental_path(this.source_file.get_sizeof_template(), 
-									this.source_file.get_ast_tree(), this.source_file.get_cir_tree(), test_case);
+				CStatePath state_path = tspace.load_instrumental_path(this.inputs.get_sizeof_template(), 
+									this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
 				if(state_path != null) { for(SymInstanceTree tree : trees) tree.evaluate(state_path); }
 			}
 		}
@@ -659,11 +759,11 @@ public class MuTestProjectFeatureWriter {
 		
 		this.writer.write(category.toString());
 		this.writer.write("$" + operator.toString());
-		this.writer.write("$" + this.token_string(execution));
-		this.writer.write("$" + this.token_string(location));
-		this.writer.write("$" + this.token_string(parameter));
+		this.writer.write("$" + this.encode_token(execution));
+		this.writer.write("$" + this.encode_token(location));
+		this.writer.write("$" + this.encode_token(parameter));
 		
-		if(parameter != null) { this.symbolic_nodes.add(parameter); }
+		if(parameter != null) { this.symbol_nodes.add(parameter); }
 	}
 	/**
 	 * exec$accp$rejc [condition]+ ;
@@ -775,14 +875,14 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_sym_node(SymbolNode node, Set<String> records) throws Exception {
-		String node_key = this.token_string(node);
+		String node_key = this.encode_token(node);
 		
 		if(!records.contains(node_key)) {
-			this.writer.write(this.token_string(node));
+			this.writer.write(this.encode_token(node));
 			
 			String class_name = node.getClass().getSimpleName();
 			this.writer.write("\t" + class_name.substring(6));
-			this.writer.write("\t" + this.token_string(node.get_source()));
+			this.writer.write("\t" + this.encode_token(node.get_source()));
 			
 			CType data_type;
 			if(node instanceof SymbolExpression) {
@@ -791,7 +891,7 @@ public class MuTestProjectFeatureWriter {
 			else {
 				data_type = null;
 			}
-			this.writer.write("\t" + this.token_string(data_type));
+			this.writer.write("\t" + this.encode_token(data_type));
 			
 			Object content;
 			if(node instanceof SymbolField) {
@@ -821,13 +921,13 @@ public class MuTestProjectFeatureWriter {
 			else {
 				content = null;
 			}
-			this.writer.write("\t" + this.token_string(content));
+			this.writer.write("\t" + this.encode_token(content));
 			
-			this.writer.write("\t" + this.token_string(node.generate_code(true)));
+			this.writer.write("\t" + this.encode_token(node.generate_code(true)));
 			
 			this.writer.write("\t[");
 			for(SymbolNode child : node.get_children()) {
-				this.writer.write(" " + this.token_string(child));
+				this.writer.write(" " + this.encode_token(child));
 			}
 			this.writer.write(" ]");
 			
@@ -847,7 +947,7 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private int write_sym_nodes() throws Exception {
 		Set<String> records = new HashSet<String>();
-		for(SymbolNode node : this.symbolic_nodes) {
+		for(SymbolNode node : this.symbol_nodes) {
 			this.write_sym_node(node, records);
 		}
 		return records.size();
@@ -861,13 +961,13 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_sym_features(CDependGraph dependence_graph, int distance, Collection<TestInput> test_cases) throws Exception {
 		/* 1. declarations and initialization */
-		this.symbolic_nodes.clear();
+		this.symbol_nodes.clear();
 		Collection<SymInstanceTree> trees = new ArrayList<SymInstanceTree>(); 
 		int number_of_trees = 0, number_of_paths = 0, number_of_nodes = 0, number_of_mutants;
 		
 		/* 2. generate symbolic instance trees for each available mutant */
-		number_of_mutants = this.source_file.get_mutant_space().size();
-		for(Mutant mutant : this.source_file.get_mutant_space().get_mutants()) {
+		number_of_mutants = this.inputs.get_mutant_space().size();
+		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 			/* NOTE only output features for mutant that has cir-mutation and tested */
 			if(this.is_available_mutant(mutant)) {
 				trees.add(SymInstanceTree.new_tree(mutant, distance, dependence_graph));
@@ -913,10 +1013,12 @@ public class MuTestProjectFeatureWriter {
 		
 		/* 4. symbolic information */
 		this.generate_instrument_files(test_cases);
-		CirFunction root_function = this.
-				source_file.get_cir_tree().get_function_call_graph().get_main_function();
+		CirFunction root_function = 
+				this.inputs.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.
 						graph(root_function, CirFunctionCallPathType.unique_path, -1));
+		this.write_instance_graph(dependence_graph.get_program_graph());
+		this.write_dependence_graph(dependence_graph);
 		this.write_sym_features(dependence_graph, max_distance, test_cases);
 	}
 	/**
@@ -929,7 +1031,7 @@ public class MuTestProjectFeatureWriter {
 	 */
 	public static void write(MuTestProjectCodeFile input, File output_directory, 
 			Collection<TestInput> test_cases, int max_distance) throws Exception {
-		fwriter.write_all(input, output_directory, test_cases, max_distance);
+		util.write_all(input, output_directory, test_cases, max_distance);
 	}
 	
 }

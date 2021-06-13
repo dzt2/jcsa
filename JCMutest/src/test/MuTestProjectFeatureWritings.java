@@ -10,7 +10,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
-import com.jcsa.jcmutest.project.MuTestProjectFeatureWriter;
+import com.jcsa.jcmutest.project.MuTestProjectFeatureWrite;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -56,7 +56,7 @@ public class MuTestProjectFeatureWritings {
 		else { test_cases = null; }		/* no test case is used for dynamic generation */
 		
 		/* 3. Generate feature information to output directory finally */
-		MuTestProjectFeatureWriter.write(code_file, output_directory, test_cases, max_distance); 
+		MuTestProjectFeatureWrite.write(code_file, output_directory, test_cases, max_distance);
 		System.out.println();
 	}
 	
