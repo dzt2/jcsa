@@ -1,12 +1,12 @@
 package com.jcsa.jcmutest.mutant.sym2mutant.cond;
 
 /**
- * The category of symbolic condition in program context for killing a mutation.
+ * The category of symbolic condition.
  * 
  * @author yukimula
  *
  */
 public enum SymCategory {
-	assertion,
+	constraints,
 	observation,
 }

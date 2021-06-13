@@ -6,8 +6,6 @@ import java.io.FileWriter;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
-import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymCondition;
-import com.jcsa.jcmutest.mutant.sym2mutant.cond.SymConditions;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
@@ -46,9 +44,11 @@ public class CirMutationsTest {
 	 * @throws Exception
 	 */
 	private static void output_opt_constraints(FileWriter writer, SymConstraint constraint) throws Exception {
-		for(SymCondition opt_const : SymConditions.generate(constraint)) {
+		/*
+		for(SymCondition opt_const : SymCondition.generate(constraint)) {
 			writer.write("\t\t==> " + opt_const + "\n");
 		}
+		*/
 	}
 	/**
 	 * output the cir-mutation into the writer
