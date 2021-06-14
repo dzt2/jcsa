@@ -829,8 +829,14 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	:param output_directory:
 	:return:
 	"""
-	max_length, min_support, min_confidence, max_confidence, min_output_number, max_output_number = 1, 2, 0.70, 0.99, 4, 8
+	max_length, min_support, min_confidence, max_confidence, \
+	min_output_number, max_output_number = 1, 2, 0.70, 0.99, 4, 8
+	start_flag, start_file_name = False, "triangle"
 	for file_name in os.listdir(project_directory):
+		if file_name == start_file_name:
+			start_flag = True
+		if not start_flag:
+			continue
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
 		o_directory = os.path.join(output_directory, file_name)
