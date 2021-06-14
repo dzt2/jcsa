@@ -138,6 +138,8 @@ public class CirFunctionCallTreeNode {
 		
 		return buffer.toString();
 	}
+	@Override
+	public int hashCode() { return this.toString().hashCode(); }
 	
 	/* setters */
 	/**
