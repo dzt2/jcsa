@@ -1,43 +1,44 @@
-package com.jcsa.jcmutest.mutant.sym2mutant.muta;
+package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OAXACirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OAXNCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OBXACirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OBXNCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OEXACirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.OLXNCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.oxxo.ORXNCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.refs.RTRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.refs.VBRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.refs.VCRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.refs.VRRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.stmt.SBCRCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.stmt.SGLRCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.stmt.STDLCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.stmt.SWDRCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.BTRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.CTRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.ETRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.STRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.TTRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.trap.VTRPCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UIODCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UIOICirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UIORCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UNODCirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.UNOICirMutationParser;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.unry.VINCCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OAXACirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OAXNCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OBXACirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OBXNCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OEXACirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.OLXNCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxn.ORXNCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.refs.RTRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.refs.VBRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.refs.VCRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.refs.VRRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt.SBCRCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt.SGLRCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt.STDLCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt.SWDRCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.BTRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.CTRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.ETRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.STRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.TTRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.trap.VTRPCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UIODCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UIOICirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UIORCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UNODCirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UNOICirMutationParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.VINCCirMutationParser;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 
 public class CirMutationParsers {
 	
 	private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<MutaClass, CirMutationParser>();
+	
 	static {
 		parsers.put(MutaClass.BTRP, new BTRPCirMutationParser());
 		parsers.put(MutaClass.CTRP, new CTRPCirMutationParser());
