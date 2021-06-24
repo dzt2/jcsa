@@ -55,4 +55,7 @@ public enum SymOperator {
 	/** observation:mut_refr(execution, expression, null) **/				mut_refr,
 	/** observation:mut_stat(execution, expression, null) **/				mut_stat,
 	
+	/* killing condition */
+	/** observation:kill_mut(end, end.statement, integer) **/				kil_muta,
+	
 }

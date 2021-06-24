@@ -1,14 +1,20 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
+import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
@@ -641,6 +647,35 @@ public class CirMutations {
 	 */
 	public static CirMutation cir_mutation(SymCondition constraint, SymCondition init_error) throws Exception {
 		return new CirMutation(constraint, init_error);
+	}
+	private static CirExecution find_execution_of(Mutant mutant) throws Exception {
+		AstNode ast_location = mutant.get_mutation().get_location();
+		CirTree cir_tree = mutant.get_space().get_cir_tree();
+		while(ast_location != null) {
+			if(ast_location instanceof AstFunctionDefinition) {
+				for(CirFunction function : cir_tree.get_function_call_graph().get_functions()) {
+					if(function.get_definition().get_ast_source() == ast_location) {
+						return function.get_flow_graph().get_exit();
+					}
+				}
+			}
+		}
+		return cir_tree.get_function_call_graph().get_main_function().get_flow_graph().get_exit();
+	}
+	/**
+	 * @param mutant
+	 * @return observation:kil_muta(end, end.statement, integer)
+	 * @throws Exception
+	 */
+	public static SymCondition kill_mut(Mutant mutant) throws Exception {
+		if(mutant == null) {
+			throw new IllegalArgumentException("Invalid mutant: null");
+		}
+		else {
+			CirExecution execution = find_execution_of(mutant);
+			SymbolExpression parameter = SymbolFactory.sym_constant(Integer.valueOf(mutant.get_id()));
+			return new SymCondition(SymCategory.observation, SymOperator.kil_muta, execution, execution.get_statement(), parameter);
+		}
 	}
 	
 }
