@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -77,8 +77,8 @@ public class CTRPCirMutationParser extends CirMutationParser {
 							this.get_cir_node(cir_tree, case_statement, CirCaseStatement.class);
 		
 		SymbolExpression condition = SymbolFactory.sym_expression(statement2.get_condition());
-		SymCondition constraint = SymConditions.eva_expr(SymConditions.execution_of(statement1), condition);
-		SymCondition init_error = SymConditions.trp_stmt(SymConditions.execution_of(statement1));
+		SymCondition constraint = CirMutations.eva_expr(CirMutations.execution_of(statement1), condition);
+		SymCondition init_error = CirMutations.trp_stmt(CirMutations.execution_of(statement1));
 		infections.put(init_error, constraint);
 	}
 

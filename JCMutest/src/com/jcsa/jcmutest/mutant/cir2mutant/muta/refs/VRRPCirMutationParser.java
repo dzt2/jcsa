@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.refs;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -50,15 +50,15 @@ public class VRRPCirMutationParser extends CirMutationParser {
 			Map<SymCondition, SymCondition> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymbolExpression muta_value = this.get_muta_value(mutation.get_location(), mutation.get_parameter().toString());
-		CirExecution execution = SymConditions.execution_of(statement);
+		CirExecution execution = CirMutations.execution_of(statement);
 		SymbolExpression condition = SymbolFactory.not_equals(expression, muta_value);
 		
-		SymCondition constraint = SymConditions.eva_expr(execution, condition), state_error;
+		SymCondition constraint = CirMutations.eva_expr(execution, condition), state_error;
 		if(expression instanceof CirReferExpression && !(muta_value instanceof SymbolConstant)) {
-			state_error = SymConditions.mut_refr(expression, muta_value);
+			state_error = CirMutations.mut_refr(expression, muta_value);
 		}
 		else {
-			state_error = SymConditions.mut_expr(expression, muta_value);
+			state_error = CirMutations.mut_expr(expression, muta_value);
 		}
 		infections.put(state_error, constraint);
 	}

@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -70,7 +70,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		switch(mutation.get_operator()) {
 		case trap_on_pos:	
 		{
-			if(SymConditions.is_boolean(expression)) {
+			if(CirMutations.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, true);
 			}
 			else {
@@ -80,7 +80,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		}
 		case trap_on_zro:	
 		{
-			if(SymConditions.is_boolean(expression)) {
+			if(CirMutations.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, false);
 			}
 			else {
@@ -90,7 +90,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		}
 		case trap_on_neg:	
 		{
-			if(SymConditions.is_boolean(expression)) {
+			if(CirMutations.is_boolean(expression)) {
 				condition = SymbolFactory.sym_expression(Boolean.FALSE);
 			}
 			else {
@@ -107,9 +107,9 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		
-		CirExecution execution = SymConditions.execution_of(statement);
-		SymCondition constraint = SymConditions.eva_expr(execution, condition);
-		SymCondition init_error = SymConditions.trp_stmt(execution);
+		CirExecution execution = CirMutations.execution_of(statement);
+		SymCondition constraint = CirMutations.eva_expr(execution, condition);
+		SymCondition init_error = CirMutations.trp_stmt(execution);
 		infections.put(init_error, constraint);
 	}
 	

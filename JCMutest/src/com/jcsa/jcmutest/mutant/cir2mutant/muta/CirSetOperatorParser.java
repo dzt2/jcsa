@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.Collection;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -140,14 +140,14 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition get_constraint(Object condition) throws Exception {
-		return SymConditions.eva_expr(SymConditions.execution_of(this.statement), condition);
+		return CirMutations.eva_expr(CirMutations.execution_of(this.statement), condition);
 	}
 	/**
 	 * @return trp_stmt(this.statement)
 	 * @throws Exception
 	 */
 	protected SymCondition trap_statement() throws Exception {
-		return SymConditions.trp_stmt(SymConditions.execution_of(this.statement));
+		return CirMutations.trp_stmt(CirMutations.execution_of(this.statement));
 	}
 	
 	/* exception handles */
@@ -173,7 +173,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition set_expression(Object muta_expression) throws Exception {
-		return SymConditions.mut_expr(expression, muta_expression);
+		return CirMutations.mut_expr(expression, muta_expression);
 	}
 	/**
 	 * @param operand
@@ -181,7 +181,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition add_expression(Object operand) throws Exception {
-		return SymConditions.mut_expr(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
+		return CirMutations.mut_expr(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @param operand
@@ -189,28 +189,28 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition sub_expression(Object operand) throws Exception {
-		return SymConditions.mut_expr(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
+		return CirMutations.mut_expr(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
 	}
 	/**
 	 * @return uny_expr(this.expression, -)
 	 * @throws Exception
 	 */
 	protected SymCondition neg_expression() throws Exception {
-		return SymConditions.mut_expr(expression, SymbolFactory.arith_neg(expression));
+		return CirMutations.mut_expr(expression, SymbolFactory.arith_neg(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, ~)
 	 * @throws Exception
 	 */
 	protected SymCondition rsv_expression() throws Exception {
-		return SymConditions.mut_expr(expression, SymbolFactory.bitws_rsv(expression));
+		return CirMutations.mut_expr(expression, SymbolFactory.bitws_rsv(expression));
 	}
 	/**
 	 * @return uny_expr(this.expression, !)
 	 * @throws Exception
 	 */
 	protected SymCondition not_expression() throws Exception {
-		return SymConditions.mut_expr(expression, SymbolFactory.logic_not(expression));
+		return CirMutations.mut_expr(expression, SymbolFactory.logic_not(expression));
 	}
 	/**
 	 * @param operand
@@ -219,7 +219,7 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition ins_expression(Object operand, COperator operator) throws Exception {
-		return SymConditions.mut_expr(expression, this.sym_expression(operator, operand, expression));
+		return CirMutations.mut_expr(expression, this.sym_expression(operator, operand, expression));
 	}
 	
 	/* symbolic operations */
@@ -307,9 +307,9 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition conjunct(Collection<SymCondition> constraints) throws Exception {
-		CirExecution execution = SymConditions.execution_of(this.statement);
+		CirExecution execution = CirMutations.execution_of(this.statement);
 		if(constraints.isEmpty())
-			return SymConditions.eva_expr(execution, Boolean.TRUE);
+			return CirMutations.cov_stmt(execution, 1);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
@@ -320,7 +320,7 @@ public abstract class CirSetOperatorParser {
 				else
 					condition = SymbolFactory.logic_and(condition, constraint.get_parameter());
 			}
-			return SymConditions.eva_expr(execution, condition);
+			return CirMutations.eva_expr(execution, condition);
 		}
 	}
 	/**
@@ -329,9 +329,9 @@ public abstract class CirSetOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymCondition disjunct(Collection<SymCondition> constraints) throws Exception {
-		CirExecution execution = SymConditions.execution_of(this.statement);
+		CirExecution execution = CirMutations.execution_of(this.statement);
 		if(constraints.isEmpty())
-			return SymConditions.eva_expr(execution, Boolean.FALSE);
+			return CirMutations.eva_expr(execution, Boolean.FALSE);
 		else if(constraints.size() == 1)
 			return constraints.iterator().next();
 		else {
@@ -342,7 +342,7 @@ public abstract class CirSetOperatorParser {
 				else
 					condition = SymbolFactory.logic_ior(condition, constraint.get_parameter());
 			}
-			return SymConditions.eva_expr(execution, condition);
+			return CirMutations.eva_expr(execution, condition);
 		}
 	}
 	

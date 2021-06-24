@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -42,8 +42,8 @@ public class TTRPCirMutationParser extends CirMutationParser {
 		}
 		int times = ((Integer) mutation.get_parameter()).intValue();
 		
-		SymCondition constraint = SymConditions.cov_stmt(true_branch, times);
-		SymCondition init_error = SymConditions.trp_stmt(true_branch);
+		SymCondition constraint = CirMutations.cov_stmt(true_branch, times);
+		SymCondition init_error = CirMutations.trp_stmt(true_branch);
 		infections.put(init_error, constraint);
 	}
 	

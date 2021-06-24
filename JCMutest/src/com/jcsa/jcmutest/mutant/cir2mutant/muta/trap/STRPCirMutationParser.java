@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -26,9 +26,9 @@ public class STRPCirMutationParser extends CirMutationParser {
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymCondition, SymCondition> infections) throws Exception {
-		CirExecution execution = SymConditions.execution_of(statement);
-		SymCondition constraint = SymConditions.cov_stmt(execution, 1);
-		SymCondition init_error = SymConditions.trp_stmt(execution);
+		CirExecution execution = CirMutations.execution_of(statement);
+		SymCondition constraint = CirMutations.cov_stmt(execution, 1);
+		SymCondition init_error = CirMutations.trp_stmt(execution);
 		infections.put(init_error, constraint);
 	}
 	

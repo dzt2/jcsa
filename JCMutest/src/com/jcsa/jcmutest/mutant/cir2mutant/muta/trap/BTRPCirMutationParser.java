@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -37,10 +37,10 @@ public class BTRPCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		
-		CirExecution execution = SymConditions.execution_of(statement);
+		CirExecution execution = CirMutations.execution_of(statement);
 		SymbolExpression condition = SymbolFactory.sym_condition(expression, value);
-		SymCondition constraint = SymConditions.eva_expr(execution, condition);
-		SymCondition init_error = SymConditions.trp_stmt(execution);
+		SymCondition constraint = CirMutations.eva_expr(execution, condition);
+		SymCondition init_error = CirMutations.trp_stmt(execution);
 		infections.put(init_error, constraint);
 	}
 	

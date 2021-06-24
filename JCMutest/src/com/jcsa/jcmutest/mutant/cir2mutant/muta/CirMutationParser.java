@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.AstCirPair;
@@ -62,7 +62,7 @@ public abstract class CirMutationParser {
 				
 				for(SymCondition init_error : infections.keySet()) {
 					SymCondition constraint = infections.get(init_error);
-					cir_mutations.add(SymConditions.cir_mutation(constraint, init_error));
+					cir_mutations.add(CirMutations.cir_mutation(constraint, init_error));
 				}
 			}
 			return cir_mutations;

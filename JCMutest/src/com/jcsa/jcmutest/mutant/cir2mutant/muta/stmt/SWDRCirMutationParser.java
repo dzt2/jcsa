@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -33,7 +33,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 				break;
 			}
 		}
-		SymCondition constraint = SymConditions.cov_stmt(true_branch, 1);
+		SymCondition constraint = CirMutations.cov_stmt(true_branch, 1);
 		
 		/* beg_stmt.before --> end_stmt */
 		CirStatement beg_statement = this.get_beg_statement(cir_tree, mutation.get_location());
@@ -44,7 +44,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(
 				beg_execution.get_in_flow(0).get_source(), end_execution);
-		SymCondition state_error = SymConditions.mut_flow(orig_flow, muta_flow);
+		SymCondition state_error = CirMutations.mut_flow(orig_flow, muta_flow);
 		
 		infections.put(state_error, constraint);
 	}
@@ -59,7 +59,7 @@ public class SWDRCirMutationParser extends CirMutationParser {
 				this.get_cir_node(cir_tree, mutation.get_location(), CirIfStatement.class);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
-		infections.put(SymConditions.mut_flow(orig_flow, muta_flow), SymConditions.cov_stmt(beg_execution, 1));
+		infections.put(CirMutations.mut_flow(orig_flow, muta_flow), CirMutations.cov_stmt(beg_execution, 1));
 	}
 	
 	@Override

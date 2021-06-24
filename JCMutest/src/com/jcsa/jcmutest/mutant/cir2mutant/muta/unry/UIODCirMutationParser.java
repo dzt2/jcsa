@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.unry;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -39,9 +39,9 @@ public class UIODCirMutationParser extends CirMutationParser {
 			CirComputeExpression expression = (CirComputeExpression) inc_statement.get_rvalue();
 			CirExpression loperand = expression.get_operand(0);
 			
-			CirExecution execution = SymConditions.execution_of(inc_statement);
-			SymCondition constraint = SymConditions.cov_stmt(execution, 1);
-			SymCondition init_error = SymConditions.mut_expr(expression, loperand);
+			CirExecution execution = CirMutations.execution_of(inc_statement);
+			SymCondition constraint = CirMutations.cov_stmt(execution, 1);
+			SymCondition init_error = CirMutations.mut_expr(expression, loperand);
 			infections.put(init_error, constraint);
 			break;
 		}

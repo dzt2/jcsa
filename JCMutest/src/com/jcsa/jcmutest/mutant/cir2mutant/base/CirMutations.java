@@ -11,14 +11,13 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-
 /**
  * It implements the factory interfaces for creating symbolic condition and cir-mutation.
  * 
  * @author yukimula
  *
  */
-public class SymConditions {
+public class CirMutations {
 	
 	/* factory methods */
 	/* constraints */
@@ -65,9 +64,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_boolean(expression)) {
+		else if(CirMutations.is_boolean(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.chg_bool, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -82,9 +81,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_boolean(expression)) {
+		else if(CirMutations.is_boolean(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_true, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -99,9 +98,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_boolean(expression)) {
+		else if(CirMutations.is_boolean(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_fals, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -117,9 +116,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_boolean(expression)) {
+		else if(CirMutations.is_boolean(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_bool, 
-					SymConditions.execution_of(expression), expression, 
+					CirMutations.execution_of(expression), expression, 
 					SymbolFactory.sym_condition(muta_value, true));
 		}
 		else {
@@ -136,13 +135,13 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.chg_numb, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
-		else if(SymConditions.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.chg_addr, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -157,9 +156,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_post, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -174,9 +173,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_negt, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -191,9 +190,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_zero, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -208,9 +207,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_npos, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -225,9 +224,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_nneg, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -242,9 +241,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_nzro, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -260,9 +259,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_numb, 
-					SymConditions.execution_of(expression), expression, 
+					CirMutations.execution_of(expression), expression, 
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -279,9 +278,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.chg_addr, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -296,9 +295,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_null, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -313,9 +312,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_invp, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -331,9 +330,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_addr, 
-					SymConditions.execution_of(expression), expression, 
+					CirMutations.execution_of(expression), expression, 
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -350,9 +349,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_nonauto(expression)) {
+		else if(CirMutations.is_nonauto(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.chg_auto, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -368,9 +367,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_nonauto(expression)) {
+		else if(CirMutations.is_nonauto(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.set_auto, 
-					SymConditions.execution_of(expression), expression, 
+					CirMutations.execution_of(expression), expression, 
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -387,9 +386,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression) || SymConditions.is_address(expression)) {
+		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.inc_scop, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -404,9 +403,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression) || SymConditions.is_address(expression)) {
+		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.dec_scop, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -421,9 +420,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression) || SymConditions.is_address(expression)) {
+		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.ext_scop, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -438,9 +437,9 @@ public class SymConditions {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(SymConditions.is_numeric(expression) || SymConditions.is_address(expression)) {
+		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			return new SymCondition(SymCategory.observation, SymOperator.shk_scop, 
-					SymConditions.execution_of(expression), expression, null);
+					CirMutations.execution_of(expression), expression, null);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + expression.get_data_type().generate_code());
@@ -458,7 +457,7 @@ public class SymConditions {
 		}
 		else {
 			return new SymCondition(SymCategory.observation, SymOperator.mut_expr,
-					SymConditions.execution_of(expression), expression, 
+					CirMutations.execution_of(expression), expression, 
 					SymbolFactory.sym_expression(value));
 		}
 	}
@@ -473,7 +472,7 @@ public class SymConditions {
 		}
 		else {
 			return new SymCondition(SymCategory.observation, SymOperator.mut_refr,
-					SymConditions.execution_of(expression), expression, SymbolFactory.sym_expression(value));
+					CirMutations.execution_of(expression), expression, SymbolFactory.sym_expression(value));
 		}
 	}
 	/**
@@ -487,7 +486,7 @@ public class SymConditions {
 		}
 		else {
 			return new SymCondition(SymCategory.observation, SymOperator.mut_stat,
-					SymConditions.execution_of(expression), expression, SymbolFactory.sym_expression(value));
+					CirMutations.execution_of(expression), expression, SymbolFactory.sym_expression(value));
 		}
 	}
 	/* observation:stmt */

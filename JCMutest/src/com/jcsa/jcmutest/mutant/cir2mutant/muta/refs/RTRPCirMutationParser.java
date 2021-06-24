@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.refs;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -25,8 +25,8 @@ public class RTRPCirMutationParser extends CirMutationParser {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymbolExpression muta_value = SymbolFactory.sym_expression(mutation.get_parameter());
 		SymbolExpression condition = SymbolFactory.not_equals(expression, muta_value);
-		SymCondition constraint = SymConditions.eva_expr(SymConditions.execution_of(statement), condition);
-		SymCondition state_error = SymConditions.mut_expr(expression, muta_value);
+		SymCondition constraint = CirMutations.eva_expr(CirMutations.execution_of(statement), condition);
+		SymCondition state_error = CirMutations.mut_expr(expression, muta_value);
 		infections.put(state_error, constraint);
 	}
 

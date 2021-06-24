@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.stmt;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.SymConditions;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -58,8 +58,8 @@ public class STDLCirMutationParser extends CirMutationParser {
 		
 		CirExecutionFlow orig_flow = beg_execution.get_ou_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
-		SymCondition state_error = SymConditions.mut_flow(orig_flow, muta_flow);
-		SymCondition constraint = SymConditions.cov_stmt(SymConditions.execution_of(beg_statement), 1);
+		SymCondition state_error = CirMutations.mut_flow(orig_flow, muta_flow);
+		SymCondition constraint = CirMutations.cov_stmt(CirMutations.execution_of(beg_statement), 1);
 		infections.put(state_error, constraint);
 	}
 
