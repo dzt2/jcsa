@@ -1,7 +1,11 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+
 import com.jcsa.jcmutest.mutant.cir2mutant.base.SymCondition;
 
 /**
@@ -66,29 +70,43 @@ public class KillDependenceNode {
 	/**
 	 * @param type
 	 * @param target
-	 * @return create the unique edge from this node to a target
-	 * @throws Exception
+	 * @return link this node to the given node of target
+	 * @throws IllegalArgumentException
 	 */
-	public KillDependenceEdge connect(KillDependenceType type, KillDependenceNode target) throws Exception {
+	protected KillDependenceEdge link_to(KillDependenceType type, KillDependenceNode target) throws IllegalArgumentException {
 		if(type == null) {
-			throw new IllegalArgumentException("Invalid type: null");
+			throw new IllegalArgumentException("Invalid type as null");
 		}
-		else if(target == null) {
+		else if(target == null || target.graph != this.graph || 
+				this.condition.equals(target.condition)) {		/* ignore */
 			throw new IllegalArgumentException("Invalid target: null");
 		}
 		else {
-			for(KillDependenceEdge edge : this.ou_edges) {
-				if(edge.get_target() == target) {
-					if(edge.get_type() == type) {
-						return edge;
+			Queue<KillDependenceNode> queue = new LinkedList<KillDependenceNode>();
+			Set<KillDependenceNode> records = new HashSet<KillDependenceNode>();
+			
+			queue.add(this); records.add(this);
+			while(!queue.isEmpty()) {
+				KillDependenceNode node = queue.poll();
+				for(KillDependenceEdge edge : node.ou_edges) {
+					if(edge.get_target().condition.equals(target.condition)) {
+						if(edge.get_type() == type) {
+							return edge;
+						}
+						else {
+							throw new IllegalArgumentException("Unmatched: " + type);
+						}
 					}
-					else {
-						throw new IllegalArgumentException("Invalid type: " + type);
+					else if(!records.contains(edge.get_target())) {
+						queue.add(edge.get_target()); 
+						records.add(edge.get_target());
 					}
 				}
 			}
+			
 			KillDependenceEdge edge = new KillDependenceEdge(type, this, target);
-			this.ou_edges.add(edge); target.in_edges.add(edge); return edge;
+			edge.get_source().ou_edges.add(edge); edge.get_target().in_edges.add(edge);
+			return edge;
 		}
 	}
 	

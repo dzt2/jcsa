@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.base;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 
 /**
@@ -108,5 +109,18 @@ public class SymCondition {
 		else
 			return false;
 	}
+	public SymCondition optimize() throws Exception { return this.optimize(null); }
+	public SymCondition optimize(SymbolProcess process) throws Exception { return CirMutations.optimize(this, process); }
+	/**
+	 * @param context
+	 * @return true-met, false-unmet, null-unknown
+	 * @throws Exception
+	 */
+	public Boolean validate(SymbolProcess context) throws Exception { return CirMutations.validate(this, context); }
+	/**
+	 * @return
+	 * @throws Exception
+	 */
+	public Boolean validate() throws Exception { return this.validate(null); }
 	
 }
