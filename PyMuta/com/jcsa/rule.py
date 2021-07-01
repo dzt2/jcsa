@@ -831,38 +831,35 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	"""
 	max_length, min_support, min_confidence, max_confidence, \
 	min_output_number, max_output_number = 1, 2, 0.70, 0.99, 4, 8
-	start_flag, start_file_name = False, "hereon_triangle"
+	specify_file = "calendar"
 	for file_name in os.listdir(project_directory):
-		if file_name == start_file_name:
-			start_flag = True
-		if not start_flag:
-			continue
-		c_document_directory = os.path.join(project_directory, file_name)
-		m_document_directory = os.path.join(encoding_directory, file_name)
-		o_directory = os.path.join(output_directory, file_name)
-		if not os.path.exists(o_directory):
-			os.mkdir(o_directory)
-		print("Testing for {} project.".format(file_name))
+		if file_name == specify_file:
+			c_document_directory = os.path.join(project_directory, file_name)
+			m_document_directory = os.path.join(encoding_directory, file_name)
+			o_directory = os.path.join(output_directory, file_name)
+			if not os.path.exists(o_directory):
+				os.mkdir(o_directory)
+			print("Testing for {} project.".format(file_name))
 
-		c_document = jctest.CDocument(c_document_directory, file_name, ".sip")
-		m_document = jcenco.MerDocument(m_document_directory, file_name)
-		print("\t(1) Load {} executions and {} mutants in {} test cases.".format(len(m_document.exec_space.get_executions()),
-																				 len(m_document.exec_space.get_mutants()),
-																				 len(m_document.test_space.get_test_cases())))
+			c_document = jctest.CDocument(c_document_directory, file_name, ".sip")
+			m_document = jcenco.MerDocument(m_document_directory, file_name)
+			print("\t(1) Load {} executions and {} mutants in {} test cases.".format(len(m_document.exec_space.get_executions()),
+																					 len(m_document.exec_space.get_mutants()),
+																					 len(m_document.test_space.get_test_cases())))
 
-		inputs = KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, min_output_number, max_output_number)
-		outputter = KillPredictionOutput(c_document, m_document)
-		outputter.write_mutant_rules_file(inputs, os.path.join(o_directory, file_name + ".m2r"),
-										  os.path.join(o_directory, file_name + ".r2m"), 128)
-		outputter.write_prediction_rules(inputs, os.path.join(o_directory, file_name + ".e2r"))
-		print("\t(2) Write the killable prediction rules to {}.".format(o_directory))
-		print()
+			inputs = KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, min_output_number, max_output_number)
+			outputter = KillPredictionOutput(c_document, m_document)
+			outputter.write_mutant_rules_file(inputs, os.path.join(o_directory, file_name + ".m2r"),
+											  os.path.join(o_directory, file_name + ".r2m"), 128)
+			outputter.write_prediction_rules(inputs, os.path.join(o_directory, file_name + ".e2r"))
+			print("\t(2) Write the killable prediction rules to {}.".format(o_directory))
+			print()
 	return
 
 
 if __name__ == "__main__":
 	proj_directory = "/home/dzt2/Development/Data/zexp/features"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
-	outs_directory = "/home/dzt2/Development/Data/zexp/rules"
+	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
 	main(proj_directory, enco_directory, outs_directory)
 
