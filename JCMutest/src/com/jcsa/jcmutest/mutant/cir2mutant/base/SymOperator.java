@@ -54,7 +54,7 @@ public enum SymOperator {
 	ast_kill,	cir_kill,	
 	cov_stmt,	eva_expr,
 	del_exec,	inc_exec,	dec_exec,	mut_flow,
-	mut_expr,	mut_refr,	mut_stat,
+	mut_expr,	mut_refr,	mut_stat,	trp_exec,
 	set_bool,	set_true,	set_fals,	chg_bool,
 	set_numb,	set_post,	set_negt,	set_zero,	
 	set_npos,	set_nneg,	set_nzro,	chg_numb,

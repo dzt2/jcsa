@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.base;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * 	Structural symbolic condition is defined as following:	<br>
@@ -97,6 +98,20 @@ public class SymCondition {
 			return this.toString().equals(obj.toString());
 		else
 			return false;
+	}
+	
+	/* evaluation */
+	public SymCondition optimize(SymbolProcess context) throws Exception {
+		return SymConditions.optimize(this, context);
+	}
+	public SymCondition optimize() throws Exception {
+		return SymConditions.optimize(this, null);
+	}
+	public Boolean validate(SymbolProcess context) throws Exception {
+		return SymConditions.evaluate(this, context);
+	}
+	public Boolean validate() throws Exception {
+		return SymConditions.evaluate(this, null);
 	}
 	
 }

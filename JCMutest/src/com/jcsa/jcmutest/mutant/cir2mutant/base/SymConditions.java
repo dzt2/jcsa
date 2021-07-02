@@ -14,7 +14,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It provides interfaces to create symbolic conditions and cir-mutations.
@@ -105,6 +110,15 @@ public class SymConditions {
 			}
 		}
 		return null;
+	}
+	/**
+	 * @param expression
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess context) throws Exception {
+		return SymbolEvaluator.evaluate_on(expression, context);
 	}
 	
 	/* evaluation category */
@@ -202,6 +216,19 @@ public class SymConditions {
 		else {
 			return new SymCondition(SymCategory.path_error, SymOperator.mut_flow, orig_flow.get_source(), 
 					orig_flow.get_target().get_statement(), SymbolFactory.sym_expression(muta_flow.get_target()));
+		}
+	}
+	/**
+	 * @param execution
+	 * @return path_error:trp_exec(execution, statement, null)
+	 * @throws Exception
+	 */
+	public static SymCondition trp_exec(CirExecution execution) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			return new SymCondition(SymCategory.path_error, SymOperator.trp_exec, execution, execution.get_statement(), null);
 		}
 	}
 	
@@ -737,6 +764,403 @@ public class SymConditions {
 	 */
 	public static CirMutation cir_mutation(SymCondition constraint, SymCondition init_error) throws Exception {
 		return new CirMutation(constraint, init_error);
+	}
+	
+	/* optimization methods */
+	/**
+	 * @param source
+	 * @return recursively optimize source condition to simplified form
+	 * @throws Exception
+	 */
+	protected static SymCondition optimize(SymCondition source, SymbolProcess context) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else {
+			switch(source.get_operator()) {
+			case cov_stmt:	return source;
+			case eva_expr:	return SymConditions.optimize_eva_expr(source, context);
+			
+			case mut_expr:	return SymConditions.optimize_set_expr(source, context);
+			case mut_refr:	return SymConditions.optimize_set_expr(source, context);
+			case mut_stat:	return SymConditions.optimize_set_expr(source, context);
+			case set_bool:	return SymConditions.optimize_set_expr(source, context);
+			case set_numb:	return SymConditions.optimize_set_expr(source, context);
+			case set_addr:	return SymConditions.optimize_set_expr(source, context);
+			case set_auto:	return SymConditions.optimize_set_expr(source, context);
+			
+			case mut_flow:	return SymConditions.optimize_mut_flow(source);
+			
+			case ast_kill:	return source;
+			case cir_kill:	return source;
+			default:		return source;
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymCondition optimize_eva_expr(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression condition = source.get_parameter();
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return SymConditions.cov_stmt(source.get_execution(), 1);
+			}
+			else {
+				return SymConditions.eva_expr(source.get_execution(), Boolean.FALSE, true);
+			}
+		}
+		else {
+			return SymConditions.eva_expr(source.get_execution(), condition, true);
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymCondition optimize_set_expr(SymCondition source, SymbolProcess context) throws Exception {
+		CirExpression location = (CirExpression) source.get_location();
+		SymbolExpression orig_expression = SymbolFactory.sym_expression(location);
+		SymbolExpression muta_expression = source.get_parameter();
+		if(source.get_operator() == SymOperator.set_bool) {
+			orig_expression = SymbolFactory.sym_condition(orig_expression, true);
+			muta_expression = SymbolFactory.sym_condition(muta_expression, true);
+		}
+		orig_expression = SymConditions.evaluate(orig_expression, context);
+		muta_expression = SymConditions.evaluate(muta_expression, context);
+		
+		if(orig_expression.equals(muta_expression)) {
+			return SymConditions.eva_expr(source.get_execution(), Boolean.FALSE, true);
+		}
+		else {
+			switch(source.get_operator()) {
+			case mut_expr:	return SymConditions.mut_expr(location, muta_expression);
+			case mut_refr:	return SymConditions.mut_refr(location, muta_expression);
+			case mut_stat:	return SymConditions.mut_stat(location, muta_expression);
+			case set_bool:	return SymConditions.set_bool(location, muta_expression);
+			case set_numb:	return SymConditions.set_numb(location, muta_expression);
+			case set_addr:	return SymConditions.set_addr(location, muta_expression);
+			case set_auto:	return SymConditions.set_auto(location, muta_expression);
+			default:		throw new IllegalArgumentException("Invalid: " + source);
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private static SymCondition optimize_mut_flow(SymCondition source) throws Exception {
+		CirExecution orig_target = SymConditions.execution_of(source.get_location());
+		CirExecution muta_target = (CirExecution) source.get_parameter().get_source();
+		if(orig_target == muta_target) {
+			return SymConditions.eva_expr(source.get_execution(), Boolean.FALSE, true);
+		}
+		else {
+			return source;
+		}
+	}
+	
+	/* evaluation methods */
+	/**
+	 * @param source
+	 * @param context
+	 * @return true(satisfied); false(not satisfied); null(unknown)
+	 * @throws Exception
+	 */
+	protected static Boolean evaluate(SymCondition source, SymbolProcess context) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else {
+			switch(source.get_operator()) {
+			case ast_kill:	return null;
+			case cir_kill:	return null;
+			
+			case cov_stmt:	return SymConditions.evaluate_cov_stmt(source, context);
+			case eva_expr:	return SymConditions.evaluate_eva_expr(source, context);
+			
+			case inc_exec:	return SymConditions.evaluate_mut_exec(source);
+			case dec_exec:	return SymConditions.evaluate_mut_exec(source);
+			case del_exec:	return SymConditions.evaluate_mut_exec(source);
+			
+			case mut_flow:	return SymConditions.evaluate_mut_flow(source);
+			
+			case mut_expr:	return SymConditions.evaluate_set_expr(source, context);
+			case mut_refr:	return SymConditions.evaluate_set_expr(source, context);
+			case mut_stat:	return SymConditions.evaluate_set_expr(source, context);
+			case set_bool:	return SymConditions.evaluate_set_expr(source, context);
+			case set_addr:	return SymConditions.evaluate_set_expr(source, context);
+			case set_auto:	return SymConditions.evaluate_set_expr(source, context);
+			case set_numb:	return SymConditions.evaluate_set_expr(source, context);
+			
+			case set_post:	return SymConditions.evaluate_set_post(source, context);
+			case set_negt:	return SymConditions.evaluate_set_negt(source, context);
+			case set_zero:	return SymConditions.evaluate_set_zero(source, context);
+			case set_npos:	return SymConditions.evaluate_set_npos(source, context);
+			case set_nneg:	return SymConditions.evaluate_set_nneg(source, context);
+			case set_nzro:	return SymConditions.evaluate_set_nzro(source, context);
+			case set_null:	return SymConditions.evaluate_set_zero(source, context);
+			case set_invp:	return SymConditions.evaluate_set_nzro(source, context);
+			case inc_scop:	return Boolean.TRUE;
+			case dec_scop:	return Boolean.TRUE;
+			case ext_scop:	return Boolean.TRUE;
+			case shk_scop:	return Boolean.TRUE;
+			
+			case chg_bool:	return Boolean.TRUE;
+			case chg_addr:	return Boolean.TRUE;
+			case chg_auto:	return Boolean.TRUE;
+			case chg_numb:	return Boolean.TRUE;
+			case trp_exec:	return Boolean.TRUE;
+				
+			default:		throw new IllegalArgumentException("Invalid source: null");
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_cov_stmt(SymCondition source, SymbolProcess context) throws Exception {
+		if(context != null) {
+			CirExecution execution = source.get_execution();
+			SymbolExpression key = SymbolFactory.sym_expression(execution);
+			SymbolExpression expect_times = source.get_parameter();
+			SymbolExpression actual_times = context.get_data_stack().load(key);
+			if(actual_times != null) {
+				int expect = ((SymbolConstant) expect_times).get_int();
+				int actual = ((SymbolConstant) actual_times).get_int();
+				return actual >= expect;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_eva_expr(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression condition = source.get_parameter();
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			return ((SymbolConstant) condition).get_bool();
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_mut_exec(SymCondition source) throws Exception {
+		CirStatement statement = source.get_execution().get_statement();
+		if(statement instanceof CirTagStatement) {
+			return Boolean.FALSE;
+		}
+		else {
+			return Boolean.TRUE;
+		}
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_mut_flow(SymCondition source) throws Exception {
+		CirExecution orig_target = SymConditions.execution_of(source.get_location());
+		CirExecution muta_target = (CirExecution) source.get_parameter().get_source();
+		if(orig_target == muta_target) {
+			return Boolean.FALSE;
+		}
+		else {
+			return Boolean.TRUE;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_expr(SymCondition source, SymbolProcess context) throws Exception {
+		CirExpression location = (CirExpression) source.get_location();
+		SymbolExpression orig_expression = SymbolFactory.sym_expression(location);
+		SymbolExpression muta_expression = source.get_parameter();
+		if(source.get_operator() == SymOperator.set_bool) {
+			orig_expression = SymbolFactory.sym_condition(orig_expression, true);
+			muta_expression = SymbolFactory.sym_condition(muta_expression, true);
+		}
+		orig_expression = SymConditions.evaluate(orig_expression, context);
+		muta_expression = SymConditions.evaluate(muta_expression, context);
+		
+		if(orig_expression.equals(muta_expression)) {
+			return Boolean.FALSE;
+		}
+		else {
+			SymbolExpression difference = SymbolFactory.not_equals(orig_expression, muta_expression);
+			difference = SymConditions.evaluate(difference, context);
+			if(difference instanceof SymbolConstant) {
+				return ((SymbolConstant) difference).get_bool();
+			}
+			else {
+				return null;
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_post(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.smaller_eq(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_negt(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.greater_eq(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_zero(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.not_equals(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_npos(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.greater_tn(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_nneg(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.smaller_tn(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
+	}
+	/**
+	 * @param source
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	private static Boolean evaluate_set_nzro(SymCondition source, SymbolProcess context) throws Exception {
+		SymbolExpression loperand = SymbolFactory.sym_expression(source.get_location());
+		SymbolExpression roperand = SymbolFactory.sym_constant(Integer.valueOf(0));
+		SymbolExpression condition = SymbolFactory.equal_with(loperand, roperand);
+		condition = SymConditions.evaluate(condition, context);
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return Boolean.TRUE;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			return null;
+		}
 	}
 	
 }
