@@ -4,8 +4,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.base;
  * 	Refined type of symbolic condition.<br>
  * 	<br>
  * 	<code>
- * 	kill_fault:ast_muta(e, e.s, mid)			<br>
- * 	kill_fault:cir_muta(e, e.s, mid.cid)		<br>
+ * 	kill_fault:ast_kill(e, e.s, mid)			<br>
+ * 	kill_fault:cir_kill(e, e.s, mid.cid)		<br>
  * 	<br>
  * 	evaluation:cov_stmt(e, e.s, time)			<br>
  * 	evaluation:eva_expr(e, e.s, expr)			<br>
@@ -51,12 +51,13 @@ package com.jcsa.jcmutest.mutant.cir2mutant.base;
  *	
  */
 public enum SymOperator {
-	ast_muta,	cir_muta,	
+	ast_kill,	cir_kill,	
 	cov_stmt,	eva_expr,
-	del_stmt,	inc_exec,	dec_exec,	mut_flow,
+	del_exec,	inc_exec,	dec_exec,	mut_flow,
 	mut_expr,	mut_refr,	mut_stat,
 	set_bool,	set_true,	set_fals,	chg_bool,
-	set_numb,	set_post,	set_negt,	set_zero,	set_npos,	set_nneg,	set_nzro,	chg_numb,
+	set_numb,	set_post,	set_negt,	set_zero,	
+	set_npos,	set_nneg,	set_nzro,	chg_numb,
 	set_addr,	set_null,	set_invp,	chg_addr,
 	inc_scop,	dec_scop,	ext_scop,	shk_scop,
 	set_auto,	chg_auto,

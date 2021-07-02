@@ -36,7 +36,7 @@ public class SymCondition {
 	 * @param parameter	symbolic expression or null if useless
 	 * @throws IllegalArgumentException
 	 */
-	private SymCondition(SymCategory category, SymOperator operator, CirExecution execution, 
+	protected SymCondition(SymCategory category, SymOperator operator, CirExecution execution, 
 			CirNode location, SymbolExpression parameter) throws IllegalArgumentException {
 		if(category == null)
 			throw new IllegalArgumentException("Invalid category: null");
