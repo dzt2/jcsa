@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 
-public class TTRPMutationParser extends CirMutationParser {
+public class TTRPCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {

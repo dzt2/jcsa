@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
-public class STRPMutationParser extends CirMutationParser {
+public class STRPCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {

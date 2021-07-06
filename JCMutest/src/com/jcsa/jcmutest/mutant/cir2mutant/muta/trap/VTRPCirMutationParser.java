@@ -17,7 +17,7 @@ import com.jcsa.jcparse.lang.scope.CScope;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-public class VTRPMutationParser extends CirMutationParser {
+public class VTRPCirMutationParser extends CirMutationParser {
 
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {

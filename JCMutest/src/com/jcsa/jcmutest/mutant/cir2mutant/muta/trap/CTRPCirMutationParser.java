@@ -16,7 +16,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 
-public class CTRPMutationParser extends CirMutationParser {
+public class CTRPCirMutationParser extends CirMutationParser {
 
 	/**
 	 * @param location
