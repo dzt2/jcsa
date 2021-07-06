@@ -14,8 +14,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class CirSetOperatorParsers {
 	
-	private static final Map<COperator, CirSetOperatorParser>
-		map = new HashMap<COperator, CirSetOperatorParser>();
+	private static final Map<COperator, CirSetOperatorParser> map = new HashMap<COperator, CirSetOperatorParser>();
 	static {
 		map.put(COperator.assign, 		new CirSetAssignParser());
 		
