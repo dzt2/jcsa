@@ -1,26 +1,28 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.util;
+package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
+/**
+ * The edge from parent (source) to child (target)
+ * @author yukimula
+ *
+ */
 public class CirMutationEdge {
 	
-	/* definitions */
-	/** the type of mutation edge **/
-	private CirMutationType type;
-	/** the node depending on the target **/
+	/* attributes */
+	private CirMutationFlow flow;
 	private CirMutationNode source;
-	/** the node that source depends on **/
 	private CirMutationNode target;
 	
 	/* constructor */
 	/**
-	 * @param type
-	 * @param source
-	 * @param target
+	 * @param flow		the type of the cir-mutation tree edge
+	 * @param source	the parent 
+	 * @param target	the child
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationEdge(CirMutationType type, CirMutationNode source, 
+	protected CirMutationEdge(CirMutationFlow flow, CirMutationNode source,
 				CirMutationNode target) throws IllegalArgumentException {
-		if(type == null) {
-			throw new IllegalArgumentException("Invalid type as null");
+		if(flow == null) {
+			throw new IllegalArgumentException("Invalid flow: null");
 		}
 		else if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
@@ -29,7 +31,7 @@ public class CirMutationEdge {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
 		else {
-			this.type = type;
+			this.flow = flow;
 			this.source = source;
 			this.target = target;
 		}
@@ -37,15 +39,15 @@ public class CirMutationEdge {
 	
 	/* getters */
 	/**
-	 * @return the type of mutation edge
+	 * @return the type of the cir-mutation tree edge
 	 */
-	public CirMutationType get_type() { return this.type; }
+	public CirMutationFlow get_flow() { return this.flow; }
 	/**
-	 * @return the node depending on the target
+	 * @return the parent
 	 */
 	public CirMutationNode get_source() { return this.source; }
 	/**
-	 * @return the node that source depends on
+	 * @return the child
 	 */
 	public CirMutationNode get_target() { return this.target; }
 	
