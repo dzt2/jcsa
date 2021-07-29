@@ -93,15 +93,24 @@ public class CirExecutionFlow {
 	 * @return whether the call-flow matches with the return flow as given
 	 */
 	public static boolean match_call_retr_flow(CirExecutionFlow call_flow, CirExecutionFlow retr_flow) {
-		if(call_flow == null || call_flow.type != CirExecutionFlowType.call_flow)
+		if(call_flow == null || retr_flow == null) {
 			return false;
-		else if(retr_flow == null || retr_flow.type != CirExecutionFlowType.retr_flow)
-			return false;
-		else {
+		}
+		/*
+		else if(call_flow == retr_flow 
+				&& call_flow.type == CirExecutionFlowType.skip_flow) {
+			return true;
+		}
+		*/
+		else if(call_flow.type == CirExecutionFlowType.call_flow 
+				&& retr_flow.type == CirExecutionFlowType.retr_flow) {
 			CirExecution call_execution = call_flow.source;
 			CirExecution wait_execution = retr_flow.target;
 			return call_execution.get_graph() == wait_execution.get_graph() &&
 					call_execution.get_id() + 1 == wait_execution.get_id();
+		}
+		else {
+			return false;
 		}
 	}
 	

@@ -8,12 +8,17 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
  */
 public enum CirMutationFlow {
 	
-	/** local subsumption or implication relation **/		subsume,
+	/* initialization */
+	/** ast_kill --> cir_kill  **/			ast_ext,
+	/** cir_kill --> condition **/			cir_pre,
+	/** cir_kill --> init_error **/			cir_pos,
 	
-	/** control dependence: cov_stmt --> eva_expr **/		control,
+	/* long dependence */
+	/** cov_stmt --> condition **/			cov_dep,
+	/** data_error propagate to **/			err_pas,
 	
-	/** error propagation edge: errors --> errors **/		pass_on,
-	
-	/** ast --> cir  **/									ast_cir,
+	/* local extension */
+	/** condition --> con | cov **/			log_ext,
+	/** data_error--> data_error **/		err_ext,
 	
 }

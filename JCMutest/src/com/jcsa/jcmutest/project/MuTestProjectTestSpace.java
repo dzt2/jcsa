@@ -229,7 +229,7 @@ public class MuTestProjectTestSpace {
 				get_instrument_file(this.get_instrumental_output_directory());
 		if(instrumental_file.exists()) {
 			CStatePath state_path = CStatePath.read_path(template, ast_tree, cir_tree, instrumental_file);
-			return CirExecutionPathFinder.finder.instrumental_path(state_path);
+			return CirExecutionPathFinder.finder.instrument_path(state_path);
 		}
 		else {
 			return null;	/* no instrumental results are found in */

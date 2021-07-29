@@ -2,15 +2,13 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Collection;
-
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
-import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 public class CirExecutionPathTest {
 	
@@ -23,9 +21,9 @@ public class CirExecutionPathTest {
 			if(cfile.getName().endsWith(".c")) {
 				// test_df_paths(cfile);
 				// test_db_paths(cfile);
-				// test_vf_paths(cfile);
+				test_vf_paths(cfile);
 				// test_vb_paths(cfile);
-				test_sf_paths(cfile);
+				// test_sf_paths(cfile);
 			}
 		}
 	}
@@ -164,37 +162,6 @@ public class CirExecutionPathTest {
 		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
 		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			output_vb_paths(writer, function);
-		}
-		writer.close();
-	}
-	
-	/* simple forward paths extension testings */
-	private static void output_sf_path(FileWriter writer, CirExecution source) throws Exception {
-		writer.write("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)) + "\n");
-		System.out.println("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)));
-		CirExecutionPath path = new CirExecutionPath(source);
-		Collection<CirExecutionPath> paths = CirExecutionPathFinder.finder.sf_extend(path, source.get_graph().get_exit());
-		for(CirExecutionPath simple_path : paths) {
-			output_path(writer, simple_path);
-		}
-	}
-	private static void output_sf_paths(FileWriter writer, CirFunction function) throws Exception {
-		System.out.println("BEG " + function.get_name());
-		writer.write("BEG " + function.get_name() + "\n");
-		for(int k = 1; k <= function.get_flow_graph().size(); k++) {
-			CirExecution execution = function.get_flow_graph().get_execution(k % function.get_flow_graph().size());
-			writer.write("\t" + execution.toString());
-			output_sf_path(writer, execution);
-		}
-		writer.write("END " + function.get_name() + "\n");
-		System.out.println("END " + function.get_name());
-	}
-	protected static void test_sf_paths(File cfile) throws Exception {
-		System.out.println("Testing on " + cfile.getName());
-		AstCirFile ast_file = parse(cfile);
-		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
-		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
-			output_sf_paths(writer, function);
 		}
 		writer.close();
 	}

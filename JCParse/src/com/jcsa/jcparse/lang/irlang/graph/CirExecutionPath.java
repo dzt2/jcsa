@@ -1,198 +1,172 @@
 package com.jcsa.jcparse.lang.irlang.graph;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 import java.util.Stack;
 
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
+
+
 /**
- * 	The execution path is defined as a sequence of execution flows with annotations, denoted as path.flows such that:<br>
- * 		1. path.source == flows[0].source;
- * 		2. path.target == flows[n - 1].target;
- * 		3. flows[k].target == flows[k + 1].source for any k >= 0 and k < flows.length - 1
- * 	in which n is the flows.length
- * 	@author yukimula
+ * It denotes a series of execution (edges) in the CFG to represent its path.
+ * 
+ * @author yukimula
  *
  */
 public class CirExecutionPath {
 	
-	/* definitions */
-	/** the source from which the path starts **/
+	/* attributes */
+	/** the source node of the path **/
 	private CirExecution source;
-	/** the target at which the path terminates **/
+	/** the target node of the path **/
 	private CirExecution target;
-	/** the sequence of execution flows performed in the path:
-	 * 	1. path.source == flows[0].source
-	 * 	2. path.target == flows[-1].target
-	 * 	3. flows[k].target == flows[k + 1].source **/
+	/** the sequence of edges linking the source to the target **/
 	private LinkedList<CirExecutionEdge> edges;
+	
+	/* constructor */
 	/**
-	 * create an empty path starting from the execution of statement as given
-	 * @param execution
+	 * create an empty path with one single node without any edges
+	 * @param source
 	 * @throws IllegalArgumentException
 	 */
-	public CirExecutionPath(CirExecution execution) throws IllegalArgumentException {
-		if(execution == null)
-			throw new IllegalArgumentException("Invalid execution: null");
+	public CirExecutionPath(CirExecution source) throws IllegalArgumentException {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
 		else {
-			this.source = execution;
-			this.target = execution;
+			this.source = source; this.target = source;
 			this.edges = new LinkedList<CirExecutionEdge>();
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return the source from which the path starts
+	 * @return the source node of the path 
 	 */
 	public CirExecution get_source() { return this.source; }
 	/**
-	 * @return the target at which the path terminates
+	 * @return the target node of the path 
 	 */
 	public CirExecution get_target() { return this.target; }
 	/**
-	 * @return the sequence of execution flows performed in the path
+	 * @return the length of the edges in the path
 	 */
-	public Iterable<CirExecutionEdge> get_edges() { return edges; }
+	public int get_length() { return this.edges.size(); }
 	/**
-	 * @return whether the path is empty without any edges in
+	 * @return whether the path is empty without any edeges
 	 */
 	public boolean is_empty() { return this.edges.isEmpty(); }
 	/**
-	 * @return the length of the path is the number of its edges
+	 * @return the sequence of execution flows in the path
 	 */
-	public int length() { return this.edges.size(); }
+	public Iterable<CirExecutionEdge> get_edges() { return this.edges; }
 	/**
-	 * @param k
-	 * @return the kth edge in the sequence of edges in the path
+	 * @param k [0, length - 1]
+	 * @return the kth edge in the path
 	 * @throws IndexOutOfBoundsException
 	 */
-	public CirExecutionEdge get_edge(int k) throws IndexOutOfBoundsException { return this.edges.get(k); }
+	public CirExecutionEdge get_edge(int k) throws IndexOutOfBoundsException {
+		return this.edges.get(k);
+	}
 	/**
-	 * @param k in [0, path.length]
-	 * @return nodes[0] == path.source; nodes[n] == path.target; nodes[k] == edges[k].source;
+	 * @param k
+	 * @return the flow of the kth edge in the path
+	 * @throws IndexOutOfBoundsException
+	 */
+	public CirExecutionFlow get_flow(int k) throws IndexOutOfBoundsException {
+		return this.get_edge(k).get_flow();
+	}
+	/**
+	 * @param k [0, length]
+	 * @return the kth node in the path
 	 * @throws IndexOutOfBoundsException
 	 */
 	public CirExecution get_node(int k) throws IndexOutOfBoundsException {
-		if(k < 0)
-			throw new IndexOutOfBoundsException("Invalid k: " + k);
-		else if(k < this.edges.size())
+		if(k < 0) {
+			throw new IndexOutOfBoundsException("Invalid index: " + k);
+		}
+		else if(k < this.edges.size()) {
 			return this.edges.get(k).get_source();
-		else if(k == this.edges.size())
+		}
+		else if(k == this.edges.size()) {
 			return this.target;
-		else
-			throw new IndexOutOfBoundsException("Invalid k: " + k);
-	}
-	
-	/* setters */
-	/**
-	 * clear the edges in the path and move path.target to path.source
-	 */
-	public void clc_to_first() {
-		for(CirExecutionEdge edge : this.edges)
-			edge.delete();
-		this.edges.clear();
-		this.target = this.source;
-	}
-	/**
-	 * clear the edges in the path and move path.source to path.target
-	 */
-	public void clc_to_final() {
-		for(CirExecutionEdge edge : this.edges) 
-			edge.delete();
-		this.edges.clear();
-		this.source = this.target;
-	}
-	/**
-	 * @param flow required: flow.target == path.source
-	 * @return insert the flow before the source of the path
-	 * @throws IllegalArgumentException
-	 */
-	public CirExecutionEdge add_first(CirExecutionFlow flow) throws IllegalArgumentException {
-		if(flow == null || flow.get_target() != this.source)
-			throw new IllegalArgumentException("Invalid flow: " + flow + " before " + this.source);
+		}
 		else {
-			CirExecutionEdge edge = new CirExecutionEdge(this, flow);
-			this.edges.addFirst(edge);
-			this.source = flow.get_source();
-			return edge;
+			throw new IndexOutOfBoundsException("Invalid index: " + k);
 		}
 	}
 	/**
-	 * @param flow required: flow.source == path.target
-	 * @return add the next flow into the path
-	 * @throws IllegalArgumentException
+	 * @param reverse whether to visit the edges in the path reversively
+	 * @return
 	 */
-	public CirExecutionEdge add_final(CirExecutionFlow flow) throws IllegalArgumentException {
-		if(flow == null || flow.get_source() != this.target)
-			throw new IllegalArgumentException("Invalid flow: " + flow + " since " + this.target);
+	public Iterator<CirExecutionEdge> get_iterator(boolean reverse) {
+		if(reverse) {
+			return this.edges.descendingIterator();
+		}
 		else {
-			CirExecutionEdge edge = new CirExecutionEdge(this, flow);
-			this.edges.addLast(edge);
-			this.target = flow.get_target();
-			return edge;
+			return this.edges.iterator();
 		}
 	}
 	/**
-	 * @return remove the first edge in the head of the path and update path.source
-	 * @throws IndexOutOfBoundsException
+	 * @return the iterator to access edge in sequence of the path
 	 */
-	public CirExecutionEdge del_first() throws IndexOutOfBoundsException {
-		if(this.edges.isEmpty())
-			throw new IndexOutOfBoundsException("Empty path cannot be deleted");
-		else {
-			CirExecutionEdge edge = this.edges.removeFirst();
-			this.source = edge.get_flow().get_target();
-			return edge;
-		}
-	}
+	public Iterator<CirExecutionEdge> get_iterator() { return this.edges.iterator(); }
 	/**
-	 * @return remove the final edge in the head of the path and update path.target
-	 * @throws IndexOutOfBoundsException
+	 * @return the first edge in the path
 	 */
-	public CirExecutionEdge del_final() throws IndexOutOfBoundsException {
-		if(this.edges.isEmpty())
-			throw new IndexOutOfBoundsException("Empty path cannot be deleted");
-		else {
-			CirExecutionEdge edge = this.edges.removeLast();
-			this.target = edge.get_flow().get_source();
-			return edge;
-		}
-	}
-	/**
-	 * @return the first edge in the path or null if the path is empty
-	 */
-	public CirExecutionEdge get_first() {
-		if(this.edges.isEmpty())
+	public CirExecutionEdge get_first_edge()  { 
+		if(this.edges.isEmpty()) {
 			return null;
-		else
+		}
+		else {
 			return this.edges.getFirst();
+		}
 	}
 	/**
-	 * @return the final edge in the path or null if the path is empty
+	 * @return the final edge in the path
+	 * @throws NoSuchElementException
 	 */
-	public CirExecutionEdge get_final() {
-		if(this.edges.isEmpty())
+	public CirExecutionEdge get_final_edge()  { 
+		if(this.edges.isEmpty()) {
 			return null;
-		else
+		}
+		else {
 			return this.edges.getLast();
+		}
 	}
 	/**
-	 * @return the first flow in the path or null if the path is empty
+	 * @return the flow of the first edge in the path
 	 */
 	public CirExecutionFlow get_first_flow() {
-		if(this.edges.isEmpty())
+		if(this.edges.isEmpty()) {
 			return null;
-		else
+		}
+		else {
 			return this.edges.getFirst().get_flow();
+		}
 	}
 	/**
-	 * @return the final flow in the path or null if the path is empty
+	 * @return the flow of the final edge in the path
 	 */
 	public CirExecutionFlow get_final_flow() {
-		if(this.edges.isEmpty())
+		if(this.edges.isEmpty()) {
 			return null;
-		else
+		}
+		else {
 			return this.edges.getLast().get_flow();
+		}
 	}
 	
 	/* universals */
@@ -214,7 +188,8 @@ public class CirExecutionPath {
 			return true;
 		else if(obj instanceof CirExecutionPath) {
 			CirExecutionPath path = (CirExecutionPath) obj;
-			if(path.source == this.source && path.target == this.target && path.length() == this.length()) {
+			if(path.source == this.source && path.target == this.target 
+							&& path.get_length() == this.get_length()) {
 				for(int k = 0; k < this.edges.size(); k++) {
 					if(!path.edges.get(k).get_flow().equals(this.edges.get(k).get_flow()))
 						return false;
@@ -231,105 +206,303 @@ public class CirExecutionPath {
 	public CirExecutionPath clone() {
 		CirExecutionPath path = new CirExecutionPath(this.source);
 		for(CirExecutionEdge edge : this.edges) {
-			path.add_final(edge.get_flow());
+			path.append(edge.get_flow());
 		}
+		path.target = this.target;
 		return path;
 	}
 	
-	/* implication */
+	/* setters */
 	/**
-	 * @return the edge of call flow that generates the context in which the path.target is executed
-	 * 		   or null if the path.target is on the top of the calling stack.
+	 * append the flow in the tail of the execution path and return the new edge
+	 * @param flow
+	 * @return the edge w.r.t. the flow appended from the tail of execution path
+	 * @throws IllegalArgumentException
 	 */
-	public CirExecutionEdge final_call_edge() throws Exception {
-		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
-		Iterator<CirExecutionEdge> iterator = this.edges.descendingIterator();
-		while(iterator.hasNext()) {
-			CirExecutionEdge edge = iterator.next();
-			if(edge.get_type() == CirExecutionFlowType.retr_flow) {
-				call_stack.push(edge.get_flow());
-			}
-			else if(edge.get_type() == CirExecutionFlowType.call_flow) {
-				if(call_stack.isEmpty()) {
-					return edge;
-				}
-				else {
-					CirExecutionFlow call_flow = edge.get_flow();
-					CirExecutionFlow retr_flow = call_stack.pop();
-					if(!CirExecutionFlow.match_call_retr_flow(call_flow, retr_flow))
-						throw new RuntimeException(call_flow + " ==> " + retr_flow);
-				}
+	public CirExecutionEdge append(CirExecutionFlow flow) throws IllegalArgumentException {
+		if(flow == null) {
+			throw new IllegalArgumentException("Invalid flow: null");
+		}
+		else if(this.target == flow.get_source()) {
+			CirExecutionEdge edge = new CirExecutionEdge(this, flow);
+			this.edges.add(edge); this.target = flow.get_target();
+			return edge;
+		}
+		else {
+			throw new IllegalArgumentException("Invalid flow: " + flow);
+		}
+	}
+	/**
+	 * insert the flow in the head of the execution path and return the new edge
+	 * @param flow
+	 * @return the edge w.r.t. the flow inserted into the head of execution path
+	 * @throws IllegalArgumentException
+	 */
+	public CirExecutionEdge insert(CirExecutionFlow flow) throws IllegalArgumentException {
+		if(flow == null) {
+			throw new IllegalArgumentException("Invalid flow: null");
+		}
+		else if(this.source == flow.get_target()) {
+			CirExecutionEdge edge = new CirExecutionEdge(this, flow);
+			this.edges.addFirst(edge); this.source = flow.get_source();
+			return edge;
+		}
+		else {
+			throw new IllegalArgumentException("Invalid flow: " + flow);
+		}
+	}
+	/**
+	 * connect the path on the left and extend this path
+	 * @param path
+	 * @throws Exception
+	 */
+	public void l_connect(CirExecutionPath path) throws Exception {
+		if(path == null) {
+			throw new IllegalArgumentException("Invalid path: null");
+		}
+		else if(path.target == this.source) {
+			Iterator<CirExecutionEdge> iterator = path.get_iterator(true);
+			while(iterator.hasNext()) {
+				CirExecutionEdge edge = iterator.next();
+				this.insert(edge.get_flow());
 			}
 		}
-		return null;
+		else {
+			throw new IllegalArgumentException("Invalid: " + path);
+		}
 	}
 	/**
-	 * @return the call flow that generates the context in which the path.target is executed
+	 * connect the path on the right and extend the path
+	 * @param path
 	 * @throws Exception
 	 */
-	public CirExecutionFlow final_call_flow() throws Exception {
-		CirExecutionEdge edge = this.final_call_edge();
-		if(edge == null)
-			return null;
-		else
-			return edge.get_flow();
+	public void r_connect(CirExecutionPath path) throws Exception {
+		if(path == null) {
+			throw new IllegalArgumentException("Invalid path: null");
+		}
+		else if(path.source == this.target) {
+			Iterator<CirExecutionEdge> iterator = path.get_iterator(false);
+			while(iterator.hasNext()) {
+				CirExecutionEdge edge = iterator.next();
+				this.append(edge.get_flow());
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + path);
+		}
 	}
+	
+	/* inference */
 	/**
-	 * @return the edge of return flow that corresponds to context where the path.source is executed
-	 * @throws Exception
+	 * @return the flow that calls the entry of the execution path
 	 */
-	public CirExecutionEdge first_retr_edge() throws Exception {
-		Stack<CirExecutionFlow> call_stack = new Stack<CirExecutionFlow>();
-		Iterator<CirExecutionEdge> iterator = this.edges.iterator();
+	public CirExecutionFlow get_call_flow_of_source() throws Exception {
+		/* 1. declarations */	
+		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		Iterator<CirExecutionEdge> iterator = this.get_iterator(false);
+		
+		/* 2. infer the call-point based on first return-flow */
 		while(iterator.hasNext()) {
 			CirExecutionEdge edge = iterator.next();
 			if(edge.get_type() == CirExecutionFlowType.call_flow) {
-				call_stack.push(edge.get_flow());
+				stack.push(edge.get_flow());
 			}
 			else if(edge.get_type() == CirExecutionFlowType.retr_flow) {
-				if(call_stack.isEmpty())
-					return edge;
-				else {
-					CirExecutionFlow call_flow = call_stack.pop();
+				if(stack.isEmpty()) {	/* infer based on the first return */
 					CirExecutionFlow retr_flow = edge.get_flow();
-					if(!CirExecutionFlow.match_call_retr_flow(call_flow, retr_flow))
-						throw new RuntimeException(call_flow + " ==> " + retr_flow);
+					CirExecution wait_execution = retr_flow.get_target();
+					CirExecution call_execution = wait_execution.get_graph().
+									get_execution(wait_execution.get_id() - 1);
+					return call_execution.get_ou_flow(0);	
+				}
+				else {
+					CirExecutionFlow call_flow = stack.pop();
+					CirExecutionFlow retr_flow = edge.get_flow();
+					if(!CirExecutionFlow.match_call_retr_flow(call_flow, retr_flow)) {
+						throw new RuntimeException(call_flow + " --> " + retr_flow);
+					}
 				}
 			}
 		}
-		return null;
-	}
-	/**
-	 * @return the return flow that corresponds to the context where the path.source is executed
-	 * @throws Exception
-	 */
-	public CirExecutionFlow first_retr_flow() throws Exception {
-		CirExecutionEdge edge = this.first_retr_edge();
-		if(edge == null)
-			return null;
-		else
-			return edge.get_flow();
-	}
-	/**
-	 * @param flow
-	 * @return whether there is edge in the path w.r.t. the given flow
-	 */
-	public boolean has_edge_of(CirExecutionFlow flow) {
-		if(flow == null)
-			return false;
+		
+		/* 3. infer the call-point based on local entry */
+		CirExecution source = this.source.get_graph().get_entry();
+		if(source.get_in_degree() == 1) {
+			return source.get_in_flow(0);
+		}
 		else {
-			for(CirExecutionEdge edge : this.edges) {
-				if(edge.get_flow().equals(flow))
-					return true;
-			}
-			return false;
+			return null;
 		}
 	}
 	/**
-	 * @return the iterator returns the edges in reversed sequence in the path
+	 * @return the flow that returns from the target of this path
+	 * @throws Exception
 	 */
-	public Iterator<CirExecutionEdge> get_reverse_edges() {
-		return this.edges.descendingIterator();
+	public CirExecutionFlow get_retr_flow_of_target() throws Exception {
+		/* 1. declarations */	
+		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		Iterator<CirExecutionEdge> iterator = this.get_iterator(true);
+		
+		/* 2. infer the retr-flow based on last call-point in path */
+		while(iterator.hasNext()) {
+			CirExecutionEdge edge = iterator.next();
+			if(edge.get_type() == CirExecutionFlowType.retr_flow) {
+				stack.push(edge.get_flow());
+			}
+			else if(edge.get_type() == CirExecutionFlowType.call_flow) {
+				if(stack.isEmpty()) {
+					CirExecutionFlow call_flow = edge.get_flow();
+					CirExecution call_execution = call_flow.get_source();
+					CirExecution wait_execution = call_execution.get_graph().
+									get_execution(call_execution.get_id() + 1);
+					return wait_execution.get_in_flow(0);
+				}
+				else {
+					CirExecutionFlow call_flow = edge.get_flow();
+					CirExecutionFlow retr_flow = stack.pop();
+					if(!CirExecutionFlow.match_call_retr_flow(call_flow, retr_flow)) {
+						throw new RuntimeException(call_flow + " --> " + retr_flow);
+					}
+				}
+			}
+		}
+		
+		/* 3. infer the retr-flow based on exit of the target function */
+		CirExecution target = this.target.get_graph().get_exit();
+		if(target.get_ou_degree() == 1) {
+			return target.get_ou_flow(0);
+		}
+		else {
+			return null;
+		}
+	}
+	private SymbolExpression condition_of(CirExpression expression) throws Exception {
+		return SymbolEvaluator.evaluate_on(SymbolFactory.sym_condition(expression, true));
+	}
+	/**
+	 * @param cross_function whether to collect input flows based on function-cross analysis
+	 * @return the set of possible flows reaching the source of the path
+	 * @throws Exception
+	 */
+	public Collection<CirExecutionFlow> get_in_flows_of_source(boolean cross_function) throws Exception {
+		Collection<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		if(this.source.get_in_degree() == 0) { /* no available flow */ }
+		else if(this.source.get_in_degree() == 1) {	/* unique flows */
+			flows.add(this.source.get_in_flow(0));
+		}
+		else {									/* context-sensitive decide */
+			CirStatement statement = this.source.get_statement();
+			if(statement instanceof CirBegStatement) {
+				CirExecutionFlow call_flow = this.get_call_flow_of_source();
+				if(call_flow != null) {
+					flows.add(call_flow);
+				}
+				else {
+					if(cross_function) {
+						for(CirExecutionFlow flow : this.source.
+								get_in_flows(CirExecutionFlowType.call_flow)) {
+							flows.add(flow);
+						}
+					}
+				}
+			}
+			else {
+				for(CirExecutionFlow flow : this.source.get_in_flows()) {
+					flows.add(flow);
+				}
+			}
+		}
+		return flows;
+	}
+	/**
+	 * @param cross_function whether to collect input flows based on function-cross analysis
+	 * @return the set of possible flows reaching from the target of the path
+	 * @throws Exception
+	 */
+	public Collection<CirExecutionFlow> get_ou_flows_of_target(boolean cross_function) throws Exception {
+		Collection<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		if(this.target.get_ou_degree() == 0) { /* none output flows */ }
+		else if(this.target.get_ou_degree() == 1) {	/* unique flow */
+			flows.add(this.target.get_ou_flow(0));
+		}
+		else {
+			CirStatement statement = this.target.get_statement();
+			if(statement instanceof CirIfStatement) {
+				SymbolExpression condition = this.condition_of(
+						((CirIfStatement) statement).get_condition());
+				Iterable<CirExecutionFlow> ou_flows;
+				if(condition instanceof SymbolConstant) {
+					if(((SymbolConstant) condition).get_bool()) {
+						ou_flows = this.target.get_ou_flows(CirExecutionFlowType.true_flow);
+					}
+					else {
+						ou_flows = this.target.get_ou_flows(CirExecutionFlowType.fals_flow);
+					}
+				}
+				else {
+					ou_flows = this.target.get_ou_flows();
+				}
+				for(CirExecutionFlow flow : ou_flows) flows.add(flow);
+			}
+			else if(statement instanceof CirCaseStatement) {
+				SymbolExpression condition = this.condition_of(
+						((CirCaseStatement) statement).get_condition());
+				Iterable<CirExecutionFlow> ou_flows;
+				if(condition instanceof SymbolConstant) {
+					if(((SymbolConstant) condition).get_bool()) {
+						ou_flows = this.target.get_ou_flows(CirExecutionFlowType.true_flow);
+					}
+					else {
+						ou_flows = this.target.get_ou_flows(CirExecutionFlowType.fals_flow);
+					}
+				}
+				else {
+					ou_flows = this.target.get_ou_flows();
+				}
+				for(CirExecutionFlow flow : ou_flows) flows.add(flow);
+			}
+			else if(statement instanceof CirEndStatement) {
+				CirExecutionFlow next_flow = this.get_retr_flow_of_target();
+				if(next_flow != null) {
+					flows.add(next_flow);
+				}
+				else {
+					if(cross_function) {
+						for(CirExecutionFlow flow : this.target.
+								get_ou_flows(CirExecutionFlowType.retr_flow)) {
+							flows.add(flow);
+						}
+					}
+				}
+			}
+			else {
+				for(CirExecutionFlow flow : this.target.get_ou_flows()) {
+					flows.add(flow);
+				}
+			}
+		}
+		return flows;
+	}
+	/**
+	 * @param beg_index
+	 * @param end_index
+	 * @return sub-sequence of path[beg_index: end_index] not including end_index
+	 * @throws Exception
+	 */
+	public CirExecutionPath get_path(int beg_index, int end_index) throws Exception {
+		if(beg_index < 0 || beg_index >= this.edges.size()) {
+			throw new IllegalArgumentException("Invalid beg_index: " + beg_index);
+		}
+		else if(end_index > this.edges.size()) {
+			throw new IllegalArgumentException("Invalid end_index: " + end_index);
+		}
+		else {
+			CirExecutionPath path = new CirExecutionPath(this.get_node(beg_index));
+			for(int index = beg_index; index < end_index; index++) {
+				path.append(this.edges.get(index).get_flow());
+			}
+			return path;
+		}
 	}
 	
 }

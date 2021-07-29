@@ -731,29 +731,19 @@ public class SymConditions {
 	/**
 	 * @param mutant
 	 * @param cir_mutation
-	 * @return kill_fault:ast_kill(entry, statement, "mid:hashcode")
+	 * @return kill_fault:ast_kill(entry, statement, cir_mutation)
 	 * @throws Exception
 	 */
-	public static SymCondition cir_kill(Mutant mutant, Object cir_mutation) throws Exception {
-		if(mutant == null) {
+	public static SymCondition cir_kill(CirMutation cir_mutation) throws Exception {
+		if(cir_mutation == null) {
 			throw new IllegalArgumentException("Invalid mutant: null");
 		}
 		else {
-			AstNode ast_location = mutant.get_mutation().get_location();
-			CirTree cir_tree = mutant.get_space().get_cir_tree();
-			while(ast_location != null) {
-				if(ast_location instanceof AstFunctionDefinition) {
-					CirStatement statement = cir_tree.get_localizer().beg_statement(ast_location);
-					CirExecution execution = SymConditions.execution_of(statement);
-					int mid = mutant.get_id(), cid = cir_mutation.toString().hashCode();
-					return new SymCondition(SymCategory.kill_fault, SymOperator.cir_kill, 
-							execution, statement, SymbolFactory.literal(mid + ":" + cid));
-				}
-				else {
-					ast_location = ast_location.get_parent();
-				}
-			}
-			throw new IllegalArgumentException("Not belong to any function");
+			CirExecution execution = SymConditions.execution_of(
+					cir_mutation.get_init_error().get_location());
+			CirNode location = cir_mutation.get_init_error().get_location();
+			return new SymCondition(SymCategory.kill_fault, SymOperator.cir_kill,
+					execution, location, SymbolFactory.literal(cir_mutation.toString()));
 		}
 	}
 	/**

@@ -1,5 +1,6 @@
 package com.jcsa.jcparse.lang.irlang.graph;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -166,6 +167,32 @@ public class CirExecution {
 	@Override
 	public String toString() {
 		return this.graph.get_function().get_name() + "[" + this.id + "]";
+	}
+	/**
+	 * @param type
+	 * @return the output flows w.r.t. the given type
+	 */
+	public Iterable<CirExecutionFlow> get_ou_flows(CirExecutionFlowType type) {
+		List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		for(CirExecutionFlow flow : this.ou) {
+			if(flow.get_type() == type) {
+				flows.add(flow);
+			}
+		}
+		return flows;
+	}
+	/**
+	 * @param type
+	 * @return the input flows w.r.t. the given type
+	 */
+	public Iterable<CirExecutionFlow> get_in_flows(CirExecutionFlowType type) {
+		List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		for(CirExecutionFlow flow : this.in) {
+			if(flow.get_type() == type) {
+				flows.add(flow);
+			}
+		}
+		return flows;
 	}
 	
 	/* setter */

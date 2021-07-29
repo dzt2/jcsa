@@ -147,7 +147,7 @@ class SymConditionUtil {
 			
 			/** improve until the first decidable branch to unify **/
 			CirExecutionPath prev_path = CirExecutionPathFinder.finder.db_extend(execution);
-			Iterator<CirExecutionEdge> iterator = prev_path.get_reverse_edges();
+			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
 			while(iterator.hasNext()) {
 				CirExecutionEdge edge = iterator.next();
 				CirStatement statement = edge.get_source().get_statement();
@@ -174,7 +174,7 @@ class SymConditionUtil {
 			/** improve non-const condition on decidbale path **/
 			else {
 				CirExecutionPath prev_path = CirExecutionPathFinder.finder.db_extend(execution);
-				Iterator<CirExecutionEdge> iterator = prev_path.get_reverse_edges();
+				Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
 				Collection<SymbolExpression> references = this.get_symbol_references_in(expression);
 				while(iterator.hasNext()) {
 					CirExecutionEdge edge = iterator.next();

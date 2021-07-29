@@ -28,6 +28,8 @@ public class SymCondition {
 	private CirNode location;
 	/** symbolic expression or null if useless **/
 	private SymbolExpression parameter;
+	
+	/* constructor */
 	/**
 	 * private creator for factory mode
 	 * @param category	either "assertion" or "observation"

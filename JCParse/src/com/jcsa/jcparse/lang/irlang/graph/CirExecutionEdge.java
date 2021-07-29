@@ -1,82 +1,75 @@
 package com.jcsa.jcparse.lang.irlang.graph;
 
+
 /**
- * The edge in execution path corresponds to an execution flow, as well as the 
- * annotation it correlated with.
+ * It represents an instance of execution flow in the CirExecutionPath.
  * 
  * @author yukimula
  *
  */
 public class CirExecutionEdge {
 	
-	/* definitions */
-	/** the path in which the execution edge is created **/
+	/* attributes */
+	/** the execution path where this edge is defined **/
 	private CirExecutionPath path;
-	/** the execution flow to which the edge correspond **/
+	/** the execution flow that this edge corresponds **/
 	private CirExecutionFlow flow;
-	/** the annotation correlated with the flow **/
+	/** the object to annotate this edge (as state) **/
 	private Object annotation;
 	
 	/* constructor */
 	/**
-	 * create an execution edge in the path w.r.t. the flow as given
+	 * create an edge of the flow in the context of the path
 	 * @param path
-	 * @param index
 	 * @param flow
 	 * @throws IllegalArgumentException
 	 */
-	protected CirExecutionEdge(CirExecutionPath path, CirExecutionFlow flow) throws IllegalArgumentException {
-		if(path == null)
+	protected CirExecutionEdge(CirExecutionPath path,
+			CirExecutionFlow flow) throws IllegalArgumentException {
+		if(path == null) {
 			throw new IllegalArgumentException("Invalid path: null");
-		else if(flow == null)
+		}
+		else if(flow == null) {
 			throw new IllegalArgumentException("Invalid flow: null");
+		}
 		else {
-			this.path = path;
-			this.flow = flow;
-			this.annotation = null;
+			this.path = path; this.flow = flow; this.annotation = null;
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return the path in which the execution edge is created
+	 * @return the execution path where this edge is defined
 	 */
 	public CirExecutionPath get_path() { return this.path; }
 	/**
-	 * @return the execution flow to which the edge corresponds
+	 * @return the execution flow that this edge corresponds
 	 */
 	public CirExecutionFlow get_flow() { return this.flow; }
 	/**
-	 * @return the annotation correlated with the flow in the edge
+	 * @return the object to annotate this edge (as state)
 	 */
 	public Object get_annotation() { return this.annotation; }
 	/**
-	 * set the annotation correlated with the flow in the edge
-	 * @param annotation
-	 */
-	public void set_annotation(Object annotation) { this.annotation = annotation; }
-	
-	/* implication */
-	/**
-	 * @return the source statement from which the edge points to target
-	 */
-	public CirExecution get_source() { return this.flow.get_source(); }
-	/**
-	 * @return the target statement to which the edge points from source
-	 */
-	public CirExecution get_target() { return this.flow.get_target(); }
-	/**
-	 * @return the type of the execution flow
+	 * @return the type of execution flow of this edge
 	 */
 	public CirExecutionFlowType get_type() { return this.flow.get_type(); }
 	/**
-	 * @return whether the execution flow is virtual
+	 * @return the source node of the execution flow of the edge
 	 */
-	public boolean is_virtual() { return this.flow.is_virtual(); }
+	public CirExecution get_source() { return this.flow.get_source(); }
 	/**
-	 * @return whether the execution flow is actual (not virtual)
+	 * @return the target node of the execution flow of the edge
 	 */
-	public boolean is_actual() { return this.flow.is_actual(); }
+	public CirExecution get_target() { return this.flow.get_target(); }
+	/**
+	 * @return whether the flow is virtual flow
+	 */
+	public boolean is_virtual_edge() { return this.flow.is_virtual(); }
+	/**
+	 * @return whether the flow is actual flow
+	 */
+	public boolean is_acutal_edge() { return this.flow.is_actual(); }
 	
 	/* universal */
 	@Override
@@ -92,6 +85,8 @@ public class CirExecutionEdge {
 		else
 			return false;
 	}
+	
+	/* setters */
 	/**
 	 * delete this edge from the path
 	 */
@@ -99,6 +94,13 @@ public class CirExecutionEdge {
 		this.path = null;
 		this.flow = null;
 		this.annotation = null;
+	}
+	/**
+	 * set the annotation of the edge in the path
+	 * @param annotation
+	 */
+	protected void set_annotation(Object annotation) {
+		this.annotation = annotation;
 	}
 	
 }
