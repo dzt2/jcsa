@@ -1,11 +1,9 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.CirNode;
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
-import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+
 
 /**
  * 	It denotes a symbolic attribute required in software testing. 			<br>
@@ -108,87 +106,44 @@ public abstract class CirAttribute {
 		}
 	}
 	
-	/* factory methods */
+	/* utility methods */
 	/**
-	 * @param execution
-	 * @param expression
-	 * @param value
-	 * @return {condition; execution; statement; expression;}
-	 * @throws Exception
+	 * @return whether the attribute is taken as a condition
 	 */
-	public static CirConstraint new_constraint(CirExecution execution, 
-				Object expression, boolean value) throws Exception {
-		return new CirConstraint(execution, SymbolFactory.sym_condition(expression, value));
+	public boolean is_constraint() {
+		switch(this.type) {
+		case cov_count:
+		case condition:	return true;
+		default:		return false;
+		}
 	}
 	/**
-	 * @param execution
-	 * @param times
-	 * @return
-	 * @throws Exception
+	 * @return {val_error; sta_error; ref_error;}
 	 */
-	public static CirCoverCount new_coverage_count(CirExecution execution, int times) throws Exception {
-		return new CirCoverCount(execution, SymbolFactory.sym_constant(Integer.valueOf(times)));
+	public boolean is_expr_error() {
+		switch(this.type) {
+		case val_error:
+		case sta_error:
+		case ref_error:	return true;
+		default:		return false;
+		}
 	}
 	/**
-	 * @param execution
-	 * @return {trp_error; execution; statement; true;}
-	 * @throws Exception
+	 * @return {trp_error; flw_error; blk_error;}
 	 */
-	public static CirTrapsError new_trap_error(CirExecution execution) throws Exception {
-		return new CirTrapsError(execution, SymbolFactory.sym_constant(Boolean.TRUE));
+	public boolean is_stmt_error() {
+		switch(this.type) {
+		case trp_error:
+		case flw_error:
+		case blk_error:	return true;
+		default:		return false;
+		}
 	}
 	/**
-	 * @param execution
-	 * @param execute
-	 * @return {blk_error; execution; statement; true|false;}
-	 * @throws Exception
+	 * @return {val_error; sta_error; ref_error; trp_error; flw_error; blk_error;}
 	 */
-	public static CirBlockError new_block_error(CirExecution execution, boolean execute) throws Exception {
-		return new CirBlockError(execution, SymbolFactory.sym_constant(Boolean.valueOf(execute)));
-	}
-	/**
-	 * @param orig_flow
-	 * @param muta_flow
-	 * @return {flw_error; if_exec; orig_target; muta_target;}
-	 * @throws Exception
-	 */
-	public static CirFlowsError new_flow_error(CirExecutionFlow orig_flow, CirExecutionFlow muta_flow) throws Exception {
-		return new CirFlowsError(orig_flow.get_source(), 
-				orig_flow.get_target().get_statement(),
-				SymbolFactory.sym_expression(muta_flow.get_target()));
-	}
-	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return {val_error; execution; expression; value;}
-	 * @throws Exception
-	 */
-	public static CirValueError new_value_error(CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new CirValueError(orig_expression.get_tree().get_localizer().
-				get_execution(orig_expression.statement_of()),
-				orig_expression, SymbolFactory.sym_expression(muta_expression));
-	}
-	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return {ref_error; execution; expression; value;}
-	 * @throws Exception
-	 */
-	public static CirReferError new_refer_error(CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new CirReferError(orig_expression.get_tree().get_localizer().
-				get_execution(orig_expression.statement_of()),
-				orig_expression, SymbolFactory.sym_expression(muta_expression));
-	}
-	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return {val_error; execution; expression; value;}
-	 * @throws Exception
-	 */
-	public static CirStateError new_state_error(CirExpression orig_expression, Object muta_expression) throws Exception {
-		return new CirStateError(orig_expression.get_tree().get_localizer().
-				get_execution(orig_expression.statement_of()),
-				orig_expression, SymbolFactory.sym_expression(muta_expression));
+	public boolean is_abst_error() {
+		return this.is_expr_error() || this.is_stmt_error();
 	}
 	
 }
