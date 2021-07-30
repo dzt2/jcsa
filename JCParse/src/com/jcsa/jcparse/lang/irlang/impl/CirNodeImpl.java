@@ -7,6 +7,8 @@ import java.util.List;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.parse.code.CodeGeneration;
 
@@ -118,6 +120,25 @@ public abstract class CirNodeImpl implements CirNode {
 			else node = node.get_parent();
 		}
 		return (CirFunctionDefinition) node;
+	}
+	
+	@Override
+	public CirExecution execution_of() {
+		CirNode node = this;
+		while(node != null) {
+			if(node instanceof CirStatement) {
+				try {
+					return this.tree.get_localizer().get_execution((CirStatement) this);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
+			else {
+				node = node.get_parent();
+			}
+		}
+		return null;
 	}
 	
 }

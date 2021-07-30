@@ -1,6 +1,7 @@
 package com.jcsa.jcparse.lang.irlang;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 
 /**
@@ -143,4 +144,11 @@ public interface CirNode {
 	 * @return null when the node is transition unit.
 	 */
 	public CirFunctionDefinition function_of();
+	
+	/**
+	 * @return the execution where the node is defined or null if it is not 
+	 * 			in any CFG-execution node in the graph
+	 */
+	public CirExecution execution_of();
+	
 }
