@@ -4,6 +4,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 public class CirBlockError extends CirAttribute {
 
@@ -11,18 +12,27 @@ public class CirBlockError extends CirAttribute {
 		super(CirAttributeType.blk_error, execution, execution.get_statement(), parameter);
 	}
 	
-	/* specialized */
 	/**
-	 * @return the statement being traped to exit the program as failure immediately
+	 * @return the statement to be mutated in execution
 	 */
-	public CirStatement get_statement() { return this.get_execution().get_statement(); }
+	public CirStatement get_statement() { return (CirStatement) this.get_location(); }
 	/**
-	 * @return whether to execute the statement 
+	 * @return whether the error incorrectly executes the statement when it should not be
 	 */
 	public boolean is_executed() { return ((SymbolConstant) this.get_parameter()).get_bool(); }
 	/**
-	 * @return whether to cancal the execution
+	 * @return whether the error incorrectly cancals the execution, when it should have been
 	 */
 	public boolean is_canceled() { return !((SymbolConstant) this.get_parameter()).get_bool(); }
+
+	@Override
+	public CirAttribute optimize(SymbolProcess context) throws Exception {
+		return this;
+	}
+
+	@Override
+	public Boolean evaluate(SymbolProcess context) throws Exception {
+		return true;
+	}
 	
 }

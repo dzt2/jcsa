@@ -1,26 +1,22 @@
 package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
- * 	It represents a state infection channel with a constraint (precondition) and 
- * 	initial state error (post-condition) around the mutated code location. <br>
- * 	
- * 	@author yukimula
+ * It denotes a basic infection channel with two attributes, said constraint
+ * (or precondition) and initial state error (post-condition).
+ * 
+ * @author yukimula
+ *
  */
 public class CirMutation {
 	
-	/* attributes */
+	/* definitions */
 	private CirAttribute constraint;
 	private CirAttribute init_error;
-	
-	/* constructor */
-	/**
-	 * @param constraint the precondition to cause infection in CIR source code
-	 * @param init_error the initial state error being caused, after infections
-	 * @throws IllegalArgumentException
-	 */
-	public CirMutation(CirAttribute constraint, CirAttribute init_error) throws IllegalArgumentException {
+	public CirMutation(CirAttribute constraint, CirAttribute 
+				init_error) throws IllegalArgumentException {
 		if(constraint == null || !constraint.is_constraint()) {
 			throw new IllegalArgumentException("Invalid constraint: " + constraint);
 		}
@@ -34,13 +30,17 @@ public class CirMutation {
 	
 	/* getters */
 	/**
-	 * @return the precondition to cause infection in CIR source code
+	 * @return state infection condition to infect
 	 */
 	public CirAttribute get_constraint() { return this.constraint; }
 	/**
-	 * @return the initial state error being caused, after infections
+	 * @return state error introduced in infection
 	 */
 	public CirAttribute get_init_error() { return this.init_error; }
+	/**
+	 * @return where the mutation is introduced and evaluated
+	 */
+	public CirExecution get_execution() { return this.init_error.get_execution(); }
 	
 	/* universal */
 	@Override

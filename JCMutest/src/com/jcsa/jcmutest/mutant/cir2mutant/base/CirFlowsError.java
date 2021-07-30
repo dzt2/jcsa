@@ -1,47 +1,51 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
-import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
-/**
- * {flw_error; if_exec; orig_target; muta_target;}
- * @author dzt2
- *
- */
 public class CirFlowsError extends CirAttribute {
 
-	protected CirFlowsError(CirExecution execution, CirNode location, SymbolExpression parameter)
+	protected CirFlowsError(CirExecutionFlow orig_flow, SymbolExpression parameter)
 			throws IllegalArgumentException {
-		super(CirAttributeType.flw_error, execution, location, parameter);
+		super(CirAttributeType.flw_error, orig_flow.get_source(), 
+				orig_flow.get_target().get_statement(), parameter);
 	}
 	
-	/* specialized */
 	/**
-	 * @return original flow being replaced
+	 * @return the original execution flow being replaced with
 	 * @throws Exception
 	 */
-	public CirExecutionFlow get_orig_flow() throws Exception {
+	public CirExecutionFlow get_original_flow() throws Exception {
 		CirExecution source = this.get_execution();
-		CirExecution orig_target = this.get_location().get_tree().
-				get_localizer().get_execution((CirStatement) this.get_location());
-		for(CirExecutionFlow ou_flow : source.get_ou_flows()) {
-			if(ou_flow.get_target() == orig_target) {
-				return ou_flow;
-			}
+		CirStatement target_statement = (CirStatement) this.get_location();
+		CirExecution target = target_statement.
+				get_tree().get_localizer().get_execution(target_statement);
+		for(CirExecutionFlow flow : source.get_ou_flows()) {
+			if(flow.get_target() == target) return flow;
 		}
-		throw new IllegalArgumentException("No flow to original target");
+		throw new IllegalArgumentException("Invalid source: " + source);
 	}
 	/**
-	 * @return mutation flow to replace with
+	 * @return the flow to replace the original flow in the error
 	 * @throws Exception
 	 */
-	public CirExecutionFlow get_muta_flow() throws Exception {
+	public CirExecutionFlow get_mutation_flow() throws Exception {
 		CirExecution source = this.get_execution();
-		CirExecution muta_target = (CirExecution) this.get_parameter().get_source();
-		return CirExecutionFlow.virtual_flow(source, muta_target);
+		CirExecution target = (CirExecution) this.get_parameter().get_source();
+		return CirExecutionFlow.virtual_flow(source, target);
+	}
+
+	@Override
+	public CirAttribute optimize(SymbolProcess context) throws Exception {
+		return this;
+	}
+
+	@Override
+	public Boolean evaluate(SymbolProcess context) throws Exception {
+		return this.get_original_flow().get_target() != this.get_mutation_flow().get_target();
 	}
 	
 }
