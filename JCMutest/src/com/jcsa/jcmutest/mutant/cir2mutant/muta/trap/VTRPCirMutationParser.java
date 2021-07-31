@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.trap;
 
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -64,7 +65,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		switch(mutation.get_operator()) {
 		case trap_on_pos:	
 		{
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, true);
 			}
 			else {
@@ -74,7 +75,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		}
 		case trap_on_zro:	
 		{
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, false);
 			}
 			else {
@@ -84,7 +85,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		}
 		case trap_on_neg:	
 		{
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_expression(Boolean.FALSE);
 			}
 			else {

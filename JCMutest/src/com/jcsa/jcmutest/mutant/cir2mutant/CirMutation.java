@@ -1,7 +1,13 @@
 package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 
 /**
  * It denotes a basic infection channel with two attributes, said constraint
@@ -57,6 +63,90 @@ public class CirMutation {
 		}
 		else {
 			return false;
+		}
+	}
+	
+	/* classifiers */
+	public static boolean is_boolean(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			CirNode parent = expression.get_parent();
+			if(parent instanceof CirIfStatement || parent instanceof CirCaseStatement) {
+				return true;
+			}
+			else {
+				try {
+					CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+					if(CTypeAnalyzer.is_boolean(type)) {
+						return true;
+					}
+					else {
+						return false;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();	
+					return false;
+				}
+			}
+		}
+	}
+	public static boolean is_numeric(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			try {
+				CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+				if(CTypeAnalyzer.is_number(type)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();	
+				return false;
+			}
+		}
+	}
+	public static boolean is_integer(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			try {
+				CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+				if(CTypeAnalyzer.is_integer(type)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();	
+				return false;
+			}
+		}
+	}
+	public static boolean is_pointer(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			try {
+				CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+				if(CTypeAnalyzer.is_pointer(type)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();	
+				return false;
+			}
 		}
 	}
 	

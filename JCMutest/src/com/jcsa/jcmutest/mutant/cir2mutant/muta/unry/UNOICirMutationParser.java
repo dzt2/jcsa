@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.unry;
 
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
@@ -30,7 +31,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		case insert_arith_neg:
 		{
 			condition = SymbolFactory.not_equals(expression, Integer.valueOf(0));
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				constraint = CirAttribute.new_constraint(execution, Boolean.FALSE, true);
 			}
 			else {
@@ -59,7 +60,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		}
 		case insert_abs_value:
 		{
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				constraint = CirAttribute.new_constraint(execution, Boolean.FALSE, true);
 			}
 			else {
@@ -73,7 +74,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		}
 		case insert_nabs_value:
 		{
-			if(CirAttribute.is_boolean(expression)) {
+			if(CirMutation.is_boolean(expression)) {
 				constraint = CirAttribute.new_constraint(execution, Boolean.FALSE, true);
 			}
 			else {

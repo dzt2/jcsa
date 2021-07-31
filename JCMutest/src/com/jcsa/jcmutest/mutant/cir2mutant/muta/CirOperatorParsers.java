@@ -1,20 +1,37 @@
-package com.jcsa.jcmutest.mutant.sym2mutant.muta.oprt;
+package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
-import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirSetOperatorParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithAddParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithDivParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithModParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithMulParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithSubParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetAssignParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetBitwsAndParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetBitwsIorParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetBitwsLshParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetBitwsRshParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetBitwsXorParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetEqualWithParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetGreaterEqParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetGreaterTnParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetLogicAndParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetLogicIorParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetNotEqualsParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetSmallerEqParser;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetSmallerTnParser;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
-public class CirSetOperatorParsers {
+public class CirOperatorParsers {
 	
-	private static final Map<COperator, CirSetOperatorParser> map = new HashMap<COperator, CirSetOperatorParser>();
+	private static final Map<COperator, CirOperatorParser> map = new HashMap<COperator, CirOperatorParser>();
 	
 	static {
 		map.put(COperator.assign, 		new CirSetAssignParser());
@@ -57,7 +74,7 @@ public class CirSetOperatorParsers {
 	public static boolean generate_infections(AstMutation mutation, 
 			CirStatement statement, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
-			Map<SymStateError, SymConstraint> infections) throws Exception {
+			Map<CirAttribute, CirAttribute> infections) throws Exception {
 		AstBinaryExpression location = (AstBinaryExpression) mutation.get_location();
 		return map.get(location.get_operator().get_operator()).generate_infections(
 					mutation, statement, expression, loperand, roperand, infections);
