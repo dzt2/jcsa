@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.enco;
+package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 public enum CirAnnotationClass {
 	/** cov_stmt; eva_expr; **/								constraint,

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.enco;
+package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcparse.lang.irlang.CirNode;
