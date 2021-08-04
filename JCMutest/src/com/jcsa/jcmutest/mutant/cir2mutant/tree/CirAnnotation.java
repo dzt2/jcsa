@@ -465,6 +465,24 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
 		}
 	}
+	/**
+	 * @param expression
+	 * @param value
+	 * @return numb_error:chg_numb:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_zero(CirExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_zero,
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+		}
+	}
 	/* addr_error */
 	/**
 	 * @param expression
@@ -495,6 +513,23 @@ public class CirAnnotation {
 		}
 		else if(CirMutation.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.set_invp,
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return addr_error:set_null:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_null(CirExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.set_null,
 					expression.execution_of(), expression, null);
 		}
 		else {

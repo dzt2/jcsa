@@ -19,6 +19,7 @@ public enum CirAnnotationType {
 	/** numb_error:set_numb:execution:expression:constant **/		set_numb,
 	/** numb_error:set_post:execution:expression:null **/			set_post,
 	/** numb_error:set_negt:execution:expression:null **/			set_negt,
+	/** numb_error:set_zero:execution:expression:null **/			set_zero,
 	/** numb_error:set_npos:execution:expression:null **/			set_npos,
 	/** numb_error:set_nneg:execution:expression:null **/			set_nneg,
 	/** numb_error:set_nzro:execution:expression:null **/			set_nzro,
@@ -27,6 +28,7 @@ public enum CirAnnotationType {
 	/* addr_error */
 	/** addr_error:set_addr:execution:expression:{NULL} **/			set_addr,
 	/** addr_error:set_invp:execution:expression:null **/			set_invp,
+	/** addr_error:set_null:execution:expression:null **/			set_null,
 	/** addr_error:chg_addr:execution:expression:null **/			chg_addr,
 	
 	/* auto_error */

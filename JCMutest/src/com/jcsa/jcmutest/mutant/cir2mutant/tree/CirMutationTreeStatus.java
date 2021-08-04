@@ -1,7 +1,9 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
@@ -21,6 +23,10 @@ public class CirMutationTreeStatus {
 	private List<Boolean> 		evaluation_results;
 	/** the set of concrete attributes generated from source **/
 	private List<CirAttribute> 	concrete_attributes;
+	/** the set of annotations generated for each evaluation **/
+	private Set<CirAnnotation>	concrete_annotations;
+	/** the set of abstract annotations accumulated from concrete set **/
+	private Set<CirAnnotation> 	abstract_annotations;
 	
 	/* constructor */
 	/**
@@ -36,6 +42,8 @@ public class CirMutationTreeStatus {
 			this.attribute = attribute;
 			this.evaluation_results = new ArrayList<Boolean>();
 			this.concrete_attributes = new ArrayList<CirAttribute>();
+			this.concrete_annotations = new HashSet<CirAnnotation>();
+			this.abstract_annotations = new HashSet<CirAnnotation>();
 		}
 	}
 	
@@ -52,20 +60,50 @@ public class CirMutationTreeStatus {
 	 * @return the set of concrete attributes generated from source
 	 */
 	public Iterable<CirAttribute> get_concrete_attributes() { return this.concrete_attributes; }
+	/**
+	 * @return the set of annotations (concrete) generated from the evaluation and analysis
+	 */
+	public Iterable<CirAnnotation> get_concrete_annotations() { return this.concrete_annotations; }
+	/**
+	 * @return the set of abstract annotations summarized from the concrete annotations
+	 */
+	public Iterable<CirAnnotation> get_abstract_annotations() { return this.abstract_annotations; }
 	
 	/* setters */
 	/**
 	 * clear the accumulated results and concrete attributes in the evaluation history
 	 */
-	protected void clc() { this.evaluation_results.clear(); this.concrete_attributes.clear(); }
+	protected void clc() { 
+		this.evaluation_results.clear(); 
+		this.concrete_attributes.clear(); 
+		this.abstract_annotations.clear(); 
+		this.concrete_annotations.clear();
+	}
 	/**
 	 * evaluate the source attribute and generate its concrete results in accumulation
 	 * @param context
 	 * @throws Exception
 	 */
-	protected void add(SymbolProcess context) throws Exception {
-		this.evaluation_results.add(attribute.evaluate(context));
-		this.concrete_attributes.add(attribute.optimize(context));
+	protected Boolean add(SymbolProcess context) throws Exception {
+		Boolean result = attribute.evaluate(context);
+		this.evaluation_results.add(result);
+		CirAttribute concrete_attribute = attribute.optimize(context);
+		this.concrete_attributes.add(concrete_attribute);
+		if(concrete_attribute.is_constraint()) {
+			CirMutationUtil.util.generate_concrete_annotations(attribute, concrete_annotations);
+		}
+		else {
+			CirMutationUtil.util.generate_concrete_annotations(concrete_attribute, concrete_annotations);
+		}
+		return result;
+	}
+	/**
+	 * generate the abstract annotations summarized from the concrete ones
+	 * @throws Exception
+	 */
+	protected void sum() throws Exception {
+		CirMutationUtil.util.summarize_abstract_annotations(
+				concrete_annotations, abstract_annotations);
 	}
 	
 	/* counters */
