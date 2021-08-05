@@ -869,7 +869,8 @@ public class MuTestProjectFeatureWriter {
 	 * @param dependence_graph
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_trees(CDependGraph dependence_graph) throws Exception {
+	private int write_cir_mutation_trees(CDependGraph dependence_graph) throws Exception {
+		int counter = 0;
 		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 			CirMutationTree tree;
 			try {
@@ -880,7 +881,9 @@ public class MuTestProjectFeatureWriter {
 			}
 			tree.evaluate();
 			this.write_cir_mutation_tree(tree, null);
+			counter++;
 		}
+		return counter;
 	}
 	/**
 	 * @param mutant
@@ -933,14 +936,14 @@ public class MuTestProjectFeatureWriter {
 	 * @param test_case
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_trees(TestInput test_case) throws Exception {
+	private int write_cir_mutation_trees(TestInput test_case) throws Exception {
 		/* loading path */
 		MuTestProjectTestSpace tspace = 
 				this.inputs.get_code_space().get_project().get_test_space();
 		CStatePath state_path = tspace.load_instrumental_path(
 				this.inputs.get_sizeof_template(), this.inputs.get_ast_tree(), 
 				this.inputs.get_cir_tree(), test_case);
-		if(state_path == null) { return; }
+		if(state_path == null) { return 0; }
 		
 		/* construction */
 		Collection<CirMutationTree> trees = new ArrayList<CirMutationTree>();
@@ -965,38 +968,44 @@ public class MuTestProjectFeatureWriter {
 		}
 		
 		/* output features */
+		int counter = 0;
 		for(CirMutationTree tree : trees) {
 			this.write_cir_mutation_tree(tree, test_case);
+			counter++;
 		}
+		return counter;
 	}
 	/**
-	 * static symbolic features
 	 * @param dependence_graph
 	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void write_symb_features(CDependGraph dependence_graph) throws Exception {
-		this.symbol_nodes.clear();
-		this.open(".stn"); this.write_cir_mutation_trees(dependence_graph); this.close();
-		this.open(".sym"); this.write_sym_nodes(); this.close();
-	}
-	/**
-	 * dynamic symbolic features
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_symb_features(Collection<TestInput> test_cases) throws Exception {
+	private void write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.symbol_nodes.clear();
 		this.open(".stn");
-		for(TestInput test_case : test_cases) {
-			this.write_cir_mutation_trees(test_case);
+		int lines = 0;
+		if(test_cases == null || test_cases.isEmpty()) {
+			lines += this.write_cir_mutation_trees(dependence_graph);
+		}
+		else {
+			for(TestInput test_case : test_cases) {
+				lines += this.write_cir_mutation_trees(test_case);
+			}
 		}
 		this.close();
-		
 		this.open(".sym"); this.write_sym_nodes(); this.close();
+		/* print information to console for debugging */
+		System.out.println("\t\tTODO create " + lines + " trees and " + this.symbol_nodes.size() + " symbolic nodes.");
 	}
 	
 	/* public interfaces for writing */
+	/**
+	 * write all the features {code, flow, test, symbolic}
+	 * @param input
+	 * @param output_directory
+	 * @param test_cases
+	 * @throws Exception
+	 */
 	private void write_all(MuTestProjectCodeFile input, 
 			File output_directory,
 			Collection<TestInput> test_cases) throws Exception {
@@ -1013,12 +1022,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_code_features();
 		this.write_test_features();
 		this.write_flow_features(dependence_graph);
-		if(test_cases == null || test_cases.isEmpty()) {
-			this.write_symb_features(dependence_graph);
-		}
-		else {
-			this.write_symb_features(test_cases);
-		}
+		this.write_symb_features(dependence_graph, test_cases);
 	}
 	public static void write_features(MuTestProjectCodeFile input, File output_directory) throws Exception {
 		writer.write_all(input, output_directory, null);
