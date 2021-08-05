@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>StructDecl --> SpecifierQualifierList StructDeclaratorList ;</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstStructDeclaration extends AstNode {

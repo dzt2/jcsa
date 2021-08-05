@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>gogo_stmt --> <b>goto</b> label ;</code>
- * 
+ *
  * @author yukimula
  *
  */

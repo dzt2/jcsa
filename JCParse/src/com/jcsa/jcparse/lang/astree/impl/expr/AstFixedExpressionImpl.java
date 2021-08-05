@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 /**
  * Superclass (abstract) for all expression with fixed size of children (except
  * comma_expr)
- * 
+ *
  * @author yukimula
  *
  */

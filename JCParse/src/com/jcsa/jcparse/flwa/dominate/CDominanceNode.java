@@ -12,12 +12,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 
 /**
  * The node in dominance graph of C program.
- * 
+ *
  * @author yukimula
  *
  */
 public class CDominanceNode {
-	
+
 	/* attributes */
 	/** the graph where the node is created **/
 	private CDominanceGraph graph;
@@ -27,7 +27,7 @@ public class CDominanceNode {
 	private List<CDominanceNode> in;
 	/** the set of nodes that are directly dominated by this node **/
 	private List<CDominanceNode> ou;
-	
+
 	/* constructor */
 	/**
 	 * create a node in the graph with respect to the instance provided
@@ -42,11 +42,11 @@ public class CDominanceNode {
 			throw new IllegalArgumentException("Invalid instance: null");
 		else {
 			this.graph = graph; this.instance = instance;
-			this.in = new LinkedList<CDominanceNode>();
-			this.ou = new LinkedList<CDominanceNode>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the dominance graph where this node belongs to
@@ -120,7 +120,7 @@ public class CDominanceNode {
 			return ((CirInstanceEdge) instance).get_flow();
 		else return null;
 	}
-	
+
 	/* setters */
 	/**
 	 * link this node to the target node as declaring that this node directly
@@ -131,14 +131,14 @@ public class CDominanceNode {
 	protected void dominate(CDominanceNode node) throws Exception {
 		if(node == null || node.graph != this.graph)
 			throw new IllegalArgumentException("Invalid graph: null");
-		else { 
+		else {
 			for(CDominanceNode next : this.ou) {
 				if(next == node) { return; }
 			}
 			this.ou.add(node); node.in.add(this);
 		}
 	}
-	
+
 	/* path generator */
 	/**
 	 * @return the sequence of execution flows that lead to this node from others
@@ -146,9 +146,9 @@ public class CDominanceNode {
 	 * @throws Exception
 	 */
 	public List<CirExecutionFlow> get_dominance_path() throws Exception {
-		List<CirExecutionFlow> edges = new ArrayList<CirExecutionFlow>();
+		List<CirExecutionFlow> edges = new ArrayList<>();
 		CDominanceNode node = this;
-		
+
 		while(node != null) {
 			if(node.is_flow()) {
 				CirExecutionFlow flow = node.get_flow();
@@ -160,7 +160,7 @@ public class CDominanceNode {
 				default: 		break;
 				}
 			}
-			
+
 			if(node.get_in_degree() > 0) {
 				node = node.get_in_node(0);
 			}
@@ -168,14 +168,14 @@ public class CDominanceNode {
 				node = null;
 			}
 		}
-		
+
 		for(int k = 0; k < edges.size() / 2; k++) {
 			CirExecutionFlow x = edges.get(k);
 			CirExecutionFlow y = edges.get(edges.size() - 1);
 			edges.set(k, y); edges.set(edges.size() - k - 1, x);
 		}
-		
+
 		return edges;
 	}
-	
+
 }

@@ -29,11 +29,11 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 
 public class CDependNode {
-	
+
 	private CDependGraph graph;
 	private CirInstanceNode instance;
 	private List<CDependEdge> in, ou;
-	
+
 	protected CDependNode(CDependGraph graph, CirInstanceNode instance) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
@@ -41,11 +41,11 @@ public class CDependNode {
 			throw new IllegalArgumentException("Invalid instance: null");
 		else {
 			this.graph = graph; this.instance = instance;
-			this.in = new LinkedList<CDependEdge>();
-			this.ou = new LinkedList<CDependEdge>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
-	
+
 	public CDependGraph get_graph() { return this.graph; }
 	public CirInstanceNode get_instance() { return this.instance; }
 	public CirExecution get_execution() { return this.instance.get_execution(); }
@@ -54,7 +54,7 @@ public class CDependNode {
 	public Iterable<CDependEdge> get_ou_edges() { return this.ou; }
 	protected void predicate_depend(CDependNode target, boolean predicate_value) throws Exception {
 		CirStatement target_stmt = target.get_statement();
-		
+
 		CDependEdge edge;
 		if(target_stmt instanceof CirIfStatement) {
 			CDependPredicate predicate = new CDependPredicate(
@@ -69,14 +69,14 @@ public class CDependNode {
 		else {
 			throw new IllegalArgumentException("Invalid: " + target_stmt);
 		}
-		
-		this.ou.add(edge); target.in.add(edge); 
+
+		this.ou.add(edge); target.in.add(edge);
 	}
 	protected void stmt_call_depend(CDependNode target) throws Exception {
 		if(target.get_statement() instanceof CirCallStatement) {
 			CDependEdge edge = new CDependEdge(CDependType.
 					stmt_call_depend, this, target, null);
-			this.ou.add(edge); target.in.add(edge); 
+			this.ou.add(edge); target.in.add(edge);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid target");
@@ -95,23 +95,23 @@ public class CDependNode {
 	protected void use_define_depend(CDependNode target) throws Exception {
 		CirStatement source_stmt = this.get_statement();
 		CirStatement target_stmt = target.get_statement();
-		
+
 		if(target_stmt instanceof CirAssignStatement) {
 			CirExpression def = ((CirAssignStatement) target_stmt).get_lvalue();
-			Set<CirExpression> usage_set = new HashSet<CirExpression>();
+			Set<CirExpression> usage_set = new HashSet<>();
 			this.collect_usage_set(source_stmt, usage_set, def.generate_code(true));
-			
+
 			if(!usage_set.isEmpty()) {
 				CirExecution source_execution = this.get_execution();
 				CirExecution target_execution = target.get_execution();
 				Set<CirExecutionFlow> flows = this.get_reachable_set(target_execution, source_execution);
-				
+
 				for(CirExpression use : usage_set) {
 					CDependReference reference = new CDependReference(def, use);
 					reference.set_flow_path(flows);
-					
+
 					CDependEdge edge = new CDependEdge(CDependType.use_defin_depend, this, target, reference);
-					this.ou.add(edge); target.in.add(edge); 
+					this.ou.add(edge); target.in.add(edge);
 				}
 			}
 		}
@@ -142,7 +142,7 @@ public class CDependNode {
 				uses.add(expression);
 			}
 		}
-		
+
 		if(expression instanceof CirDeferExpression) {
 			this.collect_usage_set(((CirDeferExpression) expression).get_address(), uses, key);
 		}
@@ -172,7 +172,7 @@ public class CDependNode {
 		else if(expression instanceof CirWaitExpression) {
 			this.collect_usage_set(((CirWaitExpression) expression).get_function(), uses, key);
 		}
-		
+
 	}
 	private void solve_reachable_set(CirExecutionFlow flow, CirExecution target, Map<CirExecutionFlow, Boolean> solutions) throws Exception {
 		if(!solutions.containsKey(flow)) {
@@ -181,7 +181,7 @@ public class CDependNode {
 			}
 			else {
 				solutions.put(flow, false);
-				
+
 				CirExecution next_execution;
 				switch(flow.get_type()) {
 				case call_flow:
@@ -193,7 +193,7 @@ public class CDependNode {
 				case retr_flow: next_execution = null; break;
 				default: next_execution = flow.get_target(); break;
 				}
-				
+
 				if(next_execution != null) {
 					boolean reach = false;
 					for(CirExecutionFlow next_flow : next_execution.get_ou_flows()) {
@@ -206,26 +206,26 @@ public class CDependNode {
 		}
 	}
 	private Set<CirExecutionFlow> get_reachable_set(CirExecution source, CirExecution target) throws Exception {
-		Map<CirExecutionFlow, Boolean> solutions = new HashMap<CirExecutionFlow, Boolean>();
+		Map<CirExecutionFlow, Boolean> solutions = new HashMap<>();
 		for(CirExecutionFlow flow : source.get_ou_flows()) {
 			this.solve_reachable_set(flow, target, solutions);
 		}
-		
-		Set<CirExecutionFlow> all_flows = new HashSet<CirExecutionFlow>();
+
+		Set<CirExecutionFlow> all_flows = new HashSet<>();
 		for(CirExecutionFlow flow : solutions.keySet()) {
 			if(solutions.get(flow)) {
 				all_flows.add(flow);
 			}
 		}
-		
-		Set<CirExecutionFlow> control_flows = new HashSet<CirExecutionFlow>();
+
+		Set<CirExecutionFlow> control_flows = new HashSet<>();
 		for(CirExecutionFlow flow : all_flows) {
 			switch(flow.get_type()) {
 			case true_flow:
 			case fals_flow:
 			{
 				CirExecution if_execution = flow.get_source();
-				if(!(all_flows.contains(if_execution.get_ou_flow(0))) || 
+				if(!(all_flows.contains(if_execution.get_ou_flow(0))) ||
 					!(all_flows.contains(if_execution.get_ou_flow(1)))) {
 					control_flows.add(flow);
 				}
@@ -234,28 +234,28 @@ public class CDependNode {
 			default: break;
 			}
 		}
-		
+
 		return control_flows;
 	}
 	protected void param_arg_depend(CDependNode target, CirExpression argument) throws Exception {
 		CirAssignStatement assign = (CirAssignStatement) this.get_statement();
 		CDependReference reference = new CDependReference(argument, assign.get_rvalue());
 		reference.add_flow(target.get_execution().get_ou_flow(0));
-		
+
 		CDependEdge edge = new CDependEdge(CDependType.param_arg_depend, this, target, reference);
-		this.ou.add(edge); target.in.add(edge); 
+		this.ou.add(edge); target.in.add(edge);
 	}
 	protected void wait_retr_depend(CDependNode target) throws Exception {
 		CirWaitAssignStatement wait_stmt = (CirWaitAssignStatement) this.get_statement();
 		CirReturnAssignStatement retr_stmt = (CirReturnAssignStatement) target.get_statement();
-		
+
 		CDependReference reference = new CDependReference(retr_stmt.get_lvalue(), wait_stmt.get_rvalue());
 		reference.add_flow(this.get_execution().get_in_flow(0));
-		
+
 		CDependEdge edge = new CDependEdge(CDependType.wait_retr_depend, this, target, reference);
-		this.ou.add(edge); target.in.add(edge); 
+		this.ou.add(edge); target.in.add(edge);
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.get_execution().toString() + "@" + this.instance.get_context().hashCode();

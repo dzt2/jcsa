@@ -6,9 +6,9 @@ package com.jcsa.jcparse.lang.symbol;
  *
  */
 public class SymbolArgumentList extends SymbolUnit {
-	
+
 	private SymbolArgumentList() { }
-	
+
 	/**
 	 * @return the number of arguments under the list
 	 */
@@ -26,7 +26,7 @@ public class SymbolArgumentList extends SymbolUnit {
 	protected SymbolNode construct() throws Exception {
 		return new SymbolArgumentList();
 	}
-	
+
 	/**
 	 * @param arguments
 	 * @return argument_list |-- ( expression* )
@@ -34,9 +34,9 @@ public class SymbolArgumentList extends SymbolUnit {
 	 */
 	protected static SymbolArgumentList create(Iterable<SymbolExpression> arguments) throws Exception {
 		SymbolArgumentList list = new SymbolArgumentList();
-		for(SymbolExpression argument : arguments) 
+		for(SymbolExpression argument : arguments)
 			list.add_child(argument);
 		return list;
 	}
-	
+
 }

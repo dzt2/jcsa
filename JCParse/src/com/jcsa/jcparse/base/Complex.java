@@ -2,17 +2,17 @@ package com.jcsa.jcparse.base;
 
 /**
  * Complex describes the complex number with one real and one imaginary as a + b * i
- * 
+ *
  * @author yukimula
  */
 public class Complex {
-	
+
 	/* properties */
 	/** real-value **/
 	private double real;
 	/** imaginary **/
 	private double imag;
-	
+
 	/* constructor */
 	/**
 	 * create a complex-value with specified real and imaginary
@@ -47,7 +47,7 @@ public class Complex {
 			this.real = x.real; this.imag = x.imag;
 		}
 	}
-	
+
 	/* getter */
 	/**
 	 * get the real-value
@@ -59,7 +59,7 @@ public class Complex {
 	 * @return
 	 */
 	public double get_y() { return this.imag; }
-	
+
 	/* common */
 	@Override
 	public boolean equals(Object val) {
@@ -71,7 +71,7 @@ public class Complex {
 			return (this.imag == 0.0) && (val.equals(this.real));
 		}
 		else if(val instanceof Complex) {
-			return (this.real == ((Complex) val).real) 
+			return (this.real == ((Complex) val).real)
 					&& (this.imag == ((Complex) val).imag);
 		}
 		else return false;
@@ -80,7 +80,7 @@ public class Complex {
 	public String toString() {
 		return this.real + " + " + this.imag + " * i";
 	}
-	
+
 	/* computation */
 	/**
 	 * x.real + y.real, x.imag + y.imag
@@ -190,7 +190,7 @@ public class Complex {
 			throw new IllegalArgumentException("invalid x: null");
 		else return new Complex(-x.real, -x.imag);
 	}
-	
+
 	/* computation-2 */
 	/**
 	 * x.real + y.real, x.imag + y.imag
@@ -214,7 +214,7 @@ public class Complex {
 	 */
 	public Complex mul(Complex y) throws Exception { return Complex.mul(this, y); }
 	/**
-	 * 
+	 *
 	 * @param y
 	 * @return
 	 * @throws Exception
@@ -245,5 +245,5 @@ public class Complex {
 	 * @return
 	 */
 	public Complex neg() { return new Complex(-this.real, -this.imag); }
-	
+
 }

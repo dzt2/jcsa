@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>init_decl_list --> init_declarator (, init_declarator)*</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstInitDeclaratorList extends AstNode {

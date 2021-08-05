@@ -19,12 +19,12 @@ import com.jcsa.jcparse.parse.CTranslate;
 
 /**
  * It manages the data model of source code in C programming language.
- * 
+ *
  * @author yukimula
  *
  */
 public class AstCirFile {
-	
+
 	/* attributes */
 	/** the source code file **/
 	private File source_code_file;
@@ -36,7 +36,7 @@ public class AstCirFile {
 	private CirTree cir_tree;
 	/** C-function calling graph **/
 	private CirFunctionCallGraph call_graph;
-	
+
 	/* constructor */
 	/**
 	 * create AST-CIR file w.r.t. source code file under the template
@@ -57,7 +57,7 @@ public class AstCirFile {
 			this.call_graph = this.cir_tree.get_function_call_graph();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return source code file
@@ -215,7 +215,7 @@ public class AstCirFile {
 	public CirFunction get_cir_main_function() throws Exception {
 		return this.cir_tree.get_function_call_graph().get_main_function();
 	}
-	
+
 	/* factory method */
 	/**
 	 * @param source_file
@@ -227,5 +227,5 @@ public class AstCirFile {
 	public static AstCirFile parse(File source_file, File template_file, ClangStandard standard) throws Exception {
 		return new AstCirFile(source_file, template_file, standard);
 	}
-	
+
 }

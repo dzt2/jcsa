@@ -22,12 +22,12 @@ import com.jcsa.jcparse.test.state.CStateUnit;
 /**
  * SymbolProcess is the basic top instance to represent a program process being executed symbolically by the engine,
  * which maintains necessary data elements for analysis, including the local memory stack etc.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymbolProcess {
-	
+
 	/* definitions */
 	/** abstract syntactic tree of the program being executed **/
 	private AstTree ast_tree;
@@ -39,7 +39,7 @@ public class SymbolProcess {
 	private Collection<SymbolInvoker> invokers;
 	/** it simulates the data stack used in local memory system **/
 	private SymbolDataStack data_stack;
-	
+
 	/* constructor */
 	/**
 	 * create a new process to symbolically execute the given program
@@ -56,14 +56,14 @@ public class SymbolProcess {
 			this.ast_tree = ast_tree;
 			this.cir_tree = cir_tree;
 			this.symbol_factory = new SymbolFactory();
-			this.invokers = new HashSet<SymbolInvoker>();
+			this.invokers = new HashSet<>();
 			this.data_stack = new SymbolDataStack(this);
-			
+
 			/* NOTE add default invokers here */
 			this.add_invoker(new SymbolMathPackageInvoker());
 		}
 	}
-	
+
 	/* basic getters */
 	/**
 	 * @return abstract syntactic tree of the program being executed
@@ -82,7 +82,7 @@ public class SymbolProcess {
 	 */
 	public Iterable<SymbolInvoker> get_invokers() { return this.invokers; }
 	/**
-	 * @return it simulates the data stack used in local memory system 
+	 * @return it simulates the data stack used in local memory system
 	 */
 	public SymbolDataStack get_data_stack() { return this.data_stack; }
 	/**
@@ -93,7 +93,7 @@ public class SymbolProcess {
 	public void add_invoker(SymbolInvoker invoker) throws Exception {
 		if(invoker == null)
 			throw new IllegalArgumentException("Invalid invoker: null");
-		else 
+		else
 			this.invokers.add(invoker);
 	}
 	/**
@@ -116,7 +116,7 @@ public class SymbolProcess {
 					}
 				}
 			}
-			
+
 			/* 2. update the scope at the border of function */
 			CirStatement statement = node.get_statement();
 			CirFunction def = statement.get_tree().get_localizer().
@@ -127,7 +127,7 @@ public class SymbolProcess {
 			else if(statement instanceof CirEndStatement) {
 				this.data_stack.pop_block(def);
 			}
-			
+
 			/* 3. update the local state in current scope */
 			for(CStateUnit unit : node.get_units()) {
 				if(unit.has_value()) {
@@ -137,7 +137,7 @@ public class SymbolProcess {
 					this.data_stack.save(unit.get_expression(), target);
 				}
 			}
-			
+
 			/* 4. accumulate the statement as being executed */
 			SymbolExpression value = this.data_stack.load(statement);
 			int counter = 0;
@@ -148,5 +148,5 @@ public class SymbolProcess {
 			this.data_stack.save(statement, Integer.valueOf(counter));
 		}
 	}
-	
+
 }

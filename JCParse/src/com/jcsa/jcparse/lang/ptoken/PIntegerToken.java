@@ -11,28 +11,28 @@ import com.jcsa.jcparse.lang.lexical.CNumberEncode;
  * <br>
  * int_suffix |--> (u|U)? (l|ll|L|LL)? <br>
  * |--> (l|ll|L|LL)? (u|U)? <br>
- * 
+ *
  * @author yukimula
  *
  */
 public interface PIntegerToken extends PToken {
 	/**
 	 * get the encode of this integer
-	 * 
+	 *
 	 * @return
 	 */
 	public CNumberEncode get_encode();
 
 	/**
 	 * get the number literal of this integer
-	 * 
+	 *
 	 * @return
 	 */
 	public String get_int_literal();
 
 	/**
 	 * get the suffix of integer
-	 * 
+	 *
 	 * @return
 	 */
 	public String get_int_suffix();

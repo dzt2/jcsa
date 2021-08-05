@@ -28,7 +28,7 @@ import com.jcsa.jcparse.test.CommandUtil;
  *
  */
 public class JCTestProjectFiles {
-	
+
 	/* parameters for file names */
 	private static final String c_file_directory_name = "cfiles";
 	private static final String i_file_directory_name = "ifiles";
@@ -44,7 +44,7 @@ public class JCTestProjectFiles {
 	private static final String instrument_stderr_file_name = "instrument.err";
 	private static final String instrument_result_file_name = "instrument.txt";
 	private static final String config_directory_name = "config";
-	
+
 	/* attributes */
 	/** root directory where the project is saved **/
 	private File root;
@@ -76,7 +76,7 @@ public class JCTestProjectFiles {
 	private File instrument_result_file;
 	/** the directory where the configuration data is saved **/
 	private File config_directory;
-	
+
 	/* constructor */
 	/**
 	 * @param dir the directory that is going to be created
@@ -128,7 +128,7 @@ public class JCTestProjectFiles {
 			this.config_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + config_directory_name));
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return root directory where the project is saved
@@ -190,5 +190,5 @@ public class JCTestProjectFiles {
 	 * @return the directory where the configuration data is saved
 	 */
 	public File get_config_directory() { return this.config_directory; }
-	
+
 }

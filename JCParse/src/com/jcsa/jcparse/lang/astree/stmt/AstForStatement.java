@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 
 /**
  * <code><b>for</b> ( (decl_stmt | expr_stmt) expr_stmt (expr)? ) stmt</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstForStatement extends AstStatement {

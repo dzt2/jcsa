@@ -6,10 +6,10 @@ package com.jcsa.jcparse.lang.symbol;
  *
  */
 public class SymbolField extends SymbolUnit {
-	
+
 	/** the name of the field **/
 	private String name;
-	
+
 	/**
 	 * field |-- {name: String}
 	 * @param name
@@ -22,17 +22,17 @@ public class SymbolField extends SymbolUnit {
 			this.name = name.trim();
 		}
 	}
-	
+
 	/**
-	 * @return the name of the field 
+	 * @return the name of the field
 	 */
 	public String get_name() { return this.name; }
-	
+
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolField(this.name);
 	}
-	
+
 	/**
 	 * field |-- {name: String}
 	 * @param name
@@ -42,5 +42,5 @@ public class SymbolField extends SymbolUnit {
 	protected static SymbolField create(String name) throws Exception {
 		return new SymbolField(name);
 	}
-	
+
 }

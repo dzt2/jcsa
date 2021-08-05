@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  *
  */
 class ACPLabelsTarget {
-	
+
 	/* definitions and constructor */
 	private ACPScope scope;
 	private String label_name;
@@ -27,11 +27,11 @@ class ACPLabelsTarget {
 		else {
 			this.scope = scope;
 			this.label_name = label_name;
-			this.labels = new ArrayList<CirLabel>();
+			this.labels = new ArrayList<>();
 			this.target = null;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the scope where the label-target instance is created
@@ -58,7 +58,7 @@ class ACPLabelsTarget {
 			throw new IllegalArgumentException("invalid label: null");
 		else {
 			this.labels.add(label);
-			if(this.target != null) 
+			if(this.target != null)
 				label.set_target_node_id(target.get_node_id());
 		}
 	}
@@ -89,5 +89,5 @@ class ACPLabelsTarget {
 	 * @return
 	 */
 	public CirStatement get_target() { return target; }
-	
+
 }

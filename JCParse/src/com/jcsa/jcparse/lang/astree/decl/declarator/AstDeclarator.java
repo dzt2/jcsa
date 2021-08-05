@@ -4,19 +4,19 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
- * <code>declarator |-->  pointer declarator 
+ * <code>declarator |-->  pointer declarator
  * 						| declarator dimension
  * 						| declarator parambody
  * 						| ( declarator )
  * 						| identifier </code>
- * 
+ *
  * @author yukimula
  *
  */
 public interface AstDeclarator extends AstNode {
 	/**
 	 * production of declarator
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */

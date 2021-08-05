@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
  * 1. character: 'a', '\036', '\xff', L'1' <br>
  * 2. integer: 0, 037, 150, 0xa0ff, 647L, 4218258ul <br>
  * 3. floating: 0., .125, 5.486e-3, 28E32 <br>
- * 
+ *
  * @author yukimula
  */
 public class CConstant {
@@ -25,7 +25,7 @@ public class CConstant {
 
 	/**
 	 * whether there is data in the constant
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean has_value() {
@@ -34,13 +34,13 @@ public class CConstant {
 
 	/**
 	 * get the basic type of this constant
-	 * 
+	 *
 	 * @return
 	 */
 	public CBasicType get_type() {
 		return type;
 	}
-	
+
 	/**
 	 * set as <b>_Bool</b>
 	 * @param val
@@ -49,10 +49,10 @@ public class CConstant {
 		type = CBasicTypeImpl.bool_type;
 		data = Boolean.valueOf(val);
 	}
-	
+
 	/**
 	 * set as <b>char</b>
-	 * 
+	 *
 	 * @param ch
 	 */
 	public void set_char(char ch) {
@@ -62,7 +62,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>wchar_t</b>
-	 * 
+	 *
 	 * @param ch
 	 */
 	public void set_wchar(char ch) {
@@ -72,7 +72,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>int</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_int(int val) {
@@ -82,7 +82,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>unsigned</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_uint(int val) {
@@ -92,7 +92,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>long</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_long(long val) {
@@ -102,7 +102,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>unsigned long</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_ulong(long val) {
@@ -112,7 +112,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>long long</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_llong(long val) {
@@ -122,7 +122,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>unsigned long long</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_ullong(long val) {
@@ -132,7 +132,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>float</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_float(float val) {
@@ -142,7 +142,7 @@ public class CConstant {
 
 	/**
 	 * set as <b>double</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_double(double val) {
@@ -152,23 +152,23 @@ public class CConstant {
 
 	/**
 	 * set as <b>long double</b>
-	 * 
+	 *
 	 * @param val
 	 */
 	public void set_ldouble(double val) {
 		type = CBasicTypeImpl.ldouble_type;
 		data = Double.valueOf(val);
 	}
-	
+
 	/**
 	 * get the boolean value hold by the constant
 	 * @return
 	 */
 	public Boolean get_bool() { return (Boolean) data; }
-	
+
 	/**
 	 * get as char or wchar_t
-	 * 
+	 *
 	 * @return
 	 */
 	public Character get_char() {
@@ -177,7 +177,7 @@ public class CConstant {
 
 	/**
 	 * get as int or unsigned
-	 * 
+	 *
 	 * @return
 	 */
 	public Integer get_integer() {
@@ -186,7 +186,7 @@ public class CConstant {
 
 	/**
 	 * get as long, long long, unsigned long, unsigned long long
-	 * 
+	 *
 	 * @return
 	 */
 	public Long get_long() {
@@ -195,7 +195,7 @@ public class CConstant {
 
 	/**
 	 * get as float
-	 * 
+	 *
 	 * @return
 	 */
 	public Float get_float() {
@@ -204,18 +204,18 @@ public class CConstant {
 
 	/**
 	 * get as double | long double
-	 * 
+	 *
 	 * @return
 	 */
 	public Double get_double() {
 		return (Double) data;
 	}
-	
+
 	/**
 	 * @return the Java-object to represent the data of the constant
 	 */
 	public Object get_object() { return this.data; }
-	
+
 	@Override
 	public String toString() {
 		if (data == null)

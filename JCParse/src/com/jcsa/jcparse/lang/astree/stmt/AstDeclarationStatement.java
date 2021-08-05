@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.unit.AstExternalUnit;
 
 /**
  * <code>decl_stmt |--> declaration ;</code>
- * 
+ *
  * @author yukimula
  *
  */

@@ -98,9 +98,9 @@ import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
  * @author yukimula
  */
 public abstract class AstProcessorByType {
-	
+
 	protected AstProcessorByType() {}
-	
+
 	/**
 	 * Process the AstNode based on its type
 	 * @param node
@@ -110,7 +110,7 @@ public abstract class AstProcessorByType {
 	public Object process(AstNode node) throws Exception {
 		if(node == null)
 			throw new IllegalArgumentException("Invalid node: null");
-		else if(node instanceof AstTranslationUnit) 
+		else if(node instanceof AstTranslationUnit)
 			return translation_unit((AstTranslationUnit) node);
 		else if(node instanceof AstFunctionDefinition)
 			return function_definition((AstFunctionDefinition) node);
@@ -294,7 +294,7 @@ public abstract class AstProcessorByType {
 			return for_statement((AstForStatement) node);
 		else throw new IllegalArgumentException("Unknown type: " + node.getClass().getSimpleName());
 	}
-	
+
 	/* unit and root */
 	protected abstract Object translation_unit(AstTranslationUnit node) throws Exception;
 	protected abstract Object function_definition(AstFunctionDefinition node) throws Exception;
@@ -339,7 +339,7 @@ public abstract class AstProcessorByType {
 	protected abstract Object pointer(AstPointer node) throws Exception;
 	protected abstract Object init_declarator_list(AstInitDeclaratorList node) throws Exception;
 	protected abstract Object init_declarator(AstInitDeclarator node) throws Exception;
-	
+
 	/* initializer */
 	protected abstract Object initializer(AstInitializer node) throws Exception;
 	protected abstract Object initializer_body(AstInitializerBody node) throws Exception;
@@ -395,5 +395,5 @@ public abstract class AstProcessorByType {
 	protected abstract Object while_statement(AstWhileStatement node) throws Exception;
 	protected abstract Object do_while_statement(AstDoWhileStatement node) throws Exception;
 	protected abstract Object for_statement(AstForStatement node) throws Exception;
-	
+
 }

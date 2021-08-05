@@ -4,18 +4,18 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 
 public class SymbolConstant extends SymbolBasicExpression {
-	
+
 	/** constant of the value of the expression node **/
 	private CConstant constant;
-	
+
 	private SymbolConstant(CType data_type, CConstant constant) throws IllegalArgumentException {
 		super(data_type);
 		if(constant == null)
 			throw new IllegalArgumentException("Invalid constant: null");
-		else 
+		else
 			this.constant = constant;
 	}
-	
+
 	/* value getter */
 	/**
 	 * @return constant of the value of the expression node
@@ -82,11 +82,11 @@ public class SymbolConstant extends SymbolBasicExpression {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (int) (this.constant.get_bool() ? 1 : 0);
 		case c_char:
-		case c_uchar:		return Integer.valueOf((int) this.constant.get_char().charValue());
+		case c_uchar:		return Integer.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Integer.valueOf((int) this.constant.get_integer().intValue());
+		case c_uint:		return Integer.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
@@ -101,15 +101,15 @@ public class SymbolConstant extends SymbolBasicExpression {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (long) (this.constant.get_bool() ? 1 : 0);
 		case c_char:
-		case c_uchar:		return Long.valueOf((long) this.constant.get_char().charValue());
+		case c_uchar:		return Long.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Long.valueOf((long) this.constant.get_integer().intValue());
+		case c_uint:		return Long.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
-		case c_ullong:		return Long.valueOf((long) this.constant.get_long().longValue());
+		case c_ullong:		return Long.valueOf(this.constant.get_long().longValue());
 		case c_float:		return Long.valueOf((long) this.constant.get_float().floatValue());
 		case c_double:
 		case c_ldouble:		return Long.valueOf((long) this.constant.get_double().doubleValue());
@@ -120,16 +120,16 @@ public class SymbolConstant extends SymbolBasicExpression {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (float) (this.constant.get_bool() ? 1 : 0);
 		case c_char:
-		case c_uchar:		return Float.valueOf((float) this.constant.get_char().charValue());
+		case c_uchar:		return Float.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Float.valueOf((float) this.constant.get_integer().intValue());
+		case c_uint:		return Float.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
-		case c_ullong:		return Float.valueOf((float) this.constant.get_long().longValue());
-		case c_float:		return Float.valueOf((float) this.constant.get_float().floatValue());
+		case c_ullong:		return Float.valueOf(this.constant.get_long().longValue());
+		case c_float:		return Float.valueOf(this.constant.get_float().floatValue());
 		case c_double:
 		case c_ldouble:		return Float.valueOf((float) this.constant.get_double().doubleValue());
 		default: 			return null;
@@ -139,18 +139,18 @@ public class SymbolConstant extends SymbolBasicExpression {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (double) (this.constant.get_bool() ? 1 : 0);
 		case c_char:
-		case c_uchar:		return Double.valueOf((double) this.constant.get_char().charValue());
+		case c_uchar:		return Double.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Double.valueOf((double) this.constant.get_integer().intValue());
+		case c_uint:		return Double.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
-		case c_ullong:		return Double.valueOf((double) this.constant.get_long().longValue());
-		case c_float:		return Double.valueOf((double) this.constant.get_float().floatValue());
+		case c_ullong:		return Double.valueOf(this.constant.get_long().longValue());
+		case c_float:		return Double.valueOf(this.constant.get_float().floatValue());
 		case c_double:
-		case c_ldouble:		return Double.valueOf((double) this.constant.get_double().doubleValue());
+		case c_ldouble:		return Double.valueOf(this.constant.get_double().doubleValue());
 		default: 			return null;
 		}
 	}
@@ -161,27 +161,27 @@ public class SymbolConstant extends SymbolBasicExpression {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return Long.valueOf((this.constant.get_bool() ? 1 : 0));
 		case c_char:
-		case c_uchar:		return Long.valueOf((long) this.constant.get_char().charValue());
+		case c_uchar:		return Long.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Long.valueOf((long) this.constant.get_integer().intValue());
+		case c_uint:		return Long.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
-		case c_ullong:		return Long.valueOf((long) this.constant.get_long().longValue());
-		case c_float:		return Double.valueOf((double) this.constant.get_float().floatValue());
+		case c_ullong:		return Long.valueOf(this.constant.get_long().longValue());
+		case c_float:		return Double.valueOf(this.constant.get_float().floatValue());
 		case c_double:
-		case c_ldouble:		return Double.valueOf((double) this.constant.get_double().doubleValue());
+		case c_ldouble:		return Double.valueOf(this.constant.get_double().doubleValue());
 		default: 			return null;
 		}
 	}
-	
+
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolConstant(this.get_data_type(), this.get_constant());
 	}
-	
+
 	/**
 	 * @param constant
 	 * @return
@@ -190,5 +190,5 @@ public class SymbolConstant extends SymbolBasicExpression {
 	protected static SymbolConstant create(CConstant constant) throws Exception {
 		return new SymbolConstant(constant.get_type(), constant);
 	}
-	
+
 }

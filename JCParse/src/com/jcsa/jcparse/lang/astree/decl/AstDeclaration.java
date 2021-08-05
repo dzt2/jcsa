@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.decl.specifier.AstDeclarationSpecifiers;
 
 /**
  * <code>declaration --> specifiers (init_declarator_list)?</code>
- * 
+ *
  * @author yukimula
  *
  */

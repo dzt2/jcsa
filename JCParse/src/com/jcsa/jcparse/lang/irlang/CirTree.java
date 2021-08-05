@@ -18,13 +18,13 @@ import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
  * 	CirParameterList		|-- (CirInitAssignStatement)*
  * 	CirStatementList		|-- (CirStatement)*
  * 	+---------------------------------------------------------------------------------------+
- * 	
+ *
  * 	+---------------------------------------------------------------------------------------+
  * 	CirStatement [index]	|-- CirAssignStatement
- * 							|-- CirGotoStatement | CirCaseStatement 
- * 							|-- CirIfStatement | CirCallStatement 
+ * 							|-- CirGotoStatement | CirCaseStatement
+ * 							|-- CirIfStatement | CirCallStatement
  * 							|-- CirTagStatement
- * 	
+ *
  * 	CirAssignStatement		|-- CirBinAssignStatement | CirInitAssignStatement
  * 							|-- CirReturnAssignStatement | CirWaitAssignStatement
  * 	CirGotoStatement		|-- goto CirLabel
@@ -32,30 +32,30 @@ import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
  * 	CirIfStatement			|-- if CirExpression then CirLabel else CirLabel
  * 	CirCallStatement		|-- call CirExpression CirArgumentList
  * 	CirArgumentList			|-- (CirExpression)*
- * 	CirTagStatement			|-- CirLabelStatement | CirDefaultStatement 
- * 							|-- CirBegStatement | CirEndStatement 
+ * 	CirTagStatement			|-- CirLabelStatement | CirDefaultStatement
+ * 							|-- CirBegStatement | CirEndStatement
  * 	CirBegStatement			|-- begin :
  * 	CirEndStatement			|-- end :
  * 	CirDefaultStatement		|-- default :
  * 	CirLabelStatement		|-- {string}:
  * 	CirLabel				|-- <i>integer</i>
  * 	+---------------------------------------------------------------------------------------+
- * 	
+ *
  * 	+---------------------------------------------------------------------------------------+
  * 	CirExpression [CType]	|-- CirReferExpression | CirValueExpression
- * 	CirReferExpression		|-- CirNameExpression | CirDeferExpression | CirFieldExpression 
+ * 	CirReferExpression		|-- CirNameExpression | CirDeferExpression | CirFieldExpression
  * 	CirNameExpression 		|-- CirIdentifier | CirDeclarator | CirReturnPoint | CirImplictor
  * 	CirValueExpression		|-- CirConstExpression | CirStringLiteral
- * 							|-- CirArithExpression | CirBitwsExpression 
+ * 							|-- CirArithExpression | CirBitwsExpression
  * 							|-- CirLogicExpression | CirRelationExpression
  * 							|-- CirAddressExpression | CirCastExpression
  * 							|-- CirInitializerBody
- * 	
+ *
  * 	CirIdExpression			|-- {string}
  * 	CirDeferExpression		|-- (defer CirExpression)
  * 	CirFieldExpression		|-- (get_field CirExpression CirField)
  * 	CirField				|-- {string}
- * 	
+ *
  * 	CirConstExpression		|-- {constant}
  * 	CirStringLiteral		|-- {string}
  * 	CirArithExpression		|-- (+,-,*,/,% CirExpression+)
@@ -66,14 +66,14 @@ import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
  * 	CirCastExpression		|-- (cast_to CirType CirExpression)
  * 	CirInitializerBody		|-- { (CirExpression)* }
  * 	+---------------------------------------------------------------------------------------+
- * 	
+ *
  * </code><br>
  * <br>
  * @author yukimula
  *
  */
 public interface CirTree {
-	
+
 	/* tree node access */
 	/**
 	 * get the root node of the entire tree (as CirTransitionUnit)
@@ -97,7 +97,7 @@ public interface CirTree {
 	 * @return
 	 */
 	public Iterable<CirNode> get_nodes();
-	
+
 	/* mapping from AST source nodes to their CIR nodes */
 	/**
 	 * get all the CIR nodes in the tree to which the AST node refers
@@ -121,14 +121,14 @@ public interface CirTree {
 	/**
 	 * get the CIR code range to be referred from the specified AST source node
 	 * @param ast_source
-	 * @return 
+	 * @return
 	 */
 	public AstCirPair get_cir_range(AstNode ast_source) throws IllegalArgumentException;
 	/**
 	 * @return the localization algorithm machine
 	 */
 	public CirLocalizer get_localizer();
-	
+
 	/* factory methods */
 	/**
 	 * generate the copy of the specified node in this tree
@@ -137,7 +137,7 @@ public interface CirTree {
 	 * @throws Exception
 	 */
 	public CirNode copy(CirNode node) throws Exception;
-	
+
 	/* flow graph getter */
 	/**
 	 * get the function calling graph that describes the execution flow
@@ -145,5 +145,5 @@ public interface CirTree {
 	 * @return
 	 */
 	public CirFunctionCallGraph get_function_call_graph();
-	
+
 }

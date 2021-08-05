@@ -6,12 +6,12 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class AstCirPairImpl implements AstCirPair {
-	
+
 	private AstNode ast_source;
 	private CirStatement beg_statement;
 	private CirStatement end_statement;
 	private CirExpression result;
-	
+
 	protected AstCirPairImpl(AstNode ast_source) throws IllegalArgumentException {
 		if(ast_source == null)
 			throw new IllegalArgumentException("invalid ast-source as null");
@@ -22,7 +22,7 @@ public class AstCirPairImpl implements AstCirPair {
 			this.result = null;
 		}
 	}
-	
+
 	@Override
 	public AstNode get_ast_source() { return this.ast_source; }
 	@Override
@@ -44,5 +44,5 @@ public class AstCirPairImpl implements AstCirPair {
 	public void set(CirStatement beg_statement, CirStatement end_statement, CirExpression result) {
 		this.beg_statement = beg_statement; this.end_statement = end_statement; this.result = result;
 	}
-	
+
 }

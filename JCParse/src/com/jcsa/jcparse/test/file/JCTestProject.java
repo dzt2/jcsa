@@ -8,12 +8,12 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
 
 /**
  * 	The C-testing project to execute software testing on program provided.
- * 	
+ *
  * 	@author yukimula
- *	
+ *
  */
 public class JCTestProject {
-	
+
 	/* attributes */
 	/** the file structure provided by the project **/
 	private JCTestProjectFiles files;
@@ -25,7 +25,7 @@ public class JCTestProject {
 	private JCTestProjectTest test_part;
 	/** the interface to load the test results in project **/
 	private JCTestProjectResult result_part;
-	
+
 	/* constructor */
 	/**
 	 * @param root the root directory where test project is created
@@ -35,13 +35,13 @@ public class JCTestProject {
 	private JCTestProject(File root, CommandUtil command_util, boolean load_config) throws Exception {
 		this.files = new JCTestProjectFiles(root);
 		this.config = new JCTestProjectConfig(command_util);
-		if(load_config) 
+		if(load_config)
 			this.config.load(this.files.get_config_directory());
 		this.code_part = new JCTestProjectCode(this);
 		this.test_part = new JCTestProjectTest(this);
 		this.result_part = new JCTestProjectResult(this);
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the name of test project.
@@ -71,7 +71,7 @@ public class JCTestProject {
 	 * @return the interface to load the test results in project
 	 */
 	public JCTestProjectResult get_result_part() { return this.result_part; }
-	
+
 	/* setters */
 	/**
 	 * set the source code, header and library files in the project
@@ -81,7 +81,7 @@ public class JCTestProject {
 	 * @param lfiles the library files used {xxx.lib}
 	 * @throws Exception
 	 */
-	public void set_code(Iterable<File> cfiles, 
+	public void set_code(Iterable<File> cfiles,
 			Iterable<File> hfiles, Iterable<File> lfiles) throws Exception {
 		this.code_part.set(cfiles, hfiles, lfiles);
 	}
@@ -113,8 +113,8 @@ public class JCTestProject {
 	/**
 	 * Perform normal program against the test inputs with specified long-time.
 	 * @param test_inputs the set of test inputs used to execute normal pogram
-	 * @param timeout the maximal seconds needed for executing each command-line of test input or 
-	 * 				  non-positive if no limitation is needed. 
+	 * @param timeout the maximal seconds needed for executing each command-line of test input or
+	 * 				  non-positive if no limitation is needed.
 	 * @throws Exception
 	 */
 	public void normal_execute(Iterable<TestInput> test_inputs, long timeout) throws Exception {
@@ -129,7 +129,7 @@ public class JCTestProject {
 	public void instrument_execute(Iterable<TestInput> test_inputs, long timeout) throws Exception {
 		this.test_part.instrument_execution(test_inputs, timeout);
 	}
-	
+
 	/* creator */
 	/**
 	 * create a new test project and update its configuration data
@@ -144,12 +144,12 @@ public class JCTestProject {
 	 * @return C-test project with updating the configuration base.
 	 * @throws Exception
 	 */
-	public static JCTestProject new_project(File root, CommandUtil command_util, 
-			CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
-			File c_instrument_head_file, File c_pre_process_mac_file, 
+	public static JCTestProject new_project(File root, CommandUtil command_util,
+			CCompiler compiler, ClangStandard lang_standard, File c_template_file,
+			File c_instrument_head_file, File c_pre_process_mac_file,
 			Iterable<String> compile_parameters) throws Exception {
 		JCTestProject project = new JCTestProject(root, command_util, false);
-		project.config.set(compiler, lang_standard, c_template_file, 
+		project.config.set(compiler, lang_standard, c_template_file,
 				c_instrument_head_file, c_pre_process_mac_file, compile_parameters);
 		project.config.save(project.files.get_config_directory());
 		return project;
@@ -164,5 +164,5 @@ public class JCTestProject {
 	public static JCTestProject open_project(File root, CommandUtil command_util) throws Exception {
 		return new JCTestProject(root, command_util, true);
 	}
-	
+
 }

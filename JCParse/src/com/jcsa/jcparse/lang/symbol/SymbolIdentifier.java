@@ -19,10 +19,10 @@ import com.jcsa.jcparse.lang.scope.CName;
  *
  */
 public class SymbolIdentifier extends SymbolBasicExpression {
-	
+
 	/** the name of the identifier **/
 	private String name;
-	
+
 	/**
 	 * create an identifier node w.r.t. complete variable name
 	 * @param data_type
@@ -33,20 +33,20 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 		super(data_type);
 		if(name == null || name.trim().isEmpty())
 			throw new IllegalArgumentException("Invalid name: " + name);
-		else 
+		else
 			this.name = name.trim();
 	}
-	
+
 	/**
 	 * @return the name of the identifier
 	 */
 	public String get_name() { return this.name; }
-	
+
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolIdentifier(this.get_data_type(), this.get_name());
 	}
-	
+
 	/* factory methods */
 	/**
 	 * @param data_type
@@ -106,5 +106,5 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	protected static SymbolIdentifier create(CType data_type, String name) throws Exception {
 		return new SymbolIdentifier(data_type, name);
 	}
-	
+
 }

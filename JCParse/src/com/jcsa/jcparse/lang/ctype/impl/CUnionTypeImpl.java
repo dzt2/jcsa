@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 
 public class CUnionTypeImpl extends CTypeImpl implements CUnionType {
-	
+
 	private String name;
 	protected CFieldBody body;
 
@@ -38,5 +38,5 @@ public class CUnionTypeImpl extends CTypeImpl implements CUnionType {
 	public String get_name() {
 		return name;
 	}
-	
+
 }

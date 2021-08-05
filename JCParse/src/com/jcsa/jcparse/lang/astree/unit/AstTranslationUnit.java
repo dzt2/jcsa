@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.AstScopeNode;
 
 /**
  * <code>trans_unit --> (external_unit)*</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstTranslationUnit extends AstScopeNode {

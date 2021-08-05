@@ -25,7 +25,12 @@ public class CirStateError extends CirAttribute {
 	@Override
 	public CirAttribute optimize(SymbolProcess context) throws Exception {
 		SymbolExpression muta_expression = this.get_muta_expression();
-		muta_expression = SymbolEvaluator.evaluate_on(muta_expression, context);
+		try {
+			muta_expression = SymbolEvaluator.evaluate_on(muta_expression, context);
+		}
+		catch(ArithmeticException ex) {
+			return CirAttribute.new_traps_error(this.get_execution());
+		}
 		return CirAttribute.new_state_error(get_orig_expression(), muta_expression);
 	}
 

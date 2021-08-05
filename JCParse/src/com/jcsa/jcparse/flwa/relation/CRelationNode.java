@@ -16,16 +16,16 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
  * 	(1)	<code>Statement</code>: a statement being executed in C-like intermediate representation, except
  * 		the useless goto and tag statement.<br>
  * 	(2)	<code>Reference</code>: a reference expression used or defined in C-like intermediate representation.<br>
- * 	(3)	<code>Expression</code>: a non-reference expression used in C-like intermediate representation.<br> 
+ * 	(3)	<code>Expression</code>: a non-reference expression used in C-like intermediate representation.<br>
  * @author yukimula
  *
  */
 public class CRelationNode {
-	
+
 	/* attributes */
 	/** the graph where this node is created **/
 	private CRelationGraph graph;
-	/** the instance of the statement being executed where 
+	/** the instance of the statement being executed where
 	 * 	the source node that the node represent is defined **/
 	private CirInstanceNode instance;
 	/** the source node of C-like intermediate representation
@@ -37,7 +37,7 @@ public class CRelationNode {
 	private List<CRelationEdge> in;
 	/** the edges point from this ndoe to others **/
 	private List<CRelationEdge> ou;
-	
+
 	/* constructor */
 	/**
 	 * Create a node in the specified relational graph with respect to the specified node of C-like intermediate
@@ -59,8 +59,8 @@ public class CRelationNode {
 			this.instance = instance;
 			this.cir_source = cir_source;
 			this.type = this.get_type(cir_source);
-			this.in = new LinkedList<CRelationEdge>();
-			this.ou = new LinkedList<CRelationEdge>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
 	/**
@@ -73,7 +73,7 @@ public class CRelationNode {
 		if(cir_source instanceof CirStatement) {
 			if(cir_source instanceof CirTagStatement) {
 				throw new IllegalArgumentException(
-						"Invalid cir_source: " + 
+						"Invalid cir_source: " +
 						cir_source.getClass().getSimpleName());
 			}
 			else { return CRelationNodeType.Statement; }
@@ -86,11 +86,11 @@ public class CRelationNode {
 		}
 		else {
 			throw new IllegalArgumentException(
-					"Invalid cir_source: " + 
+					"Invalid cir_source: " +
 					cir_source.getClass().getSimpleName());
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the graph where this node is created
@@ -98,19 +98,19 @@ public class CRelationNode {
 	 */
 	public CRelationGraph get_graph() { return this.graph; }
 	/**
-	 * get the instance of the statement being executed where the source node of C-like 
+	 * get the instance of the statement being executed where the source node of C-like
 	 * intermediate representation code that this node refers to is defined in.
 	 * @return
 	 */
 	public CirInstanceNode get_instance() { return instance; }
 	/**
-	 * get the execution of the statement being executed where the source node of C-like 
+	 * get the execution of the statement being executed where the source node of C-like
 	 * intermediate representation code that this node refers to is defined in.
 	 * @return
 	 */
 	public CirExecution get_execution() { return instance.get_execution(); }
 	/**
-	 * get the statement being executed where the source node of C-like intermediate 
+	 * get the statement being executed where the source node of C-like intermediate
 	 * representation code that this node refers to is defined in.
 	 * @return
 	 */
@@ -169,12 +169,12 @@ public class CRelationNode {
 			}
 			case Reference:
 			{
-				return "[refr]: {" + this.cir_source.generate_code(true) + 
+				return "[refr]: {" + this.cir_source.generate_code(true) +
 						"} in {" + this.get_statement().generate_code(true) + "}";
 			}
 			case Expression:
 			{
-				return "[expr]: {" + this.cir_source.generate_code(true) + 
+				return "[expr]: {" + this.cir_source.generate_code(true) +
 						"} in {" + this.get_statement().generate_code(true) + "}";
 			}
 			default: throw new IllegalArgumentException("Invalid type: " + type);
@@ -185,7 +185,7 @@ public class CRelationNode {
 			return null;
 		}
 	}
-	
+
 	/* setters */
 	/**
 	 * link this node to the target with an edge of specified type.
@@ -199,10 +199,10 @@ public class CRelationNode {
 			if(edge.get_target() == target)
 				return edge;
 		}
-		
+
 		/** create new relation between the two nodes in graph **/
 		CRelationEdge edge = new CRelationEdge(type, this, target);
 		this.ou.add(edge); target.in.add(edge); return edge;
 	}
-	
+
 }

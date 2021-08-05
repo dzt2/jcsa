@@ -6,12 +6,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 /**
  * function_body |--> (statement)+
  * 				 |==> [beg_statement (init_assign_statement)* (statement)* end_statement]
- * 
+ *
  * @author yukimula
  *
  */
 public interface CirFunctionBody extends CirNode {
-	
+
 	/* getters */
 	/**
 	 * get the number of statements in the function body
@@ -31,6 +31,6 @@ public interface CirFunctionBody extends CirNode {
 	 * @throws IllegalArgumentException
 	 */
 	public void add_statement(CirStatement statement) throws IllegalArgumentException;
-	
-	
+
+
 }

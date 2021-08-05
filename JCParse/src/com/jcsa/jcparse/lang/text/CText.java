@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Text of original source program (for both x.i or x.c) <br>
  * - constraint: if `\` and newLine occur together, then both will be escaped.
- * 
+ *
  * @author yukimula
  */
 public class CText {
@@ -27,13 +27,13 @@ public class CText {
 	 */
 	public CText() {
 		text = new StringBuilder();
-		line_index = new ArrayList<Integer>();
+		line_index = new ArrayList<>();
 		line_index.add(0);
 	}
 
 	/**
 	 * get the number of characters in text
-	 * 
+	 *
 	 * @return
 	 */
 	public int length() {
@@ -42,7 +42,7 @@ public class CText {
 
 	/**
 	 * get the kth character in text
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 * @throws Exception
@@ -56,7 +56,7 @@ public class CText {
 
 	/**
 	 * get the number of lines in source code
-	 * 
+	 *
 	 * @return
 	 */
 	public int number_of_lines() {
@@ -65,7 +65,7 @@ public class CText {
 
 	/**
 	 * get the index to first character in specified line (starting from 1)
-	 * 
+	 *
 	 * @param line
 	 * @return
 	 * @throws Exception
@@ -80,7 +80,7 @@ public class CText {
 
 	/**
 	 * get the line of character specified by index
-	 * 
+	 *
 	 * @param index
 	 * @return
 	 * @throws Exception
@@ -112,7 +112,7 @@ public class CText {
 
 	/**
 	 * get the substring of text
-	 * 
+	 *
 	 * @param beg
 	 *            : to the first character
 	 * @param end
@@ -126,7 +126,7 @@ public class CText {
 	/**
 	 * append text in the tail of source text, this will update the line-index
 	 * in the object
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
@@ -152,7 +152,7 @@ public class CText {
 
 	/**
 	 * get the stream of this text
-	 * 
+	 *
 	 * @return
 	 */
 	public CStream get_stream() {
@@ -162,7 +162,7 @@ public class CText {
 	/**
 	 * get the location of text by specifying its bias and length where the
 	 * segment this location represents
-	 * 
+	 *
 	 * @param bias
 	 * @param length
 	 * @return

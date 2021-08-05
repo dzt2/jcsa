@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 
 /**
  * node to represent header (system or user-defined)
- * 
+ *
  * @author yukimula
  */
 public interface AstHeader extends AstNode {

@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>param_body --> ( (param_type_list|identifier_list)? ) </code>
- * 
+ *
  * @author yukimula
  */
 public interface AstParameterBody extends AstScopeNode {

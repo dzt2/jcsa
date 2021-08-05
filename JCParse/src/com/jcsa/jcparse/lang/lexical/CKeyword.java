@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.lexical;
 /**
  * Keyword defined in C standard <br>
  * Note: this is based on GNU-C manual
- * 
+ *
  * @author yukimula
  */
 public enum CKeyword {

@@ -27,7 +27,12 @@ public class CirReferError extends CirAttribute {
 	@Override
 	public CirAttribute optimize(SymbolProcess context) throws Exception {
 		SymbolExpression muta_expression = this.get_muta_expression();
-		muta_expression = SymbolEvaluator.evaluate_on(muta_expression, context);
+		try {
+			muta_expression = SymbolEvaluator.evaluate_on(muta_expression, context);
+		}
+		catch(ArithmeticException ex) {
+			return CirAttribute.new_traps_error(this.get_execution());
+		}
 		return CirAttribute.new_refer_error(get_orig_expression(), muta_expression);
 	}
 
@@ -36,7 +41,12 @@ public class CirReferError extends CirAttribute {
 		SymbolExpression muta_expression = this.get_muta_expression();
 		SymbolExpression orig_expression = SymbolFactory.sym_expression(this.get_orig_expression());
 		SymbolExpression condition = SymbolFactory.not_equals(orig_expression, muta_expression);
-		condition = SymbolEvaluator.evaluate_on(condition, context);
+		try {
+			condition = SymbolEvaluator.evaluate_on(condition, context);
+		}
+		catch(ArithmeticException ex) {
+			return Boolean.TRUE;
+		}
 		if(condition instanceof SymbolConstant) {
 			return ((SymbolConstant) condition).get_bool().booleanValue();
 		}

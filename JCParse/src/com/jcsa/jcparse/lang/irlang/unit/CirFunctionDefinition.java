@@ -9,7 +9,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
  *
  */
 public interface CirFunctionDefinition extends CirExternalUnit {
-	
+
 	/* getters */
 	/**
 	 * get the declarator that declares the function with name and type
@@ -21,7 +21,7 @@ public interface CirFunctionDefinition extends CirExternalUnit {
 	 * @return
 	 */
 	public CirFunctionBody get_body();
-	
+
 	/* setter */
 	/**
 	 * set the declarator of the function with type and name
@@ -35,5 +35,5 @@ public interface CirFunctionDefinition extends CirExternalUnit {
 	 * @throws IllegalArgumentException
 	 */
 	public void set_body(CirFunctionBody body) throws IllegalArgumentException;
-	
+
 }

@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.symbol;
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
- * SymbolUnaryExpression		{operator: -, ~, !, *, &, =} 
+ * SymbolUnaryExpression		{operator: -, ~, !, *, &, =}
  * @author yukimula
  *
  */
@@ -17,7 +17,7 @@ public class SymbolUnaryExpression extends SymbolExpression {
 	protected SymbolNode construct() throws Exception {
 		return new SymbolUnaryExpression(this.get_data_type());
 	}
-	
+
 	/**
 	 * @return {operator: -, ~, !, *, &, =}
 	 */
@@ -26,7 +26,7 @@ public class SymbolUnaryExpression extends SymbolExpression {
 	 * @return unary operand in the expression
 	 */
 	public SymbolExpression get_operand() { return (SymbolExpression) this.get_child(1); }
-	
+
 	/**
 	 * @param operator
 	 * @param operand
@@ -34,7 +34,7 @@ public class SymbolUnaryExpression extends SymbolExpression {
 	 * @throws Exception
 	 */
 	protected static SymbolUnaryExpression create(
-			CType data_type, SymbolOperator operator, 
+			CType data_type, SymbolOperator operator,
 			SymbolExpression operand) throws Exception {
 		switch(operator.get_operator()) {
 		case negative:
@@ -45,11 +45,11 @@ public class SymbolUnaryExpression extends SymbolExpression {
 		case assign:
 		{
 			SymbolUnaryExpression expression = new SymbolUnaryExpression(data_type);
-			expression.add_child(operator); expression.add_child(operand); 
+			expression.add_child(operator); expression.add_child(operand);
 			return expression;
 		}
 		default: throw new IllegalArgumentException(operator.get_operator().toString());
 		}
 	}
-	
+
 }

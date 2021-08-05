@@ -30,7 +30,7 @@ public class CNameTableImpl implements CNameTable {
 	protected CNameTableImpl(CScope scope) throws Exception {
 		if (scope == null)
 			throw new IllegalArgumentException("Invalid scope: null");
-		name_map = new HashMap<String, CName>();
+		name_map = new HashMap<>();
 		this.scope = scope;
 	}
 
@@ -62,7 +62,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for struct declaration or definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -76,7 +76,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for union declaration or definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -90,7 +90,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for enum type declaration | definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -104,7 +104,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for label definition at label :
-	 * 
+	 *
 	 * @param label
 	 * @return
 	 * @throws Exception
@@ -118,7 +118,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for macro declaration, i.e. #define
-	 * 
+	 *
 	 * @param macro
 	 * @return
 	 * @throws Exception
@@ -132,7 +132,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for enumerator in enum-body
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 * @throws Exception
@@ -146,7 +146,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for typedef specifier
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -160,7 +160,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for field definition in struct|union body
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -174,7 +174,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for variable declaration | definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -188,7 +188,7 @@ public class CNameTableImpl implements CNameTable {
 
 	/**
 	 * create a name for parameter in parameter list
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception

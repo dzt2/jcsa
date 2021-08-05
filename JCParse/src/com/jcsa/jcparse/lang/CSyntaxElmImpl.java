@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.text.CLocation;
 
 /**
  * abstract element for C syntax
- * 
+ *
  * @author yukimula
  *
  */

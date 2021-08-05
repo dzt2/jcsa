@@ -17,10 +17,10 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionType;
 
 public class CirInstanceGraph {
-	
-	private static final List<CirInstance> empty_instances = new ArrayList<CirInstance>();
-	private static final List<Object> empty_instance_sources = new ArrayList<Object>();
-	
+
+	private static final List<CirInstance> empty_instances = new ArrayList<>();
+	private static final List<Object> empty_instance_sources = new ArrayList<>();
+
 	private CirTree cir_tree;
 	private Map<Object, Map<Object, CirInstance>> context_instances;
 	private Set<CirInstanceNode> heads;
@@ -30,13 +30,12 @@ public class CirInstanceGraph {
 			throw new IllegalArgumentException("invalid cir-tree: null");
 		else {
 			this.cir_tree = cir_tree;
-			this.context_instances = new HashMap<
-					Object, Map<Object, CirInstance>>();
-			this.heads = new HashSet<CirInstanceNode>();
-			this.tails = new HashSet<CirInstanceNode>();
+			this.context_instances = new HashMap<>();
+			this.heads = new HashSet<>();
+			this.tails = new HashSet<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the tree of C-like intermediate representation program
@@ -135,7 +134,7 @@ public class CirInstanceGraph {
 		else throw new IllegalArgumentException("Invalid context: " + context);
 	}
 	/**
-	 * get the set of instance nodes in this graph such that all the other nodes and edges can be 
+	 * get the set of instance nodes in this graph such that all the other nodes and edges can be
 	 * reached from these nodes in the graph.
 	 * @return
 	 */
@@ -177,7 +176,7 @@ public class CirInstanceGraph {
 	 * @throws Exception
 	 */
 	public Iterable<CirInstanceNode> get_instances_of(CirExecution statement) {
-		List<CirInstanceNode> nodes = new ArrayList<CirInstanceNode>();
+		List<CirInstanceNode> nodes = new ArrayList<>();
 		if(statement != null) {
 			for(Map<Object, CirInstance> instances : this.context_instances.values()) {
 				if(instances.containsKey(statement)) {
@@ -193,7 +192,7 @@ public class CirInstanceGraph {
 	 * @return
 	 */
 	public Iterable<CirInstanceEdge> get_instances_of(CirExecutionFlow flow) {
-		List<CirInstanceEdge> nodes = new ArrayList<CirInstanceEdge>();
+		List<CirInstanceEdge> nodes = new ArrayList<>();
 		if(flow != null) {
 			for(Map<Object, CirInstance> instances : this.context_instances.values()) {
 				if(instances.containsKey(flow)) {
@@ -203,7 +202,7 @@ public class CirInstanceGraph {
 		}
 		return nodes;
 	}
-	
+
 	/* setters */
 	/**
 	 * create a node representing the statement being executed in specified context
@@ -218,10 +217,10 @@ public class CirInstanceGraph {
 		else if(statement == null)
 			throw new IllegalArgumentException("invalid element: null");
 		else {
-			if(!this.context_instances.containsKey(context)) 
+			if(!this.context_instances.containsKey(context))
 				this.context_instances.put(context, new HashMap<Object, CirInstance>());
 			Map<Object, CirInstance> instances = this.context_instances.get(context);
-			if(!instances.containsKey(statement)) 
+			if(!instances.containsKey(statement))
 				instances.put(statement, new CirInstanceNode(this, context, statement));
 			else throw new RuntimeException("Duplicated: " + context + ":" + statement);
 			return (CirInstanceNode) instances.get(statement);
@@ -261,7 +260,7 @@ public class CirInstanceGraph {
 			if(!this.context_instances.containsKey(context))
 				this.context_instances.put(context, new HashMap<Object, CirInstance>());
 			Map<Object, CirInstance> instances = this.context_instances.get(context);
-			if(!instances.containsKey(flow)) 
+			if(!instances.containsKey(flow))
 				instances.put(flow, source.link_to(target, context, flow));
 			else throw new RuntimeException("Duplicated: " + context + ":" + flow);
 			return (CirInstanceEdge) instances.get(flow);
@@ -302,9 +301,9 @@ public class CirInstanceGraph {
 	 */
 	private void update_heads() throws Exception {
 		/* 1. declarations */
-		Set<CirInstanceNode> visited = new HashSet<CirInstanceNode>();
-		Queue<CirInstanceNode> queue = new LinkedList<CirInstanceNode>();
-		
+		Set<CirInstanceNode> visited = new HashSet<>();
+		Queue<CirInstanceNode> queue = new LinkedList<>();
+
 		/* 2. initialize the heads set by adding all the nodes */
 		this.heads.clear();
 		for(Map<Object, CirInstance> instances : this.context_instances.values()) {
@@ -313,7 +312,7 @@ public class CirInstanceGraph {
 					this.heads.add((CirInstanceNode) instance);
 			}
 		}
-		
+
 		/* 3. simplify the nodes in heads until minimization */
 		while(true) {
 			/* (1) Find the next non-visited node in heads */
@@ -324,28 +323,28 @@ public class CirInstanceGraph {
 				}
 			}
 			if(head == null) { break; }	// no more needed
-			
-			/* (2) Traverse all the nodes (not-visited) from head 
+
+			/* (2) Traverse all the nodes (not-visited) from head
 			 * 	   and remove those nodes reached from the head */
 			queue.clear(); queue.add(head); visited.add(head);
-			
+
 			/* (3) Brand-first traversal algorithm */
 			while(!queue.isEmpty()) {
 				// a. get the next node in BFS traversal
 				CirInstanceNode node = queue.poll();
-				
+
 				for(CirInstanceEdge edge : node.get_ou_edges()) {
 					// b. for non-visited node, add into queue
 					if(!visited.contains(edge.target)) {
 						visited.add(edge.target);
 						queue.add(edge.target);
 					}
-					
+
 					// c. whatever, remove the linked node from
 					this.heads.remove(edge.target);
 				}
 			}	/* end of BFS traversal */
-			
+
 		}	/* end of all */
 	}
 	/**
@@ -355,9 +354,9 @@ public class CirInstanceGraph {
 	 */
 	private void update_tails() throws Exception {
 		/* 1. declarations */
-		Set<CirInstanceNode> visited = new HashSet<CirInstanceNode>();
-		Queue<CirInstanceNode> queue = new LinkedList<CirInstanceNode>();
-		
+		Set<CirInstanceNode> visited = new HashSet<>();
+		Queue<CirInstanceNode> queue = new LinkedList<>();
+
 		/* 2. initialize the tails set by adding all the nodes */
 		this.tails.clear();
 		for(Map<Object, CirInstance> instances : this.context_instances.values()) {
@@ -366,7 +365,7 @@ public class CirInstanceGraph {
 					this.tails.add((CirInstanceNode) instance);
 			}
 		}
-		
+
 		/* 3. simplify the nodes in heads until minimization */
 		while(true) {
 			/* (1) Find the next non-visited node in tails */
@@ -377,31 +376,31 @@ public class CirInstanceGraph {
 				}
 			}
 			if(tail == null) { break; }	// no more needed
-			
-			/* (2) Traverse all the nodes (not-visited) from tail 
+
+			/* (2) Traverse all the nodes (not-visited) from tail
 			 * 	   and remove those nodes reached from the tail */
 			queue.clear(); queue.add(tail); visited.add(tail);
-			
+
 			/* (3) Brand-first traversal algorithm */
 			while(!queue.isEmpty()) {
 				// a. get the next node in BFS traversal
 				CirInstanceNode node = queue.poll();
-				
+
 				for(CirInstanceEdge edge : node.get_in_edges()) {
 					// b. for non-visited node, add into queue
 					if(!visited.contains(edge.source)) {
 						visited.add(edge.source);
 						queue.add(edge.source);
 					}
-					
+
 					// c. whatever, remove the linked node from
 					this.tails.remove(edge.source);
 				}
 			}	/* end of BFS traversal */
-			
+
 		}	/* end of all */
 	}
-	
+
 	/* iterator */
 	/**
 	 * Forward traversal starting from the node
@@ -585,5 +584,5 @@ public class CirInstanceGraph {
 			throw new IllegalArgumentException("Invalid edge: null");
 		else return new CirDFSEdgeIterator(edge, false);
 	}
-	
+
 }

@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 
 /**
  * <code>switch_stmt --> <b>switch</b> ( expr ) stmt </code>
- * 
+ *
  * @author yukimula
  */
 public interface AstSwitchStatement extends AstStatement {

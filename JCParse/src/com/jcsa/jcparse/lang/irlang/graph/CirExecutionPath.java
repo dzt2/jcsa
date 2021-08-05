@@ -21,12 +21,12 @@ import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
 
 /**
  * It denotes a series of execution (edges) in the CFG to represent its path.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirExecutionPath {
-	
+
 	/* attributes */
 	/** the source node of the path **/
 	private CirExecution source;
@@ -34,7 +34,7 @@ public class CirExecutionPath {
 	private CirExecution target;
 	/** the sequence of edges linking the source to the target **/
 	private LinkedList<CirExecutionEdge> edges;
-	
+
 	/* constructor */
 	/**
 	 * create an empty path with one single node without any edges
@@ -47,17 +47,17 @@ public class CirExecutionPath {
 		}
 		else {
 			this.source = source; this.target = source;
-			this.edges = new LinkedList<CirExecutionEdge>();
+			this.edges = new LinkedList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
-	 * @return the source node of the path 
+	 * @return the source node of the path
 	 */
 	public CirExecution get_source() { return this.source; }
 	/**
-	 * @return the target node of the path 
+	 * @return the target node of the path
 	 */
 	public CirExecution get_target() { return this.target; }
 	/**
@@ -126,7 +126,7 @@ public class CirExecutionPath {
 	/**
 	 * @return the first edge in the path
 	 */
-	public CirExecutionEdge get_first_edge()  { 
+	public CirExecutionEdge get_first_edge()  {
 		if(this.edges.isEmpty()) {
 			return null;
 		}
@@ -138,7 +138,7 @@ public class CirExecutionPath {
 	 * @return the final edge in the path
 	 * @throws NoSuchElementException
 	 */
-	public CirExecutionEdge get_final_edge()  { 
+	public CirExecutionEdge get_final_edge()  {
 		if(this.edges.isEmpty()) {
 			return null;
 		}
@@ -168,7 +168,7 @@ public class CirExecutionPath {
 			return this.edges.getLast().get_flow();
 		}
 	}
-	
+
 	/* universals */
 	@Override
 	public String toString() {
@@ -188,7 +188,7 @@ public class CirExecutionPath {
 			return true;
 		else if(obj instanceof CirExecutionPath) {
 			CirExecutionPath path = (CirExecutionPath) obj;
-			if(path.source == this.source && path.target == this.target 
+			if(path.source == this.source && path.target == this.target
 							&& path.get_length() == this.get_length()) {
 				for(int k = 0; k < this.edges.size(); k++) {
 					if(!path.edges.get(k).get_flow().equals(this.edges.get(k).get_flow()))
@@ -211,7 +211,7 @@ public class CirExecutionPath {
 		path.target = this.target;
 		return path;
 	}
-	
+
 	/* setters */
 	/**
 	 * append the flow in the tail of the execution path and return the new edge
@@ -291,16 +291,16 @@ public class CirExecutionPath {
 			throw new IllegalArgumentException("Invalid: " + path);
 		}
 	}
-	
+
 	/* inference */
 	/**
 	 * @return the flow that calls the entry of the execution path
 	 */
 	public CirExecutionFlow get_call_flow_of_source() throws Exception {
-		/* 1. declarations */	
-		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		/* 1. declarations */
+		Stack<CirExecutionFlow> stack = new Stack<>();
 		Iterator<CirExecutionEdge> iterator = this.get_iterator(false);
-		
+
 		/* 2. infer the call-point based on first return-flow */
 		while(iterator.hasNext()) {
 			CirExecutionEdge edge = iterator.next();
@@ -313,7 +313,7 @@ public class CirExecutionPath {
 					CirExecution wait_execution = retr_flow.get_target();
 					CirExecution call_execution = wait_execution.get_graph().
 									get_execution(wait_execution.get_id() - 1);
-					return call_execution.get_ou_flow(0);	
+					return call_execution.get_ou_flow(0);
 				}
 				else {
 					CirExecutionFlow call_flow = stack.pop();
@@ -324,7 +324,7 @@ public class CirExecutionPath {
 				}
 			}
 		}
-		
+
 		/* 3. infer the call-point based on local entry */
 		CirExecution source = this.source.get_graph().get_entry();
 		if(source.get_in_degree() == 1) {
@@ -339,10 +339,10 @@ public class CirExecutionPath {
 	 * @throws Exception
 	 */
 	public CirExecutionFlow get_retr_flow_of_target() throws Exception {
-		/* 1. declarations */	
-		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		/* 1. declarations */
+		Stack<CirExecutionFlow> stack = new Stack<>();
 		Iterator<CirExecutionEdge> iterator = this.get_iterator(true);
-		
+
 		/* 2. infer the retr-flow based on last call-point in path */
 		while(iterator.hasNext()) {
 			CirExecutionEdge edge = iterator.next();
@@ -366,7 +366,7 @@ public class CirExecutionPath {
 				}
 			}
 		}
-		
+
 		/* 3. infer the retr-flow based on exit of the target function */
 		CirExecution target = this.target.get_graph().get_exit();
 		if(target.get_ou_degree() == 1) {
@@ -385,7 +385,7 @@ public class CirExecutionPath {
 	 * @throws Exception
 	 */
 	public Collection<CirExecutionFlow> get_in_flows_of_source(boolean cross_function) throws Exception {
-		Collection<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		Collection<CirExecutionFlow> flows = new ArrayList<>();
 		if(this.source.get_in_degree() == 0) { /* no available flow */ }
 		else if(this.source.get_in_degree() == 1) {	/* unique flows */
 			flows.add(this.source.get_in_flow(0));
@@ -420,7 +420,7 @@ public class CirExecutionPath {
 	 * @throws Exception
 	 */
 	public Collection<CirExecutionFlow> get_ou_flows_of_target(boolean cross_function) throws Exception {
-		Collection<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		Collection<CirExecutionFlow> flows = new ArrayList<>();
 		if(this.target.get_ou_degree() == 0) { /* none output flows */ }
 		else if(this.target.get_ou_degree() == 1) {	/* unique flow */
 			flows.add(this.target.get_ou_flow(0));
@@ -504,5 +504,5 @@ public class CirExecutionPath {
 			return path;
 		}
 	}
-	
+
 }

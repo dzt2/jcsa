@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.astree.pline;
 
 /**
  * <code><b>#define</b> macro (id_list)? macro_body \n</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstPreprocessDefineLine extends AstPreprocessLine {

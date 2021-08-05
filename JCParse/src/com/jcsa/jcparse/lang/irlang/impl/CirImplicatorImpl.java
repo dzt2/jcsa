@@ -9,7 +9,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirImplicator;
  *
  */
 public class CirImplicatorImpl extends CirExpressionImpl implements CirImplicator {
-	
+
 	private String name;
 	protected CirImplicatorImpl(CirTree tree, int node_id) throws IllegalArgumentException {
 		super(tree, node_id, true);
@@ -19,14 +19,14 @@ public class CirImplicatorImpl extends CirExpressionImpl implements CirImplicato
 		super(tree, node_id, true);
 		this.name = name;
 	}
-	
+
 	@Override
-	public String get_name() { 
+	public String get_name() {
 		if(name == null)
-			return "#" + this.get_ast_source().get_key(); 
+			return "#" + this.get_ast_source().get_key();
 		else return name;
 	}
 	@Override
 	public String get_unique_name() { return "#" + this.get_ast_source().get_key(); }
-	
+
 }

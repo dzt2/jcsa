@@ -4,28 +4,28 @@ import com.jcsa.jcparse.lang.ctoken.CToken;
 
 /**
  * From <code>CTokenStream</code>, one can access token in a stream way.
- * 
+ *
  * @author yukimula
  *
  */
 public interface CTokenStream {
 	/**
 	 * whether the current cursor refers to available token
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean has_token();
 
 	/**
 	 * get the current cursor
-	 * 
+	 *
 	 * @return
 	 */
 	public int get_cursor();
 
 	/**
 	 * get the token referred by current cursor.
-	 * 
+	 *
 	 * @return : null when out of index
 	 * @throws Exception
 	 */
@@ -33,7 +33,7 @@ public interface CTokenStream {
 
 	/**
 	 * move the cursor forward to the next token
-	 * 
+	 *
 	 * @return : false if no more token
 	 * @throws Exception
 	 *             : lexical errors
@@ -42,7 +42,7 @@ public interface CTokenStream {
 
 	/**
 	 * set the cursor to original location
-	 * 
+	 *
 	 * @param cursor
 	 * @throws Exception
 	 *             : cursor is out of index

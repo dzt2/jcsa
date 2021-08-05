@@ -3,7 +3,7 @@ package com.jcsa.jcparse.lang.symbol;
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
- * SymbolBinaryExpression		{operator: +, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}								
+ * SymbolBinaryExpression		{operator: +, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
  * @author yukimula
  *
  */
@@ -17,7 +17,7 @@ public class SymbolBinaryExpression extends SymbolExpression {
 	protected SymbolNode construct() throws Exception {
 		return new SymbolBinaryExpression(this.get_data_type());
 	}
-	
+
 	/**
 	 * @return {operator: +, -, *, /, %, &, |, ^, <<, >>, &&, ||}
 	 */
@@ -30,14 +30,14 @@ public class SymbolBinaryExpression extends SymbolExpression {
 	 * @return right-operand
 	 */
 	public SymbolExpression get_roperand() { return (SymbolExpression) this.get_child(2); }
-	
+
 	/**
-	 * 
+	 *
 	 * @param data_type
-	 * @param operator	{operator: +, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}	
+	 * @param operator	{operator: +, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
 	 * @param loperand
 	 * @param roperand
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	protected static SymbolBinaryExpression create(CType data_type, SymbolOperator operator,
@@ -71,5 +71,5 @@ public class SymbolBinaryExpression extends SymbolExpression {
 		default: throw new IllegalArgumentException(operator.get_operator().toString());
 		}
 	}
-	
+
 }

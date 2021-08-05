@@ -10,12 +10,12 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 /**
  * It provides value domain analysis on symbolic evaluation.
- * 
+ *
  * @author yukimula
  *
  */
 class SymbolValueDomain {
-	
+
 	/* definitions */
 	/** the minimal value in the domain or null if it represents negative infinite **/
 	private Double minimal_value;
@@ -156,7 +156,7 @@ class SymbolValueDomain {
 			}
 		}
 	}
-	
+
 	/* getters */
 	protected boolean is_minimal_infinite() { return this.minimal_value == null; }
 	protected boolean is_maximal_infinite() { return this.maximal_value == null; }
@@ -197,5 +197,5 @@ class SymbolValueDomain {
 		}
 		return "[" + left + ", " + right + "]";
 	}
-	
+
 }

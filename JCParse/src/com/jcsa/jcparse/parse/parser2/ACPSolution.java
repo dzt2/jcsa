@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 class ACPSolution {
-	
+
 	/* definitions */
 	/** the module in which statements are created and maintained **/
 	private ACPModule module;
@@ -29,14 +29,14 @@ class ACPSolution {
 		else if(ast_source == null)
 			throw new IllegalArgumentException("invalid ast_source as null");
 		else {
-			this.module = module; 
+			this.module = module;
 			this.ast_source = ast_source;
 			this.beg_statement = null;
 			this.end_statement = null;
 			this.result = null;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the AST source node to be solved
@@ -68,7 +68,7 @@ class ACPSolution {
 	 * @return
 	 */
 	public boolean computational() { return this.result != null; }
-	
+
 	/* setters */
 	/**
 	 * add the statement at the tail of the code range referred from the AST node
@@ -107,5 +107,5 @@ class ACPSolution {
 			throw new IllegalArgumentException("invalid expression as null");
 		else this.result = expression;
 	}
-	
+
 }

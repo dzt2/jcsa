@@ -82,7 +82,7 @@ public class CTypeFactory {
 
 	/**
 	 * get the type for value of target
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception

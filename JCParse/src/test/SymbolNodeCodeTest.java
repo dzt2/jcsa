@@ -22,15 +22,15 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.JCTestProject;
 
 public class SymbolNodeCodeTest {
-	
+
 	private static final ClangStandard lang_standard = ClangStandard.gnu_c89;
 	private static final CommandUtil command_util = CommandUtil.linux_util;
 	private static final CCompiler compiler = CCompiler.clang;
 	private static final File c_template_file = new File("config/cruntime.txt");
 	private static final File c_instrument_head_file = new File("config/jcinst.h");
 	private static final File c_pre_process_mac_file = new File("config/linux.h");
-	private static final List<String> compile_parameters = new ArrayList<String>();
-	
+	private static final List<String> compile_parameters = new ArrayList<>();
+
 	private static final String root_path = "/home/dzt2/Development/Data/";
 	private static final File cfile_dir = new File(root_path + "cfiles");
 	private static final File input_dir = new File(root_path + "inputs");
@@ -45,7 +45,7 @@ public class SymbolNodeCodeTest {
 			}
 		}
 	}
-	
+
 	/**
 	 * @param name
 	 * @return [xxx.c, inputs/xxx/, tests/xxx.txt, project/xxx/]
@@ -59,7 +59,7 @@ public class SymbolNodeCodeTest {
 		File idir = new File(input_dir.getAbsolutePath() + "/" + name);
 		File tfile = new File(tests_dir.getAbsolutePath() + "/" + name + ".txt");
 		File pdir = new File(project_dir.getAbsolutePath() + "/" + name);
-		
+
 		if(cfile.exists() && tfile.exists()) {
 			File[] results = new File[] { null, null, null, null };
 			results[0] = cfile;
@@ -83,24 +83,24 @@ public class SymbolNodeCodeTest {
 		JCTestProject project;
 		if(files[3].exists()) {
 			project = JCTestProject.open_project(files[3], command_util);
-			List<File> tfiles = new ArrayList<File>();
+			List<File> tfiles = new ArrayList<>();
 			tfiles.add(files[2]);
 			project.set_tests(tfiles, files[1]);
 		}
 		else {
 			compile_parameters.clear(); compile_parameters.add("-lm");
-			project = JCTestProject.new_project(files[3], command_util, compiler, lang_standard, 
+			project = JCTestProject.new_project(files[3], command_util, compiler, lang_standard,
 					c_template_file, c_instrument_head_file, c_pre_process_mac_file, compile_parameters);
-			List<File> cfiles = new ArrayList<File>();
-			List<File> hfiles = new ArrayList<File>();
-			List<File> lfiles = new ArrayList<File>();
+			List<File> cfiles = new ArrayList<>();
+			List<File> hfiles = new ArrayList<>();
+			List<File> lfiles = new ArrayList<>();
 			cfiles.add(files[0]);
-			List<File> tfiles = new ArrayList<File>();
+			List<File> tfiles = new ArrayList<>();
 			tfiles.add(files[2]);
 			project.set_code(cfiles, hfiles, lfiles);
 			project.set_tests(tfiles, files[1]);
 		}
-		
+
 		System.out.println("\t1. Get the project for " + files[0].getName());
 		System.out.println("\t\t==> include " + project.get_test_part().get_test_inputs().number_of_inputs() + " test inputs.");
 		return project;
@@ -128,7 +128,7 @@ public class SymbolNodeCodeTest {
 					SymbolExpression rvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t==> [1] " + lvalue.generate_code(true) + "\n");
 					writer.write("\t==> [2] " + rvalue.generate_code(true) + "\n");
-					
+
 					lvalue = lvalue.evaluate(null);
 					rvalue = rvalue.evaluate(null);
 					writer.write("\t~~> [1] " + lvalue.generate_code(true) + "\n");
@@ -137,21 +137,21 @@ public class SymbolNodeCodeTest {
 				else if(statement instanceof CirIfStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
-					
+
 					value = value.evaluate(null);
 					writer.write("\t~~> [1] " + value.generate_code(true) + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
-					
+
 					value = value.evaluate(null);
 					writer.write("\t~~> [1] " + value.generate_code(true) + "\n");
 				}
 			}
 			writer.write("END FUNC\n");
 		}
-		
+
 		writer.close();
 	}
 	protected static void testing(File cfile) throws Exception {
@@ -163,5 +163,5 @@ public class SymbolNodeCodeTest {
 		JCTestProject project = get_project(files);
 		output_symbolic_nodes(project, new File("result/symbol/" + name + ".txt"));
 	}
-	
+
 }

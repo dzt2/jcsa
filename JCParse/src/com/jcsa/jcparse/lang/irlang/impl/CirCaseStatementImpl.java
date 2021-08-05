@@ -48,5 +48,5 @@ public class CirCaseStatementImpl extends CirNodeImpl implements CirCaseStatemen
 			throw new IllegalArgumentException("Out of bounds: " + this.number_of_children());
 		}
 	}
-	
+
 }

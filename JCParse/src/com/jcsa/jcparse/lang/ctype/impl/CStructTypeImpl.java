@@ -50,5 +50,5 @@ public class CStructTypeImpl extends CTypeImpl implements CStructType {
 	public String get_name() {
 		return name;
 	}
-	
+
 }

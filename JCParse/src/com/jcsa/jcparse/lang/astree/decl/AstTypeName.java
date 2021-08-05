@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
  * <code>spec_qualifier_list (abs_declarator)?</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstTypeName extends AstNode {

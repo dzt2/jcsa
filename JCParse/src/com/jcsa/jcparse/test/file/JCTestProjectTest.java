@@ -12,12 +12,12 @@ import com.jcsa.jcparse.test.CommandUtil;
  * 	---	[inputs]
  * 	--- [n_output]
  * 	--- [i_output]
- * 	
+ *
  * @author yukimula
  *
  */
 public class JCTestProjectTest {
-	
+
 	/* constructor */
 	/** the test project that performs on the testing **/
 	private JCTestProject project;
@@ -32,14 +32,14 @@ public class JCTestProjectTest {
 		this.test_inputs = new TestInputs();
 		this.test_inputs.load(project.get_project_files().get_test_suite_file());
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the shell script file for executing normal program
 	 */
 	public File get_normal_shell_file() {
 		return new File(this.project.get_project_files().
-				get_exe_directory().getAbsolutePath() + "/" + 
+				get_exe_directory().getAbsolutePath() + "/" +
 				this.project.get_name() + ".sh");
 	}
 	/**
@@ -47,7 +47,7 @@ public class JCTestProjectTest {
 	 */
 	public File get_instrumental_shell_file() {
 		return new File(this.project.get_project_files().
-				get_exe_directory().getAbsolutePath() + "/" + 
+				get_exe_directory().getAbsolutePath() + "/" +
 				this.project.get_name() + ".ins.sh");
 	}
 	/**
@@ -84,7 +84,7 @@ public class JCTestProjectTest {
 	public File get_instrumental_output_directory() {
 		return this.project.get_project_files().get_instrument_output_directory();
 	}
-	
+
 	/* setters */
 	private void copy_by(File source, File target) throws Exception {
 		if(source.isDirectory()) {
@@ -127,29 +127,29 @@ public class JCTestProjectTest {
 		this.test_inputs.append(test_files);
 		this.test_inputs.save(this.project.get_project_files().get_test_suite_file());
 	}
-	
+
 	/* execution methods */
 	/**
 	 * Perform normal program against the test inputs with specified long-time.
 	 * @param inputs the set of test inputs
-	 * @param timeout the maximal seconds needed for executing each command-line of test input or 
+	 * @param timeout the maximal seconds needed for executing each command-line of test input or
 	 * 			non-positive if no limitation is needed.
 	 * @throws Exception
 	 */
 	protected void normal_execution(Iterable<TestInput> inputs, long timeout) throws Exception {
 		CommandUtil util = this.project.get_config().get_command_util();
 		JCTestProjectFiles pfiles = this.project.get_project_files();
-		
-		if(!util.gen_normal_test_shell(pfiles.get_exe_directory(), 
-				this.project.get_code_part().get_executional_file(), 
-				inputs, this.get_normal_output_directory(), 
+
+		if(!util.gen_normal_test_shell(pfiles.get_exe_directory(),
+				this.project.get_code_part().get_executional_file(),
+				inputs, this.get_normal_output_directory(),
 				timeout, this.get_normal_shell_file())) {
-			throw new RuntimeException("Unable to generate " + 
+			throw new RuntimeException("Unable to generate " +
 				this.get_normal_shell_file().getAbsolutePath());
 		}
-		
+
 		CommandUtil.delete_files_in(this.get_normal_output_directory());
-		
+
 		if(!util.do_execute_shell(this.
 				get_normal_shell_file(), pfiles.get_exe_directory())) {
 			throw new RuntimeException("Fails occurs in executing tests");
@@ -158,30 +158,30 @@ public class JCTestProjectTest {
 	/**
 	 * Perform instrumental program against the test inputs with specified long-time.
 	 * @param inputs the set of test inputs
-	 * @param timeout the maximal seconds needed for executing each command-line of test input or 
+	 * @param timeout the maximal seconds needed for executing each command-line of test input or
 	 * 			non-positive if no limitation is needed.
 	 * @throws Exception
 	 */
 	protected void instrument_execution(Iterable<TestInput> inputs, long timeout) throws Exception {
 		CommandUtil util = this.project.get_config().get_command_util();
 		JCTestProjectFiles pfiles = this.project.get_project_files();
-		
-		if(!util.gen_instrumental_shell(pfiles.get_exe_directory(), 
-				this.project.get_code_part().get_instrument_executional_file(), 
-				inputs, pfiles.get_instrument_result_file(), 
+
+		if(!util.gen_instrumental_shell(pfiles.get_exe_directory(),
+				this.project.get_code_part().get_instrument_executional_file(),
+				inputs, pfiles.get_instrument_result_file(),
 				pfiles.get_instrument_stdout_file(), pfiles.get_instrument_stderr_file(),
-				pfiles.get_instrument_output_directory(), timeout, 
+				pfiles.get_instrument_output_directory(), timeout,
 				this.get_instrumental_shell_file())) {
-			throw new RuntimeException("Unable to generate " + 
+			throw new RuntimeException("Unable to generate " +
 					this.get_instrumental_shell_file().getAbsolutePath());
 		}
-		
+
 		CommandUtil.delete_files_in(this.get_instrumental_output_directory());
-		
+
 		if(!util.do_execute_shell(this.
 				get_instrumental_shell_file(), pfiles.get_exe_directory())) {
 			throw new RuntimeException("Fails occurs in executing tests");
 		}
 	}
-	
+
 }

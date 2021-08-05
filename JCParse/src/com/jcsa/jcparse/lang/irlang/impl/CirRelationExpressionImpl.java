@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirRelationExpression;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class CirRelationExpressionImpl extends CirExpressionImpl implements CirRelationExpression {
-	
+
 	private COperator operator;
 	protected CirRelationExpressionImpl(CirTree tree, int node_id, COperator operator) throws IllegalArgumentException {
 		super(tree, node_id, true);

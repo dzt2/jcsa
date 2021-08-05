@@ -6,21 +6,21 @@ import com.jcsa.jcparse.lang.astree.AstScopeNode;
 
 /**
  * scope defines a space where names are defined or declared
- * 
+ *
  * @author yukimula
  */
 public interface CScope {
 
 	/**
 	 * get the AST-node where the scope is based on
-	 * 
+	 *
 	 * @return
 	 */
 	public AstScopeNode get_origin();
 
 	/**
 	 * set the origin for this scope
-	 * 
+	 *
 	 * @param origin
 	 * @throws Exception
 	 */
@@ -28,21 +28,21 @@ public interface CScope {
 
 	/**
 	 * get the parent scope
-	 * 
+	 *
 	 * @return : null for lang_scope
 	 */
 	public CScope get_parent();
 
 	/**
 	 * get the parent scope where this scope is based on
-	 * 
+	 *
 	 * @return
 	 */
 	public Iterator<CScope> get_children();
 
 	/**
 	 * create a new child-scope within this one
-	 * 
+	 *
 	 * @return
 	 * @throws Exception
 	 */
@@ -50,7 +50,7 @@ public interface CScope {
 
 	/**
 	 * whether the child belongs to this scope or its parent
-	 * 
+	 *
 	 * @param child
 	 * @return
 	 */
@@ -58,7 +58,7 @@ public interface CScope {
 
 	/**
 	 * delete an existing child from current scope or its parent
-	 * 
+	 *
 	 * @param child
 	 * @return
 	 * @throws Exception
@@ -67,14 +67,14 @@ public interface CScope {
 
 	/**
 	 * get the table of names for this scope
-	 * 
+	 *
 	 * @return
 	 */
 	public CNameTable get_name_table();
 
 	/**
 	 * whether there defined or declared a name in current scope or its parent
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -82,7 +82,7 @@ public interface CScope {
 
 	/**
 	 * get the name defined or declared in local scope or its parent scope
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */

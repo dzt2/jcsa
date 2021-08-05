@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.lexical;
 
 /**
  * Punctuator in C language
- * 
+ *
  * @author yukimula
  *
  */

@@ -29,7 +29,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 		reference of latter in another statement.<br>
  * 	(2)	<code>use_define</code>: the source node is an expression while the target node is a reference, such
  * 		that the former and the latter refer to the left and right value in the same assignment statement.<br>
- * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the 
+ * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the
  * 		target node refers to the right-value of the assignment to initialize the parameter in the callee
  * 		function.<br>
  * 	(4)	<code>pass_ou</code>: the source node refers to the reference of returning assignment while target
@@ -53,18 +53,18 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  * 		refers to the expression in the calling statement that flows to the waiting point as specified.<br>
  * -----------------------------------------------------------------------------------------------------<br>
  * <br>
- * 
+ *
  * @author yukimula
  *
  */
 public class CRelationGraph {
-	
+
 	/* constructor */
 	/** the mapping from the instance of statement where the nodes refer to **/
 	private Map<CirInstanceNode, List<CRelationNode>> instances_nodes;
 	/** create an empty relational graph for the C program **/
-	private CRelationGraph() { 
-		instances_nodes = new HashMap<CirInstanceNode, List<CRelationNode>>(); 
+	private CRelationGraph() {
+		instances_nodes = new HashMap<>();
 	}
 	/**
 	 * generate the relational graph based on the given program in C-like intermediate representation.
@@ -77,7 +77,7 @@ public class CRelationGraph {
 		CRelationBuilder.build(cir_tree, graph);
 		return graph;
 	}
-	
+
 	/* getters */
 	/**
 	 * get the number of nodes created in this graph
@@ -145,7 +145,7 @@ public class CRelationGraph {
 			throw new IllegalArgumentException("Undefined instance: " + instance);
 		}
 	}
-	
+
 	/* setters */
 	/**
 	 * create a new node with respect to the source node in the instance of the statement.
@@ -163,11 +163,11 @@ public class CRelationGraph {
 			if(!this.instances_nodes.containsKey(instance))
 				this.instances_nodes.put(instance, new LinkedList<CRelationNode>());
 			List<CRelationNode> nodes = this.instances_nodes.get(instance);
-			
+
 			for(CRelationNode node : nodes) {
 				if(node.get_cir_source() == cir_source) return node;
 			}
-			
+
 			CRelationNode node = new CRelationNode(this, instance, cir_source);
 			nodes.add(node);
 			return node;
@@ -188,10 +188,10 @@ public class CRelationGraph {
 			throw new IllegalArgumentException("Invalid source: null");
 		else if(target == null || target.get_graph() != this)
 			throw new IllegalArgumentException("Invalid target: null");
-		else { 
-			CRelationEdge edge = source.link_to(type, target); 
-			return edge.get_type() == type; 
+		else {
+			CRelationEdge edge = source.link_to(type, target);
+			return edge.get_type() == type;
 		}
 	}
-	
+
 }

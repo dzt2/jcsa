@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.text.CLocalable;
  * 6. CHeaderToken <-- PHeaderToken <br>
  * 7. CNewlineToken <-- PNewlineToken <br>
  * 8. CPunctuatorToken <-- PPunctuatorToken<br>
- * 
+ *
  * @author yukimula
  */
 public interface CToken extends CLocalable {

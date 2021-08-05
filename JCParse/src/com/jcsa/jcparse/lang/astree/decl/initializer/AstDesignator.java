@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstField;
 
 /**
  * <code>designator --> [ const_expr ] | . field</code>
- * 
+ *
  * @author yukimula
  *
  */

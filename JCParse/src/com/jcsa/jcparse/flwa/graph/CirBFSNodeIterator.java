@@ -7,19 +7,19 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * Using brand-first traversal algorithm to traverse all the nodes in instance graph 
+ * Using brand-first traversal algorithm to traverse all the nodes in instance graph
  * based on nodes such that each node is visited only once.<br>
  * (1) The iterator accesses all the nodes in graph dynamically rather than preserving
  * 	   a sequence of nodes in the graph.<br>
  * (2) The iterator specifies the direction to traverse the nodes in graph, either the
  * 	   forward or backward traversal anyway.<br>
  * (3) It can starts the traversal from an edge, node or the heads of graph provided.<br>
- * 
+ *
  * @author yukimula
  *
  */
 class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
-	
+
 	/* attributes */
 	/** the direction of traversal, true --> forward, false --> backward **/
 	private boolean direction;
@@ -27,7 +27,7 @@ class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
 	private Queue<CirInstanceNode> queue;
 	/** the set of nodes that have been visited before in traversal **/
 	private Set<CirInstanceNode> visited;
-	
+
 	/* constructors */
 	/**
 	 * create a brand-first traversal iterator starting from the edge.
@@ -35,8 +35,8 @@ class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
 	 * @param direction
 	 */
 	protected CirBFSNodeIterator(CirInstanceEdge edge, boolean direction) {
-		this.init_buffers(direction); 
-		if(direction) 
+		this.init_buffers(direction);
+		if(direction)
 			this.add_queue(edge.target);
 		else this.add_queue(edge.source);
 	}
@@ -65,15 +65,15 @@ class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
 				this.add_queue(tail);
 		}
 	}
-	
+
 	/* basic methods */
 	/**
 	 * create the buffers used for brand-first traversal
 	 */
 	private void init_buffers(boolean direction) {
 		this.direction = direction;
-		this.queue = new LinkedList<CirInstanceNode>();
-		this.visited = new HashSet<CirInstanceNode>();
+		this.queue = new LinkedList<>();
+		this.visited = new HashSet<>();
 	}
 	/**
 	 * add the node to the queue if it is not visited
@@ -87,7 +87,7 @@ class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
 			return true;
 		}
 	}
-	
+
 	/* implementation methods */
 	@Override
 	public boolean hasNext() { return !this.queue.isEmpty(); }
@@ -120,5 +120,5 @@ class CirBFSNodeIterator implements Iterator<CirInstanceNode> {
 			this.add_queue(edge.source);
 		}
 	}
-	
+
 }

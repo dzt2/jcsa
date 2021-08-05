@@ -9,7 +9,7 @@ import com.jcsa.jcparse.base.BitSet;
  *
  */
 public class BitSetValue implements AbsValue {
-	
+
 	/* constructor */
 	/** the set of objects that represent this value **/
 	private BitSet bitset;
@@ -23,7 +23,7 @@ public class BitSetValue implements AbsValue {
 			throw new IllegalArgumentException("invalid bitset: null");
 		else this.bitset = bitset;
 	}
-	
+
 	/* getter and setter */
 	/**
 	 * get the bit representation of set this value describes
@@ -53,5 +53,5 @@ public class BitSetValue implements AbsValue {
 		}
 		else return false;
 	}
-	
+
 }

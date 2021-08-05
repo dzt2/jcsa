@@ -16,7 +16,7 @@ import com.jcsa.jcparse.lang.ptoken.PPunctuatorToken;
 
 /**
  * to create PToken
- * 
+ *
  * @author yukimula
  */
 public class PTokenFactory {

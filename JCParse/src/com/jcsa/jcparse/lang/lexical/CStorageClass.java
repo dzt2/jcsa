@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.lexical;
 
 /**
  * storage class for instance name
- * 
+ *
  * @author yukimula
  */
 public enum CStorageClass {

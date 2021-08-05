@@ -5,7 +5,7 @@ package com.jcsa.jcparse.lang.text;
  * A location can be seen as a two-dimensional position like: (base, length)
  * where base refers to the first character in segment and length represents the
  * number of characters within.
- * 
+ *
  * @author yukimula
  *
  */
@@ -20,7 +20,7 @@ public class CLocation {
 
 	/**
 	 * create a location based on given text and pointers
-	 * 
+	 *
 	 * @param text
 	 * @param bias
 	 * @param length
@@ -32,7 +32,7 @@ public class CLocation {
 
 	/**
 	 * get the source of this location
-	 * 
+	 *
 	 * @return
 	 */
 	public CText get_source() {
@@ -41,7 +41,7 @@ public class CLocation {
 
 	/**
 	 * get the bias to first character
-	 * 
+	 *
 	 * @return
 	 */
 	public int get_bias() {
@@ -50,7 +50,7 @@ public class CLocation {
 
 	/**
 	 * get number of characters within
-	 * 
+	 *
 	 * @return
 	 */
 	public int get_length() {
@@ -59,13 +59,13 @@ public class CLocation {
 
 	/**
 	 * get the text to this location represents
-	 * 
+	 *
 	 * @return
 	 */
 	public String read() {
 		return text.text.substring(bias, bias + length);
 	}
-	
+
 	/** used to print the trim-code **/
 	private static final StringBuilder buffer = new StringBuilder();
 	/**
@@ -76,15 +76,15 @@ public class CLocation {
 	 */
 	public String trim_code(int max_length) {
 		buffer.setLength(0);
-		
+
 		String code = this.read();
-		for(int k = 0; k < code.length() && 
+		for(int k = 0; k < code.length() &&
 				buffer.length() < max_length; k++) {
 			char ch = code.charAt(k);
 			if(ch == '\t' || ch == '\n') continue;
 			else buffer.append(ch);
 		}
-		
+
 		return buffer.toString();
 	}
 	/**
@@ -119,7 +119,7 @@ public class CLocation {
 		}
 		return buffer.toString();
 	}
-	
+
 	/**
 	 * get the line where the location belonging to.
 	 * @return
@@ -128,7 +128,7 @@ public class CLocation {
 	public int line_of() throws Exception {
 		return this.text.line_of(this.bias);
 	}
-	
+
 	public void set_location(int bias, int length) {
 		if (bias < 0 || bias >= text.text.length())
 			throw new IllegalArgumentException("Invalid bias: " + bias);

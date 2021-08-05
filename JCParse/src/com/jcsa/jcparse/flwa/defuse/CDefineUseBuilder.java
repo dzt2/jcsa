@@ -40,12 +40,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 
 /**
  * To build up the definition-usage links between variables within the program under analysis.
- * 
+ *
  * @author yukimula
  *
  */
 class CDefineUseBuilder {
-	
+
 	/* operator implementation */
 	/**
 	 * Abstract operator used to compute the valid assignment instances in forward analysis.
@@ -53,7 +53,7 @@ class CDefineUseBuilder {
 	 *
 	 */
 	protected static class CDefineUseOperator implements AbsOperator {
-		
+
 		private BitSetBase bitset_base;
 		/**
 		 * create the operator to determine valid assignment in data flow analysis
@@ -61,11 +61,11 @@ class CDefineUseBuilder {
 		 * @throws Exception
 		 */
 		protected CDefineUseOperator(CirInstanceGraph graph) throws Exception {
-			Set<Object> assignments = new HashSet<Object>();
+			Set<Object> assignments = new HashSet<>();
 			for(Object context : graph.get_contexts()) {
 				for(CirInstance instance : graph.get_instances(context)) {
 					if(instance instanceof CirInstanceNode) {
-						CirStatement statement = ((CirInstanceNode) 
+						CirStatement statement = ((CirInstanceNode)
 								instance).get_execution().get_statement();
 						if(statement instanceof CirAssignStatement) {
 							assignments.add(instance);
@@ -75,7 +75,7 @@ class CDefineUseBuilder {
 			}
 			this.bitset_base = BitSetBase.base(assignments);
 		}
-		
+
 		/* initial methods */
 		@Override
 		public AbsValue initial_value(CirInstanceNode exec_instance) throws Exception {
@@ -85,8 +85,8 @@ class CDefineUseBuilder {
 		public AbsValue initial_value(CirInstanceEdge flow_instance) throws Exception {
 			return new BitSetValue(this.bitset_base.new_set());
 		}
-		
-		/* update methods */ 
+
+		/* update methods */
 		@Override
 		public AbsValue update_value(CirInstanceNode exec_instance, boolean forward) throws Exception {
 			/* declarations */
@@ -98,7 +98,7 @@ class CDefineUseBuilder {
 			else edges = exec_instance.get_ou_edges();
 			CirExecution execution = exec_instance.get_execution();
 			CirStatement statement = execution.get_statement();
-			
+
 			/* Y = X1 | X2 | X3 | ... | Xn except the entry and exit */
 			/*
 			if(forward && statement instanceof CirBegStatement) {}
@@ -116,55 +116,55 @@ class CDefineUseBuilder {
 				BitSequence bitstring = value.get().get_set();
 				result_bits.set(result_bits.or(bitstring));
 			}
-			
+
 			/* Kill(Y, stmt) */
 			if(statement instanceof CirAssignStatement) {
 				CirExpression lvalue = ((CirAssignStatement) statement).get_lvalue();
 				// String refer_code = lvalue.generate_code();
 				// String refer_code = CDefineUseBuilder.get_unique_expression(exec_instance, lvalue);
 				String refer_code = exec_instance.generate_code(lvalue);
-				
+
 				for(int k = 0; k < result_bits.length(); k++) {
 					if(result_bits.get(k)) {
-						CirInstanceNode old_instance = 
+						CirInstanceNode old_instance =
 								(CirInstanceNode) result.get_base().get(k);
-						CirAssignStatement stmt = (CirAssignStatement) 
+						CirAssignStatement stmt = (CirAssignStatement)
 								old_instance.get_execution().get_statement();
 						// String old_refer = stmt.get_lvalue().generate_code();
 						/*String old_refer = CDefineUseBuilder.
 								get_unique_expression(old_instance, stmt.get_lvalue());*/
 						String old_refer = old_instance.generate_code(stmt.get_lvalue());
-						
-						if(old_refer.equals(refer_code)) 
+
+						if(old_refer.equals(refer_code))
 							result_bits.set(k, BitSequence.BIT0);
 					}
 				}
 			}
-			
+
 			return new BitSetValue(result);
 		}
 		@Override
 		public AbsValue update_value(CirInstanceEdge flow_instance, boolean forward) throws Exception {
 			BitSet result = this.bitset_base.new_set();
 			BitSequence result_bits = result.get_set();
-			
+
 			CirInstanceNode source;
 			if(forward)
 				 source = flow_instance.get_source();
 			else source = flow_instance.get_target();
 			BitSetValue pvalue = (BitSetValue) source.get_state();
 			result_bits.set(pvalue.get().get_set());
-			
+
 			CirStatement statement = source.get_execution().get_statement();
 			if(statement instanceof CirAssignStatement) {
 				result.add(source);
 			}
-			
+
 			return new BitSetValue(result);
 		}
-		
+
 	}
-	
+
 	/* attributes */
 	/** abstract operator for valid assignment analysis **/
 	private CDefineUseOperator operator;
@@ -172,13 +172,13 @@ class CDefineUseBuilder {
 	private CirInstanceGraph input;
 	/** the definition-usage graph being constructed **/
 	private CDefineUseGraph output;
-	
+
 	/* constructor */
 	/** singleton of the builder **/
 	protected static final CDefineUseBuilder builder = new CDefineUseBuilder();
 	/** constructor of definition-usage graph builder **/
 	private CDefineUseBuilder() { this.operator = null; this.input = null; this.output = null; }
-	
+
 	/* processing methods */
 	/**
 	 * Set the input program and initialize the operator for abstract interpretation.
@@ -215,7 +215,7 @@ class CDefineUseBuilder {
 		if(output == null)
 			throw new IllegalArgumentException("Invalid output as null");
 		else {
-			this.output = output;	
+			this.output = output;
 			this.create_nodes();
 			this.create_edges();
 			this.create_links();
@@ -233,7 +233,7 @@ class CDefineUseBuilder {
 		this.analysis(true);
 		this.get_output(output);
 	}
-	
+
 	/* building methods */
 	/**
 	 * create the usage nodes within the provided expression tree
@@ -247,12 +247,12 @@ class CDefineUseBuilder {
 		}
 		else if(expression instanceof CirDeferExpression) {
 			this.output.new_node(false, instance, expression);
-			
+
 			this.create_nodes(instance, ((CirDeferExpression) expression).get_address());
 		}
 		else if(expression instanceof CirFieldExpression) {
 			this.output.new_node(false, instance, expression);
-			
+
 			this.create_nodes(instance, ((CirFieldExpression) expression).get_body());
 		}
 		else if(expression instanceof CirAddressExpression) {
@@ -284,9 +284,9 @@ class CDefineUseBuilder {
 		}
 		else if(statement instanceof CirCallStatement) {
 			this.create_nodes(instance, ((CirCallStatement) statement).get_function());
-			
+
 			CirArgumentList list = ((CirCallStatement) statement).get_arguments();
-			for(int k = 0; k < list.number_of_arguments(); k++) 
+			for(int k = 0; k < list.number_of_arguments(); k++)
 				this.create_nodes(instance, list.get_argument(k));
 		}
 		else if(statement instanceof CirCaseStatement) {
@@ -310,7 +310,7 @@ class CDefineUseBuilder {
 		}
 	}
 	/** used to collect all the nodes (usage and definitio) in the statement being executed **/
-	private Map<String, List<CDefineUseNode>> expressions = new HashMap<String, List<CDefineUseNode>>();
+	private Map<String, List<CDefineUseNode>> expressions = new HashMap<>();
 	/**
 	 * create the edges to usage from its last definition(s) based on the valid assignment instances.
 	 * @param instance
@@ -323,25 +323,25 @@ class CDefineUseBuilder {
 			// String key = node.get_reference();
 			// String key = CDefineUseBuilder.get_unique_expression(instance, node.get_expression());
 			String key = instance.generate_code(node.get_expression());
-			if(!this.expressions.containsKey(key)) 
+			if(!this.expressions.containsKey(key))
 				this.expressions.put(key, new LinkedList<CDefineUseNode>());
 			this.expressions.get(key).add(node);
 		}
-		
+
 		/* 2. link from the valid assignment definition points */
 		BitSetValue value = (BitSetValue) instance.get_state();
 		BitSequence bitstring = value.get().get_set();
 		for(int k = 0; k < bitstring.length(); k++) {
 			if(bitstring.get(k)) {
 				CirInstanceNode prev_node = (CirInstanceNode) value.get().get_base().get(k);
-				CirAssignStatement statement = 
+				CirAssignStatement statement =
 						(CirAssignStatement) prev_node.get_execution().get_statement();
 				CDefineUseNode source = output.get_node(prev_node, statement.get_lvalue());
 				// String source_reference = source.get_reference();
 				/*String source_reference = CDefineUseBuilder.
 						get_unique_expression(source.get_instance(), source.get_expression());*/
 				String source_reference = source.get_instance().generate_code(source.get_expression());
-				
+
 				if(this.expressions.containsKey(source_reference)) {
 					for(CDefineUseNode target : this.expressions.get(source_reference)) {
 						source.link_to(target);
@@ -371,17 +371,17 @@ class CDefineUseBuilder {
 	 * @throws Exception
 	 */
 	private void call_wait_links(CirInstanceNode instance) throws Exception {
-		if(instance.get_ou_edge(0).get_type() == CirExecutionFlowType.skip_flow || 
+		if(instance.get_ou_edge(0).get_type() == CirExecutionFlowType.skip_flow ||
 				instance.get_ou_edge(0).get_type() == CirExecutionFlowType.virt_flow) {
 			CirExecution call_execution = instance.get_execution();
 			CirExecution wait_execution = call_execution.get_graph().
 					get_execution(call_execution.get_id() + 1);
 			CirInstanceNode next_instance = this.input.
 					get_instance(instance.get_context(), wait_execution);
-			CirWaitAssignStatement next_statement = 
+			CirWaitAssignStatement next_statement =
 					(CirWaitAssignStatement) wait_execution.get_statement();
 			CDefineUseNode def = this.output.get_node(next_instance, next_statement.get_lvalue());
-			
+
 			for(CDefineUseNode use : this.output.get_nodes(instance)) {
 				if(use.is_usage()) { use.link_to(def); }
 			}
@@ -396,13 +396,13 @@ class CDefineUseBuilder {
 		if(instance.get_ou_edge(0).get_type() == CirExecutionFlowType.call_flow) {
 			CirInstanceNode entry_node = instance.get_ou_edge(0).get_target();
 			CirInstanceNode search_node = entry_node.get_ou_edge(0).get_target();
-			CirCallStatement call_statement = 
+			CirCallStatement call_statement =
 					(CirCallStatement) instance.get_execution().get_statement();
-			
+
 			CirArgumentList arguments = call_statement.get_arguments();
 			for(int k = 0; k < arguments.number_of_arguments(); k++) {
 				if(search_node.get_execution().get_statement() instanceof CirInitAssignStatement) {
-					CirInitAssignStatement param_statement = 
+					CirInitAssignStatement param_statement =
 							(CirInitAssignStatement) search_node.get_execution().get_statement();
 					CDefineUseNode def = this.output.get_node(search_node, param_statement.get_lvalue());
 					CDefineUseNode use = this.output.new_node(false, instance, arguments.get_argument(k));
@@ -423,16 +423,16 @@ class CDefineUseBuilder {
 		CirInstanceNode exit_instance = retr_goto_instance.get_ou_edge(0).get_target();
 		if(exit_instance.get_ou_degree() == 1) {
 			CirInstanceNode wait_instance = exit_instance.get_ou_edge(0).get_target();
-			
-			CirWaitAssignStatement wait_statement = 
+
+			CirWaitAssignStatement wait_statement =
 					(CirWaitAssignStatement) wait_instance.get_execution().get_statement();
 			CirWaitExpression wait_expression = (CirWaitExpression) wait_statement.get_rvalue();
 			CDefineUseNode use = this.output.get_node(wait_instance, wait_expression.get_function());
-			
-			CirReturnAssignStatement retr_statement = 
+
+			CirReturnAssignStatement retr_statement =
 					(CirReturnAssignStatement) instance.get_execution().get_statement();
 			CDefineUseNode def = this.output.get_node(instance, retr_statement.get_lvalue());
-			
+
 			def.link_to(use);
 		}
 	}
@@ -451,7 +451,7 @@ class CDefineUseBuilder {
 					if(use.is_usage()) { use.link_to(def); }
 				}
 			}
-			
+
 			if(statement instanceof CirReturnAssignStatement) {
 				this.retr_wait_links(instance);
 			}
@@ -462,7 +462,7 @@ class CDefineUseBuilder {
 		}
 	}
 	/**
-	 * create all the links through 
+	 * create all the links through
 	 * @throws Exception
 	 */
 	private void create_links() throws Exception {
@@ -475,5 +475,5 @@ class CDefineUseBuilder {
 			}
 		}
 	}
-	
+
 }

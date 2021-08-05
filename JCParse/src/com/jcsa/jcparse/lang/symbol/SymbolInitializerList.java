@@ -17,19 +17,19 @@ public class SymbolInitializerList extends SymbolExpression {
 	protected SymbolNode construct() throws Exception {
 		return new SymbolInitializerList(this.get_data_type());
 	}
-	
+
 	/**
 	 * @return the number of elements in the initializer list
 	 */
 	public int number_of_elements() { return this.number_of_children(); }
-	
+
 	/**
 	 * @param k
 	 * @return the kth element in the list
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymbolExpression get_element(int k) throws IndexOutOfBoundsException { return (SymbolExpression) this.get_child(k); }
-	
+
 	/**
 	 * @param data_type
 	 * @param elements
@@ -43,5 +43,5 @@ public class SymbolInitializerList extends SymbolExpression {
 		}
 		return list;
 	}
-	
+
 }

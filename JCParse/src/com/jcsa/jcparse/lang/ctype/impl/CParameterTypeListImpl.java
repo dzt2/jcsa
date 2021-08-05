@@ -13,7 +13,7 @@ public class CParameterTypeListImpl implements CParameterTypeList {
 
 	protected CParameterTypeListImpl(boolean variable) {
 		this.is_variable = variable;
-		this.type_list = new ArrayList<CType>();
+		this.type_list = new ArrayList<>();
 		this.buffer = new StringBuilder();
 	}
 

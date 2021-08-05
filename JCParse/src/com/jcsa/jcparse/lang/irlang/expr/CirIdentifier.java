@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.scope.CName;
 
 /**
  * explicitly declared expression in assignment
- * 
+ *
  * @author yukimula
  *
  */

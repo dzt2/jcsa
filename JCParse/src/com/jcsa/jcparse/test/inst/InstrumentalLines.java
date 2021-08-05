@@ -69,12 +69,12 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * It is used to generate the complete sequence of instrumental lines.
- * 
+ *
  * @author yukimula
  *
  */
 public class InstrumentalLines {
-	
+
 	/* definitions */
 	/** the template to decode the bytes into Java-Object value **/
 	private CRunTemplate template;
@@ -86,11 +86,11 @@ public class InstrumentalLines {
 	private InstrumentalLine curr_line;
 	/** the complete sequence of instrumental lines being parsed **/
 	private List<InstrumentalLine> lines;
-	
+
 	/* singleton */
 	private InstrumentalLines() { }
 	private static final InstrumentalLines parser = new InstrumentalLines();
-	
+
 	/* stream methods */
 	/**
 	 * @return whether there is more line from the stream
@@ -128,7 +128,7 @@ public class InstrumentalLines {
 	 * @param instrumental_file
 	 * @throws Exception
 	 */
-	private void start(CRunTemplate template, AstTree ast_tree, 
+	private void start(CRunTemplate template, AstTree ast_tree,
 					File instrumental_file) throws Exception {
 		if(template == null)
 			throw new IllegalArgumentException("Invalid template: null");
@@ -140,12 +140,12 @@ public class InstrumentalLines {
 			this.close();
 			this.template = template;
 			this.ast_tree = ast_tree;
-			this.lines = new ArrayList<InstrumentalLine>();
+			this.lines = new ArrayList<>();
 			this.stream = new FileInputStream(instrumental_file);
 			this.next_line();
 		}
 	}
-	
+
 	/* matching methods */
 	/**
 	 * @param location
@@ -191,9 +191,9 @@ public class InstrumentalLines {
 			}
 			else if(forcely && this.is_instrumented(line.get_location())) {
 				throw new RuntimeException("Unable to match:\n"
-						+ "\tcurr_line: " + this.curr_line.toString() + 
+						+ "\tcurr_line: " + this.curr_line.toString() +
 						"\t==> " + this.curr_line.get_location().generate_code()
-						+ "\n\tnew_line: " + line.toString() + "\t==> " + 
+						+ "\n\tnew_line: " + line.toString() + "\t==> " +
 						line.get_location().generate_code() + "\n");
 			}
 			else {
@@ -204,7 +204,7 @@ public class InstrumentalLines {
 			return false;
 		}
 	}
-	
+
 	/* lines access */
 	/**
 	 * @param value
@@ -238,7 +238,7 @@ public class InstrumentalLines {
 	private InstrumentalLine last_line() throws IndexOutOfBoundsException {
 		return this.lines.get(this.lines.size() - 1);
 	}
-	
+
 	/* location verifiers */
 	/**
 	 * @param data_type
@@ -266,8 +266,8 @@ public class InstrumentalLines {
 		else if(data_type instanceof CFunctionType) {
 			return false;
 		}
-		else if(data_type instanceof CStructType || 
-				data_type instanceof CUnionType || 
+		else if(data_type instanceof CStructType ||
+				data_type instanceof CUnionType ||
 				data_type instanceof CEnumType) {
 			return true;
 		}
@@ -305,7 +305,7 @@ public class InstrumentalLines {
 				parent = parent.get_parent();
 			}
 		}
-		
+
 		/** 2. invalid case determination **/
 		if(context instanceof AstAssignExpression
 			|| context instanceof AstArithAssignExpression
@@ -336,7 +336,7 @@ public class InstrumentalLines {
 		}
 		else if(context instanceof AstFieldExpression) {
 			switch(((AstFieldExpression) context).get_operator().get_punctuator()) {
-			case dot:	
+			case dot:
 			{
 				return ((AstFieldExpression) context).get_body() != child;
 			}
@@ -442,7 +442,7 @@ public class InstrumentalLines {
 			return false;
 		}
 	}
-	
+
 	/* construction methods */
 	private void parse(AstNode location) throws Exception {
 		if(location == null)
@@ -500,7 +500,7 @@ public class InstrumentalLines {
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
 	}
-	
+
 	/* general expression */
 	private void parse_id_expression(AstIdExpression location) throws Exception {
 		InstrumentalLine line = this.new_end_line(location);
@@ -552,7 +552,7 @@ public class InstrumentalLines {
 		}
 		this.match_line(this.new_end_line(location), true);
 	}
-	
+
 	/* special expression */
 	private void parse_array_expression(AstArrayExpression location) throws Exception {
 		this.new_beg_line(location);
@@ -567,7 +567,7 @@ public class InstrumentalLines {
 	}
 	private void parse_comma_expression(AstCommaExpression location) throws Exception {
 		this.new_beg_line(location);
-		for(int k = 0; k < location.number_of_arguments(); k++) 
+		for(int k = 0; k < location.number_of_arguments(); k++)
 			this.parse(location.get_expression(k));
 		this.match_line(this.new_end_line(location), true);
 	}
@@ -586,7 +586,7 @@ public class InstrumentalLines {
 		this.parse(location.get_body());
 		this.match_line(this.new_end_line(location), true);
 	}
-	
+
 	/* initializer expression */
 	private void parse_initializer(AstInitializer location) throws Exception {
 		if(location.is_body())
@@ -607,7 +607,7 @@ public class InstrumentalLines {
 	private void parse_field_initializer(AstFieldInitializer location) throws Exception {
 		this.parse(location.get_initializer());
 	}
-	
+
 	/* transition expressions */
 	private void parse_conditional_expression(AstConditionalExpression location) throws Exception {
 		this.new_beg_line(location);
@@ -633,14 +633,14 @@ public class InstrumentalLines {
 		if(location.has_argument_list()) {
 			this.parse(location.get_argument_list());
 		}
-		
+
 		/* function calling part */
 		while(this.is_next_calling_point()) {
-			AstFunctionDefinition callee = (AstFunctionDefinition) 
+			AstFunctionDefinition callee = (AstFunctionDefinition)
 					this.curr_line.get_location().get_parent();
 			this.parse(callee);
 		}
-		
+
 		this.match_line(this.new_end_line(location), true);
 	}
 	private void parse_expression(AstExpression location) throws Exception {
@@ -679,7 +679,7 @@ public class InstrumentalLines {
 		else
 			throw new IllegalArgumentException(location.toString());
 	}
-	
+
 	/* declaration package */
 	private void parse_declaration(AstDeclaration location) throws Exception {
 		if(location.has_declarator_list()) {
@@ -701,7 +701,7 @@ public class InstrumentalLines {
 	private void parse_declarator(AstDeclarator location) throws Exception {
 		this.new_end_line(location);
 	}
-	
+
 	/* basic statements */
 	private void parse_declaration_statement(AstDeclarationStatement location) throws Exception {
 		this.match_line(this.new_beg_line(location), false);
@@ -747,7 +747,7 @@ public class InstrumentalLines {
 		this.parse(location.get_expression());
 		this.match_line(this.new_end_line(location), true);
 	}
-	
+
 	/* structure statement */
 	private void parse_if_statement(AstIfStatement location) throws Exception {
 		if(this.has_line() && this.curr_line.get_location() == location) {
@@ -834,7 +834,7 @@ public class InstrumentalLines {
 			throw new IllegalArgumentException("Invalid match location");
 		}
 	}
-	
+
 	/* linear sequence directions */
 	/**
 	 * @param location
@@ -877,7 +877,7 @@ public class InstrumentalLines {
 		this.new_beg_line(location);
 		while(this.has_line()) {
 			/*
-			System.out.println("\t\t--> " + 
+			System.out.println("\t\t--> " +
 					this.curr_line.get_location().getClass().getSimpleName());
 			*/
 			AstNode next_location = this.get_top_location(this.curr_line.get_location());
@@ -887,7 +887,7 @@ public class InstrumentalLines {
 		}
 		this.new_end_line(location);
 	}
-	
+
 	/* public interface */
 	public static List<InstrumentalLine> simple_lines(CRunTemplate template,
 			AstTree ast_tree, File instrumental_file) throws Exception {
@@ -898,7 +898,7 @@ public class InstrumentalLines {
 		else if(instrumental_file == null || !instrumental_file.exists())
 			throw new IllegalArgumentException("Invalid instrumental file");
 		else {
-			List<InstrumentalLine> lines = new ArrayList<InstrumentalLine>();
+			List<InstrumentalLine> lines = new ArrayList<>();
 			InputStream stream = new FileInputStream(instrumental_file);
 			InstrumentalLine line;
 			while((line = InstrumentalLine.read(template, ast_tree, stream)) != null) {
@@ -919,7 +919,7 @@ public class InstrumentalLines {
 		else {
 			parser.start(template, ast_tree, instrumental_file);
 			if(parser.has_line()) {
-				AstFunctionDefinition main = (AstFunctionDefinition) 
+				AstFunctionDefinition main = (AstFunctionDefinition)
 						parser.curr_line.get_location().get_parent();
 				parser.parse(main);
 			}
@@ -927,5 +927,5 @@ public class InstrumentalLines {
 			return parser.lines;
 		}
 	}
-	
+
 }

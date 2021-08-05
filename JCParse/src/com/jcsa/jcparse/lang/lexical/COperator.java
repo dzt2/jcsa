@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.lexical;
 
 /**
  * Operator in C expression
- * 
+ *
  * @author yukimula
  */
 public enum COperator {

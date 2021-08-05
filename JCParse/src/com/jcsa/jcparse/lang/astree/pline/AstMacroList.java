@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstIdentifierList;
 
 /**
  * <code>( identifier_list? | ... )</code>
- * 
+ *
  * @author yukimula
  *
  */

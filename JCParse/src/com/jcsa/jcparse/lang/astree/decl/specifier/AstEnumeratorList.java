@@ -5,20 +5,20 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>EnumList --> Enumerator (, Enumerator)*</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstEnumeratorList extends AstNode {
 	/**
 	 * get the number of enumerators in the list
-	 * 
+	 *
 	 * @return
 	 */
 	public int number_of_enumerators();
 
 	/**
 	 * get the kth enumerator
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 */
@@ -26,7 +26,7 @@ public interface AstEnumeratorList extends AstNode {
 
 	/**
 	 * get the kth comma punctuator
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 */
@@ -34,7 +34,7 @@ public interface AstEnumeratorList extends AstNode {
 
 	/**
 	 * add new enumerator in the tail of this list
-	 * 
+	 *
 	 * @param comma
 	 * @param enumerator
 	 * @throws Exception

@@ -246,7 +246,7 @@ class CirMutationTreeUtil {
 			throw new IllegalArgumentException("Invalid error: null");
 		}
 		else if(error instanceof CirBlockError) {
-			this.propagate_from_block_error((CirFlowsError) error, errors);
+			this.propagate_from_block_error((CirBlockError) error, errors);
 		}
 		else if(error instanceof CirFlowsError) {
 			this.propagate_from_flows_error((CirFlowsError) error, errors);
@@ -272,7 +272,7 @@ class CirMutationTreeUtil {
 	 * @param errors
 	 * @throws Exception
 	 */
-	private void propagate_from_block_error(CirFlowsError error, Collection<CirAttribute> errors) throws Exception { /* none */ }
+	private void propagate_from_block_error(CirBlockError error, Collection<CirAttribute> errors) throws Exception { /* none */ }
 	/**
 	 * true --> add_executions; false --> del_executions;
 	 * @param orig_target
@@ -762,12 +762,13 @@ class CirMutationTreeUtil {
 		else {
 			/* manage each execution to corresponding cir-mutations */
 			Map<CirExecution, Collection<CirMutation>> maps =
-					new HashMap<>();
+					new HashMap<CirExecution, Collection<CirMutation>>();
 			for(CirMutation cir_mutation : tree.get_cir_mutations()) {
 				CirExecution execution = cir_mutation.get_execution();
 				if(!maps.containsKey(execution)) {
 					maps.put(execution, new HashSet<CirMutation>());
 				}
+				maps.get(execution).add(cir_mutation);
 			}
 
 			/* reachability & infection construction */
@@ -1839,5 +1840,55 @@ class CirMutationTreeUtil {
 			else { }
 		}
 	}
-
+	
+	/* evaluation methods */
+	/**
+	 * @param tree
+	 * @throws Exception
+	 */
+	private void upon_evaluate(CirMutationTree tree) throws Exception {
+		Set<CirMutationTreeNode> prev_nodes = new HashSet<CirMutationTreeNode>();
+		for(CirMutationTreeEdge edge : tree.get_infection_edges()) {
+			CirMutationTreeNode prev_node = edge.get_source().get_parent();
+			while(prev_node != null) {
+				prev_nodes.add(prev_node);
+				prev_node = prev_node.get_parent();
+			}
+		}
+		for(CirMutationTreeNode prev_node : prev_nodes) {
+			prev_node.get_status().add(null);
+		}
+	}
+	/**
+	 * recursively evaluate the attribute in node using context information
+	 * @param node
+	 * @param context
+	 * @throws Exception
+	 */
+	private void down_evaluate(CirMutationTreeNode node, SymbolProcess context) throws Exception {
+		Boolean result = node.get_status().add(context);
+		if(result == null || result.booleanValue()) {
+			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
+				this.down_evaluate(edge.get_target(), context);
+			}
+		}
+	}
+	/**
+	 * perform evaluation from infection-node to the entire of the tree edges
+	 * @param tree
+	 * @param context
+	 * @throws Exception
+	 */
+	protected void evaluate_at(CirMutationTree tree, SymbolProcess context) throws Exception {
+		if(tree == null) {
+			throw new IllegalArgumentException("Invalid tree as null");
+		}
+		else {
+			this.upon_evaluate(tree);
+			for(CirMutationTreeEdge edge : tree.get_infection_edges()) {
+				this.down_evaluate(edge.get_source(), context);
+			}
+		}
+	}
+	
 }

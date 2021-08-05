@@ -4,10 +4,10 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 
 /**
  * CirStatement [index]	|-- CirAssignStatement
- * 						|-- CirGotoStatement 
- * 						|-- CirCaseStatement 
- * 						|-- CirIfStatement 	
- * 						|-- CirCallStatement 
+ * 						|-- CirGotoStatement
+ * 						|-- CirCaseStatement
+ * 						|-- CirIfStatement
+ * 						|-- CirCallStatement
  * 						|-- CirTagStatement
  * @author yukimula
  *

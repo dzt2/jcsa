@@ -10,12 +10,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
  * Each node records the value hold by expressions after a statement being executed.
- * 
+ *
  * @author yukimula
  *
  */
 public class CStateNode {
-	
+
 	/* definitions */
 	/** the path in which the node is created **/
 	protected CStatePath path;
@@ -26,7 +26,7 @@ public class CStateNode {
 	/** the units record the value hold by the expressions after the
 	 * 	statement being executed during testing in the statement. **/
 	private List<CStateUnit> units;
-	
+
 	/* constructor */
 	/**
 	 * create an isolated node in the path of the state transition.
@@ -42,10 +42,10 @@ public class CStateNode {
 			this.path = null;
 			this.index = -1;
 			this.execution = execution;
-			this.units = new ArrayList<CStateUnit>();
+			this.units = new ArrayList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the node is isolated when it has not been added in the path
@@ -96,15 +96,15 @@ public class CStateNode {
 		return null;
 	}
 	/**
-	 * @param value 
-	 * @return allow Boolean, Character, Short, Integer, 
+	 * @param value
+	 * @return allow Boolean, Character, Short, Integer,
 	 */
 	private boolean available_value(Object value) {
-		return 	value instanceof Boolean 
+		return 	value instanceof Boolean
 				|| value instanceof Character
-				|| value instanceof Short 
+				|| value instanceof Short
 				|| value instanceof Integer
-				|| value instanceof Long 
+				|| value instanceof Long
 				|| value instanceof Float
 				|| value instanceof Double;
 	}
@@ -169,5 +169,5 @@ public class CStateNode {
 			return null;
 		}
 	}
-	
+
 }

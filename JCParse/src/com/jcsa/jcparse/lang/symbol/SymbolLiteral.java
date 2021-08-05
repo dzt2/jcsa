@@ -10,10 +10,10 @@ import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
  *
  */
 public class SymbolLiteral extends SymbolBasicExpression {
-	
+
 	/** content of string literal **/
 	private String literal;
-	
+
 	/**
 	 * construct a literal node w.r.t. String content
 	 * @param data_type
@@ -24,22 +24,22 @@ public class SymbolLiteral extends SymbolBasicExpression {
 		super(data_type);
 		if(literal == null)
 			throw new IllegalArgumentException("Invalid literal: null");
-		else 
+		else
 			this.literal = literal;
 	}
-	
+
 	/**
 	 * @return content of string literal
 	 */
 	public String get_literal() { return this.literal; }
-	
+
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolLiteral(this.get_data_type(), this.get_literal());
 	}
-	
+
 	private static final CTypeFactory tfactory = new CTypeFactory();
-	
+
 	/**
 	 * @param literal
 	 * @return literal |-- {literal: String}
@@ -50,5 +50,5 @@ public class SymbolLiteral extends SymbolBasicExpression {
 		CType data_type = tfactory.get_array_type(CBasicTypeImpl.char_type, length);
 		return new SymbolLiteral(data_type, literal);
 	}
-	
+
 }

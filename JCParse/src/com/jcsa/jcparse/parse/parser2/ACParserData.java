@@ -13,12 +13,12 @@ import com.jcsa.jcparse.lang.irlang.impl.CirTreeImpl;
  * 	(2) ACPModule for declarations in transition unit.<br>
  * 	(3) The solutions with range and result information for each AstNode to build their AstCirPair.<br>
  * 	(4) The sequence of statements being created for building up the the flow graph and function body.<br>
- * 
+ *
  * @author yukimula
  *
  */
 public class ACParserData {
-	
+
 	/* definitions & constructor */
 	private AstTranslationUnit ast_root;
 	private CirTreeImpl cir_tree;
@@ -28,10 +28,10 @@ public class ACParserData {
 			throw new IllegalArgumentException("invalid ast-root as null");
 		else {
 			this.cir_tree = new CirTreeImpl(ast_root);
-			this.modules = new HashMap<AstNode, ACPModule>();
+			this.modules = new HashMap<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the root of the syntactic tree for being parsed
@@ -53,10 +53,10 @@ public class ACParserData {
 		if(ast_source == null)
 			throw new IllegalArgumentException("invalid ast_source: null");
 		else {
-			if(!this.modules.containsKey(ast_source)) 
+			if(!this.modules.containsKey(ast_source))
 				this.modules.put(ast_source, new ACPModule(ast_source));
 			return this.modules.get(ast_source);
 		}
 	}
-	
+
 }

@@ -19,16 +19,16 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 /**
  * Used to test the parsing and structure of influence graph.
- * 
+ *
  * @author yukimula
  *
  */
 public class CInfluenceTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
 	protected static final String postfx = "result/inf/";
 	protected static final File template_file = new File("config/cruntime.txt");
-	
+
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(prefix).listFiles()) {
 			testing(file);
@@ -48,44 +48,44 @@ public class CInfluenceTest {
 		System.out.println("\t5. output the influence graph.");
 		System.out.println();
 	}
-	
+
 	/* basic methods */
 	private static AstCirFile parse(File file) throws Exception {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		return CirCallContextInstanceGraph.graph(root_function, 
+		return CirCallContextInstanceGraph.graph(root_function,
 				CirFunctionCallPathType.unique_path, -1);
 	}
 	private static CInfluenceGraph generate(CirInstanceGraph program_graph) throws Exception {
 		return CInfluenceGraph.graph(program_graph);
 	}
-	
+
 	/* output methods */
 	private static StringBuilder buffer = new StringBuilder();
 	private static String get_identifier(CInfluenceNode node) throws Exception {
 		/* context */
-		CirFunctionCallTreeNode context = 
-				(CirFunctionCallTreeNode) node.get_instance_context(); 
+		CirFunctionCallTreeNode context =
+				(CirFunctionCallTreeNode) node.get_instance_context();
 		buffer.setLength(0);
 		while(context != null) {
 			if(context.get_context() != null) {
 				buffer.append(context.get_context().
 						get_call_execution().toString());
-				buffer.append(":"); 
+				buffer.append(":");
 			}
 			else {
 				buffer.append(context.get_function().get_name());
 			}
 			context = context.get_parent();
 		}
-		
+
 		/* identifier */
 		return buffer.toString() + "[" + node.get_cir_source().get_node_id() + "]";
 	}
 	/**
-	 * ID type execution cir_source 
+	 * ID type execution cir_source
 	 * @param node
 	 * @param writer
 	 * @throws Exception
@@ -104,7 +104,7 @@ public class CInfluenceTest {
 			writer.write("\"" + code + "\"");
 		}
 		writer.write("\n");
-		
+
 		for(CInfluenceEdge edge : node.get_ou_edges()) {
 			writer.write("\t==> ");
 			writer.write(edge.get_type().toString());
@@ -122,5 +122,5 @@ public class CInfluenceTest {
 		}
 		writer.close();
 	}
-	
+
 }

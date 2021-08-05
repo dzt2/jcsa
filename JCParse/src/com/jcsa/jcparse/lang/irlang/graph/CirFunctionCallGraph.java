@@ -9,7 +9,7 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 
 public class CirFunctionCallGraph {
-	
+
 	private CirTree cir_tree;
 	private Map<CirFunctionDefinition, CirFunction> functions;
 	private Map<String, CirFunction> name_function_index;
@@ -24,10 +24,10 @@ public class CirFunctionCallGraph {
 			throw new IllegalArgumentException("invalid cir-tree");
 		else {
 			this.cir_tree = cir_tree;
-			this.functions = new HashMap<CirFunctionDefinition, CirFunction>();
-			this.name_function_index = new HashMap<String, CirFunction>();
-			this.calls = new HashMap<CirExecutionFlow, CirFunctionCall>();
-			
+			this.functions = new HashMap<>();
+			this.name_function_index = new HashMap<>();
+			this.calls = new HashMap<>();
+
 			this.init_functions();
 		}
 	}
@@ -46,7 +46,7 @@ public class CirFunctionCallGraph {
 			}
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the C-like intermediate representation code tree
@@ -131,7 +131,7 @@ public class CirFunctionCallGraph {
 			return calling;
 		}
 	}
-	
+
 	/* parsing method */
 	/**
 	 * construct the execution flow graph and function calling graph based
@@ -143,5 +143,5 @@ public class CirFunctionCallGraph {
 	public static CirFunctionCallGraph graph(CirTree cir_tree) throws Exception {
 		return CirFunctionBuilder.build(cir_tree);
 	}
-	
+
 }

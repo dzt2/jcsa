@@ -31,7 +31,7 @@ import com.jcsa.jcparse.lang.ptoken.PPunctuatorToken;
  * 8. PPunctuatorToken |--> CPunctuatorToken <br>
  * 9. PNewlineToken |--> CNewlineToken <br>
  * a. PCommentToken |--> <i>none</i>
- * 
+ *
  * @author yukimula
  */
 public class PTokenImprover {
@@ -47,7 +47,7 @@ public class PTokenImprover {
 	/**
 	 * Improve PIdentifierToken to either CKeywordToken or CIdentifierToken,
 	 * depending on the names of keywords defined in keyword-library.
-	 * 
+	 *
 	 * @param ptoken
 	 * @param lib
 	 * @return
@@ -70,7 +70,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve PCharacterToken to CConstantToken
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -101,7 +101,7 @@ public class PTokenImprover {
 	/**
 	 * Improve PLiteralToken to CLiteralToken, this will parse string to its
 	 * environmental format.
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -132,7 +132,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve PIntegerToken to integer constant as CConstantToken
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -190,7 +190,7 @@ public class PTokenImprover {
 	 * Improve PFloatingToken to CConstantToken, this will parse the floating
 	 * string to a double value represented in Java, which might be <i>not that
 	 * precise</i>.
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -215,7 +215,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve directive token
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -228,7 +228,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve header token
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -245,7 +245,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve punctuator token
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -258,7 +258,7 @@ public class PTokenImprover {
 
 	/**
 	 * Improve newline as token
-	 * 
+	 *
 	 * @param ptoken
 	 * @return
 	 * @throws Exception
@@ -271,7 +271,7 @@ public class PTokenImprover {
 
 	/**
 	 * parse the next character to its number in execution environment.
-	 * 
+	 *
 	 * @param str
 	 *            : string where characters are specified
 	 * @param k
@@ -352,7 +352,7 @@ public class PTokenImprover {
 	 * 0-9 |--> decimal number <br>
 	 * a-f |--> hexical number <br>
 	 * A-F |--> hexical number <br>
-	 * 
+	 *
 	 * @param ch
 	 * @return
 	 * @throws Exception
@@ -370,7 +370,7 @@ public class PTokenImprover {
 
 	/**
 	 * parse string as decimal-string
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 * @throws Exception
@@ -389,7 +389,7 @@ public class PTokenImprover {
 
 	/**
 	 * parse string as hexical numbers
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 * @throws Exception
@@ -408,7 +408,7 @@ public class PTokenImprover {
 
 	/**
 	 * improve the value of decimal floating constant
-	 * 
+	 *
 	 * @param ptoken
 	 * @param ctoken
 	 * @throws Exception
@@ -448,7 +448,7 @@ public class PTokenImprover {
 
 	/**
 	 * improve the value of hexical floating constant
-	 * 
+	 *
 	 * @param ptoken
 	 * @param ctoken
 	 * @throws Exception

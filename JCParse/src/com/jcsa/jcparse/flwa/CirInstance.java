@@ -15,7 +15,7 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
  *
  */
 public abstract class CirInstance {
-	
+
 	/* properties  */
 	/** the directed graph where the instance is created **/
 	private CirInstanceGraph graph;
@@ -25,7 +25,7 @@ public abstract class CirInstance {
 	private Object element;
 	/** the state hold by the instance of statement or flow that will be used during analysis **/
 	private Object state;
-	
+
 	/* constructor */
 	/**
 	 * create the instance of statement or flow in the graph with respect to the program element
@@ -47,7 +47,7 @@ public abstract class CirInstance {
 			this.element = element; this.state = null;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the directed graph where the instance of node or flow is created
@@ -84,5 +84,5 @@ public abstract class CirInstance {
 	 * @param state
 	 */
 	public void set_state(Object state) { this.state = state; }
-	
+
 }

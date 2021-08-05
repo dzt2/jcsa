@@ -17,11 +17,11 @@ public class SymbolCallExpression extends SymbolExpression {
 	protected SymbolNode construct() throws Exception {
 		return new SymbolCallExpression(this.get_data_type());
 	}
-	
+
 	public SymbolExpression get_function() { return (SymbolExpression) this.get_child(0); }
-	
+
 	public SymbolArgumentList get_argument_list() { return (SymbolArgumentList) this.get_child(1); }
-	
+
 	/**
 	 * @param function
 	 * @param arguments
@@ -33,5 +33,5 @@ public class SymbolCallExpression extends SymbolExpression {
 		expression.add_child(function); expression.add_child(arguments);
 		return expression;
 	}
-	
+
 }

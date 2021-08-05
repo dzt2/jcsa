@@ -15,7 +15,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
  *
  */
 public class CirFunctionCallTreeNode {
-	
+
 	/* properties */
 	/** the tree where the node is created **/
 	private CirFunctionCallTree tree;
@@ -27,7 +27,7 @@ public class CirFunctionCallTreeNode {
 	private CirFunctionCall context;
 	/** the function that this tree node represents **/
 	private CirFunction function;
-	
+
 	/* constructors */
 	/**
 	 * create the root node in the tree with respect to the given function
@@ -45,7 +45,7 @@ public class CirFunctionCallTreeNode {
 			this.context = null;
 			this.function = function;
 			this.parent = null;
-			this.children = new LinkedList<CirFunctionCallTreeNode>();
+			this.children = new LinkedList<>();
 		}
 	}
 	/**
@@ -66,10 +66,10 @@ public class CirFunctionCallTreeNode {
 			this.parent = parent;
 			this.context = call;
 			this.function = call.get_callee();
-			this.children = new LinkedList<CirFunctionCallTreeNode>();
+			this.children = new LinkedList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the tree where the node is created
@@ -118,16 +118,16 @@ public class CirFunctionCallTreeNode {
 	}
 	@Override
 	public String toString() {
-		Stack<CirFunctionCall> calls = new Stack<CirFunctionCall>();
+		Stack<CirFunctionCall> calls = new Stack<>();
 		CirFunctionCallTreeNode node = this;
-		
+
 		while(node != null) {
 			if(node.context != null) {
 				calls.push(node.context);
 			}
 			node = node.parent;
 		}
-		
+
 		StringBuilder buffer = new StringBuilder();
 		while(!calls.isEmpty()) {
 			CirFunctionCall call = calls.pop();
@@ -135,12 +135,12 @@ public class CirFunctionCallTreeNode {
 			buffer.append(call_stmt.toString()).append("::");
 		}
 		buffer.append(this.function.get_name());
-		
+
 		return buffer.toString();
 	}
 	@Override
 	public int hashCode() { return this.toString().hashCode(); }
-	
+
 	/* setters */
 	/**
 	 * create a new child that this tree node calls or return the existing one
@@ -156,5 +156,5 @@ public class CirFunctionCallTreeNode {
 		CirFunctionCallTreeNode child = new CirFunctionCallTreeNode(this, call);
 		this.children.add(child); return child;
 	}
-	
+
 }

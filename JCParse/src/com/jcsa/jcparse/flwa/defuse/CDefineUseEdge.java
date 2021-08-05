@@ -5,14 +5,14 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 
 public class CDefineUseEdge {
-	
+
 	/** the node from which this edge points **/
 	private CDefineUseNode source;
 	/** the node to which this edge points **/
 	private CDefineUseNode target;
 	/** the assign statement that the edge represents **/
 	private CirInstanceNode instance;
-	
+
 	/**
 	 * create an edge from the define|use node to the use|define node
 	 * @param source
@@ -20,7 +20,7 @@ public class CDefineUseEdge {
 	 * @param statement
 	 * @throws Exception
 	 */
-	protected CDefineUseEdge(CDefineUseNode source, 
+	protected CDefineUseEdge(CDefineUseNode source,
 			CDefineUseNode target, CirInstanceNode instance) throws Exception {
 		if(source == null)
 			throw new IllegalArgumentException("Invalid source: null");
@@ -36,7 +36,7 @@ public class CDefineUseEdge {
 			this.instance = instance;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the source node from which the edge points
@@ -62,16 +62,16 @@ public class CDefineUseEdge {
 	 * get the assign statement that the definition node of the edge represents
 	 * @return
 	 */
-	public CirAssignStatement get_statement() { 
+	public CirAssignStatement get_statement() {
 		return (CirAssignStatement) this.instance.
-				get_execution().get_statement(); 
+				get_execution().get_statement();
 	}
 	/**
 	 * Is this edge links from a definition node to a usage node, which
 	 * represents the defined node is further used in the usage node.
 	 * @return
 	 */
-	public boolean is_def_use() {  
+	public boolean is_def_use() {
 		return this.source.is_define() && this.target.is_usage();
 	}
 	/**
@@ -82,5 +82,5 @@ public class CDefineUseEdge {
 	public boolean is_use_def() {
 		return this.source.is_usage() && this.target.is_define();
 	}
-	
+
 }

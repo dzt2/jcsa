@@ -14,8 +14,8 @@ public class CEnumeratorListImpl implements CEnumeratorList {
 	protected Map<String, CEnumerator> enum_map;
 
 	protected CEnumeratorListImpl() {
-		enum_list = new ArrayList<CEnumerator>();
-		enum_map = new HashMap<String, CEnumerator>();
+		enum_list = new ArrayList<>();
+		enum_map = new HashMap<>();
 	}
 
 	@Override

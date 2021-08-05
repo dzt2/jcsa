@@ -5,7 +5,7 @@ package com.jcsa.jcparse.lang.lexical;
  * 1. octal <br>
  * 2. decimal <br>
  * 3. hexical <br>
- * 
+ *
  * @author yukimula
  *
  */

@@ -12,20 +12,20 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 /**
  * The program influence graph in which each node represents a program element (statement or expression)
  * while the edge represents their relationships such that one directly influences on another.
- * 
+ *
  * @author yukimula
  *
  */
 public class CInfluenceGraph {
-	
+
 	/* constructor */
 	/** the mapping from statement instance to the nodes referring to it **/
 	private Map<CirInstanceNode, List<CInfluenceNode>> instances_nodes;
 	/** create an empty influence graph **/
 	private CInfluenceGraph() {
-		instances_nodes = new HashMap<CirInstanceNode, List<CInfluenceNode>>();
-	} 
-	
+		instances_nodes = new HashMap<>();
+	}
+
 	/* getters */
 	/**
 	 * get the number of nodes created in this graph
@@ -93,7 +93,7 @@ public class CInfluenceGraph {
 			throw new IllegalArgumentException("Undefined instance: " + instance);
 		}
 	}
-	
+
 	/* setters */
 	/**
 	 * create a new node with respect to the source node in the instance of the statement.
@@ -111,11 +111,11 @@ public class CInfluenceGraph {
 			if(!this.instances_nodes.containsKey(instance))
 				this.instances_nodes.put(instance, new LinkedList<CInfluenceNode>());
 			List<CInfluenceNode> nodes = this.instances_nodes.get(instance);
-			
+
 			for(CInfluenceNode node : nodes) {
 				if(node.get_cir_source() == cir_source) return node;
 			}
-			
+
 			CInfluenceNode node = new CInfluenceNode(this, instance, cir_source);
 			nodes.add(node);
 			return node;
@@ -138,12 +138,12 @@ public class CInfluenceGraph {
 			throw new IllegalArgumentException("Invalid target: null");
 		else { return source.link_with(type, target); }
 	}
-	
+
 	/* generator */
 	public static CInfluenceGraph graph(CirInstanceGraph program_graph) throws Exception {
 		CInfluenceGraph influence_graph = new CInfluenceGraph();
 		CInfluenceBuilder.build(program_graph, influence_graph);
 		return influence_graph;
 	}
-	
+
 }

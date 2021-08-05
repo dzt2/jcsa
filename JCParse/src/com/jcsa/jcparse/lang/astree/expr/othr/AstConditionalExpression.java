@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 
 /**
  * <code>CondExpr --> Expr ? Expr : Expr</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstConditionalExpression extends AstExpression {
@@ -13,7 +13,7 @@ public interface AstConditionalExpression extends AstExpression {
 
 	/**
 	 * get ?
-	 * 
+	 *
 	 * @return
 	 */
 	public AstPunctuator get_question();
@@ -22,7 +22,7 @@ public interface AstConditionalExpression extends AstExpression {
 
 	/**
 	 * get :
-	 * 
+	 *
 	 * @return
 	 */
 	public AstPunctuator get_colon();

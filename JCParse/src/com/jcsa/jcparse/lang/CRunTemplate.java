@@ -31,12 +31,12 @@ import com.jcsa.jcparse.lang.ctype.CUnionType;
 /**
  * The template defines the information to build up the running environment
  * for executing programs written in C.
- * 
+ *
  * @author yukimula
  *
  */
 public class CRunTemplate {
-	
+
 	/* parameters to build up environment */
 	/** true: {1 --> 01 00 00 00} **/
 	private boolean little_endian;
@@ -78,7 +78,7 @@ public class CRunTemplate {
 	private int va_list_size;
 	/** size of pointer value **/
 	private int pointer_size;
-	
+
 	/* constructor */
 	/**
 	 * read the key-value pairs from template-file
@@ -87,8 +87,8 @@ public class CRunTemplate {
 	 * @throws Exception
 	 */
 	private Map<String, Integer> read(File template_file) throws Exception {
-		Map<String, Integer> results = new HashMap<String, Integer>();
-		
+		Map<String, Integer> results = new HashMap<>();
+
 		BufferedReader reader = new BufferedReader(new FileReader(template_file));
 		String line;
 		while((line = reader.readLine()) != null) {
@@ -101,7 +101,7 @@ public class CRunTemplate {
 			}
 		}
 		reader.close();
-		
+
 		return results;
 	}
 	/**
@@ -116,7 +116,7 @@ public class CRunTemplate {
 			Map<String, Integer> results = this.read(template_file);
 			this.little_endian = (results.get("little_endian") != 0);
 			this.word_size = results.get("word_size");
-			
+
 			this.void_size = results.get("void_size");
 			this.char_size = results.get("char_size");
 			this.short_size = results.get("short_size");
@@ -136,7 +136,7 @@ public class CRunTemplate {
 			this.va_list_size = results.get("va_list_size");
 		}
 	}
-	
+
 	/* utility methods */
 	/**
 	 * @return whether the bytes are encoded with little endian.
@@ -218,7 +218,7 @@ public class CRunTemplate {
 		else if(data_type instanceof CQualifierType) {
 			return this.sizeof(((CQualifierType) data_type).get_reference());
 		}
-		else 
+		else
 			throw new IllegalArgumentException("Not support for: " + data_type);
 	}
 	/**
@@ -238,7 +238,7 @@ public class CRunTemplate {
 		}
 		else if(expression instanceof AstInitializerBody) {
 			int size = 0;
-			AstInitializerList list = 
+			AstInitializerList list =
 					((AstInitializerBody) expression).get_initializer_list();
 			for(int k = 0; k < list.number_of_initializer(); k++) {
 				AstFieldInitializer element = list.get_initializer(k);
@@ -256,7 +256,7 @@ public class CRunTemplate {
 		else
 			throw new IllegalArgumentException("Unsupport: " + expression);
 	}
-	
+
 	/* stream reader */
 	/**
 	 * @param stream
@@ -269,7 +269,7 @@ public class CRunTemplate {
 		int length = this.sizeof(data_type);
 		byte[] data_buffer = new byte[length];
 		length = stream.read(data_buffer);
-		
+
 		/* when EOF is reached */
 		if(length < 0) {
 			return null;
@@ -317,7 +317,7 @@ public class CRunTemplate {
 			byte_buffer.order(ByteOrder.BIG_ENDIAN);
 		}
 		byte_buffer.clear();
-		
+
 		if(type instanceof CBasicType) {
 			switch(((CBasicType) type).get_tag()) {
 			case c_bool:
@@ -382,7 +382,7 @@ public class CRunTemplate {
 			{
 				return new Complex(0, byte_buffer.getDouble());
 			}
-			default: 
+			default:
 			{
 				return byte_buffer;
 			}
@@ -407,7 +407,7 @@ public class CRunTemplate {
 	public byte[] encode(CType type, Object value) throws Exception {
 		ByteBuffer byte_buffer;
 		type = CTypeAnalyzer.get_value_type(type);
-		
+
 		if(value instanceof Boolean) {
 			byte_buffer = ByteBuffer.wrap(new byte[] { (byte) (((Boolean) value).booleanValue() ? 1 : 0) });
 		}
@@ -457,5 +457,5 @@ public class CRunTemplate {
 		byte_buffer.clear();
 		return byte_buffer.array();
 	}
-	
+
 }

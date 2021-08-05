@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>field_initializer (, field_initializer)*</code>
- * 
+ *
  * @author yukimula
  *
  */

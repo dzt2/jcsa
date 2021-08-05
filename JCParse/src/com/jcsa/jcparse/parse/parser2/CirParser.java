@@ -7,6 +7,7 @@ import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclaratorList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstName;
@@ -17,7 +18,6 @@ import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
@@ -134,14 +134,14 @@ import com.jcsa.jcparse.lang.scope.CScope;
  * 		function_definition			|==	function_definition
  * 		declaration_statement		|== init_assign_statement (declarator = default_value|expression)
  * 	+-----------------------------------------------------------------------------------------------------------------------+
- * 	
+ *
  * 	+-----------------------------------------------------------------------------------------------------------------------+
  * 		id_expression (var)			|== identifier 			[cname]
  * 		id_expression (enum)		|== const_expression 	[integer]
  * 		constant					|== const_expression 	[character|short|integer|long|float|double]
  * 		literal						|== string_literal	 	[string]
  * 		E --> +E1					|== (E1)				{skip}
- * 		E --> -E1					|== (arith_neg (E1))	
+ * 		E --> -E1					|== (arith_neg (E1))
  * 		E --> ~E1					|== (bitws_rsv (E1))
  * 		E --> !E1					|== (logic_not (E1))
  * 		E --> &E1					|== (address (E1))
@@ -168,7 +168,7 @@ import com.jcsa.jcparse.lang.scope.CScope;
  * 		E1->F2						|== (field (defer (E1)) (F2))
  * 		E1, E2, ..., En				|== [{E1}; {E2}; ... {En}; return (En)]
  * 		(T) E						|== (cast (T) (E))
- * 		E1 ? E2 : E3				|== [(if (E1) then L1 else L2); 
+ * 		E1 ? E2 : E3				|== [(if (E1) then L1 else L2);
  * 									|== [L1: (assign #temporal as (E1)); (goto L3);]
  * 									|== [L2: (assign #temporal as (E2)); (goto L3);]
  * 									|== [L3: if_end_statement]
@@ -183,7 +183,7 @@ import com.jcsa.jcparse.lang.scope.CScope;
  * 		init_declarator				|== (init_assign declarator as default_value)
  * 		declarator = initializer	|== (init_assign declarator as (initializer))
  * 	+-----------------------------------------------------------------------------------------------------------------------+
- * 	
+ *
  * 	+-----------------------------------------------------------------------------------------------------------------------+
  * 		E ;							|== {E}
  * 		;							|== {}
@@ -212,16 +212,16 @@ import com.jcsa.jcparse.lang.scope.CScope;
  * 		if E S1 else S2				|== {E}
  * 									|== (if (E) then L1 else L2)					@require	{true}
  * 																					@require	{false}
- * 		switch E S					|== {E}	
+ * 		switch E S					|== {E}
  * 									|== (assign #temporal as (E))
  * 									|== (goto L1)									@require	{case}
- * 									|== {S}											
+ * 									|== {S}
  * 									|== [L2: case_end_statement]					@solve		{break}
  * 		while E S					|== {E}											@solve		{continue}
  * 									|== (if (E) then L1 else L2]					@require	{true}
  * 																					@require	{false}
  * 									|== [L1: {S} (goto {continue})]					@solve		{true}
- * 																					@require	
+ * 																					@require
  * 									|== [L2: if_end_statement]						@solve		{false}
  * 																					@solve		{break}
  * 		do S while E;				|==	[L: {S};]									@solve		{true}
@@ -230,29 +230,29 @@ import com.jcsa.jcparse.lang.scope.CScope;
  * 									|== (L2: if_end_statement)						@solve		{false|break}
  * 		for(S1 S2 E3) S4			|== {S1}
  * 									|== {S2}
- * 									|== (if (S2) then L1 else L2)					@require	{true|false}		
+ * 									|== (if (S2) then L1 else L2)					@require	{true|false}
  * 									|== {L1: {S4}}									@solve		{true}
  * 																					@require	{break|continue}
  * 									|== {{E3}; (goto {true});}						@solve		{continue}
  * 									|== (if_end_statement)							@solve		{break|false}
  * 	+-----------------------------------------------------------------------------------------------------------------------+
- * 
+ *
  * </code>
  * <br>
  * @author yukimula
  *
  */
 public class CirParser {
-	
+
 	public static final String InitFunctionName = "#init";
-	
+
 	/* definitions and constructor */
 	private ACParserData data;
 	private CirTreeImpl cir_tree;
 	private ACPModule cur_module;
 	private CTypeFactory type_factory;
 	private CRunTemplate template;
-	private CirParser(AstTranslationUnit ast_root, CRunTemplate 
+	private CirParser(AstTranslationUnit ast_root, CRunTemplate
 			template) throws IllegalArgumentException {
 		this.template = template;
 		this.data = new ACParserData(ast_root);
@@ -260,7 +260,7 @@ public class CirParser {
 		this.cur_module = null;
 		this.type_factory = new CTypeFactory();
 	}
-	
+
 	/* basic methods */
 	/**
 	 * find the base name that defines or declares the instance in the source code.
@@ -272,17 +272,17 @@ public class CirParser {
 		/* 1. initialization */
 		CScope scope = cname.get_scope();
 		CName final_name = null;
-		
+
 		/* 2. try to find the scope where the definition is provided */
 		while(scope != null) {
-			
+
 			/* A. verify whether there are cnames in current scope */
 			if(scope.get_name_table().has_name(cname.get_name())) {
 				/* A.1 get the instance cname in current scope and record it as final name */
 				CInstanceName iname = (CInstanceName) scope.
 						get_name_table().get_name(cname.get_name());
 				final_name = iname;	// record the final cname if not defined in current file
-				
+
 				/* A.2 traverse the links of the instance name until definition is found */
 				while(iname != null) {
 					CInstance instance = iname.get_instance();
@@ -294,16 +294,16 @@ public class CirParser {
 					}
 				}
 			}
-			
+
 			/* B. get to its parent scope to find any definition name */
 			scope = scope.get_parent();
 		}
-		
+
 		/* 3. when no valid cname found that represents the definition of the instance in code */
 		if(final_name == null)
 			throw new IllegalArgumentException("unable to find base-name for " + cname.get_name());
 		/* 4. return the final recorded name as the instance not defined in current source file */
-		else return final_name;	
+		else return final_name;
 	}
 	/**
 	 * generate the const-expression node in IR program representing the integer value
@@ -348,15 +348,15 @@ public class CirParser {
 	 */
 	private void build_cir_range(ACPModule module) throws Exception {
 		Iterable<ACPSolution> solutions = module.get_solutions();
-		
+
 		for(ACPSolution solution : solutions) {
 			/* 1. declarations */
 			AstNode ast_source = solution.get_ast_source();
-			AstCirPairImpl ast_cir = (AstCirPairImpl) 
+			AstCirPairImpl ast_cir = (AstCirPairImpl)
 					this.cir_tree.new_cir_range(ast_source);
 			CirStatement beg_statement, end_statement;
 			CirExpression result = solution.get_result();
-			
+
 			/* 2. get statement range */
 			if(solution.executional()) {
 				beg_statement = solution.get_beg_statement();
@@ -370,12 +370,12 @@ public class CirParser {
 				beg_statement = null;
 				end_statement = null;
 			}
-			
+
 			/* update the index range */
 			ast_cir.set(beg_statement, end_statement, result);
 		}
 	}
-	
+
 	/* main parsing methods */
 	/**
 	 * Parse from the abstract syntax tree according to its production type.
@@ -484,7 +484,7 @@ public class CirParser {
 			return this.parse_transition_unit((AstTranslationUnit) source);
 		else throw new IllegalArgumentException("unsupport: " + source);
 	}
-	
+
 	/* expression layer */
 	/**
 	 * identifier [as variable]		|-- identifier with c-instance name<br>
@@ -496,8 +496,8 @@ public class CirParser {
 	 */
 	private ACPSolution parse_id_expression(AstIdExpression source) throws Exception {
 		/* 1. declarations */
-		CName cname = source.get_cname(); CirExpression expression; 
-		
+		CName cname = source.get_cname(); CirExpression expression;
+
 		/* 2. identifier as variable */
 		if(cname instanceof CInstanceName) {
 			cname = this.find_base_name((CInstanceName) cname);
@@ -515,7 +515,7 @@ public class CirParser {
 		}
 		/* 5. invalid case produced */
 		else throw new IllegalArgumentException("unsupport: " + cname.getClass().getSimpleName());
-		
+
 		/* 6. update the solution of the source and return it */
 		ACPSolution solution = this.get_solution(source);
 		solution.set(expression); return solution;
@@ -528,7 +528,7 @@ public class CirParser {
 	 */
 	private ACPSolution parse_constant(AstConstant source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		solution.set(this.cir_tree.new_const_expression(source, 
+		solution.set(this.cir_tree.new_const_expression(source,
 				source.get_constant(), source.get_value_type()));
 		return solution;
 	}
@@ -540,7 +540,7 @@ public class CirParser {
 	 */
 	private ACPSolution parse_literal(AstLiteral source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		solution.set(this.cir_tree.new_string_literal(source, 
+		solution.set(this.cir_tree.new_string_literal(source,
 				source.get_literal(), source.get_value_type()));
 		return solution;
 	}
@@ -553,7 +553,7 @@ public class CirParser {
 	 */
 	private ACPSolution parse_arith_unary_expression(AstArithUnaryExpression source) throws Exception {
 		COperator operator = source.get_operator().get_operator();
-		
+
 		/* +E	|== {E}; return (E) */
 		if(operator == COperator.positive) {
 			return this.parse(source.get_operand());
@@ -563,11 +563,11 @@ public class CirParser {
 			ACPSolution osolution = this.parse(source.get_operand());
 			ACPSolution solution = this.get_solution(source);
 			solution.append(osolution);
-			
+
 			CirArithExpression expression = this.cir_tree.
 					new_arith_expression(source, operator, source.get_value_type());
 			expression.add_operand(osolution.get_result()); solution.set(expression);
-			
+
 			return solution;
 		}
 		else throw new IllegalArgumentException("invalid operator: " + operator);
@@ -582,11 +582,11 @@ public class CirParser {
 		ACPSolution osolution = this.parse(source.get_operand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
-		
+
 		CirBitwsExpression expression = this.cir_tree.
 				new_bitws_expression(source, COperator.bit_not, source.get_value_type());
 		expression.add_operand(osolution.get_result()); solution.set(expression);
-		
+
 		return solution;
 	}
 	/**
@@ -599,11 +599,11 @@ public class CirParser {
 		ACPSolution osolution = this.parse(source.get_operand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
-		
+
 		CirLogicExpression expression = this.cir_tree.
 				new_logic_expression(source, COperator.logic_not, source.get_value_type());
 		expression.add_operand(osolution.get_result()); solution.set(expression);
-		
+
 		return solution;
 	}
 	/**
@@ -617,7 +617,7 @@ public class CirParser {
 		ACPSolution osolution = this.parse(source.get_operand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
-		
+
 		COperator operator = source.get_operator().get_operator();
 		if(operator == COperator.address_of) {
 			CirAddressExpression expression = this.cir_tree.new_address_expression(source, source.get_value_type());
@@ -628,7 +628,7 @@ public class CirParser {
 			expression.set_address(osolution.get_result()); solution.set(expression);
 		}
 		else throw new IllegalArgumentException("invalid: " + operator);
-		
+
 		return solution;
 	}
 	/**
@@ -643,7 +643,7 @@ public class CirParser {
 		ACPSolution osolution = this.parse(source.get_operand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
-		
+
 		/* 2. ��arith_add|arith_sub (E) 1�� */
 		CirReferExpression lvalue = (CirReferExpression) this.cir_tree.copy(osolution.get_result());
 		CirArithExpression rvalue;
@@ -653,11 +653,11 @@ public class CirParser {
 		default: throw new IllegalArgumentException("invalid: " + source.get_operator().get_operator());
 		}
 		rvalue.add_operand(osolution.get_result()); rvalue.add_operand(this.get_integer(1));
-		
+
 		/* 3. (inc_assign (E) as ((E) +\- 1) */
 		CirIncreAssignStatement statement = this.cir_tree.new_inc_assign_statement(source);
 		statement.set_lvalue(lvalue); statement.set_rvalue(rvalue); solution.append(statement);
-		
+
 		/* 4. return (E) */
 		solution.set((CirExpression) this.cir_tree.copy(osolution.get_result())); return solution;
 	}
@@ -673,14 +673,14 @@ public class CirParser {
 		ACPSolution osolution = this.parse(source.get_operand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(osolution);
-		
+
 		/* 2. (sav_assign $temporal as (E)); */
 		CirImplicator temporal = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirExpression save_val = osolution.get_result();
 		CirSaveAssignStatement statement1 = this.cir_tree.new_save_assign_statement(source);
-		statement1.set_lvalue(temporal); statement1.set_rvalue(save_val); 
+		statement1.set_lvalue(temporal); statement1.set_rvalue(save_val);
 		solution.append(statement1);
-		
+
 		/* 3. (arith_add|arith_sub (E) 1) */
 		CirExpression loperand = (CirExpression) this.cir_tree.copy(osolution.get_result());
 		CirExpression roperand = this.get_integer(1); CirArithExpression rvalue;
@@ -689,14 +689,14 @@ public class CirParser {
 		case decrement:	rvalue = this.cir_tree.new_arith_expression(null, COperator.arith_sub, source.get_value_type()); break;
 		default: throw new IllegalArgumentException("invalid operator: " + source.get_operator().get_operator());
 		}
-		rvalue.add_operand(loperand); rvalue.add_operand(roperand); 
-		
+		rvalue.add_operand(loperand); rvalue.add_operand(roperand);
+
 		/* 4. (inc-assign (E) as (arith_add|arith_sub (E) 1)) */
 		CirReferExpression lvalue = (CirReferExpression) this.cir_tree.copy(osolution.get_result());
 		CirIncreAssignStatement statement2 = this.cir_tree.new_inc_assign_statement(source);
-		statement2.set_lvalue(lvalue); statement2.set_rvalue(rvalue); 
+		statement2.set_lvalue(lvalue); statement2.set_rvalue(rvalue);
 		solution.append(statement2);
-		
+
 		/* 5. return $temporal */
 		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
 	}
@@ -716,12 +716,12 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (arith_xxx (E1) (E2)) */
 		COperator operator = source.get_operator().get_operator();
 		CirArithExpression expression = this.cir_tree.new_arith_expression(source, operator, source.get_value_type());
 		expression.add_operand(lsolution.get_result()); expression.add_operand(rsolution.get_result());
-		
+
 		/* 3. return expression */	solution.set(expression); return solution;
 	}
 	/**
@@ -740,12 +740,12 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (bitws_xxx (E1) (E2)) */
 		COperator operator = source.get_operator().get_operator();
 		CirBitwsExpression expression = this.cir_tree.new_bitws_expression(source, operator, source.get_value_type());
 		expression.add_operand(lsolution.get_result()); expression.add_operand(rsolution.get_result());
-		
+
 		/* 3. return expression */	solution.set(expression); return solution;
 	}
 	/**
@@ -764,7 +764,7 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (arith_xxx (E1) (E2)) */
 		COperator operator = source.get_operator().get_operator();
 		switch(operator) {
@@ -777,12 +777,12 @@ public class CirParser {
 		}
 		CirArithExpression expression = this.cir_tree.new_arith_expression(source, operator, source.get_value_type());
 		expression.add_operand(lsolution.get_result()); expression.add_operand(rsolution.get_result());
-		
+
 		/* 3. (bin_assign (E1) expression)*/
 		CirReferExpression lvalue = (CirReferExpression) this.cir_tree.copy(lsolution.get_result());
 		CirBinAssignStatement statement = this.cir_tree.new_bin_assign_statement(source);
 		statement.set_lvalue(lvalue); statement.set_rvalue(expression); solution.append(statement);
-		
+
 		/* 4. return (E1) */
 		solution.set((CirExpression) this.cir_tree.copy(lsolution.get_result())); return solution;
 	}
@@ -802,7 +802,7 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (bitws_xxx (E1) (E2)) */
 		COperator operator = source.get_operator().get_operator();
 		switch(operator) {
@@ -815,12 +815,12 @@ public class CirParser {
 		}
 		CirBitwsExpression expression = this.cir_tree.new_bitws_expression(source, operator, source.get_value_type());
 		expression.add_operand(lsolution.get_result()); expression.add_operand(rsolution.get_result());
-		
+
 		/* 3. (bin_assign (E1) expression)*/
 		CirReferExpression lvalue = (CirReferExpression) this.cir_tree.copy(lsolution.get_result());
 		CirBinAssignStatement statement = this.cir_tree.new_bin_assign_statement(source);
 		statement.set_lvalue(lvalue); statement.set_rvalue(expression); solution.append(statement);
-		
+
 		/* 4. return (E1) */
 		solution.set((CirExpression) this.cir_tree.copy(lsolution.get_result())); return solution;
 	}
@@ -836,14 +836,14 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (bin_assign (E1) as (E2)); */
 		CirBinAssignStatement statement = this.cir_tree.new_bin_assign_statement(source);
-		statement.set_lvalue((CirReferExpression) lsolution.get_result()); 
+		statement.set_lvalue((CirReferExpression) lsolution.get_result());
 		statement.set_rvalue(rsolution.get_result()); solution.append(statement);
-		
-		/* 3. return (E1) */	
-		solution.set((CirExpression) this.cir_tree.copy(lsolution.get_result())); 
+
+		/* 3. return (E1) */
+		solution.set((CirExpression) this.cir_tree.copy(lsolution.get_result()));
 		return solution;
 	}
 	/**
@@ -863,12 +863,12 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_roperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (xxx (E1) (E2)) */
 		COperator operator = source.get_operator().get_operator();
 		CirRelationExpression expression = this.cir_tree.new_relation_expression(source, operator, source.get_value_type());
 		expression.add_operand(lsolution.get_result()); expression.add_operand(rsolution.get_result());
-		
+
 		/* 3. return expression */	solution.set(expression); return solution;
 	}
 	/**
@@ -878,7 +878,7 @@ public class CirParser {
 	 * 			|== {E2}
 	 * 			|== (save_assign $temporal as (E2))
 	 * 			|== (if_end_statement)
-	 * 
+	 *
 	 * E1 || E2	|== {E1}
 	 * 			|== (save_assign $temporal as (E1))
 	 * 			|== (if not $temporal then L1 else L2)
@@ -894,13 +894,13 @@ public class CirParser {
 		ACPSolution lsolution = this.parse(source.get_loperand());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution);
-		
+
 		/* 2. (save_assign $temporal as (E1)) */
 		CirImplicator temporal = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirExpression sav_val1 = lsolution.get_result();
 		CirSaveAssignStatement statement1 = this.cir_tree.new_save_assign_statement(source);
 		statement1.set_lvalue(temporal); statement1.set_rvalue(sav_val1); solution.append(statement1);
-		
+
 		/* 3. predicate as (not) temporal */
 		temporal = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirExpression predicate; COperator operator = source.get_operator().get_operator();
@@ -912,28 +912,28 @@ public class CirParser {
 			((CirLogicExpression) predicate).add_operand(temporal);
 		}
 		else throw new IllegalArgumentException("unsupport " + operator);
-		
+
 		/* 4. (if predicate then L1 else L2) */
 		CirIfStatement statement2 = this.cir_tree.new_if_statement(source);
-		statement2.set_condition(predicate); 
+		statement2.set_condition(predicate);
 		statement2.set_true_branch(this.cir_tree.new_label(null));
 		statement2.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(statement2);
-		
+
 		/* 5. {E2} */
 		ACPSolution fsolution = this.parse(source.get_roperand());
 		solution.append(fsolution);
-		
+
 		/* 6. (save_assign $temporal as (E2)) */
 		temporal = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirExpression sav_val2 = fsolution.get_result();
 		CirSaveAssignStatement statement3 = this.cir_tree.new_save_assign_statement(source);
 		statement3.set_lvalue(temporal); statement3.set_rvalue(sav_val2); solution.append(statement3);
-		
+
 		/* 7. if_end_statement */
 		CirIfEndStatement if_end = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end);
-		
+
 		/* 8. link the flows between statements */
 		if(fsolution.executional()) {
 			statement2.get_true_label().set_target_node_id(fsolution.get_beg_statement().get_node_id());
@@ -942,7 +942,7 @@ public class CirParser {
 			statement2.get_true_label().set_target_node_id(statement3.get_node_id());
 		}
 		statement2.get_false_label().set_target_node_id(if_end.get_node_id());
-		
+
 		/* 9. return $temporal */
 		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
 	}
@@ -958,13 +958,13 @@ public class CirParser {
 		ACPSolution rsolution = this.parse(source.get_dimension_expression());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(lsolution); solution.append(rsolution);
-		
+
 		/* 2. (arith_add (E1) (E2)) */
-		CirArithExpression address = this.cir_tree.new_arith_expression(null, 
+		CirArithExpression address = this.cir_tree.new_arith_expression(null,
 				COperator.arith_add, lsolution.get_result().get_data_type());
 		address.add_operand(lsolution.get_result());
 		address.add_operand(rsolution.get_result());
-		
+
 		/* 3. (defer address) */
 		CirDeferExpression reference = this.cir_tree.new_defer_expression(source, source.get_value_type());
 		reference.set_address(address); solution.set(reference); return solution;
@@ -980,12 +980,12 @@ public class CirParser {
 		ACPSolution esolution = this.parse(source.get_expression());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(esolution);
-		
+
 		/* 2. (cast (T) (E)) */
 		CirType type = this.cir_tree.new_type(source.get_typename(), source.get_typename().get_type());
 		CirCastExpression expression = this.cir_tree.new_cast_expression(source, source.get_value_type());
 		expression.set_type(type); expression.set_operand(esolution.get_result()); solution.set(expression);
-		
+
 		return solution;
 	}
 	/**
@@ -997,13 +997,13 @@ public class CirParser {
 	private ACPSolution parse_comma_expression(AstCommaExpression source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
 		CirExpression final_expression = null;
-		
+
 		for(int k = 0; k < source.number_of_arguments(); k++) {
 			ACPSolution esolution = this.parse(source.get_expression(k));
 			solution.append(esolution);
 			final_expression = esolution.get_result();
 		}
-		
+
 		solution.set(final_expression); return solution;
 	}
 	/**
@@ -1021,14 +1021,14 @@ public class CirParser {
 		ACPSolution csolution = this.parse(source.get_condition());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(csolution);
-		
+
 		/* 2. (if (E1) then L1 else L2) */
 		CirIfStatement if_statement = this.cir_tree.new_if_statement(source);
 		if_statement.set_condition(csolution.get_result());
 		if_statement.set_true_branch(this.cir_tree.new_label(null));
 		if_statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(if_statement);
-		
+
 		/* 3. [L1: {E2}; (save_assign $temporal as (E2)); (goto L3);] */
 		ACPSolution tsolution = this.parse(source.get_true_branch());
 		solution.append(tsolution);
@@ -1037,7 +1037,7 @@ public class CirParser {
 		t_assign.set_rvalue(tsolution.get_result()); solution.append(t_assign);
 		CirGotoStatement t_goto_end = this.cir_tree.new_goto_statement(null);
 		t_goto_end.set_label(this.cir_tree.new_label(null)); solution.append(t_goto_end);
-		
+
 		/* 4. [L2: {E3}; (save_assign $temporal as (E3)); (goto L3);] */
 		ACPSolution fsolution = this.parse(source.get_false_branch());
 		solution.append(fsolution);
@@ -1046,11 +1046,11 @@ public class CirParser {
 		f_assign.set_rvalue(fsolution.get_result()); solution.append(f_assign);
 		CirGotoStatement f_goto_end = this.cir_tree.new_goto_statement(null);
 		f_goto_end.set_label(this.cir_tree.new_label(null)); solution.append(f_goto_end);
-		
+
 		/* 5. [L3: if_end_statement] */
 		CirIfEndStatement if_end_statement = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end_statement);
-		
+
 		/* 6. link the statements together */
 		if(tsolution.executional()) {
 			if_statement.get_true_label().set_target_node_id(tsolution.get_beg_statement().get_node_id());
@@ -1066,7 +1066,7 @@ public class CirParser {
 		}
 		t_goto_end.get_label().set_target_node_id(if_end_statement.get_node_id());
 		f_goto_end.get_label().set_target_node_id(if_end_statement.get_node_id());
-		
+
 		/* 7. return $temporal */
 		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
 	}
@@ -1082,7 +1082,7 @@ public class CirParser {
 		ACPSolution bsolution = this.parse(source.get_body());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(bsolution);
-		
+
 		/* 2. construct body */
 		CirReferExpression body;
 		CPunctuator operator = source.get_operator().get_punctuator();
@@ -1103,7 +1103,7 @@ public class CirParser {
 			bexpr.set_address(bsolution.get_result()); body = bexpr;
 		}
 		else throw new IllegalArgumentException("invalid operator: " + operator);
-		
+
 		/* 3. (field body (F)) */
 		CirField field = this.cir_tree.new_field(source.get_field(), source.get_field().get_name());
 		CirFieldExpression expression = this.cir_tree.new_field_expression(source, source.get_value_type());
@@ -1122,7 +1122,7 @@ public class CirParser {
 		ACPSolution solution = this.get_solution(source);
 		ACPSolution fsolution = this.parse(source.get_function());
 		solution.append(fsolution);
-		
+
 		/* 2. {A1}; ... {An}; (A1, A2, ..., An) */
 		CirArgumentList arguments;
 		if(source.has_argument_list()) {
@@ -1130,14 +1130,14 @@ public class CirParser {
 			arguments = this.cir_tree.new_argument_list(list);
 			for(int k = 0; k < list.number_of_arguments(); k++) {
 				ACPSolution asolution = this.parse(list.get_argument(k));
-				solution.append(asolution); 
+				solution.append(asolution);
 				arguments.add_argument(asolution.get_result());
 			}
 		}
 		else {
 			arguments = this.cir_tree.new_argument_list(null);
 		}
-		
+
 		/* 3. (F) */
 		CirExpression function = fsolution.get_result();
 		CType ftype = source.get_function().get_value_type();
@@ -1151,24 +1151,24 @@ public class CirParser {
 			}
 			else throw new IllegalArgumentException("invalid type: " + ftype);
 			CFunctionType fun_type = (CFunctionType) ftype;
-			
+
 			CirDeferExpression fexpr = this.cir_tree.new_defer_expression(null, fun_type);
 			fexpr.set_address(function); function = fexpr;
 		}
-		
+
 		/* 4. (call (F) ((A1), (A2), ..., (An)) */
 		CirCallStatement call_statement = this.cir_tree.new_call_statement(source);
 		call_statement.set_function(function); call_statement.set_arguments(arguments);
-		solution.append(call_statement); 
-		
+		solution.append(call_statement);
+
 		/* 5. (wait_assign $temporal as (wait (F))) */
 		function = (CirExpression) this.cir_tree.copy(function);
 		CirWaitExpression rvalue = this.cir_tree.new_wait_expression(source, source.get_value_type());
-		rvalue.set_function(function); 
+		rvalue.set_function(function);
 		CirImplicator lvalue = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirWaitAssignStatement wait_statement = this.cir_tree.new_wait_assign_statement(source);
 		wait_statement.set_lvalue(lvalue); wait_statement.set_rvalue(rvalue); solution.append(wait_statement);
-		
+
 		/* 6. return $temporal */
 		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
 	}
@@ -1188,26 +1188,26 @@ public class CirParser {
 		ACPSolution solution = this.get_solution(source);
 		ACPSolution fsolution = this.parse(source.get_function());
 		solution.append(fsolution);
-		
+
 		/* 2. {A1}; ... {An}; (A1, A2, ..., An) */
 		CirArgumentList arguments;
-		List<CirExpression> parameters = new ArrayList<CirExpression>();
+		List<CirExpression> parameters = new ArrayList<>();
 		if(source.has_argument_list()) {
 			AstArgumentList list = source.get_argument_list();
 			arguments = this.cir_tree.new_argument_list(list);
 			for(int k = 0; k < list.number_of_arguments(); k++) {
 				ACPSolution asolution = this.parse(list.get_argument(k));
 				solution.append(asolution);
-				
+
 				/* param_k := argument_k; */
 				CirImplicator parameter = this.cir_tree.new_implicator(list.
 						get_argument(k), list.get_argument(k).get_value_type());
 				CirSaveAssignStatement param_assign = this.
 						cir_tree.new_save_assign_statement(list.get_argument(k));
-				param_assign.set_lvalue(parameter); 
+				param_assign.set_lvalue(parameter);
 				param_assign.set_rvalue(asolution.get_result());
 				solution.append(param_assign);
-				
+
 				/* save the copy of the parameter as for usage in argument-list */
 				parameters.add((CirExpression) this.cir_tree.copy(parameter));
 			}
@@ -1215,10 +1215,10 @@ public class CirParser {
 		else {
 			arguments = this.cir_tree.new_argument_list(null);
 		}
-		
+
 		/* register the kth argument in the list. */
 		for(CirExpression parameter : parameters) arguments.add_argument(parameter);
-		
+
 		/* 3. (F) */
 		CirExpression function = fsolution.get_result();
 		CType ftype = source.get_function().get_value_type();
@@ -1232,29 +1232,29 @@ public class CirParser {
 			}
 			else throw new IllegalArgumentException("invalid type: " + ftype);
 			CFunctionType fun_type = (CFunctionType) ftype;
-			
+
 			CirDeferExpression fexpr = this.cir_tree.new_defer_expression(null, fun_type);
 			fexpr.set_address(function); function = fexpr;
 		}
-		
+
 		/* 4. (call (F) ((A1), (A2), ..., (An)) */
 		CirCallStatement call_statement = this.cir_tree.new_call_statement(source);
 		call_statement.set_function(function); call_statement.set_arguments(arguments);
-		solution.append(call_statement); 
-		
+		solution.append(call_statement);
+
 		/* 5. (wait_assign $temporal as (wait (F))) */
 		function = (CirExpression) this.cir_tree.copy(function);
 		CirWaitExpression rvalue = this.cir_tree.new_wait_expression(source, source.get_value_type());
-		rvalue.set_function(function); 
+		rvalue.set_function(function);
 		CirImplicator lvalue = this.cir_tree.new_implicator(source, source.get_value_type());
 		CirWaitAssignStatement wait_statement = this.cir_tree.new_wait_assign_statement(source);
 		wait_statement.set_lvalue(lvalue); wait_statement.set_rvalue(rvalue); solution.append(wait_statement);
-		
+
 		/* 6. return $temporal */
 		solution.set(this.cir_tree.new_implicator(source, source.get_value_type())); return solution;
 	}
 	/**
-	 * 
+	 *
 	 * @param source
 	 * @return
 	 * @throws Exception
@@ -1268,11 +1268,11 @@ public class CirParser {
 			data_type = source.get_typename().get_type();
 		}
 		data_type = CTypeAnalyzer.get_value_type(data_type);
-		
+
 		int size = this.template.sizeof(data_type);
 		CConstant constant = new CConstant();
 		constant.set_int(size);
-		
+
 		CirExpression expression = cir_tree.new_const_expression(source, constant, source.get_value_type());
 		ACPSolution solution = this.get_solution(source); solution.set(expression); return solution;
 	}
@@ -1312,7 +1312,7 @@ public class CirParser {
 		ACPSolution solution = this.get_solution(source);
 		ACPSolution dsolution = this.parse(source.get_declarator());
 		CirReferExpression lvalue = (CirReferExpression) dsolution.get_result();
-		
+
 		// when the declarator is a variable declarator
 		if(lvalue != null) {
 			/* 2. (E) */
@@ -1324,12 +1324,12 @@ public class CirParser {
 			else {
 				rvalue = this.cir_tree.new_default_value(lvalue.get_data_type());
 			}
-			
+
 			/* 3. (init_assign (D) as (E)) */
 			CirInitAssignStatement statement = this.cir_tree.new_init_assign_statement(source);
 			statement.set_lvalue(lvalue); statement.set_rvalue(rvalue); solution.append(statement);
 		}
-		
+
 		return solution;
 	}
 	/**
@@ -1344,20 +1344,20 @@ public class CirParser {
 			source = source.get_declarator();
 		}
 		AstName identifier = source.get_identifier();
-		
+
 		/* 2. determine whether to return solution */
 		ACPSolution solution = this.get_solution(source);
 		CName cname = identifier.get_cname();
 		if(cname instanceof CInstanceName) {
 			cname = this.find_base_name((CInstanceName) cname);
-			solution.set(this.cir_tree.new_declarator(source, cname, 
+			solution.set(this.cir_tree.new_declarator(source, cname,
 					((CInstanceName) cname).get_instance().get_type()));
 		}
 		else if(cname instanceof CParameterName) {
-			solution.set(this.cir_tree.new_declarator(source, cname, 
+			solution.set(this.cir_tree.new_declarator(source, cname,
 					((CParameterName) cname).get_parameter().get_type()));
 		}
-		
+
 		/* 3. return solution */	return solution;
 	}
 	private ACPSolution parse_initializer(AstInitializer source) throws Exception {
@@ -1368,14 +1368,14 @@ public class CirParser {
 	private ACPSolution parse_initializer_body(AstInitializerBody source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
 		CirInitializerBody expression = this.cir_tree.new_initializer_body(source);
-		
+
 		AstInitializerList list = source.get_initializer_list();
 		for(int k = 0;  k < list.number_of_initializer(); k++) {
 			AstFieldInitializer field_initializer = list.get_initializer(k);
 			ACPSolution esolution = this.parse(field_initializer.get_initializer());
 			solution.append(esolution); expression.add_element(esolution.get_result());
 		}
-		
+
 		solution.set(expression); return solution;
 	}
 	/* statement layer */
@@ -1435,14 +1435,14 @@ public class CirParser {
 	 */
 	private ACPSolution parse_break_statement(AstBreakStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		CirGotoStatement statement = this.cir_tree.new_goto_statement(source);
 		statement.set_label(this.cir_tree.new_label(null)); solution.append(statement);
-		
+
 		ACPScope scope = this.cur_module.get_top_scope();
 		ACPLabelsTarget label_target = scope.get_labels_target(ACPScope.BREAK_LABEL);
 		label_target.add_label(statement.get_label());
-		
+
 		return solution;
 	}
 	/**
@@ -1453,14 +1453,14 @@ public class CirParser {
 	 */
 	private ACPSolution parse_continue_statement(AstContinueStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		CirGotoStatement statement = this.cir_tree.new_goto_statement(source);
 		statement.set_label(this.cir_tree.new_label(null)); solution.append(statement);
-		
+
 		ACPScope scope = this.cur_module.get_top_scope();
 		ACPLabelsTarget label_target = scope.get_labels_target(ACPScope.CONTINUE_LABEL);
 		label_target.add_label(statement.get_label());
-		
+
 		return solution;
 	}
 	/**
@@ -1471,16 +1471,16 @@ public class CirParser {
 	 */
 	private ACPSolution parse_goto_statement(AstGotoStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		CirGotoStatement statement = this.cir_tree.new_goto_statement(source);
 		statement.set_label(this.cir_tree.new_label(source.get_label()));
 		solution.append(statement);
-		
+
 		String label_name = source.get_label().get_name();
 		ACPScope scope = this.cur_module.get_root_scope();
 		ACPLabelsTarget label_target = scope.new_labels_target(label_name);
 		label_target.add_label(statement.get_label());
-		
+
 		return solution;
 	}
 	/**
@@ -1494,25 +1494,25 @@ public class CirParser {
 	 */
 	private ACPSolution parse_return_statement(AstReturnStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		if(source.has_expression()) {
 			ACPSolution esolution = this.parse(source.get_expression());
 			solution.append(esolution);
-			
+
 			CirReturnPoint lvalue = this.cir_tree.new_return_point(
 					source.get_return(), source.get_expression().get_value_type());
 			CirExpression rvalue = esolution.get_result();
 			CirReturnAssignStatement statement = this.cir_tree.new_return_assign_statement(source);
 			statement.set_lvalue(lvalue); statement.set_rvalue(rvalue); solution.append(statement);
 		}
-		
+
 		CirGotoStatement statement = this.cir_tree.new_goto_statement(source);
 		statement.set_label(this.cir_tree.new_label(null)); solution.append(statement);
-		
+
 		ACPScope scope = this.cur_module.get_root_scope();
 		ACPLabelsTarget label_target = scope.get_labels_target(ACPScope.RETURN_LABEL);
 		label_target.add_label(statement.get_label());
-		
+
 		return solution;
 	}
 	/**
@@ -1523,15 +1523,15 @@ public class CirParser {
 	 */
 	private ACPSolution parse_labeled_statement(AstLabeledStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		CirLabelStatement statement = this.cir_tree.new_label_statement(source);
 		solution.append(statement);
-		
+
 		String label_name = source.get_label().get_name();
 		ACPScope scope = this.cur_module.get_root_scope();
 		ACPLabelsTarget label_target = scope.new_labels_target(label_name);
 		label_target.set_target(statement);
-		
+
 		return solution;
 	}
 	/**
@@ -1544,32 +1544,32 @@ public class CirParser {
 	private ACPSolution parse_case_statement(AstCaseStatement source) throws Exception {
 		ACPScope scope = this.cur_module.get_top_scope();
 		AstSwitchStatement ast_key = (AstSwitchStatement) scope.get_ast_key();
-		
+
 		/* 1. {E} */
 		ACPSolution esolution = this.parse(source.get_expression());
 		ACPSolution solution = this.get_solution(source);
 		solution.append(esolution);
-		
+
 		/* 2. (equal_with $temporal (E)) */
 		CirImplicator lvalue = this.cir_tree.new_implicator(ast_key, ast_key.get_condition().get_value_type());
 		CirExpression rvalue = esolution.get_result();
 		CirRelationExpression predicate = this.cir_tree.new_relation_expression(source, COperator.equal_with, CBasicTypeImpl.bool_type);
 		predicate.add_operand(lvalue); predicate.add_operand(rvalue);
-		
+
 		/* 3. (case predicate then next else L) */
 		CirCaseStatement statement = this.cir_tree.new_case_statement(source);
-		statement.set_condition(predicate); 
+		statement.set_condition(predicate);
 		statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(statement);
-		
+
 		/* 4. @solve {case} */
 		ACPLabelsTarget label_target = scope.get_labels_target(ACPScope.CASE_LABEL);
 		label_target.set_target(solution.get_beg_statement());
-		
+
 		/* 5. @require {case} */
 		label_target.init();
 		label_target.add_label(statement.get_false_label());
-		
+
 		return solution;
 	}
 	/**
@@ -1581,19 +1581,19 @@ public class CirParser {
 	 */
 	private ACPSolution parse_default_statement(AstDefaultStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		/* (default_statement) */
 		CirDefaultStatement statement = this.cir_tree.new_default_statement(source);
 		solution.append(statement);
-		
+
 		/* @solve {case} */
 		ACPScope scope = this.cur_module.get_top_scope();
 		ACPLabelsTarget label_target = scope.get_labels_target(ACPScope.CASE_LABEL);
-		label_target.set_target(statement); 
-		
+		label_target.set_target(statement);
+
 		/* delete {case} */
 		scope.del_labels_target(ACPScope.CASE_LABEL);
-		
+
 		return solution;
 	}
 	/**
@@ -1601,38 +1601,38 @@ public class CirParser {
 	 * 					|== (if (E) then L1 else L2)	@require 	{true|false}
 	 * 					|== {S}							@solve		{true}
 	 * 					|== (if_end_statement)			@solve		{false}
-	 * 
+	 *
 	 * if E S1 else S2	|==	{E}
 	 * 					|== (if (E) then L1 else L2)	@require	{true|false}
 	 * 					|== [{S1}; (goto L3);]			@solve		{true}
 	 * 													@require	{if}
 	 * 					|== [{S2}; (goto L3);]			@solve		{false}
 	 * 													@require	{if}
-	 * 					|== (if_end_statement)			@solve		{if}						
+	 * 					|== (if_end_statement)			@solve		{if}
 	 * @param source
 	 * @return
 	 * @throws Exception
 	 */
 	private ACPSolution parse_if_statement(AstIfStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		/* 1. {E} */
 		ACPSolution csolution = this.parse(source.get_condition());
 		solution.append(csolution);
-		
+
 		/* 2. (if (E) then L1 else L2) */
 		CirIfStatement if_statement = this.cir_tree.new_if_statement(source);
 		if_statement.set_condition(csolution.get_result());
 		if_statement.set_true_branch(this.cir_tree.new_label(null));
 		if_statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(if_statement);
-		
+
 		/* 3. [{S1}; (goto L3);] */
 		ACPSolution tsolution = this.parse(source.get_true_branch());
 		CirGotoStatement t_goto_end = this.cir_tree.new_goto_statement(source);
 		t_goto_end.set_label(this.cir_tree.new_label(null));
 		tsolution.append(t_goto_end); solution.append(tsolution);
-		
+
 		/* 4. [{S2}; (goto L3);] */
 		ACPSolution fsolution = null;
 		if(source.has_else()) {
@@ -1641,11 +1641,11 @@ public class CirParser {
 			f_goto_end.set_label(this.cir_tree.new_label(null));
 			fsolution.append(f_goto_end); solution.append(fsolution);
 		}
-		
+
 		/* 5. (if_end_statement) */
 		CirIfEndStatement if_end = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end);
-		
+
 		/* 6. link the statements */
 		if_statement.get_true_label().set_target_node_id(tsolution.get_beg_statement().get_node_id());
 		t_goto_end.get_label().set_target_node_id(if_end.get_node_id());
@@ -1657,7 +1657,7 @@ public class CirParser {
 			CirGotoStatement f_goto_end = (CirGotoStatement) fsolution.get_end_statement();
 			f_goto_end.get_label().set_target_node_id(if_end.get_node_id());
 		}
-		
+
 		return solution;
 	}
 	/**
@@ -1674,40 +1674,40 @@ public class CirParser {
 	 */
 	private ACPSolution parse_switch_statement(AstSwitchStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		/* 1. {E} */
 		ACPSolution csolution = this.parse(source.get_condition());
 		solution.append(csolution);
-		
+
 		/* 2. (save_assign $temporal as (E)) */
 		CirImplicator lvalue = this.cir_tree.new_implicator(source, source.get_condition().get_value_type());
 		CirExpression rvalue = csolution.get_result();
 		CirSaveAssignStatement statement = this.cir_tree.new_save_assign_statement(source);
 		statement.set_lvalue(lvalue); statement.set_rvalue(rvalue); solution.append(statement);
-		
+
 		/* 3. (goto {case}) */
 		CirGotoStatement goto_case = this.cir_tree.new_goto_statement(source);
 		goto_case.set_label(this.cir_tree.new_label(null)); solution.append(goto_case);
-		
+
 		/* 4. @require {case|break} */
 		ACPScope scope = this.cur_module.push_scope(source);
 		ACPLabelsTarget break_target = scope.new_labels_target(ACPScope.BREAK_LABEL);
 		ACPLabelsTarget case_label_target = scope.new_labels_target(ACPScope.CASE_LABEL);
 		case_label_target.add_label(goto_case.get_label());
-		
+
 		/* 5. {S} @solve {break} */
 		ACPSolution bsolution = this.parse(source.get_body());
 		solution.append(bsolution);
-		
+
 		/* 6. (case_end_statement)		@solve	{case} */
 		CirCaseEndStatement case_end = this.cir_tree.new_case_end_statement(source);
 		solution.append(case_end); break_target.set_target(case_end);
-		
+
 		/* 7. binding the last case without default... */
 		if(!case_label_target.has_target()) {
 			case_label_target.set_target(case_end);
 		}
-		
+
 		this.cur_module.pop_scope(); return solution;
 	}
 	/**
@@ -1722,22 +1722,22 @@ public class CirParser {
 	private ACPSolution parse_while_statement(AstWhileStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
 		ACPScope scope = this.cur_module.push_scope(source);
-		
+
 		/* 1. {E} */
 		ACPSolution csolution = this.parse(source.get_condition());
 		solution.append(csolution);
-		
+
 		/* 2. (if (E) then L1 else L2) */
 		CirIfStatement if_statement = this.cir_tree.new_if_statement(source);
 		if_statement.set_condition(csolution.get_result());
 		if_statement.set_true_branch(this.cir_tree.new_label(null));
 		if_statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(if_statement);
-		
+
 		/* 3. @solve {continue} @require {break} */
 		scope.new_labels_target(ACPScope.CONTINUE_LABEL).set_target(solution.get_beg_statement());
 		scope.new_labels_target(ACPScope.BREAK_LABEL).add_label(if_statement.get_false_label());
-		
+
 		/* 4. [L1: {S}; (goto L3)] 	@solve {true} */
 		ACPSolution bsolution = this.parse(source.get_body());
 		CirGotoStatement goto_end = this.cir_tree.new_goto_statement(source);
@@ -1745,12 +1745,12 @@ public class CirParser {
 		bsolution.append(goto_end); solution.append(bsolution);
 		scope.get_labels_target(ACPScope.CONTINUE_LABEL).add_label(goto_end.get_label());
 		if_statement.get_true_label().set_target_node_id(bsolution.get_beg_statement().get_node_id());
-		
+
 		/* 5. (if_end_statement)	@solve {break} */
 		CirIfEndStatement if_end = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end);
 		scope.get_labels_target(ACPScope.BREAK_LABEL).set_target(if_end);
-		
+
 		this.cur_module.pop_scope(); return solution;
 	}
 	/**
@@ -1765,26 +1765,26 @@ public class CirParser {
 	private ACPSolution parse_do_while_statement(AstDoWhileStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
 		ACPScope scope = this.cur_module.push_scope(source);
-		
+
 		/* 0. @define {break|continue} */
 		scope.new_labels_target(ACPScope.BREAK_LABEL);
 		scope.new_labels_target(ACPScope.CONTINUE_LABEL);
-		
+
 		/* 1. {S} */
 		ACPSolution bsolution = this.parse(source.get_body());
 		solution.append(bsolution);
-		
+
 		/* 2. {E} */
 		ACPSolution csolution = this.parse(source.get_condition());
 		solution.append(csolution);
-		
+
 		/* 3. (if (E) then L1 else L2) 	*/
 		CirIfStatement if_statement = this.cir_tree.new_if_statement(source);
 		if_statement.set_condition(csolution.get_result());
 		if_statement.set_true_branch(this.cir_tree.new_label(null));
 		if_statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(if_statement);
-		
+
 		/* 4. @solve {true|continue}	@require {break} */
 		if(bsolution.executional()) {
 			if_statement.get_true_label().set_target_node_id(bsolution.get_beg_statement().get_node_id());
@@ -1802,12 +1802,12 @@ public class CirParser {
 		else {
 			scope.get_labels_target(ACPScope.CONTINUE_LABEL).set_target(if_statement);
 		}
-		
+
 		/* 5. (if_end_statement)	@solve {break} */
 		CirIfEndStatement if_end = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end);
 		scope.get_labels_target(ACPScope.BREAK_LABEL).set_target(if_end);
-		
+
 		this.cur_module.pop_scope(); return solution;
 	}
 	/**
@@ -1823,12 +1823,12 @@ public class CirParser {
 	 */
 	private ACPSolution parse_for_statement(AstForStatement source) throws Exception {
 		ACPSolution solution = this.get_solution(source);
-		
+
 		/* 1. {S1} */
 		ACPSolution isolution = this.parse(source.get_initializer());
 		solution.append(isolution);
 		ACPScope scope = this.cur_module.push_scope(source);				// push scope
-		
+
 		/* 2. [{S2}; (if (S2) then L1 else L2);] */
 		ACPSolution csolution = this.parse(source.get_condition());
 		solution.append(csolution);
@@ -1843,11 +1843,11 @@ public class CirParser {
 		if_statement.set_true_branch(this.cir_tree.new_label(null));
 		if_statement.set_false_branch(this.cir_tree.new_label(null));
 		solution.append(if_statement);
-		
+
 		/* 3. @define	{break|continue} */
 		ACPLabelsTarget break_target = scope.new_labels_target(ACPScope.BREAK_LABEL);
 		ACPLabelsTarget continue_target = scope.new_labels_target(ACPScope.CONTINUE_LABEL);
-		
+
 		/* 4. [{B}; {E3}; (goto L3);] */
 		ACPSolution bsolution = this.parse(source.get_body());
 		solution.append(bsolution);
@@ -1859,7 +1859,7 @@ public class CirParser {
 		CirGotoStatement goto_begin = this.cir_tree.new_goto_statement(source);
 		goto_begin.set_label(this.cir_tree.new_label(null));
 		solution.append(goto_begin);
-		
+
 		/* 5. (if_end_statement)	@solve {break|continue} */
 		CirIfEndStatement if_end = this.cir_tree.new_if_end_statement(source);
 		solution.append(if_end);
@@ -1870,7 +1870,7 @@ public class CirParser {
 		else {
 			continue_target.set_target(goto_begin);
 		}
-		
+
 		/* 6. link the statement */
 		if(bsolution.executional()) {
 			if_statement.get_true_label().set_target_node_id(bsolution.get_beg_statement().get_node_id());
@@ -1888,7 +1888,7 @@ public class CirParser {
 		else {
 			goto_begin.get_label().set_target_node_id(if_statement.get_node_id());
 		}
-		
+
 		this.cur_module.pop_scope(); return solution;						// pops scope
 	}
 	/**
@@ -1902,18 +1902,18 @@ public class CirParser {
 		this.cur_module = this.data.get_parsing_module(source);
 		ACPScope scope = this.cur_module.get_root_scope();
 		scope.new_labels_target(ACPScope.RETURN_LABEL);
-		
+
 		/* 0. function definition */
 		ACPSolution solution = this.get_solution(source);
 		CirFunctionDefinition fun_def = this.cir_tree.new_function_definition(source);
-		
+
 		/* 1. declarator */
 		ACPSolution dsolution = this.parse(source.get_declarator());
 		CirDeclarator declarator = (CirDeclarator) dsolution.get_result();
 		fun_def.set_declarator(declarator);
 		fun_def.set_body(this.cir_tree.new_function_body(source.get_body()));
 		fun_def.get_body().add_statement(this.cir_tree.new_beg_statement(null));
-		
+
 		/* 2. parameters */
 		if(source.has_declaration_list()) {
 			AstDeclarationList dlist = source.get_declaration_list();
@@ -1928,7 +1928,7 @@ public class CirParser {
 				decl = decl.get_declarator();
 			}
 			AstParameterBody pbody = decl.get_parameter_body();
-			
+
 			if(pbody.has_parameter_type_list()) {
 				AstParameterList plist = pbody.get_parameter_type_list().get_parameter_list();
 				for(int k = 0; k < plist.number_of_parameters(); k++) {
@@ -1943,22 +1943,22 @@ public class CirParser {
 				}
 			}
 		}
-		
-		/* 3. body */ 
+
+		/* 3. body */
 		ACPSolution bsolution = this.parse(source.get_body());
 		solution.append(bsolution);
-		
+
 		/* 4. construct function body */
 		Iterable<CirStatement> statements = this.cur_module.get_statements();
 		for(CirStatement statement : statements) fun_def.get_body().add_statement(statement);
 		CirEndStatement end = this.cir_tree.new_end_statement(null);
 		fun_def.get_body().add_statement(end);
 		scope.get_labels_target(ACPScope.RETURN_LABEL).set_target(end);
-		
+
 		/* 5. update the code index range according to solutions in module */
 		this.build_cir_range(cur_module);
-		
-		this.cur_module.pop_scope(); this.cur_module = null; 
+
+		this.cur_module.pop_scope(); this.cur_module = null;
 		solution.set(declarator); return solution;
 	}
 	/**
@@ -1972,12 +1972,12 @@ public class CirParser {
 		/* #init_function */
 		this.cur_module = this.data.get_parsing_module(source);
 		ACPSolution solution = this.get_solution(source);
-		
+
 		CirFunctionDefinition fun_def = this.cir_tree.new_function_definition(source);
 		fun_def.set_declarator(this.cir_tree.new_implicator(
 				source, this.void_function_type(), InitFunctionName));
 		fun_def.set_body(this.cir_tree.new_function_body(null));
-		
+
 		fun_def.get_body().add_statement(this.cir_tree.new_beg_statement(null));
 		for(int k = 0; k < source.number_of_units(); k++) {
 			AstExternalUnit unit = source.get_unit(k);
@@ -1989,11 +1989,11 @@ public class CirParser {
 		Iterable<CirStatement> statements = this.cur_module.get_statements();
 		for(CirStatement statement : statements) fun_def.get_body().add_statement(statement);
 		fun_def.get_body().add_statement(this.cir_tree.new_end_statement(null));
-		
+
 		this.build_cir_range(cur_module);
-		this.cur_module.pop_scope(); this.cur_module = null; 
+		this.cur_module.pop_scope(); this.cur_module = null;
 		solution.set(fun_def.get_declarator());
-		
+
 		/* build up transition unit */
 		CirTransitionUnit root = this.cir_tree.get_root();
 		root.add_unit(fun_def);
@@ -2005,13 +2005,13 @@ public class CirParser {
 				root.add_unit(func);
 			}
 		}
-		
+
 		return solution;
 	}
 	private CFunctionType void_function_type() throws Exception {
 		return this.type_factory.get_fixed_function_type(CBasicTypeImpl.void_type);
 	}
-	
+
 	/* public methods */
 	/**
 	 * parse from the abstract syntax tree to the C-like intermediate representation together
@@ -2027,5 +2027,5 @@ public class CirParser {
 		parser.cir_tree.gen_function_call_graph();		// build up the flow graph for CIR
 		return parser.cir_tree;
 	}
-	
+
 }

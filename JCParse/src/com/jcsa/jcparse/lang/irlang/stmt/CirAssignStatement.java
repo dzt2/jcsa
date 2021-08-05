@@ -4,11 +4,11 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 
 /**
- * CirAssignStatement	|-- CirBinAssignStatement 
+ * CirAssignStatement	|-- CirBinAssignStatement
  * 						|-- CirIncreAssignStatement
  * 						|-- CirSaveAssignStatement
  * 						|-- CirInitAssignStatement
- * 						|-- CirReturnAssignStatement 
+ * 						|-- CirReturnAssignStatement
  * 						|-- CirWaitAssignStatement
  * @author yukimula
  *

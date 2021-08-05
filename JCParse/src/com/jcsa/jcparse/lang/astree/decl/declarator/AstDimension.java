@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
 
 /**
  * <code>dimension --> [ (array_qualifier_list)? (const_expr)? ]</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstDimension extends AstNode {

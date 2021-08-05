@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.lexical.CPunctuator;
 
 /**
  * to generate CToken
- * 
+ *
  * @author yukimula
  */
 public class CTokenFactory {

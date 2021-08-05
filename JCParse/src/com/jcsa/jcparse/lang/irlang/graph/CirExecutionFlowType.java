@@ -7,7 +7,7 @@ package com.jcsa.jcparse.lang.irlang.graph;
  * 	3. {end_stmt} --> wait	[retr_flow]	{user_defined}
  * 	4. call	--> wait		[skip_flow]	{pointer + external}
  * 	5. brch --> *			[true_flow|fals_flow]
- * 	6. none --> *			[next_flow]	
+ * 	6. none --> *			[next_flow]
  * </code>
  * @author yukimula
  *

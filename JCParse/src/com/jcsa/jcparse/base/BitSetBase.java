@@ -10,27 +10,27 @@ import java.util.Map;
 /**
  * The base of a <code>BitSet</code> describes of which object refers to which index
  * in the <code>BitSet</code> represented based on a <code>BitSequence</code>.
- * 
+ *
  * @author yukimula
  *
  */
 public class BitSetBase {
-	
+
 	/* properties */
 	/** mapping from index to the value **/
 	private List<Object> index_value;
 	/** mapping from value to the index **/
 	private Map<Object, Integer> value_index;
-	
+
 	/* constructor */
 	/**
 	 * construct an empty bit-set base for creating bit-set
 	 */
 	private BitSetBase() {
-		this.index_value = new ArrayList<Object>();
-		this.value_index = new HashMap<Object, Integer>();
+		this.index_value = new ArrayList<>();
+		this.value_index = new HashMap<>();
 	}
-	
+
 	/* getters */
 	/**
 	 * whether the set-base is empty
@@ -46,8 +46,8 @@ public class BitSetBase {
 	 * get the list of values in the bit-set base
 	 * @return
 	 */
-	public Iterator<Object> get_values() { 
-		return index_value.iterator(); 
+	public Iterator<Object> get_values() {
+		return index_value.iterator();
 	}
 	/**
 	 * get the kth value in the bit-set base
@@ -65,7 +65,7 @@ public class BitSetBase {
 	 * @param value
 	 * @return
 	 */
-	public boolean has(Object value) { 
+	public boolean has(Object value) {
 		return this.value_index.containsKey(value);
 	}
 	/**
@@ -84,7 +84,7 @@ public class BitSetBase {
 	 * @throws Exception
 	 */
 	public BitSet new_set() throws Exception { return new BitSet(this); }
-	
+
 	/* generation method */
 	/**
 	 * add a value into the index of the base
@@ -103,16 +103,16 @@ public class BitSetBase {
 	 * @param values
 	 */
 	private void generate(Collection<Object> values) {
-		this.index_value.clear(); 
+		this.index_value.clear();
 		this.value_index.clear();
-		
+
 		if(values == null) return;
 		else {
 			for(Object value : values)
 				this.add(value);
 		}
 	}
-	
+
 	/* factory method */
 	/**
 	 * generate a bit-set base constructed from the set of values
@@ -124,5 +124,5 @@ public class BitSetBase {
 		BitSetBase base = new BitSetBase();
 		base.generate(values); return base;
 	}
-	
+
 }

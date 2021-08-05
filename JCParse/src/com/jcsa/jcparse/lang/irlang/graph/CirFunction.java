@@ -9,7 +9,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 
 public class CirFunction {
-	
+
 	private CirFunctionCallGraph graph;
 	private CirFunctionDefinition definition;
 	private CirExecutionFlowGraph flow_graph;
@@ -22,12 +22,12 @@ public class CirFunction {
 		else {
 			this.graph = graph;
 			this.definition = definition;
-			this.in = new LinkedList<CirFunctionCall>();
-			this.ou = new LinkedList<CirFunctionCall>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 			this.flow_graph = new CirExecutionFlowGraph(this);
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the graph where the function node is created
@@ -38,7 +38,7 @@ public class CirFunction {
 	 * get the function name (without scoping information)
 	 * @return
 	 */
-	public String get_name() { 
+	public String get_name() {
 		CirNameExpression declarator = definition.get_declarator();
 		if(declarator instanceof CirDeclarator) {
 			return ((CirDeclarator) declarator).get_cname().get_name();
@@ -72,5 +72,5 @@ public class CirFunction {
 	 * @return
 	 */
 	public Iterable<CirFunctionCall> get_ou_calls() { return this.ou; }
-	
+
 }

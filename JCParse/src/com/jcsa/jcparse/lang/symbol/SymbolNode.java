@@ -31,7 +31,7 @@ import com.jcsa.jcparse.parse.code.SymbolCodeGenerator;
  *
  */
 public abstract class SymbolNode {
-	
+
 	/* attributes */
 	/** parent of this symbolic node or null if it is root **/
 	private SymbolNode parent;
@@ -41,7 +41,7 @@ public abstract class SymbolNode {
 	private List<SymbolNode> children;
 	/** either AstNode, CirNode, CirExecution etc. from which it is created from factory **/
 	private Object source;
-	
+
 	/* constructor */
 	/**
 	 * create an isolated symbolic node in tree
@@ -49,10 +49,10 @@ public abstract class SymbolNode {
 	protected SymbolNode() {
 		this.parent = null;
 		this.child_index = -1;
-		this.children = new LinkedList<SymbolNode>();
+		this.children = new LinkedList<>();
 		this.source = null;
 	}
-	
+
 	/* getters */
 	/**
 	 * @return whether the node is root without parent
@@ -92,7 +92,7 @@ public abstract class SymbolNode {
 	 * @return the source from which the symbolic node is created
 	 */
 	public Object get_source() { return this.source; }
-	
+
 	/* setters */
 	/**
 	 * set the source of the symbolic node
@@ -115,15 +115,16 @@ public abstract class SymbolNode {
 			this.children.add(child);
 		}
 	}
-	
+
 	/* abstract methods */
 	/**
 	 * @return generate the copy of this node as isolated node without parent and children and no source
 	 * @throws Exception
 	 */
 	protected abstract SymbolNode construct() throws Exception;
-	
+
 	/* general methods */
+	@Override
 	public SymbolNode clone() {
 		SymbolNode parent;
 		try {
@@ -132,12 +133,12 @@ public abstract class SymbolNode {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		for(SymbolNode child : this.children) {
 			parent.add_child(child.clone());
 		}
 		parent.set_source(this.source);
-		
+
 		return parent;
 	}
 	/**
@@ -173,7 +174,7 @@ public abstract class SymbolNode {
 			return false;
 		}
 	}
-	
+
 	/* verification methods */
 	/**
 	 * @return true for {identifier|field_expression|de_reference}
@@ -199,5 +200,5 @@ public abstract class SymbolNode {
 			return false;
 		}
 	}
-	
+
 }

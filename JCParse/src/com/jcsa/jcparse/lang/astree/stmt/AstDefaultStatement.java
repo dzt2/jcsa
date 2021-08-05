@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>default_stmt --> <b>default</b> : </code>
- * 
+ *
  * @author yukimula
  *
  */

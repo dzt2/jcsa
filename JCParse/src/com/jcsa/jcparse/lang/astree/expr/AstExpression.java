@@ -15,20 +15,20 @@ import com.jcsa.jcparse.lang.ctype.CType;
  * <br>
  * 4. <i>compositional expression</i>:
  * <code>AstParanthExpression | AstConstExpression </code> <br>
- * 
+ *
  * @author yukimula
  */
 public interface AstExpression extends AstNode {
 	/**
 	 * get the type of the expression
-	 * 
+	 *
 	 * @return
 	 */
 	public CType get_value_type();
 
 	/**
 	 * set the type for this expression
-	 * 
+	 *
 	 * @param type
 	 */
 	public void set_value_type(CType type);

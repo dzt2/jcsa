@@ -12,13 +12,13 @@ import com.jcsa.jcparse.lang.astree.AstNode;
  *
  */
 class ACPScope {
-	
+
 	/* common defined label name */
 	protected static final String BREAK_LABEL 		= "break";
 	protected static final String CONTINUE_LABEL 	= "continue";
 	protected static final String CASE_LABEL		= "case";
 	protected static final String RETURN_LABEL	 	= "return";
-	
+
 	/* definitions and constructor */
 	private ACPScope parent;
 	private AstNode ast_key;
@@ -28,7 +28,7 @@ class ACPScope {
 			throw new IllegalArgumentException("invalid ast_key as null");
 		else {
 			this.parent = null; this.ast_key = ast_key;
-			this.labels = new HashMap<String, ACPLabelsTarget>();
+			this.labels = new HashMap<>();
 		}
 	}
 	private ACPScope(ACPScope parent, AstNode ast_key) throws IllegalArgumentException {
@@ -38,10 +38,10 @@ class ACPScope {
 			throw new IllegalArgumentException("invalid ast_key as null");
 		else {
 			this.parent = parent; this.ast_key = ast_key;
-			this.labels = new HashMap<String, ACPLabelsTarget>();
+			this.labels = new HashMap<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the AST node as the key referring to this scope
@@ -107,5 +107,5 @@ class ACPScope {
 		if(this.labels.containsKey(label_name)) this.labels.remove(label_name);
 		else throw new IllegalArgumentException("undefined: " + label_name);
 	}
-	
+
 }

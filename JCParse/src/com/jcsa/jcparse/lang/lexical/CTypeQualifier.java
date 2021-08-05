@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.lexical;
 
 /**
  * type qualifier
- * 
+ *
  * @author yukimula
  *
  */

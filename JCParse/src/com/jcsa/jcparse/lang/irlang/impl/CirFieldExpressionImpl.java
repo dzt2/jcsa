@@ -29,7 +29,7 @@ public class CirFieldExpressionImpl extends CirExpressionImpl implements CirFiel
 			return (CirField) this.get_child(1);
 		}
 	}
-	
+
 	@Override
 	public void set_body(CirExpression body) throws IllegalArgumentException {
 		if(this.number_of_children() == 0) {

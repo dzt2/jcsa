@@ -9,6 +9,7 @@ import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstAbsDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDimension;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstIdentifierList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
@@ -19,7 +20,6 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterTypeList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstPointer;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstDesignator;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
@@ -150,7 +150,7 @@ public class C89_Parser implements CParser {
 	// primary expression
 	/**
 	 * <code>prim_expr |--> identifier | constant | literal | ( expression ) </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -171,7 +171,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> prim_expr |--> identifier </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -201,7 +201,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>prim_expr |--> constant</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -221,7 +221,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>prim_expr |--> (literal)+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -257,7 +257,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>prim_expr |--> ( expression )</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -286,7 +286,7 @@ public class C89_Parser implements CParser {
 	 * 	post_expr |--> prim_expr ( [ expression ] | ( argument_expression_list? ) | {. ->} identifier | {++, --} )* <br>
 	 * 	post_expr |--> ( type_name ) initializer_body <br>
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -331,7 +331,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	post_expr |--> post_expr [ expression ]
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param child
@@ -360,7 +360,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	post_expr |--> post_expr ( argument_expr_list? )
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param child
@@ -390,7 +390,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	argument_expression_list |--> assignment_expression (, assignment_expression)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -420,7 +420,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	post_expr |--> post_expr {. ->} field
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -455,7 +455,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>post_expr |--> post_expr (++, --)</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param child
 	 * @return
@@ -492,7 +492,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>post_expr |--> ( type_name ) initial_body</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param child
@@ -526,7 +526,7 @@ public class C89_Parser implements CParser {
 	 * 	unary_expr |--> {+, -, ~, !, &, *} cast_expr <br>
 	 * 	unary_expr |--> <b>sizeof</b> unary_expr | ( type_name ) <br>
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -568,7 +568,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	unary_expr |--> {++, --} unary_expr
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -610,7 +610,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	unary_expr |--> {+, -, ~, !, &, *} cast_expr <br>
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -680,7 +680,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	unary_expr |--> <b>sizeof</b> unary_expr | ( type_name ) <br>
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -717,7 +717,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	cast_expr --> unary_expression | ( type_name ) cast_expression
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -754,7 +754,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	mul_expr |--> cast_expr ({* / %} cast_expr)*<br>
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -774,7 +774,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> ({* / %} cast_expression)</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param child
@@ -823,7 +823,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	add_expr |--> mul_expr ( {+ -} mul_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -845,7 +845,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	--> {+ -} mul_expr
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -891,7 +891,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	shift_expr |--> add_expr ({>> <<} add_expr)?
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -911,7 +911,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> {>> <<} add_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -955,7 +955,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	rel_expr |--> shift_expr ({>, >=, <=, <} shift_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -975,7 +975,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> {>, >=, <=, <} shift_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1028,7 +1028,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	eq_expr |--> rel_expr ({==, !=} rel_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1048,7 +1048,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>--> {==, !=} rel_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1092,7 +1092,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * bit_and_expr |--> eq_expr (& eq_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1114,7 +1114,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	--> & eq_expr
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1149,7 +1149,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	bit_xor_expr |--> bit_and_expr (^ bit_and_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1171,7 +1171,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	--> ^ bit_and_expr
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1204,7 +1204,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * bit_or_expr |--> xor_expr (| xor_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1224,7 +1224,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> | xor_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1260,7 +1260,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	log_and_expr |--> bit_or_expr (&& bit_or_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1280,7 +1280,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> && bit_or_expr </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1316,7 +1316,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	log_or_expr |--> log_and_expr (|| log_and_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1336,7 +1336,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> || log_and_expr </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1372,7 +1372,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * cond_expr |--> log_or_expr (? expression : cond_expr)?
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1405,7 +1405,7 @@ public class C89_Parser implements CParser {
 	 * 	assign_expr |--> conditional_expr <br>
 	 * 	assign_expr |--> unary_expr assignment_operator assignment_expression
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1505,7 +1505,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	expr --> assignment_expr (, assignment_expr)*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1525,7 +1525,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>, assign_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param loperand
@@ -1553,7 +1553,7 @@ public class C89_Parser implements CParser {
 	// const-expression
 	/**
 	 * <code>const_expr |--> cond_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1571,7 +1571,7 @@ public class C89_Parser implements CParser {
 	// declaration specifier
 	/**
 	 * <code>decl_spec |--> storage_class_spec | type_qualifier | type_keyword | typedef_name | struct_spec | union_spec | enum_spec </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1641,7 +1641,7 @@ public class C89_Parser implements CParser {
 	// struct specifier
 	/**
 	 * <code>struct_spec |--> <b>struct</b> name | (name)? body</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1730,7 +1730,7 @@ public class C89_Parser implements CParser {
 	// union specifier
 	/**
 	 * <code>union_spec |--> <b>union</b> name | (name)? body</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1817,7 +1817,7 @@ public class C89_Parser implements CParser {
 	// enum specifier
 	/**
 	 * <code>enum_spec |--> <b>enum</b> name | (name)? { enumerator_list (,)? }</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1906,7 +1906,7 @@ public class C89_Parser implements CParser {
 	// struct-declaration-list
 	/**
 	 * <code>struct_decl_list |--> (struct_decl)+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1927,7 +1927,7 @@ public class C89_Parser implements CParser {
 	// enumerator-list
 	/**
 	 * <code>enumerator_list |--> enumerator (, enumerator)*</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -1957,7 +1957,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>enumerator |--> identifier (= const_expr)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2003,7 +2003,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> type_qualifier | type_specifier </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2064,7 +2064,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>--> {*, const, volatile, restrict}</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2098,7 +2098,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> static | const | volatile | restrict</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2127,7 +2127,7 @@ public class C89_Parser implements CParser {
 	// declaration-specifiers
 	/**
 	 * <code>decl_spec |--> (storage_class_spec | type_qualifier | type_keyword | typedef_name | struct_spec | union_spec | enum_spec)+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2147,7 +2147,7 @@ public class C89_Parser implements CParser {
 	// specifier-qualifier-list
 	/**
 	 * <code>specifier_qualifier_list |--> (type_qualifier | type_keyword | typedef_name | struct_spec | union_spec | enum_spec)+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2168,7 +2168,7 @@ public class C89_Parser implements CParser {
 	// pointer
 	/**
 	 * <code>pointer |--> {*, const, volatile, restrict}+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2200,7 +2200,7 @@ public class C89_Parser implements CParser {
 	// declarator
 	/**
 	 * <code>declarator |--> (pointer)? direct-declarator</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2230,7 +2230,7 @@ public class C89_Parser implements CParser {
 	 * 	direct-declarator |--> identifier | ( declarator ) <br>
 	 * 	direct-declarator |--> direct-declarator { [(array_qualifier_list)? (assign_expression)?] | ( (param_type_list | identifier_list)? ) }*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2266,7 +2266,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> identifier | ( declarator ) </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2298,7 +2298,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>dir_declarator |--> dir_declarator ( param_type_list? | id_list? )</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param declarator
@@ -2343,7 +2343,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>dir_declarator |--> dir_declarator [(assign_expr)?]</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param declarator
@@ -2377,7 +2377,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	abs_declarator |--> pointer | (pointer)? direct_abs_declarator
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2401,7 +2401,7 @@ public class C89_Parser implements CParser {
 	 * <code>
 	 * 	direct_abs_declarator |--> { ( abs_declarator ) }? { [ assignment-expression? ] | ( parameter-type-list? ) }*
 	 * </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2436,7 +2436,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> |--> ( abs_declarator ) </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2463,7 +2463,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> abs_declarator ( parameter-type-list? )</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2497,7 +2497,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> --> abs_declarator [ assignment-expression? ]</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param declarator
@@ -2529,7 +2529,7 @@ public class C89_Parser implements CParser {
 	// identifier-list
 	/**
 	 * <code>id-list |--> identifier (, identifier)*</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2561,7 +2561,7 @@ public class C89_Parser implements CParser {
 	// parameter-type-list
 	/**
 	 * <code> param_type_list |--> param_list (, ...)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2588,7 +2588,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code> param_list |--> param_decl (, param_decl)* </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2618,7 +2618,7 @@ public class C89_Parser implements CParser {
 	// init-declarator-list
 	/**
 	 * <code>init_declarator_list |--> init_declarator (, init_declarator)* </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2648,7 +2648,7 @@ public class C89_Parser implements CParser {
 	// init-declarator
 	/**
 	 * <code>init_declarator |--> declarator (= initializer)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2675,7 +2675,7 @@ public class C89_Parser implements CParser {
 	// struct-declarator-list
 	/**
 	 * <code>struct_declarator_list |--> struct_declarator (, struct_declarator)*</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2703,7 +2703,7 @@ public class C89_Parser implements CParser {
 	// struct-declarator
 	/**
 	 * <code> declarator | (declarator)? : const_expr</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @param declarator
@@ -2736,7 +2736,7 @@ public class C89_Parser implements CParser {
 	// initializer
 	/**
 	 * <code> initializer |--> expr | init_body </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2756,7 +2756,7 @@ public class C89_Parser implements CParser {
 	// initializer-body
 	/**
 	 * <code> init_body |--> "{" initializer_list (",")? "}"</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2786,7 +2786,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>initializer_list |--> field_initializer (, field_initializer)*</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2814,7 +2814,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>field_initializer |--> initializer</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2830,7 +2830,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>designator |--> (. field | [ const_expr ] )</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2867,7 +2867,7 @@ public class C89_Parser implements CParser {
 	// struct-declaration
 	/**
 	 * <code>specifier_qualifier_list struct_declarator_list ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2902,7 +2902,7 @@ public class C89_Parser implements CParser {
 	// parameter-declaration
 	/**
 	 * <code>declaration_specifiers (declarator | abs_declarator)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2931,7 +2931,7 @@ public class C89_Parser implements CParser {
 	// declaration
 	/**
 	 * <code>declaration |--> declaration-specifiers (init-declarator-list)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2955,7 +2955,7 @@ public class C89_Parser implements CParser {
 	// type-name
 	/**
 	 * <code>specifier_qualifier_list (abs_declarator)?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -2976,7 +2976,7 @@ public class C89_Parser implements CParser {
 	// statement
 	/**
 	 * <code>statement |--> labeled-statement | compound-statement | expression-statement | selection-statement | iteration-statement | jump-statement</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3042,7 +3042,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>expr_stmt |--> (expression)? ; </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3065,7 +3065,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>declaration-statement |--> declaration ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3090,7 +3090,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>labeled-statement |--> label : </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3114,7 +3114,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>case-statement |--> case const-expression :</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3140,7 +3140,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>default-statement |--> <b>default</b> : </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3161,7 +3161,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>comp-statement |--> { (statement-list)? }</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3195,7 +3195,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>statement-list |--> (statement)+</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3215,7 +3215,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>if-statement |--> <b>if</b> ( expression ) statement {<b>else</b> statement}?</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3259,7 +3259,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>switch-statement |--> <b>switch</b> ( expression ) statement</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3294,7 +3294,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>while-statement |--> <b>while</b> ( expression ) statement</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3329,7 +3329,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>do-while-statement |--> <b>do</b> statement <b>while</b> ( expression ) ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3373,7 +3373,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code><b>for</b> ( {expression-statement} expression-statement {expression}? ) statement</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3432,7 +3432,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>goto-statement |--> <b>goto</b> label ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3464,7 +3464,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>continue-statement |--> <b>continue</b> ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3485,7 +3485,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>continue-statement |--> <b>break</b> ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3506,7 +3506,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>return-statement |--> <b>return</b> (expression)? ;</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3592,7 +3592,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#if const-expression new-line</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3617,7 +3617,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#ifdef macro new-line</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3647,7 +3647,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#ifndef macro new-line</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3677,7 +3677,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#elif const-expression \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3702,7 +3702,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#else \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3722,7 +3722,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#endif \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3742,7 +3742,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#define identifier {( idlist | ... )}? tokens newline</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3817,7 +3817,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#undef macro \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3842,7 +3842,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#include header \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3868,7 +3868,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#line constant (literal)? \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3900,7 +3900,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#error (tokens)+ \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3918,7 +3918,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>#pragma (token)+ \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3936,7 +3936,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code># \n</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -3959,7 +3959,7 @@ public class C89_Parser implements CParser {
 	// function-definition
 	/**
 	 * <code>declaration-specifiers declarator (declaration-list)? compound-statement</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -4029,7 +4029,7 @@ public class C89_Parser implements CParser {
 	// external-unit
 	/**
 	 * <code>external-unit |--> preprocess-line | declaration-statement | function-definition </code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -4055,7 +4055,7 @@ public class C89_Parser implements CParser {
 	// translation-unit
 	/**
 	 * parse the source code token stream into C99-syntax parse-tree
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -4083,7 +4083,7 @@ public class C89_Parser implements CParser {
 	// basic match method
 	/**
 	 * <code>|--> keyword</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param keyword
 	 * @return : null if not matched, otherwise, stream is consumed by one token
@@ -4105,7 +4105,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> punctuator</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param punctuator
 	 * @return : null if not matched, otherwise, stream is consumed by one token
@@ -4127,7 +4127,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> directive</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param directive
 	 * @return : null if not matched, otherwise, stream is consumed by one token
@@ -4149,7 +4149,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> identifier</code>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -4177,7 +4177,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * <code>|--> identifier</code>
-	 * 
+	 *
 	 * @param stream
 	 * @param scope
 	 * @return
@@ -4202,7 +4202,7 @@ public class C89_Parser implements CParser {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -4217,7 +4217,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * match identifier
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -4236,7 +4236,7 @@ public class C89_Parser implements CParser {
 
 	/**
 	 * match header
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception

@@ -6,13 +6,13 @@ package com.jcsa.jcparse.flwa.depend;
  *
  */
 public class CDependEdge {
-	
+
 	private CDependType type;
 	private CDependNode source;
 	private CDependNode target;
 	private Object element;
-	
-	protected CDependEdge(CDependType type, CDependNode source, 
+
+	protected CDependEdge(CDependType type, CDependNode source,
 			CDependNode target, Object element) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("Invalid type: null");
@@ -27,9 +27,9 @@ public class CDependEdge {
 			this.element = element;
 		}
 	}
-	
+
 	/**
-	 * get the type of dependence 
+	 * get the type of dependence
 	 * @return
 	 */
 	public CDependType get_type() { return this.type; }
@@ -48,5 +48,5 @@ public class CDependEdge {
 	 * @return
 	 */
 	public Object get_element() { return this.element; }
-	
+
 }

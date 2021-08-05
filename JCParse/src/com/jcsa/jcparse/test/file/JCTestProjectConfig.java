@@ -17,13 +17,13 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
  * 	---	c_pre_process_mac_file: config/linux.h<br>
  * 	---	lang_standard: ClangStandard for parse<br>
  * 	---	command_util: interface to execute command-line processing<br>
- * 	---	
- * 
+ * 	---
+ *
  * @author yukimula
  *
  */
 public class JCTestProjectConfig {
-	
+
 	/* file name parameters */
 	/** the name of the compiler to compile the source code files **/
 	private static final String compiler_file_name = "compiler.name";
@@ -37,7 +37,7 @@ public class JCTestProjectConfig {
 	private static final String c_pre_process_mac_file_name = "linux.h";
 	/** the name of the file to preserve the compilation parameters **/
 	private static final String c_compile_parameter_file_name = "complie.param";
-	
+
 	/* attributes */
 	/** the interface to execute the command-line program **/
 	private CommandUtil command_util;
@@ -53,7 +53,7 @@ public class JCTestProjectConfig {
 	private File c_pre_process_mac_file;
 	/** the parameters used in compiling program under test **/
 	private List<String> compile_parameters;
-	
+
 	/* constructor */
 	/**
 	 * @param lang_standard	the C language standard used for parsing .i file
@@ -67,10 +67,10 @@ public class JCTestProjectConfig {
 			throw new IllegalArgumentException("Invalid util: null");
 		else {
 			this.command_util = command_util;
-			this.compile_parameters = new ArrayList<String>();
+			this.compile_parameters = new ArrayList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the interfaces to execute the command-line processing.
@@ -100,7 +100,7 @@ public class JCTestProjectConfig {
 	 * @return the parameters used in compiling the source code files into xxx.exe
 	 */
 	public Iterable<String> get_compile_parameters() { return this.compile_parameters; }
-	
+
 	/* setters */
 	/**
 	 * set the configuration data in the object
@@ -110,7 +110,7 @@ public class JCTestProjectConfig {
 	 * @param c_pre_process_mac_file
 	 * @throws Exception
 	 */
-	protected void set(CCompiler compiler, ClangStandard lang_standard, File c_template_file, 
+	protected void set(CCompiler compiler, ClangStandard lang_standard, File c_template_file,
 			File c_instrument_head_file, File c_pre_process_mac_file, Iterable<String> compile_parameters) throws Exception {
 		if(compiler == null)
 			throw new IllegalArgumentException("Invalid compiler: null");
@@ -151,9 +151,9 @@ public class JCTestProjectConfig {
 			throw new IllegalArgumentException("Invalid directory: null");
 		}
 		else {
-			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
+			CommandUtil.write_text(new File(config_dir.getAbsolutePath() +
 					"/" + compiler_file_name), this.compiler.toString());
-			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
+			CommandUtil.write_text(new File(config_dir.getAbsolutePath() +
 					"/" + lang_standard_file_name), this.lang_standard.toString());
 			CommandUtil.copy_file(this.c_template_file, new File(config_dir.
 					getAbsolutePath() + "/" + c_template_file_name));
@@ -165,7 +165,7 @@ public class JCTestProjectConfig {
 			for(String parameter : this.compile_parameters) {
 				compile_parameters.append(parameter.trim()).append("\n");
 			}
-			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
+			CommandUtil.write_text(new File(config_dir.getAbsolutePath() +
 					"/" + c_compile_parameter_file_name), compile_parameters.toString());
 		}
 	}
@@ -188,8 +188,8 @@ public class JCTestProjectConfig {
 			File c_template_file = new File(config_dir.getAbsolutePath() + "/" + c_template_file_name);
 			File c_instrument_head_file = new File(config_dir.getAbsolutePath() + "/" + c_instrument_head_file_name);
 			File c_pre_process_mac_file = new File(config_dir.getAbsolutePath() + "/" + c_pre_process_mac_file_name);
-			
-			List<String> compile_parameters = new ArrayList<String>(); String line;
+
+			List<String> compile_parameters = new ArrayList<>(); String line;
 			BufferedReader reader = new BufferedReader(
 					new FileReader(new File(config_dir.getAbsolutePath() + "/" + c_compile_parameter_file_name)));
 			while((line = reader.readLine()) != null) {
@@ -199,11 +199,11 @@ public class JCTestProjectConfig {
 				}
 			}
 			reader.close();
-			
-			this.set(compiler, lang_standard, c_template_file, 
-					c_instrument_head_file, c_pre_process_mac_file, compile_parameters); 
+
+			this.set(compiler, lang_standard, c_template_file,
+					c_instrument_head_file, c_pre_process_mac_file, compile_parameters);
 			return;
 		}
 	}
-	
+
 }

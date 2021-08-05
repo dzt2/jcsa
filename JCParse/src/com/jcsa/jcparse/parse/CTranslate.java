@@ -36,7 +36,7 @@ import com.jcsa.jcparse.parse.tokenizer.CTokenizerImpl;
  * @author yukimula
  */
 public class CTranslate {
-	
+
 	// source text method
 	/**
 	 * get the standard text of source file
@@ -78,7 +78,7 @@ public class CTranslate {
 		CLangKeywordLoaderFactory.get_c99_keyword_loader().load(lib);
 		CLangKeywordLoaderFactory.get_gnu_keyword_loader().load(lib);
 	}
-	
+
 	// AST parser
 	/**
 	 * parse the source code and generate AST
@@ -102,20 +102,20 @@ public class CTranslate {
 			default:
 				throw new IllegalArgumentException("Invalid C-standard: " + std);
 			}
-			
+
 			/* get standard text of source code in file */
 			CText text = get_source_text(file);
-			
+
 			/* get scanner from source code */
 			CTokenizer tokenizer = new CTokenizerImpl(lib);
 			tokenizer.open(text);
 			CTokenStream stream = tokenizer.get_stream();
-			
+
 			/* parse to get AST root */
 			AstTranslationUnit root;
 			if ((root = parser.parse(stream)) == null)
 				throw new RuntimeException("Invalid parse for " + file.getAbsolutePath());
-			
+
 			/* return AST */ return root;
 		}
 	}
@@ -131,10 +131,10 @@ public class CTranslate {
 		CConstantEvaluator evaluator = new CConstantEvaluator(template);
 		CTypeBuilder builder = new CTypeBuilder(evaluator);
 		CExpressionBuilder expr_builder = new CExpressionBuilder();
-		
+
 		/* set the iterator to access nodes in AST */
 		AstNodeIterator iterator = new AstNodeDFSIterator(root);
-		
+
 		/* derive types from declarations */
 		while(iterator.has_next()) {
 			AstNode node = iterator.get_next();
@@ -150,9 +150,9 @@ public class CTranslate {
 				System.out.println(node.get_location().trim_code());
 				throw ex;
 			}
-			
+
 		}
-		
+
 		/* build up types for each expression */
 		iterator = new AstNodeDFSIterator(root);
 		while(iterator.has_next()) {
@@ -160,10 +160,10 @@ public class CTranslate {
 			if (node instanceof AstExpression)
 				expr_builder.build_up((AstExpression) node);
 		}
-		
+
 		/* return success */ return true;
 	}
-	
+
 	/**
 	 * generate the abstract syntax tree from source code text
 	 * @param source_file
@@ -176,7 +176,7 @@ public class CTranslate {
 		CText source_code = get_source_text(source_file);
 		AstTranslationUnit ast_root = get_ast_root(source_file, standard);
 		derive_types_for(ast_root, sizeof_base);
-		
+
 		return new AstTree(source_file, source_code, ast_root);
 	}
 	/**
@@ -188,5 +188,5 @@ public class CTranslate {
 	public static CirTree parse(AstTree ast_tree, CRunTemplate sizeof_base) throws Exception {
 		return CirParser.parse_all(ast_tree.get_ast_root(), sizeof_base);
 	}
-	
+
 }

@@ -2,20 +2,20 @@ package com.jcsa.jcparse.lang.ctype;
 
 /**
  * set of field in struct | union type
- * 
+ *
  * @author yukimula
  */
 public interface CFieldBody {
 	/**
 	 * get the number of fields in body
-	 * 
+	 *
 	 * @return
 	 */
 	public int size();
 
 	/**
 	 * get the ith field
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 * @throws Exception
@@ -24,7 +24,7 @@ public interface CFieldBody {
 
 	/**
 	 * whether there is field corresponding to the name
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -32,7 +32,7 @@ public interface CFieldBody {
 
 	/**
 	 * get the field by its name
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -41,7 +41,7 @@ public interface CFieldBody {
 
 	/**
 	 * add a new field in the body
-	 * 
+	 *
 	 * @param field
 	 * @throws Exception
 	 *             : duplicated name

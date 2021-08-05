@@ -8,10 +8,10 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
  *
  */
 public interface CirCallStatement extends CirStatement {
-	
+
 	public CirExpression get_function();
 	public CirArgumentList get_arguments();
 	public void set_function(CirExpression function) throws IllegalArgumentException;
 	public void set_arguments(CirArgumentList arguments) throws IllegalArgumentException;
-	
+
 }

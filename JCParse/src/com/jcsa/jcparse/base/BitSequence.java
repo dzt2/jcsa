@@ -5,13 +5,13 @@ package com.jcsa.jcparse.base;
  * @author yukimula
  */
 public class BitSequence {
-	
+
 	protected static final byte[] BITS = new byte[] {1, 2, 4, 8, 16, 32, 64, -128};
 	protected static final StringBuilder buff = new StringBuilder();
-	
+
 	public static final boolean BIT1 = true;
 	public static final boolean BIT0 = false;
-	
+
 	private byte[] bytes;
 	private int size;
 	public BitSequence(BitSequence x) throws Exception {
@@ -48,7 +48,7 @@ public class BitSequence {
 			return cap;
 		}
 	}
-	
+
 	/**
 	 * number of bit in the sequence
 	 * @return
@@ -71,16 +71,15 @@ public class BitSequence {
 		}
 	}
 	/**
-	 * number of BIT-1 in the sequence 
+	 * number of BIT-1 in the sequence
 	 * @return
 	 */
 	public int degree() {
 		int deg = 0;
 		if(bytes != null) {
-			for(int i = 0; i < bytes.length; i++) {
-				byte bk = bytes[i];
-				for(int j = 0; j < BITS.length; j++) {
-					if((bk & BITS[j]) != 0) deg++;
+			for (byte bk : bytes) {
+				for (byte element : BITS) {
+					if((bk & element) != 0) deg++;
 				}
 			}
 		}
@@ -98,14 +97,14 @@ public class BitSequence {
 		else {
 			int x = k / 8, y = k % 8;
 			byte b = bytes[x];
-			
+
 			if(bit) {
 				b = (byte) (b | BITS[y]);
 			}
 			else {
 				b = (byte) (b & ~(BITS[y]));
 			}
-			
+
 			bytes[x] = b;
 		}
 	}
@@ -118,7 +117,7 @@ public class BitSequence {
 				bytes[i] = 0;
 		}
 	}
-	
+
 	/* computational methods */
 	/**
 	 * X := Y<br>
@@ -143,7 +142,7 @@ public class BitSequence {
 		while(k < bytes.length) {
 			bytes[k] = 0; k = k + 1;
 		}
-		
+
 	}
 	/**
 	 * Z = X & Y<br>
@@ -159,7 +158,7 @@ public class BitSequence {
 		else {
 			int min = Math.min(size, y.size);
 			BitSequence z = new BitSequence(min);
-			
+
 			for(int i = 0; i < z.bytes.length; i++) {
 				z.bytes[i] = (byte) (bytes[i] & y.bytes[i]);
 			}
@@ -213,7 +212,7 @@ public class BitSequence {
 		}
 		return y;
 	}
-	
+
 	/* translation methods */
 	/** number of bytes used to represent one integer **/
 	public static final int INT_BYTES = 4;
@@ -229,7 +228,7 @@ public class BitSequence {
 			int length = (int) Math.ceil(bytes.length / INT_BYTES);
 			int[] int_array = new int[length]; int value, product;
 			for(int k = 0; k < length; k++) {
-				value = 0; product = 1; 
+				value = 0; product = 1;
 				for(int i = 0; i < INT_BYTES; i++) {
 					value = value + bytes[4 * k + i] * product;
 					product = product * INT_STEP;
@@ -244,7 +243,7 @@ public class BitSequence {
 	 * @return
 	 */
 	public byte[] bytes_of() { return this.bytes.clone(); }
-	
+
 	@Override
 	public boolean equals(Object y) {
 		if(y == null) return false;
@@ -253,7 +252,7 @@ public class BitSequence {
 			/* match the common bits */
 			int k = 0;
 			while((k < this.size) && (k < res.size)) {
-				if(this.get(k) != res.get(k)) 
+				if(this.get(k) != res.get(k))
 					return false;
 				else k = k + 1;
 			}

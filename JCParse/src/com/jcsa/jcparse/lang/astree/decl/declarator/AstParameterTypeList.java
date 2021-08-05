@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>param_type_list |--> param_list (, ...)?</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstParameterTypeList extends AstNode {

@@ -229,7 +229,7 @@ import com.jcsa.jcparse.lang.lexical.CPunctuator;
 
 /**
  * To produce AST-node in a regular way
- * 
+ *
  * @author yukimula
  */
 public class AstNodeFactory {

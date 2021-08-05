@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionType;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CirInstanceNode extends CirInstance {
-	
+
 	/** the set of edges to and from this node in the graph **/
 	private List<CirInstanceEdge> in, ou;
 	/**
@@ -23,8 +23,8 @@ public class CirInstanceNode extends CirInstance {
 	 */
 	protected CirInstanceNode(CirInstanceGraph graph, Object context, CirExecution element) throws Exception {
 		super(graph, context, element);
-		this.in = new LinkedList<CirInstanceEdge>();
-		this.ou = new LinkedList<CirInstanceEdge>();
+		this.in = new LinkedList<>();
+		this.ou = new LinkedList<>();
 	}
 	/**
 	 * create a node of instance in execution graph with respect to the virtual statement of specified type
@@ -35,20 +35,20 @@ public class CirInstanceNode extends CirInstance {
 	 */
 	protected CirInstanceNode(CirInstanceGraph graph, Object context, CirExecutionType element) throws Exception {
 		super(graph, context, element);
-		this.in = new LinkedList<CirInstanceEdge>();
-		this.ou = new LinkedList<CirInstanceEdge>();
+		this.in = new LinkedList<>();
+		this.ou = new LinkedList<>();
 	}
-	
+
 	/* getters */
 	@Override
-	public boolean is_virtual() { 
-		return this.get_element() instanceof CirExecutionType; 
+	public boolean is_virtual() {
+		return this.get_element() instanceof CirExecutionType;
 	}
 	/**
 	 * get the statement being executed
 	 * @return null if the node is virtual
 	 */
-	public CirExecution get_execution() { 
+	public CirExecution get_execution() {
 		Object element = this.get_element();
 		if(element instanceof CirExecution)
 			return (CirExecution) element;
@@ -102,7 +102,7 @@ public class CirInstanceNode extends CirInstance {
 	public CirInstanceEdge get_ou_edge(int k) throws IndexOutOfBoundsException {
 		return this.ou.get(k);
 	}
-	
+
 	/* code generator */
 	/**
 	 * whether the syntax node of C-like intermediate representation
@@ -136,7 +136,7 @@ public class CirInstanceNode extends CirInstance {
 			return node.generate_code(false) + "#" + this.get_context().hashCode();
 		}
 	}
-	
+
 	/* setters */
 	/**
 	 * link this node with the target with an edge with respect to the program flow
@@ -147,7 +147,7 @@ public class CirInstanceNode extends CirInstance {
 	 * @return
 	 * @throws Exception
 	 */
-	protected CirInstanceEdge link_to(CirInstanceNode target, 
+	protected CirInstanceEdge link_to(CirInstanceNode target,
 			Object context, CirExecutionFlow flow) throws Exception {
 		if(target == null || target.get_graph() != this.get_graph())
 			throw new IllegalArgumentException("Undefined target: " + target);
@@ -176,5 +176,5 @@ public class CirInstanceNode extends CirInstance {
 			this.ou.add(edge); target.in.add(edge); return edge;
 		}
 	}
-	
+
 }

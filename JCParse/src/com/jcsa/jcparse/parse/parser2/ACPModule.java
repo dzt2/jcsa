@@ -11,18 +11,18 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 class ACPModule {
-	
+
 	/* definitions & constructor */
 	private List<CirStatement> statements;
 	private Map<AstNode, ACPSolution> solutions;
 	private Stack<ACPScope> scopes;
 	protected ACPModule(AstNode root) throws IllegalArgumentException {
-		this.statements = new ArrayList<CirStatement>();
-		this.solutions = new HashMap<AstNode, ACPSolution>();
-		this.scopes = new Stack<ACPScope>();
+		this.statements = new ArrayList<>();
+		this.solutions = new HashMap<>();
+		this.scopes = new Stack<>();
 		this.scopes.push(new ACPScope(root));
 	}
-	
+
 	/* getters and setters */
 	/**
 	 * get all the solutions created within the solution space of the module
@@ -91,5 +91,5 @@ class ACPModule {
 	 * @return
 	 */
 	public Iterable<CirStatement> get_statements() { return this.statements; }
-	
+
 }

@@ -70,18 +70,18 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 /**
  * It provides the interface to determine the locations in cir-code
  * w.r.t. a given AstNode.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirLocalizer {
-	
+
 	/* definition */
 	private CirTree cir_tree;
 	protected CirLocalizer(CirTree cir_tree) {
 		this.cir_tree = cir_tree;
 	}
-	
+
 	/* localization methods */
 	/**
 	 * @param parent
@@ -123,7 +123,7 @@ public class CirLocalizer {
 	 */
 	public List<CirNode> get_cir_nodes(AstNode location, Class<?> cir_class) {
 		List<CirNode> cir_nodes = this.cir_tree.get_cir_nodes(location);
-		LinkedList<CirNode> cir_filter_nodes = new LinkedList<CirNode>();
+		LinkedList<CirNode> cir_filter_nodes = new LinkedList<>();
 		for(CirNode cir_node : cir_nodes) {
 			if(cir_class.isInstance(cir_node)) {
 				cir_filter_nodes.add(cir_node);
@@ -155,11 +155,11 @@ public class CirLocalizer {
 				return range.get_result();
 			}
 			else if(location instanceof AstConstExpression) {
-				return this.get_cir_value(((AstConstExpression) 
+				return this.get_cir_value(((AstConstExpression)
 									location).get_expression());
 			}
 			else if(location instanceof AstParanthExpression) {
-				return this.get_cir_value(((AstParanthExpression) 
+				return this.get_cir_value(((AstParanthExpression)
 								location).get_sub_expression());
 			}
 			else if(location instanceof AstFunCallExpression) {
@@ -292,7 +292,7 @@ public class CirLocalizer {
 			}
 			else if(location instanceof AstReturnStatement) {
 				if(((AstReturnStatement) location).has_expression()) {
-					return (CirStatement) this.get_cir_nodes(location, 
+					return (CirStatement) this.get_cir_nodes(location,
 							CirReturnAssignStatement.class).get(0);
 				}
 				else {
@@ -318,7 +318,7 @@ public class CirLocalizer {
 						location, CirIfStatement.class).get(0);
 			}
 			else if(location instanceof AstSwitchStatement) {
-				return (CirStatement) this.get_cir_nodes(location, 
+				return (CirStatement) this.get_cir_nodes(location,
 						CirSaveAssignStatement.class).get(0);
 			}
 			else if(location instanceof AstDoWhileStatement) {
@@ -373,12 +373,12 @@ public class CirLocalizer {
 		if(statement == null) {
 			AstNode parent = location.get_parent();
 			int index = this.find_child_index(parent, location);
-			
+
 			for(int k = index - 1; k >= 0; k--) {
 				statement = this.get_end_statement(parent.get_child(k));
 				if(statement != null) return statement;
 			}
-			
+
 			return this.beg_statement(parent);
 		}
 		else {
@@ -414,7 +414,7 @@ public class CirLocalizer {
 						((AstParanthExpression) location).get_sub_expression());
 			}
 			else if(location instanceof AstFunCallExpression) {
-				return (CirStatement) this.get_cir_nodes(location, 
+				return (CirStatement) this.get_cir_nodes(location,
 							CirWaitAssignStatement.class).get(0);
 			}
 			else if(location instanceof AstConditionalExpression) {
@@ -423,7 +423,7 @@ public class CirLocalizer {
 			}
 			else if(location instanceof AstUnaryExpression) {
 				if(location instanceof AstIncreUnaryExpression) {
-					return (CirStatement) this.get_cir_nodes(location, 
+					return (CirStatement) this.get_cir_nodes(location,
 							CirIncreAssignStatement.class).get(0);
 				}
 				else {
@@ -431,7 +431,7 @@ public class CirLocalizer {
 				}
 			}
 			else if(location instanceof AstPostfixExpression) {
-				return (CirStatement) this.get_cir_nodes(location, 
+				return (CirStatement) this.get_cir_nodes(location,
 							CirIncreAssignStatement.class).get(0);
 			}
 			else if(location instanceof AstBinaryExpression) {
@@ -515,12 +515,12 @@ public class CirLocalizer {
 		if(statement == null) {
 			AstNode parent = location.get_parent();
 			int index = this.find_child_index(parent, location);
-			
+
 			for(int k = index + 1; k < parent.number_of_children(); k++) {
 				statement = this.get_beg_statement(parent.get_child(k));
 				if(statement != null) { return statement; }
 			}
-			
+
 			return this.end_statement(parent);
 		}
 		else {
@@ -567,7 +567,7 @@ public class CirLocalizer {
 		if(location == null)
 			throw new IllegalArgumentException("Invalid location: null");
 		else {
-			Set<CirExpression> expressions = new HashSet<CirExpression>();
+			Set<CirExpression> expressions = new HashSet<>();
 			collect_expressions_in(location, expressions);
 			return expressions;
 		}
@@ -591,5 +591,5 @@ public class CirLocalizer {
 			return false;
 		}
 	}
-	
+
 }

@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.text.CLocation;
 
 /**
  * Node of which children size can be pre-determined
- * 
+ *
  * @author yukimula
  *
  */
@@ -51,7 +51,7 @@ public abstract class AstFixedNode extends AstNodeImpl {
 	 * 4. child.parent has been set. <br>
 	 * this method will update the location when head and tail are
 	 * available.<br>
-	 * 
+	 *
 	 * @param k
 	 * @param child
 	 */

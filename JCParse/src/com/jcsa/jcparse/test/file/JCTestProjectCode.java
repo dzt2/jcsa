@@ -24,10 +24,10 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
  * 	---	[efiles/xxx.exe]	{the executional file being compiled after}
  * 	</code>
  * 	@author yukimula
- *	
+ *
  */
 public class JCTestProjectCode {
-	
+
 	/* constructor */
 	/** the test project that performs on the code **/
 	private JCTestProject project;
@@ -39,16 +39,16 @@ public class JCTestProjectCode {
 	 */
 	protected JCTestProjectCode(JCTestProject project) {
 		this.project = project;
-		this.program_buff = new HashMap<String, AstCirFile>();
+		this.program_buff = new HashMap<>();
 	}
-	
+
 	/* getters */
 	/**
 	 * @param files
 	 * @return the list of files in the array (non-null)
 	 */
 	private Iterable<File> list_of_files(File[] files) {
-		List<File> file_list = new ArrayList<File>();
+		List<File> file_list = new ArrayList<>();
 		if(files != null) {
 			for(File file : files) {
 				if(file != null && file.exists())
@@ -97,7 +97,7 @@ public class JCTestProjectCode {
 	 * @return the set of diretories where the header files are used
 	 */
 	public Iterable<File> get_header_directories() {
-		List<File> hdirs = new ArrayList<File>();
+		List<File> hdirs = new ArrayList<>();
 		hdirs.add(this.project.get_project_files().get_h_file_directory());
 		hdirs.add(this.project.get_project_files().get_config_directory());
 		return hdirs;
@@ -107,7 +107,7 @@ public class JCTestProjectCode {
 	 */
 	public File get_executional_file() {
 		return new File(
-				this.project.get_project_files().get_exe_directory().getAbsolutePath() + 
+				this.project.get_project_files().get_exe_directory().getAbsolutePath() +
 				"/" + this.project.get_name() + ".exe");
 	}
 	/**
@@ -115,21 +115,21 @@ public class JCTestProjectCode {
 	 */
 	public File get_instrument_executional_file() {
 		return new File(
-				this.project.get_project_files().get_exe_directory().getAbsolutePath() + 
+				this.project.get_project_files().get_exe_directory().getAbsolutePath() +
 				"/" + this.project.get_name() + ".ins.exe");
 	}
 	/**
 	 * @return [config/linux.h]
 	 */
 	public Iterable<File> get_macros_files() {
-		List<File> mfiles = new ArrayList<File>();
+		List<File> mfiles = new ArrayList<>();
 		mfiles.add(this.project.get_config().get_c_pre_process_mac_file());
 		return mfiles;
 	}
 	/**
 	 * @return the number of .c files in cfiles/ and ifiles/ and sfiles/
 	 */
-	public int number_of_c_files() { 
+	public int number_of_c_files() {
 		int counter = 0;
 		for(@SuppressWarnings("unused") File file : this.get_source_code_files()) {
 			counter++;
@@ -149,18 +149,18 @@ public class JCTestProjectCode {
 		else {
 			File cfile = cfiles[k];
 			if(!this.program_buff.containsKey(cfile.getName())) {
-				AstCirFile program = AstCirFile.parse(cfile, 
-						this.project.get_config().get_c_template_file(), 
+				AstCirFile program = AstCirFile.parse(cfile,
+						this.project.get_config().get_c_template_file(),
 						this.project.get_config().get_lang_standard());
 				this.program_buff.put(cfile.getName(), program);
 			}
 			return this.program_buff.get(cfile.getName());
 		}
 	}
-	
+
 	/* actions */
 	/**
-	 * delete all the code files in cfiles, ifiles, sfiles, 
+	 * delete all the code files in cfiles, ifiles, sfiles,
 	 * hfiles, lfiles and efiles/xxx.exe.
 	 * @throws Exception
 	 */
@@ -233,7 +233,7 @@ public class JCTestProjectCode {
 		File rfile = this.project.get_project_files().get_instrument_result_file();
 		File c_template_file = this.project.get_config().get_c_template_file();
 		ClangStandard standard = this.project.get_config().get_lang_standard();
-		
+
 		for(File ifile : this.get_intermediate_files()) {
 			File sfile = new File(this.project.get_project_files().
 					get_s_file_directory().getAbsolutePath() + "/" + ifile.getName());
@@ -250,23 +250,23 @@ public class JCTestProjectCode {
 		CommandUtil util = this.project.get_config().get_command_util();
 		CCompiler compiler = this.project.get_config().get_compiler();
 		Iterable<String> parameters = this.project.get_config().get_compile_parameters();
-		
+
 		/* compile the intermediate code files to generate non-instrumental program. */
-		if(!util.do_compile(compiler, 
-				this.get_intermediate_files(), 
-				this.get_executional_file(), 
-				this.get_header_directories(), 
-				this.get_library_files(), 
+		if(!util.do_compile(compiler,
+				this.get_intermediate_files(),
+				this.get_executional_file(),
+				this.get_header_directories(),
+				this.get_library_files(),
 				parameters)) {
 			throw new RuntimeException("Unable to compile " + this.get_executional_file().getAbsolutePath());
 		}
-		
+
 		/* compile the instrumental code files to generate instrumental program. */
-		if(!util.do_compile(compiler, 
-				this.get_instrumental_files(), 
-				this.get_instrument_executional_file(), 
-				this.get_header_directories(), 
-				this.get_library_files(), 
+		if(!util.do_compile(compiler,
+				this.get_instrumental_files(),
+				this.get_instrument_executional_file(),
+				this.get_header_directories(),
+				this.get_library_files(),
 				parameters)) {
 			throw new RuntimeException("Unable to compile " + this.get_instrument_executional_file().getAbsolutePath());
 		}
@@ -304,5 +304,5 @@ public class JCTestProjectCode {
 		this.gen_instrumental_files();
 		this.gen_executional_files();
 	}
-	
+
 }

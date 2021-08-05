@@ -8,12 +8,12 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 
 /**
  * The graph that represents the dominance relationships in C program.
- * 
+ *
  * @author yukimula
  *
  */
 public class CDominanceGraph {
-	
+
 	/* constructor */
 	private CirInstanceGraph instance_graph;
 	/** the mapping from the instance to the node that represents it **/
@@ -23,9 +23,9 @@ public class CDominanceGraph {
 	 */
 	private CDominanceGraph(CirInstanceGraph instance_graph) {
 		this.instance_graph = instance_graph;
-		this.nodes = new HashMap<CirInstance, CDominanceNode>();
+		this.nodes = new HashMap<>();
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the executional instance graph
@@ -64,7 +64,7 @@ public class CDominanceGraph {
 		if(nodes.containsKey(instance)) return this.nodes.get(instance);
 		else throw new IllegalArgumentException("Invalid: " + instance);
 	}
-	
+
 	/* setters */
 	/**
 	 * create a new node with respect to the instance in this graph
@@ -81,7 +81,7 @@ public class CDominanceGraph {
 			return this.nodes.get(instance);
 		}
 	}
-	
+
 	/* factory methods */
 	/**
 	 * create the forward-dominance graph of the program flow graph
@@ -105,5 +105,5 @@ public class CDominanceGraph {
 		CDominanceBuilder.builder.build(input, false, output);
 		return output;
 	}
-	
+
 }

@@ -67,12 +67,12 @@ import com.jcsa.jcparse.lang.scope.CParameterName;
 
 /**
  * It is used to parse from AstNode, CirNode, constant or CirExecution to SymbolNode.
- * 
+ *
  * @author yukimula
  *
  */
 class SymbolParser {
-	
+
 	/* constructor & singleton */
 	/**
 	 * private constructor for singleton mode
@@ -83,16 +83,16 @@ class SymbolParser {
 	}
 	/** singleton of the symbolic node parser **/
 	protected static final SymbolParser parser = new SymbolParser();
-	
+
 	/* parameters for parsing */
 	/** used to support sizeof operation **/
 	private CRunTemplate ast_run_template;
 	/** the CIR is optimized for default-value **/
 	private boolean cir_optimize_switch;
-	
+
 	/* ast parsing */
 	/**
-	 * @param source 
+	 * @param source
 	 * @return generate symbolic node from AstNode
 	 * @throws Exception
 	 */
@@ -140,7 +140,7 @@ class SymbolParser {
 			target = this.parse_initializer_body((AstInitializerBody) source);
 		else if(source instanceof AstSizeofExpression)
 			target = this.parse_sizeof_expression((AstSizeofExpression) source);
-		else 
+		else
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		if(!target.has_source())
 			target.set_source(source);
@@ -195,7 +195,7 @@ class SymbolParser {
 	 */
 	private SymbolNode parse_ast_operator(AstOperator source) throws Exception {
 		COperator operator = source.get_operator();
-		
+
 		switch(operator) {
 		case arith_add_assign:
 		case arith_sub_assign:
@@ -206,7 +206,7 @@ class SymbolParser {
 		case bit_or_assign:
 		case bit_xor_assign:
 		case left_shift_assign:
-		case righ_shift_assign:		
+		case righ_shift_assign:
 		{
 			String name = operator.toString();
 			name = name.substring(0, name.length() - 7).trim();
@@ -215,7 +215,7 @@ class SymbolParser {
 		}
 		default:	break;
 		}
-		
+
 		return SymbolOperator.create(operator);
 	}
 	/**
@@ -236,7 +236,7 @@ class SymbolParser {
 		COperator operator = source.get_operator().get_operator();
 		SymbolExpression operand = (SymbolExpression) this.parse_ast(source.get_operand());
 		CType data_type = source.get_value_type();
-		
+
 		/* syntax-directed translation */
 		switch(operator) {
 		case positive:		return operand;
@@ -248,7 +248,7 @@ class SymbolParser {
 			SymbolOperator sym_operator = (SymbolOperator) this.parse_ast(source.get_operator());
 			return SymbolUnaryExpression.create(data_type, sym_operator, operand);
 		}
-		case logic_not: 
+		case logic_not:
 		{
 			return this.parse_cod(operand, false);
 		}
@@ -304,10 +304,10 @@ class SymbolParser {
 	private SymbolNode parse_ast_array_expression(AstArrayExpression source) throws Exception {
 		SymbolExpression array = (SymbolExpression) this.parse_ast(source.get_array_expression());
 		SymbolExpression index = (SymbolExpression) this.parse_ast(source.get_dimension_expression());
-		
+
 		SymbolExpression address = SymbolBinaryExpression.create(array.
 				get_data_type(), SymbolOperator.create(COperator.arith_add), array, index);
-		return SymbolUnaryExpression.create(source.get_value_type(), 
+		return SymbolUnaryExpression.create(source.get_value_type(),
 				SymbolOperator.create(COperator.dereference), address);
 	}
 	/**
@@ -341,7 +341,7 @@ class SymbolParser {
 	private SymbolNode parse_ast_field_expression(AstFieldExpression source) throws Exception {
 		SymbolExpression body = (SymbolExpression) this.parse_ast(source.get_body());
 		SymbolField field = (SymbolField) this.parse_ast(source.get_field());
-		
+
 		if(source.get_operator().get_punctuator() == CPunctuator.arrow) {
 			CType type = body.get_data_type();
 			if(type instanceof CArrayType) {
@@ -355,7 +355,7 @@ class SymbolParser {
 			}
 			body = SymbolUnaryExpression.create(type, SymbolOperator.create(COperator.dereference), body);
 		}
-		
+
 		return SymbolFieldExpression.create(source.get_value_type(), body, field);
 	}
 	private SymbolNode parse_ast_conditional_expression(AstConditionalExpression source) throws Exception {
@@ -364,17 +364,17 @@ class SymbolParser {
 		SymbolExpression foperand = (SymbolExpression) this.parse_ast(source.get_false_branch());
 		SymbolExpression ncondition = SymbolUnaryExpression.create(
 				CBasicTypeImpl.bool_type, SymbolOperator.create(COperator.logic_not), condition);
-		
-		SymbolExpression loperand = SymbolBinaryExpression.create(source.get_value_type(), 
+
+		SymbolExpression loperand = SymbolBinaryExpression.create(source.get_value_type(),
 				SymbolOperator.create(COperator.arith_mul), condition, toperand);
-		SymbolExpression roperand = SymbolBinaryExpression.create(source.get_value_type(), 
+		SymbolExpression roperand = SymbolBinaryExpression.create(source.get_value_type(),
 				SymbolOperator.create(COperator.arith_mul), ncondition, foperand);
-		
-		return SymbolBinaryExpression.create(source.get_value_type(), 
+
+		return SymbolBinaryExpression.create(source.get_value_type(),
 				SymbolOperator.create(COperator.arith_add), loperand, roperand);
 	}
 	private SymbolNode parse_ast_argument_list(AstArgumentList source) throws Exception {
-		List<SymbolExpression> arguments = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> arguments = new ArrayList<>();
 		for(int k = 0; k < source.number_of_arguments(); k++) {
 			SymbolExpression argument = (SymbolExpression) this.parse_ast(source.get_argument(k));
 			arguments.add(argument);
@@ -399,7 +399,7 @@ class SymbolParser {
 			return this.parse_ast(source.get_expression());
 	}
 	private SymbolNode parse_initializer_body(AstInitializerBody source) throws Exception {
-		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> elements = new ArrayList<>();
 		AstInitializerList ilist = source.get_initializer_list();
 		for(int k = 0; k < ilist.number_of_initializer(); k++) {
 			AstFieldInitializer finit = ilist.get_initializer(k);
@@ -415,13 +415,13 @@ class SymbolParser {
 		else
 			data_type = source.get_typename().get_type();
 		data_type = CTypeAnalyzer.get_value_type(data_type);
-		
+
 		CConstant constant = new CConstant();
 		if(this.ast_run_template == null)
 			throw new IllegalArgumentException("Not support sizeof operator");
 		else
 			constant.set_int(this.ast_run_template.sizeof(data_type));
-		
+
 		return SymbolConstant.create(constant);
 	}
 	/**
@@ -434,7 +434,7 @@ class SymbolParser {
 		this.ast_run_template = template;
 		return this.parse_ast(source);
 	}
-	
+
 	/* cir parser */
 	/**
 	 * @param source
@@ -479,7 +479,7 @@ class SymbolParser {
 	}
 	/**
 	 * @param source
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolNode parse_cir_name_expression(CirNameExpression source) throws Exception {
@@ -512,12 +512,12 @@ class SymbolParser {
 	}
 	private SymbolNode parse_cir_address_expression(CirAddressExpression source) throws Exception {
 		SymbolExpression operand = (SymbolExpression) this.parse_cir(source.get_operand());
-		return SymbolUnaryExpression.create(source.get_data_type(), 
+		return SymbolUnaryExpression.create(source.get_data_type(),
 				SymbolOperator.create(COperator.address_of), operand);
 	}
 	private SymbolNode parse_cir_defer_expression(CirDeferExpression source) throws Exception {
 		SymbolExpression operand = (SymbolExpression) this.parse_cir(source.get_address());
-		return SymbolUnaryExpression.create(source.get_data_type(), 
+		return SymbolUnaryExpression.create(source.get_data_type(),
 				SymbolOperator.create(COperator.dereference), operand);
 	}
 	private SymbolNode parse_cir_field(CirField source) throws Exception {
@@ -538,7 +538,7 @@ class SymbolParser {
 			data_type = CBasicTypeImpl.void_type;
 		else
 			data_type = CTypeAnalyzer.get_value_type(data_type);
-		
+
 		CConstant constant;
 		if(this.cir_optimize_switch) {
 			if(data_type instanceof CBasicType) {
@@ -572,7 +572,7 @@ class SymbolParser {
 		else {
 			constant = null;
 		}
-		
+
 		if(constant == null) {
 			return SymbolIdentifier.create(source.get_data_type(), source);
 		}
@@ -587,8 +587,8 @@ class SymbolParser {
 		case negative:
 		case bit_not:
 		{
-			return SymbolUnaryExpression.create(source.get_data_type(), 
-					SymbolOperator.create(operator), 
+			return SymbolUnaryExpression.create(source.get_data_type(),
+					SymbolOperator.create(operator),
 					(SymbolExpression) this.parse_cir(source.get_operand(0)));
 		}
 		case logic_not:
@@ -613,8 +613,8 @@ class SymbolParser {
 		case equal_with:
 		case not_equals:
 		{
-			return SymbolBinaryExpression.create(source.get_data_type(), 
-					SymbolOperator.create(operator), 
+			return SymbolBinaryExpression.create(source.get_data_type(),
+					SymbolOperator.create(operator),
 					(SymbolExpression) this.parse_cir(source.get_operand(0)),
 					(SymbolExpression) this.parse_cir(source.get_operand(1)));
 		}
@@ -625,21 +625,21 @@ class SymbolParser {
 			SymbolExpression roperand = (SymbolExpression) this.parse_cir(source.get_operand(1));
 			loperand = (SymbolExpression) this.parse_cod(loperand, true);
 			roperand = (SymbolExpression) this.parse_cod(roperand, true);
-			return SymbolBinaryExpression.create(source.get_data_type(), 
+			return SymbolBinaryExpression.create(source.get_data_type(),
 					SymbolOperator.create(operator), loperand, roperand);
 		}
 		default: throw new IllegalArgumentException("Invalid: " + operator);
 		}
 	}
 	private SymbolNode parse_cir_initializer_list(CirInitializerBody source) throws Exception {
-		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> elements = new ArrayList<>();
 		for(int k = 0; k < source.number_of_elements(); k++) {
 			elements.add((SymbolExpression) this.parse_cir(source.get_element(k)));
 		}
 		return SymbolInitializerList.create(source.get_data_type(), elements);
 	}
 	private SymbolNode parse_cir_argument_list(CirArgumentList source) throws Exception {
-		List<SymbolExpression> arguments = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> arguments = new ArrayList<>();
 		for(int k = 0; k < source.number_of_arguments(); k++) {
 			arguments.add((SymbolExpression) this.parse_cir(source.get_argument(k)));
 		}
@@ -650,7 +650,7 @@ class SymbolParser {
 		CirExecution wait_execution = wait_statement.get_tree().get_localizer().get_execution(wait_statement);
 		CirExecution call_execution = wait_execution.get_graph().get_execution(wait_execution.get_id() - 1);
 		CirCallStatement call_statement = (CirCallStatement) call_execution.get_statement();
-		
+
 		SymbolExpression function = (SymbolExpression) this.parse_cir(call_statement.get_function());
 		SymbolArgumentList arguments = (SymbolArgumentList) this.parse_cir(call_statement.get_arguments());
 		return SymbolCallExpression.create(source.get_data_type(), function, arguments);
@@ -665,7 +665,7 @@ class SymbolParser {
 		this.cir_optimize_switch = cir_optimize;
 		return this.parse_cir(source);
 	}
-	
+
 	/* exe parser */
 	/**
 	 * @param execution
@@ -677,7 +677,7 @@ class SymbolParser {
 		node.set_source(execution);
 		return node;
 	}
-	
+
 	/* constant parser */
 	/**
 	 * @param value
@@ -721,12 +721,12 @@ class SymbolParser {
 		expression.set_source(value);
 		return expression;
 	}
-	
+
 	/* condition parser */
 	/**
 	 * @param expression
 	 * @param value
-	 * @return	
+	 * @return
 	 * @throws Exception
 	 */
 	protected SymbolNode parse_cod(SymbolExpression expression, boolean value) throws Exception {
@@ -736,7 +736,7 @@ class SymbolParser {
 				return expression;
 			}
 			else {
-				return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type, 
+				return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type,
 						SymbolOperator.create(COperator.logic_not), expression);
 			}
 		}
@@ -744,13 +744,13 @@ class SymbolParser {
 			/* x != 0 */
 			if(value) {
 				return SymbolBinaryExpression.create(
-						CBasicTypeImpl.bool_type, SymbolOperator.create(COperator.not_equals), 
+						CBasicTypeImpl.bool_type, SymbolOperator.create(COperator.not_equals),
 						expression, (SymbolExpression) this.parse_con(Integer.valueOf(0)));
 			}
 			/* x == 0 */
 			else {
 				return SymbolBinaryExpression.create(
-						CBasicTypeImpl.bool_type, SymbolOperator.create(COperator.equal_with), 
+						CBasicTypeImpl.bool_type, SymbolOperator.create(COperator.equal_with),
 						expression, (SymbolExpression) this.parse_con(Integer.valueOf(0)));
 			}
 		}
@@ -758,5 +758,5 @@ class SymbolParser {
 			throw new IllegalArgumentException(data_type.toString());
 		}
 	}
-	
+
 }

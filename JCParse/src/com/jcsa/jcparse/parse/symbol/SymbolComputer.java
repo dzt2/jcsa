@@ -9,7 +9,6 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.symbol.SymbolBasicExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
@@ -24,12 +23,12 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolInvoker;
 
 /**
  * It implements the computation and simplification of symbolic expression on one-layer.
- * 
+ *
  * @author yukimula
  *
  */
 class SymbolComputer {
-	
+
 	/* definitions */
 	/** for which the computational unit serves to simplify or compute expressions **/
 	private SymbolEvaluator evaluator;
@@ -38,7 +37,7 @@ class SymbolComputer {
 	 * @param evaluator
 	 * @throws Exception
 	 */
-	protected SymbolComputer(SymbolEvaluator evaluator) { 
+	protected SymbolComputer(SymbolEvaluator evaluator) {
 		if(evaluator == null) {
 			throw new IllegalArgumentException("Invalid evaluator: null");
 		}
@@ -46,7 +45,7 @@ class SymbolComputer {
 			this.evaluator = evaluator;
 		}
 	}
-	
+
 	/* basic operations */
 	/**
 	 * @param reference
@@ -67,9 +66,9 @@ class SymbolComputer {
 	 * @throws Exception
 	 */
 	protected SymbolExpression compute_basic(SymbolExpression expression) throws Exception {
-		return (SymbolBasicExpression) expression;
+		return expression;
 	}
-	
+
 	/* unary operations */
 	/**
 	 * @param operand
@@ -77,7 +76,7 @@ class SymbolComputer {
 	 * 			(1) constant		==>	-(constant)
 	 * 			(2)	-expression		==> expression
 	 * 			(3)	~expression		==>	expression + 1
-	 * 			(4)	x - y			==>	y - x	
+	 * 			(4)	x - y			==>	y - x
 	 * @throws Exception
 	 */
 	protected SymbolExpression compute_arith_neg(SymbolExpression operand) throws Exception {
@@ -160,7 +159,7 @@ class SymbolComputer {
 	 * 			2.	~expression	-->	expression
 	 * 			3.	-expression	-->	expression - 1
 	 * 			4.	x & y		--> ~x | ~y
-	 * 			5.	x | y		-->	~x & ~y 
+	 * 			5.	x | y		-->	~x & ~y
 	 * 			6.	otherwise	--> ~operand
 	 * @throws Exception
 	 */
@@ -329,7 +328,7 @@ class SymbolComputer {
 				}
 			}
 			else {
-				return this.evaluator.get_symbol_factory().new_address_of(operand); 
+				return this.evaluator.get_symbol_factory().new_address_of(operand);
 			}
 		}
 		else {
@@ -395,15 +394,15 @@ class SymbolComputer {
 			return this.evaluator.get_symbol_factory().new_type_casting(type, operand);
 		}
 	}
-	
+
 	/* special operation */
 	/**
 	 * @param elements
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	protected SymbolExpression compute_initializer_list(Iterable<SymbolExpression> elements) throws Exception {
-		ArrayList<Object> objects = new ArrayList<Object>();
+		ArrayList<Object> objects = new ArrayList<>();
 		for(SymbolExpression element : elements) {
 			objects.add(element);
 		}
@@ -421,11 +420,11 @@ class SymbolComputer {
 	/**
 	 * @param function
 	 * @param arguments
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	protected SymbolExpression compute_call_expression(SymbolExpression function, Iterable<SymbolExpression> arguments) throws Exception {
-		ArrayList<Object> argument_objects = new ArrayList<Object>();
+		ArrayList<Object> argument_objects = new ArrayList<>();
 		for(SymbolExpression argument : arguments) argument_objects.add(argument);
 		SymbolCallExpression call_expression = this.evaluator.get_symbol_factory().new_call_expression(function, argument_objects);
 		if(this.evaluator.get_symbol_process() != null) {
@@ -439,7 +438,7 @@ class SymbolComputer {
 			return call_expression;
 		}
 	}
-	
+
 	/* arithmetic accumulation (+ and -) */
 	/**
 	 * @param constant
@@ -466,22 +465,22 @@ class SymbolComputer {
 			long lvalue = ((Long) lnumber).longValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
 			}
 		}
 		else {
 			double lvalue = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue + rvalue);
 			}
 		}
 	}
@@ -497,22 +496,22 @@ class SymbolComputer {
 			long lvalue = ((Long) lnumber).longValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
 			}
 		}
 		else {
 			double lvalue = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue - rvalue);
 			}
 		}
 	}
@@ -522,7 +521,7 @@ class SymbolComputer {
 	 * @param neg_operands	the collection to preserve negative parts of accumulation
 	 * @throws Exception
 	 */
-	private void extend_operands_in_accumulation(SymbolExpression expression, 
+	private void extend_operands_in_accumulation(SymbolExpression expression,
 			List<SymbolExpression> pos_operands, List<SymbolExpression> neg_operands) throws Exception {
 		if(expression instanceof SymbolUnaryExpression) {
 			COperator operator = ((SymbolUnaryExpression) expression).get_operator().get_operator();
@@ -578,13 +577,13 @@ class SymbolComputer {
 	 */
 	private void digest_operands_in_accumulation(List<SymbolExpression> pos_operands, List<SymbolExpression> neg_operands) throws Exception {
 		SymbolExpression pos_remove, neg_remove;
-		
+
 		/* repeat until none of operands matched between */
 		do {
 			/* 1. initialize the operands to be removed */
 			pos_remove = null;
 			neg_remove = null;
-			
+
 			/* 2. find the first matched pairs */
 			for(SymbolExpression pos_operand : pos_operands) {
 				for(SymbolExpression neg_operand : neg_operands) {
@@ -596,13 +595,13 @@ class SymbolComputer {
 				}
 				if(pos_remove != null) { break; }
 			}
-			
+
 			/* 3. removed the matched pair from operands */
 			if(pos_remove != null) {
 				pos_operands.remove(pos_remove);
 				neg_operands.remove(neg_remove);
 			}
-		} while(pos_remove != null);	
+		} while(pos_remove != null);
 	}
 	/**
 	 * @param data_type
@@ -610,9 +609,9 @@ class SymbolComputer {
 	 * @param pos_operands
 	 * @param neg_operands
 	 * @return	construct the standard structure of accumulation based on following rules:
-	 * 			(1)	IF 	pos_operands is empty && neg_operands is empty: 
+	 * 			(1)	IF 	pos_operands is empty && neg_operands is empty:
 	 * 					return constant;
-	 * 			(2) EIF	pos_operands is empty && neg_operands is not empty: 
+	 * 			(2) EIF	pos_operands is empty && neg_operands is not empty:
 	 * 					if constant == 0:
 	 * 						return -(n1 + n2 + n3 + ... + nk)
 	 * 					else:
@@ -649,7 +648,7 @@ class SymbolComputer {
 				neg_expression = this.evaluator.get_symbol_factory().new_arith_add(data_type, neg_expression, neg_operand);
 			}
 		}
-		
+
 		/* standard construction */
 		if(pos_expression == null) {
 			if(neg_expression == null) {
@@ -691,23 +690,23 @@ class SymbolComputer {
 	 */
 	private SymbolExpression compute_arith_add_or_sub(SymbolExpression expression) throws Exception {
 		/* 1. extend the operands into buffers */
-		List<SymbolExpression> pos_operands = new ArrayList<SymbolExpression>();
-		List<SymbolExpression> neg_operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> pos_operands = new ArrayList<>();
+		List<SymbolExpression> neg_operands = new ArrayList<>();
 		this.extend_operands_in_accumulation(expression, pos_operands, neg_operands);
-		
+
 		/* 2. update the constant and variables in operands list */
-		List<SymbolExpression> pos_variables = new ArrayList<SymbolExpression>();
-		List<SymbolExpression> neg_variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> pos_variables = new ArrayList<>();
+		List<SymbolExpression> neg_variables = new ArrayList<>();
 		SymbolConstant lconstant = this.update_operands_in_accumulation(pos_operands, pos_variables);
 		SymbolConstant rconstant = this.update_operands_in_accumulation(neg_operands, neg_variables);
-		
-		
+
+
 		/* 3. simplify the positive and negative variables */
 		this.digest_operands_in_accumulation(pos_variables, neg_variables);
 		SymbolConstant constant = this.compute_const_sub(lconstant, rconstant);
 		pos_operands = pos_variables; neg_operands = neg_variables;
-		
-		/* 4. construct accumulation format */	
+
+		/* 4. construct accumulation format */
 		return this.integrate_in_accumulation(expression.get_data_type(), constant, pos_operands, neg_operands);
 	}
 	/**
@@ -715,7 +714,7 @@ class SymbolComputer {
 	 * @param loperand
 	 * @param roperand
 	 * @return loperand + roperand
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected SymbolExpression compute_arith_add(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		return this.compute_arith_add_or_sub(this.evaluator.get_symbol_factory().new_arith_add(data_type, loperand, roperand));
@@ -730,7 +729,7 @@ class SymbolComputer {
 	protected SymbolExpression compute_arith_sub(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		return this.compute_arith_add_or_sub(this.evaluator.get_symbol_factory().new_arith_sub(data_type, loperand, roperand));
 	}
-	
+
 	/* arithmetic production (* and /) */
 	/**
 	 * @param constant
@@ -770,22 +769,22 @@ class SymbolComputer {
 			long lvalue = ((Long) lnumber).longValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
 			}
 		}
 		else {
 			double lvalue = ((Double) lnumber).doubleValue();
 			if(rnumber instanceof Long) {
 				long rvalue = ((Long) rnumber).longValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
 			}
 			else {
 				double rvalue = ((Double) rnumber).doubleValue();
-				return (SymbolConstant) this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
+				return this.evaluator.get_symbol_factory().new_constant(lvalue * rvalue);
 			}
 		}
 	}
@@ -795,7 +794,7 @@ class SymbolComputer {
 	 * @param div_operands	to preserve the operands in divisor part
 	 * @throws Exception
 	 */
-	private void extend_operands_in_production(SymbolExpression expression, 
+	private void extend_operands_in_production(SymbolExpression expression,
 			List<SymbolExpression> did_operands, List<SymbolExpression> div_operands) throws Exception {
 		if(expression instanceof SymbolBinaryExpression) {
 			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
@@ -850,13 +849,13 @@ class SymbolComputer {
 	 */
 	private void digest_operands_in_production(List<SymbolExpression> did_operands, List<SymbolExpression> div_operands) throws Exception {
 		SymbolExpression did_remove, div_remove;
-		
+
 		/* repeat until none of operands matched between */
 		do {
 			/* 1. initialize the operands to be removed */
 			did_remove = null;
 			div_remove = null;
-			
+
 			/* 2. find the first matched pairs */
 			for(SymbolExpression did_operand : did_operands) {
 				for(SymbolExpression div_operand : div_operands) {
@@ -868,19 +867,19 @@ class SymbolComputer {
 				}
 				if(did_remove != null) { break; }
 			}
-			
+
 			/* 3. removed the matched pair from operands */
 			if(did_remove != null) {
 				did_operands.remove(did_remove);
 				div_operands.remove(div_remove);
 			}
-		} while(did_remove != null);	
+		} while(did_remove != null);
 	}
 	/**
 	 * @param x
 	 * @param y
 	 * @return the greatest common divisor between x and y
-	 */ 
+	 */
 	private long gcd(long x, long y) {
 		x = Math.abs(x);
 		y = Math.abs(y);
@@ -981,7 +980,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolExpression integrate_in_production(CType data_type, 
+	private SymbolExpression integrate_in_production(CType data_type,
 			SymbolConstant did_constant, Iterable<SymbolExpression> did_operands,
 			SymbolConstant div_constant, Iterable<SymbolExpression> div_operands) throws Exception {
 		if(this.is_zero_constant(div_constant)) {
@@ -993,7 +992,7 @@ class SymbolComputer {
 		else {
 			SymbolExpression did_expression = this.integrate_operands_in_production(data_type, did_constant, did_operands);
 			SymbolExpression div_expression = this.integrate_operands_in_production(data_type, div_constant, div_operands);
-			
+
 			if(div_expression instanceof SymbolConstant) {
 				if(this.is_pone_constant((SymbolConstant) div_expression)) {
 					return did_expression;
@@ -1002,7 +1001,7 @@ class SymbolComputer {
 					return this.evaluator.get_symbol_factory().new_arith_neg(did_expression);
 				}
 			}
-			
+
 			return this.evaluator.get_symbol_factory().new_arith_div(data_type, did_expression, div_expression);
 		}
 	}
@@ -1013,25 +1012,25 @@ class SymbolComputer {
 	 */
 	private SymbolExpression compute_arith_mul_and_div(SymbolExpression expression) throws Exception {
 		/* 1. extends the operands in the production */
-		List<SymbolExpression> did_operands = new ArrayList<SymbolExpression>();
-		List<SymbolExpression> div_operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> did_operands = new ArrayList<>();
+		List<SymbolExpression> div_operands = new ArrayList<>();
 		this.extend_operands_in_production(expression, did_operands, div_operands);
-		
+
 		/* 2. update the variables and collect constant */
-		List<SymbolExpression> did_variables = new ArrayList<SymbolExpression>();
-		List<SymbolExpression> div_variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> did_variables = new ArrayList<>();
+		List<SymbolExpression> div_variables = new ArrayList<>();
 		SymbolConstant did_constant = this.update_operands_in_production(did_operands, did_variables);
 		SymbolConstant div_constant = this.update_operands_in_production(div_operands, div_variables);
-		
+
 		/* 3. standardize the constants and variables */
 		this.digest_operands_in_production(did_variables, div_variables);
 		SymbolConstant[] constants = this.translate_constants_in_production(
 					expression.get_data_type(), did_constant, div_constant);
-		did_constant = constants[0]; 
-		div_constant = constants[1]; 
-		did_operands = did_variables; 
+		did_constant = constants[0];
+		div_constant = constants[1];
+		did_operands = did_variables;
 		div_operands = div_variables;
-		
+
 		/* 4. integrate the production */
 		return this.integrate_in_production(expression.get_data_type(), did_constant, did_operands, div_constant, div_operands);
 	}
@@ -1055,7 +1054,7 @@ class SymbolComputer {
 	protected SymbolExpression compute_arith_div(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		return this.compute_arith_mul_and_div(this.evaluator.get_symbol_factory().new_arith_div(data_type, loperand, roperand));
 	}
-	
+
 	/* arithmetic remainder (%) */
 	/**
 	 * @param data_type
@@ -1074,7 +1073,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(0);
 			}
 		}
-		
+
 		if(loperand instanceof SymbolConstant) {
 			long lvalue = ((SymbolConstant) loperand).get_long().longValue();
 			if(lvalue == 0L) {
@@ -1084,7 +1083,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(1);
 			}
 		}
-		
+
 		if(loperand instanceof SymbolConstant) {
 			if(roperand instanceof SymbolConstant) {
 				long lvalue = ((SymbolConstant) loperand).get_long().longValue();
@@ -1092,10 +1091,10 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(lvalue % rvalue);
 			}
 		}
-		
+
 		return this.evaluator.get_symbol_factory().new_arith_mod(data_type, loperand, roperand);
 	}
-	
+
 	/* bitwise and by & */
 	/**
 	 * @param lconstant
@@ -1153,7 +1152,7 @@ class SymbolComputer {
 		SymbolExpression removed_operand;
 		do {
 			removed_operand = null;
-			
+
 			for(int i = 0; i < operands.size(); i++) {
 				for(int j = i + 1; j < operands.size(); j++) {
 					if(operands.get(i).equals(operands.get(j))) {
@@ -1163,7 +1162,7 @@ class SymbolComputer {
 				}
 				if(removed_operand != null) { break; }
 			}
-			
+
 			if(removed_operand != null) {
 				operands.remove(removed_operand);
 			}
@@ -1176,7 +1175,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolExpression integrate_operands_in_bitws_and(CType data_type, 
+	private SymbolExpression integrate_operands_in_bitws_and(CType data_type,
 			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
 		SymbolExpression expression = null;
 		for(SymbolExpression operand : operands) {
@@ -1187,7 +1186,7 @@ class SymbolComputer {
 				expression = this.evaluator.get_symbol_factory().new_bitws_and(data_type, expression, operand);
 			}
 		}
-		
+
 		if(expression == null) {
 			return constant;
 		}
@@ -1210,20 +1209,20 @@ class SymbolComputer {
 	 */
 	protected SymbolExpression compute_bitws_and(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		/* 1. extend operands */
-		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> operands = new ArrayList<>();
 		this.extend_operands_in_bitws_and(loperand, operands);
 		this.extend_operands_in_bitws_and(roperand, operands);
-		
+
 		/* 2. update the operands into variables and constant */
-		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> variables = new ArrayList<>();
 		SymbolConstant constant = this.update_operands_in_bitws_and(operands, variables);
-		this.digest_operands_in_bitws_and(variables); 
+		this.digest_operands_in_bitws_and(variables);
 		operands = variables;
-		
+
 		/* 3. integrate operands into expression (&) */
 		return this.integrate_operands_in_bitws_and(data_type, constant, operands);
 	}
-	
+
 	/* bitwise ior by | */
 	/**
 	 * @param lconstant
@@ -1281,7 +1280,7 @@ class SymbolComputer {
 		SymbolExpression removed_operand;
 		do {
 			removed_operand = null;
-			
+
 			for(int i = 0; i < operands.size(); i++) {
 				for(int j = i + 1; j < operands.size(); j++) {
 					if(operands.get(i).equals(operands.get(j))) {
@@ -1291,7 +1290,7 @@ class SymbolComputer {
 				}
 				if(removed_operand != null) { break; }
 			}
-			
+
 			if(removed_operand != null) {
 				operands.remove(removed_operand);
 			}
@@ -1304,7 +1303,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolExpression integrate_operands_in_bitws_ior(CType data_type, 
+	private SymbolExpression integrate_operands_in_bitws_ior(CType data_type,
 			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
 		SymbolExpression expression = null;
 		for(SymbolExpression operand : operands) {
@@ -1315,7 +1314,7 @@ class SymbolComputer {
 				expression = this.evaluator.get_symbol_factory().new_bitws_ior(data_type, expression, operand);
 			}
 		}
-		
+
 		if(expression == null) {
 			return constant;
 		}
@@ -1338,20 +1337,20 @@ class SymbolComputer {
 	 */
 	protected SymbolExpression compute_bitws_ior(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		/* 1. extend operands */
-		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> operands = new ArrayList<>();
 		this.extend_operands_in_bitws_ior(loperand, operands);
 		this.extend_operands_in_bitws_ior(roperand, operands);
-		
+
 		/* 2. update the operands into variables and constant */
-		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> variables = new ArrayList<>();
 		SymbolConstant constant = this.update_operands_in_bitws_ior(operands, variables);
-		this.digest_operands_in_bitws_ior(variables); 
+		this.digest_operands_in_bitws_ior(variables);
 		operands = variables;
-		
+
 		/* 3. integrate operands into expression (&) */
 		return this.integrate_operands_in_bitws_ior(data_type, constant, operands);
 	}
-	
+
 	/* bitwise xor by ^ */
 	/**
 	 * @param lconstant
@@ -1408,9 +1407,9 @@ class SymbolComputer {
 	private void digest_operands_in_bitws_xor(List<SymbolExpression> operands) throws Exception {
 		SymbolExpression removed_operand;
 		do {
-			removed_operand = null; 
+			removed_operand = null;
 			int removed_i = -1, removed_j = -1;
-			
+
 			for(int i = 0; i < operands.size(); i++) {
 				for(int j = i + 1; j < operands.size(); j++) {
 					if(operands.get(i).equals(operands.get(j))) {
@@ -1421,7 +1420,7 @@ class SymbolComputer {
 				}
 				if(removed_operand != null) { break; }
 			}
-			
+
 			if(removed_operand != null) {
 				operands.remove(removed_j);
 				operands.remove(removed_i);
@@ -1435,7 +1434,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolExpression integrate_operands_in_bitws_xor(CType data_type, 
+	private SymbolExpression integrate_operands_in_bitws_xor(CType data_type,
 			SymbolConstant constant, Iterable<SymbolExpression> operands) throws Exception {
 		SymbolExpression expression = null;
 		for(SymbolExpression operand : operands) {
@@ -1446,7 +1445,7 @@ class SymbolComputer {
 				expression = this.evaluator.get_symbol_factory().new_bitws_xor(data_type, expression, operand);
 			}
 		}
-		
+
 		if(expression == null) {
 			return constant;
 		}
@@ -1469,20 +1468,20 @@ class SymbolComputer {
 	 */
 	protected SymbolExpression compute_bitws_xor(CType data_type, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		/* 1. extend operands */
-		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> operands = new ArrayList<>();
 		this.extend_operands_in_bitws_xor(loperand, operands);
 		this.extend_operands_in_bitws_xor(roperand, operands);
-		
+
 		/* 2. update the operands into variables and constant */
-		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> variables = new ArrayList<>();
 		SymbolConstant constant = this.update_operands_in_bitws_xor(operands, variables);
-		this.digest_operands_in_bitws_xor(variables); 
+		this.digest_operands_in_bitws_xor(variables);
 		operands = variables;
-		
+
 		/* 3. integrate operands into expression (&) */
 		return this.integrate_operands_in_bitws_xor(data_type, constant, operands);
 	}
-	
+
 	/* bitwise shifting (<<, >>) */
 	/** the maximal limit of shifting operation **/
 	private static final int MAX_SHIFT_WINDOW = 32;
@@ -1504,7 +1503,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(0);
 			}
 		}
-		
+
 		if(roperand instanceof SymbolConstant) {
 			long rvalue = ((SymbolConstant) roperand).get_long().longValue();
 			if(rvalue == 0) {
@@ -1514,7 +1513,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(0);
 			}
 		}
-		
+
 		if(loperand instanceof SymbolConstant) {
 			if(roperand instanceof SymbolConstant) {
 				long lvalue = ((SymbolConstant) loperand).get_long().longValue();
@@ -1522,7 +1521,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(lvalue << rvalue);
 			}
 		}
-		
+
 		return this.evaluator.get_symbol_factory().new_bitws_lsh(data_type, loperand, roperand);
 	}
 	/**
@@ -1543,7 +1542,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(0);
 			}
 		}
-		
+
 		if(roperand instanceof SymbolConstant) {
 			long rvalue = ((SymbolConstant) roperand).get_long().longValue();
 			if(rvalue == 0) {
@@ -1553,7 +1552,7 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(0);
 			}
 		}
-		
+
 		if(loperand instanceof SymbolConstant) {
 			if(roperand instanceof SymbolConstant) {
 				long lvalue = ((SymbolConstant) loperand).get_long().longValue();
@@ -1561,10 +1560,10 @@ class SymbolComputer {
 				return this.evaluator.get_symbol_factory().new_constant(lvalue >> rvalue);
 			}
 		}
-		
+
 		return this.evaluator.get_symbol_factory().new_bitws_rsh(data_type, loperand, roperand);
 	}
-	
+
 	/* logical and by && */
 	/**
 	 * @param lconstant
@@ -1601,7 +1600,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolConstant update_operands_in_logic_and(Iterable<SymbolExpression> operands, 
+	private SymbolConstant update_operands_in_logic_and(Iterable<SymbolExpression> operands,
 			List<SymbolExpression> variables) throws Exception {
 		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(true);
 		for(SymbolExpression operand : operands) {
@@ -1623,7 +1622,7 @@ class SymbolComputer {
 		SymbolExpression removed_operand;
 		do {
 			removed_operand = null;
-			
+
 			for(int i = 0; i < operands.size(); i++) {
 				for(int j = i + 1; j < operands.size(); j++) {
 					if(operands.get(i).equals(operands.get(j))) {
@@ -1633,7 +1632,7 @@ class SymbolComputer {
 				}
 				if(removed_operand != null) { break; }
 			}
-			
+
 			if(removed_operand != null) {
 				operands.remove(removed_operand);
 			}
@@ -1675,19 +1674,19 @@ class SymbolComputer {
 	 */
 	protected SymbolExpression compute_logic_and(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		/* extend operands in logical */
-		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> operands = new ArrayList<>();
 		this.extend_operands_in_logic_and(loperand, operands);
 		this.extend_operands_in_logic_and(roperand, operands);
-		
+
 		/* update constant and variables */
-		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> variables = new ArrayList<>();
 		SymbolConstant constant = this.update_operands_in_logic_and(operands, variables);
 		this.digest_operands_in_logic_and(variables);
 		operands = variables;
-		
+
 		/* integrate on */	return this.integrate_operands_in_logic_and(constant, operands);
 	}
-	
+
 	/* logical ior by || */
 	/**
 	 * @param lconstant
@@ -1724,7 +1723,7 @@ class SymbolComputer {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolConstant update_operands_in_logic_ior(Iterable<SymbolExpression> operands, 
+	private SymbolConstant update_operands_in_logic_ior(Iterable<SymbolExpression> operands,
 			List<SymbolExpression> variables) throws Exception {
 		SymbolConstant constant = this.evaluator.get_symbol_factory().new_constant(false);
 		for(SymbolExpression operand : operands) {
@@ -1745,7 +1744,7 @@ class SymbolComputer {
 		SymbolExpression removed_operand;
 		do {
 			removed_operand = null;
-			
+
 			for(int i = 0; i < operands.size(); i++) {
 				for(int j = i + 1; j < operands.size(); j++) {
 					if(operands.get(i).equals(operands.get(j))) {
@@ -1755,7 +1754,7 @@ class SymbolComputer {
 				}
 				if(removed_operand != null) { break; }
 			}
-			
+
 			if(removed_operand != null) {
 				operands.remove(removed_operand);
 			}
@@ -1797,19 +1796,19 @@ class SymbolComputer {
 	 */
 	protected SymbolExpression compute_logic_ior(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		/* extend operands in logical */
-		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> operands = new ArrayList<>();
 		this.extend_operands_in_logic_ior(loperand, operands);
 		this.extend_operands_in_logic_ior(roperand, operands);
-		
+
 		/* update constant and variables */
-		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> variables = new ArrayList<>();
 		SymbolConstant constant = this.update_operands_in_logic_ior(operands, variables);
 		this.digest_operands_in_logic_ior(variables);
 		operands = variables;
-		
+
 		/* integrate on */	return this.integrate_operands_in_logic_ior(constant, operands);
 	}
-	
+
 	/* relational expression part */
 	/**
 	 * @param loperand
@@ -1930,7 +1929,7 @@ class SymbolComputer {
 			return this.evaluator.get_symbol_factory().new_not_equals(expression, 0);
 		}
 	}
-	
+
 	/* value domain analysis */
 	/**
 	 * @param expression
@@ -2112,7 +2111,7 @@ class SymbolComputer {
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolValueDomain compute_domain_logic_not(SymbolUnaryExpression expression) throws Exception {
@@ -2134,7 +2133,7 @@ class SymbolComputer {
 			else {
 				maximal_value = sdomain.get_maximal_value().longValue();
 			}
-			
+
 			boolean has_true, has_false;
 			has_true = (0 >= minimal_value) && (0 <= maximal_value);
 			has_false = (minimal_value != 0) || (maximal_value != 0);
@@ -2208,7 +2207,7 @@ class SymbolComputer {
 					minimal_value = Math.max(minimal_value1, minimal_value2);
 				}
 			}
-			
+
 			if(maximal_value1 == null) {
 				if(maximal_value2 == null) {
 					maximal_value = null;
@@ -2230,7 +2229,7 @@ class SymbolComputer {
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolValueDomain compute_domain_arith_add(SymbolBinaryExpression expression) throws Exception {
@@ -2247,7 +2246,7 @@ class SymbolComputer {
 			else {
 				minimal_value = ldomain.get_minimal_value() + rdomain.get_minimal_value();
 			}
-			
+
 			Double maximal_value;
 			if(ldomain.is_maximal_infinite() || rdomain.is_maximal_infinite()) {
 				maximal_value = null;
@@ -2255,13 +2254,13 @@ class SymbolComputer {
 			else {
 				maximal_value = ldomain.get_maximal_value() + rdomain.get_maximal_value();
 			}
-			
+
 			return new SymbolValueDomain(minimal_value, maximal_value);
 		}
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolValueDomain compute_domain_arith_sub(SymbolBinaryExpression expression) throws Exception {
@@ -2278,7 +2277,7 @@ class SymbolComputer {
 			else {
 				minimal_value = ldomain.get_minimal_value() - rdomain.get_maximal_value();
 			}
-			
+
 			Double maximal_value;
 			if(ldomain.is_maximal_infinite() || rdomain.is_minimal_infinite()) {
 				maximal_value = null;
@@ -2286,13 +2285,13 @@ class SymbolComputer {
 			else {
 				maximal_value = ldomain.get_maximal_value() - rdomain.get_minimal_value();
 			}
-			
+
 			return new SymbolValueDomain(minimal_value, maximal_value);
 		}
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolValueDomain compute_domain_arith_mul(SymbolBinaryExpression expression) throws Exception {
@@ -2309,7 +2308,7 @@ class SymbolComputer {
 			else {
 				minimal_value = ldomain.get_minimal_value() * rdomain.get_minimal_value();
 			}
-			
+
 			Double maximal_value;
 			if(ldomain.is_maximal_infinite() || rdomain.is_maximal_infinite()) {
 				maximal_value = null;
@@ -2317,17 +2316,17 @@ class SymbolComputer {
 			else {
 				maximal_value = ldomain.get_maximal_value() * rdomain.get_maximal_value();
 			}
-			
+
 			return new SymbolValueDomain(minimal_value, maximal_value);
 		}
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private SymbolValueDomain compute_domain_arith_div(SymbolBinaryExpression expression) throws Exception {
 		return SymbolValueDomain.domain_of_type(expression.get_data_type());
 	}
-	
+
 }

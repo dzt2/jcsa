@@ -14,8 +14,8 @@ public class CFieldBodyImpl implements CFieldBody {
 	protected Map<String, CField> field_map;
 
 	protected CFieldBodyImpl() {
-		field_list = new ArrayList<CField>();
-		field_map = new HashMap<String, CField>();
+		field_list = new ArrayList<>();
+		field_map = new HashMap<>();
 	}
 
 	@Override

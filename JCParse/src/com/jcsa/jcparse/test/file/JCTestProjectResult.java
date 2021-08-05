@@ -16,12 +16,12 @@ import com.jcsa.jcparse.test.state.CStatePath;
 /**
  * It provides the interfaces to fetch the results generated during the
  * testing process.
- * 
+ *
  * @author yukimula
  *
  */
 public class JCTestProjectResult {
-	
+
 	/* data construction */
 	/** the project that the result serves for **/
 	private JCTestProject project;
@@ -31,11 +31,11 @@ public class JCTestProjectResult {
 	protected JCTestProjectResult(JCTestProject project) {
 		this.project = project;
 	}
-	/** 
+	/**
 	 * @return the project that the result serves for
 	 */
 	public JCTestProject get_project() { return this.project; }
-	
+
 	/* data loaders */
 	/**
 	 * @param input the test input of which result is fetched
@@ -73,7 +73,7 @@ public class JCTestProjectResult {
 			return null;
 		}
 	}
-	
+
 	/* instrumental loader */
 	/**
 	 * @param template
@@ -83,7 +83,7 @@ public class JCTestProjectResult {
 	 * @return the original instrumental lines read from data file
 	 * @throws Exception
 	 */
-	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template, 
+	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template,
 			AstTree ast_tree, TestInput input, boolean complete) throws Exception {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
@@ -114,7 +114,7 @@ public class JCTestProjectResult {
 		File instrumental_file = input.get_instrument_file(this.project.
 				get_project_files().get_instrument_output_directory());
 		if(instrumental_file.exists()) {
-			return InstrumentalNodes.get_nodes(template, 
+			return InstrumentalNodes.get_nodes(template,
 					ast_tree, cir_tree, instrumental_file);
 		}
 		else {
@@ -140,5 +140,5 @@ public class JCTestProjectResult {
 			return null;
 		}
 	}
-	 
+
 }

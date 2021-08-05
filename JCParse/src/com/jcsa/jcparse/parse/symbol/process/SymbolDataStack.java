@@ -3,7 +3,7 @@ package com.jcsa.jcparse.parse.symbol.process;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 public class SymbolDataStack {
-	
+
 	/* definitions */
 	/** the process to which the stack serves **/
 	private SymbolProcess process;
@@ -22,7 +22,7 @@ public class SymbolDataStack {
 			this.top = new SymbolDataBlock(this);
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the process to which the stack serves
@@ -77,5 +77,5 @@ public class SymbolDataStack {
 	public SymbolExpression load(Object key) throws Exception {
 		return this.top.load(key);
 	}
-	
+
 }

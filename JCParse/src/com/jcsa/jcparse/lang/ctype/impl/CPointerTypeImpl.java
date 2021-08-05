@@ -36,5 +36,5 @@ public class CPointerTypeImpl extends CTypeImpl implements CPointerType {
 		else
 			return false;
 	}
-	
+
 }

@@ -33,7 +33,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
  *
  */
 public class CirExecution {
-	
+
 	/* attributes */
 	private CirExecutionFlowGraph graph;
 	private int id;
@@ -41,7 +41,7 @@ public class CirExecution {
 	private CirStatement statement;
 	private boolean reachable;
 	private List<CirExecutionFlow> in, ou;
-	
+
 	/* constructor */
 	/**
 	 * create an execution in program flow graph with respect to the given statement
@@ -60,8 +60,8 @@ public class CirExecution {
 			this.type = this.type_of(statement);
 			this.reachable = false;
 			this.statement = statement;
-			this.in = new LinkedList<CirExecutionFlow>();
-			this.ou = new LinkedList<CirExecutionFlow>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
 	/**
@@ -96,7 +96,7 @@ public class CirExecution {
 		}
 		else throw new IllegalArgumentException("unsupport: " + statement);
 	}
-	
+
 	/* getters */
 	/**
 	 * get the flow graph where the execution of statement is defined.
@@ -146,7 +146,7 @@ public class CirExecution {
 	 */
 	public CirExecutionFlow get_in_flow(int k) throws IndexOutOfBoundsException { return this.in.get(k); }
 	/**
-	 * get the kth flow pointing from this node 
+	 * get the kth flow pointing from this node
 	 * @param k
 	 * @return
 	 * @throws IndexOutOfBoundsException
@@ -158,9 +158,9 @@ public class CirExecution {
 	 * <br>
 	 * Note: the reach-ability here is based on the structure of the flow graph
 	 * rather than program semantics, such as to determine the reach-ability of
-	 * a flow that calling the exit() method will never return to the point of 
+	 * a flow that calling the exit() method will never return to the point of
 	 * the waiting-statement, which is NOT THE CASE we consider here.<br>
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean is_reachable() { return this.reachable; }
@@ -173,7 +173,7 @@ public class CirExecution {
 	 * @return the output flows w.r.t. the given type
 	 */
 	public Iterable<CirExecutionFlow> get_ou_flows(CirExecutionFlowType type) {
-		List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		List<CirExecutionFlow> flows = new ArrayList<>();
 		for(CirExecutionFlow flow : this.ou) {
 			if(flow.get_type() == type) {
 				flows.add(flow);
@@ -186,7 +186,7 @@ public class CirExecution {
 	 * @return the input flows w.r.t. the given type
 	 */
 	public Iterable<CirExecutionFlow> get_in_flows(CirExecutionFlowType type) {
-		List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
+		List<CirExecutionFlow> flows = new ArrayList<>();
 		for(CirExecutionFlow flow : this.in) {
 			if(flow.get_type() == type) {
 				flows.add(flow);
@@ -194,7 +194,7 @@ public class CirExecution {
 		}
 		return flows;
 	}
-	
+
 	/* setter */
 	/**
 	 * link this execution node to the next node with respect to the given type
@@ -212,5 +212,5 @@ public class CirExecution {
 	 * @param reachable
 	 */
 	protected void set_reachable(boolean reachable) { this.reachable = reachable; }
-	
+
 }

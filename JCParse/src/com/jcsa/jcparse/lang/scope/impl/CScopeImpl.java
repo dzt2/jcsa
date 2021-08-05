@@ -19,14 +19,14 @@ public class CScopeImpl implements CScope {
 	public CScopeImpl() throws Exception {
 		this.parent = null;
 		this.origin = null;
-		this.children = new HashSet<CScope>();
+		this.children = new HashSet<>();
 		this.table = new CNameTableImpl(this);
 	}
 
 	protected CScopeImpl(CScope parent) throws Exception {
 		this.parent = parent;
 		this.origin = null;
-		this.children = new HashSet<CScope>();
+		this.children = new HashSet<>();
 		this.table = new CNameTableImpl(this);
 	}
 

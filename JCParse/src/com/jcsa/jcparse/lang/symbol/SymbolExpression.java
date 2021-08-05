@@ -22,10 +22,10 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  *
  */
 public abstract class SymbolExpression extends SymbolNode {
-	
+
 	/** data type of the value hold by the expression **/
 	private CType data_type;
-	
+
 	/**
 	 * create an isolated expression node w.r.t. data type
 	 * @param data_type
@@ -38,12 +38,12 @@ public abstract class SymbolExpression extends SymbolNode {
 			this.data_type = data_type;
 		}
 	}
-	
+
 	/**
 	 * @return data type of the value hold by the expression
 	 */
 	public CType get_data_type() { return this.data_type; }
-	
+
 	/**
 	 * @param contexts
 	 * @return evaluate the value of this expression w.r.t. the given context
@@ -52,5 +52,5 @@ public abstract class SymbolExpression extends SymbolNode {
 	public SymbolExpression evaluate(SymbolProcess process) throws Exception {
 		return SymbolEvaluator.evaluate_on(this, process);
 	}
-	
+
 }

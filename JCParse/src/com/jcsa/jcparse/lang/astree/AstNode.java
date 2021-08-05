@@ -7,21 +7,21 @@ import com.jcsa.jcparse.lang.text.CLocalable;
  * <code>
  * 	Ast
  * </code>
- * 
+ *
  * @author yukimula
  *
  */
 public interface AstNode extends CLocalable {
-	
+
 	public static final int UNDEFINED_KEY = -1;
-	
+
 	/**
 	 * get the abstract syntax tree where the node is defined
 	 * @return
 	 */
 	public AstTree get_tree();
 	/**
-	 * key for access the AST-Node in a tree 
+	 * key for access the AST-Node in a tree
 	 * (order of its BFS transverse)
 	 * @return
 	 */
@@ -31,38 +31,38 @@ public interface AstNode extends CLocalable {
 	 * @param k
 	 */
 	public void set_key(int k);
-	
+
 	/**
 	 * get the parent of this node
-	 * 
+	 *
 	 * @return
 	 */
 	public AstNode get_parent();
 
 	/**
 	 * get the number of its children
-	 * 
+	 *
 	 * @return
 	 */
 	public int number_of_children();
 
 	/**
 	 * get the kth child node of this node
-	 * 
+	 *
 	 * @param k
 	 * @return : null if k is out of index
 	 */
 	public AstNode get_child(int k);
-	
+
 	/**
 	 * @return original code to which the AST node corresponds
 	 */
 	public String get_code() throws Exception;
-	
+
 	/**
 	 * @return source code generated based on the structure of the abstract
 	 * structure of this syntactic node
 	 */
 	public String generate_code() throws Exception;
-	
+
 }

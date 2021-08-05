@@ -7,14 +7,14 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 /**
  * Access the nodes of AST by Deep-First-Search. A node can be accessed when all
  * its children have been accessed
- * 
+ *
  * @author yukimula
  */
 public class AstNodeDFSIterator implements AstNodeIterator {
 
 	/**
 	 * Element of stack to access AST in deep-first-search
-	 * 
+	 *
 	 * @author yukimula
 	 */
 	protected static class _Stack_Element {
@@ -26,7 +26,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 		/**
 		 * create a stack element for the node
-		 * 
+		 *
 		 * @param node
 		 * @throws Exception
 		 */
@@ -41,7 +41,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 		/**
 		 * get the node of stack element
-		 * 
+		 *
 		 * @return
 		 */
 		protected AstNode get_node() {
@@ -50,7 +50,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 		/**
 		 * get the index to the next child of the node
-		 * 
+		 *
 		 * @return
 		 */
 		protected int get_next_index() {
@@ -66,7 +66,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 		/**
 		 * whether there is more child to be accessed in the stack element
-		 * 
+		 *
 		 * @return
 		 */
 		protected boolean accessible() {
@@ -81,7 +81,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 	/**
 	 * create an iterator for AST to access nodes in deep-first-search
-	 * 
+	 *
 	 * @param root
 	 * @throws Exception
 	 */
@@ -89,7 +89,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 		if (root == null)
 			throw new IllegalArgumentException("Invalid root: null");
 		else {
-			stack = new Stack<_Stack_Element>();
+			stack = new Stack<>();
 			stack.push(new _Stack_Element(root));
 			this.roll_next(); // roll to first
 		}
@@ -97,7 +97,7 @@ public class AstNodeDFSIterator implements AstNodeIterator {
 
 	/**
 	 * roll to the next node for accessed
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	private void roll_next() throws Exception {

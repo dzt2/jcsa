@@ -18,11 +18,11 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 public class CDependenceTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
 	protected static final String postfx = "result/dep/";
 	protected static final File template_file = new File("config/cruntime.txt");
-	
+
 	public static void main(String[] args) throws Exception {
 		File[] files = new File(prefix).listFiles();
 		for(File file : files) {
@@ -37,17 +37,17 @@ public class CDependenceTest {
 		CDependGraph depend_graph = CDependGraph.graph(program_graph);
 		output(depend_graph, new File(postfx + file.getName() + ".txt"));
 	}
-	
+
 	/* basic methods */
 	private static AstCirFile parse(File file) throws Exception {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		return CirCallContextInstanceGraph.graph(root_function, 
+		return CirCallContextInstanceGraph.graph(root_function,
 				CirFunctionCallPathType.unique_path, -1);
 	}
-	
+
 	/* output method */
 	private static void output_node(CDependNode node, FileWriter writer) throws Exception {
 		writer.write("\t");
@@ -57,7 +57,7 @@ public class CDependenceTest {
 		writer.write("\t");
 		writer.write(node.get_statement().generate_code(true));
 		writer.write("\n");
-		
+
 		for(CDependEdge edge : node.get_in_edges()) {
 			writer.write("\t<-- ");
 			writer.write(edge.get_type().toString());
@@ -74,10 +74,10 @@ public class CDependenceTest {
 		writer.write("\n");
 	}
 	private static void output(CDependGraph depend_graph, File output) throws Exception {
-		CirCallContextInstanceGraph program_graph = 
+		CirCallContextInstanceGraph program_graph =
 				(CirCallContextInstanceGraph) depend_graph.get_program_graph();
 		FileWriter writer = new FileWriter(output);
-		
+
 		Iterable<CirFunctionCallTreeNode> contexts = program_graph.get_call_contexts();
 		for(CirFunctionCallTreeNode context : contexts) {
 			CirFunction function = context.get_function();
@@ -93,8 +93,8 @@ public class CDependenceTest {
 				}
 			}
 		}
-		
+
 		writer.close();
 	}
-	
+
 }

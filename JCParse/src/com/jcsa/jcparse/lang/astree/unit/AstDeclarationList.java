@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstDeclarationStatement;
 
 /**
  * <code>decl_list --> decl_stmt+</code>
- * 
+ *
  * @author yukimula
  *
  */

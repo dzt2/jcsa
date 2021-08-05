@@ -48,5 +48,5 @@ public class CArrayTypeImpl extends CTypeImpl implements CArrayType {
 		} else
 			return false;
 	}
-	
+
 }

@@ -10,9 +10,9 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProd
  * 						  | (abs_declarator)? dimension
  * 						  | (abs_declarator)? parambody
  * 						  | ( abs_declarator )
- * 							
+ *
  * </code>
- * 
+ *
  * @author yukimula
  *
  */

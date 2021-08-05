@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 
 /**
  * <code>func_def --> decl_specifiers declarator (decl_list)? comp_stmt</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstFunctionDefinition extends AstExternalUnit, AstScopeNode {

@@ -2,7 +2,7 @@ package com.jcsa.jcparse.test.cmd;
 
 
 public class CommandResult {
-	
+
 	/** the status in running command **/
 	private CommandStatus status;
 	/** the code returned from command process **/
@@ -11,7 +11,7 @@ public class CommandResult {
 	private String stdout;
 	/** string preserved from standard errors **/
 	private String stderr;
-	
+
 	/* getters */
 	/**
 	 * @return the status when the command exits from process.
@@ -29,7 +29,7 @@ public class CommandResult {
 	 * @return the standard error generated in running command
 	 */
 	public String get_stderr() { return stderr; }
-	
+
 	/* constructor */
 	/**
 	 * @param status the status when the command exits from process.
@@ -37,12 +37,12 @@ public class CommandResult {
 	 * @param stdout the standard output generated in running command
 	 * @param stderr the standard error generated in running command
 	 */
-	protected CommandResult(CommandStatus status, 
+	protected CommandResult(CommandStatus status,
 			int exit_code, String stdout, String stderr) {
 		this.status = status;
 		this.exit_code = exit_code;
 		this.stdout = stdout;
 		this.stderr = stderr;
 	}
-	
+
 }

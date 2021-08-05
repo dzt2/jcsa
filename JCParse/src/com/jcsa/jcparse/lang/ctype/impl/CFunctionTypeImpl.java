@@ -68,5 +68,5 @@ public class CFunctionTypeImpl extends CTypeImpl implements CFunctionType {
 		} else
 			return false;
 	}
-	
+
 }

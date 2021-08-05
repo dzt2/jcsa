@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.ctoken.CToken;
 
 /**
  * <code>macro_body ---> (ctoken)*</code>
- * 
+ *
  * @author yukimula
  *
  */

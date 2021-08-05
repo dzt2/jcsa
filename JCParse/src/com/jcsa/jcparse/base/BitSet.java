@@ -3,13 +3,13 @@ package com.jcsa.jcparse.base;
 import java.util.Collection;
 
 public class BitSet {
-	
+
 	/* properties */
 	/** bit-set value base **/
 	private BitSetBase base;
 	/** the values in set **/
 	private BitSequence set;
-	
+
 	/* constructor */
 	/**
 	 * construct an empty set described based on bit-string,
@@ -26,11 +26,11 @@ public class BitSet {
 		}
 	}
 	protected BitSet(BitSet value) throws Exception {
-		if(value == null) 
+		if(value == null)
 			throw new IllegalArgumentException("invalid value: null");
 		else { this.base = value.base; this.set = new BitSequence(value.set); }
 	}
-	
+
 	/* getters */
 	/**
 	 * get the base to which the values in the set refer
@@ -136,9 +136,9 @@ public class BitSet {
 	public BitSet or(BitSet y) throws Exception {
 		if(y == null || y.base != this.base)
 			throw new IllegalArgumentException("invalid y: null");
-		else { 
+		else {
 			BitSet result = new BitSet(base);
-			result.set = this.set.or(y.set); 
+			result.set = this.set.or(y.set);
 			return result;
 		}
 	}
@@ -151,13 +151,13 @@ public class BitSet {
 	public BitSet and(BitSet y) throws Exception {
 		if(y == null || y.base != this.base)
 			throw new IllegalArgumentException("invalid y: null");
-		else { 
+		else {
 			BitSet result = new BitSet(base);
-			result.set = this.set.and(y.set); 
+			result.set = this.set.and(y.set);
 			return result;
 		}
 	}
-	
+
 	@Override
 	public String toString() { return this.set.toString(); }
 	@Override
@@ -167,5 +167,5 @@ public class BitSet {
 			return ((BitSet) value).set.equals(this.set);
 		else return false;
 	}
-	
+
 }

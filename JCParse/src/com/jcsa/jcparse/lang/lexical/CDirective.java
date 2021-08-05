@@ -4,7 +4,7 @@ package com.jcsa.jcparse.lang.lexical;
  * directive is used as instruction in preprocessing: <br>
  * <b> #if, #ifdef, #ifndef, #elif, #else, #endif, #define, #undef, #include,
  * #line, #error, #pragma </b>
- * 
+ *
  * @author yukimula
  *
  */

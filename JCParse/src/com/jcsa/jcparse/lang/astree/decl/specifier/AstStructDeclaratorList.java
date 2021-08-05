@@ -5,20 +5,20 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>StructDeclaratorList --> struct_declarator (, struct_declarator)*</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstStructDeclaratorList extends AstNode {
 	/**
 	 * get the number of struct-declarators in the list
-	 * 
+	 *
 	 * @return
 	 */
 	public int number_of_declarators();
 
 	/**
 	 * get the kth struct declarator
-	 * 
+	 *
 	 * @param i
 	 * @return
 	 */
@@ -26,7 +26,7 @@ public interface AstStructDeclaratorList extends AstNode {
 
 	/**
 	 * get the kth comma
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 */
@@ -34,7 +34,7 @@ public interface AstStructDeclaratorList extends AstNode {
 
 	/**
 	 * add new struct-declarator in the tail of the list
-	 * 
+	 *
 	 * @param comma
 	 * @param declarator
 	 * @throws Exception

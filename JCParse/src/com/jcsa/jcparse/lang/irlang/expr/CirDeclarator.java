@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.scope.CName;
 
 /**
  * as identifier in declarator of initialization
- * 
+ *
  * @author yukimula
  *
  */

@@ -19,9 +19,9 @@ package com.jcsa.jcparse.lang.irlang.graph;
  *
  */
 public enum CirExecutionType {
-	/** CirAssignStatement except CirWaitAssignStatement **/	base, 
-	/** CirIfStatement and CirCaseStatement **/					brch, 
-	/** CirCallStatement **/									call, 
-	/** CirWaitStatement **/									wait, 
+	/** CirAssignStatement except CirWaitAssignStatement **/	base,
+	/** CirIfStatement and CirCaseStatement **/					brch,
+	/** CirCallStatement **/									call,
+	/** CirWaitStatement **/									wait,
 	/** CirGotoStatement and CirTagStatement **/				none,
 }

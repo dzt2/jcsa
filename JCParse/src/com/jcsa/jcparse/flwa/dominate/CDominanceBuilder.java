@@ -17,29 +17,29 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 
 /**
  * Used to build up the dominance graph in C program.
- * 
+ *
  * @author yukimula
  *
  */
 class CDominanceBuilder {
-	
+
 	/* abstract operator to compute the dominance set */
 	/**
 	 * The abstract operator used to compute dominance set based on following equation:<br>
 	 * Y = X1 & X2 & X3 & ... & Xn + {Si}
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */
 	protected static class CDominanceOperator implements AbsOperator {
-		
+
 		/* constructor */
 		protected BitSetBase bitset_base;
 		protected CDominanceOperator(CirInstanceGraph graph) throws Exception {
 			if(graph == null)
 				throw new IllegalArgumentException("Invalid graph: null");
 			else {
-				Set<Object> data_set = new HashSet<Object>();
+				Set<Object> data_set = new HashSet<>();
 				for(Object context : graph.get_contexts()) {
 					for(CirInstance instance : graph.get_instances(context)) {
 						data_set.add(instance);
@@ -53,7 +53,7 @@ class CDominanceBuilder {
 				this.bitset_base = BitSetBase.base(data_set);
 			}
 		}
-		
+
 		@Override
 		public AbsValue initial_value(CirInstanceNode exec_instance) throws Exception {
 			BitSet bitset = this.bitset_base.new_set();
@@ -61,7 +61,7 @@ class CDominanceBuilder {
 			bitstring.set(bitstring.not());
 			return new BitSetValue(bitset);
 		}
-		
+
 		@Override
 		public AbsValue initial_value(CirInstanceEdge flow_instance) throws Exception {
 			BitSet bitset = this.bitset_base.new_set();
@@ -69,25 +69,25 @@ class CDominanceBuilder {
 			bitstring.set(bitstring.not());
 			return new BitSetValue(bitset);
 		}
-		
+
 		@Override
 		public AbsValue update_value(CirInstanceNode exec_instance, boolean forward) throws Exception {
 			/* 1. declarations */
 			boolean first = true;
 			BitSet result = this.bitset_base.new_set();
 			BitSequence result_bits = result.get_set();
-			
+
 			/* 2. determine the edges being converged */
 			Iterable<CirInstanceEdge> edges;
 			if(forward)
 				 edges = exec_instance.get_in_edges();
 			else edges = exec_instance.get_ou_edges();
-			
+
 			/* 3. Y = X1 & X2 & X3 & ... & Xn */
 			for(CirInstanceEdge edge : edges) {
 				BitSetValue state = (BitSetValue) edge.get_state();
 				BitSequence bitstring = state.get().get_set();
-				
+
 				if(first) {
 					first = false;
 					result_bits.set(bitstring);
@@ -96,15 +96,15 @@ class CDominanceBuilder {
 					result_bits.set(result_bits.and(bitstring));
 				}
 			}
-			
+
 			/* 4. Z = X1 & X2 & X3 & ... & Xn + {Si} */
 			result.add(exec_instance);
 			// System.out.println("\t\t--> " + result.get_set().degree());
-			
+
 			/* 5. return the bit-set as new result */
 			return new BitSetValue(result);
 		}
-		
+
 		@Override
 		public AbsValue update_value(CirInstanceEdge flow_instance, boolean forward) throws Exception {
 			/* 1. get X */
@@ -113,17 +113,17 @@ class CDominanceBuilder {
 				 x = (BitSetValue) flow_instance.get_source().get_state();
 			else x = (BitSetValue) flow_instance.get_target().get_state();
 			BitSet x_set = x.get(); BitSequence x_string =x_set.get_set();
-			
+
 			/* 2. X + {flow} */
 			BitSet result = this.bitset_base.new_set();
 			result.get_set().set(x_string);
 			result.add(flow_instance);
-			
+
 			return new BitSetValue(result);
 		}
-		
+
 	}
-	
+
 	/* attributes */
 	/** the abstract operator used to compute the abstract state hold by program element **/
 	private CDominanceOperator operator;
@@ -131,7 +131,7 @@ class CDominanceBuilder {
 	private CirInstanceGraph input;
 	/** the dominance graph describing the dominance relations between program elements **/
 	private CDominanceGraph output;
-	
+
 	/* constructor */
 	/** the singleton of the builder to build up the program flow graph **/
 	protected static final CDominanceBuilder builder = new CDominanceBuilder();
@@ -143,7 +143,7 @@ class CDominanceBuilder {
 		this.input = null;
 		this.output = null;
 	}
-	
+
 	/* processing methods */
 	/**
 	 * Set the input program and initialize the operator for abstract interpretation.
@@ -197,7 +197,7 @@ class CDominanceBuilder {
 		this.analysis(forward);
 		this.get_output(output);
 	}
-	
+
 	/* analysis methods */
 	private void create_nodes() throws Exception {
 		for(Object context : this.input.get_contexts()) {
@@ -226,17 +226,17 @@ class CDominanceBuilder {
 		BitSet xset = this.get_dominance_set(node.get_instance());
 		BitSequence xstring = xset.get_set();
 		int index = this.get_index_of_instance(node.get_instance());
-		
+
 		for(int k = 0; k < xstring.length(); k++) {
 			if(index != k && xstring.get(k)) {
 				CirInstance instance = this.get_instance_of(k);
 				BitSequence ystring = this.get_dominance_set(instance).get_set();
-				
-				xstring = xstring.and(ystring.not()); 
+
+				xstring = xstring.and(ystring.not());
 				xstring.set(k, BitSequence.BIT1);
 			}
 		}
-		
+
 		CirInstance target = node.get_instance();
 		for(int k = 0; k < xstring.length(); k++) {
 			if(index != k && xstring.get(k)) {
@@ -254,5 +254,5 @@ class CDominanceBuilder {
 			this.create_edge(node);
 		}
 	}
-	
+
 }

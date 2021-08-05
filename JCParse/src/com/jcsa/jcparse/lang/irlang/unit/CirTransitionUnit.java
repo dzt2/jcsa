@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
  *
  */
 public interface CirTransitionUnit extends CirNode {
-	
+
 	/**
 	 * get the number of external units in the program
 	 * @return
@@ -28,5 +28,5 @@ public interface CirTransitionUnit extends CirNode {
 	 * @throws IllegalArgumentException
 	 */
 	public void add_unit(CirExternalUnit unit) throws IllegalArgumentException;
-	
+
 }

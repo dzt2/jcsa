@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 
 /**
  * <code><b># line</b> constant (literal)? \n</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstPreprocessLineLine extends AstPreprocessLine {

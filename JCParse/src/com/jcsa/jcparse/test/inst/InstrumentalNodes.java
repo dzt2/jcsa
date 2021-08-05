@@ -85,12 +85,12 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * It is used to generate instrumental nodes sequence for analysis on CIR code.
- * 
+ *
  * @author yukimula
  *
  */
 public class InstrumentalNodes {
-	
+
 	/* definitions */
 	/** C-intermediate representation program **/
 	private CirTree cir_tree;
@@ -98,11 +98,11 @@ public class InstrumentalNodes {
 	private Map<CirExpression, Object> buffer;
 	/** the sequence of instrumental nodes being generated **/
 	private List<InstrumentalNode> nodes;
-	
+
 	/* singleton constructor */
 	private InstrumentalNodes() { }
 	private static final InstrumentalNodes parser = new InstrumentalNodes();
-	
+
 	/* cir-location algorithms */
 	/**
 	 * @param location
@@ -133,7 +133,7 @@ public class InstrumentalNodes {
 	/**
 	 * @param expression
 	 * @return whether the expression is a left-reference
-	 */ 
+	 */
 	private boolean is_left_reference(CirExpression expression) {
 		CirNode parent = expression.get_parent();
 		if(parent instanceof CirAssignStatement) {
@@ -165,7 +165,7 @@ public class InstrumentalNodes {
 			}
 		}
 	}
-	
+
 	/* buffer operation methods */
 	/**
 	 * record the expression and its value in the buffer
@@ -191,7 +191,7 @@ public class InstrumentalNodes {
 		}
 	}
 	/**
-	 * create a new node w.r.t. the statement, of which expressions are 
+	 * create a new node w.r.t. the statement, of which expressions are
 	 * constructed with values and initialized into the node created.
 	 * (1) create a node w.r.t. the statement and add it to the list;
 	 * (2) collect all the expressions under the statement;
@@ -203,10 +203,10 @@ public class InstrumentalNodes {
 	private void append(CirStatement statement) throws Exception {
 		CirExecution execution = this.get_cir_execution(statement);
 		InstrumentalNode node = new InstrumentalNode(execution);
-		
-		Set<CirExpression> expressions = new HashSet<CirExpression>();
+
+		Set<CirExpression> expressions = new HashSet<>();
 		this.collect_expressions_in(statement, expressions);
-		
+
 		for(CirExpression expression : expressions) {
 			if(this.buffer.containsKey(expression)) {
 				Object value = this.buffer.get(expression);
@@ -216,7 +216,7 @@ public class InstrumentalNodes {
 				this.buffer.remove(expression);
 			}
 		}
-		
+
 		/* link the path between it and last one */
 		if(!this.nodes.isEmpty()) {
 			InstrumentalNode source = this.nodes.get(nodes.size() - 1);
@@ -229,7 +229,7 @@ public class InstrumentalNodes {
 		}
 		this.nodes.add(node);
 	}
-	
+
 	/* context-sensitive translation */
 	private void parse_follow(AstExpression location) throws Exception {
 		AstNode child = location;
@@ -245,7 +245,7 @@ public class InstrumentalNodes {
 				break;
 			}
 		}
-		
+
 		if(parent instanceof AstFunCallExpression) {
 			if(!((AstFunCallExpression) parent).has_argument_list()) {
 				if(((AstFunCallExpression) parent).get_function() == child) {
@@ -261,7 +261,7 @@ public class InstrumentalNodes {
 						get_cir_nodes(parent, CirSaveAssignStatement.class).get(0);
 				Object condition_value = this.buffer.get(statement1.get_rvalue());
 				this.append(statement1);
-				
+
 				CirIfStatement statement2 = (CirIfStatement) this.
 						get_cir_nodes(location, CirIfStatement.class).get(0);
 				if(((AstLogicBinaryExpression) parent).get_operator().get_operator() == COperator.logic_and) {
@@ -344,7 +344,7 @@ public class InstrumentalNodes {
 			}
 		}
 	}
-	
+
 	/* basic expression */
 	private void parse_id_expression(InstrumentalLine line, AstIdExpression location) throws Exception {
 		if(line.is_end()) {
@@ -388,8 +388,8 @@ public class InstrumentalNodes {
 				CirExpression roperand = expression.get_operand(1);
 				this.put_expression(expression, line.get_value());
 				this.put_expression(roperand, Integer.valueOf(1));
-				
-				CirExpression loperand = expression.get_operand(0); 
+
+				CirExpression loperand = expression.get_operand(0);
 				Object value = line.get_value();
 				int increment = (expression.get_operator() == COperator.arith_add) ? -1 : 1;
 				if(value != null) {
@@ -425,12 +425,12 @@ public class InstrumentalNodes {
 	private void parse_postfix_expression(InstrumentalLine line, AstPostfixExpression location) throws Exception {
 		if(line.is_end()) {
 			this.put_expressions(location, line.get_value());
-			
+
 			CirAssignStatement sav_statement = (CirAssignStatement) this.
 					get_cir_nodes(location, CirSaveAssignStatement.class).get(0);
 			this.put_expression(sav_statement.get_rvalue(), line.get_value());
 			this.append(sav_statement);
-			
+
 			CirAssignStatement inc_statement = (CirAssignStatement) this.
 					get_cir_nodes(location, CirIncreAssignStatement.class).get(0);
 			CirArithExpression expression = (CirArithExpression) inc_statement.get_rvalue();
@@ -438,7 +438,7 @@ public class InstrumentalNodes {
 			CirExpression roperand = expression.get_operand(1);
 			this.put_expression(loperand, line.get_value());
 			this.put_expression(roperand, Integer.valueOf(1));
-			
+
 			Object value = line.get_value();
 			int increment = (expression.get_operator() == COperator.arith_add) ? 1 : -1;
 			if(value != null) {
@@ -492,7 +492,7 @@ public class InstrumentalNodes {
 			}
 		}
 	}
-	
+
 	/* special expression */
 	private void parse_array_expression(InstrumentalLine line, AstArrayExpression location) throws Exception {
 		if(line.is_end()) {
@@ -536,7 +536,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	
+
 	/* expression */
 	private void parse_expression(InstrumentalLine line, AstExpression location) throws Exception {
 		if(location instanceof AstBasicExpression)
@@ -565,7 +565,7 @@ public class InstrumentalNodes {
 			this.parse_fun_call_expression(line, (AstFunCallExpression) location);
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
-		
+
 		if(line.is_end())
 			this.parse_follow(location);
 	}
@@ -576,7 +576,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	
+
 	/* declaration part */
 	private void parse_declarator(InstrumentalLine line, AstDeclarator location) throws Exception {}
 	private void parse_init_declarator(InstrumentalLine line, AstInitDeclarator location) throws Exception {
@@ -586,7 +586,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	
+
 	/* statement part */
 	private void parse_expression_statement(InstrumentalLine line, AstExpressionStatement location) throws Exception {
 		if(line.is_end()) {
@@ -607,7 +607,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	private void parse_break_statement(InstrumentalLine line, 
+	private void parse_break_statement(InstrumentalLine line,
 				AstBreakStatement location) throws Exception {
 		if(line.is_beg()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -615,7 +615,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	private void parse_continue_statement(InstrumentalLine line, 
+	private void parse_continue_statement(InstrumentalLine line,
 			AstContinueStatement location) throws Exception {
 		if(line.is_beg()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -628,7 +628,7 @@ public class InstrumentalNodes {
 		if(line.is_end()) {
 			CirStatement statement;
 			if(location.has_expression()) {
-				statement = (CirStatement) this.get_cir_nodes(location, 
+				statement = (CirStatement) this.get_cir_nodes(location,
 						CirReturnAssignStatement.class).get(0);
 				this.append(statement);
 			}
@@ -637,7 +637,7 @@ public class InstrumentalNodes {
 			this.append(statement);
 		}
 	}
-	private void parse_labeled_statement(InstrumentalLine line, 
+	private void parse_labeled_statement(InstrumentalLine line,
 			AstLabeledStatement location) throws Exception {
 		if(line.is_end()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -679,9 +679,9 @@ public class InstrumentalNodes {
 		else if(location instanceof AstDefaultStatement)
 			this.parse_default_statement(line, (AstDefaultStatement) location);
 	}
-	
+
 	/* function part */
-	private void parse_function_definition(InstrumentalLine line, 
+	private void parse_function_definition(InstrumentalLine line,
 			AstFunctionDefinition location) throws Exception {
 		CirFunctionDefinition def = (CirFunctionDefinition) this.
 				get_cir_nodes(location, CirFunctionDefinition.class).get(0);
@@ -693,7 +693,7 @@ public class InstrumentalNodes {
 			this.append(function.get_flow_graph().get_exit().get_statement());
 		}
 	}
-	
+
 	/* parsing methods */
 	private void parse(InstrumentalLine line) throws Exception {
 		AstNode location = line.get_location();
@@ -725,34 +725,34 @@ public class InstrumentalNodes {
 		else {
 			List<InstrumentalLine> lines = InstrumentalLines.
 					complete_lines(template, ast_tree, instrumental_file);
-			
+
 			parser.cir_tree = cir_tree;
-			parser.buffer = new HashMap<CirExpression, Object>();
-			parser.nodes = new ArrayList<InstrumentalNode>();
-			
+			parser.buffer = new HashMap<>();
+			parser.nodes = new ArrayList<>();
+
 			for(InstrumentalLine line : lines) {
 				parser.parse(line);
 			}
-			
+
 			parser.buffer.clear();
 			return parser.nodes;
 		}
 	}
-	
+
 	/* complete nodes in path */
 	private List<CirExecution> complete_path_between(
 			InstrumentalNode source_node,
 			InstrumentalNode target_node) throws Exception {
-		List<CirExecution> path = new ArrayList<CirExecution>();
+		List<CirExecution> path = new ArrayList<>();
 		CirExecution source_execution = source_node.get_execution();
 		CirExecution target_execution = target_node.get_execution();
 		CirExecution curr_execution = source_execution;
 		CirStatement target_statement = target_execution.get_statement();
-		
+
 		while(curr_execution != target_execution) {
 			if(curr_execution != source_execution && curr_execution != target_execution)
 				path.add(curr_execution);
-			
+
 			/* determine the next node being executed from curr_execution */
 			CirStatement statement = curr_execution.get_statement();
 			if(statement instanceof CirAssignStatement || statement instanceof CirGotoStatement) {
@@ -810,8 +810,8 @@ public class InstrumentalNodes {
 				curr_execution = curr_execution.get_ou_flow(0).get_target();
 			}
 		}
-		
+
 		return path;
 	}
-	
+
 }

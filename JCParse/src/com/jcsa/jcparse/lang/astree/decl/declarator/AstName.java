@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
 
 /**
  * <code>Name --> identifier</code>
- * 
+ *
  * @author yukimula
  *
  */

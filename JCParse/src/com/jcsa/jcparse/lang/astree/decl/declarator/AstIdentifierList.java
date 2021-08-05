@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>id_list -> id (, id)*</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstIdentifierList extends AstNode {

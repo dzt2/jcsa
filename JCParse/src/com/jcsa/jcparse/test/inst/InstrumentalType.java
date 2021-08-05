@@ -2,7 +2,7 @@ package com.jcsa.jcparse.test.inst;
 
 /**
  * The type of location being instrumented.
- * 
+ *
  * @author yukimula
  *
  */

@@ -11,12 +11,12 @@ import java.util.Set;
 
 /**
  * The input space for testing the program.
- * 
+ *
  * @author yukimula
  *
  */
 public class TestInputs {
-	
+
 	/* constructor & attribute */
 	/** the set of test inputs in **/
 	private List<TestInput> inputs;
@@ -24,11 +24,11 @@ public class TestInputs {
 	 * create the test inputs space as empty
 	 */
 	public TestInputs() {
-		this.inputs = new ArrayList<TestInput>();
+		this.inputs = new ArrayList<>();
 	}
-	
+
 	/* getters */
-	/** 
+	/**
 	 * @return the number of test inputs in the space
 	 */
 	public int number_of_inputs() { return this.inputs.size(); }
@@ -44,7 +44,7 @@ public class TestInputs {
 	public TestInput get_input(int id) throws IndexOutOfBoundsException {
 		return this.inputs.get(id);
 	}
-	
+
 	/* read & write */
 	/**
 	 * clear all the test inputs in the space
@@ -52,7 +52,7 @@ public class TestInputs {
 	public void clear() { this.inputs.clear(); }
 	/**
 	 * @param suite_file the file to which the test inputs are written
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public void save(File suite_file) throws Exception {
 		FileWriter writer = new FileWriter(suite_file);
@@ -68,7 +68,7 @@ public class TestInputs {
 	 */
 	public void load(File suite_file) throws Exception {
 		BufferedReader reader = new BufferedReader(new FileReader(suite_file));
-		Set<String> parameters = new HashSet<String>(); 
+		Set<String> parameters = new HashSet<>();
 		String line; this.inputs.clear(); TestInput input;
 		while((line = reader.readLine()) != null) {
 			line = line.trim();
@@ -85,11 +85,11 @@ public class TestInputs {
 	 * @throws Exception
 	 */
 	public void append(File suite_file) throws Exception {
-		Set<String> parameters = new HashSet<String>();
+		Set<String> parameters = new HashSet<>();
 		for(TestInput input : this.inputs) {
 			parameters.add(input.get_parameter());
 		}
-		
+
 		BufferedReader reader = new BufferedReader(new FileReader(suite_file));
 		String line; TestInput input;
 		while((line = reader.readLine()) != null) {
@@ -107,11 +107,11 @@ public class TestInputs {
 	 * @throws Exception
 	 */
 	public void append(Iterable<File> suite_files) throws Exception {
-		Set<String> parameters = new HashSet<String>();
+		Set<String> parameters = new HashSet<>();
 		for(TestInput input : this.inputs) {
 			parameters.add(input.get_parameter());
 		}
-		
+
 		for(File suite_file : suite_files) {
 			BufferedReader reader = new BufferedReader(new FileReader(suite_file));
 			String line; TestInput input;
@@ -126,5 +126,5 @@ public class TestInputs {
 			reader.close();
 		}
 	}
-	
+
 }

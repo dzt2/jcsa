@@ -6,13 +6,13 @@ package com.jcsa.jcparse.lang.ctype;
  * long, unsigned long, long long, unsigned long long, float, double, long
  * double, float _Complex, double _Complex, long double _Complex, float
  * _Imaginary, double _Imaginary, long double _Imaginary</b>
- * 
+ *
  * @author yukimula
  */
 public interface CBasicType extends CType {
 	/**
 	 * tag to represent basic type type
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */
@@ -65,7 +65,7 @@ public interface CBasicType extends CType {
 
 	/**
 	 * get the tag for this basic type
-	 * 
+	 *
 	 * @return
 	 */
 	public CBasicTypeTag get_tag();

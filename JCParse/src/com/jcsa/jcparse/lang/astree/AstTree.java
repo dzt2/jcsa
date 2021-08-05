@@ -18,16 +18,16 @@ import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * The abstract syntax tree.
- * 
+ *
  * @author yukimula
  *
  */
 public class AstTree {
-	
+
 	private File source_file;
 	private CText source_code;
 	private List<AstNode> nodes;
-	
+
 	public AstTree(File source_file, CText source_code, AstTranslationUnit ast_root) throws Exception {
 		if(source_file == null || !source_file.exists())
 			throw new IllegalArgumentException("Undefined source_file as null");
@@ -45,17 +45,17 @@ public class AstTree {
 		if(ast_root == null)
 			throw new IllegalArgumentException("invalid ast_root");
 		else {
-			this.nodes = new ArrayList<AstNode>();
-			Queue<AstNode> queue = new LinkedList<AstNode>();
-			
+			this.nodes = new ArrayList<>();
+			Queue<AstNode> queue = new LinkedList<>();
+
 			queue.add(ast_root);
 			while(!queue.isEmpty()) {
 				AstNode node = queue.poll();
-				((AstNodeImpl) node).set_tree(this);;
-				
+				((AstNodeImpl) node).set_tree(this);
+
 				node.set_key(this.nodes.size());
 				this.nodes.add(node);
-				
+
 				for(int k = 0; k < node.number_of_children(); k++) {
 					AstNode child = node.get_child(k);
 					if(child != null) {
@@ -65,7 +65,7 @@ public class AstTree {
 			}
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the source code file used to generate the abstract syntax
@@ -99,7 +99,7 @@ public class AstTree {
 	 * @return the function definition of the node
 	 */
 	public AstFunctionDefinition function_of(AstNode node) {
-		while(node != null && 
+		while(node != null &&
 				!(node instanceof AstFunctionDefinition)) {
 			node = node.get_parent();
 		}
@@ -122,11 +122,11 @@ public class AstTree {
 			AstExternalUnit unit = root.get_unit(k);
 			if(unit instanceof AstFunctionDefinition) {
 				AstDeclarator declarator = ((AstFunctionDefinition) unit).get_declarator();
-				
+
 				while(declarator.get_production() != DeclaratorProduction.identifier) {
 					declarator = declarator.get_declarator();
 				}
-				
+
 				if(declarator.get_identifier().get_name().trim().equals(name.trim())) {
 					return (AstFunctionDefinition) unit;
 				}
@@ -134,7 +134,7 @@ public class AstTree {
 		}
 		return null;
 	}
-	
+
 	/* code generator */
 	/**
 	 * generate the (normalized code) of this code file based on its AST structure
@@ -150,10 +150,10 @@ public class AstTree {
 		else {
 			code = CodeGeneration.generate_code(this.get_ast_root());
 		}
-		
+
 		FileWriter writer = new FileWriter(cfile);
 		writer.write(code);
 		writer.close();
 	}
-	
+
 }

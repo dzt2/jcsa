@@ -21,7 +21,7 @@ package com.jcsa.jcparse.flwa.relation;
  * 		reference of latter in another statement.<br>
  * 	(2)	<code>use_define</code>: the source node is an expression while the target node is a reference, such
  * 		that the former and the latter refer to the left and right value in the same assignment statement.<br>
- * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the 
+ * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the
  * 		target node refers to the right-value of the assignment to initialize the parameter in the callee
  * 		function.<br>
  * 	(4)	<code>pass_ou</code>: the source node refers to the reference of returning assignment while target
@@ -49,7 +49,7 @@ package com.jcsa.jcparse.flwa.relation;
  *
  */
 public class CRelationEdge {
-	
+
 	/* attributes */
 	/** the type of the edge in relational graph **/
 	private CRelationEdgeType type;
@@ -57,10 +57,10 @@ public class CRelationEdge {
 	private CRelationNode source;
 	/** the target node to which this edge points from the source **/
 	private CRelationNode target;
-	
+
 	/* constructor */
 	/**
-	 * create an edge from the source node to the target node in relational graph 
+	 * create an edge from the source node to the target node in relational graph
 	 * with respect to the specified type
 	 * @param type
 	 * @param source
@@ -69,7 +69,7 @@ public class CRelationEdge {
 	protected CRelationEdge(CRelationEdgeType type, CRelationNode source, CRelationNode target) {
 		this.type = type; this.source = source; this.target = target;
 	}
-	
+
 	/* getters */
 	/**
 	 * get the type of the edge
@@ -86,5 +86,5 @@ public class CRelationEdge {
 	 * @return
 	 */
 	public CRelationNode get_target() { return target; }
-	
+
 }

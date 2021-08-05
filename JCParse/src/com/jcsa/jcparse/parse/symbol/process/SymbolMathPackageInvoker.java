@@ -72,23 +72,23 @@ public class SymbolMathPackageInvoker implements SymbolInvoker {
 			else {
 				result = null;
 			}
-			
+
 			if(result == null) {
 				function = SymbolFactory.identifier(function.get_data_type(), name);
-				ArrayList<Object> argument_list = new ArrayList<Object>();
+				ArrayList<Object> argument_list = new ArrayList<>();
 				for(int k = 0; k < arguments.number_of_arguments(); k++) {
 					argument_list.add(arguments.get_argument(k));
 				}
 				result = SymbolFactory.call_expression(function, argument_list);
 			}
-			
+
 			return result;
 		}
 		else {
 			return null;
 		}
 	}
-	
+
 	/* interpretation */
 	private SymbolExpression acos(SymbolArgumentList arguments) throws Exception {
 		SymbolExpression arg0 = arguments.get_argument(0);
@@ -126,7 +126,7 @@ public class SymbolMathPackageInvoker implements SymbolInvoker {
 		if(arg0 instanceof SymbolConstant) {
 			if(arg1 instanceof SymbolConstant) {
 				Double result = Math.atan2(
-						((SymbolConstant) arg0).get_double(), 
+						((SymbolConstant) arg0).get_double(),
 						((SymbolConstant) arg1).get_double());
 				return SymbolFactory.sym_constant(result);
 			}
@@ -268,5 +268,5 @@ public class SymbolMathPackageInvoker implements SymbolInvoker {
 			return null;
 		}
 	}
-	
+
 }

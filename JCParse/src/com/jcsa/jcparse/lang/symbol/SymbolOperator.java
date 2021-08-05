@@ -8,10 +8,10 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  *
  */
 public class SymbolOperator extends SymbolUnit {
-	
+
 	/** the operator used to define this node **/
 	private COperator operator;
-	
+
 	/**
 	 * {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, -, ~, !, &, *, =}
 	 * @param operator
@@ -44,23 +44,23 @@ public class SymbolOperator extends SymbolUnit {
 			case bit_not:
 			case logic_not:
 			case address_of:
-			case dereference:	
+			case dereference:
 			case assign:		this.operator = operator;	break;
 			default: throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
 	}
-	
+
 	/**
 	 * @return {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, -, ~, !, &, *, =}
 	 */
 	public COperator get_operator() { return this.operator; }
-	
+
 	@Override
 	protected SymbolNode construct() throws Exception {
 		return new SymbolOperator(this.operator);
 	}
-	
+
 	/**
 	 * @param operator
 	 * @return operator |-- {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, -, ~, !, &, *, =, <, <=, >, >=, ==, !=}
@@ -69,5 +69,5 @@ public class SymbolOperator extends SymbolUnit {
 	protected static SymbolOperator create(COperator operator) throws Exception {
 		return new SymbolOperator(operator);
 	}
-	
+
 }

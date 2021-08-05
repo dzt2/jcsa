@@ -16,12 +16,12 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionBody;
  * file, there is no execution flow graph to describe it but using a "skip_flow" from the
  * calling statement to the waiting statement directly, which means the transition skips
  * from thousands of statements and may not reach the final point (probabilistic).
- * 
+ *
  * @author yukimula
  *
  */
 public class CirExecutionFlowGraph {
-	
+
 	private CirFunction function;
 	private List<CirExecution> executions;
 	private Map<CirStatement, CirExecution> index;
@@ -36,9 +36,9 @@ public class CirExecutionFlowGraph {
 			throw new IllegalArgumentException("invalid function");
 		else {
 			this.function = function;
-			this.executions = new ArrayList<CirExecution>();
-			this.index = new HashMap<CirStatement, CirExecution>();
-			this.reach_set = new ArrayList<CirExecution>();
+			this.executions = new ArrayList<>();
+			this.index = new HashMap<>();
+			this.reach_set = new ArrayList<>();
 			this.init_entry_and_exit();
 		}
 	}
@@ -48,7 +48,7 @@ public class CirExecutionFlowGraph {
 		CirEndStatement end = (CirEndStatement) body.get_statement(body.number_of_statements() - 1);
 		this.new_execution(end); this.new_execution(beg);
 	}
-	
+
 	/* getters */
 	/**
 	 * get the function of the flow graph
@@ -107,7 +107,7 @@ public class CirExecutionFlowGraph {
 	 * @throws IndexOutOfBoundsException
 	 */
 	public CirExecution get_exit() throws IndexOutOfBoundsException { return this.get_execution(0); }
-	
+
 	/* setters */
 	/**
 	 * create the execution for the statement in the function's flow graph or

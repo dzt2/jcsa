@@ -13,16 +13,16 @@ import com.jcsa.jcparse.lang.ctype.CUnionType;
 
 /**
  * It generates the code that describes the type in C programming language format.
- * 
+ *
  * @author yukimula
  *
  */
 public class TypeCodeGenerator {
-	
+
 	/* attributes */
 	/** to preserve the string of code being generated. **/
 	private StringBuilder buffer;
-	
+
 	/* constructor & singleton */
 	/**
 	 * private constructor for singleton mode
@@ -32,7 +32,7 @@ public class TypeCodeGenerator {
 	}
 	/** the singleton of the type code generator **/
 	private static final TypeCodeGenerator generator = new TypeCodeGenerator();
-	
+
 	/* generation method */
 	/**
 	 * generate the code of data type in buffer.
@@ -67,8 +67,8 @@ public class TypeCodeGenerator {
 			case c_double_imaginary:	buffer.append("double _Imaginary");		break;
 			case c_ldouble_imaginary:	buffer.append("long double _Imaginary");break;
 			case gnu_va_list:			buffer.append("va_list");				break;
-			default: 
-				throw new IllegalArgumentException("Unsupport basic-type: " + 
+			default:
+				throw new IllegalArgumentException("Unsupport basic-type: " +
 											((CBasicType) data_type).get_tag());
 			}
 		}
@@ -76,7 +76,7 @@ public class TypeCodeGenerator {
 			buffer.append("(");
 			this.gen(((CArrayType) data_type).get_element_type());
 			buffer.append(")");
-			
+
 			int length = ((CArrayType) data_type).length();
 			if(length > 0) {
 				buffer.append("[" + length + "]");
@@ -96,7 +96,7 @@ public class TypeCodeGenerator {
 			this.gen(((CFunctionType) data_type).get_return_type());
 			buffer.append(")");
 			buffer.append(" ");
-			
+
 			CParameterTypeList plist = ((CFunctionType) data_type).get_parameter_types();
 			buffer.append("(");
 			for(int k = 0; k < plist.size(); k++) {
@@ -135,7 +135,7 @@ public class TypeCodeGenerator {
 			throw new IllegalArgumentException("Unsupport: " + data_type);
 		}
 	}
-	
+
 	/* generation method for public usage */
 	/**
 	 * @param data_type
@@ -147,5 +147,5 @@ public class TypeCodeGenerator {
 		generator.gen(data_type);
 		return generator.buffer.toString();
 	}
-	
+
 }

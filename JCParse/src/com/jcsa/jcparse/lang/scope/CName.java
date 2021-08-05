@@ -13,14 +13,14 @@ import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
  * 6. field (in struct|union definition) <br>
  * <br>
  * A name is designated within a specific <i>scope</i> <br>
- * 
+ *
  * @author yukimula
  */
 public interface CName {
 
 	/**
 	 * linkage of each name
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */
@@ -30,42 +30,42 @@ public interface CName {
 
 	/**
 	 * get the scope where the name is defined
-	 * 
+	 *
 	 * @return
 	 */
 	public CScope get_scope();
 
 	/**
 	 * the literal of this name
-	 * 
+	 *
 	 * @return
 	 */
 	public String get_name();
 
 	/**
 	 * node that defines this name (not its usage)
-	 * 
+	 *
 	 * @return
 	 */
 	public AstIdentifier get_source();
 
 	/**
 	 * set the source to this name refers
-	 * 
+	 *
 	 * @param node
 	 */
 	public void set_source(AstIdentifier node);
 
 	/**
 	 * get the linkage of this name
-	 * 
+	 *
 	 * @return
 	 */
 	public CNameLinkage get_linkage();
 
 	/**
 	 * set the linkage for this name
-	 * 
+	 *
 	 * @param linkage
 	 * @return
 	 * @throws Exception

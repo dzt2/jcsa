@@ -41,7 +41,7 @@ import com.jcsa.jcparse.lang.text.CLocation;
  * <br>
  * This evaluator is also responsible for the determination of types for each
  * sub-expression among the const expression node.<br>
- * 
+ *
  * @author yukimula
  *
  */
@@ -67,15 +67,15 @@ public class CConstantEvaluator {
 			throw new IllegalArgumentException("Invalid template: null");
 
 		this.template = template;
-		this.stack = new Stack<AstExpression>();
-		this.queue = new LinkedList<AstExpression>();
-		this.solutions = new HashMap<AstExpression, CConstant>();
+		this.stack = new Stack<>();
+		this.queue = new LinkedList<>();
+		this.solutions = new HashMap<>();
 	}
 
 	// solve the const-expression
 	/**
 	 * evaluate the value of const-expression
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -90,7 +90,7 @@ public class CConstantEvaluator {
 	// solve methods
 	/**
 	 * update the stack in which expression will be solved
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -120,7 +120,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * evaluate the value of expression (when its children have been solved)
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -163,7 +163,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * compute the constant of expression
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -193,7 +193,7 @@ public class CConstantEvaluator {
 	// basic expression
 	/**
 	 * enumerator as constant
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -212,7 +212,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * get constant from node
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -570,7 +570,7 @@ public class CConstantEvaluator {
 	// value getter
 	/**
 	 * get the value as boolean
-	 * 
+	 *
 	 * @param x
 	 * @return
 	 * @throws Exception
@@ -600,7 +600,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * get the value of constant as integer
-	 * 
+	 *
 	 * @param x
 	 * @return
 	 * @throws Exception
@@ -627,7 +627,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * get the value of constant as real
-	 * 
+	 *
 	 * @param x
 	 * @return
 	 * @throws Exception
@@ -661,7 +661,7 @@ public class CConstantEvaluator {
 
 	/**
 	 * get the solution from map based on its node
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 * @throws Exception
@@ -678,7 +678,7 @@ public class CConstantEvaluator {
 	// code-getters
 	/**
 	 * get the line of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception
@@ -690,7 +690,7 @@ public class CConstantEvaluator {
 
 	/***
 	 * get the code of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception

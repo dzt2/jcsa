@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.astree.AstNode;
  * 					if_stmt | switch_stmt |
  * 					while_stmt | do_stmt | for_stmt |
  * </code>
- * 
+ *
  * @author yukimula
  */
 public interface AstStatement extends AstNode {

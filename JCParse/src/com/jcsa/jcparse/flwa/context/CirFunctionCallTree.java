@@ -10,19 +10,19 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 
 /**
  * The tree describes the function calling expansion based on one unique root-function node.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirFunctionCallTree {
-	
+
 	/* parameters */
 	/** the value set to maximal_depth in building algorithm to specify that
 	 *  there is no constrain on the length of any paths in the calling tree **/
 	public static final int UNLIMITED_DEPTH = -1;
 	/** the maximal number of nodes allowed in the function calling tree **/
 	private static final int MAXIMAL_TREE_SIZE = Short.MAX_VALUE;
-	
+
 	/* definitions */
 	/** the root node in this tree **/
 	private CirFunctionCallTreeNode root;
@@ -35,9 +35,9 @@ public class CirFunctionCallTree {
 	 */
 	protected CirFunctionCallTree(CirFunction root_function) throws Exception {
 		this.root = new CirFunctionCallTreeNode(this, root_function);
-		this.nodes = new ArrayList<CirFunctionCallTreeNode>();
+		this.nodes = new ArrayList<>();
 	}
-	
+
 	/* getters */
 	/**
 	 * get the number of nodes created in this tree
@@ -55,14 +55,14 @@ public class CirFunctionCallTree {
 	 * @return
 	 */
 	public Iterable<CirFunctionCallTreeNode> get_nodes() { return nodes; }
-	
+
 	/* setters */
 	/**
 	 * update the nodes in the tree for BFS algorithm
 	 */
 	private void update_nodes() {
-		Queue<CirFunctionCallTreeNode> queue = 
-				new LinkedList<CirFunctionCallTreeNode>();
+		Queue<CirFunctionCallTreeNode> queue =
+				new LinkedList<>();
 		queue.add(this.root); this.nodes.clear();
 		while(!queue.isEmpty()) {
 			CirFunctionCallTreeNode node = queue.poll();
@@ -72,7 +72,7 @@ public class CirFunctionCallTree {
 			}
 		}
 	}
-	
+
 	/* creator methods */
 	/**
 	 * create a child under the given parent with respect to the given calling relation
@@ -87,7 +87,7 @@ public class CirFunctionCallTree {
 			CirFunctionCall call_context, CirFunctionCallPathType type, int maximal_depth) throws Exception {
 		/* A. declarations and initialization */
 		int depth = 0; CirFunctionCallTreeNode save_parent = parent;
-		
+
 		/* B. create the child if it does not contain duplicated nodes in path */
 		if(type == CirFunctionCallPathType.unique_path) {
 			/* validate the constraint on the new path from parent to child */
@@ -102,10 +102,10 @@ public class CirFunctionCallTree {
 					parent = parent.get_parent(); depth++;
 				}
 			}
-			
+
 			return save_parent.new_child(call_context);	// it's valid path
 		}
-		
+
 		/* C. create the child if it does not contain duplicated edges in path */
 		else if(type == CirFunctionCallPathType.simple_path) {
 			/* validate the constraint on the new path from parent to child */
@@ -120,10 +120,10 @@ public class CirFunctionCallTree {
 					parent = parent.get_parent(); depth++;
 				}
 			}
-			
+
 			return save_parent.new_child(call_context);	// it's valid path
 		}
-		
+
 		/* D. create the child if its lenght is not going to exceed the maximal depth */
 		else {
 			/* validate the constraint on the new path from parent to child */
@@ -135,10 +135,10 @@ public class CirFunctionCallTree {
 					parent = parent.get_parent(); depth++;
 				}
 			}
-			
+
 			return save_parent.new_child(call_context);	// it's valid path
 		}
-		
+
 	}
 	/**
 	 * create the children of the parent if the path is valid, and throw out-of-memory
@@ -153,15 +153,15 @@ public class CirFunctionCallTree {
 	 */
 	private static int create_children(Queue<CirFunctionCallTreeNode> queue, int counter,
 			CirFunctionCallPathType type, int maximal_depth) throws Exception {
-		CirFunctionCallTreeNode parent = queue.poll(); 
+		CirFunctionCallTreeNode parent = queue.poll();
 		Iterable<CirFunctionCall> call_contexts = parent.get_function().get_ou_calls();
-		
+
 		for(CirFunctionCall call_context : call_contexts) {
 			CirFunctionCallTreeNode child = create_child(
 					parent, call_context, type, maximal_depth);
 			if(child != null) { counter++; queue.add(child); }
 		}
-		
+
 		return counter;
 	}
 	/**
@@ -172,19 +172,19 @@ public class CirFunctionCallTree {
 	 * @return the number of created nodes within the tree under being built
 	 * @throws Exception
 	 */
-	private static int create_tree(CirFunctionCallTree tree, 
+	private static int create_tree(CirFunctionCallTree tree,
 			CirFunctionCallPathType type, int maximal_depth) throws Exception {
-		Queue<CirFunctionCallTreeNode> queue = 
-				new LinkedList<CirFunctionCallTreeNode>();
+		Queue<CirFunctionCallTreeNode> queue =
+				new LinkedList<>();
 		int counter = 0; queue.add(tree.get_root());
-		
+
 		while(!queue.isEmpty()) {
 			counter = create_children(queue, counter, type, maximal_depth);
 			if(counter > MAXIMAL_TREE_SIZE) {
 				throw new Exception(new OutOfMemoryError(counter + " is out of range"));
 			}
 		}
-		
+
 		return counter;
 	}
 	/**
@@ -195,7 +195,7 @@ public class CirFunctionCallTree {
 	 * @return
 	 * @throws Exception
 	 */
-	protected static CirFunctionCallTree tree(CirFunction root_function, 
+	protected static CirFunctionCallTree tree(CirFunction root_function,
 			CirFunctionCallPathType type, int maximal_depth) throws Exception {
 		if(root_function == null)
 			throw new IllegalArgumentException("invalid root_function");
@@ -206,5 +206,5 @@ public class CirFunctionCallTree {
 			create_tree(tree, type, maximal_depth); tree.update_nodes(); return tree;
 		}
 	}
-	
+
 }

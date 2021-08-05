@@ -13,27 +13,26 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 /**
  * The definition-usage graph describes the define-usage and usage-define relationships between
  * the variables within the program under analysis.
- * 
+ *
  * @author yukimula
  *
  */
 public class CDefineUseGraph {
-	
+
 	/* constructor */
 	private Map<CirInstanceNode, Collection<CDefineUseNode>> instance_nodes;
 	private CDefineUseGraph() {
-		this.instance_nodes = new HashMap<
-				CirInstanceNode, Collection<CDefineUseNode>>();
+		this.instance_nodes = new HashMap<>();
 	}
-	
+
 	/* getters */
 	/**
 	 * get the number of nodes in the graph
 	 * @return
 	 */
-	public int size() { 
+	public int size() {
 		int size = 0;
-		for(Collection<CDefineUseNode> instance_nodes : instance_nodes.values()) 
+		for(Collection<CDefineUseNode> instance_nodes : instance_nodes.values())
 			size = size + instance_nodes.size();
 		return  size;
 	}
@@ -41,8 +40,8 @@ public class CDefineUseGraph {
 	 * get the set of nodes created in this graph
 	 * @return
 	 */
-	public Iterable<CDefineUseNode> get_nodes() { 
-		return new CDefineUseNodeIterable(this); 
+	public Iterable<CDefineUseNode> get_nodes() {
+		return new CDefineUseNodeIterable(this);
 	}
 	/**
 	 * whether there are nodes within the instance of statement
@@ -66,7 +65,7 @@ public class CDefineUseGraph {
 	 * whether there is a node with respect to the instance where the expression is used or defined
 	 * @param instance
 	 * @param expression
-	 * @return 
+	 * @return
 	 */
 	public boolean has_node(CirInstanceNode instance, CirExpression expression) {
 		if(this.instance_nodes.containsKey(instance)) {
@@ -93,7 +92,7 @@ public class CDefineUseGraph {
 		}
 		else throw new IllegalArgumentException("Undefined instance");
 	}
-	
+
 	/* setter */
 	/**
 	 * create a new node (define or usage) in the graph with respect to the expression
@@ -104,14 +103,14 @@ public class CDefineUseGraph {
 	 * @return
 	 * @throws Exception
 	 */
-	protected CDefineUseNode new_node(boolean define, CirInstanceNode 
+	protected CDefineUseNode new_node(boolean define, CirInstanceNode
 			instance, CirExpression expression) throws Exception {
 		if(expression == null)
 			throw new IllegalArgumentException("Invalid expression: null");
 		else if(instance == null)
 			throw new IllegalArgumentException("Invalid statement: null");
 		else {
-			if(!this.instance_nodes.containsKey(instance)) 
+			if(!this.instance_nodes.containsKey(instance))
 				this.instance_nodes.put(instance, new LinkedList<CDefineUseNode>());
 			Collection<CDefineUseNode> nodes = this.instance_nodes.get(instance);
 			for(CDefineUseNode node : nodes) {
@@ -121,14 +120,14 @@ public class CDefineUseGraph {
 			nodes.add(node); return node;
 		}
 	}
-	
+
 	/* iterator class */
 	protected static class CDefineUseNodeIterator implements Iterator<CDefineUseNode> {
-		
+
 		private Iterator<Collection<CDefineUseNode>> iter1;
 		private Iterator<CDefineUseNode> iter2;
 		private CDefineUseNode node;
-		
+
 		protected CDefineUseNodeIterator(CDefineUseGraph graph) {
 			iter1 = graph.instance_nodes.values().iterator();
 			if(iter1.hasNext()) {
@@ -149,7 +148,7 @@ public class CDefineUseGraph {
 						iter2 = iter1.next().iterator();
 					else iter2 = null;
 				} while(iter2 != null);
-				
+
 				node = null;
 			}
 		}
@@ -169,7 +168,7 @@ public class CDefineUseGraph {
 			return new CDefineUseNodeIterator(this.graph);
 		}
 	}
-	
+
 	/* factory methods */
 	/**
 	 * create the definition-usage graph over the entire program flow graph
@@ -182,5 +181,5 @@ public class CDefineUseGraph {
 		CDefineUseBuilder.builder.build(program_graph, output);
 		return output;
 	}
-	
+
 }

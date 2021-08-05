@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.decl.specifier.AstDeclarationSpecifiers;
 
 /**
  * <code>param_decl --> decl_specifiers (declarator|abs_declarator)?</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstParameterDeclaration extends AstNode {

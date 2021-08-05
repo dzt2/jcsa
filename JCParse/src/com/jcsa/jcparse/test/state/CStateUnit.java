@@ -20,12 +20,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 /**
  * Each unit in program state space refers to an expression of cir-code,
  * of which value and type are recorded.
- * 
+ *
  * @author yukimula
  *
  */
 public class CStateUnit {
-	
+
 	/* definitions */
 	/** the node in which the unit is created **/
 	private CStateNode node;
@@ -35,7 +35,7 @@ public class CStateUnit {
 	private CirExpression expression;
 	/** the value hold by this expression **/
 	private Object value;
-	
+
 	/* constructor */
 	/**
 	 * @param expression
@@ -50,7 +50,7 @@ public class CStateUnit {
 		else if(expression instanceof CirStringLiteral) {
 			return CValueType.clist;
 		}
-		
+
 		/* 2. context-based classifier */
 		CirStatement statement = expression.statement_of();
 		if(statement instanceof CirIfStatement) {
@@ -63,14 +63,14 @@ public class CStateUnit {
 				return CValueType.cbool;
 			}
 		}
-		
+
 		/* 3. data type based classifier */
 		CType data_type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		if(data_type instanceof CBasicType) {
 			switch(((CBasicType) data_type).get_tag()) {
 			case c_void:	return CValueType.cvoid;
 			case c_bool:	return CValueType.cbool;
-			case c_char:	
+			case c_char:
 			case c_uchar:	return CValueType.cchar;
 			case c_short:
 			case c_int:
@@ -122,7 +122,7 @@ public class CStateUnit {
 			this.value = null;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the node refers to a statement being executed during testing
@@ -158,7 +158,7 @@ public class CStateUnit {
 	 * @param value
 	 */
 	protected void set_value(Object value) { this.value = value; }
-	
+
 	/* value translators */
 	/**
 	 * @return value translated as bool
@@ -181,7 +181,7 @@ public class CStateUnit {
 			return ((Float) value).floatValue() != 0.0f;
 		else if(value instanceof Double)
 			return ((Double) value).doubleValue() != 0.0;
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -194,7 +194,7 @@ public class CStateUnit {
 		else if(value instanceof Boolean)
 			return ((Boolean) value).booleanValue() ? '\1' : '\0';
 		else if(value instanceof Character)
-			return (char) (((Character) value).charValue());
+			return (((Character) value).charValue());
 		else if(value instanceof Short)
 			return (char) ((Short) value).shortValue();
 		else if(value instanceof Integer)
@@ -205,7 +205,7 @@ public class CStateUnit {
 			return (char) ((Float) value).floatValue();
 		else if(value instanceof Double)
 			return (char) ((Double) value).doubleValue();
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -220,7 +220,7 @@ public class CStateUnit {
 		else if(value instanceof Character)
 			return (short) (((Character) value).charValue());
 		else if(value instanceof Short)
-			return (short) ((Short) value).shortValue();
+			return ((Short) value).shortValue();
 		else if(value instanceof Integer)
 			return (short) ((Integer) value).intValue();
 		else if(value instanceof Long)
@@ -229,7 +229,7 @@ public class CStateUnit {
 			return (short) ((Float) value).floatValue();
 		else if(value instanceof Double)
 			return (short) ((Double) value).doubleValue();
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -240,20 +240,20 @@ public class CStateUnit {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
 		else if(value instanceof Boolean)
-			return (int) (((Boolean) value).booleanValue() ? 1 : 0);
+			return ((Boolean) value).booleanValue() ? 1 : 0;
 		else if(value instanceof Character)
-			return (int) (((Character) value).charValue());
+			return (((Character) value).charValue());
 		else if(value instanceof Short)
-			return (int) ((Short) value).shortValue();
+			return ((Short) value).shortValue();
 		else if(value instanceof Integer)
-			return (int) ((Integer) value).intValue();
+			return ((Integer) value).intValue();
 		else if(value instanceof Long)
 			return (int) ((Long) value).longValue();
 		else if(value instanceof Float)
 			return (int) ((Float) value).floatValue();
 		else if(value instanceof Double)
 			return (int) ((Double) value).doubleValue();
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -264,20 +264,20 @@ public class CStateUnit {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
 		else if(value instanceof Boolean)
-			return (long) (((Boolean) value).booleanValue() ? 1 : 0);
+			return ((Boolean) value).booleanValue() ? 1 : 0;
 		else if(value instanceof Character)
-			return (long) (((Character) value).charValue());
+			return (((Character) value).charValue());
 		else if(value instanceof Short)
-			return (long) ((Short) value).shortValue();
+			return ((Short) value).shortValue();
 		else if(value instanceof Integer)
-			return (long) ((Integer) value).intValue();
+			return ((Integer) value).intValue();
 		else if(value instanceof Long)
-			return (long) ((Long) value).longValue();
+			return ((Long) value).longValue();
 		else if(value instanceof Float)
 			return (long) ((Float) value).floatValue();
 		else if(value instanceof Double)
 			return (long) ((Double) value).doubleValue();
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -288,20 +288,20 @@ public class CStateUnit {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
 		else if(value instanceof Boolean)
-			return (float) (((Boolean) value).booleanValue() ? 1 : 0);
+			return ((Boolean) value).booleanValue() ? 1 : 0;
 		else if(value instanceof Character)
-			return (float) (((Character) value).charValue());
+			return (((Character) value).charValue());
 		else if(value instanceof Short)
-			return (float) ((Short) value).shortValue();
+			return ((Short) value).shortValue();
 		else if(value instanceof Integer)
-			return (float) ((Integer) value).intValue();
+			return ((Integer) value).intValue();
 		else if(value instanceof Long)
-			return (float) ((Long) value).longValue();
+			return ((Long) value).longValue();
 		else if(value instanceof Float)
-			return (float) ((Float) value).floatValue();
+			return ((Float) value).floatValue();
 		else if(value instanceof Double)
 			return (float) ((Double) value).doubleValue();
-		else 
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
 	/**
@@ -312,23 +312,23 @@ public class CStateUnit {
 		if(value == null)
 			throw new IllegalArgumentException("No value established");
 		else if(value instanceof Boolean)
-			return (double) (((Boolean) value).booleanValue() ? 1 : 0);
+			return ((Boolean) value).booleanValue() ? 1 : 0;
 		else if(value instanceof Character)
-			return (double) (((Character) value).charValue());
+			return (((Character) value).charValue());
 		else if(value instanceof Short)
-			return (double) ((Short) value).shortValue();
+			return ((Short) value).shortValue();
 		else if(value instanceof Integer)
-			return (double) ((Integer) value).intValue();
+			return ((Integer) value).intValue();
 		else if(value instanceof Long)
-			return (double) ((Long) value).longValue();
+			return ((Long) value).longValue();
 		else if(value instanceof Float)
-			return (double) ((Float) value).floatValue();
+			return ((Float) value).floatValue();
 		else if(value instanceof Double)
-			return (double) ((Double) value).doubleValue();
-		else 
+			return ((Double) value).doubleValue();
+		else
 			throw new IllegalArgumentException("Unsupport: " + value);
 	}
-	
+
 	@Override
 	public String toString() {
 		try {
@@ -339,5 +339,5 @@ public class CStateUnit {
 			return null;
 		}
 	}
-	
+
 }

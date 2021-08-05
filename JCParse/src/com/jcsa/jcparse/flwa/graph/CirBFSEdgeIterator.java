@@ -7,7 +7,7 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * Using brand-first traversal algorithm to traverse the edges in the graph , in which 
+ * Using brand-first traversal algorithm to traverse the edges in the graph , in which
  * each edge can be visited once.<br>
  * (1) The iterator accesses all the edges in graph dynamically rather than preserving
  * 	   a sequence of edges in the graph.<br>
@@ -18,7 +18,7 @@ import java.util.Set;
  *
  */
 class CirBFSEdgeIterator implements Iterator<CirInstanceEdge> {
-	
+
 	/* attributes */
 	/** the direction in which the edges are traversed **/
 	private boolean direction;
@@ -26,7 +26,7 @@ class CirBFSEdgeIterator implements Iterator<CirInstanceEdge> {
 	private Queue<CirInstanceEdge> queue;
 	/** the set of edges that have been visited before **/
 	private Set<CirInstanceEdge> visited;
-	
+
 	/* constructor */
 	/**
 	 * create a brand-first traversal for edges starting from specified edge
@@ -77,15 +77,15 @@ class CirBFSEdgeIterator implements Iterator<CirInstanceEdge> {
 			}
 		}
 	}
-	
+
 	/* basic methods */
 	/**
 	 * initialize the buffers for brand-first traversal
 	 */
 	private void init_buffers(boolean direction) {
 		this.direction = direction;
-		this.queue = new LinkedList<CirInstanceEdge>();
-		this.visited = new HashSet<CirInstanceEdge>();
+		this.queue = new LinkedList<>();
+		this.visited = new HashSet<>();
 	}
 	/**
 	 * add the edge into the queue or not if it has been visited
@@ -100,7 +100,7 @@ class CirBFSEdgeIterator implements Iterator<CirInstanceEdge> {
 		}
 		else return false;
 	}
-	
+
 	/* implementation methods */
 	@Override
 	public boolean hasNext() { return !this.queue.isEmpty(); }

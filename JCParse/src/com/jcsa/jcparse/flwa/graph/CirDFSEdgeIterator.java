@@ -17,11 +17,11 @@ import java.util.Stack;
  *
  */
 class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
-	
+
 	/* element class */
 	/**
 	 * The element used in depth-first traversal.
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */
@@ -35,7 +35,7 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 			else this.edges = edge.source.get_in_edges().iterator();
 		}
 	}
-	
+
 	/* attributes */
 	/** the direction of traversal can be forward (true) or backward (false) **/
 	private boolean direction;
@@ -43,7 +43,7 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 	private Stack<CirDFSEdgeElement> stack;
 	/** the set of the edges that have been visited before in traversal **/
 	private Set<CirInstanceEdge> visited;
-	
+
 	/* basic methods */
 	/**
 	 * create the buffers for depth-first traversal
@@ -51,8 +51,8 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 	 */
 	private void init_buffers(boolean direction) {
 		this.direction = direction;
-		this.stack = new Stack<CirDFSEdgeElement>();
-		this.visited = new HashSet<CirInstanceEdge>();
+		this.stack = new Stack<>();
+		this.visited = new HashSet<>();
 	}
 	/**
 	 * push the node into the stack and update visited set if it has not been visited before.
@@ -66,7 +66,7 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 			this.visited.add(edge); return true;
 		}
 	}
-	
+
 	/* constructors */
 	/**
 	 * Depth-first traversal starting from the edge specified
@@ -77,7 +77,7 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 		this.init_buffers(direction);
 		this.push_stack(edge);
 	}
-	
+
 	@Override
 	public boolean hasNext() { return !this.stack.isEmpty(); }
 	@Override
@@ -92,13 +92,13 @@ class CirDFSEdgeIterator implements Iterator<CirInstanceEdge> {
 		while(!this.stack.isEmpty()) {
 			// (1) get the current top in the stack
 			CirDFSEdgeElement element = this.stack.peek();
-			
+
 			// (2) try to find the next edge that can be visited
 			while(element.edges.hasNext()) {
 				CirInstanceEdge edge = element.edges.next();
 				if(this.push_stack(edge)) return;
 			}
-			
+
 			// (3) if no more node non-visited from this one, pop
 			this.stack.pop();
 		}

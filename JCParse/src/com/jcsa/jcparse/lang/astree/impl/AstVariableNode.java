@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.text.CLocation;
 
 /**
  * Node of which children size is undecidable
- * 
+ *
  * @author yukimula
  *
  */
@@ -18,7 +18,7 @@ public abstract class AstVariableNode extends AstNodeImpl {
 
 	protected AstVariableNode() throws Exception {
 		super();
-		this.children = new ArrayList<AstNode>();
+		this.children = new ArrayList<>();
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public abstract class AstVariableNode extends AstNodeImpl {
 
 	/**
 	 * append the child at the tail of this node's children
-	 * 
+	 *
 	 * @param child
 	 * @throws Exception
 	 *             : child is null, or child.parent is established
@@ -56,7 +56,7 @@ public abstract class AstVariableNode extends AstNodeImpl {
 	 * Update the location at the following cases:<br>
 	 * 1. When first child is added, construct new location;<br>
 	 * 2. When new child is appended, update location. <br>
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	private void update_location() throws Exception {

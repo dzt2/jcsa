@@ -35,6 +35,7 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
+import com.jcsa.jcparse.lang.ctype.CBasicType.CBasicTypeTag;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CEnumerator;
 import com.jcsa.jcparse.lang.ctype.CField;
@@ -46,7 +47,6 @@ import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
-import com.jcsa.jcparse.lang.ctype.CBasicType.CBasicTypeTag;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 import com.jcsa.jcparse.lang.lexical.CConstant;
@@ -70,7 +70,7 @@ import com.jcsa.jcparse.lang.text.CLocation;
  * 01. { E --> id_expr } :: { T(E) = type_of(identifier, scope) }<br>
  * 02. { E --> constant } :: { T(E) = type_of(constant) }<br>
  * 03. { E --> literal } :: { T(E) = array(char, strlen(literal))}<br>
- * 
+ *
  * 04. { E --> E1 (+,-) E2 } :: { T(E) = maximum_precision(T(E1), T(E2)) } <= {is_number(T(E1)) && is_number(T(E2))} <br>
  * --. { E --> E1 (+,-) E2 } :: { T(E) = T(E1) } <= {is_address(T(E1)) && is_number(T(E2))} <br>
  * 05. { E --> E1 (+=, -=) E2 } :: { T(E) = T(E1) } <= { {is_number(E1) && is_number(E2)} || {is_pointer(E1) && is_integer(E2)} }<br>
@@ -78,29 +78,29 @@ import com.jcsa.jcparse.lang.text.CLocation;
  * 07. { E --> E1 (*=, /=) E2 } :: { T(E) = T(E1) } <= {is_number(T(E1)) && is_number(T(E2))}<br>
  * 08. { E --> E1 % E2 } :: { T(E) = maximum_precision(T(E1), T(E2))} <= {is_integer(T(E1)) && is_integer(T(E2))}<br>
  * 09. { E --> E1 %= E2 } :: { T(E) = T(E1) } <= {is_integer(T(E1)) && is_integer(T(E2))}<br>
- * 
+ *
  * 10. { E --> -E1 } :: { T(E) = maximum_precision(int, T(E1)) } <= {is_number(T(E1))}<br>
  * 11. { E --> E1 (&, |) E2 } :: { T(E) = maximum_precision(T(E1), T(E2)) } <= {is_integer(T(E1)) && is_integer(T(E2))}<br>
  * 12. { E --> ~ E1} :: { T(E) = maximum_precision(int, T(E1)) } <= {is_integer(T(E1))} <br>
- * 
+ *
  * 13. { E --> (--,++)E1 | E1(++,--)} :: { T(E) = T(E1) } <= {is_number(T(E1)) || is_pointer(T(E2))}<br>
- * 
+ *
  * 14. { E --> E1 (&&,||) E2 } :: { T(E) = Boolean } <== {is_number_or_pointer(T(E1)) && is_number_or_pointer(T(E2))}<br>
  * 15. { E --> !E } :: { T(E) = Boolean } <== {is_number_or_pointer(T(E1))}<br>
- * 
+ *
  * 16. { E --> E1 {->} Fd } :: { T(E), T(Fd) = type_of( field_of(T(*E1), Fd.name)) } <= { has_field(T(*E1), Fd.name) }<br>
- * 17. { E --> E1 (.) Fd } :: { T(E), T(Fd) = type_of( field_of(T(*E1), Fd.name)) } <= { has_field(T(E1), Fd.name) }<br> 
- * 
+ * 17. { E --> E1 (.) Fd } :: { T(E), T(Fd) = type_of( field_of(T(*E1), Fd.name)) } <= { has_field(T(E1), Fd.name) }<br>
+ *
  * 18. { E --> E1 (>, >=, <=, <) E2 } :: { T(E) = Boolean } <= { {is_number(T(E1)) && is_number(T(E2))} || {is_pointer(T(E1) && is_pointer(T(E2)))} }<br>
  * 19. { E --> E1 (==, !=) E2 } :: { T(E) = Boolean } <= { is_number_or_pointer(T(E1)) && is_number_or_pointer(T(E2)) }<br>
- * 
+ *
  * 20. { E --> E1 (>>, <<) E2 } :: { T(E) = T(E1) } <= { is_integer(T(E1)) && is_integer(T(E2)) }<br>
  * 21. { E --> E1 (>>=, <<=) E2 } :: { T(E) = T(E1) } <= { is_integer(T(E1)) && is_integer(T(E2)) }<br>
- * 
+ *
  * 22. { E --> &E1 } :: { T(E) = pointer(T(E1)) }<br>
  * 23. { E --> *E1 } :: { T(E) = referOf(T(E1)) } <= { is_address(T(E1)) }<br>
  * 24. { E --> E1 [E2] } :: { T(E) = referOf(T(E1)) } <= { is_address(T(E1)) && is_integer(T(E2)) }<br>
- * 
+ *
  * 25. { E --> (Ty) E1 } :: { T(E) = type_of(Ty) } <= {is_transable(T(E1), type_of(Ty)) }<br>
  * 26. { E --> E1, E2, ..., En } :: { T(E) = T(En) } <br>
  * 27. { E --> E1 = E2 } :: { T(E) = T(E1) } <= {is_assignable(T(E2), T(E1)) }<br>
@@ -108,12 +108,12 @@ import com.jcsa.jcparse.lang.text.CLocation;
  * --. { E --> E1 ? E2 : E3 } :: { T(E) = maximum(T(E2), T(E3)) } <= {is_number_or_pointer(T(E1)) && is_number(T(E1)) && is_number(T(E2)) }<br>
  * 29. { E --> sizeof Ty | E1} :: { T(E) = integer } <= {is_defined(T(E1))}<br>
  * 30. { E --> E1 ( A1, A2, ..., An ) } :: { T(E) = return_of(T(E1)) } <= { {is_function(T(E1)) || is_function_pointer(T(E1))} && {is_transable(T(Ak), type_of(parameter_of(T(E1), k)))} }<br>
- * 
+ *
  * 31. { E --> ( E1 ) | E1 } :: { T(E) = T(E1) }
  * </code> <br>
  * =================== type inference rules ==================<br>
  * <br>
- * 
+ *
  * @author yukimula
  *
  */
@@ -133,7 +133,7 @@ public class CExpressionBuilder {
 	// interface
 	/**
 	 * build up the type within expression node
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -229,7 +229,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	( E --> identifier ) :: { type_of( instance_of(scope, identifier.name) )}
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -268,7 +268,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	( E --> constant ) :: { T(E) = type_of(constant) }
 	 * </code>
-	 * 
+	 *
 	 * @param constant
 	 * @return
 	 * @throws Exception
@@ -281,9 +281,9 @@ public class CExpressionBuilder {
 
 	/**
 	 * <code>
-	 * 	( E --> literal ) :: { T(E) = array(const char, literal.length) } 
+	 * 	( E --> literal ) :: { T(E) = array(const char, literal.length) }
 	 * </code>
-	 * 
+	 *
 	 * @param literal
 	 * @return
 	 * @throws Exception
@@ -303,7 +303,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> E1 % E2 } :: { T(E) = maximum(VT(E1), VT(E2)) } <= { is_integer(VT(E1)) && is_integer(VT(E2)) }<br>
 	 * 	{ E --> E1 (+,-) E2 } :: { T(E) = VT(E1) } <= { is_address(VT(E1)) && is_integer(VT(E2)) } <br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -340,7 +340,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> E1 + E2 } :: { T(E) = VT(E1) } <= { is_address(VT(E1)) && is_integer(VT(E2)) }<br>
 	 * 	{ E --> E1 + E2 } :: { T(E) = VT(E2) } <= { is_address(VT(E2)) && is_integer(VT(E1)) }<br>
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -375,7 +375,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> E1 - E2 } :: { T(E) = VT(E1) } <= { is_address(VT(E1)) && is_integer(VT(E2)) }<br>
 	 * 	{ E --> E1 - E2 } :: { T(E) = int } <= { is_address(VT(E1)) && is_address(VT(E2)) }<br>
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -408,7 +408,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (*,/) E2 } :: { T(E) = maximum(VT(E1), VT(E2)) } <= { is_number(VT(E1)) && is_number(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -432,7 +432,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 % E2 } :: { T(E) = maximum(VT(E1), VT(E2)) } <= { is_integer(VT(E1)) && is_integer(VT(E2)) }<br>
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -459,7 +459,7 @@ public class CExpressionBuilder {
 	 * { E --> E1 (*=,/=) E2 } :: { T(E) = T(E1) } <= { {is_number(VT(E1)) && is_number(VT(E2))} && {is_assignable(T(E1))} }<br>
 	 * { E --> E1 %= E2 } :: { T(E) = T(E1) } <= { {is_integer(VT(E1)) && is_integer(VT(E2))} && {is_assignable(T(E1))} }<br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -492,7 +492,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (+=,-=) E2 } :: { T(E) = T(E1) } <= { { {is_number(VT(E1)) && is_number(VT(E2)) } || { is_address(VT(E1)) && is_integer(VT(E2)) }} && {is_assignable(T(E1))} }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -530,7 +530,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (*=,/=) E2 } :: { T(E) = T(E1) } <= { {is_number(VT(E1)) && is_number(VT(E2))} && {is_assignable(T(E1))} }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -562,7 +562,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 %= E2 } :: { T(E) = T(E1) } <= { {is_integer(VT(E1)) && is_integer(VT(E2))} && {is_assignable(T(E1))} }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -595,7 +595,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> - E1 } :: { T(E) = maximum(int, VT(E1)) } <= {is_number(VT(E1))}
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -616,7 +616,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (&,|,^) E2 } :: { T(E) = maximum(VT(E1), VT(E2)) } <= { is_integer(VT(E1)) && is_integer(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -645,7 +645,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (&=,|=,^=) E2 } :: { T(E) = T(E1) } <= { {is_integer(VT(E1)) && is_integer(VT(E2))} && {is_assignable(T(E1)} }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -674,7 +674,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> ~ E1 } :: { T(E) = maximum(int, VT(E1)) } <= { is_integer(VT(E1)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -698,7 +698,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (&&,||) E2 } :: { T(E) = _Bool } <= { is_number_or_address(VT(E1)) && is_number_or_address(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -727,7 +727,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> ! E1 } :: { T(E) = _Bool } <= { is_number(VT(E1)) || is_address(VT(E1)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -751,7 +751,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> (++,--) E1 } :: { T(E) = T(E1) } <= { {is_number(VT(E1)) || is_address(VT(E1))} && {is_assignable(T(E1))} }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -778,7 +778,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (++,--)} :: { T(E) = T(E1) } <= { {is_number(VT(E1)) || is_address(VT(E1))} && {is_assignable(T(E1))} }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -808,7 +808,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> * E1 } :: { T(E) = type_of_element(VT(E1)) } <= {is_array(VT(E1))}<br>
 	 * 	{ E --> * E1 } :: { T(E) = type_of_reference(VT(E1)) } <= {is_point(VT(E1))}<br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -833,7 +833,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> & E1 } :: { T(E) = pointer(VT(E1)) } <= {is_allocable(VT(E1))}
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @return
 	 * @throws Exception
@@ -856,7 +856,7 @@ public class CExpressionBuilder {
 	 * 	{E --> * E1 } :: { T(E) = type_of_element(VT(E1)) } <= {is_array(VT(E1))}<br>
 	 * 	{E --> * E1 } :: { T(E) = type_of_reference(VT(E1)) } <= {is_point(VT(E1))}<br>
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @return
 	 * @throws Exception
@@ -878,7 +878,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> E1 (>, >=, <=, <) E2 } :: { T(E) = _Bool } <= { is_number(VT(E1)) && is_number(VT(E2)) }<br>
 	 * 	{ E --> E1 (==, !=) E2 } :: { T(E) = _Bool } <= { is_number_or_address(VT(E1)) && is_number_or_address(VT(E2)) }<br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -907,7 +907,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (>, >=, <=, <) E2 } :: { T(E) = _Bool } <= { is_number(VT(E1)) && is_number(VT(E2)) } || { is_addr(VT(E1)) && is_addr(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -934,7 +934,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (==, !=) E2 } :: { T(E) = _Bool } <= { is_number_or_address(VT(E1)) && is_number_or_address(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param E1
 	 * @param E2
 	 * @return
@@ -960,7 +960,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (>>, <<) E2 } :: { T(E) = VT(E1) } <= { is_integer(E1) && is_integer(E2) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -989,7 +989,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 (>>=, <<=) E2 } :: { T(E) = T(E1) } <= { is_integer(VT(E1)) && is_integer(VT(E2)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1019,7 +1019,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 = E2 } :: { T(E) = T(E1) } <= { is_assignable(T(E1)) && is_translable(VT(E2), VT(E1)) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1047,7 +1047,7 @@ public class CExpressionBuilder {
 
 	// field expression
 	/**
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1068,7 +1068,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 -> Fd } :: { T(E) = T(field_of(VT(*E1), Fd.name)) } <= {has_field(VT(*E1), Fd.name)}
 	 * </code>
-	 * 
+	 *
 	 * @param base
 	 * @param field
 	 * @return
@@ -1112,7 +1112,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 -> Fd } :: { T(E) = T(field_of(VT(E1), Fd.name)) } <= {has_field(VT(E1), Fd.name)}
 	 * </code>
-	 * 
+	 *
 	 * @param base
 	 * @param field
 	 * @return
@@ -1148,7 +1148,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 ( A1, A2,..., An ) } :: { T(E) = VT(ret(VT(E)))}
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1176,7 +1176,7 @@ public class CExpressionBuilder {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param plist
 	 * @param alist
 	 * @return
@@ -1234,7 +1234,7 @@ public class CExpressionBuilder {
 	 * <code>pointer</code>;<br>
 	 * 9. <code>pointer</code> can only be assigned to {compatible-element}
 	 * <code>pointer</code>;<br>
-	 * 
+	 *
 	 * @param src
 	 * @param trg
 	 * @return
@@ -1291,7 +1291,7 @@ public class CExpressionBuilder {
 	 * 	{E --> E1 ? E2 : E3} :: { T(E) = VT(E2) } <= { is_number(VT(E1)) && {VT(E1) == VT(E2)}}<br>
 	 * 	{E --> E1 ? E2 : E3} :: { T(E) = maximum(VT(E2), VT(E3)) } <= { is_number(VT(E1)) && {is_number(VT(E2)) && is_number(VT(E2))}}<br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1330,7 +1330,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1 [ E2 ] } :: { T(E) = T(element_of(E1)) } <= { {is_address(VT(E1))} && {is_integer(VT(E2))} }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1358,7 +1358,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> (Ty) E1 } :: {T(E) = VT(Ty)} <= {is_castable(VT(E1), VT(E2))}
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1380,7 +1380,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{ E --> E1, E2, ..., En } :: { T(E) = VT(En) }
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1392,7 +1392,7 @@ public class CExpressionBuilder {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1405,7 +1405,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	{E --> ( E1 )} :: {T(E) = VT(E1)}
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1419,7 +1419,7 @@ public class CExpressionBuilder {
 	 * 	{ E --> sizeof Ty } :: { T(E) = int } <= {is_defined(Ty)} <br>
 	 * 	{ E --> sizeof E1 } :: { T(E) = int } <= {is_defined(VT(E1))} <br>
 	 * </code>
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1441,7 +1441,7 @@ public class CExpressionBuilder {
 	// type getters
 	/**
 	 * get the type by eliminating qualifier from type expression
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1463,7 +1463,7 @@ public class CExpressionBuilder {
 
 	/**
 	 * get the type as address
-	 * 
+	 *
 	 * @param type
 	 *            : CArrayType | CPointerType | CFunctionType
 	 * @return : CArrayType/CFunctionType |--> CPointerType
@@ -1481,7 +1481,7 @@ public class CExpressionBuilder {
 	// type classify
 	/**
 	 * whether the type is <code>void</code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1496,10 +1496,10 @@ public class CExpressionBuilder {
 	/**
 	 * <code>
 	 * 	_Bool, char, unsigned char, short, unsigned short, int,
-	 * 	unsigned int, long, unsigned long, long long, unsigned 
+	 * 	unsigned int, long, unsigned long, long long, unsigned
 	 * 	long long, float, double, long double; enum-type.
 	 * </code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1534,10 +1534,10 @@ public class CExpressionBuilder {
 	/**
 	 * <code>
 	 * 	_Bool, char, unsinged char, short, unsigned short, int,
-	 * 	unsigned int, long, unsigned long, long long, unsigned 
+	 * 	unsigned int, long, unsigned long, long long, unsigned
 	 * 	long long, enum
 	 * </code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1570,7 +1570,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	pointer-type | array-type
 	 * </code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1583,7 +1583,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	float | double | long double + _Complex
 	 * </code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1606,7 +1606,7 @@ public class CExpressionBuilder {
 	 * <code>
 	 * 	float | double | long double + _Imaginary
 	 * </code>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1629,7 +1629,7 @@ public class CExpressionBuilder {
 	 * a type is not assignable when it is const;<br>
 	 * function or array is not assignable, too;<br>
 	 * finally, void cannot be assigned at all.<br>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1664,7 +1664,7 @@ public class CExpressionBuilder {
 	 * a type is not allocated if:<br>
 	 * 1. type is void;<br>
 	 * 2. type is not defined;<br>
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1685,7 +1685,7 @@ public class CExpressionBuilder {
 
 	/**
 	 * whether the type is const-qualifier
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 * @throws Exception
@@ -1706,7 +1706,7 @@ public class CExpressionBuilder {
 
 	/**
 	 * To determine whether pointer(e2) := pointer(e1) is valid
-	 * 
+	 *
 	 * @param e1
 	 * @param e2
 	 * @return
@@ -1732,7 +1732,7 @@ public class CExpressionBuilder {
 
 	/**
 	 * whether the expression can be seen as zero of constant or zero enumerator
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception
@@ -1784,14 +1784,14 @@ public class CExpressionBuilder {
 	 * 	[unsigned long long > long long]
 	 * 	>
 	 * 	[unsigned long > long]
-	 * 	> 
+	 * 	>
 	 * 	[unsigned, int]
 	 * 	>
 	 * 	[unsigned short > short] | [unsigned char > char]
 	 * 	>
 	 * 	[_Bool]
 	 * </code>
-	 * 
+	 *
 	 * @param type1
 	 * @param type2
 	 * @return
@@ -1946,7 +1946,7 @@ public class CExpressionBuilder {
 	 * <code>pointer</code>;<br>
 	 * 9. <code>pointer</code> can only be assigned to {compatible-element}
 	 * <code>pointer</code>;<br>
-	 * 
+	 *
 	 * @param src
 	 * @param trg
 	 * @return
@@ -2006,7 +2006,7 @@ public class CExpressionBuilder {
 	 * 6. array | pointer can be casted to the integer type;<br>
 	 * 7. number can be casted to number | pointer.<br>
 	 * 8. any types can be casted as void for once.<br>
-	 * 
+	 *
 	 * @param src
 	 * @param trg
 	 * @return
@@ -2059,7 +2059,7 @@ public class CExpressionBuilder {
 	 * The maximum type for pointer | array type.<br>
 	 * 1) * (void) is minimal;<br>
 	 * 2) * (type) < * (const type).<br>
-	 * 
+	 *
 	 * @param type1
 	 * @param type2
 	 * @return
@@ -2110,7 +2110,7 @@ public class CExpressionBuilder {
 	// code-getters
 	/**
 	 * get the line of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception
@@ -2122,7 +2122,7 @@ public class CExpressionBuilder {
 
 	/***
 	 * get the code of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception

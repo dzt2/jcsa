@@ -9,20 +9,20 @@ import com.jcsa.jcparse.lang.astree.stmt.AstLabel;
 
 /**
  * name table maps the name to its corresponding CName object (unique)
- * 
+ *
  * @author yukimula
  */
 public interface CNameTable {
 	/**
 	 * the scope where the local name-table is defined
-	 * 
+	 *
 	 * @return
 	 */
 	public CScope get_scope();
 
 	/**
 	 * whether the name is defined in the table
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -30,14 +30,14 @@ public interface CNameTable {
 
 	/**
 	 * get the list of names in this table
-	 * 
+	 *
 	 * @return
 	 */
 	public Iterator<String> get_names();
 
 	/**
 	 * get the name entity by its string literal
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -46,7 +46,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for struct declaration or definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -55,7 +55,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for union declaration or definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -64,7 +64,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for enum type declaration | definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -73,7 +73,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for label definition at label :
-	 * 
+	 *
 	 * @param label
 	 * @return
 	 * @throws Exception
@@ -82,7 +82,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for macro declaration, i.e. #define
-	 * 
+	 *
 	 * @param macro
 	 * @return
 	 * @throws Exception
@@ -91,7 +91,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for enumerator in enum-body
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 * @throws Exception
@@ -100,7 +100,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for typedef specifier
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -109,7 +109,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for field definition in struct|union body
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -118,7 +118,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for variable declaration | definition
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -127,7 +127,7 @@ public interface CNameTable {
 
 	/**
 	 * create a name for parameter in parameter list
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -136,7 +136,7 @@ public interface CNameTable {
 
 	/**
 	 * delete an existing name from the table
-	 * 
+	 *
 	 * @param name
 	 * @throws Exception
 	 */
@@ -149,7 +149,7 @@ public interface CNameTable {
 
 	/**
 	 * get the number of names in table
-	 * 
+	 *
 	 * @return
 	 */
 	public int size();

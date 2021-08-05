@@ -9,7 +9,7 @@ import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
  *
  */
 public interface AbsOperator {
-	
+
 	/**
 	 * Get the abstract representation of the initial state hold at statement in analysis
 	 * @param instance
@@ -17,7 +17,7 @@ public interface AbsOperator {
 	 * @throws Exception
 	 */
 	public AbsValue initial_value(CirInstanceNode exec_instance) throws Exception;
-	
+
 	/**
 	 * Get the abstract representation of the initial state hold at the flow in analysis
 	 * @param flow_instance
@@ -25,7 +25,7 @@ public interface AbsOperator {
 	 * @throws Exception
 	 */
 	public AbsValue initial_value(CirInstanceEdge flow_instance) throws Exception;
-	
+
 	/**
 	 * Update the value of the flow based on the value hold by its source node (in forward
 	 * data flow analysis) or its target node (in backward analysis).
@@ -35,7 +35,7 @@ public interface AbsOperator {
 	 * @throws Exception
 	 */
 	public AbsValue update_value(CirInstanceNode exec_instance, boolean forward) throws Exception;
-	
+
 	/**
 	 * Update the value of the statement based on its input flows (in forward data flow
 	 * analysis) or its output flows (in backward data flow analysis).
@@ -45,5 +45,5 @@ public interface AbsOperator {
 	 * @throws Exception
 	 */
 	public AbsValue update_value(CirInstanceEdge flow_instance, boolean forward) throws Exception;
-	
+
 }

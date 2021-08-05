@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.text;
 
 /**
  * To access characters in CText by sequence
- * 
+ *
  * @author yukimula
  */
 public class CStream {
@@ -16,7 +16,7 @@ public class CStream {
 
 	/**
 	 * create a stream for a specified text
-	 * 
+	 *
 	 * @param text
 	 */
 	protected CStream(CText text) {
@@ -27,7 +27,7 @@ public class CStream {
 
 	/**
 	 * get the source to this stream points
-	 * 
+	 *
 	 * @return
 	 */
 	public CText get_source() {
@@ -36,7 +36,7 @@ public class CStream {
 
 	/**
 	 * cursor to the character for reading by get_char()
-	 * 
+	 *
 	 * @return
 	 */
 	public int get_cursor() {
@@ -45,7 +45,7 @@ public class CStream {
 
 	/**
 	 * whether the cursor is accessible
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean has_char() {
@@ -54,7 +54,7 @@ public class CStream {
 
 	/**
 	 * get the character where cursor points to
-	 * 
+	 *
 	 * @return
 	 */
 	public char get_char() {
@@ -63,7 +63,7 @@ public class CStream {
 
 	/**
 	 * consume the next k characters
-	 * 
+	 *
 	 * @param k
 	 * @throws Exception
 	 *             : cursor + k > code.length()
@@ -79,7 +79,7 @@ public class CStream {
 
 	/**
 	 * consume for one more character
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public void consume() throws Exception {
@@ -88,7 +88,7 @@ public class CStream {
 
 	/**
 	 * reset the location of the stream
-	 * 
+	 *
 	 * @param loc
 	 * @throws Exception
 	 */

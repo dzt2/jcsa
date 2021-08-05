@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * provide the map from keyword-identifier to keyword entity
- * 
+ *
  * @author yukimula
  */
 public class CLangKeywordLib {
@@ -15,13 +15,13 @@ public class CLangKeywordLib {
 	private Map<String, CKeyword> keywords;
 
 	public CLangKeywordLib() {
-		keywords = new HashMap<String, CKeyword>();
+		keywords = new HashMap<>();
 	}
 
 	/**
 	 * whether there is a keyword referring to this name in specified language
 	 * lib
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -34,7 +34,7 @@ public class CLangKeywordLib {
 
 	/**
 	 * get the keyword of specified name
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -49,7 +49,7 @@ public class CLangKeywordLib {
 
 	/**
 	 * add a keyword with its binding name in the language lib
-	 * 
+	 *
 	 * @param name
 	 * @param keyword
 	 * @throws Exception
@@ -68,7 +68,7 @@ public class CLangKeywordLib {
 
 	/**
 	 * unbound the specified name with its keyword
-	 * 
+	 *
 	 * @param name
 	 * @throws Exception
 	 *             : name is not defined
@@ -96,7 +96,7 @@ public class CLangKeywordLib {
 
 	/**
 	 * get the collection of names binded with keywords
-	 * 
+	 *
 	 * @return
 	 */
 	public Collection<String> get_names() {

@@ -2,20 +2,21 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
+
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 public class CirExecutionPathTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
 	protected static final String postfx = "result/paths/";
 	protected static final File template_file = new File("config/cruntime.txt");
-	
+
 	public static void main(String[] args) throws Exception {
 		for(File cfile : new File(prefix).listFiles()) {
 			if(cfile.getName().endsWith(".c")) {
@@ -27,7 +28,7 @@ public class CirExecutionPathTest {
 			}
 		}
 	}
-	
+
 	private static AstCirFile parse(File file) throws Exception {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
@@ -55,7 +56,7 @@ public class CirExecutionPathTest {
 		}
 		writer.write(path.get_target() + "\n");
 	}
-	
+
 	/* decidable forward path extension testing */
 	private static void output_df_path(FileWriter writer, CirExecution source) throws Exception {
 		writer.write("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)) + "\n");
@@ -82,7 +83,7 @@ public class CirExecutionPathTest {
 		}
 		writer.close();
 	}
-	
+
 	/* decidable backward path extension testing */
 	private static void output_db_path(FileWriter writer, CirExecution source) throws Exception {
 		writer.write("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)) + "\n");
@@ -109,7 +110,7 @@ public class CirExecutionPathTest {
 		}
 		writer.close();
 	}
-	
+
 	/* virtual forward path extension testing */
 	private static void output_vf_path(FileWriter writer, CirExecution source) throws Exception {
 		writer.write("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)) + "\n");
@@ -137,7 +138,7 @@ public class CirExecutionPathTest {
 		}
 		writer.close();
 	}
-	
+
 	/* virtual backward path extension testing */
 	private static void output_vb_path(FileWriter writer, CirExecution source) throws Exception {
 		writer.write("\t" + source + ": " + strip_code(source.get_statement().generate_code(true)) + "\n");
@@ -165,5 +166,5 @@ public class CirExecutionPathTest {
 		}
 		writer.close();
 	}
-	
+
 }

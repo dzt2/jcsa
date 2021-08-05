@@ -20,5 +20,5 @@ public class CirFunctionBodyImpl extends CirNodeImpl implements CirFunctionBody 
 	public void add_statement(CirStatement statement) throws IllegalArgumentException {
 		this.add_child((CirNodeImpl) statement);
 	}
-	
+
 }

@@ -22,18 +22,18 @@ import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 
 /**
  * It is used to generate code for SymbolNode.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymbolCodeGenerator {
-	
+
 	/* attributes */
 	/** whether to generate simplified code for SymNodes **/
 	private boolean simplified;
 	/** used to preserve the code generated from SymNode **/
 	private StringBuilder buffer;
-	
+
 	/* constructor and singleton */
 	/** private constructor for singleton mode **/
 	private SymbolCodeGenerator() {
@@ -42,7 +42,7 @@ public class SymbolCodeGenerator {
 	}
 	/** singleton of code generator for generating code for SymbolNode **/
 	private static SymbolCodeGenerator generator = new SymbolCodeGenerator();
-	
+
 	/* utility methods */
 	/**
 	 * @param node
@@ -56,7 +56,7 @@ public class SymbolCodeGenerator {
 		generator.gen_node(node);
 		return generator.buffer.toString();
 	}
-	
+
 	/* generator methods */
 	/**
 	 * recursively generate the code of symbolic node
@@ -107,7 +107,7 @@ public class SymbolCodeGenerator {
 		}
 		return buffer.toString();
 	}
-	
+
 	/* implement syntax-directed code generation */
 	private void gen_argument_list(SymbolArgumentList node) throws Exception {
 		this.buffer.append("(");
@@ -157,7 +157,7 @@ public class SymbolCodeGenerator {
 		String base = name.substring(0, index).trim();
 		String bias = name.substring(index + 1).trim();
 		Object source = node.get_source();
-		
+
 		if(this.simplified) {
 			if(base.isEmpty()) {
 				int ast_key = Integer.parseInt(bias);
@@ -176,7 +176,7 @@ public class SymbolCodeGenerator {
 				else if(source instanceof CirNode) {
 					if(((CirNode) source).get_ast_source() != null) {
 						AstNode ast_source = ((CirNode) source).get_ast_source();
-						ast_source = ((AstNode) ast_source).get_tree().get_node(ast_key);
+						ast_source = ast_source.get_tree().get_node(ast_key);
 						if(ast_source instanceof AstSwitchStatement) {
 							ast_source = ((AstSwitchStatement) ast_source).get_condition();
 						}
@@ -216,7 +216,7 @@ public class SymbolCodeGenerator {
 		CConstant constant = node.get_constant();
 		String code;
 		switch(constant.get_type().get_tag()) {
-		case c_bool:		
+		case c_bool:
 		{
 			code = constant.get_bool().toString();
 			break;
@@ -298,6 +298,6 @@ public class SymbolCodeGenerator {
 		}
 		this.buffer.append("}");
 	}
-	
-	
+
+
 }

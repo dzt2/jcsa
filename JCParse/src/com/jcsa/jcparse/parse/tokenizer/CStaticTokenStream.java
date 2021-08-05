@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.ctoken.CToken;
 /**
  * <code>CStaticTokenStream</code> will first push all tokens from tokenizer in
  * its cache, and provides these tokens for user by the array list.
- * 
+ *
  * @author yukimula
  */
 public class CStaticTokenStream implements CTokenStream {
@@ -21,7 +21,7 @@ public class CStaticTokenStream implements CTokenStream {
 		if (!tokenizer.is_openned())
 			throw new RuntimeException("tokenizer is not openned");
 
-		tokens = new ArrayList<CToken>();
+		tokens = new ArrayList<>();
 		CToken ctoken;
 		boolean close = true;
 		while ((ctoken = tokenizer.tokenize()) != null) {

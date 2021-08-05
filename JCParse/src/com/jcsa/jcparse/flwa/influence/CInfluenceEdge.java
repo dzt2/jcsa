@@ -3,12 +3,12 @@ package com.jcsa.jcparse.flwa.influence;
 /**
  * The edge represents the influence relationship between program elements, which can be an expression
  * or statement such that the source directly influences on the target (or target relies on the source).
- * 
+ *
  * @author yukimula
  *
  */
 public class CInfluenceEdge {
-	
+
 	/* properties */
 	/** the type of influence **/
 	private CInfluenceEdgeType type;
@@ -16,7 +16,7 @@ public class CInfluenceEdge {
 	private CInfluenceNode source;
 	/** the program element that relies on the source **/
 	private CInfluenceNode target;
-	
+
 	/* constructor */
 	/**
 	 * create an influence edge from source to target with specified type such that
@@ -26,7 +26,7 @@ public class CInfluenceEdge {
 	 * @param target
 	 * @throws Exception
 	 */
-	protected CInfluenceEdge(CInfluenceEdgeType type, 
+	protected CInfluenceEdge(CInfluenceEdgeType type,
 			CInfluenceNode source, CInfluenceNode target) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("Invalid type: null");
@@ -38,7 +38,7 @@ public class CInfluenceEdge {
 			this.type = type; this.source = source; this.target = target;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the type of the influence
@@ -55,5 +55,5 @@ public class CInfluenceEdge {
 	 * @return
 	 */
 	public CInfluenceNode get_target() { return this.target; }
-	
+
 }

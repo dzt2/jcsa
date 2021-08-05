@@ -21,11 +21,11 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 
 public class CDefineUseTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
 	protected static final String postfx = "result/";
 	protected static final File template_file = new File("config/cruntime.txt");
-	
+
 	public static void main(String[] args) {
 		for(File file : new File(prefix).listFiles()) {
 			try {
@@ -36,25 +36,25 @@ public class CDefineUseTest {
 			}
 		}
 	}
-	
+
 	/* basic methods */
 	private static AstCirFile parse(File file) throws Exception {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
-		return CirCallContextInstanceGraph.graph(root_function, 
+		return CirCallContextInstanceGraph.graph(root_function,
 				CirFunctionCallPathType.unique_path, -1);
 	}
 	private static CDefineUseGraph define_use_graph(CirInstanceGraph input) throws Exception {
 		return CDefineUseGraph.define_use_graph(input);
 	}
-	private static void output(CirCallContextInstanceGraph program_graph, CDefineUseGraph 
+	private static void output(CirCallContextInstanceGraph program_graph, CDefineUseGraph
 			define_use_graph, CirFunctionCallTreeNode tree_node, FileWriter writer) throws Exception {
 		writer.write("FUNCTION\t");
 		writer.write(tree_node.toString());
 		writer.write("\n");
-		
+
 		CirExecutionFlowGraph flow_graph = tree_node.get_function().get_flow_graph();
 		for(int k = 1; k <= flow_graph.size(); k++) {
 			CirExecution execution = flow_graph.get_execution(k % flow_graph.size());
@@ -66,33 +66,33 @@ public class CDefineUseTest {
 					writer.write("\t");
 					writer.write(execution.get_statement().generate_code(true));
 					writer.write('\n');
-					
+
 					for(CDefineUseNode node : define_use_graph.get_nodes(instance)) {
 						writer.write("\t    ");
-						if(node.is_define()) 
+						if(node.is_define())
 							 writer.write("DEF\t");
 						else writer.write("USE\t");
 						writer.write(node.get_reference());
 						writer.write('\n');
-						
+
 						for(CDefineUseEdge edge : node.get_ou_edges()) {
 							CDefineUseNode target = edge.get_target();
-							
+
 							writer.write("\t\t==> ");
 							writer.write(target.get_instance().get_execution() + "\t");
 							writer.write(target.get_reference());
 							writer.write("\n");
 						}
-						
+
 						for(CDefineUseEdge edge : node.get_in_edges()) {
 							CDefineUseNode source = edge.get_source();
-							
+
 							writer.write("\t\t<-- ");
 							writer.write(source.get_instance().get_execution() + "\t");
 							writer.write(source.get_reference());
 							writer.write("\n");
 						}
-						
+
 						writer.write('\n');
 					}
 				}
@@ -100,11 +100,11 @@ public class CDefineUseTest {
 		}
 		writer.write("\n");
 	}
-	private static void output(CirCallContextInstanceGraph program_graph, CDefineUseGraph 
+	private static void output(CirCallContextInstanceGraph program_graph, CDefineUseGraph
 			define_use_graph, File file) throws Exception {
-		Queue<CirFunctionCallTreeNode> queue = new LinkedList<CirFunctionCallTreeNode>();
+		Queue<CirFunctionCallTreeNode> queue = new LinkedList<>();
 		queue.add(program_graph.get_call_tree().get_root());
-		
+
 		FileWriter writer = new FileWriter(file);
 		while(!queue.isEmpty()) {
 			CirFunctionCallTreeNode tree_node = queue.poll();
@@ -118,23 +118,23 @@ public class CDefineUseTest {
 	private static void testing(File file) throws Exception {
 		System.out.println("Testing " + file.getName());
 		AstCirFile ast_file = parse(file);
-		
+
 		ast_file.get_ast_tree();
 		System.out.println("\t(1) parsing to AST tree");
-		
+
 		CirTree cir_tree = ast_file.get_cir_tree();
 		System.out.println("\t(2) parsing to CIR tree");
-		
+
 		CirCallContextInstanceGraph program_graph = translate(cir_tree);
 		System.out.println("\t(3) translate to flow graph (" + program_graph.size() + ")");
-		
+
 		CDefineUseGraph define_use_graph = define_use_graph(program_graph);
 		System.out.println("\t(4) generate def-use graph (" + define_use_graph.size() + ")");
-		
+
 		output(program_graph, define_use_graph, new File(postfx + "use/" + file.getName() + ".txt"));
 		System.out.println("\t(5) output the def-use graph to the output file");
-		
+
 		System.out.println();
 	}
-	
+
 }

@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.scope.CMacro;
 
 /**
  * To produce instance for semantic analysis
- * 
+ *
  * @author yukimula
  */
 public class CEntityFactory {

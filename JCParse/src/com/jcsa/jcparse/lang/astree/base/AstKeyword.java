@@ -5,14 +5,14 @@ import com.jcsa.jcparse.lang.lexical.CKeyword;
 
 /**
  * Keyword node
- * 
+ *
  * @author yukimula
  *
  */
 public interface AstKeyword extends AstNode {
 	/**
 	 * get the keyword tag
-	 * 
+	 *
 	 * @return
 	 */
 	public CKeyword get_keyword();

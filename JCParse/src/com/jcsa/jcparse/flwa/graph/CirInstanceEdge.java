@@ -5,11 +5,11 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 
 public class CirInstanceEdge extends CirInstance {
-	
+
 	protected CirInstanceNode source;
 	protected CirInstanceNode target;
 	/**
-	 * create an edge from the source to the target with respect to the 
+	 * create an edge from the source to the target with respect to the
 	 * program flow in the specific context being described
 	 * @param source
 	 * @param target
@@ -17,7 +17,7 @@ public class CirInstanceEdge extends CirInstance {
 	 * @param element
 	 * @throws Exception
 	 */
-	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target, 
+	protected CirInstanceEdge(CirInstanceNode source, CirInstanceNode target,
 			Object context, CirExecutionFlow element) throws Exception {
 		super(source.get_graph(), context, element);
 		this.source = source; this.target = target;
@@ -36,7 +36,7 @@ public class CirInstanceEdge extends CirInstance {
 				source.get_execution(), target.get_execution()));
 		this.source = source; this.target = target;
 	}
-	
+
 	/**
 	 * get the program flow it represents
 	 * @return null if it is virtual
@@ -76,5 +76,5 @@ public class CirInstanceEdge extends CirInstance {
 	public boolean is_virtual() {
 		return this.get_flow().get_type() == CirExecutionFlowType.virt_flow;
 	}
-	
+
 }

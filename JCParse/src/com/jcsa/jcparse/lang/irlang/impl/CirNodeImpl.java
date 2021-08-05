@@ -14,12 +14,12 @@ import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * The abstract implementation of node in C-like intermediate representation.
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class CirNodeImpl implements CirNode {
-	
+
 	/* properties */
 	private AstNode ast_source;
 	private CirTree tree;
@@ -27,7 +27,7 @@ public abstract class CirNodeImpl implements CirNode {
 	private CirNode parent;
 	private int child_index;
 	private List<CirNode> children;
-	
+
 	/* constructor and initializer */
 	/**
 	 * create an instance of CirNode with node-id in the tree structure
@@ -48,19 +48,19 @@ public abstract class CirNodeImpl implements CirNode {
 			this.parent = null;
 			this.child_index = -1;
 			if(linked) {
-				this.children = new LinkedList<CirNode>();
+				this.children = new LinkedList<>();
 			}
 			else {
-				this.children = new ArrayList<CirNode>();
+				this.children = new ArrayList<>();
 			}
 		}
 	}
-	
+
 	/* local properties */
 	@Override
 	public AstNode get_ast_source() { return this.ast_source; }
 	@Override
-	public void set_ast_source(AstNode source) throws IllegalArgumentException { 
+	public void set_ast_source(AstNode source) throws IllegalArgumentException {
 		if(this.ast_source != null)
 			throw new IllegalArgumentException("duplicated assignment.");
 		else if(source == null) return;	/* ignore the setting if null provided */
@@ -73,7 +73,7 @@ public abstract class CirNodeImpl implements CirNode {
 	public CirTree get_tree() { return this.tree; }
 	@Override
 	public int get_node_id() { return this.node_id; }
-	
+
 	/* parent-child relation */
 	@Override
 	public CirNode get_parent() { return this.parent; }
@@ -87,12 +87,12 @@ public abstract class CirNodeImpl implements CirNode {
 	public CirNode get_child(int k) throws IndexOutOfBoundsException {
 		return this.children.get(k);
 	}
-	
+
 	@Override
 	public String generate_code(boolean simplified) throws Exception {
 		return CodeGeneration.generate_code(simplified, this);
 	}
-	
+
 	/* children setter */
 	/**
 	 * add a new child (without being linked to any parent) under this node
@@ -104,13 +104,13 @@ public abstract class CirNodeImpl implements CirNode {
 			throw new IllegalArgumentException("invalid child: null");
 		else if(child.parent != null)
 			throw new IllegalArgumentException("duplicated parent");
-		else { 
+		else {
 			child.parent = this;
 			child.child_index = this.children.size();
 			this.children.add(child);
 		}
 	}
-	
+
 	@Override
 	public CirFunctionDefinition function_of() {
 		CirNode node = this;
@@ -121,14 +121,14 @@ public abstract class CirNodeImpl implements CirNode {
 		}
 		return (CirFunctionDefinition) node;
 	}
-	
+
 	@Override
 	public CirExecution execution_of() {
 		CirNode node = this;
 		while(node != null) {
 			if(node instanceof CirStatement) {
 				try {
-					return this.tree.get_localizer().get_execution((CirStatement) this);
+					return this.tree.get_localizer().get_execution((CirStatement) node);
 				} catch (Exception e) {
 					e.printStackTrace();
 					return null;
@@ -140,5 +140,5 @@ public abstract class CirNodeImpl implements CirNode {
 		}
 		return null;
 	}
-	
+
 }

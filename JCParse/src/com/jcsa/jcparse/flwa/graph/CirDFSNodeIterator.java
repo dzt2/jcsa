@@ -13,16 +13,16 @@ import java.util.Stack;
  * (2) The iterator specifies the direction to traverse the nodes in graph, either the
  * 	   forward or backward traversal anyway.<br>
  * (3) It can starts the traversal from an edge, node or the heads of graph provided.<br>
- * 
+ *
  * @author yukimula
  *
  */
 class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
-	
+
 	/* element class */
 	/**
 	 * The element used in depth-first traversal.
-	 * 
+	 *
 	 * @author yukimula
 	 *
 	 */
@@ -36,7 +36,7 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 			else this.edges = node.get_in_edges().iterator();
 		}
 	}
-	
+
 	/* attributes */
 	/** the direction of traversal can be forward (true) or backward (false) **/
 	private boolean direction;
@@ -44,7 +44,7 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 	private Stack<CirDFSNodeElement> stack;
 	/** the set of the nodes that have been visited before in traversal **/
 	private Set<CirInstanceNode> visited;
-	
+
 	/* constructor */
 	/**
 	 * Depth-first traversal starting from the node specified
@@ -66,7 +66,7 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 			this.push_stack(edge.target);
 		else this.push_stack(edge.source);
 	}
-	
+
 	/* basic methods */
 	/**
 	 * create the buffers for depth-first traversal
@@ -74,8 +74,8 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 	 */
 	private void init_buffers(boolean direction) {
 		this.direction = direction;
-		this.stack = new Stack<CirDFSNodeElement>();
-		this.visited = new HashSet<CirInstanceNode>();
+		this.stack = new Stack<>();
+		this.visited = new HashSet<>();
 	}
 	/**
 	 * push the node into the stack and update visited set if it has not been visited before.
@@ -89,7 +89,7 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 			this.visited.add(node); return true;
 		}
 	}
-	
+
 	/* implementation methods */
 	@Override
  	public boolean hasNext() { return !this.stack.isEmpty(); }
@@ -108,13 +108,13 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 		while(!this.stack.isEmpty()) {
 			// (1) get the current top in the stack
 			CirDFSNodeElement element = this.stack.peek();
-			
+
 			// (2) try to find the next node that can be visited
 			while(element.edges.hasNext()) {
 				CirInstanceEdge edge = element.edges.next();
 				if(this.push_stack(edge.target)) return;
 			}
-			
+
 			// (3) if no more node non-visited from this one, pop
 			this.stack.pop();
 		}
@@ -123,16 +123,16 @@ class CirDFSNodeIterator implements Iterator<CirInstanceNode> {
 		while(!this.stack.isEmpty()) {
 			// (1) get the current top in the stack
 			CirDFSNodeElement element = this.stack.peek();
-			
+
 			// (2) try to find the next node that can be visited
 			while(element.edges.hasNext()) {
 				CirInstanceEdge edge = element.edges.next();
 				if(this.push_stack(edge.source)) return;
 			}
-			
+
 			// (3) if no more node non-visited from this one, pop
 			this.stack.pop();
 		}
 	}
-	
+
 }

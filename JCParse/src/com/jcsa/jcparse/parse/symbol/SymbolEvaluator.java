@@ -24,7 +24,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  *
  */
 public class SymbolEvaluator {
-	
+
 	/* definitions */
 	/** the context in which the evaluation was performed **/
 	private SymbolProcess symbol_process;
@@ -33,11 +33,11 @@ public class SymbolEvaluator {
 	/**
 	 * construct an empty non-initialized evaluator
 	 */
-	public SymbolEvaluator() { 
-		this.set_symbol_process(null); 
+	public SymbolEvaluator() {
+		this.set_symbol_process(null);
 		this.computer_unit = new SymbolComputer(this);
 	}
-	
+
 	/* parameters */
 	/**
 	 * @return the context in which the evaluation was performed
@@ -46,7 +46,7 @@ public class SymbolEvaluator {
 	/**
 	 * @return the factory used to construct symbolic expression
 	 */
-	public SymbolFactory get_symbol_factory() { 
+	public SymbolFactory get_symbol_factory() {
 		if(this.symbol_process == null) {
 			return SymbolFactory.factory;
 		}
@@ -58,7 +58,7 @@ public class SymbolEvaluator {
 	 * @param process context to be established for evaluation
 	 */
 	public void set_symbol_process(SymbolProcess process) { this.symbol_process = process; }
-	
+
 	/* evaluation methods */
 	/**
 	 * @param expression
@@ -105,7 +105,7 @@ public class SymbolEvaluator {
 		}
 		else if(expression instanceof SymbolInitializerList) {
 			SymbolInitializerList ilist = (SymbolInitializerList) expression;
-			List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+			List<SymbolExpression> elements = new ArrayList<>();
 			for(int k = 0; k < ilist.number_of_elements(); k++) {
 				elements.add(this.recur_eval(ilist.get_element(k), loaded));
 			}
@@ -118,7 +118,7 @@ public class SymbolEvaluator {
 		else if(expression instanceof SymbolCallExpression) {
 			SymbolExpression function = this.recur_eval(((SymbolCallExpression) expression).get_function(), loaded);
 			SymbolArgumentList arguments = ((SymbolCallExpression) expression).get_argument_list();
-			List<SymbolExpression> alist = new ArrayList<SymbolExpression>();
+			List<SymbolExpression> alist = new ArrayList<>();
 			for(int k = 0; k < arguments.number_of_arguments(); k++) {
 				alist.add(this.recur_eval(arguments.get_argument(k), loaded));
 			}
@@ -141,7 +141,7 @@ public class SymbolEvaluator {
 			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
 			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
 			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
-			loperand = this.recur_eval(loperand, loaded); 
+			loperand = this.recur_eval(loperand, loaded);
 			roperand = this.recur_eval(roperand, loaded);
 			CType data_type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 			switch(operator) {
@@ -169,7 +169,7 @@ public class SymbolEvaluator {
 		else {
 			throw new IllegalArgumentException(expression.getClass().getSimpleName());
 		}
-		
+
 		if(loaded && this.has_solution(result)) {
 			result = this.get_solution(result);
 		}
@@ -184,7 +184,7 @@ public class SymbolEvaluator {
 	public SymbolExpression evaluate(SymbolExpression expression, boolean loaded) throws Exception {
 		return this.recur_eval(expression, loaded);
 	}
-	
+
 	/* static interfaces */
 	private static final SymbolEvaluator evaluator = new SymbolEvaluator();
 	/**
@@ -217,5 +217,5 @@ public class SymbolEvaluator {
 		evaluator.set_symbol_process(null);
 		return evaluator.evaluate(expression, false);
 	}
-	
+
 }

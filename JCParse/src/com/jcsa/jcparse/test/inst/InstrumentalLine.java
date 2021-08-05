@@ -44,19 +44,19 @@ import com.jcsa.jcparse.lang.lexical.CPunctuator;
 /**
  * Each line in instrumental file is a tuple, describing the state hold
  * by the location in C source code, including:<br>
- * 
+ *
  * 	(1) <code>location: AstNode</code>: the statement or expression being
  * 		instrumented during testing process.<br>
- * 
+ *
  * 	(2)	<code>value: Object</code>: the Java-Object describes the value
  * 		of the location (as expression) being fetched in testing, or
  * 		boolean for statement to tag its beginning or end time.<br>
- * 
+ *
  * @author yukimula
  *
  */
 public class InstrumentalLine {
-	
+
 	/* definition */
 	/** true --> end of location; false --> start of location **/
 	private boolean flag;
@@ -68,7 +68,7 @@ public class InstrumentalLine {
 	 *  an expression or the boolean false as the beginning of the
 	 *  statement or true to its end **/
 	private Object value;
-	
+
 	/* constructor */
 	/**
 	 * create an instrumental line w.r.t. the location and value
@@ -86,7 +86,7 @@ public class InstrumentalLine {
 			this.value = value;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return whether the line is the start of the location
@@ -119,7 +119,7 @@ public class InstrumentalLine {
 	 * @param value
 	 */
 	protected void set_value(Object value) { this.value = value; }
-	
+
 	/* parser */
 	private static boolean is_non_zero(byte[] content) {
 		for(byte value : content) {
@@ -133,7 +133,7 @@ public class InstrumentalLine {
 	 * @param template
 	 * @param ast_tree
 	 * @param stream
-	 * @return read the next line from the stream of the instrumental 
+	 * @return read the next line from the stream of the instrumental
 	 * 		   file or null when stream reaches the end of file (EOF)
 	 * @throws Exception
 	 */
@@ -148,19 +148,19 @@ public class InstrumentalLine {
 		else {
 			/* 0. declarations */
 			AstNode location; byte[] content; ByteBuffer buffer; int length;
-			
+
 			/* 1. read the identifier of AstNode */
 			buffer = template.read(stream, CBasicTypeImpl.int_type);
 			if(buffer == null) return null;	/* end-of-file */
 			location = ast_tree.get_node(buffer.getInt());
-			
+
 			/* 2. read the length of content from file */
 			buffer = template.read(stream, CBasicTypeImpl.uint_type);
 			length = buffer.getInt();
-			
+
 			/* 3. read the byte content sequence from file */
 			content = new byte[length]; stream.read(content);
-			
+
 			/* 4.1. generate line for (statement, boolean) */
 			if(location instanceof AstStatement) {
 				return new InstrumentalLine(is_non_zero(content), location, null);
@@ -169,7 +169,7 @@ public class InstrumentalLine {
 			else if(location instanceof AstExpression) {
 				CType type = CTypeAnalyzer.get_value_type(
 						((AstExpression) location).get_value_type());
-				return new InstrumentalLine(true, location, 
+				return new InstrumentalLine(true, location,
 						template.generate_value(type, content));
 			}
 			/* 4.3. otherwise, throw exception to the users */
@@ -178,7 +178,7 @@ public class InstrumentalLine {
 			}
 		}
 	}
-	
+
 	/* type inference */
 	private AstNode[] get_parent_child(AstNode location) {
 		AstNode child = location;
@@ -321,7 +321,7 @@ public class InstrumentalLine {
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
 	}
-	
+
 	@Override
 	public String toString() {
 		if(this.flag)
@@ -329,5 +329,5 @@ public class InstrumentalLine {
 		else
 			return "beg::" + this.location.getClass().getSimpleName() + "::" + this.value;
 	}
-	
+
 }

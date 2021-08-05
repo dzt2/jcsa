@@ -3,12 +3,12 @@ package com.jcsa.jcparse.lang.irlang.graph;
 
 /**
  * It represents an instance of execution flow in the CirExecutionPath.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirExecutionEdge {
-	
+
 	/* attributes */
 	/** the execution path where this edge is defined **/
 	private CirExecutionPath path;
@@ -16,7 +16,7 @@ public class CirExecutionEdge {
 	private CirExecutionFlow flow;
 	/** the object to annotate this edge (as state) **/
 	private Object annotation;
-	
+
 	/* constructor */
 	/**
 	 * create an edge of the flow in the context of the path
@@ -36,7 +36,7 @@ public class CirExecutionEdge {
 			this.path = path; this.flow = flow; this.annotation = null;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the execution path where this edge is defined
@@ -70,7 +70,7 @@ public class CirExecutionEdge {
 	 * @return whether the flow is actual flow
 	 */
 	public boolean is_acutal_edge() { return this.flow.is_actual(); }
-	
+
 	/* universal */
 	@Override
 	public String toString() { return this.flow.toString(); }
@@ -85,7 +85,7 @@ public class CirExecutionEdge {
 		else
 			return false;
 	}
-	
+
 	/* setters */
 	/**
 	 * delete this edge from the path
@@ -102,5 +102,5 @@ public class CirExecutionEdge {
 	protected void set_annotation(Object annotation) {
 		this.annotation = annotation;
 	}
-	
+
 }

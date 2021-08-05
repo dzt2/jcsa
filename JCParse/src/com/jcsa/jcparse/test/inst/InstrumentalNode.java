@@ -10,12 +10,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 /**
  * The instrumental node refers to a statement being executed during testing,
  * of which expressions are instrumented and recorded with their values.
- * 
+ *
  * @author yukimula
  *
  */
 public class InstrumentalNode {
-	
+
 	/* definitions */
 	/** the execution of statement **/
 	private CirExecution execution;
@@ -31,10 +31,10 @@ public class InstrumentalNode {
 			throw new IllegalArgumentException("Invalid execution: null");
 		else {
 			this.execution = execution;
-			this.units = new ArrayList<InstrumentalUnit>();
+			this.units = new ArrayList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the execution of statement being executed in testing
@@ -90,7 +90,7 @@ public class InstrumentalNode {
 					break;
 				}
 			}
-			
+
 			/* add the new instrumental unit to the node */
 			if(element == null) {
 				element = new InstrumentalUnit(expression, value);
@@ -102,5 +102,5 @@ public class InstrumentalNode {
 			}
 		}
 	}
-	
+
 }

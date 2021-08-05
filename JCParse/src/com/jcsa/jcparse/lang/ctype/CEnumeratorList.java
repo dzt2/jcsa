@@ -2,21 +2,21 @@ package com.jcsa.jcparse.lang.ctype;
 
 /**
  * list of enumerators
- * 
+ *
  * @author yukimula
  *
  */
 public interface CEnumeratorList {
 	/**
 	 * get the number of enumerators in list
-	 * 
+	 *
 	 * @return
 	 */
 	public int size();
 
 	/**
 	 * get the kth enumerator from list
-	 * 
+	 *
 	 * @param k
 	 * @return
 	 * @throws Exception
@@ -26,7 +26,7 @@ public interface CEnumeratorList {
 
 	/**
 	 * whether there is enumerator for this name
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -34,7 +34,7 @@ public interface CEnumeratorList {
 
 	/**
 	 * get the enumerator corresponding to the name
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 * @throws Exception
@@ -44,7 +44,7 @@ public interface CEnumeratorList {
 
 	/**
 	 * add a new enumerator in the tail of the list
-	 * 
+	 *
 	 * @param enumerator
 	 * @throws Exception
 	 *             : duplicated name

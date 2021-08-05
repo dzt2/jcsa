@@ -5,7 +5,7 @@ package com.jcsa.jcparse.flwa.relation;
  * 	(1)	<code>Statement</code>: a statement being executed in C-like intermediate representation, except
  * 		the useless goto and tag statement.<br>
  * 	(2)	<code>Reference</code>: a reference expression used or defined in C-like intermediate representation.<br>
- * 	(3)	<code>Expression</code>: a non-reference expression used in C-like intermediate representation.<br> 
+ * 	(3)	<code>Expression</code>: a non-reference expression used in C-like intermediate representation.<br>
  * @author yukimula
  *
  */

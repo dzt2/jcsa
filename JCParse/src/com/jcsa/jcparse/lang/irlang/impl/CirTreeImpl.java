@@ -62,31 +62,31 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CName;
 
 public class CirTreeImpl implements CirTree {
-	
+
 	private List<CirNode> nodes;
 	private Map<AstNode, List<CirNode>> index;
 	private Map<AstNode, AstCirPair> ranges;
 	private CirLocalizer localizer;
 	private CirFunctionCallGraph call_graph;
-	
+
 	public CirTreeImpl(AstTranslationUnit astroot) throws IllegalArgumentException {
 		if(astroot == null)
 			throw new IllegalArgumentException("invalid astroot: null");
 		else {
-			this.nodes = new ArrayList<CirNode>();
-			this.index = new HashMap<AstNode, List<CirNode>>();
-			this.ranges = new HashMap<AstNode, AstCirPair>();
+			this.nodes = new ArrayList<>();
+			this.index = new HashMap<>();
+			this.ranges = new HashMap<>();
 			CirNode root = new CirTransitionUnitImpl(this, 0);
 			this.nodes.add(root); root.set_ast_source(astroot);
 			this.localizer = new CirLocalizer(this);
 			this.call_graph = null;
 		}
 	}
-	
+
 	/* node getters */
 	@Override
-	public CirTransitionUnit get_root() { 
-		return (CirTransitionUnit) nodes.get(0); 
+	public CirTransitionUnit get_root() {
+		return (CirTransitionUnit) nodes.get(0);
 	}
 	@Override
 	public int size() { return nodes.size(); }
@@ -96,20 +96,20 @@ public class CirTreeImpl implements CirTree {
 	}
 	@Override
 	public Iterable<CirNode> get_nodes() { return this.nodes; }
-	
+
 	/* index access */
 	@Override
 	public List<CirNode> get_cir_nodes(AstNode ast_source) {
 		if(this.index.containsKey(ast_source)) {
-			return new LinkedList<CirNode>(this.index.get(ast_source));
+			return new LinkedList<>(this.index.get(ast_source));
 		}
 		else {
-			return new LinkedList<CirNode>();
+			return new LinkedList<>();
 		}
 	}
 	@Override
 	public List<CirNode> get_cir_nodes(AstNode ast_source, Class<?> cir_type) {
-		List<CirNode> nodes = new LinkedList<CirNode>();
+		List<CirNode> nodes = new LinkedList<>();
 		if(this.index.containsKey(ast_source)) {
 			List<CirNode> all_nodes = this.index.get(ast_source);
 			for(CirNode cir_node : all_nodes) {
@@ -134,223 +134,223 @@ public class CirTreeImpl implements CirTree {
 		}
 		else {
 			AstNode ast_source = tree_node.get_ast_source();
-			
+
 			if(!this.index.containsKey(ast_source)) {
 				this.index.put(ast_source, new LinkedList<CirNode>());
 			}
-			
+
 			List<CirNode> cir_nodes = this.index.get(ast_source);
 			cir_nodes.add(tree_node);
 		}
 	}
-	
+
 	/* factory methods */
-	public CirIdentifier new_identifier(AstNode ast_source, 
+	public CirIdentifier new_identifier(AstNode ast_source,
 			CName cname, CType data_type) throws IllegalArgumentException {
-		CirIdentifier identifier = new 
+		CirIdentifier identifier = new
 				CirIdentifierImpl(this, this.nodes.size());
 		this.nodes.add(identifier);
-		
-		identifier.set_ast_source(ast_source); 
+
+		identifier.set_ast_source(ast_source);
 		identifier.set_data_type(data_type);
 		identifier.set_cname(cname);
-		
+
 		return identifier;
 	}
-	public CirDeclarator new_declarator(AstNode ast_source, 
+	public CirDeclarator new_declarator(AstNode ast_source,
 			CName cname, CType data_type) throws IllegalArgumentException {
 		CirDeclarator declarator = new CirDeclaratorImpl(this, nodes.size());
 		this.nodes.add(declarator);
-		
+
 		declarator.set_ast_source(ast_source);
 		declarator.set_cname(cname);
 		declarator.set_data_type(data_type);
-		
+
 		return declarator;
 	}
 	public CirImplicator new_implicator(AstNode ast_source, CType data_type) throws IllegalArgumentException {
 		CirImplicator implicator = new CirImplicatorImpl(this, nodes.size());
 		this.nodes.add(implicator);
-		
+
 		implicator.set_ast_source(ast_source);
 		implicator.set_data_type(data_type);
-		
+
 		return implicator;
 	}
 	public CirImplicator new_implicator(AstNode ast_source, CType data_type, String name) throws IllegalArgumentException {
 		CirImplicator implicator = new CirImplicatorImpl(this, nodes.size(), name);
 		this.nodes.add(implicator);
-		
+
 		implicator.set_ast_source(ast_source);
 		implicator.set_data_type(data_type);
-		
+
 		return implicator;
 	}
-	public CirReturnPoint new_return_point(AstNode ast_source, 
+	public CirReturnPoint new_return_point(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirReturnPoint return_point = new CirReturnPointImpl(this, nodes.size());
 		this.nodes.add(return_point);
-		
+
 		return_point.set_ast_source(ast_source);
 		return_point.set_data_type(data_type);
 		return return_point;
 	}
-	public CirDeferExpression new_defer_expression(AstNode ast_source, 
+	public CirDeferExpression new_defer_expression(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirDeferExpression expression = new CirDeferExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirFieldExpression new_field_expression(AstNode ast_source, 
+	public CirFieldExpression new_field_expression(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirFieldExpression expression = new CirFieldExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
 	public CirField new_field(AstNode ast_source, String name) throws IllegalArgumentException {
 		CirField field = new CirFieldImpl(this, nodes.size());
 		this.nodes.add(field);
-		
+
 		field.set_ast_source(ast_source); field.set_name(name);
-		
+
 		return field;
 	}
-	public CirConstExpression new_const_expression(AstNode ast_source, 
+	public CirConstExpression new_const_expression(AstNode ast_source,
 			CConstant constant, CType data_type) throws IllegalArgumentException {
 		CirConstExpression expression = new CirConstExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
 		expression.set_constant(constant);
-		
+
 		return expression;
 	}
-	public CirStringLiteral new_string_literal(AstNode ast_source, 
+	public CirStringLiteral new_string_literal(AstNode ast_source,
 			String literal, CType data_type) throws IllegalArgumentException {
 		CirStringLiteral expression = new CirStringLiteralImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
 		expression.set_literal(literal);
-		
+
 		return expression;
 	}
-	public CirArithExpression new_arith_expression(AstNode ast_source, 
+	public CirArithExpression new_arith_expression(AstNode ast_source,
 			COperator operator, CType data_type) throws IllegalArgumentException {
 		CirArithExpression expression = new CirArithExpressionImpl(this, nodes.size(), operator);
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirBitwsExpression new_bitws_expression(AstNode ast_source, 
+	public CirBitwsExpression new_bitws_expression(AstNode ast_source,
 			COperator operator, CType data_type) throws IllegalArgumentException {
 		CirBitwsExpression expression = new CirBitwsExpressionImpl(this, nodes.size(), operator);
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirLogicExpression new_logic_expression(AstNode ast_source, 
+	public CirLogicExpression new_logic_expression(AstNode ast_source,
 			COperator operator, CType data_type) throws IllegalArgumentException {
 		CirLogicExpression expression = new CirLogicExpressionImpl(this, nodes.size(), operator);
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirRelationExpression new_relation_expression(AstNode ast_source, 
+	public CirRelationExpression new_relation_expression(AstNode ast_source,
 			COperator operator, CType data_type) throws IllegalArgumentException {
 		CirRelationExpression expression = new CirRelationExpressionImpl(this, nodes.size(), operator);
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirAddressExpression new_address_expression(AstNode ast_source, 
+	public CirAddressExpression new_address_expression(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirAddressExpression expression = new CirAddressExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirCastExpression new_cast_expression(AstNode ast_source, 
+	public CirCastExpression new_cast_expression(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirCastExpression expression = new CirCastExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
 	public CirType new_type(AstNode ast_source, CType data_type) throws IllegalArgumentException {
 		CirType typename = new CirTypeImpl(this, nodes.size());
 		this.nodes.add(typename);
-		
+
 		typename.set_ast_source(ast_source);
 		typename.set_typename(data_type);
-		
+
 		return typename;
 	}
-	public CirWaitExpression new_wait_expression(AstNode ast_source, 
+	public CirWaitExpression new_wait_expression(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
 		CirWaitExpression expression = new CirWaitExpressionImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
-	public CirInitializerBody new_initializer_body(AstNode ast_source, 
+	public CirInitializerBody new_initializer_body(AstNode ast_source,
 			CType data_type) throws IllegalArgumentException {
-		CirInitializerBody expression = new 
+		CirInitializerBody expression = new
 				CirInitializerBodyImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
 	public CirInitializerBody new_initializer_body(AstNode ast_source) throws IllegalArgumentException {
-		CirInitializerBody expression = new 
+		CirInitializerBody expression = new
 				CirInitializerBodyImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_ast_source(ast_source);
-		
+
 		return expression;
 	}
 	public CirDefaultValue new_default_value(CType data_type) throws IllegalArgumentException {
-		CirDefaultValue expression = new 
+		CirDefaultValue expression = new
 				CirDefaultValueImpl(this, nodes.size());
 		this.nodes.add(expression);
-		
+
 		expression.set_data_type(data_type);
-		
+
 		return expression;
 	}
 	public CirLabel new_label(AstNode ast_source) throws IllegalArgumentException {
@@ -428,7 +428,7 @@ public class CirTreeImpl implements CirTree {
 	}
 	public CirFunctionDefinition new_function_definition(AstNode ast_source) throws IllegalArgumentException {
 		CirFunctionDefinition function = new CirFunctionDefinitionImpl(this, nodes.size());
-		this.nodes.add(function); function.set_ast_source(ast_source); 
+		this.nodes.add(function); function.set_ast_source(ast_source);
 		return function;
 	}
 	public CirFunctionBody new_function_body(AstNode ast_source) throws IllegalArgumentException {
@@ -442,15 +442,15 @@ public class CirTreeImpl implements CirTree {
 		else {
 			if(node instanceof CirDeclarator) {
 				CirDeclarator declarator = this.new_declarator(
-						node.get_ast_source(), 
-						((CirDeclarator) node).get_cname(), 
+						node.get_ast_source(),
+						((CirDeclarator) node).get_cname(),
 						((CirDeclarator) node).get_data_type());
 				return declarator;
 			}
 			else if(node instanceof CirIdentifier) {
 				CirIdentifier identifier = this.new_identifier(
-						node.get_ast_source(), 
-						((CirIdentifier) node).get_cname(), 
+						node.get_ast_source(),
+						((CirIdentifier) node).get_cname(),
 						((CirIdentifier) node).get_data_type());
 				return identifier;
 			}
@@ -461,7 +461,7 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirReturnPoint) {
 				CirReturnPoint return_point = this.new_return_point(
-						node.get_ast_source(), 
+						node.get_ast_source(),
 						((CirReturnPoint) node).get_data_type());
 				return return_point;
 			}
@@ -501,15 +501,15 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirConstExpression) {
 				CirConstExpression expression = this.new_const_expression(
-						node.get_ast_source(), 
-						((CirConstExpression) node).get_constant(), 
+						node.get_ast_source(),
+						((CirConstExpression) node).get_constant(),
 						((CirConstExpression) node).get_data_type());
 				return expression;
 			}
 			else if(node instanceof CirStringLiteral) {
 				CirStringLiteral literal = this.new_string_literal(
-						node.get_ast_source(), 
-						((CirStringLiteral) node).get_literal(), 
+						node.get_ast_source(),
+						((CirStringLiteral) node).get_literal(),
 						((CirStringLiteral) node).get_data_type());
 				return literal;
 			}
@@ -521,7 +521,7 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirInitializerBody) {
 				CirInitializerBody body = this.new_initializer_body(
-						node.get_ast_source(), 
+						node.get_ast_source(),
 						((CirInitializerBody) node).get_data_type());
 				for(int k = 0; k < node.number_of_children(); k++) {
 					body.add_element((CirExpression) this.copy(((CirInitializerBody) node).get_element(k)));
@@ -534,8 +534,8 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirArithExpression) {
 				CirArithExpression expression = this.new_arith_expression(
-						node.get_ast_source(), 
-						((CirArithExpression) node).get_operator(), 
+						node.get_ast_source(),
+						((CirArithExpression) node).get_operator(),
 						((CirArithExpression) node).get_data_type());
 				for(int k = 0; k < node.number_of_children(); k++) {
 					expression.add_operand((CirExpression) this.copy(
@@ -545,8 +545,8 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirBitwsExpression) {
 				CirBitwsExpression expression = this.new_bitws_expression(
-						node.get_ast_source(), 
-						((CirBitwsExpression) node).get_operator(), 
+						node.get_ast_source(),
+						((CirBitwsExpression) node).get_operator(),
 						((CirBitwsExpression) node).get_data_type());
 				for(int k = 0; k < node.number_of_children(); k++) {
 					expression.add_operand((CirExpression) this.
@@ -556,8 +556,8 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirLogicExpression) {
 				CirLogicExpression expression = this.new_logic_expression(
-						node.get_ast_source(), 
-						((CirLogicExpression) node).get_operator(), 
+						node.get_ast_source(),
+						((CirLogicExpression) node).get_operator(),
 						((CirLogicExpression) node).get_data_type());
 				for(int k = 0; k < node.number_of_children(); k++) {
 					expression.add_operand((CirExpression) this.
@@ -567,8 +567,8 @@ public class CirTreeImpl implements CirTree {
 			}
 			else if(node instanceof CirRelationExpression) {
 				CirRelationExpression expression = this.new_relation_expression(
-						node.get_ast_source(), 
-						((CirRelationExpression) node).get_operator(), 
+						node.get_ast_source(),
+						((CirRelationExpression) node).get_operator(),
 						((CirRelationExpression) node).get_data_type());
 				for(int k = 0; k < node.number_of_children(); k++) {
 					expression.add_operand((CirExpression) this.
@@ -688,7 +688,7 @@ public class CirTreeImpl implements CirTree {
 			else throw new IllegalArgumentException("unsupport " + node.getClass().getSimpleName());
 		}
 	}
-	
+
 	/* code range access */
 	@Override
 	public boolean has_cir_range(AstNode ast_source) { return this.ranges.containsKey(ast_source); }
@@ -712,7 +712,7 @@ public class CirTreeImpl implements CirTree {
 			return this.ranges.get(ast_source);
 		}
 	}
-	
+
 	@Override
 	public CirFunctionCallGraph get_function_call_graph() { return this.call_graph; }
 	/**
@@ -725,5 +725,5 @@ public class CirTreeImpl implements CirTree {
 
 	@Override
 	public CirLocalizer get_localizer() { return this.localizer; }
-	
+
 }

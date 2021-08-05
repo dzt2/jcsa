@@ -41,17 +41,17 @@ import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 
 /**
  * Used to generate the C-like intermediate representation for source code.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirCodeGenerator {
-	
+
 	/** whether the generated code is unique with scoping information **/
 	private boolean unique_code;
 	/** the String buffer used as cache to preserve the generated code **/
 	private StringBuilder buffer;
-	
+
 	/**
 	 * create a code generator that generate the code for C-like intermediate
 	 * representation with specified unique switch.
@@ -62,12 +62,12 @@ public class CirCodeGenerator {
 	}
 	/** the singleton used to generate code that describes in CIR language **/
 	public static final CirCodeGenerator generator = new CirCodeGenerator();
-	
+
 	/* type generation */
 	private void parse(CType type) throws Exception {
 		this.buffer.append("type");
 	}
-	
+
 	/* generation methods */
 	private void parse(CirNode node) throws Exception {
 		if(node == null)
@@ -225,7 +225,7 @@ public class CirCodeGenerator {
 			this.buffer.append("(");
 			this.parse(node.get_operand(0));
 			this.buffer.append(")");
-			
+
 			switch(node.get_operator()) {
 			case arith_add:	this.buffer.append(" + "); break;
 			case arith_sub:	this.buffer.append(" - "); break;
@@ -235,7 +235,7 @@ public class CirCodeGenerator {
 			default: throw new IllegalArgumentException(
 					"Unsupport: " + node.get_operator());
 			}
-			
+
 			this.buffer.append("(");
 			this.parse(node.get_operand(1));
 			this.buffer.append(")");
@@ -251,7 +251,7 @@ public class CirCodeGenerator {
 			this.buffer.append("(");
 			this.parse(node.get_operand(0));
 			this.buffer.append(")");
-			
+
 			switch(node.get_operator()) {
 			case bit_and:		this.buffer.append(" & "); break;
 			case bit_or:		this.buffer.append(" | "); break;
@@ -261,7 +261,7 @@ public class CirCodeGenerator {
 			default: throw new IllegalArgumentException(
 					"Unsupport: " + node.get_operator());
 			}
-			
+
 			this.buffer.append("(");
 			this.parse(node.get_operand(1));
 			this.buffer.append(")");
@@ -276,7 +276,7 @@ public class CirCodeGenerator {
 		this.buffer.append("(");
 		this.parse(node.get_operand(0));
 		this.buffer.append(")");
-		
+
 		switch(node.get_operator()) {
 		case greater_tn:	this.buffer.append(" > ");	break;
 		case greater_eq:	this.buffer.append(" >= ");	break;
@@ -286,7 +286,7 @@ public class CirCodeGenerator {
 		case not_equals:	this.buffer.append(" != ");	break;
 		default: throw new IllegalArgumentException("Unsupport: " + node.get_operator());
 		}
-		
+
 		this.buffer.append("(");
 		this.parse(node.get_operand(1));
 		this.buffer.append(")");
@@ -382,7 +382,7 @@ public class CirCodeGenerator {
 		}
 		this.buffer.append("\n");
 	}
-	
+
 	/**
 	 * @param simplified
 	 * @param node
@@ -396,5 +396,5 @@ public class CirCodeGenerator {
 		generator.parse(node);
 		return generator.buffer.toString();
 	}
-	
+
 }

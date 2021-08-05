@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.lexical.CKeyword;
  * @author yukimula
  */
 public class CTypeAnalyzer {
-	
+
 	public static CType get_value_type(CType type) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("invalid type: null");
@@ -25,18 +25,18 @@ public class CTypeAnalyzer {
 			return type;
 		}
 	}
-	
+
 	public static boolean is_void(CType type) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("invalid type: null");
-		else if(type instanceof CBasicType) 
+		else if(type instanceof CBasicType)
 			return ((CBasicType) type).get_tag() == CBasicTypeTag.c_void;
 		else return false;
 	}
 	public static boolean is_boolean(CType type) throws Exception {
 		if(type == null)
 			throw new IllegalArgumentException("invalid type: null");
-		else if(type instanceof CBasicType) 
+		else if(type instanceof CBasicType)
 			return ((CBasicType) type).get_tag() == CBasicTypeTag.c_bool;
 		else return false;
 	}
@@ -100,7 +100,7 @@ public class CTypeAnalyzer {
 			case c_long:
 			case c_ulong:
 			case c_llong:
-			case c_ullong:	
+			case c_ullong:
 			case c_float:
 			case c_double:
 			case c_ldouble: return true;
@@ -169,7 +169,7 @@ public class CTypeAnalyzer {
 			return false;
 		}
 	}
-	
+
 	public static AstExpression get_expression_of(AstExpression expr) throws Exception {
 		if(expr == null)
 			throw new IllegalArgumentException("invalid expr: null");
@@ -202,5 +202,5 @@ public class CTypeAnalyzer {
 			return parent;
 		}
 	}
-	
+
 }

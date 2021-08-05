@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>(designator_list =)? initializer</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstFieldInitializer extends AstNode {

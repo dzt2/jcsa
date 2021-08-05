@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 
 /**
  * <code>array_qualifier_list --> (<b>static | const | volatile | restrict</b>)+</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstArrayQualifierList extends AstNode {

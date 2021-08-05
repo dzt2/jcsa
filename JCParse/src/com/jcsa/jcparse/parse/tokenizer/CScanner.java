@@ -20,7 +20,7 @@ import com.jcsa.jcparse.lang.text.CText;
 
 /**
  * To scan the characters in source code and produce corresponding PToken(s)
- * 
+ *
  * @author yukimula
  */
 class CScanner {
@@ -41,7 +41,7 @@ class CScanner {
 
 	/**
 	 * using LL(1) to match the characters and produce tokens.
-	 * 
+	 *
 	 * @param stream
 	 *            : to provide characters linearly
 	 * @param prefix
@@ -105,7 +105,7 @@ class CScanner {
 
 	/**
 	 * identifier |--> {_, a-z, A-Z} {_, 0-9, a-z, A-Z}*
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -137,7 +137,7 @@ class CScanner {
 
 	/**
 	 * character |--> (L)? ' c-char '
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -171,7 +171,7 @@ class CScanner {
 
 	/**
 	 * literal |--> (L)? " (c_str_char)* "
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -202,7 +202,7 @@ class CScanner {
 
 	/**
 	 * integer |--> (oct_digits | dec_digits | hex_digits) (int_suffix)?
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -242,7 +242,7 @@ class CScanner {
 
 	/**
 	 * floating |--> (dec_real | hex_real) (real_suffix)?
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -394,7 +394,7 @@ class CScanner {
 
 	/**
 	 * +
-	 * 
+	 *
 	 * @see CDirective definition
 	 * @param stream
 	 * @return
@@ -455,7 +455,7 @@ class CScanner {
 
 	/**
 	 * header |--> "<" {chars/{\", >, < }}* ">"
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -468,7 +468,7 @@ class CScanner {
 
 	/**
 	 * comment |--> // comment | / * comment * /
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -481,7 +481,7 @@ class CScanner {
 
 	/**
 	 * newline |--> '\n'
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -497,7 +497,7 @@ class CScanner {
 	 * |--> \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v <br>
 	 * |--> \ (0-7)+ <br>
 	 * |--> \x (0-9|a-z|A-Z)+ <br>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -561,7 +561,7 @@ class CScanner {
 	 * |--> \', \", \?, \\, \a, \b, \f, \n, \r, \t, \v <br>
 	 * |--> \ (0-7)+ <br>
 	 * |--> \x (0-9|a-z|A-Z)+ <br>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -622,7 +622,7 @@ class CScanner {
 
 	/**
 	 * dec_digits |--> (1-9) (0-9)*
-	 * 
+	 *
 	 * @param stream
 	 * @return : all digits matched
 	 */
@@ -652,7 +652,7 @@ class CScanner {
 
 	/**
 	 * oct_digits |--> 0 (0-7)*
-	 * 
+	 *
 	 * @param stream
 	 * @return : all digits matched
 	 */
@@ -680,7 +680,7 @@ class CScanner {
 
 	/**
 	 * hex_digits |--> 0x|0X (0-9|a-z|A-Z)+
-	 * 
+	 *
 	 * @param stream
 	 * @return : all digits (without 0x) matched
 	 */
@@ -709,7 +709,7 @@ class CScanner {
 	/**
 	 * int_suffix |--> (u|U) (l|ll|L|LL)? <br>
 	 * |--> (l|ll|L|LL) (u|U)? <br>
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -756,7 +756,7 @@ class CScanner {
 	/**
 	 * dec_real |--> dec_fraction (dec_exponent)? (real_suffix)? |-->
 	 * dec_digit_seq dec_exponent (real_suffix)?
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -821,7 +821,7 @@ class CScanner {
 	/**
 	 * dec_fraction |--> digit_sequence . (digit_sequence)? <br>
 	 * |--> . digit_sequence
-	 * 
+	 *
 	 * @param stream
 	 * @return : [int_part, frac_part]
 	 */
@@ -852,7 +852,7 @@ class CScanner {
 
 	/**
 	 * dec_exponent |--> (e|E) (sign)? (digit_sequence)
-	 * 
+	 *
 	 * @param stream
 	 * @return : [sign; exponent]
 	 */
@@ -887,7 +887,7 @@ class CScanner {
 
 	/**
 	 * hex_real |--> 0x|0X hex_fraction (hex_exponent)? (real_suffix)?
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -952,7 +952,7 @@ class CScanner {
 	/**
 	 * hex_fraction |--> hex_digit_sequence . (hex_digit_sequence)? <br>
 	 * |--> . hex_digit_sequence
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -986,7 +986,7 @@ class CScanner {
 
 	/**
 	 * hex_exponent |--> (p|P) (sign)? digit_sequence
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -1021,7 +1021,7 @@ class CScanner {
 
 	/**
 	 * real_suffix |--> f | F | l | L
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -1036,7 +1036,7 @@ class CScanner {
 
 	/**
 	 * dec_digit_sequence |--> (0-9)+
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -1059,7 +1059,7 @@ class CScanner {
 
 	/**
 	 * hex_digit_sequence |--> (0-9|a-z|A-Z)+
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 */
@@ -1082,7 +1082,7 @@ class CScanner {
 
 	/**
 	 * sys_header |--> < chars >
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -1115,7 +1115,7 @@ class CScanner {
 
 	/**
 	 * usr_header |--> " chars "
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -1147,7 +1147,7 @@ class CScanner {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -1171,7 +1171,7 @@ class CScanner {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -1196,7 +1196,7 @@ class CScanner {
 
 	/**
 	 * whether the current segment starts with specified character
-	 * 
+	 *
 	 * @param stream
 	 * @param ch
 	 * @return
@@ -1213,7 +1213,7 @@ class CScanner {
 
 	/**
 	 * whether the current segment starts with specified characters
-	 * 
+	 *
 	 * @param stream
 	 * @param str
 	 * @return
@@ -1240,7 +1240,7 @@ class CScanner {
 
 	/**
 	 * skip all spaces except newline
-	 * 
+	 *
 	 * @param stream
 	 * @return
 	 * @throws Exception
@@ -1263,7 +1263,7 @@ class CScanner {
 
 	/**
 	 * oct_digit |--> (0-7)
-	 * 
+	 *
 	 * @param ch
 	 * @return
 	 */
@@ -1273,7 +1273,7 @@ class CScanner {
 
 	/**
 	 * dec_digit |--> (0-9)
-	 * 
+	 *
 	 * @param ch
 	 * @return
 	 */
@@ -1283,7 +1283,7 @@ class CScanner {
 
 	/**
 	 * hex_digit |--> (0-9 | a-z | A-Z)
-	 * 
+	 *
 	 * @param ch
 	 * @return
 	 */
@@ -1293,7 +1293,7 @@ class CScanner {
 
 	/**
 	 * whether the token refers to #include
-	 * 
+	 *
 	 * @param token
 	 * @return
 	 */

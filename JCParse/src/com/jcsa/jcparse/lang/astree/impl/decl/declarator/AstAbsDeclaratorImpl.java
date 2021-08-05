@@ -2,10 +2,10 @@ package com.jcsa.jcparse.lang.astree.impl.decl.declarator;
 
 import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstAbsDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDimension;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterBody;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstPointer;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.impl.AstFixedNode;
 import com.jcsa.jcparse.lang.lexical.CPunctuator;
 

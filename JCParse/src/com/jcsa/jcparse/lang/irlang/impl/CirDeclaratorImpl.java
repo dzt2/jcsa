@@ -37,5 +37,5 @@ public class CirDeclaratorImpl extends CirExpressionImpl implements CirDeclarato
 	public String get_unique_name() {
 		return name.get_name() + "#" + name.get_scope().hashCode();
 	}
-	
+
 }

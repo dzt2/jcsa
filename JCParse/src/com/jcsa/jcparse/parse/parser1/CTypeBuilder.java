@@ -13,6 +13,7 @@ import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstAbsDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDimension;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstIdentifierList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
@@ -24,7 +25,6 @@ import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterTypeList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstPointer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstDeclarationSpecifiers;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumSpecifier;
 import com.jcsa.jcparse.lang.astree.decl.specifier.AstEnumerator;
@@ -80,11 +80,11 @@ import com.jcsa.jcparse.lang.text.CLocation;
 
 /**
  * To analyze the declaration in C program and derive types from them
- * 
+ *
  * @author yukimula
  */
 public class CTypeBuilder {
-	
+
 	/** to construct type for each declaration **/
 	protected CTypeFactory factory;
 	/** to construct entity for each type **/
@@ -102,12 +102,12 @@ public class CTypeBuilder {
 		factory = new CTypeFactory();
 		efactory = new CEntityFactory();
 		this.evaluator = evaluator;
-		type_keywords = new ArrayList<AstTypeKeyword>();
+		type_keywords = new ArrayList<>();
 	}
 
 	/**
 	 * to build up basic type from the sequence of type keywords
-	 * 
+	 *
 	 * @param keywords
 	 * @return : null if the type keywords are incorrect
 	 * @throws Exception
@@ -261,7 +261,7 @@ public class CTypeBuilder {
 
 	/**
 	 * to build up struct-type from struct specifier
-	 * 
+	 *
 	 * @param specifier
 	 * @return : with empty body if not defined | original instance if declared
 	 *         | updated if defined
@@ -286,7 +286,7 @@ public class CTypeBuilder {
 				type = factory.get_struct_type(name.get_name());
 				cname.set_type(type);
 			}
-		} 
+		}
 		else type = factory.get_struct_type(null);
 
 		/* implement the type expression */
@@ -306,7 +306,7 @@ public class CTypeBuilder {
 
 	/**
 	 * to build up union-type for union specifier
-	 * 
+	 *
 	 * @param specifier
 	 * @return : with empty body if not defined | original instance if declared
 	 *         | updated if defined
@@ -331,7 +331,7 @@ public class CTypeBuilder {
 				type = factory.get_union_type(name.get_name());
 				cname.set_type(type);
 			}
-		} 
+		}
 		else
 			type = factory.get_union_type(null);
 
@@ -352,7 +352,7 @@ public class CTypeBuilder {
 
 	/**
 	 * to build up enum-type based on enum specifier
-	 * 
+	 *
 	 * @param specifier
 	 * @return
 	 * @throws Exception
@@ -396,7 +396,7 @@ public class CTypeBuilder {
 
 	/**
 	 * to get the type of typedef-name
-	 * 
+	 *
 	 * @param specifier
 	 * @return
 	 * @throws Exception
@@ -416,7 +416,7 @@ public class CTypeBuilder {
 	/**
 	 * to build up type for the specifiers before declarator(s), where
 	 * storage-class specifier is not considered.
-	 * 
+	 *
 	 * @param specifiers
 	 * @return : [CType; CStorageClass]
 	 * @throws Exception
@@ -543,7 +543,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the type for specifier qualifier list in AST
-	 * 
+	 *
 	 * @param specifiers
 	 * @return
 	 * @throws Exception
@@ -634,7 +634,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the type from specifier type and pointer in declarator
-	 * 
+	 *
 	 * @param pointer
 	 * @param base
 	 * @return
@@ -674,7 +674,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the type from dimension in declarator
-	 * 
+	 *
 	 * @param dimension
 	 * @param base
 	 * @return
@@ -693,7 +693,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the type from parameter body in declarator
-	 * 
+	 *
 	 * @param parameters
 	 * @param base
 	 * @return
@@ -724,7 +724,7 @@ public class CTypeBuilder {
 	/**
 	 * build up the type for name among declarator and update the name's cname's
 	 * instance (not only the type!)
-	 * 
+	 *
 	 * @param declarator
 	 * @param base
 	 * @return
@@ -781,7 +781,7 @@ public class CTypeBuilder {
 			if (((CInstanceName) cname).get_instance() == null) {
 				/* fix the pointer type as array type when initializer list is provided */
 				type = this.fix_array_type_in_declarator(old_declarator, type);
-				
+
 				CInstance instance;
 				if (storage == null)
 					instance = efactory.get_instance_of(type);
@@ -797,7 +797,7 @@ public class CTypeBuilder {
 
 		return type; /* return */
 	}
-	
+
 	/**
 	 * To fix the bug for declarator as x[] = {1, 2, 3...} to array_type rather than pointer type.
 	 * @param declarator
@@ -810,7 +810,7 @@ public class CTypeBuilder {
 		while(parent != null && !(parent instanceof AstInitDeclarator)) {
 			parent = parent.get_parent();
 		}
-		
+
 		if(parent != null) {
 			AstInitDeclarator init_declarator = (AstInitDeclarator) parent;
 			if(init_declarator.has_initializer()) {
@@ -830,13 +830,13 @@ public class CTypeBuilder {
 				}
 			}
 		}
-		
+
 		return data_type;
 	}
 
 	/**
 	 * build up the type for name among struct-declarator
-	 * 
+	 *
 	 * @param declarator
 	 * @param base
 	 * @param storage
@@ -903,7 +903,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the type for name among union-declarator
-	 * 
+	 *
 	 * @param declarator
 	 * @param base
 	 * @param storage
@@ -971,7 +971,7 @@ public class CTypeBuilder {
 	/**
 	 * build up the type for abstract declarator in function-declaration or
 	 * type-name
-	 * 
+	 *
 	 * @param declarator
 	 * @param type
 	 * @return
@@ -1003,7 +1003,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the field body for each declaration in struct body
-	 * 
+	 *
 	 * @param decl
 	 * @param body
 	 * @return
@@ -1020,7 +1020,7 @@ public class CTypeBuilder {
 
 	/**
 	 * build up the field body for each declaration in union body
-	 * 
+	 *
 	 * @param decl
 	 * @param body
 	 * @return
@@ -1038,7 +1038,7 @@ public class CTypeBuilder {
 	/**
 	 * build up the enumerators for each enumerator node in list of
 	 * enum-specifier
-	 * 
+	 *
 	 * @param enumerator
 	 * @param elist
 	 * @return
@@ -1072,7 +1072,7 @@ public class CTypeBuilder {
 	 * update the parameter type list by type of the parameter declaration;
 	 * update the instance (not only the type) for cname in paramter's
 	 * declarator's name
-	 * 
+	 *
 	 * @param param
 	 * @param list
 	 * @return
@@ -1110,7 +1110,7 @@ public class CTypeBuilder {
 
 	/**
 	 * update the scope for declaration and its name (cname)
-	 * 
+	 *
 	 * @param declaration
 	 * @return
 	 * @throws Exception
@@ -1133,7 +1133,7 @@ public class CTypeBuilder {
 
 	/**
 	 * update the type in type-name (used in expression)
-	 * 
+	 *
 	 * @param typename
 	 * @return
 	 * @throws Exception
@@ -1150,7 +1150,7 @@ public class CTypeBuilder {
 
 	/**
 	 * update the type for function definition's name
-	 * 
+	 *
 	 * @param definition
 	 * @return
 	 * @throws Exception
@@ -1177,7 +1177,7 @@ public class CTypeBuilder {
 				AstDeclarationStatement stmt = dlist.get_declaration(i);
 				this.build_up(stmt.get_declaration());
 			}
-			Map<String, CName> types = new HashMap<String, CName>();
+			Map<String, CName> types = new HashMap<>();
 			this.process_definition(dlist, types);
 
 			n = ilist.number_of_identifiers();
@@ -1203,7 +1203,7 @@ public class CTypeBuilder {
 
 	/**
 	 * extract identifier list from declarator
-	 * 
+	 *
 	 * @param declarator
 	 * @return
 	 * @throws Exception
@@ -1220,7 +1220,7 @@ public class CTypeBuilder {
 
 	/**
 	 * put the names' type into map
-	 * 
+	 *
 	 * @param declaration
 	 * @param types
 	 * @throws Exception
@@ -1252,7 +1252,7 @@ public class CTypeBuilder {
 
 	/**
 	 * get the name among declarator
-	 * 
+	 *
 	 * @param declarator
 	 * @return
 	 * @throws Exception
@@ -1269,7 +1269,7 @@ public class CTypeBuilder {
 
 	/**
 	 * get the line of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception
@@ -1281,7 +1281,7 @@ public class CTypeBuilder {
 
 	/***
 	 * get the code of the node in source text
-	 * 
+	 *
 	 * @param node
 	 * @return
 	 * @throws Exception
@@ -1293,7 +1293,7 @@ public class CTypeBuilder {
 
 	/**
 	 * evaluate the integer value (expected as integer) from const-expression
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 * @throws Exception

@@ -38,5 +38,5 @@ public class CEnumTypeImpl extends CTypeImpl implements CEnumType {
 	public String get_name() {
 		return name;
 	}
-	
+
 }

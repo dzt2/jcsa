@@ -54,7 +54,7 @@ public class CBasicTypeImpl extends CTypeImpl implements CBasicType {
 
 	/**
 	 * constructor
-	 * 
+	 *
 	 * @param tag
 	 */
 	protected CBasicTypeImpl(CBasicTypeTag tag) {
@@ -158,5 +158,5 @@ public class CBasicTypeImpl extends CTypeImpl implements CBasicType {
 		ldouble_imaginary_type = new CBasicTypeImpl(CBasicTypeTag.c_ldouble_imaginary);
 		gnu_va_list_type = new CBasicTypeImpl(CBasicTypeTag.gnu_va_list);
 	}
-	
+
 }

@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
 
 /**
  * identifier as macro in preprocessing line
- * 
+ *
  * @author yukimula
  *
  */

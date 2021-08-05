@@ -12,17 +12,17 @@ package com.jcsa.jcparse.lang.ctype;
  * 8. qualifier: <i>qualifier</i>(type), where <i>qualifier</i> = <b>const</b> |
  * <b>volatile</b> <br>
  * 9. storage: <i>storage</i>(type) <br>
- * 
+ *
  * @author yukimula
  */
 public interface CType {
 	/**
 	 * whether the type is complete and defined
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean is_defined();
-	
+
 	/**
 	 * @return code of the data type
 	 */

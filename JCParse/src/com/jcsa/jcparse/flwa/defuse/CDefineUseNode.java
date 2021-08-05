@@ -9,7 +9,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CDefineUseNode {
-	
+
 	/* attributes */
 	/** the graph where this node is created **/
 	private CDefineUseGraph graph;
@@ -23,7 +23,7 @@ public class CDefineUseNode {
 	private List<CDefineUseEdge> in;
 	/** the set of define or used nodes that this use or define node links to **/
 	private List<CDefineUseEdge> ou;
-	
+
 	/* constructor */
 	/**
 	 * create a node within the graph with respect to the instance and expression
@@ -46,11 +46,11 @@ public class CDefineUseNode {
 			this.define = define;
 			this.instance = instance;
 			this.expression = expression;
-			this.in = new LinkedList<CDefineUseEdge>();
-			this.ou = new LinkedList<CDefineUseEdge>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the definition-usage graph
@@ -127,7 +127,7 @@ public class CDefineUseNode {
 	 * @throws Exception
 	 */
 	public String get_reference() throws Exception { return this.expression.generate_code(false); }
-	
+
 	/* setters */
 	/**
 	 * link this node to the target, of which pairs need to be:<br>
@@ -141,16 +141,16 @@ public class CDefineUseNode {
 		if(target == null || target.graph != this.graph)
 			throw new IllegalArgumentException("Invalid target: " + target);
 		else if(this.define && !target.define) {
-			CDefineUseEdge edge = new 
+			CDefineUseEdge edge = new
 					CDefineUseEdge(this, target, this.instance);
 			this.ou.add(edge); target.in.add(edge); return edge;
 		}
 		else if(!this.define && target.define) {
-			CDefineUseEdge edge = new 
+			CDefineUseEdge edge = new
 					CDefineUseEdge(this, target, target.instance);
 			this.ou.add(edge); target.in.add(edge); return edge;
 		}
 		else throw new IllegalArgumentException("Invalid target: " + this.define + " to " + target.define);
 	}
-	
+
 }

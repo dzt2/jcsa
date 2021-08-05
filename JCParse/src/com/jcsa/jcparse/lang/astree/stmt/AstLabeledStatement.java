@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.base.AstPunctuator;
 
 /**
  * <code>label_stmt ---> label : </code>
- * 
+ *
  * @author yukimula
  *
  */

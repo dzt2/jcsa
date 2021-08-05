@@ -7,41 +7,41 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
 
 /**
  * <code>StructDeclarator --> declarator | (declarator)? : const_expr</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstStructDeclarator extends AstNode {
 	/**
 	 * whether declarator defined in struct-declarator
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean has_declarator();
 
 	/**
 	 * whether expression defined in struct-declarator
-	 * 
+	 *
 	 * @return
 	 */
 	public boolean has_expression();
 
 	/**
 	 * get declarator
-	 * 
+	 *
 	 * @return
 	 */
 	public AstDeclarator get_declarator();
 
 	/**
 	 * get :
-	 * 
+	 *
 	 * @return
 	 */
 	public AstPunctuator get_colon();
 
 	/**
 	 * get the const-expression
-	 * 
+	 *
 	 * @return
 	 */
 	public AstConstExpression get_expression();

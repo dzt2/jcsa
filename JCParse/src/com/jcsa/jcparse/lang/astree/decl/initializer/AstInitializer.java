@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 
 /**
  * <code>initializer --> expr | initializer_body </code>
- * 
+ *
  * @author yukimula
  */
 public interface AstInitializer extends AstNode {

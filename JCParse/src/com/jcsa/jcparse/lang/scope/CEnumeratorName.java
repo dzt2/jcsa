@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.ctype.CEnumerator;
 
 /**
  * name for enumerator in enum-type
- * 
+ *
  * @author yukimula
  */
 public interface CEnumeratorName extends CName {

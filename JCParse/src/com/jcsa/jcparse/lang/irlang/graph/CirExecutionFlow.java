@@ -15,11 +15,11 @@ package com.jcsa.jcparse.lang.irlang.graph;
  *
  */
 public class CirExecutionFlow {
-	
+
 	/* definitions and constructor */
 	private CirExecutionFlowType type;
 	private CirExecution source, target;
-	protected CirExecutionFlow(CirExecutionFlowType type, CirExecution 
+	protected CirExecutionFlow(CirExecutionFlowType type, CirExecution
 			source, CirExecution target) throws IllegalArgumentException {
 		if(type == null)
 			throw new IllegalArgumentException("invalid type");
@@ -31,7 +31,7 @@ public class CirExecutionFlow {
 			this.type = type; this.source = source; this.target = target;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * get the type of the flow in execution flow graph
@@ -59,22 +59,22 @@ public class CirExecutionFlow {
 	 * is not considered in our case here.
 	 * @return
 	 */
-	public boolean is_reachable() { 
-		return this.source.is_reachable() && this.target.is_reachable(); 
+	public boolean is_reachable() {
+		return this.source.is_reachable() && this.target.is_reachable();
 	}
 	/**
 	 * @return whether the flow is virtual created
 	 */
-	public boolean is_virtual() { 
-		return this.type == CirExecutionFlowType.virt_flow; 
-	}  
+	public boolean is_virtual() {
+		return this.type == CirExecutionFlowType.virt_flow;
+	}
 	/**
 	 * @return the flow is actual if it is not virtual
 	 */
 	public boolean is_actual() {
 		return this.type != CirExecutionFlowType.virt_flow;
 	}
-	
+
 	/* virtual constructor */
 	/**
 	 * @param source
@@ -83,7 +83,7 @@ public class CirExecutionFlow {
 	 * 		   which was NOT linked to the entity of the execution nodes.
 	 * @throws Exception
 	 */
-	public static CirExecutionFlow virtual_flow(CirExecution source, 
+	public static CirExecutionFlow virtual_flow(CirExecution source,
 			CirExecution target) throws IllegalArgumentException {
 		return new CirExecutionFlow(CirExecutionFlowType.virt_flow, source, target);
 	}
@@ -97,12 +97,12 @@ public class CirExecutionFlow {
 			return false;
 		}
 		/*
-		else if(call_flow == retr_flow 
+		else if(call_flow == retr_flow
 				&& call_flow.type == CirExecutionFlowType.skip_flow) {
 			return true;
 		}
 		*/
-		else if(call_flow.type == CirExecutionFlowType.call_flow 
+		else if(call_flow.type == CirExecutionFlowType.call_flow
 				&& retr_flow.type == CirExecutionFlowType.retr_flow) {
 			CirExecution call_execution = call_flow.source;
 			CirExecution wait_execution = retr_flow.target;
@@ -113,7 +113,7 @@ public class CirExecutionFlow {
 			return false;
 		}
 	}
-	
+
 	/* common interfaces */
 	@Override
 	public String toString() {
@@ -134,5 +134,5 @@ public class CirExecutionFlow {
 		else
 			return false;
 	}
-	
+
 }

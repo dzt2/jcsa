@@ -21,7 +21,7 @@ package com.jcsa.jcparse.flwa.relation;
  * 		reference of latter in another statement.<br>
  * 	(2)	<code>use_define</code>: the source node is an expression while the target node is a reference, such
  * 		that the former and the latter refer to the left and right value in the same assignment statement.<br>
- * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the 
+ * 	(3)	<code>pass_in</code>: the source node refers to an expression in the calling statement, while the
  * 		target node refers to the right-value of the assignment to initialize the parameter in the callee
  * 		function.<br>
  * 	(4)	<code>pass_ou</code>: the source node refers to the reference of returning assignment while target
@@ -49,14 +49,14 @@ package com.jcsa.jcparse.flwa.relation;
  *
  */
 public enum CRelationEdgeType {
-	
+
 	/* parent-child relation */
 	/** if_statement ==> if_statement.condition **/				condition,
 	/** assign_statement ==> assign_statement.lvalue **/		left_value,
 	/** assign_statement ==> assign_statement.rvalue **/		right_value,
 	/** expression ==(AST)==> reference **/						refer_include,
 	/** reference ==(AST)==> reference **/						value_include,
-	
+
 	/* propagation flow */
 	/** if_statement.condition ==> statement **/				transit_true,
 	/** if_statement.condition ==> statement **/				transit_false,
@@ -64,14 +64,14 @@ public enum CRelationEdgeType {
 	/** assignment.rvalue ==> assignment.lvalue **/				use_define,
 	/** call_statement.argument ==> init_assign.lvalue **/		pass_in,
 	/** retr_assign.lvalue ==> wait_assign.rvalue **/			pass_ou,
-	
+
 	/* interprocedural flow */
 	/** call_statement ==> wait_statement **/					wait_point,
 	/** retr_statement ==> wait_statement **/					retr_point,
 	/** call_statement ==> init_assignment **/					pass_point,
-	/** wait_expression ==> wait_expression.operand 
+	/** wait_expression ==> wait_expression.operand
 	 *  call_statement ==> call_statement.function **/			function,
 	/** wait_expression.operand ==> call_statement.argument
 	 *  call_statement.function ==> call_statement.argument **/	argument,
-	
+
 }

@@ -76,22 +76,22 @@ import com.jcsa.jcparse.test.inst.InstrumentalLine;
 
 /**
  * It is used to construct the state-transition path.
- * 
+ *
  * @author yukimula
  *
  */
 public class CStatePathBuilder {
-	
+
 	/* definitions */
 	/** mapping from expression to its value **/
 	private Map<CirExpression, Object> values;
 	/** the sequence of path being generated **/
 	private CStatePath path;
-	
+
 	/* singleton mode */
 	private CStatePathBuilder() { }
 	private static final CStatePathBuilder builder = new CStatePathBuilder();
-	
+
 	/* cir-location algorithms */
 	/**
 	 * @param location
@@ -119,7 +119,7 @@ public class CStatePathBuilder {
 	private List<CirNode> get_cir_nodes(AstNode location, Class<?> type) throws Exception {
 		return this.path.get_cir_tree().get_cir_nodes(location, type);
 	}
-	
+
 	/* buffer operation methods */
 	/**
 	 * record the expression and its value in the buffer
@@ -129,7 +129,7 @@ public class CStatePathBuilder {
 	private void put_expression(CirExpression expression, Object value) {
 		if(expression == null || expression.statement_of() == null)
 			return;
-		else if(!CirLocalizer.is_left_reference(expression))	
+		else if(!CirLocalizer.is_left_reference(expression))
 			this.values.put(expression, value);	/* ignore lvalue in assignment */
 	}
 	/**
@@ -145,7 +145,7 @@ public class CStatePathBuilder {
 		}
 	}
 	/**
-	 * create a new node w.r.t. the statement, of which expressions are 
+	 * create a new node w.r.t. the statement, of which expressions are
 	 * constructed with values and initialized into the node created.
 	 * (1) create a node w.r.t. the statement and add it to the list;
 	 * (2) collect all the expressions under the statement;
@@ -158,7 +158,7 @@ public class CStatePathBuilder {
 		CirExecution execution = this.get_cir_execution(statement);
 		this.path.append(execution, values);
 	}
-	
+
 	/* context-sensitive translation */
 	/**
 	 * generate statement node when the expression is an end of statement.
@@ -179,7 +179,7 @@ public class CStatePathBuilder {
 				break;
 			}
 		}
-		
+
 		if(parent instanceof AstFunCallExpression) {
 			if(!((AstFunCallExpression) parent).has_argument_list()) {
 				if(((AstFunCallExpression) parent).get_function() == child) {
@@ -195,7 +195,7 @@ public class CStatePathBuilder {
 						get_cir_nodes(parent, CirSaveAssignStatement.class).get(0);
 				Object condition_value = this.values.get(statement1.get_rvalue());
 				this.append(statement1);
-				
+
 				CirIfStatement statement2 = (CirIfStatement) this.
 						get_cir_nodes(parent, CirIfStatement.class).get(0);
 				if(((AstLogicBinaryExpression) parent).get_operator().get_operator() == COperator.logic_and) {
@@ -278,7 +278,7 @@ public class CStatePathBuilder {
 			}
 		}
 	}
-	
+
 	/* basic expression */
 	private void parse_id_expression(InstrumentalLine line, AstIdExpression location) throws Exception {
 		if(line.is_end()) {
@@ -322,8 +322,8 @@ public class CStatePathBuilder {
 				CirExpression roperand = expression.get_operand(1);
 				this.put_expression(expression, line.get_value());
 				this.put_expression(roperand, Integer.valueOf(1));
-				
-				CirExpression loperand = expression.get_operand(0); 
+
+				CirExpression loperand = expression.get_operand(0);
 				Object value = line.get_value();
 				int increment = (expression.get_operator() == COperator.arith_add) ? -1 : 1;
 				if(value != null) {
@@ -359,12 +359,12 @@ public class CStatePathBuilder {
 	private void parse_postfix_expression(InstrumentalLine line, AstPostfixExpression location) throws Exception {
 		if(line.is_end()) {
 			this.put_expressions(location, line.get_value());
-			
+
 			CirAssignStatement sav_statement = (CirAssignStatement) this.
 					get_cir_nodes(location, CirSaveAssignStatement.class).get(0);
 			this.put_expression(sav_statement.get_rvalue(), line.get_value());
 			this.append(sav_statement);
-			
+
 			CirAssignStatement inc_statement = (CirAssignStatement) this.
 					get_cir_nodes(location, CirIncreAssignStatement.class).get(0);
 			CirArithExpression expression = (CirArithExpression) inc_statement.get_rvalue();
@@ -372,7 +372,7 @@ public class CStatePathBuilder {
 			CirExpression roperand = expression.get_operand(1);
 			this.put_expression(loperand, line.get_value());
 			this.put_expression(roperand, Integer.valueOf(1));
-			
+
 			Object value = line.get_value();
 			int increment = (expression.get_operator() == COperator.arith_add) ? 1 : -1;
 			if(value != null) {
@@ -427,7 +427,7 @@ public class CStatePathBuilder {
 			}
 		}
 	}
-	
+
 	/* special expression */
 	private void parse_array_expression(InstrumentalLine line, AstArrayExpression location) throws Exception {
 		if(line.is_end()) {
@@ -471,7 +471,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	
+
 	/* expression */
 	private void parse_expression(InstrumentalLine line, AstExpression location) throws Exception {
 		if(location instanceof AstBasicExpression)
@@ -500,7 +500,7 @@ public class CStatePathBuilder {
 			this.parse_fun_call_expression(line, (AstFunCallExpression) location);
 		else
 			throw new IllegalArgumentException("Unsupport: " + location);
-		
+
 		if(line.is_end())
 			this.parse_follow(location);
 	}
@@ -511,7 +511,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	
+
 	/* declaration part */
 	private void parse_declarator(InstrumentalLine line, AstDeclarator location) throws Exception {}
 	private void parse_init_declarator(InstrumentalLine line, AstInitDeclarator location) throws Exception {
@@ -521,7 +521,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	
+
 	/* statement part */
 	private void parse_expression_statement(InstrumentalLine line, AstExpressionStatement location) throws Exception {
 		if(line.is_end()) {
@@ -542,7 +542,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	private void parse_break_statement(InstrumentalLine line, 
+	private void parse_break_statement(InstrumentalLine line,
 				AstBreakStatement location) throws Exception {
 		if(line.is_beg()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -550,7 +550,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	private void parse_continue_statement(InstrumentalLine line, 
+	private void parse_continue_statement(InstrumentalLine line,
 			AstContinueStatement location) throws Exception {
 		if(line.is_beg()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -563,7 +563,7 @@ public class CStatePathBuilder {
 		if(line.is_end()) {
 			CirStatement statement;
 			if(location.has_expression()) {
-				statement = (CirStatement) this.get_cir_nodes(location, 
+				statement = (CirStatement) this.get_cir_nodes(location,
 						CirReturnAssignStatement.class).get(0);
 				this.append(statement);
 			}
@@ -572,7 +572,7 @@ public class CStatePathBuilder {
 			this.append(statement);
 		}
 	}
-	private void parse_labeled_statement(InstrumentalLine line, 
+	private void parse_labeled_statement(InstrumentalLine line,
 			AstLabeledStatement location) throws Exception {
 		if(line.is_end()) {
 			CirStatement statement = (CirStatement) this.get_cir_nodes(
@@ -614,9 +614,9 @@ public class CStatePathBuilder {
 		else if(location instanceof AstDefaultStatement)
 			this.parse_default_statement(line, (AstDefaultStatement) location);
 	}
-	
+
 	/* function part */
-	private void parse_function_definition(InstrumentalLine line, 
+	private void parse_function_definition(InstrumentalLine line,
 			AstFunctionDefinition location) throws Exception {
 		CirFunctionDefinition def = (CirFunctionDefinition) this.
 				get_cir_nodes(location, CirFunctionDefinition.class).get(0);
@@ -629,7 +629,7 @@ public class CStatePathBuilder {
 			this.append(function.get_flow_graph().get_exit().get_statement());
 		}
 	}
-	
+
 	/* parsing methods */
 	private void parse(InstrumentalLine line) throws Exception {
 		AstNode location = line.get_location();
@@ -661,16 +661,16 @@ public class CStatePathBuilder {
 		else if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else {
-			builder.values = new HashMap<CirExpression, Object>();
+			builder.values = new HashMap<>();
 			builder.path = new CStatePath(cir_tree);
-			
+
 			for(InstrumentalLine line : lines) {
 				builder.parse(line);
 			}
-			
+
 			builder.values.clear();
 			return builder.path;
 		}
 	}
-	
+
 }

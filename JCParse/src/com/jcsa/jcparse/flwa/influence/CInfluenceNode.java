@@ -17,7 +17,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
  *
  */
 public class CInfluenceNode {
-	
+
 	/* attributes */
 	/** the graph where the node is created **/
 	private CInfluenceGraph graph;
@@ -32,7 +32,7 @@ public class CInfluenceNode {
 	protected List<CInfluenceEdge> in;
 	/** the edges pointing from this node to the others **/
 	protected List<CInfluenceEdge> ou;
-	
+
 	/* constructor */
 	/**
 	 * create an isolated node within the influence node with respect to the program element (of cir-source)
@@ -42,7 +42,7 @@ public class CInfluenceNode {
 	 * @param cir_source
 	 * @throws Exception
 	 */
-	protected CInfluenceNode(CInfluenceGraph graph, 
+	protected CInfluenceNode(CInfluenceGraph graph,
 			CirInstanceNode instance, CirNode cir_source) throws Exception {
 		if(graph == null)
 			throw new IllegalArgumentException("Invalid graph: null");
@@ -55,8 +55,8 @@ public class CInfluenceNode {
 			this.instance = instance;
 			this.cir_source = cir_source;
 			this.type = this.get_type(cir_source);
-			this.in = new LinkedList<CInfluenceEdge>();
-			this.ou = new LinkedList<CInfluenceEdge>();
+			this.in = new LinkedList<>();
+			this.ou = new LinkedList<>();
 		}
 	}
 	/**
@@ -76,9 +76,9 @@ public class CInfluenceNode {
 			return CInfluenceNodeType.label;
 		else throw new IllegalArgumentException(
 				"Unsupport element: " + cir_source.getClass().getSimpleName());
-		
+
 	}
-	
+
 	/* getters */
 	/**
 	 * get the graph where this node is created
@@ -86,7 +86,7 @@ public class CInfluenceNode {
 	 */
 	public CInfluenceGraph get_graph() { return this.graph; }
 	/**
-	 * get the instance of the execution of the statement where the program element 
+	 * get the instance of the execution of the statement where the program element
 	 * that this node represents is defined.
 	 * @return
 	 */
@@ -98,7 +98,7 @@ public class CInfluenceNode {
 	 */
 	public Object get_instance_context() { return this.instance.get_context(); }
 	/**
-	 * get the execution of the statement where the program element that this node 
+	 * get the execution of the statement where the program element that this node
 	 * represents is defined
 	 * @return
 	 */
@@ -152,7 +152,7 @@ public class CInfluenceNode {
 	 * @throws IndexOutOfBoundsException
 	 */
 	public CInfluenceEdge get_ou_edge(int k) throws IndexOutOfBoundsException { return ou.get(k); }
-	
+
 	/* setter */
 	/**
 	 * link this node to the target via the influence edge of specified type
@@ -165,5 +165,5 @@ public class CInfluenceNode {
 		CInfluenceEdge edge = new CInfluenceEdge(edge_type, this, target);
 		this.ou.add(edge); target.in.add(edge); return edge;
 	}
-	
+
 }

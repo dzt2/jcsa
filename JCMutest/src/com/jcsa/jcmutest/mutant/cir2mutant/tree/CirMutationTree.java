@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,16 +113,14 @@ public class CirMutationTree {
 	public Iterable<CirMutationTreeEdge> get_infection_edges() {
 		Queue<CirMutationTreeNode> queue = new LinkedList<>();
 		queue.add(this.root);
-		List<CirMutationTreeEdge> edges = new ArrayList<>();
+		List<CirMutationTreeEdge> edges = new ArrayList<CirMutationTreeEdge>();
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode node = queue.poll();
 			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
 				if(edge.get_edge_type() == CirMutationTreeFlow.infect) {
 					edges.add(edge);
 				}
-				else {
-					queue.add(edge.get_target());
-				}
+				queue.add(edge.get_target());
 			}
 		}
 		return edges;
@@ -134,7 +133,20 @@ public class CirMutationTree {
 	 * @return whether there exists cir-mutation corresponding to the mutant
 	 */
 	public boolean has_cir_mutations() { return !this.cir_mutations.isEmpty(); }
-
+	public Collection<CirMutationTreeNode> get_nodes() {
+		Queue<CirMutationTreeNode> queue = new LinkedList<>();
+		queue.add(this.root);
+		Set<CirMutationTreeNode> nodes = new HashSet<CirMutationTreeNode>();
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode node = queue.poll();
+			nodes.add(node);
+			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
+				queue.add(edge.get_target());
+			}
+		}
+		return nodes;
+	}
+	
 	/* construction */
 	/**
 	 * construct a static cir-based mutation tree for mutant
@@ -194,27 +206,27 @@ public class CirMutationTree {
 	 * @throws Exception
 	 */
 	public void evaluate(SymbolProcess context) throws Exception {
-		Queue<CirMutationTreeNode> queue = new LinkedList<>();
-		for(CirMutationTreeEdge infect_edge : this.get_infection_edges()) {
-			queue.add(infect_edge.get_source());
-		}
-		Set<CirMutationTreeNode> records = new HashSet<>();
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode node = queue.poll();
-			records.add(node);
-			Boolean result = node.get_status().add(context);
-			if(result == null || result.booleanValue()) {
-				for(CirMutationTreeEdge edge : node.get_ou_edges()) {
-					queue.add(edge.get_target());
-				}
-			}
-		}
-		for(CirMutationTreeNode node : records) node.get_status().sum();
+		CirMutationTreeUtil.util.evaluate_at(this, context);
 	}
 	/**
 	 * context-insensitive evaluation from infection nodes
 	 * @throws Exception
 	 */
 	public void evaluate() throws Exception { this.evaluate(null); }
-
+	/**
+	 * summarize all the nodes in the tree
+	 * @throws Exception
+	 */
+	public void summarize_all() throws Exception {
+		Queue<CirMutationTreeNode> queue = new LinkedList<>();
+		queue.add(this.root);
+		while(!queue.isEmpty()) {
+			CirMutationTreeNode node = queue.poll();
+			node.get_status().sum();
+			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
+				queue.add(edge.get_target());
+			}
+		}
+	}
+	
 }

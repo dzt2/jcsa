@@ -4,7 +4,7 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 
 /**
  * <code>(designator)+</code>
- * 
+ *
  * @author yukimula
  *
  */

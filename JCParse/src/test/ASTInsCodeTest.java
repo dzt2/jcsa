@@ -10,11 +10,11 @@ import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 public class ASTInsCodeTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
-	protected static final String postfx = "/home/dzt2/Development/DataSet/Code/gfiles/"; 
+	protected static final String postfx = "/home/dzt2/Development/DataSet/Code/gfiles/";
 	protected static final File template_file = new File("config/cruntime.txt");
-	
+
 	private static AstCirFile parse(File file) throws Exception {
 		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
 	}
@@ -36,30 +36,30 @@ public class ASTInsCodeTest {
 		writer.write(code);
 		writer.close();
 	}
-	
+
 	private static void testing(File source_file) throws Exception {
 		System.out.println("Testing on " + source_file.getName());
-		
+
 		AstCirFile ast_cir_file = parse(source_file);
 		File ast_output_file = new File(postfx + "src/" + source_file.getName());
 		File cir_output_file = new File(postfx + "cir/" + source_file.getName() + ".cir");
 		File ins_output_file = new File(postfx + "ins/" + source_file.getName());
 		File res_output_file = new File(postfx + "res/" + source_file.getName() + ".txt");
 		System.out.println("\t1. Parse from " + source_file.getAbsoluteFile());
-		
+
 		output_source_code(ast_cir_file.get_ast_tree(), ast_output_file);
 		System.out.println("\t2. Generate source code of " + source_file.getName());
-		
+
 		output_cir_code(ast_cir_file.get_cir_tree(), cir_output_file);
 		System.out.println("\t3. Generate CIR source code of " + source_file.getName());
-		
+
 		output_instrument_code(
 						ast_cir_file.get_ast_tree(), res_output_file, ins_output_file);
 		System.out.println("\t4. Generate instrumental code of " + source_file.getName());
-		
+
 		System.out.println();
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		File dir = new File(prefix);
 		File[] files = dir.listFiles();
@@ -67,5 +67,5 @@ public class ASTInsCodeTest {
 			testing(file);
 		}
 	}
-	
+
 }

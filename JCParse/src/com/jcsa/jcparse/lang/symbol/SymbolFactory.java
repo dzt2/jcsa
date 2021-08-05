@@ -32,12 +32,12 @@ import com.jcsa.jcparse.lang.scope.CParameterName;
 
 /**
  * It implements both instance and static interfaces for constructing symbolic nodes.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymbolFactory {
-	
+
 	/* definitions */
 	/** it is used to support the inference of data type in C language **/
 	private static final CTypeFactory 	type_factory = new CTypeFactory();
@@ -46,11 +46,11 @@ public class SymbolFactory {
 	/** true to parse CirDefaultValue into constants **/
 	private boolean						cir_optimize;
 	/**
-	 * create a default factory for constructing symbolic node with ast_template as 
+	 * create a default factory for constructing symbolic node with ast_template as
 	 * null and C-intermediate representative optimization as closed configuration.
 	 */
 	public SymbolFactory() { this.ast_template = null; this.cir_optimize = false; }
-	
+
 	/* instance parameter getters and setter */
 	/**
 	 * @return used to implement the computation for sizeof
@@ -68,7 +68,7 @@ public class SymbolFactory {
 		this.ast_template = ast_template;
 		this.cir_optimize = cir_optimize;
 	}
-	
+
 	/* instance parsers */
 	/**
 	 * 	@param 	source	Java Object to be parsed as SymbolConstant | SymbolLiteral	<br>
@@ -91,7 +91,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else if(source instanceof Boolean || source instanceof Character || source instanceof Short ||
-				source instanceof Integer || source instanceof Long || source instanceof Float || 
+				source instanceof Integer || source instanceof Long || source instanceof Float ||
 				source instanceof Double) {
 			return (SymbolConstant) SymbolParser.parser.parse_con(source);
 		}
@@ -131,7 +131,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else if(source instanceof Boolean || source instanceof Character || source instanceof Short ||
-				source instanceof Integer || source instanceof Long || source instanceof Float || 
+				source instanceof Integer || source instanceof Long || source instanceof Float ||
 				source instanceof Double) {
 			return (SymbolConstant) SymbolParser.parser.parse_con(source);
 		}
@@ -172,7 +172,7 @@ public class SymbolFactory {
 		SymbolExpression expression = this.parse_to_expression(source);
 		return (SymbolExpression) SymbolParser.parser.parse_cod(expression, value);
 	}
-	
+
 	/* instance constructors */
 	/**
 	 * @param cname
@@ -310,22 +310,22 @@ public class SymbolFactory {
 	 */
 	public SymbolUnaryExpression new_arith_neg(Object operand) throws Exception {
 		SymbolExpression expression = this.parse_to_expression(operand);
-		
+
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		if(type instanceof CBasicType) {
 			switch(((CBasicType) type).get_tag()) {
-			case c_bool:	
-			case c_char:	
-			case c_uchar:	
-			case c_short:	
+			case c_bool:
+			case c_char:
+			case c_uchar:
+			case c_short:
 			case c_ushort:	type = CBasicTypeImpl.int_type;		break;
-			case c_int:		
+			case c_int:
 			case c_long:
 			case c_llong:
 			case c_float:
 			case c_double:
-			case c_ldouble:	
-			case c_uint:	
+			case c_ldouble:
+			case c_uint:
 			case c_ulong:
 			case c_ullong:	break;
 			default: throw new IllegalArgumentException(type.generate_code());
@@ -337,7 +337,7 @@ public class SymbolFactory {
 		else {
 			// throw new IllegalArgumentException(type.generate_code());
 		}
-		
+
 		return SymbolUnaryExpression.create(type, SymbolOperator.create(COperator.negative), expression);
 	}
 	/**
@@ -347,19 +347,19 @@ public class SymbolFactory {
 	 */
 	public SymbolUnaryExpression new_bitws_rsv(Object operand) throws Exception {
 		SymbolExpression expression = this.parse_to_expression(operand);
-		
+
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		if(type instanceof CBasicType) {
 			switch(((CBasicType) type).get_tag()) {
-			case c_bool:	
-			case c_char:	
-			case c_uchar:	
-			case c_short:	
+			case c_bool:
+			case c_char:
+			case c_uchar:
+			case c_short:
 			case c_ushort:	type = CBasicTypeImpl.int_type;		break;
-			case c_int:		
+			case c_int:
 			case c_long:
 			case c_llong:
-			case c_uint:	
+			case c_uint:
 			case c_ulong:
 			case c_ullong:	break;
 			default: throw new IllegalArgumentException(type.generate_code());
@@ -369,12 +369,12 @@ public class SymbolFactory {
 			type = CBasicTypeImpl.int_type;
 		}
 		else if(type instanceof CUnionType) {
-			
+
 		}
 		else {
 			throw new IllegalArgumentException(type.generate_code());
 		}
-		
+
 		return SymbolUnaryExpression.create(type, SymbolOperator.create(COperator.bit_not), expression);
 	}
 	/**
@@ -386,19 +386,19 @@ public class SymbolFactory {
 		SymbolExpression expression = this.parse_to_expression(operand);
 		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 		if(CTypeAnalyzer.is_boolean(type)) {
-			return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type, 
+			return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type,
 					SymbolOperator.create(COperator.logic_not), expression);
 		}
 		else if(CTypeAnalyzer.is_integer(type) || CTypeAnalyzer.is_pointer(type)) {
 			CConstant constant = new CConstant(); constant.set_int(0);
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-					SymbolOperator.create(COperator.equal_with), expression, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+					SymbolOperator.create(COperator.equal_with), expression,
 					SymbolConstant.create(constant));
 		}
 		else if(CTypeAnalyzer.is_real(type)) {
 			CConstant constant = new CConstant(); constant.set_double(0);
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-					SymbolOperator.create(COperator.equal_with), expression, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+					SymbolOperator.create(COperator.equal_with), expression,
 					SymbolConstant.create(constant));
 		}
 		else {
@@ -422,9 +422,9 @@ public class SymbolFactory {
 		}
 	}
 	/**
-	 * @param operand 
+	 * @param operand
 	 * @return *operand with type inference
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public SymbolUnaryExpression new_dereference(Object operand) throws Exception {
 		SymbolExpression expression = this.parse_to_expression(operand);
@@ -460,9 +460,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_arith_add(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.arith_add), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.arith_add),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -473,9 +473,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_arith_sub(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.arith_sub), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.arith_sub),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -486,9 +486,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_arith_mul(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.arith_mul), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.arith_mul),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -499,9 +499,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_arith_div(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.arith_div), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.arith_div),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -512,9 +512,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_arith_mod(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.arith_mod), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.arith_mod),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -525,9 +525,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_bitws_and(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.bit_and), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.bit_and),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -538,9 +538,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_bitws_ior(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.bit_or), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.bit_or),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -551,9 +551,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_bitws_xor(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.bit_xor), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.bit_xor),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -564,9 +564,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_bitws_lsh(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.left_shift), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.left_shift),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -577,9 +577,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_bitws_rsh(CType data_type, Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(data_type, 
-				SymbolOperator.create(COperator.righ_shift), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(data_type,
+				SymbolOperator.create(COperator.righ_shift),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -589,9 +589,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_logic_and(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.logic_and), 
-				this.parse_to_condition(loperand, true), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.logic_and),
+				this.parse_to_condition(loperand, true),
 				this.parse_to_condition(roperand, true));
 	}
 	/**
@@ -601,9 +601,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_logic_ior(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.logic_or), 
-				this.parse_to_condition(loperand, true), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.logic_or),
+				this.parse_to_condition(loperand, true),
 				this.parse_to_condition(roperand, true));
 	}
 	/**
@@ -613,9 +613,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_greater_tn(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.smaller_tn), 
-				this.parse_to_expression(roperand), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.smaller_tn),
+				this.parse_to_expression(roperand),
 				this.parse_to_expression(loperand));
 	}
 	/**
@@ -625,9 +625,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_greater_eq(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.smaller_eq), 
-				this.parse_to_expression(roperand), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.smaller_eq),
+				this.parse_to_expression(roperand),
 				this.parse_to_expression(loperand));
 	}
 	/**
@@ -637,9 +637,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_smaller_tn(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.smaller_tn), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.smaller_tn),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -649,9 +649,9 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolExpression new_smaller_eq(Object loperand, Object roperand) throws Exception {
-		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				SymbolOperator.create(COperator.smaller_eq), 
-				this.parse_to_expression(loperand), 
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
+				SymbolOperator.create(COperator.smaller_eq),
+				this.parse_to_expression(loperand),
 				this.parse_to_expression(roperand));
 	}
 	/**
@@ -664,11 +664,11 @@ public class SymbolFactory {
 		SymbolExpression lexpression = this.parse_to_expression(loperand);
 		SymbolExpression rexpression = this.parse_to_expression(roperand);
 		if(lexpression.hashCode() < rexpression.hashCode()) {
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
 					SymbolOperator.create(COperator.equal_with), lexpression, rexpression);
 		}
 		else {
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
 					SymbolOperator.create(COperator.equal_with), rexpression, lexpression);
 		}
 	}
@@ -682,11 +682,11 @@ public class SymbolFactory {
 		SymbolExpression lexpression = this.parse_to_expression(loperand);
 		SymbolExpression rexpression = this.parse_to_expression(roperand);
 		if(lexpression.hashCode() < rexpression.hashCode()) {
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
 					SymbolOperator.create(COperator.not_equals), lexpression, rexpression);
 		}
 		else {
-			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+			return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type,
 					SymbolOperator.create(COperator.not_equals), rexpression, lexpression);
 		}
 	}
@@ -696,7 +696,7 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	public SymbolInitializerList new_initializer_list(Iterable<Object> elements) throws Exception {
-		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> elist = new ArrayList<>();
 		for(Object element : elements) {
 			elist.add(this.parse_to_expression(element));
 		}
@@ -710,11 +710,11 @@ public class SymbolFactory {
 	 */
 	public SymbolCallExpression new_call_expression(Object function, Iterable<Object> arguments) throws Exception {
 		SymbolExpression sfunction = parse_to_expression(function);
-		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> elist = new ArrayList<>();
 		for(Object argument : arguments) {
 			elist.add(parse_to_expression(argument));
 		}
-		
+
 		CType data_type = CTypeAnalyzer.get_value_type(sfunction.get_data_type());
 		if(data_type instanceof CPointerType) {
 			data_type = CTypeAnalyzer.get_value_type(((CPointerType) data_type).get_pointed_type());
@@ -725,7 +725,7 @@ public class SymbolFactory {
 		else {
 			throw new IllegalArgumentException("Invalid data_type");
 		}
-		
+
 		return SymbolCallExpression.create(data_type, sfunction, SymbolArgumentList.create(elist));
 	}
 	/**
@@ -737,7 +737,7 @@ public class SymbolFactory {
 	public SymbolFieldExpression new_field_expression(Object body, String field) throws Exception {
 		SymbolExpression sbody = this.parse_to_expression(body);
 		SymbolField sfield = SymbolField.create(field);
-		
+
 		CType data_type = CTypeAnalyzer.get_value_type(sbody.get_data_type());
 		if(data_type instanceof CStructType) {
 			data_type = ((CStructType) data_type).get_fields().get_field(field).get_type();
@@ -748,10 +748,10 @@ public class SymbolFactory {
 		else {
 			throw new IllegalArgumentException("Invalid data_type");
 		}
-		
+
 		return SymbolFieldExpression.create(data_type, sbody, sfield);
 	}
-	
+
 	/* static singleton instance */
 	/** singleton for static constructors **/
 	public static final SymbolFactory factory = new SymbolFactory();
@@ -771,7 +771,7 @@ public class SymbolFactory {
 	public static void config(CRunTemplate ast_template, boolean cir_optimize) {
 		factory.set_configuration(ast_template, cir_optimize);
 	}
-	
+
 	/* static parser interfaces */
 	/**
 	 * 	@param 	source	Java Object to be parsed as SymbolConstant | SymbolLiteral	<br>
@@ -825,7 +825,7 @@ public class SymbolFactory {
 	public static SymbolExpression sym_condition(Object source, boolean value) throws Exception {
 		return factory.parse_to_condition(source, value);
 	}
-	
+
 	/* static node constructors */
 	/**
 	 * @param cname
@@ -871,7 +871,7 @@ public class SymbolFactory {
 	}
 	/**
 	 * @param value {bool|char|short|int|long|float|double}
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	public static SymbolConstant constant(Object source) throws Exception {
@@ -1115,7 +1115,7 @@ public class SymbolFactory {
 	 * @param loperand
 	 * @param roperand
 	 * @return roperand <= loperand
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static SymbolExpression greater_eq(Object loperand, Object roperand) throws Exception {
 		return factory.new_greater_eq(loperand, roperand);
@@ -1156,5 +1156,5 @@ public class SymbolFactory {
 	public static SymbolExpression not_equals(Object loperand, Object roperand) throws Exception {
 		return factory.new_not_equals(loperand, roperand);
 	}
-	
+
 }

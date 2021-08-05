@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstOperator;
 
 /**
  * <code>init_declarator --> declarator (= initializer)?</code>
- * 
+ *
  * @author yukimula
  */
 public interface AstInitDeclarator extends AstNode {

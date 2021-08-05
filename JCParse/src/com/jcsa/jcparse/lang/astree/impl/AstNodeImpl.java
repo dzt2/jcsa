@@ -8,22 +8,22 @@ import com.jcsa.jcparse.parse.code.CodeGeneration;
 
 /**
  * abstract node for all AstNode subclasses
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
-	
+
 	private AstTree tree;
 	protected AstNode parent;
 	protected int key;
 
 	protected AstNodeImpl() {
 		this.tree = null;
-		this.parent = null; 
+		this.parent = null;
 		this.key = AstNode.UNDEFINED_KEY;
 	}
-	
+
 	@Override
 	public AstTree get_tree() { return tree; }
 	@Override
@@ -32,7 +32,7 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 	public void set_key(int key) {
 		this.key = key;
 	}
-	
+
 	@Override
 	public AstNode get_parent() {
 		return parent;
@@ -42,7 +42,7 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 	 * set parent according to this method, fails in one of following cases:<br>
 	 * 1. <i>this.parent</i> has been set; <br>
 	 * 2. <i>parent</i> is <b>null</b> itself. <br>
-	 * 
+	 *
 	 * @param parent
 	 */
 	protected void set_parent(AstNode parent) throws Exception {
@@ -53,19 +53,19 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 		else
 			this.parent = parent;
 	}
-	
+
 	@Override
 	public String get_code() throws Exception {
 		CText source_code = this.tree.get_source_code();
-		return source_code.substring(this.location.get_bias(), 
+		return source_code.substring(this.location.get_bias(),
 					this.location.get_bias() + this.location.get_length());
 	}
-	
+
 	@Override
 	public String generate_code() throws Exception {
 		return CodeGeneration.generate_code(this);
 	}
-	
+
 	public void set_tree(AstTree tree) throws Exception {
 		if(tree != null) this.tree = tree;
 		else throw new IllegalArgumentException("invalid tree as null");
