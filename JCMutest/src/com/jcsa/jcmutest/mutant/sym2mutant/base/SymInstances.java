@@ -65,12 +65,12 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It provides interfaces to construct and optimize SymInstance within the mutation testing context.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymInstances {
-	
+
 	/* utilities methods */
 	/**
 	 * @param location
@@ -110,7 +110,7 @@ public class SymInstances {
 				SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
 				SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
 				COperator operator = ((SymbolBinaryExpression) condition).get_operator().get_operator();
-				
+
 				if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
 					CirExecution execution = (CirExecution) loperand.get_source();
 					Integer times = ((SymbolConstant) roperand).get_int();
@@ -152,7 +152,7 @@ public class SymInstances {
 				SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
 				SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
 				COperator operator = ((SymbolBinaryExpression) condition).get_operator().get_operator();
-				
+
 				if(loperand instanceof SymbolIdentifier && loperand.get_source() instanceof CirExecution) {
 					CirExecution execution = (CirExecution) loperand.get_source();
 					Integer times = ((SymbolConstant) roperand).get_int();
@@ -181,7 +181,7 @@ public class SymInstances {
 			}
 		}
 	}
-	
+
 	/* constructors */
 	/**
 	 * @param execution execution point in control flow graph where the constraint is evaluated
@@ -195,7 +195,7 @@ public class SymInstances {
 			throw new IllegalArgumentException("Invalid execution: null");
 		else if(expression == null)
 			throw new IllegalArgumentException("Invalid expression: null");
-		else 
+		else
 			return new SymConstraint(execution, SymbolFactory.sym_condition(expression, value));
 	}
 	/**
@@ -210,7 +210,7 @@ public class SymInstances {
 			throw new IllegalArgumentException("Invalid statement: null");
 		else if(expression == null)
 			throw new IllegalArgumentException("Invalid expression: null");
-		else 
+		else
 			return new SymConstraint(SymInstances.get_execution(statement), SymbolFactory.sym_condition(expression, value));
 	}
 	/**
@@ -230,7 +230,7 @@ public class SymInstances {
 		else {
 			SymbolExpression loperand = SymbolFactory.sym_expression(execution);
 			SymbolExpression roperand = SymbolFactory.sym_expression(Integer.valueOf(times));
-			
+
 			SymbolExpression condition;
 			switch(operator) {
 			case greater_tn:	condition = SymbolFactory.greater_tn(loperand, roperand);	break;
@@ -241,7 +241,7 @@ public class SymInstances {
 			case not_equals:	condition = SymbolFactory.not_equals(loperand, roperand);	break;
 			default: 			throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
-			
+
 			return new SymConstraint(execution, condition);
 		}
 	}
@@ -263,7 +263,7 @@ public class SymInstances {
 			CirExecution execution = SymInstances.get_execution(statement);
 			SymbolExpression loperand = SymbolFactory.sym_expression(execution);
 			SymbolExpression roperand = SymbolFactory.sym_expression(Integer.valueOf(times));
-			
+
 			SymbolExpression condition;
 			switch(operator) {
 			case greater_tn:	condition = SymbolFactory.greater_tn(loperand, roperand);	break;
@@ -274,7 +274,7 @@ public class SymInstances {
 			case not_equals:	condition = SymbolFactory.not_equals(loperand, roperand);	break;
 			default: 			throw new IllegalArgumentException("Invalid operator: " + operator);
 			}
-			
+
 			return new SymConstraint(execution, condition);
 		}
 	}
@@ -291,7 +291,7 @@ public class SymInstances {
 			throw new IllegalArgumentException("Invalid muta_flow: null");
 		else if(orig_flow.get_source() != muta_flow.get_source())
 			throw new IllegalArgumentException("Unmatched: " + orig_flow + " --> " + muta_flow);
-		else 
+		else
 			return new SymFlowError(orig_flow.get_source(), orig_flow, muta_flow);
 	}
 	/**
@@ -370,7 +370,7 @@ public class SymInstances {
 					SymbolFactory.sym_expression(orig_expression),
 					SymbolFactory.sym_expression(muta_expression));
 	}
-	
+
 	/* optimizations */
 	private static SymConstraint opt_constraint(SymConstraint constraint, SymbolProcess contexts) throws Exception {
 		if(constraint == null)
@@ -468,7 +468,7 @@ public class SymInstances {
 	public static SymInstance optimize(SymInstance instance) throws Exception {
 		return SymInstances.optimize(instance, null);
 	}
-	
+
 	/* CIR-mutation */
 	/**
 	 * @param constraint
@@ -481,43 +481,43 @@ public class SymInstances {
 			throw new IllegalArgumentException("Invalid constriant: null");
 		else if(state_error == null)
 			throw new IllegalArgumentException("Invalid state_error null");
-		else 
+		else
 			return new CirMutation(constraint, state_error);
 	}
 	/** mapping from expression operator to the propagator for generating state error **/
 	static private Map<COperator, CirErrorPropagator> propagators;
 	static {
-		propagators = new HashMap<COperator, CirErrorPropagator>();
-		
+		propagators = new HashMap<>();
+
 		propagators.put(COperator.arith_add, new CirArithAddPropagator());
 		propagators.put(COperator.arith_sub, new CirArithSubPropagator());
 		propagators.put(COperator.arith_mul, new CirArithMulPropagator());
 		propagators.put(COperator.arith_div, new CirArithDivPropagator());
 		propagators.put(COperator.arith_mod, new CirArithModPropagator());
 		propagators.put(COperator.negative, new CirArithNegPropagator());
-		
+
 		propagators.put(COperator.bit_not, new CirBitwsRsvPropagator());
 		propagators.put(COperator.bit_and, new CirBitwsAndPropagator());
 		propagators.put(COperator.bit_or, new CirBitwsIorPropagator());
 		propagators.put(COperator.bit_xor, new CirBitwsXorPropagator());
 		propagators.put(COperator.left_shift, new CirBitwsLshPropagator());
 		propagators.put(COperator.righ_shift, new CirBitwsRshPropagator());
-		
+
 		propagators.put(COperator.assign, new CirAssignPropagator());
 		propagators.put(COperator.address_of, new CirAddressOfPropagator());
 		propagators.put(COperator.dereference, new CirDereferencePropagator());
-		
+
 		propagators.put(COperator.greater_eq, new CirGreaterEqPropagator());
 		propagators.put(COperator.greater_tn, new CirGreaterTnPropagator());
 		propagators.put(COperator.smaller_eq, new CirSmallerEqPropagator());
 		propagators.put(COperator.smaller_tn, new CirSmallerTnPropagator());
 		propagators.put(COperator.equal_with, new CirEqualWithPropagator());
 		propagators.put(COperator.not_equals, new CirNotEqualsPropagator());
-		
+
 		propagators.put(COperator.logic_and, new CirLogicAndPropagator());
 		propagators.put(COperator.logic_or, new CirLogicIorPropagator());
 		propagators.put(COperator.logic_not, new CirLogicNotPropagator());
-		
+
 		propagators.put(COperator.arith_add_assign, new CirFieldOfPropagator());
 		propagators.put(COperator.arith_sub_assign, new CirTypeCastPropagator());
 		propagators.put(COperator.arith_mul_assign, new CirInitializerPropagator());
@@ -544,11 +544,11 @@ public class SymInstances {
 		else {
 			location = null;
 		}
-		
+
 		/* syntax-directed error propagation algorithms */
 		if(location != null) {
 			CirNode parent = location.get_parent();
-			
+
 			if(parent instanceof CirDeferExpression) {
 				propagators.get(COperator.dereference).propagate(source_error, location, parent, propagations);
 			}
@@ -579,7 +579,7 @@ public class SymInstances {
 				CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
 				CirExecutionFlow true_flow = execution.get_ou_flow(0);
 				CirExecutionFlow fals_flow = execution.get_ou_flow(1);
-				
+
 				CirExpression condition;
 				if(statement instanceof CirIfStatement) {
 					condition = ((CirIfStatement) statement).get_condition();
@@ -587,10 +587,10 @@ public class SymInstances {
 				else {
 					condition = ((CirCaseStatement) statement).get_condition();
 				}
-				
-				propagations.put(SymInstances.flow_error(true_flow, fals_flow), 
+
+				propagations.put(SymInstances.flow_error(true_flow, fals_flow),
 						SymInstances.expr_constraint(statement, condition, true));
-				propagations.put(SymInstances.flow_error(fals_flow, true_flow), 
+				propagations.put(SymInstances.flow_error(fals_flow, true_flow),
 						SymInstances.expr_constraint(statement, condition, false));
 			}
 			else if(parent instanceof CirAssignStatement) {
@@ -608,8 +608,8 @@ public class SymInstances {
 		if(source_error == null)
 			throw new IllegalArgumentException("Invalid source_error: null");
 		else {
-			List<CirMutation> next_mutations = new ArrayList<CirMutation>();
-			Map<SymStateError, SymConstraint> propagations = new HashMap<SymStateError, SymConstraint>();
+			List<CirMutation> next_mutations = new ArrayList<>();
+			Map<SymStateError, SymConstraint> propagations = new HashMap<>();
 			SymInstances.propagate_on(source_error, propagations);
 			for(SymStateError next_error : propagations.keySet()) {
 				SymConstraint constraint = propagations.get(next_error);
@@ -618,5 +618,5 @@ public class SymInstances {
 			return next_mutations;
 		}
 	}
-	
+
 }

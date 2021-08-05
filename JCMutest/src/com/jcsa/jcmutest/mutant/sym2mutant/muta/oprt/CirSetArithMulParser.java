@@ -33,16 +33,16 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x + y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -57,16 +57,16 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x - y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -87,10 +87,10 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		 * 	[y == 0] --> trap_on_statement()
 		 * 	[x != 0 && y != 1 && y != -1] --> set_expr(x / y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		if(this.compare_or_mutate) {
 			condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 			constraints.add(this.get_constraint(condition));
@@ -99,7 +99,7 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 			condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(-1));
 			constraints.add(this.get_constraint(condition));
 			constraint = this.conjunct(constraints);
-			
+
 			init_error = this.trap_statement();
 			return this.add_infection(constraint, init_error);
 		}
@@ -108,7 +108,7 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 			constraints.add(this.get_constraint(condition));
 			condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(1));
@@ -127,7 +127,7 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		 * 	[y == 0] --> trap_stmt()
 		 * 	[x != 0] --> set_expr(x % y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		if(this.compare_or_mutate) {
 			condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
@@ -140,7 +140,7 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(this.sym_expression(COperator.arith_mod, loperand, roperand));
@@ -153,16 +153,16 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		/**
 		 * 	[x != 0 && y != 0] --> set_expr(x & y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.conjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -177,16 +177,16 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x | y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -201,16 +201,16 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		/**
 		 * 	[x != 0 || y != 0] --> set_expr(x ^ y)
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -263,13 +263,13 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		 */
 		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression operand;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		operand = SymbolFactory.identifier(CBasicTypeImpl.bool_type, CirSetOperatorParser.AnyBoolean);
 		constraints.add(get_constraint(sym_expression(COperator.not_equals, loperand, operand)));
 		constraints.add(get_constraint(sym_expression(COperator.not_equals, roperand, operand)));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -286,14 +286,14 @@ public class CirSetArithMulParser extends CirSetOperatorParser {
 		 */
 		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, this.loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

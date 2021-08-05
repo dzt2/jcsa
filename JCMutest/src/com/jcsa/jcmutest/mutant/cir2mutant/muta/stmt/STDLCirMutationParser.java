@@ -12,12 +12,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class STDLCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	/**
 	 * @param statement
 	 * @param location
@@ -39,7 +39,7 @@ public class STDLCirMutationParser extends CirMutationParser {
 			return false;
 		}
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
@@ -47,20 +47,20 @@ public class STDLCirMutationParser extends CirMutationParser {
 		CirStatement end_statement = this.get_end_statement(cir_tree, mutation.get_location());
 		CirExecution beg_execution = cir_tree.get_localizer().get_execution(beg_statement);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
-		
+
 		if(this.in_location(beg_statement, mutation.get_location())) {
 			beg_execution = beg_execution.get_in_flow(0).get_source();
 		}
 		if(this.in_location(end_statement, mutation.get_location())) {
 			end_execution = end_execution.get_ou_flow(0).get_target();
 		}
-		
+
 		CirExecutionFlow orig_flow = beg_execution.get_ou_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
-		
+
 		CirAttribute constraint = CirAttribute.new_cover_count(beg_execution, 1);
 		CirAttribute init_error = CirAttribute.new_flows_error(orig_flow, muta_flow);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

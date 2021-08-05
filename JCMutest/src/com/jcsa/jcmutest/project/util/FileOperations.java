@@ -10,15 +10,15 @@ import java.util.List;
 
 /**
  * It provides general interfaces to manage the operations on file system.
- * 
+ *
  * @author yukimula
  *
  */
 public class FileOperations {
-	
+
 	/**
 	 * @param dir
-	 * @return true if the directory is or has been created. 
+	 * @return true if the directory is or has been created.
 	 * @throws Exception
 	 */
 	public static boolean mkdir(File dir) throws Exception {
@@ -34,7 +34,7 @@ public class FileOperations {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * @param file
 	 * @param text
@@ -51,7 +51,7 @@ public class FileOperations {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * @param file
 	 * @return read the text in the input file
@@ -72,7 +72,7 @@ public class FileOperations {
 			return buffer.toString();
 		}
 	}
-	
+
 	/**
 	 * delete the file if the file is non-directory;
 	 * or delete all the files including itself if it is a directory.
@@ -96,7 +96,7 @@ public class FileOperations {
 			while(file.exists());	// wait until file is deleted
 		}
 	}
-	
+
 	/**
 	 * copy the source file to the target file
 	 * @param source
@@ -118,7 +118,7 @@ public class FileOperations {
 			in.close(); ou.close();
 		}
 	}
-	
+
 	/**
 	 * delete all the files under the directory
 	 * @param dir
@@ -137,14 +137,14 @@ public class FileOperations {
 			}
 		}
 	}
-	
+
 	/**
 	 * @param dir
 	 * @return the list of files in the directory
 	 * @throws Exception
 	 */
 	public static List<File> list_files(File dir) {
-		List<File> flist = new ArrayList<File>();
+		List<File> flist = new ArrayList<>();
 		File[] files = dir.listFiles();
 		if(files != null) {
 			for(File file : files) {
@@ -153,7 +153,7 @@ public class FileOperations {
 		}
 		return flist;
 	}
-	
+
 	/**
 	 * copy all the files in source to the directory of target
 	 * @param source
@@ -170,7 +170,7 @@ public class FileOperations {
 				if(!target.exists()) {
 					FileOperations.mkdir(target);
 				}
-				
+
 				File[] sfiles = source.listFiles();
 				if(sfiles != null) {
 					for(File sfile : sfiles) {
@@ -184,7 +184,7 @@ public class FileOperations {
 			}
 		}
 	}
-	
+
 	/**
 	 * whether two files are identical with their bytes
 	 * @param source
@@ -202,5 +202,5 @@ public class FileOperations {
 			return FileOperations.read(source).equals(FileOperations.read(target));
 		}
 	}
-	
+
 }

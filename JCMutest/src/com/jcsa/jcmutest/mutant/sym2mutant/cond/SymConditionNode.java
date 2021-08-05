@@ -12,12 +12,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
  * It represents an instance representing a symbolic condition used in killing process.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymConditionNode {
-	
+
 	/* definitions */
 	/** the hierarchical tree where the node is created **/
 	private SymConditionTree tree;
@@ -25,7 +25,7 @@ public class SymConditionNode {
 	private SymCondition condition;
 	/** the edges pointing to the next condition nodes that it depends on **/
 	private List<SymConditionNode> children;
-	
+
 	/* constructor */
 	/**
 	 * @param tree
@@ -42,10 +42,10 @@ public class SymConditionNode {
 		else {
 			this.tree = tree;
 			this.condition = condition;
-			this.children = new ArrayList<SymConditionNode>();
+			this.children = new ArrayList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the hierarchical tree where the node is created
@@ -55,7 +55,7 @@ public class SymConditionNode {
 	 * @return the symbolic condition that defines this node in the tree uniquely
 	 */
 	public SymCondition get_condition() { return this.condition; }
-	/** 
+	/**
 	 * @return the execution point where the condition is evaluated on
 	 */
 	public CirExecution get_execution() { return this.condition.get_execution(); }
@@ -74,8 +74,8 @@ public class SymConditionNode {
 		}
 		else {
 			/* find the existing assent nodes from this one */
-			Queue<SymConditionNode> queue = new LinkedList<SymConditionNode>();
-			Set<SymConditionNode> records = new HashSet<SymConditionNode>();
+			Queue<SymConditionNode> queue = new LinkedList<>();
+			Set<SymConditionNode> records = new HashSet<>();
 			queue.add(this); records.add(this); SymConditionNode node;
 			while(!queue.isEmpty()) {
 				node = queue.poll();
@@ -90,12 +90,12 @@ public class SymConditionNode {
 					}
 				}
 			}
-			
+
 			/* update the new child w.r.t. input condition in this node */
 			SymConditionNode child = this.tree.get_node(condition);
 			this.children.add(child); return child;
 		}
 	}
 	public boolean is_leaf() { return this.children.isEmpty(); }
-	
+
 }

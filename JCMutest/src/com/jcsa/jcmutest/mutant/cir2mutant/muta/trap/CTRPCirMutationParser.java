@@ -17,7 +17,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 
 public class CTRPCirMutationParser extends CirMutationParser {
-	
+
 	/**
 	 * @param location
 	 * @return the switch-statement where the location is seeded
@@ -34,7 +34,7 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		}
 		throw new IllegalArgumentException("Not in switch-statement");
 	}
-	
+
 	/**
 	 * @param location
 	 * @return the case-statement where the location is seeded
@@ -51,25 +51,25 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		}
 		throw new IllegalArgumentException("Not in case-statement");
 	}
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
-		return (CirStatement) this.get_cir_node(cir_tree, 
-				this.get_switch_statement(mutation.get_location()), 
+		return (CirStatement) this.get_cir_node(cir_tree,
+				this.get_switch_statement(mutation.get_location()),
 				CirSaveAssignStatement.class);
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		/* determine the condition and location being evaluated */
 		AstSwitchStatement switch_statement = this.get_switch_statement(mutation.get_location());
 		AstCaseStatement case_statement = this.get_case_statement((AstNode) mutation.get_parameter());
-		CirAssignStatement 	c_save_statement = (CirAssignStatement) 
+		CirAssignStatement 	c_save_statement = (CirAssignStatement)
 					this.get_cir_node(cir_tree, switch_statement, CirSaveAssignStatement.class);
-		CirCaseStatement 	c_case_statement = (CirCaseStatement) 
+		CirCaseStatement 	c_case_statement = (CirCaseStatement)
 							this.get_cir_node(cir_tree, case_statement, CirCaseStatement.class);
-		
+
 		/* construct the constraint and initial state error for infection */
 		CirExecution execution = c_save_statement.execution_of();
 		CirAttribute constraint = CirAttribute.new_constraint(
@@ -77,5 +77,5 @@ public class CTRPCirMutationParser extends CirMutationParser {
 		CirAttribute init_error = CirAttribute.new_traps_error(execution);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

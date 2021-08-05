@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
 public class TTRPMutationGenerator extends MutationGenerator {
-	
+
 	private final int[] loop_times = new int[] {
 		2, 3, 4, 5, 6, 7, 8, 10,
 		20, 30, 40, 50, 60, 80, 100

@@ -25,7 +25,7 @@ import com.jcsa.jcparse.test.file.TestInput;
  *
  */
 public class MuTestProjectExecSpace {
-	
+
 	/** the head of the bash-shell script language **/
 	private static final String bash_shell_head = "#! /bin/bash\n\n";
 	/** the template for changing current directory **/
@@ -34,7 +34,7 @@ public class MuTestProjectExecSpace {
 	private static final String remove_files_template = "rm %s/*\n";
 	/** command for copying source to target file **/
 	private static final String copy_file_template = "cp %s %s\n";
-	
+
 	/* definition */
 	private MuTestProject project;
 	protected MuTestProjectExecSpace(MuTestProject project) throws Exception {
@@ -44,7 +44,7 @@ public class MuTestProjectExecSpace {
 			this.project = project;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the project that defines the code space as well
@@ -53,8 +53,8 @@ public class MuTestProjectExecSpace {
 	/**
 	 * @return the directory where the executional and script files are generated
 	 */
-	public File get_efiles_directory() { 
-		return this.project.get_files().get_efiles_directory(); 
+	public File get_efiles_directory() {
+		return this.project.get_files().get_efiles_directory();
 	}
 	/**
 	 * @return executional program compiled from original program (without instrumentation)
@@ -92,7 +92,7 @@ public class MuTestProjectExecSpace {
 	public File get_mutation_test_script_file() {
 		return new File(this.get_efiles_directory().getAbsolutePath() + "/" + this.project.get_name() + ".m.sh");
 	}
-	
+
 	/* running methods */
 	/**
 	 * #!bash
@@ -109,11 +109,11 @@ public class MuTestProjectExecSpace {
 		 */
 		FileWriter writer = new FileWriter(this.get_normal_test_script_file());
 		writer.write(bash_shell_head);
-		writer.write(String.format(cd_template, 
+		writer.write(String.format(cd_template,
 				project.get_files().get_efiles_directory().getAbsolutePath()));
 		writer.write(String.format(remove_files_template, this.project.
 				get_test_space().get_normal_output_directory().getAbsolutePath()));
-		
+
 		/*
 		 * {(timeout max_seconds)? [project/xxx.n.out {input_parameter} > n_outputs/tid.out 2> n_outputs/tid.err]}+
 		 */
@@ -147,20 +147,20 @@ public class MuTestProjectExecSpace {
 		FileWriter writer = new FileWriter(this.get_instrumental_test_script_file());
 		writer.write(bash_shell_head);
 		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
-		writer.write(String.format(remove_files_template, 
+		writer.write(String.format(remove_files_template,
 						this.project.get_test_space().get_instrumental_output_directory().getAbsolutePath()));
-		
+
 		/*
 		 * (timeout max_seconds)? [efiles/xxx.s.out input_parameter > instrument.out 2> instrument.err]
 		 * cp instrument.txt project/s_outputs/tid.ins
 		 */
 		for(TestInput input : tests) {
 			writer.write("\n");
-			writer.write(input.command(this.get_instrumental_executional_file(), 
-					this.project.get_test_space().get_instrumental_out_file(), 
+			writer.write(input.command(this.get_instrumental_executional_file(),
+					this.project.get_test_space().get_instrumental_out_file(),
 					this.project.get_test_space().get_instrumental_err_file(), timeout));
 			writer.write("\n");
-			writer.write(String.format(copy_file_template, 
+			writer.write(String.format(copy_file_template,
 					this.project.get_test_space().get_instrumental_txt_file(),
 					input.get_instrument_file(this.project.get_test_space().
 							get_instrumental_output_directory()).getAbsolutePath()));
@@ -191,9 +191,9 @@ public class MuTestProjectExecSpace {
 		writer.write(String.format(cd_template, project.get_files().get_efiles_directory().getAbsolutePath()));
 		writer.write(String.format(remove_files_template, this.project.
 				get_test_space().get_mutation_output_directory().getAbsolutePath()));
-		
+
 		for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
-			String command = input.command(this.get_mutation_executional_file(), 
+			String command = input.command(this.get_mutation_executional_file(),
 					this.project.get_test_space().get_mutation_output_directory(), timeout);
 			writer.write(command);
 			writer.write("\n");
@@ -201,7 +201,7 @@ public class MuTestProjectExecSpace {
 		writer.close();
 	}
 	/**
-	 * generate the execution script files for running tests on normal, 
+	 * generate the execution script files for running tests on normal,
 	 * instrumental and mutated program as compiled.
 	 * @param tests
 	 * @throws Exception
@@ -221,17 +221,17 @@ public class MuTestProjectExecSpace {
 		MuTestProjectCodeSpace code_space = project.get_code_space();
 		MuCommandUtil command_util = config.get_command_util();
 		FileOperations.delete(this.get_normal_executional_file());
-		if(!command_util.do_compile(config.get_compiler(), 
-				code_space.get_ifiles(), 
-				this.get_normal_executional_file(), 
-				code_space.get_hdirs(), 
-				code_space.get_lfiles(), 
+		if(!command_util.do_compile(config.get_compiler(),
+				code_space.get_ifiles(),
+				this.get_normal_executional_file(),
+				code_space.get_hdirs(),
+				code_space.get_lfiles(),
 				config.get_compile_parameters())) {
 			throw new RuntimeException("Unable to compile the normal program");
 		}
 	}
 	/**
-	 * compile and execute the original program, which produces the 
+	 * compile and execute the original program, which produces the
 	 * outputs in the n_outputs directory.
 	 * @throws Exception
 	 */
@@ -239,7 +239,7 @@ public class MuTestProjectExecSpace {
 		this.compile_normal_program();
 		MuTestProjectConfig config = this.project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
-		command_util.do_execute(this.get_normal_test_script_file(), 
+		command_util.do_execute(this.get_normal_test_script_file(),
 				this.get_efiles_directory());
 	}
 	/**
@@ -251,10 +251,10 @@ public class MuTestProjectExecSpace {
 		MuTestProjectCodeSpace code_space = project.get_code_space();
 		MuCommandUtil command_util = config.get_command_util();
 		FileOperations.delete(this.get_instrumental_executional_file());
-		if(!command_util.do_compile(config.get_compiler(), 
-				code_space.get_sfiles(), 
-				this.get_instrumental_executional_file(), 
-				code_space.get_hdirs(), code_space.get_lfiles(), 
+		if(!command_util.do_compile(config.get_compiler(),
+				code_space.get_sfiles(),
+				this.get_instrumental_executional_file(),
+				code_space.get_hdirs(), code_space.get_lfiles(),
 				config.get_compile_parameters())) {
 			throw new RuntimeException("Unable to compile the instrumental program");
 		}
@@ -268,7 +268,7 @@ public class MuTestProjectExecSpace {
 		this.compile_instrumental_program();
 		MuTestProjectConfig config = this.project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
-		command_util.do_execute(this.get_instrumental_test_script_file(), 
+		command_util.do_execute(this.get_instrumental_test_script_file(),
 				this.get_efiles_directory());
 	}
 	/**
@@ -281,16 +281,16 @@ public class MuTestProjectExecSpace {
 		MuTestProjectConfig config = this.project.get_config();
 		MuTestProjectCodeSpace code_space = project.get_code_space();
 		MuCommandUtil command_util = config.get_command_util();
-		
+
 		/* generate the mfiles */ code_space.set_mfiles(mutant);
-		
+
 		/* compile the mutation program */
 		FileOperations.delete(this.get_mutation_executional_file());
-		return command_util.do_compile(config.get_compiler(), 
-				code_space.get_mfiles(), 
-				this.get_mutation_executional_file(), 
-				code_space.get_hdirs(), 
-				code_space.get_lfiles(), 
+		return command_util.do_compile(config.get_compiler(),
+				code_space.get_mfiles(),
+				this.get_mutation_executional_file(),
+				code_space.get_hdirs(),
+				code_space.get_lfiles(),
 				config.get_compile_parameters());
 	}
 	/**
@@ -302,9 +302,9 @@ public class MuTestProjectExecSpace {
 		this.compile_mutation_program(mutant);
 		MuTestProjectConfig config = this.project.get_config();
 		MuCommandUtil command_util = config.get_command_util();
-		command_util.do_execute(this.get_mutation_test_script_file(), 
+		command_util.do_execute(this.get_mutation_test_script_file(),
 				this.get_efiles_directory());
 		return this.project.get_test_space().update_test_result(mutant);
 	}
-	
+
 }

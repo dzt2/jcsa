@@ -6,18 +6,18 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * Symbolic instance in C-intermediate representation code.
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class SymInstance {
-	
+
 	/* definitions */
 	/** type of the symbolic instance being evaluated **/
 	private SymInstanceType type;
 	/** statement where the instance is injected **/
 	private CirExecution execution;
-	
+
 	/**
 	 * @param type
 	 * @param execution
@@ -33,7 +33,7 @@ public abstract class SymInstance {
 			this.execution = execution;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return type of the symbolic instance being evaluated
@@ -41,7 +41,7 @@ public abstract class SymInstance {
 	public SymInstanceType get_type() { return this.type; }
 	/**
 	 * @return statement where the instance is injected
-	 */ 
+	 */
 	public CirExecution get_execution() { return this.execution; }
 	/**
 	 * @return statement in CIR code where the instance is injected
@@ -67,7 +67,7 @@ public abstract class SymInstance {
 		else
 			return false;
 	}
-	
+
 	/* implementation */
 	/**
 	 * @return generate the code that describes the instance in unique way
@@ -84,5 +84,5 @@ public abstract class SymInstance {
 	 * @throws Exception
 	 */
 	public abstract Boolean validate(SymbolProcess contexts) throws Exception;
-	
+
 }

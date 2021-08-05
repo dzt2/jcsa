@@ -30,14 +30,14 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
- * It provides the interfaces to create the mutation on AST-nodes 
+ * It provides the interfaces to create the mutation on AST-nodes
  * and read or write the mutations in the file.
- * 
+ *
  * @author yukimula
  *
  */
 public class AstMutations {
-	
+
 	/**
 	 * @param group
 	 * @param mclass
@@ -47,12 +47,12 @@ public class AstMutations {
 	 * @return create the mutation based on its parameters
 	 * @throws Exception
 	 */
-	public static AstMutation new_mutation(MutaGroup group, 
-			MutaClass mclass, MutaOperator operator, 
+	public static AstMutation new_mutation(MutaGroup group,
+			MutaClass mclass, MutaOperator operator,
 			AstNode location, Object parameter) throws Exception {
 		return new AstMutation(group, mclass, operator, location, parameter);
 	}
-	
+
 	/* factory methods */
 	/**
 	 * @param expression
@@ -60,8 +60,8 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	public static AstMutation trap_on_true(AstExpression expression) throws Exception {
-		return new AstMutation(MutaGroup.Trapping_Mutation, 
-				MutaClass.BTRP, MutaOperator.trap_on_true, 
+		return new AstMutation(MutaGroup.Trapping_Mutation,
+				MutaClass.BTRP, MutaOperator.trap_on_true,
 				expression, Boolean.TRUE);
 	}
 	/**
@@ -70,21 +70,21 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	public static AstMutation trap_on_false(AstExpression expression) throws Exception {
-		return new AstMutation(MutaGroup.Trapping_Mutation, 
-				MutaClass.BTRP, MutaOperator.trap_on_false, 
+		return new AstMutation(MutaGroup.Trapping_Mutation,
+				MutaClass.BTRP, MutaOperator.trap_on_false,
 				expression, Boolean.FALSE);
 	}
 	/**
 	 * @param switch_statement
 	 * @param case_statement
-	 * @return trap_on_case(switch_statement.condition, case_statement.expression) 
+	 * @return trap_on_case(switch_statement.condition, case_statement.expression)
 	 * @throws Exception
 	 */
-	public static AstMutation trap_on_case(AstSwitchStatement 
+	public static AstMutation trap_on_case(AstSwitchStatement
 			switch_statement, AstCaseStatement case_statement) throws Exception {
-		return new AstMutation(MutaGroup.Trapping_Mutation, 
-				MutaClass.CTRP, MutaOperator.trap_on_case, 
-				CTypeAnalyzer.get_expression_of(switch_statement.get_condition()), 
+		return new AstMutation(MutaGroup.Trapping_Mutation,
+				MutaClass.CTRP, MutaOperator.trap_on_case,
+				CTypeAnalyzer.get_expression_of(switch_statement.get_condition()),
 				CTypeAnalyzer.get_expression_of(case_statement.get_expression()));
 	}
 	/**
@@ -455,7 +455,7 @@ public class AstMutations {
 	public static AstMutation UIOD(AstExpression expression) throws Exception {
 		if(expression instanceof AstIncreUnaryExpression) {
 			switch(((AstIncreUnaryExpression) expression).get_operator().get_operator()) {
-			case increment:	
+			case increment:
 				return new AstMutation(MutaGroup.Unary_Operator_Mutation,
 						MutaClass.UIOD, MutaOperator.delete_prev_inc,
 						expression, null);
@@ -551,7 +551,7 @@ public class AstMutations {
 		case logic_not:	return new AstMutation(MutaGroup.Unary_Operator_Mutation,
 							MutaClass.UNOD, MutaOperator.delete_logic_not,
 							expression, null);
-			
+
 		default: throw new IllegalArgumentException("Invalid expression as " + expression.generate_code());
 		}
 	}
@@ -564,12 +564,12 @@ public class AstMutations {
 	public static AstMutation VBRP(AstExpression expression, boolean value) throws Exception {
 		if(value) {
 			return new AstMutation(MutaGroup.Reference_Mutation,
-					MutaClass.VBRP, MutaOperator.set_true, 
+					MutaClass.VBRP, MutaOperator.set_true,
 					expression, Boolean.TRUE);
 		}
 		else {
 			return new AstMutation(MutaGroup.Reference_Mutation,
-					MutaClass.VBRP, MutaOperator.set_false, 
+					MutaClass.VBRP, MutaOperator.set_false,
 					expression, Boolean.FALSE);
 		}
 	}
@@ -610,9 +610,9 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	public static AstMutation RTRP(AstReturnStatement source, AstReturnStatement target) throws Exception {
-		return new AstMutation(MutaGroup.Reference_Mutation, 
-				MutaClass.RTRP, MutaOperator.set_return, 
-				CTypeAnalyzer.get_expression_of(source.get_expression()), 
+		return new AstMutation(MutaGroup.Reference_Mutation,
+				MutaClass.RTRP, MutaOperator.set_return,
+				CTypeAnalyzer.get_expression_of(source.get_expression()),
 				CTypeAnalyzer.get_expression_of(target.get_expression()));
 	}
 	/**
@@ -1034,7 +1034,7 @@ public class AstMutations {
 			throw new IllegalArgumentException("Invalid parameter:" + parameter);
 		}
 	}
-	
+
 	/* parameter parsing method */
 	/**
 	 * @param parameter {AstNode, Boolean, Integer, Long, Double, String, COperator}
@@ -1074,9 +1074,9 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	private static Object string2parameter(AstTree tree, String param_str) throws Exception {
-		int index = param_str.strip().indexOf('@');
-		String title = param_str.substring(0, index).strip();
-		String content = param_str.substring(index + 1).strip();
+		int index = param_str.trim().indexOf('@');
+		String title = param_str.substring(0, index).trim();
+		String content = param_str.substring(index + 1).trim();
 		if(title.equals("a")) {
 			return tree.get_node(Integer.parseInt(content));
 		}
@@ -1110,7 +1110,7 @@ public class AstMutations {
 			throw new IllegalArgumentException("Invalid string: " + param_str);
 		}
 	}
-	
+
 	/* read and write methods */
 	/**
 	 * @param mutation
@@ -1136,16 +1136,16 @@ public class AstMutations {
 	 * @throws Exception
 	 */
 	protected static AstMutation string2mutation(AstTree tree, String line) throws Exception {
-		String[] items = line.strip().split("\t");
-		MutaGroup m_group = MutaGroup.valueOf(items[0].strip());
-		MutaClass m_class = MutaClass.valueOf(items[1].strip());
-		MutaOperator operator = MutaOperator.valueOf(items[2].strip());
-		AstNode location = tree.get_node(Integer.parseInt(items[3].strip()));
+		String[] items = line.trim().split("\t");
+		MutaGroup m_group = MutaGroup.valueOf(items[0].trim());
+		MutaClass m_class = MutaClass.valueOf(items[1].trim());
+		MutaOperator operator = MutaOperator.valueOf(items[2].trim());
+		AstNode location = tree.get_node(Integer.parseInt(items[3].trim()));
 		Object parameter = null;
 		if(items.length > 4) {
-			parameter = string2parameter(tree, items[4].strip());
+			parameter = string2parameter(tree, items[4].trim());
 		}
 		return new AstMutation(m_group, m_class, operator, location, parameter);
 	}
-	
+
 }

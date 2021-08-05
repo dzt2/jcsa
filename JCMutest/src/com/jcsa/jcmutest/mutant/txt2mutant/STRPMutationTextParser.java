@@ -15,13 +15,13 @@ import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 
 public class STRPMutationTextParser extends MutationTextParser {
-	
+
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		AstStatement statement = (AstStatement) source.get_location();
 		return statement;
 	}
-	
+
 	@Override
 	protected String get_muta_code(AstMutation source, AstNode location) throws Exception {
 		AstStatement statement = (AstStatement) source.get_location();
@@ -60,5 +60,5 @@ public class STRPMutationTextParser extends MutationTextParser {
 			return "{ jcm_trap(); " + statement.generate_code() + " }";
 		}
 	}
-	
+
 }

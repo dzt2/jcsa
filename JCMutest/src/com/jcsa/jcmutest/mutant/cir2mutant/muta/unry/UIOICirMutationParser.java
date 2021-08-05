@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UIOICirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_cir_expression(cir_tree, mutation.get_location()).statement_of();
@@ -21,11 +21,11 @@ public class UIOICirMutationParser extends CirMutationParser {
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
-		CirReferExpression reference = (CirReferExpression) 
+		CirReferExpression reference = (CirReferExpression)
 				this.get_cir_expression(cir_tree, mutation.get_location());
-		SymbolExpression muta_expression; 
+		SymbolExpression muta_expression;
 		CirAttribute constraint = CirAttribute.new_cover_count(statement.execution_of(), 1);
-		
+
 		switch(mutation.get_operator()) {
 		case insert_post_inc:
 		{
@@ -54,5 +54,5 @@ public class UIOICirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 	}
-	
+
 }

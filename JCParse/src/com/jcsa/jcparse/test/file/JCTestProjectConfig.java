@@ -133,7 +133,7 @@ public class JCTestProjectConfig {
 			this.compile_parameters.clear();
 			for(String parameter : compile_parameters) {
 				if(parameter != null) {
-					parameter = parameter.strip();
+					parameter = parameter.trim();
 					if(!parameter.isEmpty()) {
 						this.compile_parameters.add(parameter);
 					}
@@ -163,7 +163,7 @@ public class JCTestProjectConfig {
 					getAbsolutePath() + "/" + c_pre_process_mac_file_name));
 			StringBuilder compile_parameters = new StringBuilder();
 			for(String parameter : this.compile_parameters) {
-				compile_parameters.append(parameter.strip()).append("\n");
+				compile_parameters.append(parameter.trim()).append("\n");
 			}
 			CommandUtil.write_text(new File(config_dir.getAbsolutePath() + 
 					"/" + c_compile_parameter_file_name), compile_parameters.toString());
@@ -183,8 +183,8 @@ public class JCTestProjectConfig {
 					new File(config_dir.getAbsolutePath() + "/" + compiler_file_name));
 			String lang_std_text = CommandUtil.read_text(
 					new File(config_dir.getAbsolutePath() + "/" + lang_standard_file_name));
-			CCompiler compiler = CCompiler.valueOf(compiler_text.strip());
-			ClangStandard lang_standard = ClangStandard.valueOf(lang_std_text.strip());
+			CCompiler compiler = CCompiler.valueOf(compiler_text.trim());
+			ClangStandard lang_standard = ClangStandard.valueOf(lang_std_text.trim());
 			File c_template_file = new File(config_dir.getAbsolutePath() + "/" + c_template_file_name);
 			File c_instrument_head_file = new File(config_dir.getAbsolutePath() + "/" + c_instrument_head_file_name);
 			File c_pre_process_mac_file = new File(config_dir.getAbsolutePath() + "/" + c_pre_process_mac_file_name);
@@ -193,7 +193,7 @@ public class JCTestProjectConfig {
 			BufferedReader reader = new BufferedReader(
 					new FileReader(new File(config_dir.getAbsolutePath() + "/" + c_compile_parameter_file_name)));
 			while((line = reader.readLine()) != null) {
-				line = line.strip();
+				line = line.trim();
 				if(!line.isEmpty()) {
 					compile_parameters.add(line);
 				}

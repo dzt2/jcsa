@@ -46,12 +46,12 @@ import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * It implements the construction and evaluation of the symbolic tree.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymInstanceTrees {
-	
+
 	/* prev-path construction */
 	/**
 	 * @param dependence_graph
@@ -62,9 +62,9 @@ public class SymInstanceTrees {
 	 */
 	@SuppressWarnings("unused")
 	private static List<CirExecutionFlow> extract_prev_flows(CDependGraph dependence_graph, CirInstanceNode instance) throws Exception {
-		List<CirExecutionFlow> dependence_flows = new ArrayList<CirExecutionFlow>();
+		List<CirExecutionFlow> dependence_flows = new ArrayList<>();
 		CirExecutionPath dependence_path;
-		
+
 		if(dependence_graph!= null && dependence_graph.has_node(instance)) {
 			dependence_path = CirExecutionPathFinder.finder.dependence_path(dependence_graph, instance);
 		}
@@ -73,7 +73,7 @@ public class SymInstanceTrees {
 			dependence_path = new CirExecutionPath(source);
 			CirExecutionPathFinder.finder.vf_extend(dependence_path, instance.get_execution());
 		}
-		
+
 		for(CirExecutionEdge dependence_edge : dependence_path.get_edges()) {
 			switch(dependence_edge.get_type()) {
 			case true_flow:
@@ -92,9 +92,9 @@ public class SymInstanceTrees {
 	 * @throws Exception
 	 */
 	private static List<CirExecutionFlow> extract_prev_flows(CDependGraph dependence_graph, CirExecution execution) throws Exception {
-		List<CirExecutionFlow> dependence_flows = new ArrayList<CirExecutionFlow>();
+		List<CirExecutionFlow> dependence_flows = new ArrayList<>();
 		CirExecutionPath dependence_path;
-		
+
 		if(dependence_graph != null) {
 			dependence_path = CirExecutionPathFinder.finder.dependence_path(dependence_graph, execution);
 		}
@@ -103,7 +103,7 @@ public class SymInstanceTrees {
 			dependence_path = new CirExecutionPath(source);
 			CirExecutionPathFinder.finder.vf_extend(dependence_path, execution);
 		}
-		
+
 		for(CirExecutionEdge dependence_edge : dependence_path.get_edges()) {
 			switch(dependence_edge.get_type()) {
 			case true_flow:
@@ -113,7 +113,7 @@ public class SymInstanceTrees {
 			default: 		break;
 			}
 		}
-		
+
 		return dependence_flows;
 	}
 	/**
@@ -127,7 +127,7 @@ public class SymInstanceTrees {
 		/* declarations */
 		SymInstanceTreeNode tree_node = tree.get_root();
 		SymInstance edge_instance, node_instance;
-		
+
 		/* construct from root to prev-leaf on given leafs */
 		for(CirExecutionFlow flow : flows) {
 			/* generate instances for edge and child node */
@@ -180,7 +180,7 @@ public class SymInstanceTrees {
 				tree_node = tree_node.add_child(edge_instance, node_instance);
 			}
 		}
-		
+
 		if(tree_node.get_execution() != muta_execution) {
 			edge_instance = SymInstances.expr_constraint(tree_node.get_execution(), Boolean.TRUE, true);
 			node_instance = SymInstances.expr_constraint(muta_execution, Boolean.TRUE, true);
@@ -194,11 +194,11 @@ public class SymInstanceTrees {
 	 * @return the set of tree nodes that reach the statement where the mutant is seeded.
 	 * @throws Exception
 	 */
-	private static Collection<SymInstanceTreeNode> construct_prev_paths(SymInstanceTree tree, 
+	private static Collection<SymInstanceTreeNode> construct_prev_paths(SymInstanceTree tree,
 			CirExecution mutation_execution, CDependGraph dependence_graph) throws Exception {
 		/* declarations */
 		List<CirExecutionFlow> coverage_flows = SymInstanceTrees.extract_prev_flows(dependence_graph, mutation_execution);
-		Collection<SymInstanceTreeNode> muta_nodes = new ArrayList<SymInstanceTreeNode>();
+		Collection<SymInstanceTreeNode> muta_nodes = new ArrayList<>();
 		muta_nodes.add(SymInstanceTrees.construct_prev_paths(tree, coverage_flows, mutation_execution));
 		return muta_nodes;
 	}
@@ -212,7 +212,7 @@ public class SymInstanceTrees {
 	private static boolean is_defined(CirStatement statement, CirExpression expression) throws Exception {
 		if(statement instanceof CirAssignStatement) {
 			String key = ((CirAssignStatement) statement).get_lvalue().generate_code(true);
-			Queue<CirNode> queue = new LinkedList<CirNode>(); queue.add(expression);
+			Queue<CirNode> queue = new LinkedList<>(); queue.add(expression);
 			while(!queue.isEmpty()) {
 				CirNode parent = queue.poll();
 				if(parent.generate_code(true).equals(key)) {
@@ -238,11 +238,11 @@ public class SymInstanceTrees {
 	 * @throws Exception
 	 */
 	private static void append_use_expressions(CirStatement statement, CirExpression expression, Collection<CirExpression> use_expressions) throws Exception {
-		Queue<CirNode> queue = new LinkedList<CirNode>(); queue.add(statement);
+		Queue<CirNode> queue = new LinkedList<>(); queue.add(statement);
 		String code = expression.generate_code(true);
 		while(!queue.isEmpty()) {
 			CirNode parent = queue.poll();
-			if(parent instanceof CirExpression && 
+			if(parent instanceof CirExpression &&
 					parent.generate_code(true).equals(code)) {
 				boolean is_lvalue = false;
 				if(statement instanceof CirAssignStatement) {
@@ -267,10 +267,10 @@ public class SymInstanceTrees {
 	 * @throws Exception
 	 */
 	private static Collection<CirExpression> get_use_expressions(CDependGraph dependence_graph, CirExpression definition) throws Exception {
-		Set<CirExpression> use_expressions = new HashSet<CirExpression>();
+		Set<CirExpression> use_expressions = new HashSet<>();
 		CirStatement def_statement = definition.statement_of();
 		CirExecution def_execution = def_statement.get_tree().get_localizer().get_execution(def_statement);
-		
+
 		if(dependence_graph != null) {
 			CirInstanceGraph instance_graph = dependence_graph.get_program_graph();
 			if(instance_graph.has_instances_of(def_execution)) {
@@ -295,7 +295,7 @@ public class SymInstanceTrees {
 				}
 			}
 		}
-		
+
 		/* using decidable path analysis to fetch use-expressions */
 		if(use_expressions.isEmpty()) {
 			CirExecutionPath path = CirExecutionPathFinder.finder.df_extend(def_execution);
@@ -306,7 +306,7 @@ public class SymInstanceTrees {
 				}
 			}
 		}
-		
+
 		return use_expressions;
 	}
 	/* post-path construction */
@@ -320,7 +320,7 @@ public class SymInstanceTrees {
 		if(tree_node.is_state_error()) {
 			SymStateError source_error = (SymStateError) tree_node.get_instance();
 			Collection<CirMutation> next_mutations = SymInstances.propagate(source_error);
-			
+
 			if(next_mutations.isEmpty()) {
 				leafs.add(tree_node);
 			}
@@ -340,7 +340,7 @@ public class SymInstanceTrees {
 	 * @throws Exception
 	 */
 	private static Collection<SymInstanceTreeNode> build_local_propagations(SymInstanceTreeNode tree_node) throws Exception {
-		Collection<SymInstanceTreeNode> leafs = new ArrayList<SymInstanceTreeNode>();
+		Collection<SymInstanceTreeNode> leafs = new ArrayList<>();
 		if(tree_node.is_state_error()) {
 			SymInstanceTrees.build_local_propagation(tree_node, leafs);
 		}
@@ -349,21 +349,21 @@ public class SymInstanceTrees {
 	/**
 	 * @param tree_node
 	 * @param use_expressions
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
-	private static Collection<SymInstanceTreeNode> build_data_propagation(SymInstanceTreeNode tree_node, 
+	private static Collection<SymInstanceTreeNode> build_data_propagation(SymInstanceTreeNode tree_node,
 			Collection<CirExpression> use_expressions) throws Exception {
-		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<SymInstanceTreeNode>();
+		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<>();
 		SymStateValueError state_error = (SymStateValueError) tree_node.get_instance();
-		
+
 		for(CirExpression use_expression : use_expressions) {
 			CirStatement use_statement = use_expression.statement_of();
 			SymInstance edge_instance = SymInstances.expr_constraint(use_statement, Boolean.TRUE, true);
 			SymInstance node_instance = SymInstances.expr_error(use_expression, state_error.get_mutation_value());
 			next_nodes.add(tree_node.add_child(edge_instance, node_instance));
 		}
-		
+
 		return next_nodes;
 	}
 	/**
@@ -376,8 +376,8 @@ public class SymInstanceTrees {
 		CirExpression location = ((SymValueError) state_error).get_expression();
 		SymbolExpression muta_value = ((SymValueError) state_error).get_mutation_value();
 		SymConstraint constraint; SymStateError next_error;
-		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<SymInstanceTreeNode>();
-		
+		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<>();
+
 		if(location.get_parent() instanceof CirIfStatement || location.get_parent() instanceof CirCaseStatement) {
 			muta_value = SymbolEvaluator.evaluate_on(muta_value);
 			if(muta_value instanceof SymbolConstant) {
@@ -426,14 +426,14 @@ public class SymInstanceTrees {
 						fals_flow = flow;
 					}
 				}
-				
+
 				SymbolExpression condition1 = SymbolFactory.sym_condition(location, true);
 				SymbolExpression condition2 = SymbolFactory.sym_condition(muta_value, false);
 				SymbolExpression condition = SymbolFactory.logic_and(condition1, condition2);
 				constraint = SymInstances.expr_constraint(if_statement, condition, true);
 				next_error = SymInstances.flow_error(true_flow, fals_flow);
 				next_nodes.add(tree_node.add_child(constraint, next_error));
-				
+
 				condition1 = SymbolFactory.sym_condition(location, false);
 				condition2 = SymbolFactory.sym_condition(muta_value, true);
 				condition = SymbolFactory.logic_and(condition1, condition2);
@@ -442,22 +442,22 @@ public class SymInstanceTrees {
 				next_nodes.add(tree_node.add_child(constraint, next_error));
 			}
 		}
-		
+
 		return next_nodes;
 	}
 	/**
 	 * @param tree_node
 	 * @param dependence_graph
 	 * @return generate long propagation via data dependence relationships
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private static Collection<SymInstanceTreeNode> build_long_propagations(
 			SymInstanceTreeNode tree_node, CDependGraph dependence_graph) throws Exception {
-		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<SymInstanceTreeNode>();
-		
+		Collection<SymInstanceTreeNode> next_nodes = new ArrayList<>();
+
 		if(tree_node.is_state_error()) {
 			SymStateError state_error = (SymStateError) tree_node.get_instance();
-			
+
 			if(state_error instanceof SymStateValueError) {
 				Collection<CirExpression> use_expressions = SymInstanceTrees.get_use_expressions(
 						dependence_graph, ((SymStateValueError) state_error).get_expression());
@@ -469,7 +469,7 @@ public class SymInstanceTrees {
 				next_nodes.addAll(targets);
 			}
 		}
-		
+
 		return next_nodes;
 	}
 	/**
@@ -478,16 +478,16 @@ public class SymInstanceTrees {
 	 * @param distance
 	 * @throws Exception
 	 */
-	private static void construct_post_paths(SymInstanceTreeNode tree_node, 
+	private static void construct_post_paths(SymInstanceTreeNode tree_node,
 			int distance, CDependGraph dependence_graph) throws Exception {
 		Collection<SymInstanceTreeNode> local_leafs = SymInstanceTrees.build_local_propagations(tree_node);
-		
+
 		if(distance > 0 && !local_leafs.isEmpty()) {
-			Collection<SymInstanceTreeNode> long_roots = new ArrayList<SymInstanceTreeNode>();
+			Collection<SymInstanceTreeNode> long_roots = new ArrayList<>();
 			for(SymInstanceTreeNode local_leaf : local_leafs) {
 				long_roots.addAll(SymInstanceTrees.build_long_propagations(local_leaf, dependence_graph));
 			}
-			
+
 			for(SymInstanceTreeNode long_root : long_roots) {
 				SymInstanceTrees.construct_post_paths(long_root, distance - 1, dependence_graph);
 			}
@@ -507,7 +507,7 @@ public class SymInstanceTrees {
 		else {
 			/* collection execution-infection pairs */
 			Map<CirExecution, Collection<CirMutation>> execution_infections
-				= new HashMap<CirExecution, Collection<CirMutation>>();
+				= new HashMap<>();
 			if(tree.get_mutant().has_cir_mutations()) {
 				for(CirMutation cir_mutation : tree.get_mutant().get_cir_mutations()) {
 					CirExecution execution = cir_mutation.get_execution();
@@ -517,13 +517,13 @@ public class SymInstanceTrees {
 					execution_infections.get(execution).add(cir_mutation);
 				}
 			}
-			
+
 			/* construct prev-post paths on execution pivot */
 			for(CirExecution execution : execution_infections.keySet()) {
 				Collection<CirMutation> infections = execution_infections.get(execution);
-				Collection<SymInstanceTreeNode> muta_tree_nodes = 
+				Collection<SymInstanceTreeNode> muta_tree_nodes =
 						SymInstanceTrees.construct_prev_paths(tree, execution, dependence_graph);
-				
+
 				for(SymInstanceTreeNode muta_tree_node : muta_tree_nodes) {
 					for(CirMutation infection : infections) {
 						SymInstanceTreeNode infection_node = muta_tree_node.add_child(
@@ -534,7 +534,7 @@ public class SymInstanceTrees {
 			}
 		}
 	}
-	
+
 	/* evaluation methods */
 	private static void static_evaluate(SymInstanceTreeNode node) throws Exception {
 		node.add_status(null);
@@ -567,7 +567,7 @@ public class SymInstanceTrees {
 	private static void dynamic_prev_evaluate(SymInstanceTree tree, CStatePath test_path) throws Exception {
 		/* collect all the nodes and edges from root to mutation nodes */
 		Collection<SymInstanceTreeEdge> infection_edges = tree.get_infection_edges();
-		Set<SymInstanceContent> prev_contents = new HashSet<SymInstanceContent>();
+		Set<SymInstanceContent> prev_contents = new HashSet<>();
 		for(SymInstanceTreeEdge infection_edge : infection_edges) {
 			List<SymInstanceTreeEdge> infection_path = infection_edge.get_prev_path();
 			for(SymInstanceTreeEdge prev_edge : infection_path) {
@@ -575,10 +575,10 @@ public class SymInstanceTrees {
 				prev_contents.add(prev_edge.get_source());
 			}
 		}
-		
+
 		/* divide the instance edge or node based on execution */
-		Map<CirExecution, Collection<SymInstanceContent>> execution_contents = 
-				new HashMap<CirExecution, Collection<SymInstanceContent>>();
+		Map<CirExecution, Collection<SymInstanceContent>> execution_contents =
+				new HashMap<>();
 		for(SymInstanceContent prev_content : prev_contents) {
 			CirExecution execution = prev_content.get_execution();
 			if(!execution_contents.containsKey(execution)) {
@@ -586,7 +586,7 @@ public class SymInstanceTrees {
 			}
 			execution_contents.get(execution).add(prev_content);
 		}
-		
+
 		/* perform dynamic evaluation on all prev-states */
 		SymbolProcess contexts = new SymbolProcess(tree.get_mutant().get_space().get_ast_tree(),
 				tree.get_mutant().get_space().get_cir_tree());
@@ -608,12 +608,12 @@ public class SymInstanceTrees {
 	 */
 	private static void dynamic_post_evaluate(SymInstanceTree tree, CirExecution muta_execution, CStatePath test_path) throws Exception {
 		/* collect nodes after reachable mutation nodes */
-		Collection<SymInstanceContent> post_contents = new HashSet<SymInstanceContent>();
+		Collection<SymInstanceContent> post_contents = new HashSet<>();
 		Collection<SymInstanceTreeEdge> infection_edges = tree.get_infection_edges();
 		for(SymInstanceTreeEdge infection_edge : infection_edges) {
 			if(infection_edge.get_source().get_execution() == muta_execution) {
 				if(infection_edge.get_status().is_acceptable()) {
-					Collection<List<SymInstanceTreeEdge>> post_paths = 
+					Collection<List<SymInstanceTreeEdge>> post_paths =
 							infection_edge.get_target().get_post_paths();
 					for(List<SymInstanceTreeEdge> post_path : post_paths) {
 						for(SymInstanceTreeEdge post_edge : post_path) {
@@ -625,10 +625,10 @@ public class SymInstanceTrees {
 				}
 			}
 		}
-		
+
 		/* mapping from execution to corresponding node or edges in tree */
-		Map<CirExecution, Collection<SymInstanceContent>> execution_contents = 
-					new HashMap<CirExecution, Collection<SymInstanceContent>>();
+		Map<CirExecution, Collection<SymInstanceContent>> execution_contents =
+					new HashMap<>();
 		for(SymInstanceContent post_content : post_contents) {
 			CirExecution execution = post_content.get_execution();
 			if(!execution_contents.containsKey(execution)) {
@@ -636,7 +636,7 @@ public class SymInstanceTrees {
 			}
 			execution_contents.get(execution).add(post_content);
 		}
-		
+
 		/* perform dynamic evaluation on all post-states */
 		SymbolProcess contexts = new SymbolProcess(tree.get_mutant().get_space().get_ast_tree(),
 				tree.get_mutant().get_space().get_cir_tree());
@@ -645,7 +645,7 @@ public class SymInstanceTrees {
 			/* update contexts and reached tag */
 			contexts.accumulate(state_node);
 			if(state_node.get_execution() == muta_execution) { reached = true; }
-			
+
 			/* since mutation nodes is reached */
 			if(reached) {
 				CirExecution target = state_node.get_execution();
@@ -664,7 +664,7 @@ public class SymInstanceTrees {
 	 * @throws Exception
 	 */
 	private static void dynamic_post_evaluate(SymInstanceTree tree, CStatePath test_path) throws Exception {
-		Set<CirExecution> muta_executions = new HashSet<CirExecution>();
+		Set<CirExecution> muta_executions = new HashSet<>();
 		Collection<SymInstanceTreeEdge> infection_edges = tree.get_infection_edges();
 		for(SymInstanceTreeEdge infection_edge : infection_edges) {
 			if(infection_edge.get_status().is_acceptable()) {
@@ -691,5 +691,5 @@ public class SymInstanceTrees {
 			SymInstanceTrees.dynamic_post_evaluate(tree, test_path);
 		}
 	}
-	
+
 }

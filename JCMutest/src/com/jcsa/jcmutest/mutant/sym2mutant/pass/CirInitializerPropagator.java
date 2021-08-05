@@ -23,9 +23,9 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 		/* 1. declarations */
 		CirInitializerBody target = (CirInitializerBody) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymConstraint constraint; SymStateError state_error; 
+		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		/* 2. obtain the muta_operand */
 		if(error instanceof SymExpressionError) {
 			muta_operand = ((SymExpressionError) error).get_mutation_value();
@@ -36,10 +36,10 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 		else {
 			muta_operand = null;
 		}
-		
+
 		if(muta_operand != null) {
 			/* 3. construct the muta_value */
-			List<Object> elements = new ArrayList<Object>();
+			List<Object> elements = new ArrayList<>();
 			for(int k = 0; k < target.number_of_elements(); k++) {
 				if(target.get_element(k) == source) {
 					elements.add(muta_operand);
@@ -49,7 +49,7 @@ public class CirInitializerPropagator implements CirErrorPropagator {
 				}
 			}
 			muta_value = SymbolFactory.initializer_list(elements);
-			
+
 			/* 4. construct the constraint-error pair */
 			constraint = SymInstances.expr_constraint(
 					target.statement_of(), Boolean.TRUE, true);

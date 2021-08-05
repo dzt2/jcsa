@@ -10,12 +10,12 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It records the status accumultated in evaluation of the tree node.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirMutationTreeStatus {
-	
+
 	/* attributes */
 	/** the source attribute to be evaluated and accumulated **/
 	private CirAttribute 		attribute;
@@ -27,7 +27,7 @@ public class CirMutationTreeStatus {
 	private Set<CirAnnotation>	concrete_annotations;
 	/** the set of abstract annotations accumulated from concrete set **/
 	private Set<CirAnnotation> 	abstract_annotations;
-	
+
 	/* constructor */
 	/**
 	 * create a status w.r.t. the tree node of particular attribute
@@ -40,13 +40,13 @@ public class CirMutationTreeStatus {
 		}
 		else {
 			this.attribute = attribute;
-			this.evaluation_results = new ArrayList<Boolean>();
-			this.concrete_attributes = new ArrayList<CirAttribute>();
-			this.concrete_annotations = new HashSet<CirAnnotation>();
-			this.abstract_annotations = new HashSet<CirAnnotation>();
+			this.evaluation_results = new ArrayList<>();
+			this.concrete_attributes = new ArrayList<>();
+			this.concrete_annotations = new HashSet<>();
+			this.abstract_annotations = new HashSet<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the source attribute to be evaluated and accumulated
@@ -68,15 +68,15 @@ public class CirMutationTreeStatus {
 	 * @return the set of abstract annotations summarized from the concrete annotations
 	 */
 	public Iterable<CirAnnotation> get_abstract_annotations() { return this.abstract_annotations; }
-	
+
 	/* setters */
 	/**
 	 * clear the accumulated results and concrete attributes in the evaluation history
 	 */
-	protected void clc() { 
-		this.evaluation_results.clear(); 
-		this.concrete_attributes.clear(); 
-		this.abstract_annotations.clear(); 
+	protected void clc() {
+		this.evaluation_results.clear();
+		this.concrete_attributes.clear();
+		this.abstract_annotations.clear();
 		this.concrete_annotations.clear();
 	}
 	/**
@@ -90,10 +90,10 @@ public class CirMutationTreeStatus {
 		CirAttribute concrete_attribute = attribute.optimize(context);
 		this.concrete_attributes.add(concrete_attribute);
 		if(concrete_attribute.is_constraint()) {
-			CirMutationUtil.util.generate_concrete_annotations(attribute, concrete_annotations);
+			CirMutationTreeUtil.util.generate_annotations(attribute, null, concrete_annotations);
 		}
 		else {
-			CirMutationUtil.util.generate_concrete_annotations(concrete_attribute, concrete_annotations);
+			CirMutationTreeUtil.util.generate_annotations(concrete_attribute, context, concrete_annotations);
 		}
 		return result;
 	}
@@ -102,10 +102,10 @@ public class CirMutationTreeStatus {
 	 * @throws Exception
 	 */
 	protected void sum() throws Exception {
-		CirMutationUtil.util.summarize_abstract_annotations(
-				concrete_annotations, abstract_annotations);
+		this.abstract_annotations.clear();
+		CirMutationTreeUtil.util.summarize_annotations(concrete_annotations, abstract_annotations);
 	}
-	
+
 	/* counters */
 	/**
 	 * @return the number of attribute being executed in dynamic analysis
@@ -179,5 +179,5 @@ public class CirMutationTreeStatus {
 		}
 		return false;
 	}
-	
+
 }

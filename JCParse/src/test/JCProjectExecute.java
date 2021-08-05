@@ -69,7 +69,7 @@ public class JCProjectExecute {
 	private static File[] get_input_files(String name) throws Exception {
 		int index = name.indexOf(".");
 		if(index >= 0)
-			name = name.substring(0, index).strip();
+			name = name.substring(0, index).trim();
 		File cfile = new File(cfile_dir.getAbsolutePath() + "/" + name + ".c");
 		File idir = new File(input_dir.getAbsolutePath() + "/" + name);
 		File tfile = new File(tests_dir.getAbsolutePath() + "/" + name + ".txt");

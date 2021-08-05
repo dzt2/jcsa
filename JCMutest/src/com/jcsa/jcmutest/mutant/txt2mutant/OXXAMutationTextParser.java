@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class OXXAMutationTextParser extends MutationTextParser {
-	
+
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		return source.get_location();
@@ -21,7 +21,7 @@ public class OXXAMutationTextParser extends MutationTextParser {
 		String roperand = "(" + CTypeAnalyzer.get_expression_of(
 				expression.get_roperand()).generate_code() + ")";
 		COperator operator = (COperator) source.get_parameter();
-		
+
 		String op;
 		switch(operator) {
 		case assign:			op = " = ";			break;
@@ -37,7 +37,7 @@ public class OXXAMutationTextParser extends MutationTextParser {
 		case righ_shift_assign:	op = " >>= ";		break;
 		default: throw new IllegalArgumentException(source.toString());
 		}
-		
+
 		return loperand + op + roperand;
 	}
 

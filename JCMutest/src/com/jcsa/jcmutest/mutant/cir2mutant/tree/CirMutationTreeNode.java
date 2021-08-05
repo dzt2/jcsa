@@ -6,7 +6,7 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 
 public class CirMutationTreeNode {
-	
+
 	/* attributes */
 	/** the tree where this node is created **/
 	private CirMutationTree 			tree;
@@ -18,7 +18,7 @@ public class CirMutationTreeNode {
 	private CirMutationTreeEdge			in_edge;
 	/** the edges from this node linking to its children **/
 	private List<CirMutationTreeEdge>	ou_edges;
-	
+
 	/* constructor */
 	/**
 	 * create a node w.r.t. the attribute and type in the context of tree model
@@ -27,7 +27,7 @@ public class CirMutationTreeNode {
 	 * @param attribute
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationTreeNode(CirMutationTree tree, CirMutationTreeType 
+	protected CirMutationTreeNode(CirMutationTree tree, CirMutationTreeType
 			type, CirAttribute attribute) throws IllegalArgumentException {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree as null");
@@ -43,10 +43,10 @@ public class CirMutationTreeNode {
 			this.type = type;
 			this.status = new CirMutationTreeStatus(attribute);
 			this.in_edge = null;
-			this.ou_edges = new ArrayList<CirMutationTreeEdge>();
+			this.ou_edges = new ArrayList<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the tree where this node is created
@@ -81,7 +81,7 @@ public class CirMutationTreeNode {
 	 * @return the kth edge from this node being linked to one of its child
 	 */
 	public CirMutationTreeEdge				get_ou_edge(int k)	{ return this.ou_edges.get(k); }
-	
+
 	/* implication */
 	/**
 	 * @return whether the node is a root without input edge and parent
@@ -100,7 +100,7 @@ public class CirMutationTreeNode {
 	}
 	/**
 	 * @param k
-	 * @return the kth child under the node 
+	 * @return the kth child under the node
 	 */
 	public CirMutationTreeNode				get_child(int k)	{
 		return this.get_ou_edge(k).get_target();
@@ -112,7 +112,7 @@ public class CirMutationTreeNode {
 	 * @param edge_type
 	 * @throws Exception
 	 */
-	protected CirMutationTreeEdge link(CirMutationTreeType child_type, CirAttribute 
+	protected CirMutationTreeEdge link(CirMutationTreeType child_type, CirAttribute
 			attribute, CirMutationTreeFlow edge_type) throws IllegalArgumentException {
 		if(child_type == null) {
 			throw new IllegalArgumentException("Invalid child_type: null");
@@ -135,5 +135,5 @@ public class CirMutationTreeNode {
 			return edge;
 		}
 	}
-	
+
 }

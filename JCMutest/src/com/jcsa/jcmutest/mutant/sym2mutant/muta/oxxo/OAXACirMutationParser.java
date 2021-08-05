@@ -28,7 +28,7 @@ public class OAXACirMutationParser extends CirMutationParser {
 				cir_tree, mutation.get_location(), CirBinAssignStatement.class);
 		CirComputeExpression expression = (CirComputeExpression) assign_stmt.get_rvalue();
 		CirExpression loperand = expression.get_operand(0), roperand = expression.get_operand(1);
-		CirSetOperatorParsers.generate_infections(mutation, statement, 
+		CirSetOperatorParsers.generate_infections(mutation, statement,
 				expression, loperand, roperand, infections);
 	}
 

@@ -9,12 +9,12 @@ import com.jcsa.jcparse.lang.irlang.CirNode;
 /**
  * It implements the error propagation through locations in C-intermediate
  * representation program.
- * 
+ *
  * @author yukimula
  *
  */
 public interface CirErrorPropagator {
-	
+
 	/**
 	 * @param cir_mutations the library used to create constraint & state errors
 	 * @param error the source error that causes the other errors in the program
@@ -26,5 +26,5 @@ public interface CirErrorPropagator {
 	public void propagate(SymStateError error,
 			CirNode source_location, CirNode target_location,
 			Map<SymStateError, SymConstraint> propagations) throws Exception;
-	
+
 }

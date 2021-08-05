@@ -6,12 +6,12 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
  *
  */
 public class CirMutationTreeEdge {
-	
+
 	/* attributes */
 	private CirMutationTreeFlow type;
 	private CirMutationTreeNode	source;
 	private CirMutationTreeNode target;
-	
+
 	/* constructor */
 	/**
 	 * create an edge from source to target using specified type
@@ -20,7 +20,7 @@ public class CirMutationTreeEdge {
 	 * @param target
 	 * @throws IllegalArgumentException
 	 */
-	protected CirMutationTreeEdge(CirMutationTreeFlow type, CirMutationTreeNode 
+	protected CirMutationTreeEdge(CirMutationTreeFlow type, CirMutationTreeNode
 			source, CirMutationTreeNode target) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type as null");
@@ -33,7 +33,7 @@ public class CirMutationTreeEdge {
 		}
 		else { this.type = type; this.source = source; this.target = target; }
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the type of the edge to link a parent to its child
@@ -47,5 +47,5 @@ public class CirMutationTreeEdge {
 	 * @return the child or target node being linked from parent
 	 */
 	public CirMutationTreeNode get_target() { return this.target; }
-	
+
 }

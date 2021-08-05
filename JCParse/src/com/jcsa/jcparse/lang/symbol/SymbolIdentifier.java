@@ -31,10 +31,10 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	 */
 	private SymbolIdentifier(CType data_type, String name) throws IllegalArgumentException {
 		super(data_type);
-		if(name == null || name.isBlank())
+		if(name == null || name.trim().isEmpty())
 			throw new IllegalArgumentException("Invalid name: " + name);
 		else 
-			this.name = name.strip();
+			this.name = name.trim();
 	}
 	
 	/**

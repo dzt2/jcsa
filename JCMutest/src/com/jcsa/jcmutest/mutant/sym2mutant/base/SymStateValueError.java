@@ -10,5 +10,5 @@ public class SymStateValueError extends SymValueError {
 			SymbolExpression orig_expression, SymbolExpression muta_expression) throws Exception {
 		super(SymInstanceType.stat_error, execution, expression, orig_expression, muta_expression);
 	}
-	
+
 }

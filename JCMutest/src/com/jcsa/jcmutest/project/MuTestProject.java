@@ -15,12 +15,12 @@ import com.jcsa.jcparse.test.file.TestInput;
 /**
  * Mutation test project provides the top-perspective to manage the data and
  * testing process for mutation analysis over the C programs.
- * 
+ *
  * @author yukimula
  *
  */
 public class MuTestProject {
-	
+
 	/* definitions */
 	private MuTestProjectFiles files;
 	private MuTestProjectConfig config;
@@ -38,7 +38,7 @@ public class MuTestProject {
 			this.exec_space = new MuTestProjectExecSpace(this);
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the name of the mutation test project
@@ -49,7 +49,7 @@ public class MuTestProject {
 	/**
 	 * @return the files in the mutation test project
 	 */
-	public MuTestProjectFiles get_files() { return this.files; } 
+	public MuTestProjectFiles get_files() { return this.files; }
 	/**
 	 * @return the configuration data in test project
 	 */
@@ -84,7 +84,7 @@ public class MuTestProject {
 	 * @throws Exception
 	 */
 	public Collection<Mutant> get_mutants(File cfile, int beg, int end) throws Exception {
-		Collection<Mutant> mutants = new ArrayList<Mutant>();
+		Collection<Mutant> mutants = new ArrayList<>();
 		MuTestProjectCodeFile code_file = this.code_space.get_code_file(cfile);
 		if(code_file != null) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
@@ -95,10 +95,10 @@ public class MuTestProject {
 		}
 		return mutants;
 	}
-	
+
 	/* setters */
 	/**
-	 * 
+	 *
 	 * set the configuration data in mutation test project
 	 * @param compiler the system compiler used for compilation
 	 * @param lang_std the language standard used to parse source code
@@ -109,13 +109,13 @@ public class MuTestProject {
 	 * @param mutation_head_file config/jcmutest.h to compile the mutation code
 	 * @throws Exception
 	 */
-	public void set_config(CCompiler compiler, ClangStandard lang_std, 
-			Iterable<String> compilation_parameters, File sizeof_template_file, 
-			File instrument_head_file, File preprocess_macro_file, 
+	public void set_config(CCompiler compiler, ClangStandard lang_std,
+			Iterable<String> compilation_parameters, File sizeof_template_file,
+			File instrument_head_file, File preprocess_macro_file,
 			File mutation_head_file, long max_timeout_seconds) throws Exception {
-		this.config.set(compiler, lang_std, 
-				compilation_parameters, sizeof_template_file, 
-				instrument_head_file, preprocess_macro_file, 
+		this.config.set(compiler, lang_std,
+				compilation_parameters, sizeof_template_file,
+				instrument_head_file, preprocess_macro_file,
 				mutation_head_file, max_timeout_seconds);
 	}
 	/**
@@ -153,11 +153,11 @@ public class MuTestProject {
 	public void add_test_inputs(Iterable<File> test_suite_files) throws Exception {
 		this.test_space.add_test_inputs(test_suite_files);
 	}
-	
+
 	/* execution utilities */
 	/**
-	 * To assert whether the normal, instrumental and mutated program can be 
-	 * correctly compiled, if not, the incorrect code will be output on the 
+	 * To assert whether the normal, instrumental and mutated program can be
+	 * correctly compiled, if not, the incorrect code will be output on the
 	 * directory of specified. [error_number, total_number]
 	 * @param error_directory
 	 * @throws Exception
@@ -169,11 +169,11 @@ public class MuTestProject {
 		for(MuTestProjectCodeFile code_file : this.code_space.get_code_files()) {
 			for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 				if(this.exec_space.compile_mutation_program(mutant)) {
-					System.out.println("\t==> Pass on " + code_file.get_name() + 
+					System.out.println("\t==> Pass on " + code_file.get_name() +
 							"[" + mutant.get_id() + "/" + code_file.get_mutant_space().size() + "]:\t" + mutant.get_mutation());
 				}
 				else {
-					File target = new File(error_directory.getAbsolutePath() + "/" + 
+					File target = new File(error_directory.getAbsolutePath() + "/" +
 										code_file.get_name() + mutant.get_mutation().
 										get_class() + "." + mutant.get_id() + ".c");
 					FileOperations.copy(code_file.get_mfile(), target);
@@ -216,5 +216,5 @@ public class MuTestProject {
 		this.exec_space.generate_exec_scripts(tests);
 		this.exec_space.execute_instrumental_program();
 	}
-	
+
 }

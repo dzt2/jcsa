@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class STRPCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
@@ -24,5 +24,5 @@ public class STRPCirMutationParser extends CirMutationParser {
 		CirAttribute init_error = CirAttribute.new_traps_error(execution);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

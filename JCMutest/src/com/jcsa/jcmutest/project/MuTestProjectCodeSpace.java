@@ -26,7 +26,7 @@ import com.jcsa.jcmutest.project.util.FileOperations;
  *
  */
 public class MuTestProjectCodeSpace {
-	
+
 	/* definitions */
 	/** the project that defines the code space as well **/
 	private MuTestProject project;
@@ -42,7 +42,7 @@ public class MuTestProjectCodeSpace {
 			throw new IllegalArgumentException("Invalid project: null");
 		else {
 			this.project = project;
-			this.code_files = new HashMap<String, MuTestProjectCodeFile>();
+			this.code_files = new HashMap<>();
 			File[] cfiles = this.get_cfiles_directory().listFiles();
 			if(cfiles != null) {
 				for(File cfile : cfiles) {
@@ -52,7 +52,7 @@ public class MuTestProjectCodeSpace {
 			}
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the project that defines the code space as well
@@ -61,43 +61,43 @@ public class MuTestProjectCodeSpace {
 	/**
 	 * @return project/code/cfiles/ in which code files are not pre-processed.
 	 */
-	public File get_cfiles_directory() { 
-		return this.project.get_files().get_cfiles_directory(); 
+	public File get_cfiles_directory() {
+		return this.project.get_files().get_cfiles_directory();
 	}
 	/**
 	 * @return project/code/ifiles/ in which code files are pre-processed.
 	 */
-	public File get_ifiles_directory() { 
-		return this.project.get_files().get_ifiles_directory(); 
+	public File get_ifiles_directory() {
+		return this.project.get_files().get_ifiles_directory();
 	}
 	/**
 	 * @return project/code/ifiles/ in which code files are instrumented.
 	 */
-	public File get_sfiles_directory() { 
-		return this.project.get_files().get_sfiles_directory(); 
+	public File get_sfiles_directory() {
+		return this.project.get_files().get_sfiles_directory();
 	}
 	/**
 	 * @return project/code/mfiles/ in which code files are mutated with some mutants.
 	 */
-	public File get_mfiles_directory() { 
-		return this.project.get_files().get_mfiles_directory(); 
+	public File get_mfiles_directory() {
+		return this.project.get_files().get_mfiles_directory();
 	}
 	/**
 	 * @return project/code/hfiles/ in which header files are linked and included.
 	 */
-	public File get_hfiles_directory() { 
-		return this.project.get_files().get_hfiles_directory(); 
+	public File get_hfiles_directory() {
+		return this.project.get_files().get_hfiles_directory();
 	}
 	/**
 	 * @return project/code/lfiles/ in which library files are linked and used.
 	 */
-	public File get_lfiles_directory() { 
-		return this.project.get_files().get_lfiles_directory(); 
+	public File get_lfiles_directory() {
+		return this.project.get_files().get_lfiles_directory();
 	}
 	/**
 	 * @return project/code/mutants/ in which mutation data files are produced.
 	 */
-	public File get_mutants_directory() { 
+	public File get_mutants_directory() {
 		return this.project.get_files().get_mutants_directory();
 	}
 	public Iterable<File> get_cfiles() {
@@ -119,7 +119,7 @@ public class MuTestProjectCodeSpace {
 	 * @return hfiles + config
 	 */
 	public Iterable<File> get_hdirs() {
-		List<File> hdirs = new ArrayList<File>();
+		List<File> hdirs = new ArrayList<>();
 		hdirs.add(project.get_files().get_hfiles_directory());
 		hdirs.add(project.get_files().get_config_directory());
 		return hdirs;
@@ -140,7 +140,7 @@ public class MuTestProjectCodeSpace {
 		else
 			return this.code_files.get(cfile.getName());
 	}
-	
+
 	/* setters */
 	/**
 	 * delete the original code files and set the new code items for specified input source code files.
@@ -162,16 +162,16 @@ public class MuTestProjectCodeSpace {
 			code_file.delete();
 		}
 		this.code_files.clear();
-		
+
 		/* 2. reset the source code files and their data */
 		for(File hfile : hfiles) {
 			if(hfile.getName().endsWith(".h"))
-				FileOperations.copy(hfile, new File(this.get_hfiles_directory().getAbsolutePath() + "/" + hfile.getName())); 
+				FileOperations.copy(hfile, new File(this.get_hfiles_directory().getAbsolutePath() + "/" + hfile.getName()));
 		}
 		for(File lfile : lfiles) {
-			FileOperations.copy(lfile, new File(this.get_lfiles_directory().getAbsolutePath() + "/" + lfile.getName())); 
+			FileOperations.copy(lfile, new File(this.get_lfiles_directory().getAbsolutePath() + "/" + lfile.getName()));
 		}
-		
+
 		/* 3. build up the item of code files into memory */
 		for(File cfile : cfiles) {
 			MuTestProjectCodeFile code_file = new MuTestProjectCodeFile(this, cfile);
@@ -218,5 +218,5 @@ public class MuTestProjectCodeSpace {
 			}
 		}
 	}
-	
+
 }

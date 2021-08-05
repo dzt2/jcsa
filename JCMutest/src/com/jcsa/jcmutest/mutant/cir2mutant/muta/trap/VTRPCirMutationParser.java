@@ -18,12 +18,12 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class VTRPCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	/**
 	 * @param location
 	 * @param parameter
@@ -55,15 +55,15 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			return SymbolFactory.sym_expression(parameter);
 		}
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymbolExpression condition; CirExecution execution = statement.execution_of();
-		
+
 		switch(mutation.get_operator()) {
-		case trap_on_pos:	
+		case trap_on_pos:
 		{
 			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, true);
@@ -73,7 +73,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			}
 			break;
 		}
-		case trap_on_zro:	
+		case trap_on_zro:
 		{
 			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_condition(expression, false);
@@ -83,7 +83,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			}
 			break;
 		}
-		case trap_on_neg:	
+		case trap_on_neg:
 		{
 			if(CirMutation.is_boolean(expression)) {
 				condition = SymbolFactory.sym_expression(Boolean.FALSE);
@@ -93,13 +93,13 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			}
 			break;
 		}
-		case trap_on_dif: 	
+		case trap_on_dif:
 		{
 			condition = SymbolFactory.not_equals(expression, get_parameter(
-					mutation.get_location(), mutation.get_parameter())); 	
+					mutation.get_location(), mutation.get_parameter()));
 			break;
 		}
-		default: 
+		default:
 		{
 			throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
@@ -108,5 +108,5 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		CirAttribute init_error = CirAttribute.new_traps_error(execution);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

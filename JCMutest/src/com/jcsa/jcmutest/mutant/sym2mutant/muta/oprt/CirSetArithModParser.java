@@ -23,9 +23,9 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 					COperator.equal_with, this.loperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
-					COperator.not_equals, this.loperand, Integer.valueOf(0))); 
+					COperator.not_equals, this.loperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.roperand);
 		}
 		return this.add_infection(constraint, init_error);
@@ -37,10 +37,10 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 		 * 	[y == 0] --> trap_statement()
 		 * 	[x < -y || x > -2y] --> set_expr
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition, operand;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		operand = this.sym_expression(COperator.negative, this.roperand);
 		condition = this.sym_expression(COperator.smaller_tn, this.loperand, operand);
 		constraints.add(this.get_constraint(condition));
@@ -48,7 +48,7 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 		condition = this.sym_expression(COperator.greater_tn, this.loperand, operand);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -65,10 +65,10 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 		 * 	[y == 0] --> trap_statement()
 		 * 	[x < y || x > 2y] --> set_expr
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition, operand;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		operand = this.sym_expression(COperator.positive, this.roperand);
 		condition = this.sym_expression(COperator.smaller_tn, this.loperand, operand);
 		constraints.add(this.get_constraint(condition));
@@ -76,7 +76,7 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 		condition = this.sym_expression(COperator.greater_tn, this.loperand, operand);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -319,5 +319,5 @@ public class CirSetArithModParser extends CirSetOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 }

@@ -10,15 +10,15 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 public class VBRPMutationGenerator extends MutationGenerator {
-	
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return this.is_condition_expression(location);
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstExpression expression = (AstExpression) location;

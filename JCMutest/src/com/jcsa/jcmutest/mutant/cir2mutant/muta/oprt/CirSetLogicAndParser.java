@@ -22,13 +22,13 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		 */
 		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression lcondition, rcondition, condition;
-		
+
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -43,16 +43,16 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> set_true
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_condition(this.roperand, true);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -72,7 +72,7 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [!B(y)] --> trap
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
 		condition = this.sym_condition(this.roperand, false);
 		constraint = this.get_constraint(condition);
@@ -86,10 +86,10 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		 * [!B(y)] --> trap
 		 * [B(x)] --> set_false
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		if(this.compare_or_mutate) {
 			condition = this.sym_condition(this.loperand, true);
 			constraints.add(this.get_constraint(condition));
@@ -104,7 +104,7 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_condition(this.loperand, true);
 			constraints.add(this.get_constraint(condition));
 			condition = this.sym_condition(this.roperand, true);
@@ -127,13 +127,13 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		 */
 		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression lcondition, rcondition, condition;
-		
+
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -148,16 +148,16 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_condition(this.roperand, true);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -172,16 +172,16 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [B(x) && !B(y)]
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_condition(this.roperand, false);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.conjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -219,13 +219,13 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		 */
 		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression lcondition, rcondition, condition;
-		
+
 		lcondition = this.sym_condition(this.loperand, true);
 		rcondition = this.sym_condition(this.roperand, true);
 		condition = this.sym_expression(COperator.
 					not_equals, lcondition, rcondition);
 		constraint = this.get_constraint(condition);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -304,16 +304,16 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [!B(x) && !B(y)] --> set_true
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_condition(this.loperand, false);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_condition(this.roperand, false);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.conjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -328,16 +328,16 @@ public class CirSetLogicAndParser extends CirOperatorParser {
 		/**
 		 * [B(x) || B(y)] --> not_expr
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_condition(this.loperand, true);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_condition(this.roperand, true);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

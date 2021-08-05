@@ -16,10 +16,10 @@ public class SymbolField extends SymbolUnit {
 	 * @throws IllegalArgumentException
 	 */
 	private SymbolField(String name) throws IllegalArgumentException {
-		if(name == null || name.isBlank())
+		if(name == null || name.trim().isEmpty())
 			throw new IllegalArgumentException("Invalid: " + name);
 		else {
-			this.name = name.strip();
+			this.name = name.trim();
 		}
 	}
 	

@@ -5,12 +5,12 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 
 /**
  * The mutation defined based on syntactic rule on abstract syntax tree node.
- * 
+ *
  * @author yukimula
  *
  */
 public class AstMutation {
-	
+
 	/* attributes */
 	/** the group of mutation operator **/
 	private MutaGroup muta_group;
@@ -22,18 +22,18 @@ public class AstMutation {
 	private AstNode location;
 	/** the parameter that defines the mutation **/
 	private Object parameter;
-	
+
 	/* constructor */
 	/**
 	 * @param muta_group the group of mutation operator
-	 * @param muta_class the class of mutation operator 
+	 * @param muta_class the class of mutation operator
 	 * @param operator the mutation operator on AST
 	 * @param location the location in which the mutation is seeded
 	 * @param parameter the parameter that defines the mutation
 	 * @throws IllegalArgumentException
 	 */
-	protected AstMutation(MutaGroup muta_group, MutaClass muta_class, 
-			MutaOperator operator, AstNode location, Object parameter) 
+	protected AstMutation(MutaGroup muta_group, MutaClass muta_class,
+			MutaOperator operator, AstNode location, Object parameter)
 					throws IllegalArgumentException {
 		if(muta_group == null)
 			throw new IllegalArgumentException("Invalid group: null");
@@ -51,7 +51,7 @@ public class AstMutation {
 			this.parameter = parameter;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the group of mutation operator
@@ -77,7 +77,7 @@ public class AstMutation {
 	 * @return whether the parameter is non-null in mutation
 	 */
 	public boolean has_parameter() { return parameter != null; }
-	
+
 	/* identifier */
 	@Override
 	public String toString() {
@@ -101,10 +101,10 @@ public class AstMutation {
 	public int hashCode() {
 		return this.toString().hashCode();
 	}
-	
+
 	/* string-mutation */
 	public static AstMutation parse(AstTree tree, String line) throws Exception {
 		return AstMutations.string2mutation(tree, line);
 	}
-	
+
 }

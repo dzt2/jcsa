@@ -25,12 +25,12 @@ import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * feature tree of mutant
- * 
+ *
  * @author yukimula
  *
  */
 public class CirMutationTree {
-	
+
 	/* attributes */
 	/** mutant to describe the feature tree **/
 	private Mutant mutant;
@@ -38,7 +38,7 @@ public class CirMutationTree {
 	private CirMutationTreeNode root;
 	/** the set of cir-based mutations in the mutant **/
 	private List<CirMutation> cir_mutations;
-	
+
 	/* constructor */
 	/**
 	 * @param mutant
@@ -51,7 +51,7 @@ public class CirMutationTree {
 		else {
 			this.mutant = mutant;
 			this.root = this.new_root();
-			this.cir_mutations = new ArrayList<CirMutation>();
+			this.cir_mutations = new ArrayList<>();
 			Iterable<CirMutation> cir_mutations = CirMutationParsers.parse(
 					this.get_cir_tree(), this.mutant.get_mutation());
 			if(cir_mutations != null) {
@@ -88,14 +88,14 @@ public class CirMutationTree {
 		return new CirMutationTreeNode(this, CirMutationTreeType.precondition,
 				CirAttribute.new_cover_count(execution, 1));
 	}
-	
+
 	/* getters */
 	/**
 	 * @return mutant of the feature tree in CIR-mutation terms
 	 */
 	public Mutant 	get_mutant() { return this.mutant; }
 	/**
-	 * @return AST 
+	 * @return AST
 	 */
 	public AstTree	get_ast_tree() { return this.mutant.get_space().get_ast_tree(); }
 	/**
@@ -107,12 +107,12 @@ public class CirMutationTree {
 	 */
 	public CirMutationTreeNode get_root() { return this.root; }
 	/**
-	 * @return the set of infection nodes 
+	 * @return the set of infection nodes
 	 */
 	public Iterable<CirMutationTreeEdge> get_infection_edges() {
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(this.root); 
-		List<CirMutationTreeEdge> edges = new ArrayList<CirMutationTreeEdge>();
+		Queue<CirMutationTreeNode> queue = new LinkedList<>();
+		queue.add(this.root);
+		List<CirMutationTreeEdge> edges = new ArrayList<>();
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode node = queue.poll();
 			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
@@ -134,7 +134,7 @@ public class CirMutationTree {
 	 * @return whether there exists cir-mutation corresponding to the mutant
 	 */
 	public boolean has_cir_mutations() { return !this.cir_mutations.isEmpty(); }
-	
+
 	/* construction */
 	/**
 	 * construct a static cir-based mutation tree for mutant
@@ -144,8 +144,7 @@ public class CirMutationTree {
 	 */
 	public static CirMutationTree new_tree(Mutant mutant) throws Exception {
 		CirMutationTree tree = new CirMutationTree(mutant);
-		CirMutationUtil.util.construct_precondition_tree(tree);
-		CirMutationUtil.util.construct_poscondition_tree(tree);
+		CirMutationTreeUtil.util.construct_mutation_tree_in(tree, null);
 		return tree;
 	}
 	/**
@@ -154,11 +153,10 @@ public class CirMutationTree {
 	 * @return
 	 * @throws Exception
 	 */
-	public static CirMutationTree new_tree(Mutant mutant, 
+	public static CirMutationTree new_tree(Mutant mutant,
 			CDependGraph dependence_graph) throws Exception {
 		CirMutationTree tree = new CirMutationTree(mutant);
-		CirMutationUtil.util.construct_precondition_tree(tree, dependence_graph);
-		CirMutationUtil.util.construct_poscondition_tree(tree);
+		CirMutationTreeUtil.util.construct_mutation_tree_in(tree, dependence_graph);
 		return tree;
 	}
 	/**
@@ -167,22 +165,21 @@ public class CirMutationTree {
 	 * @return
 	 * @throws Exception
 	 */
-	public static CirMutationTree new_tree(Mutant mutant, 
+	public static CirMutationTree new_tree(Mutant mutant,
 			CStatePath state_path) throws Exception {
 		CirMutationTree tree = new CirMutationTree(mutant);
-		CirMutationUtil.util.construct_precondition_tree(tree, state_path);
-		CirMutationUtil.util.construct_poscondition_tree(tree);
+		CirMutationTreeUtil.util.construct_mutation_tree_in(tree, state_path);
 		return tree;
 	}
-	
+
 	/* evaluation */
 	/**
 	 * clear all the status in the tree nodes
 	 * @throws Exception
 	 */
 	public void initialize_status() throws Exception {
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		queue.add(this.root); 
+		Queue<CirMutationTreeNode> queue = new LinkedList<>();
+		queue.add(this.root);
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode node = queue.poll();
 			node.get_status().clc();
@@ -197,11 +194,11 @@ public class CirMutationTree {
 	 * @throws Exception
 	 */
 	public void evaluate(SymbolProcess context) throws Exception {
-		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
+		Queue<CirMutationTreeNode> queue = new LinkedList<>();
 		for(CirMutationTreeEdge infect_edge : this.get_infection_edges()) {
 			queue.add(infect_edge.get_source());
 		}
-		Set<CirMutationTreeNode> records = new HashSet<CirMutationTreeNode>();
+		Set<CirMutationTreeNode> records = new HashSet<>();
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode node = queue.poll();
 			records.add(node);
@@ -219,5 +216,5 @@ public class CirMutationTree {
 	 * @throws Exception
 	 */
 	public void evaluate() throws Exception { this.evaluate(null); }
-	
+
 }

@@ -22,7 +22,7 @@ public class OBXNMutationGenerator extends MutationGenerator {
 				|| location instanceof AstShiftBinaryExpression)
 				&& this.is_numeric_expression(location);
 	}
-	
+
 	private final COperator[] operators = new COperator[] {
 			COperator.arith_add, COperator.arith_sub, COperator.arith_mul,
 			COperator.arith_div, COperator.arith_mod, COperator.bit_and,
@@ -31,7 +31,7 @@ public class OBXNMutationGenerator extends MutationGenerator {
 			COperator.smaller_tn, COperator.smaller_eq, COperator.not_equals,
 			COperator.not_equals
 		};
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstBinaryExpression expression = (AstBinaryExpression) location;

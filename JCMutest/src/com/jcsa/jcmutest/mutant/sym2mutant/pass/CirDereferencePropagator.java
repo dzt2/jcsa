@@ -20,15 +20,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  *
  */
 public class CirDereferencePropagator implements CirErrorPropagator {
-	
+
 	@Override
 	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		CirDeferExpression target = (CirDeferExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymConstraint constraint; SymStateError state_error; 
+		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		if(source == target.get_address()) {
 			/* 1. obtain the mutated operand */
 			if(error instanceof SymExpressionError) {
@@ -40,7 +40,7 @@ public class CirDereferencePropagator implements CirErrorPropagator {
 			else {
 				muta_operand = null;
 			}
-			
+
 			/* 2. true --> set_refer(*muta_operand) */
 			if(muta_operand != null) {
 				constraint = SymInstances.expr_constraint(
@@ -51,5 +51,5 @@ public class CirDereferencePropagator implements CirErrorPropagator {
 			}
 		}
 	}
-	
+
 }

@@ -6,13 +6,13 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 public class VTRPMutationTextParser extends MutationTextParser {
-	
+
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
 		return CTypeAnalyzer.get_expression_of(expression);
 	}
-	
+
 	private String param_code(Object parameter) throws Exception {
 		if(parameter instanceof Boolean) {
 			if(((Boolean) parameter).booleanValue()) {
@@ -33,7 +33,7 @@ public class VTRPMutationTextParser extends MutationTextParser {
 			return parameter.toString();
 		}
 	}
-	
+
 	@Override
 	protected String get_muta_code(AstMutation source, AstNode location) throws Exception {
 		AstExpression expression = (AstExpression) location;

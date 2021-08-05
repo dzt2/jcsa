@@ -14,7 +14,7 @@ public class OAXNMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
-	
+
 	private final COperator[] operators = new COperator[] {
 		COperator.arith_add, COperator.arith_sub, COperator.arith_mul,
 		COperator.arith_div, COperator.arith_mod, COperator.bit_and,
@@ -23,7 +23,7 @@ public class OAXNMutationGenerator extends MutationGenerator {
 		COperator.smaller_tn, COperator.smaller_eq, COperator.not_equals,
 		COperator.not_equals
 	};
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return location instanceof AstArithBinaryExpression

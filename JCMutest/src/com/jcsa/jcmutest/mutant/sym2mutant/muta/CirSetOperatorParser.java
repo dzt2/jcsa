@@ -17,10 +17,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public abstract class CirSetOperatorParser {
-	
+
 	/** any boolean value **/
 	public static final String AnyBoolean = "default#boolean";
-	
+
 	/* definitions */
 	/** source mutation to cause state infections **/
 	private AstMutation mutation;
@@ -36,10 +36,10 @@ public abstract class CirSetOperatorParser {
 	protected boolean compare_or_mutate;
 	/** mapping from state errors to the constraints for killing mutation **/
 	private Map<SymStateError, SymConstraint> infections;
-	
+
 	/* constructor */
 	public CirSetOperatorParser() { }
-	
+
 	/* parsing methods */
 	/**
 	 * generate the infection module w.r.t. the mutation.
@@ -50,8 +50,8 @@ public abstract class CirSetOperatorParser {
 	 * @param roperand
 	 * @throws Exception
 	 */
-	public boolean generate_infections(AstMutation mutation, 
-			CirStatement statement, CirExpression expression, 
+	public boolean generate_infections(AstMutation mutation,
+			CirStatement statement, CirExpression expression,
 			CirExpression loperand, CirExpression roperand,
 			Map<SymStateError, SymConstraint> infection) throws Exception {
 		/* declarations */
@@ -65,8 +65,8 @@ public abstract class CirSetOperatorParser {
 		else
 			this.compare_or_mutate = false;
 		this.infections = infection;
-		
-		/* operator */ 
+
+		/* operator */
 		COperator operator = (COperator) mutation.get_parameter();
 		switch(operator) {
 		case assign:				return this.to_assign();
@@ -101,7 +101,7 @@ public abstract class CirSetOperatorParser {
 		default:	throw new IllegalArgumentException("Invalid: " + operator);
 		}
 	}
-	
+
 	/* implementation methods */
 	protected abstract boolean to_assign() throws Exception;
 	protected abstract boolean arith_add() throws Exception;
@@ -122,7 +122,7 @@ public abstract class CirSetOperatorParser {
 	protected abstract boolean smaller_eq()throws Exception;
 	protected abstract boolean equal_with()throws Exception;
 	protected abstract boolean not_equals()throws Exception;
-	
+
 	/* basic data operations */
 	/**
 	 * @param constraint
@@ -148,7 +148,7 @@ public abstract class CirSetOperatorParser {
 	protected SymStateError trap_statement() throws Exception {
 		return SymInstances.trap_error(statement);
 	}
-	
+
 	/* exception handles */
 	/**
 	 * @return report that the mutation operator is not supported in current location
@@ -164,7 +164,7 @@ public abstract class CirSetOperatorParser {
 	protected boolean report_equivalence_mutation() throws Exception {
 		throw new UnsupportedOperationException("Equivalent mutation: " + this.mutation);
 	}
-	
+
 	/* expression errors */
 	/**
 	 * @param muta_expression
@@ -220,7 +220,7 @@ public abstract class CirSetOperatorParser {
 	protected SymStateError ins_expression(Object operand, COperator operator) throws Exception {
 		return SymInstances.expr_error(expression, this.sym_expression(operator, operand, expression));
 	}
-	
+
 	/* symbolic operations */
 	/**
 	 * @param expression
@@ -237,7 +237,7 @@ public abstract class CirSetOperatorParser {
 				condition = SymbolFactory.logic_not(condition);
 			}
 		}
-		else if(CTypeAnalyzer.is_integer(type) 
+		else if(CTypeAnalyzer.is_integer(type)
 				|| CTypeAnalyzer.is_real(type)
 				|| CTypeAnalyzer.is_pointer(type)) {
 			if(value) {
@@ -298,7 +298,7 @@ public abstract class CirSetOperatorParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
-	
+
 	/* composite descriptions */
 	/**
 	 * @param descriptions
@@ -342,5 +342,5 @@ public abstract class CirSetOperatorParser {
 			return SymInstances.expr_constraint(statement, condition, true);
 		}
 	}
-	
+
 }

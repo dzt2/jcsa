@@ -14,15 +14,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirArithSubPropagator implements CirErrorPropagator {
-	
+
 	@Override
 	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		SymConstraint constraint; SymStateError state_error; 
-		
+		SymConstraint constraint; SymStateError state_error;
+
 		if(error instanceof SymExpressionError) {
 			muta_operand = ((SymExpressionError) error).get_mutation_value();
 		}
@@ -32,23 +32,23 @@ public class CirArithSubPropagator implements CirErrorPropagator {
 		else {
 			return;
 		}
-		
+
 		if(source == target.get_operand(0)) {
-			muta_value = SymbolFactory.arith_sub(target.get_data_type(), 
+			muta_value = SymbolFactory.arith_sub(target.get_data_type(),
 					muta_operand, target.get_operand(1));
 		}
 		else if(source == target.get_operand(1)) {
-			muta_value = SymbolFactory.arith_sub(target.get_data_type(), 
+			muta_value = SymbolFactory.arith_sub(target.get_data_type(),
 					target.get_operand(0), muta_operand);
 		}
 		else {
 			throw new IllegalArgumentException(target.generate_code(true));
 		}
-		
+
 		constraint = SymInstances.expr_constraint(
 				target.statement_of(), Boolean.TRUE, true);
 		state_error = SymInstances.expr_error(target, muta_value);
 		propagations.put(state_error, constraint);
 	}
-	
+
 }

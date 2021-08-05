@@ -61,7 +61,7 @@ public class LinuxCommandUtil implements CommandUtil {
 				toString(), cfile.getAbsolutePath(), ifile.getAbsolutePath()));
 		for(File hdir : hdirs) command.append(" -I ").append(hdir.getAbsolutePath());
 		for(File mfile : mfiles) command.append(" -imacros ").append(mfile.getAbsolutePath());
-		String[] commands = command.toString().strip().split(" ");
+		String[] commands = command.toString().trim().split(" ");
 		
 		/* 2. perform the pre-processing compilation on cfile */
 		this.delete_file(ifile);
@@ -81,9 +81,9 @@ public class LinuxCommandUtil implements CommandUtil {
 		for(File hdir : hdirs) command.append(" -I ").append(hdir.getAbsolutePath());
 		for(File lfile : lfiles) command.append(" -L ").append(lfile.getAbsolutePath());
 		for(String param : params) {
-			if(!param.isBlank()) command.append(" ").append(param.strip());
+			if(!param.trim().isEmpty()) command.append(" ").append(param.trim());
 		}
-		String[] commands = command.toString().strip().split(" ");
+		String[] commands = command.toString().trim().split(" ");
 		
 		/* 2. generate the xxx.exe file by compiling the source code files */
 		this.delete_file(efile);
@@ -142,7 +142,7 @@ public class LinuxCommandUtil implements CommandUtil {
 
 	@Override
 	public boolean do_execute_shell(File sfile, File cdir) throws Exception {
-		String[] command = String.format(exec_shell_template, sfile.getAbsolutePath()).strip().split(" ");
+		String[] command = String.format(exec_shell_template, sfile.getAbsolutePath()).trim().split(" ");
 		CommandProcess.do_process(command, cdir, CommandProcess.buff_size_2);
 		return true;
 	}

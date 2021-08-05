@@ -45,12 +45,12 @@ import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 /**
  * It provides interface to seed syntactic mutations in source code based on
  * the mutation operators as provided.
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class MutationGenerator {
-	
+
 	/* generation methods */
 	/**
 	 * initialize the generator state when a new function is put in
@@ -80,7 +80,7 @@ public abstract class MutationGenerator {
 	 */
 	protected List<AstMutation> generate(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {
 		this.initialize(function, locations);
-		List<AstMutation> mutations = new ArrayList<AstMutation>();
+		List<AstMutation> mutations = new ArrayList<>();
 		for(AstNode location : locations) {
 			if(this.available(location)) {
 				this.generate(location, mutations);
@@ -88,7 +88,7 @@ public abstract class MutationGenerator {
 		}
 		return mutations;
 	}
-	
+
 	/* utility methods */
 	/**
 	 * @param expression
@@ -140,7 +140,7 @@ public abstract class MutationGenerator {
 					type = ((CQualifierType) type).get_reference();
 				}
 			}
-			
+
 			if(location instanceof AstConstant) {
 				return true;
 			}
@@ -161,7 +161,7 @@ public abstract class MutationGenerator {
 	/**
 	 * @param location
 	 * @return whether the type of the expression is numeric {bool, char, short, int, long, float,
-	 * 		   double, enum} such that it can be used as the 
+	 * 		   double, enum} such that it can be used as the
 	 * @throws Exception
 	 */
 	protected boolean is_numeric_expression(AstNode location) throws Exception {
@@ -171,7 +171,7 @@ public abstract class MutationGenerator {
 		else if(location instanceof AstExpression) {
 			CType data_type = ((AstExpression) location).get_value_type();
 			data_type = CTypeAnalyzer.get_value_type(data_type);
-			
+
 			if(data_type instanceof CBasicType) {
 				switch(((CBasicType) data_type).get_tag()) {
 				case c_bool:
@@ -213,7 +213,7 @@ public abstract class MutationGenerator {
 	 * while_statement.condition
 	 * do_while_statement.condition
 	 * for_statement.condition.expression
-	 * 
+	 *
 	 * @param location
 	 * @return whether the location is taken as a conditional expression in C.
 	 * @throws Exception
@@ -273,17 +273,17 @@ public abstract class MutationGenerator {
 	 * incre_postfix_expression.operand
 	 * address_of_expression.operand
 	 * field_expression.body
-	 * 
+	 *
 	 * @param location
 	 * @return whether the expression is a left-reference
 	 * @throws Exception
 	 */
 	protected boolean is_left_reference(AstNode location) throws Exception {
 		if(location instanceof AstExpression) {
-			AstExpression expression = 
+			AstExpression expression =
 					CTypeAnalyzer.get_expression_of((AstExpression) location);
 			AstNode parent = CTypeAnalyzer.get_parent_of_expression(expression);
-			
+
 			if(parent instanceof AstAssignExpression
 				|| parent instanceof AstArithAssignExpression
 				|| parent instanceof AstBitwiseAssignExpression
@@ -338,7 +338,7 @@ public abstract class MutationGenerator {
 	 * array_expression
 	 * dereference_expression
 	 * field_expression
-	 * 
+	 *
 	 * @param location
 	 * @return
 	 * @throws Exception
@@ -363,7 +363,7 @@ public abstract class MutationGenerator {
 	 * arith-assign-expr
 	 * bitws-assign-expr
 	 * incre-xxxxxx-expr
-	 * 
+	 *
 	 * @param location
 	 * @return
 	 * @throws Exception
@@ -386,7 +386,7 @@ public abstract class MutationGenerator {
 		// CType type = CTypeAnalyzer.get_value_type(expression.get_value_type());
 		CType ltype = CTypeAnalyzer.get_value_type(expression.get_loperand().get_value_type());
 		CType rtype = CTypeAnalyzer.get_value_type(expression.get_roperand().get_value_type());
-		
+
 		if(expression.get_operator().get_operator() != operator) {
 			switch(operator) {
 			case arith_mod:
@@ -420,7 +420,7 @@ public abstract class MutationGenerator {
 			{
 				return this.is_numeric_expression(expression);
 			}
-			default:	
+			default:
 			{
 				return false;
 			}
@@ -430,5 +430,5 @@ public abstract class MutationGenerator {
 			return false;
 		}
 	}
-	
+
 }

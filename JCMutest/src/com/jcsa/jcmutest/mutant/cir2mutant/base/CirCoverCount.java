@@ -34,7 +34,7 @@ public class CirCoverCount extends CirAttribute {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * @return the statement being counted in the coverage counter
 	 */
@@ -43,5 +43,5 @@ public class CirCoverCount extends CirAttribute {
 	 * @return the times to execute the statement and count its coverage
 	 */
 	public int get_coverage_count() { return ((SymbolConstant) this.get_parameter()).get_int(); }
-	
+
 }

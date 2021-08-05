@@ -9,7 +9,6 @@ import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymStateError;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -24,7 +23,7 @@ public class CirAssignPropagator implements CirErrorPropagator {
 		CirExpression source = (CirExpression) source_location;
 		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		if(source == target.get_rvalue()) {
 			CirExpression reference = target.get_lvalue();
 			if(error instanceof SymExpressionError) {
@@ -36,11 +35,11 @@ public class CirAssignPropagator implements CirErrorPropagator {
 			else {
 				muta_operand = null;
 			}
-			
+
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.cast_expression(reference.get_data_type(), muta_operand);
 				constraint = SymInstances.expr_constraint(target, Boolean.TRUE, true);
-				state_error = SymInstances.stat_error((CirReferExpression) reference, muta_value);
+				state_error = SymInstances.stat_error(reference, muta_value);
 				propagations.put(state_error, constraint);
 			}
 		}

@@ -17,12 +17,12 @@ import com.jcsa.jcparse.parse.code.CodeGeneration;
 /**
  * It provides the data resource for analysis of source code of a c file in project
  * space, including: cfile, ifile, sfile, mfile, ufile, ast_tree, cir_tree, mutant_space.
- * 
+ *
  * @author yukimula
  *
  */
 public class MuTestProjectCodeFile {
-	
+
 	/* definitions */
 	/** the code space in which the item created **/
 	private MuTestProjectCodeSpace code_space;
@@ -68,7 +68,7 @@ public class MuTestProjectCodeFile {
 			this.ast_tree = null;
 			this.cir_tree = null;
 			this.mutant_space = null;
-			
+
 			/* set the cfile if they are different or load it */
 			if(FileOperations.compare(cfile, this.cfile)) {
 				this.load();
@@ -78,7 +78,7 @@ public class MuTestProjectCodeFile {
 			}
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the code space in which the item created
@@ -124,7 +124,7 @@ public class MuTestProjectCodeFile {
 	 * @return the space of mutants seeded in specified AST
 	 */
 	public MutantSpace get_mutant_space() { return this.mutant_space; }
-	
+
 	/* setters */
 	/**
 	 * delete this item from the code space
@@ -148,17 +148,17 @@ public class MuTestProjectCodeFile {
 	 */
 	private void load() throws Exception {
 		/* 1. rebuild the ast-tree and cir-tree by parsing ifile */
-		this.ast_tree = CTranslate.parse(ifile, 
-				this.code_space.get_project().get_config().get_lang_standard(), 
+		this.ast_tree = CTranslate.parse(ifile,
+				this.code_space.get_project().get_config().get_lang_standard(),
 				this.sizeof_template);
 		this.cir_tree = CTranslate.parse(this.ast_tree, this.sizeof_template);
 		this.mutant_space = new MutantSpace(this.ast_tree, this.cir_tree);
-		
+
 		/* 2. update the instrumental code file */
 		String code = CodeGeneration.instrument_code(ast_tree, this.
 				code_space.get_project().get_files().get_instrument_txt_file());
 		FileOperations.write(this.sfile, code);
-		
+
 		/* 3. load the mutations from mutant data file */
 		if(this.ufile.exists()) {
 			this.mutant_space.load(this.ufile);
@@ -173,27 +173,27 @@ public class MuTestProjectCodeFile {
 		/* 0. declarations */
 		MuTestProjectConfig config = this.code_space.get_project().get_config();
 		MuCommandUtil command_util = config.get_command_util();
-		
+
 		/* 1. initialize the space by removing old files */
 		FileOperations.delete(this.cfile);
 		FileOperations.delete(this.ifile);
 		FileOperations.delete(this.sfile);
 		FileOperations.delete(this.mfile);
 		FileOperations.delete(this.ufile);
-		
+
 		/* 2. copy cfile and generate ifile */
 		FileOperations.copy(cfile, this.cfile);
-		List<String> parameters = new ArrayList<String>();
+		List<String> parameters = new ArrayList<>();
 		for(String parameter : config.get_compile_parameters()) {
 			parameters.add(parameter);
 		}
 		parameters.add("-imacros");
 		parameters.add(config.get_preprocess_macro_file().getAbsolutePath());
-		if(!command_util.do_preprocess(config.get_compiler(), this.cfile, 
+		if(!command_util.do_preprocess(config.get_compiler(), this.cfile,
 				this.ifile, this.code_space.get_hdirs(), parameters)) {
 			throw new RuntimeException("Unable to pre-process " + cfile.getName());
 		}
-		
+
 		/* 3. update sfile, ast-tree, cir-tree and mutant-space(empty) */
 		this.load();
 	}
@@ -207,5 +207,5 @@ public class MuTestProjectCodeFile {
 		this.mutant_space.update(mutation_classes);
 		this.mutant_space.save(this.ufile);
 	}
-	
+
 }

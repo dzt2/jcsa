@@ -28,7 +28,7 @@ public class UNODMutationExtension extends MutationExtension {
 	protected AstMutation strong(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
 		switch(source.get_operator()) {
-		case delete_arith_neg:	
+		case delete_arith_neg:
 			return AstMutations.UNOI(expression, COperator.negative);
 		case delete_bitws_rsv:
 			return AstMutations.UNOI(expression, COperator.bit_not);

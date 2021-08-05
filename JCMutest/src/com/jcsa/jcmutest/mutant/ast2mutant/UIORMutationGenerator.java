@@ -13,13 +13,13 @@ public class UIORMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception { }
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return location instanceof AstIncreUnaryExpression
 				|| location instanceof AstIncrePostfixExpression;
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		if(location instanceof AstIncreUnaryExpression) {

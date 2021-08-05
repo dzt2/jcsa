@@ -14,12 +14,12 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 
 public abstract class SymValueError extends SymStateError {
-	
+
 	/** the original value hold by the expression before mutated **/
 	private SymbolExpression orig_value;
 	/** the mutation valud that mutates the original values hold **/
 	private SymbolExpression muta_value;
-	
+
 	/**
 	 * @param type
 	 * @param execution
@@ -27,7 +27,7 @@ public abstract class SymValueError extends SymStateError {
 	 * @param muta_expression
 	 * @throws IllegalArgumentException
 	 */
-	protected SymValueError(SymInstanceType type, CirExecution execution, 
+	protected SymValueError(SymInstanceType type, CirExecution execution,
 			CirExpression expression, SymbolExpression orig_expression,
 			SymbolExpression muta_expression) throws Exception {
 		super(type, execution, expression);
@@ -38,7 +38,7 @@ public abstract class SymValueError extends SymStateError {
 			this.muta_value = muta_expression;
 		}
 	}
-	
+
 	private boolean is_boolean(CirExpression expression) throws Exception {
 		CType type = expression.get_data_type();
 		if(type == null) {
@@ -77,7 +77,7 @@ public abstract class SymValueError extends SymStateError {
 		else
 			return CTypeAnalyzer.is_number(CTypeAnalyzer.get_value_type(type));
 	}
-	
+
 	/**
 	 * @return the expression where the state error is injected
 	 */
@@ -93,7 +93,7 @@ public abstract class SymValueError extends SymStateError {
 
 	@Override
 	protected String generate_code() throws Exception {
-		return this.get_type() + ":" + this.get_location().get_node_id() + "(" + 
+		return this.get_type() + ":" + this.get_location().get_node_id() + "(" +
 				this.orig_value.generate_code(true) + ", " + this.muta_value.generate_code(true) + ")";
 	}
 	@Override
@@ -131,5 +131,5 @@ public abstract class SymValueError extends SymStateError {
 			return null;	/* undecidable */
 		}
 	}
-	
+
 }

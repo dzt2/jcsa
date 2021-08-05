@@ -18,7 +18,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		/**
 		 * [true] --> set_expr(B(x + y))
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -40,7 +40,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean arith_mul() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -61,7 +61,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		 * [y == 0] --> trap()
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
@@ -73,7 +73,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 						COperator.equal_with, loperand, roperand));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
@@ -90,7 +90,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		 * [y == 0] --> trap()
 		 * [y != 0] --> set_expr(B(x / y))
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		if(this.compare_or_mutate) {
 			constraint = this.get_constraint(Boolean.TRUE);
@@ -102,7 +102,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 						COperator.equal_with, loperand, roperand));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
@@ -115,7 +115,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean bitws_and() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -132,7 +132,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean bitws_ior() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -154,7 +154,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean bitws_lsh() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -171,7 +171,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean bitws_rsh() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -188,7 +188,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean logic_and() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -205,7 +205,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 
 	@Override
 	protected boolean logic_ior() throws Exception {
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
 		constraint = this.get_constraint(Boolean.TRUE);
 		if(this.compare_or_mutate) {
@@ -219,7 +219,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 	@Override
 	protected boolean greater_tn() throws Exception {
 		/**
@@ -236,16 +236,16 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 					COperator.smaller_eq, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.greater_tn, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}
-	
+
 	@Override
 	protected boolean greater_eq() throws Exception {
 		/**
@@ -264,16 +264,16 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 					COperator.smaller_tn, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.greater_tn, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}
-	
+
 	@Override
 	protected boolean smaller_tn() throws Exception {
 		/**
@@ -290,12 +290,12 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 	@Override
 	protected boolean smaller_eq() throws Exception {
 		return this.unsupport_exception();
 	}
-	
+
 	@Override
 	protected boolean equal_with() throws Exception {
 		/**
@@ -312,7 +312,7 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 	@Override
 	protected boolean not_equals() throws Exception {
 		/**
@@ -331,14 +331,14 @@ public class CirSetSmallerEqParser extends CirSetOperatorParser {
 					COperator.greater_tn, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.equal_with, this.loperand, this.roperand));
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}
-	
+
 }

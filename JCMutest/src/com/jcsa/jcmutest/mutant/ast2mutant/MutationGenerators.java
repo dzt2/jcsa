@@ -16,17 +16,17 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 
 public class MutationGenerators {
-	
+
 	/** mutation generators to seed mutants in source code **/
-	private static final Map<MutaClass, MutationGenerator> 
-		generators = new HashMap<MutaClass, MutationGenerator>();
-	private static final List<MutaClass> tc = new ArrayList<MutaClass>();
-	private static final List<MutaClass> sc = new ArrayList<MutaClass>();
-	private static final List<MutaClass> uc = new ArrayList<MutaClass>();
-	private static final List<MutaClass> oc = new ArrayList<MutaClass>();
-	private static final List<MutaClass> ac = new ArrayList<MutaClass>();
-	private static final List<MutaClass> rc = new ArrayList<MutaClass>();
-	
+	private static final Map<MutaClass, MutationGenerator>
+		generators = new HashMap<>();
+	private static final List<MutaClass> tc = new ArrayList<>();
+	private static final List<MutaClass> sc = new ArrayList<>();
+	private static final List<MutaClass> uc = new ArrayList<>();
+	private static final List<MutaClass> oc = new ArrayList<>();
+	private static final List<MutaClass> ac = new ArrayList<>();
+	private static final List<MutaClass> rc = new ArrayList<>();
+
 	/* CONSTRUCTION */
 	static {
 		generators.put(MutaClass.BTRP, new BTRPMutationGenerator());
@@ -35,13 +35,13 @@ public class MutationGenerators {
 		generators.put(MutaClass.STRP, new STRPMutationGenerator());
 		generators.put(MutaClass.TTRP, new TTRPMutationGenerator());
 		generators.put(MutaClass.VTRP, new VTRPMutationGenerator());
-		tc.add(MutaClass.BTRP); 
+		tc.add(MutaClass.BTRP);
 		tc.add(MutaClass.CTRP);
 		tc.add(MutaClass.ETRP);
 		tc.add(MutaClass.STRP);
 		tc.add(MutaClass.TTRP);
 		tc.add(MutaClass.VTRP);
-		
+
 		generators.put(MutaClass.SBCR, new SBCRMutationGenerator());
 		generators.put(MutaClass.SWDR, new SWDRMutationGenerator());
 		generators.put(MutaClass.SGLR, new SGLRMutationGenerator());
@@ -50,7 +50,7 @@ public class MutationGenerators {
 		sc.add(MutaClass.SWDR);
 		sc.add(MutaClass.SGLR);
 		sc.add(MutaClass.STDL);
-		
+
 		generators.put(MutaClass.UIOR, new UIORMutationGenerator());
 		generators.put(MutaClass.UIOI, new UIOIMutationGenerator());
 		generators.put(MutaClass.UIOD, new UIODMutationGenerator());
@@ -63,7 +63,7 @@ public class MutationGenerators {
 		uc.add(MutaClass.VINC);
 		uc.add(MutaClass.UNOI);
 		uc.add(MutaClass.UNOD);
-		
+
 		generators.put(MutaClass.VBRP, new VBRPMutationGenerator());
 		generators.put(MutaClass.VCRP, new VCRPMutationGenerator());
 		generators.put(MutaClass.VRRP, new VRRPMutationGenerator());
@@ -72,7 +72,7 @@ public class MutationGenerators {
 		rc.add(MutaClass.VCRP);
 		rc.add(MutaClass.VRRP);
 		rc.add(MutaClass.RTRP);
-		
+
 		generators.put(MutaClass.OAAN, new OAXNMutationGenerator());
 		generators.put(MutaClass.OABN, new OAXNMutationGenerator());
 		generators.put(MutaClass.OALN, new OAXNMutationGenerator());
@@ -105,7 +105,7 @@ public class MutationGenerators {
 		oc.add(MutaClass.ORBN);
 		oc.add(MutaClass.ORLN);
 		oc.add(MutaClass.ORRN);
-		
+
 		generators.put(MutaClass.OEAA, new OEXAMutationGenerator());
 		generators.put(MutaClass.OEBA, new OEXAMutationGenerator());
 		generators.put(MutaClass.OAAA, new OAXAMutationGenerator());
@@ -123,16 +123,16 @@ public class MutationGenerators {
 		ac.add(MutaClass.OBBA);
 		ac.add(MutaClass.OBEA);
 	}
-	
+
 	/**
 	 * @param function
 	 * @return the locations in the function to be seeded
 	 * @throws Exception
 	 */
 	private static Iterable<AstNode> get_locations(AstFunctionDefinition function) throws Exception {
-		Queue<AstNode> queue = new LinkedList<AstNode>();
+		Queue<AstNode> queue = new LinkedList<>();
 		queue.add(function.get_body());
-		List<AstNode> locations = new ArrayList<AstNode>();
+		List<AstNode> locations = new ArrayList<>();
 		while(!queue.isEmpty()) {
 			AstNode location = queue.poll();
 			locations.add(location);
@@ -151,7 +151,7 @@ public class MutationGenerators {
 	private static List<AstMutation> generate(AstFunctionDefinition function,
 			Iterable<MutaClass> mutation_classes) throws Exception {
 		Iterable<AstNode> locations = get_locations(function);
-		List<AstMutation> mutations = new ArrayList<AstMutation>();
+		List<AstMutation> mutations = new ArrayList<>();
 		for(MutaClass mutation_class : mutation_classes) {
 			MutationGenerator generator = generators.get(mutation_class);
 			mutations.addAll(generator.generate(function, locations));
@@ -166,7 +166,7 @@ public class MutationGenerators {
 	 */
 	public static List<AstMutation> generate(AstTree ast_tree,
 			Iterable<MutaClass> mutation_classes) throws Exception {
-		List<AstMutation> mutations = new ArrayList<AstMutation>();
+		List<AstMutation> mutations = new ArrayList<>();
 		AstTranslationUnit root = ast_tree.get_ast_root();
 		for(int k = 0; k < root.number_of_children(); k++) {
 			AstExternalUnit unit = root.get_unit(k);
@@ -177,7 +177,7 @@ public class MutationGenerators {
 		}
 		return mutations;
 	}
-	
+
 	/* getters */
 	public static List<MutaClass> trapping_classes() { return tc; }
 	public static List<MutaClass> statement_classes() { return sc; }
@@ -185,5 +185,5 @@ public class MutationGenerators {
 	public static List<MutaClass> operator_classes() { return oc; }
 	public static List<MutaClass> assign_classes() { return ac; }
 	public static List<MutaClass> reference_classes() { return rc; }
-	
+
 }

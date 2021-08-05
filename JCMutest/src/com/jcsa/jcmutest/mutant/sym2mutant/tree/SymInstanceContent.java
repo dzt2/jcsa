@@ -12,12 +12,12 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It preserves the status for evaluating a symbolic instance.
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class SymInstanceContent {
-	
+
 	/* definitions */
 	/** the symbolic instance being represented **/
 	private SymInstance instance;
@@ -36,7 +36,7 @@ public abstract class SymInstanceContent {
 			this.status = new SymInstanceStatus(instance);
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the symbolic instance that the content evaluates
@@ -58,21 +58,21 @@ public abstract class SymInstanceContent {
 	 * @return the abstract status is not used for accumulation
 	 */
 	public SymInstanceStatus get_status() { return this.status; }
-	
+
 	/* setters */
 	/**
 	 * clear the accumulate status (concrete) in the content
 	 */
-	protected void clc_status() { this.status.clear_results();; }
+	protected void clc_status() { this.status.clear_results(); }
 	/**
 	 * update the accumulate status (concrete) in the content
 	 * @param contexts
 	 * @throws Exception
 	 */
-	protected Boolean add_status(SymbolProcess contexts) throws Exception { 
+	protected Boolean add_status(SymbolProcess contexts) throws Exception {
 		return this.status.evaluate(contexts);
 	}
-	
+
 	/* inference */
 	/**
 	 * @return the sequence of edges from root until this node

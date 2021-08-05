@@ -47,7 +47,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 	@Override
 	protected boolean arith_sub() throws Exception {
 		/**
-		 * [x & y != y] 
+		 * [x & y != y]
 		 */
 		SymConstraint constraint; SymStateError init_error; SymbolExpression condition;
 		condition = this.sym_expression(COperator.bit_and, loperand, roperand);
@@ -68,16 +68,16 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -105,7 +105,7 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 					COperator.equal_with, this.roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, this.loperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.sym_expression(
@@ -135,16 +135,16 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -213,16 +213,16 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -237,16 +237,16 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		SymConstraint constraint; SymStateError init_error; 
+		SymConstraint constraint; SymStateError init_error;
 		SymbolExpression condition;
-		List<SymConstraint> constraints = new ArrayList<SymConstraint>();
-		
+		List<SymConstraint> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -339,5 +339,5 @@ public class CirSetBitwsXorParser extends CirSetOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 }

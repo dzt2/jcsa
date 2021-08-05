@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.sym2mutant.pass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymExpressionError;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
@@ -37,7 +38,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 		else {
 			return;
 		}
-		
+
 		/* 1. declarations */
 		CirArgumentList alist = (CirArgumentList) target_location;
 		CirExpression source = (CirExpression) source_location;
@@ -47,9 +48,9 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 						get_graph().get_execution(call_execution.get_id() + 1);
 		CirAssignStatement statement = (CirAssignStatement) wait_execution.get_statement();
 		CirExpression target = statement.get_rvalue(); SymbolExpression muta_value;
-		
+
 		/* 2. rebuild the new arguments list */
-		List<Object> arguments = new ArrayList<Object>();
+		List<Object> arguments = new ArrayList<>();
 		for(int k = 0; k < alist.number_of_arguments(); k++) {
 			if(alist.get_argument(k) == source) {
 				arguments.add(mutation_argument);
@@ -59,7 +60,7 @@ public class CirArgumentListPropagator implements CirErrorPropagator {
 			}
 		}
 		muta_value = SymbolFactory.call_expression(call_statement.get_function(), arguments);
-		
+
 		/* 3. construct constraint-error pair */
 		SymStateError state_error = SymInstances.expr_error(target, muta_value);
 		SymConstraint constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);

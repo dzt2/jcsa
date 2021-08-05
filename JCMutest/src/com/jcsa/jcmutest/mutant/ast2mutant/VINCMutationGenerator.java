@@ -14,15 +14,15 @@ public class VINCMutationGenerator extends MutationGenerator {
 
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {}
-	
+
 	private final int[] inc_constants = new int[] {
 		1, 2, 3, -1, -2, -3
 	};
-	
+
 	private final double[] mul_constants = new double[] {
 		0.9, 0.99, 0.999, 1.1, 1.01, 1.001,
 	};
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		if(location instanceof AstExpression) {
@@ -30,7 +30,7 @@ public class VINCMutationGenerator extends MutationGenerator {
 				return false;
 			}
 			else {
-				return this.is_numeric_expression(location) 
+				return this.is_numeric_expression(location)
 						&& !this.is_left_reference(location)
 						&& !this.is_assign_expression(location);
 			}
@@ -45,7 +45,7 @@ public class VINCMutationGenerator extends MutationGenerator {
 		AstExpression expression = (AstExpression) location;
 		expression = CTypeAnalyzer.get_expression_of(expression);
 		CType type = CTypeAnalyzer.get_value_type(expression.get_value_type());
-		
+
 		if(CTypeAnalyzer.is_integer(type)) {
 			for(int inc_constant : this.inc_constants) {
 				mutations.add(AstMutations.inc_constant(expression, inc_constant));

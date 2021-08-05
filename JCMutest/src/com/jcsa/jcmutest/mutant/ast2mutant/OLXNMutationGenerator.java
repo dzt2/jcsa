@@ -20,13 +20,13 @@ public class OLXNMutationGenerator extends MutationGenerator {
 		if(location instanceof AstLogicBinaryExpression) {
 			return this.is_numeric_expression(((AstLogicBinaryExpression) location).get_loperand())
 					&& this.is_numeric_expression(((AstLogicBinaryExpression) location).get_roperand());
-			
+
 		}
 		else {
 			return false;
 		}
 	}
-	
+
 	private final COperator[] operators = new COperator[] {
 			COperator.arith_add, COperator.arith_sub, COperator.arith_mul,
 			COperator.arith_div, COperator.arith_mod, COperator.bit_and,
@@ -35,7 +35,7 @@ public class OLXNMutationGenerator extends MutationGenerator {
 			COperator.smaller_tn, COperator.smaller_eq, COperator.not_equals,
 			COperator.not_equals
 		};
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstBinaryExpression expression = (AstBinaryExpression) location;

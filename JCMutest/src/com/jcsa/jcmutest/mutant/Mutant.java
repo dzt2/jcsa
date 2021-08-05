@@ -13,7 +13,7 @@ import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
  *
  */
 public class Mutant {
-	
+
 	/* definitions */
 	/** the space in which the mutant is managed **/
 	private MutantSpace space;
@@ -43,7 +43,7 @@ public class Mutant {
 			this.mutation = mutation;
 			this.versions = new Mutant[] { null, null, null };
 			try {
-				this.cir_mutations = new ArrayList<CirMutation>();
+				this.cir_mutations = new ArrayList<>();
 				Iterable<CirMutation> buffer = this.space.generate_cir_mutation(mutation);
 				for(CirMutation cir_mutation : buffer) this.cir_mutations.add(cir_mutation);
 			}
@@ -60,7 +60,7 @@ public class Mutant {
 			}
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the space in which the mutant is managed
@@ -107,5 +107,5 @@ public class Mutant {
 	 * @return the set of cir-mutations parsed from the AST location
 	 */
 	public List<CirMutation> get_cir_mutations() { return this.cir_mutations; }
-	
+
 }

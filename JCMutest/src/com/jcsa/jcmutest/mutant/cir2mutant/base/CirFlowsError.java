@@ -10,10 +10,10 @@ public class CirFlowsError extends CirAttribute {
 
 	protected CirFlowsError(CirExecutionFlow orig_flow, SymbolExpression parameter)
 			throws IllegalArgumentException {
-		super(CirAttributeType.flw_error, orig_flow.get_source(), 
+		super(CirAttributeType.flw_error, orig_flow.get_source(),
 				orig_flow.get_target().get_statement(), parameter);
 	}
-	
+
 	/**
 	 * @return the original execution flow being replaced with
 	 * @throws Exception
@@ -47,5 +47,5 @@ public class CirFlowsError extends CirAttribute {
 	public Boolean evaluate(SymbolProcess context) throws Exception {
 		return this.get_original_flow().get_target() != this.get_mutation_flow().get_target();
 	}
-	
+
 }

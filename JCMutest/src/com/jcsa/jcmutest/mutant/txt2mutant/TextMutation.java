@@ -5,17 +5,17 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 /**
  * The mutation describes how the code of mutant is constructed, based on
  * following syntactic rules:<br>
- * 
+ *
  * prev_code
  * muta_code
  * {comment}
  * post_code
- * 
+ *
  * @author yukimula
  *
  */
 class TextMutation {
-	
+
 	/* definition */
 	/** the location in which the code is mutated (while the others are not) **/
 	private AstNode location;
@@ -31,7 +31,7 @@ class TextMutation {
 			this.muta_code = muta_code;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the location in which the code is mutated (while the others are not)
@@ -41,5 +41,5 @@ class TextMutation {
 	 * @return the code to replace the original code specified in range of location
 	 */
 	public String get_muta_code() { return this.muta_code; }
-	
+
 }

@@ -7,19 +7,19 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class UNOIMutationExtension extends MutationExtension {
-	
+
 	@Override
 	protected AstMutation cover(AstMutation source) throws Exception {
-		AstExpression expression = 
+		AstExpression expression =
 				(AstExpression) source.get_location();
 		return this.coverage_mutation(expression);
 	}
-	
+
 	@Override
 	protected AstMutation weak(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
 		expression = CTypeAnalyzer.get_expression_of(expression);
-		
+
 		switch(source.get_operator()) {
 		case insert_arith_neg:	return AstMutations.trap_on_true(expression);
 		case insert_bitws_rsv:	return this.coverage_mutation(expression);
@@ -29,12 +29,12 @@ public class UNOIMutationExtension extends MutationExtension {
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}
-	
+
 	@Override
 	protected AstMutation strong(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
 		expression = CTypeAnalyzer.get_expression_of(expression);
-		
+
 		switch(source.get_operator()) {
 		case insert_arith_neg:	return AstMutations.UNOI(expression, COperator.negative);
 		case insert_bitws_rsv:	return AstMutations.UNOI(expression, COperator.bit_not);
@@ -44,5 +44,5 @@ public class UNOIMutationExtension extends MutationExtension {
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}
-	
+
 }

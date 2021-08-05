@@ -14,12 +14,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UIODCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
@@ -33,16 +33,16 @@ public class UIODCirMutationParser extends CirMutationParser {
 					get_cir_node(cir_tree, mutation.get_location(), CirIncreAssignStatement.class);
 			CirComputeExpression expression = (CirComputeExpression) inc_statement.get_rvalue();
 			CirExpression loperand = expression.get_operand(0);
-			
+
 			CirAttribute constraint = CirAttribute.new_cover_count(inc_statement.execution_of(), 1);
 			CirAttribute init_error = CirAttribute.new_value_error(expression, SymbolFactory.sym_expression(loperand));
 			infections.put(init_error, constraint); break;
 		}
-		default: 
+		default:
 		{
 			throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		}
 	}
-	
+
 }

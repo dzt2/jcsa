@@ -11,12 +11,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class BTRPCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
@@ -28,12 +28,12 @@ public class BTRPCirMutationParser extends CirMutationParser {
 		case trap_on_false:	value = false;	break;
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
-		
+
 		/* construct the cir-based mutations */
 		CirExecution execution = statement.execution_of();
 		CirAttribute constraint = CirAttribute.new_constraint(execution, expression, value);
 		CirAttribute init_error = CirAttribute.new_traps_error(execution);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

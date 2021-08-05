@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class VINCCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_cir_expression(cir_tree, mutation.get_location()).statement_of();
@@ -24,7 +24,7 @@ public class VINCCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		SymbolExpression muta_value; 
+		SymbolExpression muta_value;
 		SymConstraint constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);
 		switch(mutation.get_operator()) {
 		case inc_constant:

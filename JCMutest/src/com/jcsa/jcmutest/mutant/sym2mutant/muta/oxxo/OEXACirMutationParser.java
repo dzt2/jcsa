@@ -28,7 +28,7 @@ public class OEXACirMutationParser extends CirMutationParser {
 		CirExpression expression = assign_stmt.get_rvalue();
 		CirExpression loperand = assign_stmt.get_lvalue();
 		CirExpression roperand = assign_stmt.get_rvalue();
-		CirSetOperatorParsers.generate_infections(mutation, statement, 
+		CirSetOperatorParsers.generate_infections(mutation, statement,
 				expression, loperand, roperand, infections);
 	}
 

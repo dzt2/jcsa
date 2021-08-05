@@ -55,7 +55,7 @@ package com.jcsa.jcmutest.mutant.mutation;
  *
  */
 public enum MutaClass {
-	
+
 	/* trapping mutation class */
 	/** trap_on_true | trap_on_false **/				BTRP,
 	/** trap_on_case(expression, val) **/				CTRP,
@@ -63,13 +63,13 @@ public enum MutaClass {
 	/** trap_on_statement(statement) **/				STRP,
 	/** trap_at_time(statement, times) **/				TTRP,
 	/** trap_on_pos | trap_on_neg | trap_on_zro **/ 	VTRP,
-	
+
 	/* statement mutation class */
 	/** break_to_continue | continue_to_break **/		SBCR,
 	/** while_to_do | do_to_while(statement) **/		SWDR,
 	/** set_label(goto_statement, label) **/			SGLR,
 	/** delete_statement(statement) **/					STDL,
-	
+
 	/* unary operator mutation class */
 	/** prev_inc_to_post_inc | prev_dec_to_prev_inc **/	UIOR,
 	/** prev_inc_ins(expr) | post_dec_ins(expr) **/		UIOI,
@@ -78,7 +78,7 @@ public enum MutaClass {
 	/** ins_arith_neg | ins_bitws_rsv | ins_logic_not
 	 *  ins_abs_call | ins_nabs_call **/				UNOI,
 	/** del_arith_neg, del_bitws_rsv, del_logic_not **/	UNOD,
-	
+
 	/* operator mutation class */
 	OAAN, OABN, OALN, OARN,
 	OBAN, OBBN, OBLN, OBRN,
@@ -86,11 +86,11 @@ public enum MutaClass {
 	ORAN, ORBN, ORLN, ORRN,
 	OEAA, OEBA, OAAA, OABA,
 	OAEA, OBAA, OBBA, OBEA,
-	
+
 	/* value mutation class */
 	/** set_true | set_false **/						VBRP,
 	/** set_constant(x, y) **/							VCRP,
 	/** set_reference(x, y) **/							VRRP,
 	/** set_return_val(retr_statement, expr) **/		RTRP,
-	
+
 }

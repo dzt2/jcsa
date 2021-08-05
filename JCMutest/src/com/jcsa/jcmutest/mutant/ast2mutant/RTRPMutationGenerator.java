@@ -11,9 +11,9 @@ import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 
 public class RTRPMutationGenerator extends MutationGenerator {
-	
-	private Map<String, AstReturnStatement> returns = new HashMap<String, AstReturnStatement>();
-	
+
+	private Map<String, AstReturnStatement> returns = new HashMap<>();
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {
 		this.returns.clear();

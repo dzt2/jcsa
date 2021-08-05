@@ -27,7 +27,7 @@ public class VTRPMutationGenerator extends MutationGenerator {
 							return true;
 						}
 						else {
-							return location instanceof AstIncreUnaryExpression || 
+							return location instanceof AstIncreUnaryExpression ||
 									location instanceof AstIncrePostfixExpression;
 						}
 					}

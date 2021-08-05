@@ -24,13 +24,13 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * 		|--	CirReferError		{ref_error, execution, orig_refr, muta_refr}	<br>
  * 		|--	CirStateError		{sta_error, execution, orig_refr, muta_expr}	<br>
  * 	</code>
- * 	
+ *
  * 	@author yukimula
  */
 public abstract class CirAttribute {
-	
+
 	/* attributes */
-	/** the type of the attribute to define software testing requirement **/	
+	/** the type of the attribute to define software testing requirement **/
 	private CirAttributeType	type;
 	/** the execution point where the attribute is evaluated or injected **/
 	private CirExecution 		execution;
@@ -38,7 +38,7 @@ public abstract class CirAttribute {
 	private CirNode				location;
 	/** the symbolic parameter to refine the definition of the attribute **/
 	private SymbolExpression	parameter;
-	
+
 	/* constructor */
 	/**
 	 * create an attribute to denote test requirement.
@@ -48,7 +48,7 @@ public abstract class CirAttribute {
 	 * @param parameter
 	 * @throws Exception
 	 */
-	protected CirAttribute(CirAttributeType type, CirExecution execution, 
+	protected CirAttribute(CirAttributeType type, CirExecution execution,
 			CirNode location, SymbolExpression parameter) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type as null");
@@ -69,7 +69,7 @@ public abstract class CirAttribute {
 			this.parameter = parameter;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the type of the attribute to define software testing requirement
@@ -87,12 +87,12 @@ public abstract class CirAttribute {
 	 * @return the symbolic parameter to refine the definition of the attribute
 	 */
 	public SymbolExpression get_parameter() { return this.parameter; }
-	
+
 	/* universals */
 	@Override
 	public String toString() {
-		return this.type + "$" + this.execution + "$" + 
-				this.location.get_node_id() + "$" + this.parameter; 
+		return this.type + "$" + this.execution + "$" +
+				this.location.get_node_id() + "$" + this.parameter;
 	}
 	@Override
 	public int hashCode() { return this.toString().hashCode(); }
@@ -108,7 +108,7 @@ public abstract class CirAttribute {
 			return false;
 		}
 	}
-	
+
 	/* utility methods */
 	/**
 	 * @return whether it is constraint {condition|cov_count}
@@ -158,7 +158,7 @@ public abstract class CirAttribute {
 	 * @throws Exception
 	 */
 	public Boolean evaluate() throws Exception { return this.evaluate(null); }
-	
+
 	/* extension methods */
 	/**
 	 * @param context
@@ -172,7 +172,7 @@ public abstract class CirAttribute {
 	 * @throws Exception
 	 */
 	public abstract Boolean evaluate(SymbolProcess context) throws Exception;
-	
+
 	/* factory methods */
 	/**
 	 * @param execution
@@ -226,7 +226,7 @@ public abstract class CirAttribute {
 	 * @param orig_reference
 	 * @param muta_expression
 	 * @return {ref_error, execution, orig_refr, muta_refr}
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static CirReferError new_refer_error(CirExpression orig_reference, SymbolExpression muta_expression) throws Exception {
 		if(orig_reference == null) {
@@ -310,5 +310,5 @@ public abstract class CirAttribute {
 	public static CirMutation new_cir_mutation(CirAttribute constraint, CirAttribute init_error) throws Exception {
 		return new CirMutation(constraint, init_error);
 	}
-	
+
 }

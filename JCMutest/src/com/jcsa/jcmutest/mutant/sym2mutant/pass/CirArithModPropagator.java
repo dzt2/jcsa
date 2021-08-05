@@ -22,15 +22,15 @@ public class CirArithModPropagator implements CirErrorPropagator {
 		CirExpression source = (CirExpression) source_location;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
 		SymConstraint constraint;  SymStateError state_error;
-		if(error instanceof SymExpressionError) 
+		if(error instanceof SymExpressionError)
 			muta_operand = ((SymExpressionError) error).get_mutation_value();
-		else if(error instanceof SymReferenceError) 
+		else if(error instanceof SymReferenceError)
 			muta_operand = ((SymReferenceError) error).get_mutation_value();
 		else return;
-		
+
 		/* muta_operand / y */
 		if(source == target.get_operand(0)) {
-			muta_value = SymbolFactory.arith_mod(target.get_data_type(), 
+			muta_value = SymbolFactory.arith_mod(target.get_data_type(),
 					muta_operand, target.get_operand(1));
 			constraint = SymInstances.expr_constraint(
 					target.statement_of(), Boolean.TRUE, true);
@@ -39,12 +39,12 @@ public class CirArithModPropagator implements CirErrorPropagator {
 		}
 		/* x / muta_operand */
 		else if(source == target.get_operand(1)) {
-			constraint = SymInstances.expr_constraint(target.statement_of(), 
+			constraint = SymInstances.expr_constraint(target.statement_of(),
 					SymbolFactory.equal_with(muta_operand, Integer.valueOf(0)), true);
 			state_error = SymInstances.trap_error(target.statement_of());
 			propagations.put(state_error, constraint);
-			
-			constraint = SymInstances.expr_constraint(target.statement_of(), 
+
+			constraint = SymInstances.expr_constraint(target.statement_of(),
 					SymbolFactory.not_equals(muta_operand, Integer.valueOf(0)), true);
 			muta_value = SymbolFactory.arith_mod(
 					target.get_data_type(), target.get_operand(0), muta_operand);

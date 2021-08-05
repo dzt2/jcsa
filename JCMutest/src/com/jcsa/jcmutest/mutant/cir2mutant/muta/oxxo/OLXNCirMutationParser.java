@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class OLXNCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
@@ -23,15 +23,15 @@ public class OLXNCirMutationParser extends CirMutationParser {
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
-		
+
 		CirAssignStatement save1 = (CirAssignStatement) this.get_cir_node(
 				cir_tree, mutation.get_location(), CirSaveAssignStatement.class);
 		CirAssignStatement save2 = (CirAssignStatement) this.get_cir_nodes(
 				cir_tree, mutation.get_location(), CirSaveAssignStatement.class).get(1);
-		
+
 		CirExpression loperand = save1.get_rvalue(), roperand = save2.get_rvalue();
-		CirOperatorParsers.generate_infections(mutation, 
+		CirOperatorParsers.generate_infections(mutation,
 				statement, expression, loperand, roperand, infections);
 	}
-	
+
 }

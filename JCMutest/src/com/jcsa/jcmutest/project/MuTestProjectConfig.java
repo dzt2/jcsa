@@ -27,7 +27,7 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
  *
  */
 public class MuTestProjectConfig {
-	
+
 	/* file-names */
 	/** the name of the configuration data file in config/ **/
 	private static final String config_file_name = "config.data";
@@ -39,7 +39,7 @@ public class MuTestProjectConfig {
 	private static final String preprocess_macro_file_name = "linux.h";
 	/** the name of the mutation header code file in the config/ **/
 	private static final String mutation_head_file_name = "jcmutest.h";
-	
+
 	/* attributes */
 	/** the mutation test project in which the configuration is defined **/
 	private MuTestProject project;
@@ -63,14 +63,14 @@ public class MuTestProjectConfig {
 	private File mutation_head_file;
 	/** the configuration file in which parameters are preserved **/
 	private File config_file;
-	
+
 	/* constructor */
 	/**
 	 * @param project
 	 * @param command_util
 	 * @throws Exception
 	 */
-	protected MuTestProjectConfig(MuTestProject project, 
+	protected MuTestProjectConfig(MuTestProject project,
 			MuCommandUtil command_util) throws Exception {
 		if(project == null)
 			throw new IllegalArgumentException("Invalid project: null");
@@ -79,17 +79,17 @@ public class MuTestProjectConfig {
 		else {
 			this.project = project;
 			this.command_util = command_util;
-			
+
 			File dir = this.project.get_files().get_config_directory();
 			this.config_file = new File(dir.getAbsolutePath() + "/" + config_file_name);
 			this.sizeof_template_file = new File(dir.getAbsolutePath() + "/" + sizeof_template_file_name);
 			this.instrument_head_file = new File(dir.getAbsolutePath() + "/" + instrument_head_file_name);
 			this.preprocess_macro_file = new File(dir.getAbsolutePath() + "/" + preprocess_macro_file_name);
 			this.mutation_head_file = new File(dir.getAbsolutePath() + "/" + mutation_head_file_name);
-			
+
 			this.compiler = null;
 			this.lang_std = null;
-			this.compilation_parameters = new ArrayList<String>();
+			this.compilation_parameters = new ArrayList<>();
 			this.load_config_file();
 		}
 	}
@@ -106,8 +106,8 @@ public class MuTestProjectConfig {
 		writer.write("max_timeout_seconds: " + this.max_timeout_second + "\n");
 		writer.write("compilation_parameters: ");
 		for(String parameter : this.compilation_parameters) {
-			if(!parameter.isBlank())
-				writer.write(" " + parameter.strip());
+			if(!parameter.trim().isEmpty())
+				writer.write(" " + parameter.trim());
 		}
 		writer.write("\n");
 		writer.close();
@@ -122,11 +122,11 @@ public class MuTestProjectConfig {
 						new FileReader(this.config_file));
 			String line, title, value; int index;
 			while((line = reader.readLine()) != null) {
-				if(!line.isBlank()) {
+				if(!line.trim().isEmpty()) {
 					index = line.indexOf(':');
-					title = line.substring(0, index).strip();
-					value = line.substring(index + 1).strip();
-					
+					title = line.substring(0, index).trim();
+					value = line.substring(index + 1).trim();
+
 					if(title.equals("compiler")) {
 						this.compiler = CCompiler.valueOf(value);
 					}
@@ -140,8 +140,8 @@ public class MuTestProjectConfig {
 						String[] parameters = value.split(" ");
 						this.compilation_parameters.clear();
 						for(String parameter : parameters) {
-							if(!parameter.isBlank()) {
-								this.compilation_parameters.add(parameter.strip());
+							if(!parameter.trim().isEmpty()) {
+								this.compilation_parameters.add(parameter.trim());
 							}
 						}
 					}
@@ -150,7 +150,7 @@ public class MuTestProjectConfig {
 			reader.close();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return mutation test project that the config serves for
@@ -196,7 +196,7 @@ public class MuTestProjectConfig {
 	 * @return the maximal seconds for running one test against program
 	 */
 	public long get_maximal_timeout_seconds() { return this.max_timeout_second; }
-	
+
 	/* setters */
 	/**
 	 * set the configuration data in mutation test project
@@ -209,9 +209,9 @@ public class MuTestProjectConfig {
 	 * @param mutation_head_file config/jcmutest.h to compile the mutation code
 	 * @throws Exception
 	 */
-	protected void set(CCompiler compiler, ClangStandard lang_std, 
-			Iterable<String> compilation_parameters, File sizeof_template_file, 
-			File instrument_head_file, File preprocess_macro_file, 
+	protected void set(CCompiler compiler, ClangStandard lang_std,
+			Iterable<String> compilation_parameters, File sizeof_template_file,
+			File instrument_head_file, File preprocess_macro_file,
 			File mutation_head_file, long max_timeout_seconds) throws Exception {
 		if(compiler == null)
 			throw new IllegalArgumentException("Invalid compiler: null");
@@ -233,8 +233,8 @@ public class MuTestProjectConfig {
 			this.max_timeout_second = max_timeout_seconds;
 			this.compilation_parameters.clear();
 			for(String parameter : compilation_parameters) {
-				if(!parameter.isBlank()) {
-					this.compilation_parameters.add(parameter.strip());
+				if(!parameter.trim().isEmpty()) {
+					this.compilation_parameters.add(parameter.trim());
 				}
 			}
 			FileOperations.copy(sizeof_template_file, this.sizeof_template_file);
@@ -244,5 +244,5 @@ public class MuTestProjectConfig {
 			this.save_config_file();
 		}
 	}
-	
+
 }

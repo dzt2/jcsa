@@ -92,11 +92,11 @@ public class CRunTemplate {
 		BufferedReader reader = new BufferedReader(new FileReader(template_file));
 		String line;
 		while((line = reader.readLine()) != null) {
-			line = line.strip();
+			line = line.trim();
 			if(!line.isEmpty()) {
 				String[] items = line.split("\t");
-				String title = items[0].strip();
-				int value = Integer.parseInt(items[1].strip());
+				String title = items[0].trim();
+				int value = Integer.parseInt(items[1].trim());
 				results.put(title, value);
 			}
 		}

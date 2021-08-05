@@ -127,7 +127,7 @@ public class AstTree {
 					declarator = declarator.get_declarator();
 				}
 				
-				if(declarator.get_identifier().get_name().strip().equals(name.strip())) {
+				if(declarator.get_identifier().get_name().trim().equals(name.trim())) {
 					return (AstFunctionDefinition) unit;
 				}
 			}

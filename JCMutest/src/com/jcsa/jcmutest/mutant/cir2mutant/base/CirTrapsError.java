@@ -10,7 +10,7 @@ public class CirTrapsError extends CirAttribute {
 	protected CirTrapsError(CirExecution execution, SymbolExpression parameter) throws IllegalArgumentException {
 		super(CirAttributeType.trp_error, execution, execution.get_statement(), parameter);
 	}
-	
+
 	/**
 	 * @return the statement in which the trapping will be introduced
 	 */
@@ -25,5 +25,5 @@ public class CirTrapsError extends CirAttribute {
 	public Boolean evaluate(SymbolProcess context) throws Exception {
 		return true;
 	}
-	
+
 }

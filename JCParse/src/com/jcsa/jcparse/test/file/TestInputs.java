@@ -58,7 +58,7 @@ public class TestInputs {
 		FileWriter writer = new FileWriter(suite_file);
 		for(TestInput input : this.inputs) {
 			String parameter = input.get_parameter();
-			writer.write(parameter.strip() + "\n");
+			writer.write(parameter.trim() + "\n");
 		}
 		writer.close();
 	}
@@ -71,7 +71,7 @@ public class TestInputs {
 		Set<String> parameters = new HashSet<String>(); 
 		String line; this.inputs.clear(); TestInput input;
 		while((line = reader.readLine()) != null) {
-			line = line.strip();
+			line = line.trim();
 			if(!parameters.contains(line)) {
 				parameters.add(line);
 				input = new TestInput(this, this.inputs.size(), line);
@@ -93,7 +93,7 @@ public class TestInputs {
 		BufferedReader reader = new BufferedReader(new FileReader(suite_file));
 		String line; TestInput input;
 		while((line = reader.readLine()) != null) {
-			line = line.strip();
+			line = line.trim();
 			if(!parameters.contains(line)) {
 				parameters.add(line);
 				input = new TestInput(this, this.inputs.size(), line);
@@ -116,7 +116,7 @@ public class TestInputs {
 			BufferedReader reader = new BufferedReader(new FileReader(suite_file));
 			String line; TestInput input;
 			while((line = reader.readLine()) != null) {
-				line = line.strip();
+				line = line.trim();
 				if(!parameters.contains(line)) {
 					parameters.add(line);
 					input = new TestInput(this, this.inputs.size(), line);

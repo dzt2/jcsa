@@ -21,15 +21,15 @@ public class CTRPMutationGenerator extends MutationGenerator {
 	protected boolean available(AstNode location) throws Exception {
 		return location instanceof AstSwitchStatement;
 	}
-	
+
 	/**
 	 * @param location
 	 * @return the case statements defined in the switch-statement body
 	 * @throws Exception
 	 */
 	private Iterable<AstCaseStatement> get_cases(AstSwitchStatement location) throws Exception {
-		Queue<AstNode> queue = new LinkedList<AstNode>();
-		List<AstCaseStatement> cases = new ArrayList<AstCaseStatement>();
+		Queue<AstNode> queue = new LinkedList<>();
+		List<AstCaseStatement> cases = new ArrayList<>();
 		queue.add(location.get_body());
 		while(!queue.isEmpty()) {
 			AstNode node = queue.poll();

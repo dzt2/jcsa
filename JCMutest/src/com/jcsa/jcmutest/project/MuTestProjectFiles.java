@@ -23,16 +23,16 @@ import com.jcsa.jcmutest.project.util.FileOperations;
  * 	|--	|--	[m_output]	// mutation output files in testing			<br>
  * 	|--	|--	[result]	// analysis result files after testing		<br>
  * 	|--	|--	instrument.txt | instrument.out | instrument.err		<br>
- * 	|--	|-- [efiles]		// executional and script files			<br>	
+ * 	|--	|-- [efiles]		// executional and script files			<br>
  * 	|--	[config]		// configuration data files in project		<br>
- * 	
+ *
  * </code>
- * 
+ *
  * @author yukimula
  *
  */
 public class MuTestProjectFiles {
-	
+
 	/* file-names */
 	private static final String code_name = "code";
 	private static final String cfiles_name = "cfiles";
@@ -54,7 +54,7 @@ public class MuTestProjectFiles {
 	private static final String instrument_err_name = "instrument.err";
 	private static final String config_name = "config";
 	private static final String efiles_name = "efiles";
-	
+
 	/* attributes */
 	/** the project in which the files are produced **/
 	private MuTestProject project;
@@ -96,7 +96,7 @@ public class MuTestProjectFiles {
 	private File config_directory;
 	/** efiles/ directory of the executional and shell script file **/
 	private File efiles_directory;
-	
+
 	/* constructor */
 	private File try_to_mkdir(File dir) throws Exception {
 		if(FileOperations.mkdir(dir)) return dir;
@@ -121,7 +121,7 @@ public class MuTestProjectFiles {
 			this.project = project;
 			this.root = this.try_to_mkdir(root);
 			this.config_directory = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + config_name));
-			
+
 			/* code */
 			File code_dir = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + code_name));
 			this.cfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + cfiles_name));
@@ -131,7 +131,7 @@ public class MuTestProjectFiles {
 			this.hfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + hfiles_name));
 			this.lfiles_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + lfiles_name));
 			this.mutants_directory = this.try_to_mkdir(new File(code_dir.getAbsolutePath() + "/" + mutants_name));
-			
+
 			/* test */
 			File test_dir = this.try_to_mkdir(new File(root.getAbsolutePath() + "/" + test_name));
 			this.test_suite_file = this.try_to_create(new File(test_dir.getAbsolutePath() + "/" + test_suite_name));
@@ -146,7 +146,7 @@ public class MuTestProjectFiles {
 			this.efiles_directory = this.try_to_mkdir(new File(test_dir.getAbsolutePath() + "/" + efiles_name));
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the root directory of mutation test project
@@ -228,5 +228,5 @@ public class MuTestProjectFiles {
 	 * @return the project in which the files are produced
 	 */
 	public MuTestProject get_project() { return this.project; }
-	
+
 }

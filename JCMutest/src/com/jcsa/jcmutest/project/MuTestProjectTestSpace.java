@@ -36,7 +36,7 @@ import com.jcsa.jcparse.test.state.CStatePath;
  *
  */
 public class MuTestProjectTestSpace {
-	
+
 	/* definition */
 	private MuTestProject project;
 	private TestInputs test_space;
@@ -49,7 +49,7 @@ public class MuTestProjectTestSpace {
 			this.load();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return mutation test project in which the test space created
@@ -68,8 +68,8 @@ public class MuTestProjectTestSpace {
 	/**
 	 * @return the number of test inputs defined in this project space
 	 */
-	public int number_of_test_inputs() { 
-		return this.test_space.number_of_inputs(); 
+	public int number_of_test_inputs() {
+		return this.test_space.number_of_inputs();
 	}
 	/**
 	 * @param beg_id
@@ -78,7 +78,7 @@ public class MuTestProjectTestSpace {
 	 * @throws Exception
 	 */
 	public Collection<TestInput> get_test_inputs(int beg_id, int end_id) throws Exception {
-		List<TestInput> inputs = new ArrayList<TestInput>();
+		List<TestInput> inputs = new ArrayList<>();
 		for(TestInput input : this.test_space.get_inputs()) {
 			if(input.get_id() >= beg_id && input.get_id() < end_id) {
 				inputs.add(input);
@@ -89,8 +89,8 @@ public class MuTestProjectTestSpace {
 	/**
 	 * @return test suite data file in which test inputs are provided
 	 */
-	public File get_test_suite_file() { 
-		return this.project.get_files().get_test_suite_file(); 
+	public File get_test_suite_file() {
+		return this.project.get_files().get_test_suite_file();
 	}
 	/**
 	 * @return the directory which provides data for testing
@@ -148,7 +148,7 @@ public class MuTestProjectTestSpace {
 	private File get_test_result_file(Mutant mutant) throws Exception {
 		String name = mutant.get_mutation().get_location().
 				get_tree().get_source_file().getName();
-		return new File(this.get_result_directory().getAbsolutePath() + 
+		return new File(this.get_result_directory().getAbsolutePath() +
 				"/" + name + mutant.get_id() + ".rs");
 	}
 	/**
@@ -157,7 +157,7 @@ public class MuTestProjectTestSpace {
 	 * @throws Exception
 	 */
 	public MuTestProjectTestResult get_test_result(Mutant mutant) throws Exception {
-		return MuTestProjectTestResult.load(mutant, 
+		return MuTestProjectTestResult.load(mutant,
 				this.test_space.number_of_inputs(),
 				this.get_test_result_file(mutant));
 	}
@@ -166,7 +166,7 @@ public class MuTestProjectTestSpace {
 	 * @return the complete instrumental lines or null if input is not executed before.
 	 * @throws Exception
 	 */
-	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template, 
+	public List<InstrumentalLine> load_instrumental_lines(CRunTemplate template,
 			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
@@ -185,7 +185,7 @@ public class MuTestProjectTestSpace {
 	 * @return the complete instrumental nodes or null if input is not executed before.
 	 * @throws Exception
 	 */
-	public List<InstrumentalNode> load_instrumental_nodes(CRunTemplate template, 
+	public List<InstrumentalNode> load_instrumental_nodes(CRunTemplate template,
 			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
@@ -201,10 +201,10 @@ public class MuTestProjectTestSpace {
 	 * @param ast_tree
 	 * @param cir_tree
 	 * @param input
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
-	public CStatePath load_instrumental_path(CRunTemplate template, 
+	public CStatePath load_instrumental_path(CRunTemplate template,
 			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
@@ -223,7 +223,7 @@ public class MuTestProjectTestSpace {
 	 * @return the execution path during testing
 	 * @throws Exception
 	 */
-	public CirExecutionPath load_execution_path(CRunTemplate template, 
+	public CirExecutionPath load_execution_path(CRunTemplate template,
 			AstTree ast_tree, CirTree cir_tree, TestInput input) throws Exception {
 		File instrumental_file = input.
 				get_instrument_file(this.get_instrumental_output_directory());
@@ -235,7 +235,7 @@ public class MuTestProjectTestSpace {
 			return null;	/* no instrumental results are found in */
 		}
 	}
-	
+
 	/* setters */
 	private void load() throws Exception {
 		this.test_space.clear();
@@ -268,7 +268,7 @@ public class MuTestProjectTestSpace {
 	/**
 	 * update the test result information w.r.t. mutant using the newest results in
 	 * n_outputs and m_outputs.
-	 * 
+	 *
 	 * @param mutant
 	 * @return
 	 * @throws Exception
@@ -277,10 +277,10 @@ public class MuTestProjectTestSpace {
 		/* get the test result data from current space */
 		MuTestProjectTestResult result = this.get_test_result(mutant);
 		if(result == null) {
-			result = new MuTestProjectTestResult(mutant, 
+			result = new MuTestProjectTestResult(mutant,
 					this.test_space.number_of_inputs());
 		}
-		
+
 		/* update the test result information for mutant */
 		File n_outputs = this.get_normal_output_directory();
 		File m_outputs = this.get_mutation_output_directory();
@@ -290,11 +290,11 @@ public class MuTestProjectTestSpace {
 			File n_stderr = input.get_stderr_file(n_outputs);
 			File m_stdout = input.get_stdout_file(m_outputs);
 			File m_stderr = input.get_stderr_file(m_outputs);
-			
+
 			if(m_stdout.exists() || m_stderr.exists()) {
 				/* record the mutation is executed against the test input */
 				result.get_exec_set().set(input.get_id(), BitSequence.BIT1);
-				
+
 				/* mutation is killed iff. its stdout or stderr different */
 				if(n_stdout.exists() && n_stderr.exists()) {
 					if(!this.compare_file(n_stdout, m_stdout)
@@ -310,7 +310,7 @@ public class MuTestProjectTestSpace {
 				}
 			}
 		}
-		
+
 		/* save the updated data information to file */
 		result.save(this.get_test_result_file(mutant));
 		return result;
@@ -330,5 +330,5 @@ public class MuTestProjectTestSpace {
 			return m_output_text.equals(n_output_text);
 		}
 	}
-	
+
 }

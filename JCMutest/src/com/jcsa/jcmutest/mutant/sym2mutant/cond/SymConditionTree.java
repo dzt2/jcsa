@@ -16,12 +16,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
  * The symbolic condition hierarchical block
- * 
+ *
  * @author yukimula
  *
  */
 public class SymConditionTree {
-	
+
 	/* definitions */
 	/** the instance that the nodes of conditions in the tree represent **/
 	private SymInstance instance;
@@ -29,7 +29,7 @@ public class SymConditionTree {
 	private Map<SymCondition, SymConditionNode> nodes;
 	/** the root node that most represents the source instance (most concrete) **/
 	private SymConditionNode root;
-	
+
 	/* constructor */
 	/**
 	 * create an empty tree with one root node w.r.t. the instance
@@ -42,7 +42,7 @@ public class SymConditionTree {
 		}
 		else {
 			this.instance = SymInstances.optimize(instance);
-			this.nodes = new HashMap<SymCondition, SymConditionNode>();
+			this.nodes = new HashMap<>();
 			this.root = this.get_node(this.get_root_condition());
 		}
 	}
@@ -63,23 +63,23 @@ public class SymConditionTree {
 			}
 		}
 		else if(this.instance instanceof SymFlowError) {
-			return SymCondition.mut_flow(((SymFlowError) this.instance).get_original_flow(), 
+			return SymCondition.mut_flow(((SymFlowError) this.instance).get_original_flow(),
 					((SymFlowError) this.instance).get_mutation_flow());
 		}
 		else if(this.instance instanceof SymTrapError) {
 			return SymCondition.trp_stmt(this.instance.get_execution());
 		}
 		else if(this.instance instanceof SymExpressionError) {
-			return SymCondition.mut_expr(((SymExpressionError) this.instance).get_expression(), 
+			return SymCondition.mut_expr(((SymExpressionError) this.instance).get_expression(),
 					((SymExpressionError) this.instance).get_mutation_value());
 		}
 		else if(this.instance instanceof SymReferenceError) {
-			return SymCondition.mut_refr(((SymReferenceError) this.instance).get_expression(), 
+			return SymCondition.mut_refr(((SymReferenceError) this.instance).get_expression(),
 					((SymReferenceError) this.instance).get_mutation_value());
 		}
 		else if(this.instance instanceof SymStateValueError) {
 			return SymCondition.mut_stat(
-					((SymStateValueError) this.instance).get_expression(), 
+					((SymStateValueError) this.instance).get_expression(),
 					((SymStateValueError) this.instance).get_mutation_value());
 		}
 		else {
@@ -96,7 +96,7 @@ public class SymConditionTree {
 		SymConditionTree tree = new SymConditionTree(instance);
 		SymConditionUtil.construct_tree(tree); return tree;
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the instance that the nodes of conditions in the tree represent
@@ -138,6 +138,6 @@ public class SymConditionTree {
 			return this.nodes.get(condition);
 		}
 	}
-	
-	
+
+
 }

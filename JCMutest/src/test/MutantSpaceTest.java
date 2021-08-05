@@ -17,12 +17,12 @@ import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 
 public class MutantSpaceTest {
-	
+
 	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
 	protected static final String postfix = "result/mut/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	private static final Random random = new Random(System.currentTimeMillis());
-	
+
 	public static void main(String[] args) throws Exception {
 		for(File cfile : new File(prefix).listFiles()) {
 			if(cfile.getName().endsWith(".c")) {
@@ -30,7 +30,7 @@ public class MutantSpaceTest {
 			}
 		}
 	}
-	
+
 	protected static void testing(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
 		AstCirFile program = parse(cfile);
@@ -48,7 +48,7 @@ public class MutantSpaceTest {
 		return AstCirFile.parse(cfile, template_file, ClangStandard.gnu_c89);
 	}
 	private static Iterable<MutaClass> get_classes() {
-		Set<MutaClass> classes = new HashSet<MutaClass>();
+		Set<MutaClass> classes = new HashSet<>();
 		classes.addAll(MutationGenerators.trapping_classes());
 		classes.addAll(MutationGenerators.unary_classes());
 		classes.addAll(MutationGenerators.statement_classes());
@@ -74,7 +74,7 @@ public class MutantSpaceTest {
 		System.out.println("\t3. Load " + space.size() + " mutants in " + mfile.getAbsolutePath());
 	}
 	private static void print_space(MutantSpace space) throws Exception {
-		Map<MutaClass, Integer> counter = new HashMap<MutaClass, Integer>();
+		Map<MutaClass, Integer> counter = new HashMap<>();
 		for(Mutant mutant : space.get_mutants()) {
 			MutaClass mclass = mutant.get_mutation().get_class();
 			if(!counter.containsKey(mclass)) {
@@ -103,5 +103,5 @@ public class MutantSpaceTest {
 		}
 		System.out.println("\t4. Generate mutation code files.");
 	}
-	
+
 }

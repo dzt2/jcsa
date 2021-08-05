@@ -41,15 +41,15 @@ public class CirConstraint extends CirAttribute {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * @return the statement in which the constraint will be evaluated
 	 */
 	public CirStatement get_statement() { return (CirStatement) this.get_location(); }
-	
+
 	/**
 	 * @return the symbolic condition being evaluated in the constraint
 	 */
 	public SymbolExpression get_condition() { return this.get_parameter(); }
-	
+
 }

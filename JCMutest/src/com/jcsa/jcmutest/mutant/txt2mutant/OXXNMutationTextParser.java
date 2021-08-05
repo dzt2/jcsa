@@ -7,9 +7,9 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class OXXNMutationTextParser extends MutationTextParser {
-	
+
 	private static final String template = "(jcm_%s_%s(%d, %s, %s))";
-	
+
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		return source.get_location();
@@ -24,7 +24,7 @@ public class OXXNMutationTextParser extends MutationTextParser {
 				expression.get_roperand()).generate_code() + ")";
 		COperator operator1 = expression.get_operator().get_operator();
 		COperator operator2 = (COperator) source.get_parameter();
-		
+
 		switch(source.get_operator()) {
 		case set_operator:
 			return String.format(template, operator1.toString(), operator2.toString(), 0, loperand, roperand);

@@ -8,22 +8,22 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 public class SymInstanceStatus {
-	
+
 	/* definitions */
 	/** the tree with the instance and evalauted condition **/
 	private SymConditionTree condition_tree;
 	/** the sequence of accumulated evaluation results **/
-	private List<Boolean> results; 
+	private List<Boolean> results;
 	/**
 	 * create a status with recorded structure dependence path
 	 * @param instance
 	 * @throws Exception
 	 */
 	public SymInstanceStatus(SymInstance instance) throws Exception {
-		this.results = new ArrayList<Boolean>();
+		this.results = new ArrayList<>();
 		this.condition_tree = SymConditionTree.new_tree(instance);
 	}
-	
+
 	/* evaluation */
 	/**
 	 * clear the accumulated evaluation results
@@ -37,7 +37,7 @@ public class SymInstanceStatus {
 	public Boolean evaluate(SymbolProcess process) throws Exception {
 		Boolean result = this.condition_tree.
 				get_instance().validate(process);
-		this.results.add(result);	
+		this.results.add(result);
 		return result;
 	}
 	/**
@@ -132,7 +132,7 @@ public class SymInstanceStatus {
 			return false;
 		}
 	}
-	
+
 	/* getters  */
 	/**
 	 * @return the instance to be evaluated in the status corpus
@@ -150,5 +150,5 @@ public class SymInstanceStatus {
 	 * @return the symbolic conditions are organized in hierarchical way
 	 */
 	public SymConditionTree get_condition_hierarchy() { return this.condition_tree; }
-	
+
 }

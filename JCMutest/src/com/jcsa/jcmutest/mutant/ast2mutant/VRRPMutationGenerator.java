@@ -13,9 +13,9 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 public class VRRPMutationGenerator extends MutationGenerator {
-	
-	private Map<String, CType> identifiers = new HashMap<String, CType>();
-	
+
+	private Map<String, CType> identifiers = new HashMap<>();
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {
 		this.identifiers.clear();
@@ -47,7 +47,7 @@ public class VRRPMutationGenerator extends MutationGenerator {
 		AstIdExpression expression = (AstIdExpression) location;
 		CType data_type = CTypeAnalyzer.
 					get_value_type(expression.get_value_type());
-		
+
 		for(String name : this.identifiers.keySet()) {
 			CType ttype = this.identifiers.get(name);
 			if(!name.equals(expression.get_name())) {
@@ -65,7 +65,7 @@ public class VRRPMutationGenerator extends MutationGenerator {
 				}
 			}
 		}
-		
+
 	}
 
 }

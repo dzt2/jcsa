@@ -2,12 +2,12 @@ package com.jcsa.jcmutest.mutant.mutation;
 
 /**
  * Mutation operator for C programming language.
- * 
+ *
  * @author yukimula
  *
  */
 public enum MutaOperator {
-	
+
 	/* BTRP */
 	/** trap_on_true(expression) **/				trap_on_true,
 	/** trap_on_false(expression) **/				trap_on_false,
@@ -23,7 +23,7 @@ public enum MutaOperator {
 	/** trap_on_neg(expression) **/					trap_on_neg,
 	/** trap_on_dif(expression, String|boolean|
 	 * 				long|double|expression) **/		trap_on_dif,
-	
+
 	/* SBCR */
 	/** break_to_continue(break_statement) **/		break_to_continue,
 	/** continue_to_break(continue_statement) **/	continue_to_break,
@@ -34,7 +34,7 @@ public enum MutaOperator {
 	/** set_goto_label(goto_statement, label) **/	set_goto_label,
 	/* STDL */
 	/** delete_statement(statement) **/				delete_statement,
-	
+
 	/* UIOR */
 	/** prev_inc_to_prev_dec(prev_inc_expr) **/		prev_inc_to_prev_dec,
 	/** prev_inc_to_post_dec(prev_inc_expr) **/		prev_inc_to_post_dec,
@@ -71,7 +71,7 @@ public enum MutaOperator {
 	/** delete_arith_neg(expression) **/			delete_arith_neg,
 	/** delete_bitws_rsv(expression) **/			delete_bitws_rsv,
 	/** delete_logic_not(expression) **/			delete_logic_not,
-	
+
 	/* VBRP */
 	/** set_true(expression) **/					set_true,
 	/** set_false(expression) **/					set_false,
@@ -82,12 +82,12 @@ public enum MutaOperator {
 	/** set_reference(expression, String) **/		set_reference,
 	/* RTRP */
 	/** set_return(expression, expression) **/		set_return,
-	
-	/* OAAN, OABN, OALN, OARN, OBAN, OBBN, OBLN, 
+
+	/* OAAN, OABN, OALN, OARN, OBAN, OBBN, OBLN,
 	 * OBRN, OLAN, OLBN, OLLN, OLRN, ORAN, ORBN,
 	 * ORLN, ORRN, OEAA, OEBA, OAEA, OBEA, OAAA,
 	 * OABA, OBAA, OBBA */
 	/** set_operator(expression, operator) **/		set_operator,
 	/** cmp_operator(expression, operator) **/		cmp_operator,
-	
+
 }

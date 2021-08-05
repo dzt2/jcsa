@@ -26,15 +26,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolNode;
 
 /**
  * Used to construct tree from symbolic instance under evaluation context.
- * 
+ *
  * @author yukimula
  *
  */
 class SymConditionUtil {
-	
+
 	/* single mode */	/** construct **/ private SymConditionUtil() { }
 	private static final SymConditionUtil util = new SymConditionUtil();
-	
+
 	/* basic supporting methods */
 	/**
 	 * recursively collect the symbolic references under the node
@@ -52,7 +52,7 @@ class SymConditionUtil {
 	 * @return the set of references defined in the node
 	 */
 	private Collection<SymbolExpression> get_symbol_references_in(SymbolNode node) {
-		Set<SymbolExpression> references = new HashSet<SymbolExpression>();
+		Set<SymbolExpression> references = new HashSet<>();
 		this.get_symbol_references_in(node, references); return references;
 	}
 	/**
@@ -144,7 +144,7 @@ class SymConditionUtil {
 			/** declarations **/
 			CirExecution execution = condition.get_execution();
 			int times = ((SymbolConstant) condition.get_parameter()).get_int().intValue();
-			
+
 			/** improve until the first decidable branch to unify **/
 			CirExecutionPath prev_path = CirExecutionPathFinder.finder.db_extend(execution);
 			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
@@ -162,7 +162,7 @@ class SymConditionUtil {
 			/** declarations **/
 			CirExecution execution = condition.get_execution();
 			SymbolExpression expression = condition.get_parameter();
-			
+
 			/** improve const condition to program entry **/
 			if(expression instanceof SymbolConstant) {
 				CirFunction function = execution.get_graph().get_function().get_graph().get_main_function();
@@ -189,10 +189,10 @@ class SymConditionUtil {
 			throw new IllegalArgumentException("Invalid: " + condition);
 		}
 	}
-	
+
 	/* recursive extension method in local instance */
 	/**
-	 * extend on the 
+	 * extend on the
 	 * @param tree
 	 * @throws Exception
 	 */
@@ -211,8 +211,8 @@ class SymConditionUtil {
 		case del_stmt:	this.extend_on_del_stmt(source); break;
 		case trp_stmt:	this.extend_on_trp_stmt(source); break;
 		case mut_flow:	this.extend_on_mut_flow(source); break;
-		case mut_expr:	
-		case mut_refr:	
+		case mut_expr:
+		case mut_refr:
 		case mut_stat:	this.extend_on_mut_expr(source); break;
 		case set_bool:	this.extend_on_set_bool(source); break;
 		case set_true:	this.extend_on_set_true(source); break;
@@ -239,7 +239,7 @@ class SymConditionUtil {
 		default:	throw new IllegalArgumentException(source.get_condition().toString());
 		}
 	}
-	
+
 	/* basic construction */
 	/**
 	 * cov(S, N) --> cov(iS, N) --> cov(iS, N - 1) --> ... --> cov(iS, 1)
@@ -249,12 +249,12 @@ class SymConditionUtil {
 	private void extend_on_cov_stmt(SymConditionNode source) throws Exception {
 		/* cov(S, N) --> cov(iS, N) */
 		source = source.add_child(this.improve_constraint_condition_on_path(source.get_condition()));
-		
+
 		/* generate smaller looping times */
 		int times = ((SymbolConstant) source.get_condition().get_parameter()).get_int();
-		List<Integer> loop_times = new ArrayList<Integer>();
+		List<Integer> loop_times = new ArrayList<>();
 		for(int k = 1; k < times; k = k * 2) { loop_times.add(Integer.valueOf(k)); }
-		
+
 		/* cov(iS, N) --> cov(iS, N - 1) */
 		CirExecution execution = source.get_condition().get_execution();
 		for(int k = loop_times.size() - 1; k >= 0; k--) {
@@ -271,9 +271,9 @@ class SymConditionUtil {
 		/* declarations */
 		CirExecution execution = source.get_condition().get_execution();
 		SymbolExpression expression = source.get_condition().get_parameter();
-		Collection<SymbolExpression> expressions = new HashSet<SymbolExpression>();
-		Collection<SymConditionNode> children = new HashSet<SymConditionNode>();
-		
+		Collection<SymbolExpression> expressions = new HashSet<>();
+		Collection<SymConditionNode> children = new HashSet<>();
+
 		/* divide into sub-expressions for conjunction case */
 		this.get_symbol_conditions_in(expression, expressions);
 		for(SymbolExpression sub_expression : expressions) {
@@ -282,7 +282,7 @@ class SymConditionUtil {
 			children.add(source.add_child(improved));
 		}
 		if(children.contains(source)) { children.remove(source); }	/* remove invalid case */
-		
+
 		/* source --> cov(S, 1) */
 		if(children.isEmpty()) {
 			this.recursive_extend_on_node(source.add_child(SymCondition.cov_stmt(execution, 1)));
@@ -335,18 +335,18 @@ class SymConditionUtil {
 		/* determine the original and mutated target execution */
 		CirExecution orig_target = SymCondition.execution_of(source.get_condition().get_location());
 		CirExecution muta_target = (CirExecution) source.get_condition().get_parameter().get_source();
-		
+
 		/* compute the statements being added or deleted in testing */
-		Collection<CirExecution> add_executions = new HashSet<CirExecution>();
-		Collection<CirExecution> del_executions = new HashSet<CirExecution>();
+		Collection<CirExecution> add_executions = new HashSet<>();
+		Collection<CirExecution> del_executions = new HashSet<>();
 		CirExecutionPath orig_path = CirExecutionPathFinder.finder.df_extend(orig_target);
 		CirExecutionPath muta_path = CirExecutionPathFinder.finder.df_extend(muta_target);
 		for(CirExecutionEdge edge : muta_path.get_edges()) { add_executions.add(edge.get_source()); }
 		for(CirExecutionEdge edge : orig_path.get_edges()) { del_executions.add(edge.get_source()); }
 		add_executions.add(muta_path.get_target()); del_executions.add(orig_path.get_target());
-		
+
 		/* removed the common part for corrections */
-		Collection<CirExecution> com_executions = new HashSet<CirExecution>();
+		Collection<CirExecution> com_executions = new HashSet<>();
 		for(CirExecution execution : add_executions) {
 			if(del_executions.contains(execution)) {
 				com_executions.add(execution);
@@ -354,7 +354,7 @@ class SymConditionUtil {
 		}
 		add_executions.removeAll(com_executions);
 		del_executions.removeAll(com_executions);
-		
+
 		/* extending to add_stmt | del_stmt */
 		for(CirExecution add_execution : add_executions) {
 			this.recursive_extend_on_node(source.add_child(SymCondition.add_stmt(add_execution)));
@@ -372,7 +372,7 @@ class SymConditionUtil {
 		/* declarations */
 		CirExpression expression = (CirExpression) source.get_condition().get_location();
 		SymbolExpression muta_value = source.get_condition().get_parameter();
-		
+
 		/* categorization based on type */
 		if(SymCondition.is_boolean(expression)) {
 			this.recursive_extend_on_node(source.add_child(SymCondition.set_bool(expression, muta_value)));
@@ -387,7 +387,7 @@ class SymConditionUtil {
 			this.recursive_extend_on_node(source.add_child(SymCondition.set_auto(expression, muta_value)));
 		}
 	}
-	
+
 	/* boolean construction */
 	/**
 	 * set_bool --> {set_true|set_fals} --> chg_bool
@@ -428,7 +428,7 @@ class SymConditionUtil {
 		this.recursive_extend_on_node(source.add_child(SymCondition.chg_bool(expression)));
 	}
 	private void extend_on_chg_bool(SymConditionNode source) throws Exception { }
-	
+
 	/* numeric construction */
 	/**
 	 * @param source
@@ -441,7 +441,7 @@ class SymConditionUtil {
 		SymbolExpression muta_value = source.get_condition().get_parameter().evaluate(null);
 		SymbolExpression difference = SymbolFactory.
 				arith_sub(expression.get_data_type(), muta_value, orig_value).evaluate(null);
-		
+
 		/* difference checking... */
 		if(difference instanceof SymbolConstant) {
 			Object diff_number = ((SymbolConstant) difference).get_number();
@@ -470,7 +470,7 @@ class SymConditionUtil {
 				}
 			}
 		}
-		
+
 		/* two constant */
 		if(orig_value instanceof SymbolConstant) {
 			if(muta_value instanceof SymbolConstant) {
@@ -520,7 +520,7 @@ class SymConditionUtil {
 				}
 			}
 		}
-		
+
 		/* muta-constant */
 		if(muta_value instanceof SymbolConstant) {
 			Object ynumber = ((SymbolConstant) muta_value).get_number();
@@ -549,7 +549,7 @@ class SymConditionUtil {
 				}
 			}
 		}
-		
+
 		if(source.is_leaf()) { this.recursive_extend_on_node(source.add_child(SymCondition.chg_numb(expression))); }
 	}
 	private void extend_on_set_post(SymConditionNode source) throws Exception {
@@ -595,7 +595,7 @@ class SymConditionUtil {
 		CirExpression expression = (CirExpression) source.get_condition().get_location();
 		this.recursive_extend_on_node(source.add_child(SymCondition.chg_numb(expression)));
 	}
-	
+
 	/* address construction */
 	private void extend_on_set_addr(SymConditionNode source) throws Exception {
 		CirExecution execution = source.get_condition().get_execution();
@@ -604,7 +604,7 @@ class SymConditionUtil {
 		SymbolExpression muta_value = source.get_condition().get_parameter().evaluate(null);
 		SymbolExpression difference = SymbolFactory.
 				arith_sub(expression.get_data_type(), muta_value, orig_value).evaluate(null);
-		
+
 		if(difference instanceof SymbolConstant) {
 			long dvalue = ((SymbolConstant) difference).get_long().longValue();
 			if(dvalue > 0) {
@@ -618,7 +618,7 @@ class SymConditionUtil {
 				return;
 			}
 		}
-		
+
 		if(muta_value instanceof SymbolConstant) {
 			long mvalue = ((SymbolConstant) muta_value).get_long().longValue();
 			if(mvalue == 0) {
@@ -647,5 +647,5 @@ class SymConditionUtil {
 	private void extend_on_chg_auto(SymConditionNode source) throws Exception { }
 	private void extend_on_chg_numb(SymConditionNode source) throws Exception { }
 	private void extend_on_chg_addr(SymConditionNode source) throws Exception { }
-	
+
 }

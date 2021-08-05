@@ -11,7 +11,7 @@ public class CirBlockError extends CirAttribute {
 	protected CirBlockError(CirExecution execution, SymbolExpression parameter) throws IllegalArgumentException {
 		super(CirAttributeType.blk_error, execution, execution.get_statement(), parameter);
 	}
-	
+
 	/**
 	 * @return the statement to be mutated in execution
 	 */
@@ -34,5 +34,5 @@ public class CirBlockError extends CirAttribute {
 	public Boolean evaluate(SymbolProcess context) throws Exception {
 		return true;
 	}
-	
+
 }

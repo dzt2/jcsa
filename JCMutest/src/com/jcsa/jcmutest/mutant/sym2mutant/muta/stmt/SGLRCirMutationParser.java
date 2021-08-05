@@ -25,11 +25,11 @@ public class SGLRCirMutationParser extends CirMutationParser {
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExecution source = cir_tree.get_localizer().get_execution(statement);
 		CirExecutionFlow orig_flow = source.get_ou_flow(0);
-		
+
 		CirStatement next_statement = this.get_beg_statement(cir_tree, (AstNode) mutation.get_parameter());
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
-		
+
 		infections.put(SymInstances.flow_error(orig_flow, muta_flow), SymInstances.expr_constraint(statement, Boolean.TRUE, true));
 	}
 

@@ -12,7 +12,7 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
  * trap_on_expression(e)
  * trap_on_case(e, c)
  * trap_on_case(e, c)
- * 
+ *
  * @author yukimula
  *
  */
@@ -28,9 +28,9 @@ public class CTRPMutationExtension extends MutationExtension {
 	protected AstMutation weak(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
 		AstExpression parameter = (AstExpression) source.get_parameter();
-		return AstMutations.new_mutation(MutaGroup.Trapping_Mutation, 
-				MutaClass.CTRP, MutaOperator.trap_on_case, 
-				CTypeAnalyzer.get_expression_of(expression), 
+		return AstMutations.new_mutation(MutaGroup.Trapping_Mutation,
+				MutaClass.CTRP, MutaOperator.trap_on_case,
+				CTypeAnalyzer.get_expression_of(expression),
 				CTypeAnalyzer.get_expression_of(parameter));
 	}
 

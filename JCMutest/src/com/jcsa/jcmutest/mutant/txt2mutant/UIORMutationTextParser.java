@@ -26,7 +26,7 @@ public class UIORMutationTextParser extends MutationTextParser {
 		}
 		operand = CTypeAnalyzer.get_expression_of(operand);
 		String opcode = operand.generate_code();
-		
+
 		switch(source.get_operator()) {
 		case prev_inc_to_post_inc:
 		case prev_dec_to_post_inc:

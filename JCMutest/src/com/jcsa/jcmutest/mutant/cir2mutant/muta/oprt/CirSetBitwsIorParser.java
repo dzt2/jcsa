@@ -32,11 +32,11 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		 * [x & y != 0]
 		 */
 		CirAttribute constraint; CirAttribute init_error; SymbolExpression condition;
-		
+
 		condition = sym_expression(COperator.bit_and, loperand, roperand);
 		condition = sym_expression(COperator.not_equals, condition, Integer.valueOf(0));
 		constraint = this.get_constraint(condition);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -70,16 +70,16 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		constraint  =this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -107,7 +107,7 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 					COperator.equal_with, roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, roperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.sym_expression(
@@ -133,7 +133,7 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 					COperator.equal_with, roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, roperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.sym_expression(
@@ -174,7 +174,7 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		condition = this.sym_expression(COperator.bit_and, loperand, roperand);
 		condition = this.sym_expression(COperator.not_equals, condition, Integer.valueOf(0));
 		constraint = this.get_constraint(condition);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -226,17 +226,17 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		/**
 		 * [x != 0 || y != 0]
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition, operand;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		operand = SymbolFactory.sym_expression(Integer.valueOf(0));
 		condition = this.sym_expression(COperator.not_equals, this.loperand, operand);
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, this.roperand, operand);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -252,10 +252,10 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		/**
 		 * [x != AnyBool || y != AnyBool]
 		 */
-		CirAttribute constraint; CirAttribute init_error; 
+		CirAttribute constraint; CirAttribute init_error;
 		SymbolExpression condition, operand;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		operand = SymbolFactory.
 				identifier(CBasicTypeImpl.bool_type, CirOperatorParser.AnyBoolean);
 		condition = this.sym_expression(COperator.not_equals, this.loperand, operand);
@@ -263,7 +263,7 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		condition = this.sym_expression(COperator.not_equals, this.roperand, operand);
 		constraints.add(this.get_constraint(condition));
 		constraint = this.disjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}
@@ -273,7 +273,7 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 	@Override
 	protected boolean greater_tn() throws Exception {
 		CirAttribute constraint = this.get_constraint(Boolean.TRUE);
@@ -357,5 +357,5 @@ public class CirSetBitwsIorParser extends CirOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 }

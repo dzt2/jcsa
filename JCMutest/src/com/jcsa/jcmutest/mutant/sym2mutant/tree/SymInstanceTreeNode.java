@@ -8,12 +8,12 @@ import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 
 /**
  * The node in the symbolic instance tree for killing a mutation.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymInstanceTreeNode extends SymInstanceContent {
-	
+
 	/* definitions */
 	/** the tree where the node is created **/
 	private SymInstanceTree tree;
@@ -34,7 +34,7 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 		else {
 			this.tree = tree;
 			this.in_edge = null;
-			this.ou_edges = new ArrayList<SymInstanceTreeEdge>();
+			this.ou_edges = new ArrayList<>();
 		}
 	}
 	/**
@@ -51,7 +51,7 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 		else {
 			this.tree = parent.tree;
 			this.in_edge = new SymInstanceTreeEdge(parent, this, edge_instance);
-			this.ou_edges = new ArrayList<SymInstanceTreeEdge>();
+			this.ou_edges = new ArrayList<>();
 		}
 	}
 	/**
@@ -65,7 +65,7 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 		this.ou_edges.add(child.get_in_edge());
 		return child;
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the tree where the node is created
@@ -89,7 +89,7 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymInstanceTreeEdge get_ou_edge(int k) throws IndexOutOfBoundsException { return this.ou_edges.get(k); }
-	
+
 	/* inference */
 	/**
 	 * @return whether the tree node is a root
@@ -125,7 +125,7 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 	@Override
 	public List<SymInstanceTreeEdge> get_prev_path() {
 		if(this.in_edge == null) {
-			return new ArrayList<SymInstanceTreeEdge>();
+			return new ArrayList<>();
 		}
 		else {
 			return this.in_edge.get_prev_path();
@@ -133,11 +133,11 @@ public class SymInstanceTreeNode extends SymInstanceContent {
 	}
 	@Override
 	public Collection<List<SymInstanceTreeEdge>> get_post_paths() {
-		Collection<List<SymInstanceTreeEdge>> post_paths = new ArrayList<List<SymInstanceTreeEdge>>();
+		Collection<List<SymInstanceTreeEdge>> post_paths = new ArrayList<>();
 		for(SymInstanceTreeEdge edge : this.ou_edges) {
 			post_paths.addAll(edge.get_post_paths());
 		}
 		return post_paths;
 	}
-	
+
 }

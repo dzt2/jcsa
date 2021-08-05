@@ -18,20 +18,20 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
 
 public class MuTestProjectFeatureWritings {
-	
+
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
 	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features/";
 	private static final int max_distance = 1;
 	private static final double random_test_ratio = 0.008;
 	private static final int min_test_number = 28;
 	private static final Random random = new Random(System.currentTimeMillis());
-	
+
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
-		} 
+		}
 	}
-	
+
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
@@ -42,24 +42,24 @@ public class MuTestProjectFeatureWritings {
 		FileOperations.mkdir(output_directory);
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
-		
+
 		/* 2. select test cases and generate instrumental files. */
 		Collection<TestInput> test_cases;
 		if(selected) {
-			Collection<MutaClass> classes = new HashSet<MutaClass>();
+			Collection<MutaClass> classes = new HashSet<>();
 			classes.add(MutaClass.STRP); classes.add(MutaClass.BTRP);
 			Set<Mutant> selected_mutants = select_mutants(code_file, classes);
 			test_cases = select_tests(selected_mutants, project.get_test_space());
-			System.out.println("\t==> Select " + test_cases.size() + " test cases from " + 
+			System.out.println("\t==> Select " + test_cases.size() + " test cases from " +
 								project.get_test_space().number_of_test_inputs() + " inputs.");
 		}
 		else { test_cases = null; }		/* no test case is used for dynamic generation */
-		
+
 		/* 3. Generate feature information to output directory finally */
 		MuTestProjectFeatureWrite.write(code_file, output_directory, test_cases, max_distance);
 		System.out.println();
 	}
-	
+
 	/* dynamic test cases selection and generation */
 	/**
 	 * select mutants w.r.t. the given mutation operators
@@ -68,7 +68,7 @@ public class MuTestProjectFeatureWritings {
 	 * @return
 	 */
 	private static Set<Mutant> select_mutants(MuTestProjectCodeFile code_file, Collection<MutaClass> muta_classes) {
-		Set<Mutant> mutants = new HashSet<Mutant>();
+		Set<Mutant> mutants = new HashSet<>();
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
 			if(muta_classes.contains(mutant.get_mutation().get_class())) {
 				mutants.add(mutant);
@@ -144,9 +144,9 @@ public class MuTestProjectFeatureWritings {
 	 * @param test
 	 * @throws Exception
 	 */
-	private static void kill_mutants_in(Set<Mutant> mutants, TestInput 
+	private static void kill_mutants_in(Set<Mutant> mutants, TestInput
 			test, MuTestProjectTestSpace tspace) throws Exception {
-		Set<Mutant> removed_mutants = new HashSet<Mutant>();
+		Set<Mutant> removed_mutants = new HashSet<>();
 		for(Mutant mutant : mutants) {
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
 			if(result == null || result.get_kill_set().degree() == 0) {
@@ -166,20 +166,20 @@ public class MuTestProjectFeatureWritings {
 	 * @throws Exception
 	 */
 	private static Set<TestInput> select_tests(Set<Mutant> mutants, MuTestProjectTestSpace tspace) throws Exception {
-		Set<TestInput> test_cases = new HashSet<TestInput>();
-		
+		Set<TestInput> test_cases = new HashSet<>();
+
 		/* minimal test cases */
 		while(!mutants.isEmpty()) {
 			Mutant next_mutant = select_random_mutant(mutants);
 			mutants.remove(next_mutant);
-			
+
 			TestInput test_case = select_random_test(next_mutant, tspace);
 			if(test_case != null) {
 				test_cases.add(test_case);
 				kill_mutants_in(mutants, test_case, tspace);
 			}
 		}
-		
+
 		/* random test selection to minimal size */
 		int minimal_size = ((int) (tspace.number_of_test_inputs() * random_test_ratio)) + 1;
 		if(minimal_size < min_test_number) minimal_size = min_test_number;	/* minimal size */
@@ -190,5 +190,5 @@ public class MuTestProjectFeatureWritings {
 		}
 		return test_cases;
 	}
-	
+
 }

@@ -209,7 +209,7 @@ class SymbolParser {
 		case righ_shift_assign:		
 		{
 			String name = operator.toString();
-			name = name.substring(0, name.length() - 7).strip();
+			name = name.substring(0, name.length() - 7).trim();
 			operator = COperator.valueOf(name);
 			break;
 		}

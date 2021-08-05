@@ -12,16 +12,16 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.astree.AstNode;
 
 public class CirMutationsTest {
-	
+
 	private static final String root_path = "/home/dzt2/Development/Data/mprojects/";
 	private static final String result_dir = "result/const/";
-	
+
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
 			testing(root);
 		}
 	}
-	
+
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
@@ -59,19 +59,19 @@ public class CirMutationsTest {
 	 */
 	private static void output_cir_mutation(FileWriter writer, CirMutation cir_mutation) throws Exception {
 		SymConstraint constraint = cir_mutation.get_constraint();
-		writer.write("\t\t" + constraint.get_condition() + "\tat \"" + 
+		writer.write("\t\t" + constraint.get_condition() + "\tat \"" +
 				strip_code(constraint.get_statement().generate_code(true)) + "\"\n");
 		output_opt_constraints(writer, constraint);
 		writer.write("\t\t" + cir_mutation.get_state_error().toString() + "\n");
 	}
 	private static void output_mutant(FileWriter writer, Mutant mutant) throws Exception {
 		writer.write("#Mutant " + mutant.get_id() + "\n");
-		writer.write("\tClass: " + mutant.get_mutation().get_class() + 
+		writer.write("\tClass: " + mutant.get_mutation().get_class() +
 					":" + mutant.get_mutation().get_operator() + "\n");
 		AstNode location = mutant.get_mutation().get_location();
 		writer.write("\tLine[" + location.get_location().line_of() + "]: " + strip_code(location.generate_code()) + "\n");
 		if(mutant.get_mutation().has_parameter()) {
-			writer.write("\tParam: " + mutant.get_mutation().get_parameter() + "\n"); 
+			writer.write("\tParam: " + mutant.get_mutation().get_parameter() + "\n");
 		}
 		if(mutant.has_cir_mutations()) {
 			for(CirMutation cir_mutation : mutant.get_cir_mutations()) {
@@ -94,5 +94,5 @@ public class CirMutationsTest {
 		System.out.println("Testing on " + root.getName());
 		output(project, new File(result_dir + root.getName() + ".txt"));
 	}
-	
+
 }

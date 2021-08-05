@@ -10,11 +10,11 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 public class CirValueError extends CirAttribute {
 
-	protected CirValueError(CirExecution execution, CirExpression orig_expression, 
+	protected CirValueError(CirExecution execution, CirExpression orig_expression,
 				SymbolExpression muta_expression) throws IllegalArgumentException {
 		super(CirAttributeType.val_error, execution, orig_expression, muta_expression);
 	}
-	
+
 	/**
 	 * @return the original expression being mutated with value error
 	 */
@@ -23,7 +23,7 @@ public class CirValueError extends CirAttribute {
 	 * @return the symbolic expression to seed the original expression
 	 */
 	public SymbolExpression get_muta_expression() { return this.get_parameter(); }
-	
+
 	@Override
 	public CirAttribute optimize(SymbolProcess context) throws Exception {
 		SymbolExpression muta_expression = this.get_muta_expression();

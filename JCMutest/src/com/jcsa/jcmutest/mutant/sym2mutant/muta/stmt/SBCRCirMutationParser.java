@@ -25,7 +25,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	private AstStatement find_loop_statement(AstNode location) throws Exception {
 		while(location != null) {
 			if(location instanceof AstDoWhileStatement
@@ -39,14 +39,14 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		}
 		throw new IllegalArgumentException("Not in loop-structure");
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExecution source = cir_tree.get_localizer().get_execution(statement);
 		CirExecutionFlow orig_flow = source.get_ou_flow(0);
 		AstStatement loop_statement = this.find_loop_statement(mutation.get_location());
-		
+
 		CirStatement next_statement;
 		switch(mutation.get_operator()) {
 		case break_to_continue:
@@ -62,7 +62,7 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
-		
+
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
 		infections.put(SymInstances.flow_error(orig_flow, muta_flow), SymInstances.expr_constraint(statement, Boolean.TRUE, true));
 	}

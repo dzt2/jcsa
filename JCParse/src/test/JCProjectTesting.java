@@ -45,7 +45,7 @@ public class JCProjectTesting {
 	protected static JCTestProject create_project(File cfile) throws Exception {
 		String name = cfile.getName();
 		int index = name.indexOf(".");
-		name = name.substring(0, index).strip();
+		name = name.substring(0, index).trim();
 		JCTestProject project = JCTestProject.new_project(
 				new File(postfix + name), command_util, 
 				compiler, lang_standard, c_template_file, 
@@ -62,7 +62,7 @@ public class JCProjectTesting {
 	protected static JCTestProject open_project(File cfile) throws Exception {
 		String name = cfile.getName();
 		int index = name.indexOf(".");
-		name = name.substring(0, index).strip();
+		name = name.substring(0, index).trim();
 		JCTestProject project = 
 				JCTestProject.open_project(new File(postfix + name), command_util);
 		

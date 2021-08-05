@@ -21,9 +21,9 @@ public class SGLRMutationGenerator extends MutationGenerator {
 			}
 		}
 	}
-	
-	private List<AstLabeledStatement> labels = new ArrayList<AstLabeledStatement>();
-	
+
+	private List<AstLabeledStatement> labels = new ArrayList<>();
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return location instanceof AstGotoStatement;

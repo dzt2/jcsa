@@ -6,12 +6,12 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 /**
  * Parse from AstMutation to TextMutation, in which the latter is used to
  * generate mutation code.
- * 
+ *
  * @author yukimula
  *
  */
 abstract class MutationTextParser {
-	
+
 	/* parsing method */
 	/**
 	 * @param source
@@ -36,5 +36,5 @@ abstract class MutationTextParser {
 		String muta_code = this.get_muta_code(source, location);
 		return new TextMutation(location, muta_code);
 	}
-	
+
 }

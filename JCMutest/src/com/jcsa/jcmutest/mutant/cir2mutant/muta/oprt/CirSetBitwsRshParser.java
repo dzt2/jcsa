@@ -91,7 +91,7 @@ public class CirSetBitwsRshParser extends CirOperatorParser {
 					COperator.equal_with, roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.sym_expression(
@@ -118,7 +118,7 @@ public class CirSetBitwsRshParser extends CirOperatorParser {
 					COperator.equal_with, roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.sym_expression(
@@ -322,5 +322,5 @@ public class CirSetBitwsRshParser extends CirOperatorParser {
 		}
 		return this.add_infection(constraint, init_error);
 	}
-	
+
 }

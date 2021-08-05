@@ -14,18 +14,18 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UNODCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_cir_expression(cir_tree, mutation.get_location()).statement_of();
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		SymConstraint constraint; SymStateError state_error; SymbolExpression condition, muta_value;
-		
+
 		switch(mutation.get_operator()) {
 		case delete_arith_neg:
 		{
@@ -55,5 +55,5 @@ public class UNODCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation);
 		}
 	}
-	
+
 }

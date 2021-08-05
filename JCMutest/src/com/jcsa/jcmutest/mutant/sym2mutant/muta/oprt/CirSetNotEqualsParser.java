@@ -72,7 +72,7 @@ public class CirSetNotEqualsParser extends CirSetOperatorParser {
 						COperator.equal_with, loperand, roperand));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
@@ -96,7 +96,7 @@ public class CirSetNotEqualsParser extends CirSetOperatorParser {
 						COperator.equal_with, loperand, roperand));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
 					COperator.not_equals, loperand, roperand));
 			condition = this.sym_expression(COperator.
@@ -247,13 +247,13 @@ public class CirSetNotEqualsParser extends CirSetOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_expression(COperator.
 					smaller_tn, loperand, roperand);
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}
@@ -291,13 +291,13 @@ public class CirSetNotEqualsParser extends CirSetOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_expression(COperator.
 					greater_tn, loperand, roperand);
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}
@@ -319,13 +319,13 @@ public class CirSetNotEqualsParser extends CirSetOperatorParser {
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.TRUE);
 			this.add_infection(constraint, init_error);
-			
+
 			condition = this.sym_expression(COperator.
 					not_equals, loperand, roperand);
 			constraint = this.get_constraint(condition);
 			init_error = this.set_expression(Boolean.FALSE);
 			this.add_infection(constraint, init_error);
-			
+
 			return true;
 		}
 	}

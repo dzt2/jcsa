@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class VINCCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_cir_expression(cir_tree, mutation.get_location()).statement_of();
@@ -40,5 +40,5 @@ public class VINCCirMutationParser extends CirMutationParser {
 		}
 		infections.put(CirAttribute.new_value_error(expression, muta_value), constraint);
 	}
-	
+
 }

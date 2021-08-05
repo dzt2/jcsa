@@ -13,9 +13,9 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 
 public class VCRPMutationGenerator extends MutationGenerator {
-	
-	private Map<String, CConstant> constants = new HashMap<String, CConstant>();
-	
+
+	private Map<String, CConstant> constants = new HashMap<>();
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception {
 		this.constants.clear();
@@ -32,7 +32,7 @@ public class VCRPMutationGenerator extends MutationGenerator {
 	protected boolean available(AstNode location) throws Exception {
 		return location instanceof AstConstant && this.is_valid_context(location);
 	}
-	
+
 	private CConstant standard_constant(CConstant source) throws Exception {
 		CConstant target = new CConstant();
 		switch(source.get_type().get_tag()) {

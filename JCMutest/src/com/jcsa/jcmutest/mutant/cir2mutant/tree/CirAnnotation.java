@@ -10,12 +10,12 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * It denotes an abstract annotation to describe the abstract features of killing process.
- * 
+ *
  * @author yukimula
  *
  */
 public class CirAnnotation {
-	
+
 	/* attributes */
 	/** abstract category of the annotation **/
 	private CirAnnotationClass		category;
@@ -27,7 +27,7 @@ public class CirAnnotation {
 	private CirNode					location;
 	/** symbolic expression as the parameter to refine the node **/
 	private SymbolExpression		parameter;
-	
+
 	/* constructor */
 	/**
 	 * @param category
@@ -37,7 +37,7 @@ public class CirAnnotation {
 	 * @param parameter
 	 * @throws IllegalArgumentException
 	 */
-	protected CirAnnotation(CirAnnotationClass category, CirAnnotationType operator, CirExecution 
+	protected CirAnnotation(CirAnnotationClass category, CirAnnotationType operator, CirExecution
 			execution, CirNode location, SymbolExpression parameter) throws IllegalArgumentException {
 		if(category == null) {
 			throw new IllegalArgumentException("Invalid category: null");
@@ -59,7 +59,7 @@ public class CirAnnotation {
 			this.parameter = parameter;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return abstract category of the annotation
@@ -85,11 +85,11 @@ public class CirAnnotation {
 	 * @return symbolic expression as the parameter to refine the node
 	 */
 	public SymbolExpression		get_parameter() { return this.parameter; }
-	
+
 	/* universals */
 	@Override
 	public String toString() {
-		return this.category + "$" + this.operator + "$" + 
+		return this.category + "$" + this.operator + "$" +
 				this.execution + "$" + this.location + "$" + this.parameter;
 	}
 	@Override
@@ -106,7 +106,7 @@ public class CirAnnotation {
 			return false;
 		}
 	}
-	
+
 	/* constraint */
 	/**
 	 * @param execution
@@ -149,7 +149,7 @@ public class CirAnnotation {
 	 * @param execution
 	 * @param condition
 	 * @param value
-	 * @return constraint:eva_expr:execution:statement:condition 
+	 * @return constraint:eva_expr:execution:statement:condition
 	 * @throws Exception
 	 */
 	public static CirAnnotation eva_expr(CirExecution execution, Object condition) throws Exception {
@@ -305,7 +305,7 @@ public class CirAnnotation {
 	}
 	/**
 	 * @param expression
-	 * @return bool_error:chg_bool:execution:expression:null 
+	 * @return bool_error:chg_bool:execution:expression:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation chg_bool(CirExpression expression) throws Exception {
@@ -640,6 +640,6 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
 		}
 	}
-	
-	
+
+
 }

@@ -26,7 +26,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	/**
 	 * @param location
 	 * @param parameter
@@ -58,7 +58,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			return SymbolFactory.sym_expression(parameter);
 		}
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
@@ -66,10 +66,10 @@ public class VTRPCirMutationParser extends CirMutationParser {
 		CType data_type = expression.get_data_type();
 		if(data_type == null) data_type = CBasicTypeImpl.void_type;
 		else data_type = CTypeAnalyzer.get_value_type(data_type);
-		
-		SymbolExpression condition; 
+
+		SymbolExpression condition;
 		switch(mutation.get_operator()) {
-		case trap_on_pos:	
+		case trap_on_pos:
 		{
 			if(CTypeAnalyzer.is_boolean(data_type)) {
 				condition = SymbolFactory.sym_condition(expression, true);
@@ -79,7 +79,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			}
 			break;
 		}
-		case trap_on_zro:	
+		case trap_on_zro:
 		{
 			if(CTypeAnalyzer.is_boolean(data_type)) {
 				condition = SymbolFactory.sym_condition(expression, false);
@@ -89,7 +89,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 			}
 			break;
 		}
-		case trap_on_neg:	
+		case trap_on_neg:
 		{
 			if(CTypeAnalyzer.is_boolean(data_type)) {
 				condition = SymbolFactory.sym_expression(Boolean.FALSE);
@@ -103,7 +103,7 @@ public class VTRPCirMutationParser extends CirMutationParser {
 										mutation.get_location(), mutation.get_parameter())); 	break;
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
-		
+
 		SymConstraint constraint = SymInstances.expr_constraint(statement, condition, true);
 		SymStateError state_error = SymInstances.trap_error(statement);
 		infections.put(state_error, constraint);

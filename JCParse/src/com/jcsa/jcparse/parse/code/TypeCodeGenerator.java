@@ -115,7 +115,7 @@ public class TypeCodeGenerator {
 		}
 		else if(data_type instanceof CStructType) {
 			String name = ((CStructType) data_type).get_name();
-			if(name != null && !name.isBlank()) {
+			if(name != null && !name.trim().isEmpty()) {
 				buffer.append("struct " + name);
 			}
 			else {
@@ -124,7 +124,7 @@ public class TypeCodeGenerator {
 		}
 		else if(data_type instanceof CUnionType) {
 			String name = ((CUnionType) data_type).get_name();
-			if(name != null && !name.isBlank()) {
+			if(name != null && !name.trim().isEmpty()) {
 				buffer.append("union " + name);
 			}
 			else {

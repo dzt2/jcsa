@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.sym2mutant.pass;
 
 import java.util.Map;
+
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymConstraint;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstances;
 import com.jcsa.jcmutest.mutant.sym2mutant.base.SymReferenceError;
@@ -26,7 +27,7 @@ public class CirAddressOfPropagator implements CirErrorPropagator {
 		CirExpression source = (CirExpression) source_location;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
 		SymConstraint constraint; SymStateError state_error;
-		
+
 		/* 2. perform error propagation */
 		if(source == target.get_operand()) {
 			/* 3. determine the mutation value of operand */
@@ -36,7 +37,7 @@ public class CirAddressOfPropagator implements CirErrorPropagator {
 			else {
 				muta_operand = null;
 			}
-			
+
 			/* 4. constraint the constraint-error propagation */
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.address_of(muta_operand);

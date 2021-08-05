@@ -5,12 +5,12 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 public class SymFlowError extends SymStateError {
-	
+
 	/** the original flow from the source statement being mutated **/
 	private CirExecutionFlow orig_flow;
 	/** the mutation flow that replace the original flow from testing **/
 	private CirExecutionFlow muta_flow;
-	
+
 	/**
 	 * @param execution
 	 * @param orig_flow
@@ -28,7 +28,7 @@ public class SymFlowError extends SymStateError {
 			this.muta_flow = muta_flow;
 		}
 	}
-	
+
 	/**
 	 * @return the original flow from the source statement being mutated
 	 */
@@ -40,14 +40,14 @@ public class SymFlowError extends SymStateError {
 
 	@Override
 	protected String generate_code() throws Exception {
-		return this.get_type() + 
-				":" + this.get_execution() + "(" + 
-				this.orig_flow.get_target() + ", " + 
+		return this.get_type() +
+				":" + this.get_execution() + "(" +
+				this.orig_flow.get_target() + ", " +
 				this.muta_flow.get_target() + ")";
 	}
 	@Override
 	public Boolean validate(SymbolProcess contexts) throws Exception {
 		return this.orig_flow.get_target() != this.muta_flow.get_target();
 	}
-	
+
 }

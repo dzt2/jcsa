@@ -13,7 +13,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class TTRPCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return (CirStatement) this.get_cir_node(
@@ -35,11 +35,11 @@ public class TTRPCirMutationParser extends CirMutationParser {
 			}
 		}
 		int times = ((Integer) mutation.get_parameter()).intValue();
-		
+
 		/* construct cir-based mutation here */
 		CirAttribute constraint = CirAttribute.new_cover_count(true_branch, times);
 		CirAttribute init_error = CirAttribute.new_traps_error(true_branch);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

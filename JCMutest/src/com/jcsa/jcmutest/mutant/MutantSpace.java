@@ -19,7 +19,7 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 
 public class MutantSpace {
-	
+
 	/* definition */
 	/** syntax tree in which mutants are seeded **/
 	private AstTree ast_tree;
@@ -42,11 +42,11 @@ public class MutantSpace {
 		else {
 			this.ast_tree = ast_tree;
 			this.cir_tree = cir_tree;
-			this.mutants = new ArrayList<Mutant>();
-			this.index = new HashMap<String, Mutant>();
+			this.mutants = new ArrayList<>();
+			this.index = new HashMap<>();
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return syntax tree in which mutants are seeded
@@ -92,11 +92,11 @@ public class MutantSpace {
 			return this.index.get(mutation.toString());
 		}
 	}
-	
+
 	/* setters */
 	/**
 	 * @param mutation
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	private Mutant new_mutant(AstMutation mutation) throws Exception {
@@ -125,13 +125,13 @@ public class MutantSpace {
 	 */
 	public void save(File file) throws Exception {
 		FileWriter writer = new FileWriter(file);
-		
+
 		/* mutation writer */
 		for(Mutant mutant : this.mutants) {
 			writer.write(mutant.get_mutation().toString());
 			writer.write("\n");
 		}
-		
+
 		/* mutation version connection */
 		for(Mutant mutant : this.mutants) {
 			writer.write("#");
@@ -141,7 +141,7 @@ public class MutantSpace {
 			writer.write(" " + mutant.get_strong_mutant().get_id());
 			writer.write("\n");
 		}
-		
+
 		writer.close();
 	}
 	/**
@@ -155,13 +155,13 @@ public class MutantSpace {
 		BufferedReader reader = new BufferedReader(new FileReader(file));
 		String line;
 		while((line = reader.readLine()) != null) {
-			if(!line.isBlank()) {
+			if(!line.trim().isEmpty()) {
 				if(line.startsWith("#")) {
-					String[] items = line.strip().split(" ");
-					int id = Integer.parseInt(items[1].strip());
-					int cov_id = Integer.parseInt(items[2].strip());
-					int wek_id = Integer.parseInt(items[3].strip());
-					int str_id = Integer.parseInt(items[4].strip());
+					String[] items = line.trim().split(" ");
+					int id = Integer.parseInt(items[1].trim());
+					int cov_id = Integer.parseInt(items[2].trim());
+					int wek_id = Integer.parseInt(items[3].trim());
+					int str_id = Integer.parseInt(items[4].trim());
 					Mutant mutant = this.mutants.get(id);
 					Mutant cov_mutant = this.mutants.get(cov_id);
 					Mutant wek_mutant = this.mutants.get(wek_id);
@@ -171,7 +171,7 @@ public class MutantSpace {
 					mutant.versions[2] = str_mutant;
 				}
 				else {
-					this.new_mutant(AstMutation.parse(ast_tree, line.strip()));
+					this.new_mutant(AstMutation.parse(ast_tree, line.trim()));
 				}
 			}
 		}
@@ -185,18 +185,18 @@ public class MutantSpace {
 	 */
 	public int update(Iterable<MutaClass> mutation_classes) throws Exception {
 		/* 1. clear the space */	this.clear();
-		
+
 		/* 2. generate the mutations in program */
-		List<AstMutation> mutations = 
+		List<AstMutation> mutations =
 				MutationGenerators.generate(ast_tree, mutation_classes);
 		for(AstMutation mutation : mutations) {
-			this.new_mutant(mutation); 
+			this.new_mutant(mutation);
 			AstMutation[] versions = MutationExtensions.extend(mutation);
 			this.new_mutant(versions[0]);
 			this.new_mutant(versions[1]);
 			this.new_mutant(versions[2]);
 		}
-		
+
 		/* 3. connect the mutants with versions */
 		for(Mutant mutant : this.mutants) {
 			AstMutation[] versions = MutationExtensions.extend(mutant.get_mutation());
@@ -207,7 +207,7 @@ public class MutantSpace {
 			mutant.versions[1] = wek_mutant;
 			mutant.versions[2] = str_mutant;
 		}
-		
+
 		/* 4. the number of generated ones */	return mutants.size();
 	}
 	/**
@@ -218,5 +218,5 @@ public class MutantSpace {
 	protected Iterable<CirMutation> generate_cir_mutation(AstMutation mutation) throws Exception {
 		return CirMutationParsers.parse(this.cir_tree, mutation);
 	}
-	
+
 }

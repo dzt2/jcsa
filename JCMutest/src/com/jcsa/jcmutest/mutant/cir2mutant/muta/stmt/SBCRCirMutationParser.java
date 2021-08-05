@@ -18,12 +18,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class SBCRCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	private AstStatement find_loop_statement(AstNode location) throws Exception {
 		while(location != null) {
 			if(location instanceof AstDoWhileStatement
@@ -37,14 +37,14 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		}
 		throw new IllegalArgumentException("Not in loop-structure");
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		CirExecution source = cir_tree.get_localizer().get_execution(statement);
 		CirExecutionFlow orig_flow = source.get_ou_flow(0);
 		AstStatement loop_statement = this.find_loop_statement(mutation.get_location());
-		
+
 		CirStatement next_statement;
 		switch(mutation.get_operator()) {
 		case break_to_continue:
@@ -60,11 +60,11 @@ public class SBCRCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		CirExecution target = cir_tree.get_localizer().get_execution(next_statement);
-		
+
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(source, target);
 		CirAttribute constraint = CirAttribute.new_cover_count(statement.execution_of(), 1);
 		CirAttribute init_error = CirAttribute.new_flows_error(orig_flow, muta_flow);
 		infections.put(init_error, constraint);
 	}
-	
+
 }

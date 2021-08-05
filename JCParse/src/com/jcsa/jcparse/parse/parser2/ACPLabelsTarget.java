@@ -20,7 +20,7 @@ class ACPLabelsTarget {
 	private List<CirLabel> labels;
 	private CirStatement target;
 	protected ACPLabelsTarget(ACPScope scope, String label_name) throws IllegalArgumentException {
-		if(label_name == null || label_name.isBlank())
+		if(label_name == null || label_name.trim().isEmpty())
 			throw new IllegalArgumentException("invalid label_name as null");
 		else if(scope == null)
 			throw new IllegalArgumentException("undefined scope as null");

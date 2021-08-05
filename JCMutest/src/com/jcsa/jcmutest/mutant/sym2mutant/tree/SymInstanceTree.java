@@ -18,7 +18,7 @@ import com.jcsa.jcparse.test.state.CStatePath;
 
 
 public class SymInstanceTree {
-	
+
 	/* definitions */
 	private Mutant mutant;
 	private SymInstanceTreeNode root;
@@ -50,7 +50,7 @@ public class SymInstanceTree {
 		SymInstanceTrees.construct_sym_tree(tree, distance, dependence_graph);
 		return tree;
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the mutation being killed
@@ -75,11 +75,11 @@ public class SymInstanceTree {
 	 * @return get all the leafs under the tree
 	 */
 	public Collection<SymInstanceTreeNode> get_leafs() {
-		Set<SymInstanceTreeNode> leafs = new HashSet<SymInstanceTreeNode>();
+		Set<SymInstanceTreeNode> leafs = new HashSet<>();
 		this.get_leafs(this.root, leafs);
 		return leafs;
 	}
-	
+
 	/* evaluation */
 	private void clc_status(SymInstanceTreeNode node) {
 		node.clc_status();
@@ -112,7 +112,7 @@ public class SymInstanceTree {
 	public void evaluate(CStatePath path) throws Exception {
 		SymInstanceTrees.dynamic_evaluate(this, path);
 	}
-	
+
 	/* inference */
 	private void get_infection_edges(SymInstanceTreeNode node, Collection<SymInstanceTreeEdge> edges) {
 		for(SymInstanceTreeEdge edge : node.get_ou_edges()) {
@@ -128,7 +128,7 @@ public class SymInstanceTree {
 	 * @return the set of edges referring to the infection stage.
 	 */
 	public Collection<SymInstanceTreeEdge> get_infection_edges() {
-		Collection<SymInstanceTreeEdge> edges = new HashSet<SymInstanceTreeEdge>();
+		Collection<SymInstanceTreeEdge> edges = new HashSet<>();
 		this.get_infection_edges(this.root, edges);
 		return edges;
 	}
@@ -159,9 +159,9 @@ public class SymInstanceTree {
 	 * @return the set of paths from root until the reachable edge or node
 	 */
 	public Collection<List<SymInstanceTreeEdge>> get_reachable_paths() {
-		Collection<List<SymInstanceTreeEdge>> paths = new ArrayList<List<SymInstanceTreeEdge>>();
+		Collection<List<SymInstanceTreeEdge>> paths = new ArrayList<>();
 		this.get_reachable_paths(this.root, paths);
 		return paths;
 	}
-	
+
 }

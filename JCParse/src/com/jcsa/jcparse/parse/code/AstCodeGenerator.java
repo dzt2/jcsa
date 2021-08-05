@@ -715,7 +715,7 @@ public class AstCodeGenerator {
 			index = 0;
 		}
 		
-		this.buffer.append(name.substring(index).strip());
+		this.buffer.append(name.substring(index).trim());
 	}
 	private void gen_pointer(AstPointer node) throws Exception {
 		for(int k = 0; k < node.number_of_keywords(); k++) {

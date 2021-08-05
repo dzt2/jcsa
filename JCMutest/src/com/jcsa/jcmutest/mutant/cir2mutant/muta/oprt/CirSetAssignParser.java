@@ -65,7 +65,7 @@ public class CirSetAssignParser extends CirOperatorParser {
 					equal_with, this.roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 			init_error = this.ins_expression(
@@ -86,7 +86,7 @@ public class CirSetAssignParser extends CirOperatorParser {
 					equal_with, this.roperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(sym_expression(COperator.
 					not_equals, this.roperand, Integer.valueOf(0)));
 			init_error = this.ins_expression(

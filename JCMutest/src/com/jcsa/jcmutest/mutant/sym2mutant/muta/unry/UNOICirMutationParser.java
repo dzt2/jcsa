@@ -31,7 +31,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		CType data_type = expression.get_data_type();
 		if(data_type == null) data_type = CBasicTypeImpl.void_type;
 		else data_type = CTypeAnalyzer.get_value_type(data_type);
-		
+
 		switch(mutation.get_operator()) {
 		case insert_arith_neg:
 		{

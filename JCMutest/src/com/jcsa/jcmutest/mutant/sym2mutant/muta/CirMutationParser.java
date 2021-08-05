@@ -19,11 +19,11 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public abstract class CirMutationParser {
-	
+
 	/* constructor */
 	/** construct a parser for parsing mutation into cir-versions **/
 	public CirMutationParser() { }
-	
+
 	/* parsing methods */
 	/**
 	 * @param mutation
@@ -40,13 +40,13 @@ public abstract class CirMutationParser {
 	 * @throws Exception
 	 */
 	protected abstract void generate_infections(
-			CirTree cir_tree, CirStatement statement, AstMutation mutation, 
+			CirTree cir_tree, CirStatement statement, AstMutation mutation,
 			Map<SymStateError, SymConstraint> infections) throws Exception;
 	/**
 	 * @param mutations
 	 * @param mutant
 	 * @return It parses the mutation in AST into CIR versions
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
 		if(cir_tree == null)
@@ -54,11 +54,11 @@ public abstract class CirMutationParser {
 		else if(mutation == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else {
-			Set<CirMutation> cir_mutations = new HashSet<CirMutation>();
+			Set<CirMutation> cir_mutations = new HashSet<>();
 			CirStatement statement = this.get_location(cir_tree, mutation);
 			if(statement != null) {
-				Map<SymStateError, SymConstraint> infections = 
-						new HashMap<SymStateError, SymConstraint>();
+				Map<SymStateError, SymConstraint> infections =
+						new HashMap<>();
 				this.generate_infections(cir_tree, statement, mutation, infections);
 				for(SymStateError state_error : infections.keySet()) {
 					SymConstraint constraint = infections.get(state_error);
@@ -68,7 +68,7 @@ public abstract class CirMutationParser {
 			return cir_mutations;
 		}
 	}
-	
+
 	/* location methods */
 	/**
 	 * @param cir_tree
@@ -77,9 +77,9 @@ public abstract class CirMutationParser {
 	 * @throws Exception
 	 */
 	protected AstCirPair get_cir_range(CirTree cir_tree, AstNode location) throws Exception {
-		if(cir_tree.has_cir_range(location)) 
+		if(cir_tree.has_cir_range(location))
 			return cir_tree.get_cir_range(location);
-		else 
+		else
 			return null;
 	}
 	/**
@@ -97,7 +97,7 @@ public abstract class CirMutationParser {
 	}
 	/**
 	 * @param cir_tree
-	 * @param location 
+	 * @param location
 	 * @return the statement being executed for reaching the location
 	 * @throws Exception
 	 */
@@ -179,5 +179,5 @@ public abstract class CirMutationParser {
 				get_cir_nodes(cir_tree, location, cir_type);
 		return cir_nodes.get(cir_nodes.size() - 1);
 	}
-	
+
 }

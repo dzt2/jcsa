@@ -20,7 +20,7 @@ public class OAXAMutationGenerator extends MutationGenerator {
 		return location instanceof AstArithAssignExpression
 				&& this.is_numeric_expression(location);
 	}
-	
+
 	private final COperator[] operators = new COperator[] {
 			COperator.assign,
 			COperator.arith_add_assign,
@@ -34,7 +34,7 @@ public class OAXAMutationGenerator extends MutationGenerator {
 			COperator.left_shift_assign,
 			COperator.righ_shift_assign
 		};
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstBinaryExpression expression = (AstBinaryExpression) location;

@@ -23,7 +23,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  *
  */
 public class SymCondition {
-	
+
 	/* attributes */
 	/** either "assertion" or "observation" **/
 	private SymCategory category;
@@ -44,7 +44,7 @@ public class SymCondition {
 	 * @param parameter	symbolic expression or null if useless
 	 * @throws IllegalArgumentException
 	 */
-	private SymCondition(SymCategory category, SymOperator operator, CirExecution execution, 
+	private SymCondition(SymCategory category, SymOperator operator, CirExecution execution,
 			CirNode location, SymbolExpression parameter) throws IllegalArgumentException {
 		if(category == null)
 			throw new IllegalArgumentException("Invalid category: null");
@@ -62,7 +62,7 @@ public class SymCondition {
 			this.parameter = parameter;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return either "assertion" or "observation"
@@ -88,11 +88,11 @@ public class SymCondition {
 	 * @return whether parameter is used in this condition
 	 */
 	public boolean has_parameter() { return this.parameter != null; }
-	
+
 	/* compare */
 	@Override
 	public String toString() {
-		return this.category + "@" + this.operator + "@" + this.execution + 
+		return this.category + "@" + this.operator + "@" + this.execution +
 					"@" + this.location.get_node_id() + "@" + this.parameter;
 	}
 	@Override
@@ -106,7 +106,7 @@ public class SymCondition {
 		else
 			return false;
 	}
-	
+
 	/* factory methods */
 	/* constraints */
 	/**
@@ -123,7 +123,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid times: " + times);
 		}
 		else {
-			return new SymCondition(SymCategory.constraints, SymOperator.cov_stmt, execution, 
+			return new SymCondition(SymCategory.constraints, SymOperator.cov_stmt, execution,
 					execution.get_statement(), SymbolFactory.sym_constant(Integer.valueOf(times)));
 		}
 	}
@@ -153,7 +153,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_boolean(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.chg_bool, 
+			return new SymCondition(SymCategory.observation, SymOperator.chg_bool,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -170,7 +170,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_boolean(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_true, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_true,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -187,7 +187,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_boolean(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_fals, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_fals,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -205,8 +205,8 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_boolean(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_bool, 
-					SymCondition.execution_of(expression), expression, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_bool,
+					SymCondition.execution_of(expression), expression,
 					SymbolFactory.sym_condition(muta_value, true));
 		}
 		else {
@@ -224,11 +224,11 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.chg_numb, 
+			return new SymCondition(SymCategory.observation, SymOperator.chg_numb,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else if(SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.chg_addr, 
+			return new SymCondition(SymCategory.observation, SymOperator.chg_addr,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -245,7 +245,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_post, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_post,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -262,7 +262,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_negt, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_negt,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -279,7 +279,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_zero, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_zero,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -296,7 +296,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_npos, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_npos,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -313,7 +313,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_nneg, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_nneg,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -330,7 +330,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_nzro, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_nzro,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -348,8 +348,8 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_numb, 
-					SymCondition.execution_of(expression), expression, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_numb,
+					SymCondition.execution_of(expression), expression,
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -367,7 +367,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.chg_addr, 
+			return new SymCondition(SymCategory.observation, SymOperator.chg_addr,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -384,7 +384,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_null, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_null,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -401,7 +401,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_invp, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_invp,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -419,8 +419,8 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_addr, 
-					SymCondition.execution_of(expression), expression, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_addr,
+					SymCondition.execution_of(expression), expression,
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -438,7 +438,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_nonauto(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.chg_auto, 
+			return new SymCondition(SymCategory.observation, SymOperator.chg_auto,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -456,8 +456,8 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_nonauto(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.set_auto, 
-					SymCondition.execution_of(expression), expression, 
+			return new SymCondition(SymCategory.observation, SymOperator.set_auto,
+					SymCondition.execution_of(expression), expression,
 					SymbolFactory.sym_expression(muta_value));
 		}
 		else {
@@ -475,7 +475,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression) || SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.inc_scop, 
+			return new SymCondition(SymCategory.observation, SymOperator.inc_scop,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -492,7 +492,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression) || SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.dec_scop, 
+			return new SymCondition(SymCategory.observation, SymOperator.dec_scop,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -509,7 +509,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression) || SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.ext_scop, 
+			return new SymCondition(SymCategory.observation, SymOperator.ext_scop,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -526,7 +526,7 @@ public class SymCondition {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(SymCondition.is_numeric(expression) || SymCondition.is_address(expression)) {
-			return new SymCondition(SymCategory.observation, SymOperator.shk_scop, 
+			return new SymCondition(SymCategory.observation, SymOperator.shk_scop,
 					SymCondition.execution_of(expression), expression, null);
 		}
 		else {
@@ -545,7 +545,7 @@ public class SymCondition {
 		}
 		else {
 			return new SymCondition(SymCategory.observation, SymOperator.mut_expr,
-					SymCondition.execution_of(expression), expression, 
+					SymCondition.execution_of(expression), expression,
 					SymbolFactory.sym_expression(value));
 		}
 	}
@@ -636,7 +636,7 @@ public class SymCondition {
 					SymbolFactory.sym_expression(muta_flow.get_target()));
 		}
 	}
-	
+
 	/* expression categorized */
 	/**
 	 * @param expression
@@ -682,7 +682,7 @@ public class SymCondition {
 	}
 	/**
 	 * @param expression
-	 * @return 
+	 * @return
 	 * @throws Exception
 	 */
 	protected static boolean is_address(CirExpression expression) throws Exception {
@@ -719,5 +719,5 @@ public class SymCondition {
 		}
 		return null;
 	}
-	
+
 }

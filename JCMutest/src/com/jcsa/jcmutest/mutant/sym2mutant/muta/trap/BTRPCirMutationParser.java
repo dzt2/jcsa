@@ -13,17 +13,17 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 /**
  * condition == {true|false} --> trap_error()
- * 
+ *
  * @author yukimula
- * 
+ *
  */
 public class BTRPCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_end_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
@@ -38,5 +38,5 @@ public class BTRPCirMutationParser extends CirMutationParser {
 		SymStateError state_error = SymInstances.trap_error(statement);
 		infections.put(state_error, constraint);
 	}
-	
+
 }

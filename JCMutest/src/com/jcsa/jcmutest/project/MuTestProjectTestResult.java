@@ -15,12 +15,12 @@ import com.jcsa.jcparse.base.BitSequence;
  * 	3. kill_set: the matrix defines of which tests in exec_set killed the mutation.<br>
  * <br>
  * NOTE that: the kill-set is the subset of the exec-set.<br>
- * 
+ *
  * @author yukimula
  *
  */
 public class MuTestProjectTestResult {
-	
+
 	/* definitions */
 	/** the mutation that is executed against test cases **/
 	private Mutant mutant;
@@ -46,7 +46,7 @@ public class MuTestProjectTestResult {
 			this.kill_set = new BitSequence(number_of_tests);
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the mutation that is executed against test cases
@@ -64,7 +64,7 @@ public class MuTestProjectTestResult {
 	 * @return the matrix defines of which tests in exec_set killed the mutation
 	 */
 	public BitSequence get_kill_set() { return this.kill_set; }
-	
+
 	/* setters */
 	/**
 	 * exec_set			{101101...001011}
@@ -98,13 +98,13 @@ public class MuTestProjectTestResult {
 			MuTestProjectTestResult result = new MuTestProjectTestResult(mutant, number_of_tests);
 			String line = reader.readLine();
 			if(line != null)
-				parse(result.exec_set, line.strip());
+				parse(result.exec_set, line.trim());
 			else {
 				reader.close(); return null;
 			}
 			line = reader.readLine();
 			if(line != null)
-				parse(result.kill_set, line.strip());
+				parse(result.kill_set, line.trim());
 			else {
 				reader.close(); return null;
 			}
@@ -124,5 +124,5 @@ public class MuTestProjectTestResult {
 			}
 		}
 	}
-	
+
 }

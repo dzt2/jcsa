@@ -37,12 +37,12 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 /**
  * It provides the interfaces to extend the source mutation to its coverage,
  * weak and strong testing version in standard way.
- * 
+ *
  * @author yukimula
  *
  */
 public abstract class MutationExtension {
-	
+
 	/* extension methods */
 	/**
 	 * @param source source mutation being extended
@@ -74,12 +74,12 @@ public abstract class MutationExtension {
 			this.strong(source)
 		};
 	}
-	
+
 	/* utility methods */
 	/**
 	 * @param location
 	 * @return whether the type of the expression is numeric {bool, char, short, int, long, float,
-	 * 		   double, enum} such that it can be used as the 
+	 * 		   double, enum} such that it can be used as the
 	 * @throws Exception
 	 */
 	protected boolean is_numeric_expression(AstNode location) throws Exception {
@@ -89,7 +89,7 @@ public abstract class MutationExtension {
 		else if(location instanceof AstExpression) {
 			CType data_type = ((AstExpression) location).get_value_type();
 			data_type = CTypeAnalyzer.get_value_type(data_type);
-			
+
 			if(data_type instanceof CBasicType) {
 				switch(((CBasicType) data_type).get_tag()) {
 				case c_bool:
@@ -128,17 +128,17 @@ public abstract class MutationExtension {
 	 * incre_postfix_expression.operand
 	 * address_of_expression.operand
 	 * field_expression.body
-	 * 
+	 *
 	 * @param location
 	 * @return whether the expression is a left-reference
 	 * @throws Exception
 	 */
 	protected boolean is_left_reference(AstNode location) throws Exception {
 		if(location instanceof AstExpression) {
-			AstExpression expression = 
+			AstExpression expression =
 					CTypeAnalyzer.get_expression_of((AstExpression) location);
 			AstNode parent = CTypeAnalyzer.get_parent_of_expression(expression);
-			
+
 			if(parent instanceof AstAssignExpression
 				|| parent instanceof AstArithAssignExpression
 				|| parent instanceof AstBitwiseAssignExpression
@@ -198,13 +198,13 @@ public abstract class MutationExtension {
 		while(this.is_left_reference(location)) {
 			location = location.get_parent();
 		}
-		
+
 		if(location instanceof AstExpression) {
 			AstExpression expression = (AstExpression) location;
 			expression = CTypeAnalyzer.get_expression_of(expression);
 			AstNode[] statement_child = this.statement_context(expression);
 			AstStatement statement = (AstStatement) statement_child[0];
-			
+
 			if(statement instanceof AstCaseStatement) {
 				return AstMutations.trap_on_statement(statement);
 			}
@@ -234,7 +234,7 @@ public abstract class MutationExtension {
 				if(parent instanceof AstForStatement) {
 					if(((AstForStatement) parent).get_initializer() == statement) {
 						/* covering the condition of the for-statement */
-						return this.coverage_mutation(parent);	
+						return this.coverage_mutation(parent);
 					}
 					else {
 						return AstMutations.trap_on_statement(statement);
@@ -264,7 +264,7 @@ public abstract class MutationExtension {
 			}
 			else if(statement instanceof AstCompoundStatement) {
 				if(((AstCompoundStatement) statement).has_statement_list()) {
-					return this.coverage_mutation(((AstCompoundStatement) 
+					return this.coverage_mutation(((AstCompoundStatement)
 							statement).get_statement_list().get_statement(0));
 				}
 				else {
@@ -310,7 +310,7 @@ public abstract class MutationExtension {
 			throw new IllegalArgumentException("Unsupport: " + location);
 		}
 	}
-	
-	
-	
+
+
+
 }

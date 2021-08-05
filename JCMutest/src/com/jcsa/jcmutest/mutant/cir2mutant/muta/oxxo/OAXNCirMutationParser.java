@@ -21,11 +21,11 @@ public class OAXNCirMutationParser extends CirMutationParser {
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
-		CirComputeExpression expression = (CirComputeExpression) 
+		CirComputeExpression expression = (CirComputeExpression)
 				this.get_cir_expression(cir_tree, mutation.get_location());
 		CirExpression loperand = expression.get_operand(0);
 		CirExpression roperand = expression.get_operand(1);
-		CirOperatorParsers.generate_infections(mutation, 
+		CirOperatorParsers.generate_infections(mutation,
 				statement, expression, loperand, roperand, infections);
 	}
 

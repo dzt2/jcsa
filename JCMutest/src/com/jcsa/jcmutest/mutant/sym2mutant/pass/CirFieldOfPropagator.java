@@ -27,9 +27,9 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 		/* 1. declarations */
 		CirFieldExpression target = (CirFieldExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymConstraint constraint; SymStateError state_error; 
+		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		/* 2. check the operand */
 		if(source == target.get_body()) {
 			/* 3. construct the target error */
@@ -46,7 +46,7 @@ public class CirFieldOfPropagator implements CirErrorPropagator {
 			else {
 				state_error = null;
 			}
-			
+
 			/* 4. generate constraint-error pair */
 			if(state_error != null) {
 				constraint = SymInstances.expr_constraint(

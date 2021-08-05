@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
  * trap_on_true(condition)|trap_on_statement(body)
  * trap_for_time(loop_statement, loop_time)
  * trap_for_time(loop_statement, loop_time)
- * 
+ *
  * @author yukimula
  *
  */
@@ -38,7 +38,7 @@ public class TTRPMutationExtension extends MutationExtension {
 		else {
 			AstForStatement statement = (AstForStatement) location;
 			if(statement.get_condition().has_expression()) {
-				AstExpression condition = 
+				AstExpression condition =
 							statement.get_condition().get_expression();
 				condition = CTypeAnalyzer.get_expression_of(condition);
 				return AstMutations.trap_on_true(condition);

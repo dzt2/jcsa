@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class UNOICirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_cir_expression(cir_tree, mutation.get_location()).statement_of();
@@ -26,7 +26,7 @@ public class UNOICirMutationParser extends CirMutationParser {
 		CirExpression expression = this.get_cir_expression(cir_tree, mutation.get_location());
 		CirAttribute constraint; CirExecution execution = statement.execution_of();
 		CirAttribute state_error; SymbolExpression condition, muta_value;
-		
+
 		switch(mutation.get_operator()) {
 		case insert_arith_neg:
 		{
@@ -89,5 +89,5 @@ public class UNOICirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 	}
-	
+
 }

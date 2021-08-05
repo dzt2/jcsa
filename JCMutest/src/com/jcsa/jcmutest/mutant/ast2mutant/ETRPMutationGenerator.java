@@ -11,21 +11,21 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 /**
  * 	trap_on_expression(expression);
- * 	
+ *
  * 	@author yukimula
  *
  */
 public class ETRPMutationGenerator extends MutationGenerator {
-	
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception { }
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		return this.is_numeric_expression(location)
 				&& !this.is_left_reference(location);
 	}
-	
+
 	@Override
 	protected void generate(AstNode location, List<AstMutation> mutations) throws Exception {
 		AstExpression expression = (AstExpression) location;

@@ -14,16 +14,16 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirTypeCastPropagator implements CirErrorPropagator {
-	
+
 	@Override
 	public void propagate(SymStateError error, CirNode source_location,
 			CirNode target_location, Map<SymStateError, SymConstraint> propagations) throws Exception {
 		/* 1. declarations */
 		CirCastExpression target = (CirCastExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymConstraint constraint; SymStateError state_error; 
+		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		if(source == target.get_operand()) {
 			/* 2. determine the muta_operand */
 			if(error instanceof SymExpressionError) {
@@ -35,7 +35,7 @@ public class CirTypeCastPropagator implements CirErrorPropagator {
 			else {
 				muta_operand = null;
 			}
-			
+
 			/* 3. construct the constraint-error pair */
 			if(muta_operand != null) {
 				constraint = SymInstances.expr_constraint(
@@ -47,5 +47,5 @@ public class CirTypeCastPropagator implements CirErrorPropagator {
 			}
 		}
 	}
-	
+
 }

@@ -22,9 +22,9 @@ public class CirSetArithDivParser extends CirOperatorParser {
 					COperator.equal_with, this.loperand, Integer.valueOf(0)));
 			init_error = this.trap_statement();
 			this.add_infection(constraint, init_error);
-			
+
 			constraint = this.get_constraint(this.sym_expression(
-					COperator.not_equals, this.loperand, Integer.valueOf(0))); 
+					COperator.not_equals, this.loperand, Integer.valueOf(0)));
 			init_error = this.set_expression(this.roperand);
 		}
 		return this.add_infection(constraint, init_error);
@@ -70,8 +70,8 @@ public class CirSetArithDivParser extends CirOperatorParser {
 		 * [x != 0 && y != 1 && y != -1]
 		 */
 		CirAttribute constraint; CirAttribute init_error; SymbolExpression condition;
-		List<CirAttribute> constraints = new ArrayList<CirAttribute>();
-		
+		List<CirAttribute> constraints = new ArrayList<>();
+
 		condition = this.sym_expression(COperator.not_equals, loperand, Integer.valueOf(0));
 		constraints.add(this.get_constraint(condition));
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(1));
@@ -79,7 +79,7 @@ public class CirSetArithDivParser extends CirOperatorParser {
 		condition = this.sym_expression(COperator.not_equals, roperand, Integer.valueOf(-1));
 		constraints.add(this.get_constraint(condition));
 		constraint = this.conjunct(constraints);
-		
+
 		if(this.compare_or_mutate) {
 			init_error = this.trap_statement();
 		}

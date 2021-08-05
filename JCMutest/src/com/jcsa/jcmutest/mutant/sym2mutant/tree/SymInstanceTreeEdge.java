@@ -8,12 +8,12 @@ import com.jcsa.jcmutest.mutant.sym2mutant.base.SymInstance;
 
 /**
  * The edge linking the tree node in symbolic instance tree for killing a mutant.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymInstanceTreeEdge extends SymInstanceContent {
-	
+
 	/* definitions */
 	private SymInstanceTreeNode source, target;
 	protected SymInstanceTreeEdge(SymInstanceTreeNode source, SymInstanceTreeNode target, SymInstance edge_instance) throws Exception {
@@ -24,7 +24,7 @@ public class SymInstanceTreeEdge extends SymInstanceContent {
 			throw new IllegalArgumentException("Invalid target: null");
 		else { this.source = source; this.target = target; }
 	}
-	
+
 	/* getters */
 	/**
 	 * @return the parent of the edge
@@ -34,7 +34,7 @@ public class SymInstanceTreeEdge extends SymInstanceContent {
 	 * @return the child of this edge
 	 */
 	public SymInstanceTreeNode get_target() { return this.target; }
-	
+
 	/* inference */
 	/**
 	 * @return whether the edge referring to an infection edge (constraint-error pair)
@@ -44,7 +44,7 @@ public class SymInstanceTreeEdge extends SymInstanceContent {
 	}
 	@Override
 	public List<SymInstanceTreeEdge> get_prev_path() {
-		List<SymInstanceTreeEdge> path = new ArrayList<SymInstanceTreeEdge>();
+		List<SymInstanceTreeEdge> path = new ArrayList<>();
 		SymInstanceTreeEdge edge = this;
 		while(edge != null) {
 			path.add(edge);
@@ -61,8 +61,8 @@ public class SymInstanceTreeEdge extends SymInstanceContent {
 	private void get_post_paths(List<SymInstanceTreeEdge> prev_path, Collection<List<SymInstanceTreeEdge>> post_paths) {
 		prev_path.add(this);
 		if(this.target.is_leaf()) {
-			List<SymInstanceTreeEdge> copy_path = new ArrayList<SymInstanceTreeEdge>();
-			copy_path.addAll(prev_path); 
+			List<SymInstanceTreeEdge> copy_path = new ArrayList<>();
+			copy_path.addAll(prev_path);
 			post_paths.add(copy_path);
 		}
 		else {
@@ -74,9 +74,9 @@ public class SymInstanceTreeEdge extends SymInstanceContent {
 	}
 	@Override
 	public Collection<List<SymInstanceTreeEdge>> get_post_paths() {
-		Collection<List<SymInstanceTreeEdge>> post_paths = new ArrayList<List<SymInstanceTreeEdge>>();
+		Collection<List<SymInstanceTreeEdge>> post_paths = new ArrayList<>();
 		this.get_post_paths(new ArrayList<SymInstanceTreeEdge>(), post_paths);
 		return post_paths;
 	}
-	
+
 }

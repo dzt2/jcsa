@@ -8,28 +8,28 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * Symbolic constraint is a symbolic expression (boolean) evaluated at some point of the program.
- * 
+ *
  * @author yukimula
  *
  */
 public class SymConstraint extends SymInstance {
-	
+
 	/** the symbolic condition being evaluated at the statement point **/
 	private SymbolExpression condition;
-	
+
 	/**
 	 * @param execution
 	 * @param condition
 	 * @throws IllegalArgumentException
 	 */
-	protected SymConstraint(CirExecution execution, 
+	protected SymConstraint(CirExecution execution,
 			SymbolExpression condition) throws IllegalArgumentException {
 		super(SymInstanceType.constraint, execution);
 		if(condition == null)
 			throw new IllegalArgumentException("Invalid condition: null");
 		this.condition = condition;
 	}
-	
+
 	/**
 	 * @return the symbolic condition being evaluated at the statement point
 	 */
@@ -50,5 +50,5 @@ public class SymConstraint extends SymInstance {
 			return null;	/* Undecidable */
 		}
 	}
-	
+
 }

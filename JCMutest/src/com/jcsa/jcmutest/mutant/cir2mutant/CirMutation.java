@@ -12,16 +12,16 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 /**
  * It denotes a basic infection channel with two attributes, said constraint
  * (or precondition) and initial state error (post-condition).
- * 
+ *
  * @author yukimula
  *
  */
 public class CirMutation {
-	
+
 	/* definitions */
 	private CirAttribute constraint;
 	private CirAttribute init_error;
-	public CirMutation(CirAttribute constraint, CirAttribute 
+	public CirMutation(CirAttribute constraint, CirAttribute
 				init_error) throws IllegalArgumentException {
 		if(constraint == null || !constraint.is_constraint()) {
 			throw new IllegalArgumentException("Invalid constraint: " + constraint);
@@ -33,7 +33,7 @@ public class CirMutation {
 			this.constraint = constraint; this.init_error = init_error;
 		}
 	}
-	
+
 	/* getters */
 	/**
 	 * @return state infection condition to infect
@@ -47,7 +47,7 @@ public class CirMutation {
 	 * @return where the mutation is introduced and evaluated
 	 */
 	public CirExecution get_execution() { return this.init_error.get_execution(); }
-	
+
 	/* universal */
 	@Override
 	public String toString() { return this.constraint + " :: " + this.init_error; }
@@ -65,7 +65,7 @@ public class CirMutation {
 			return false;
 		}
 	}
-	
+
 	/* classifiers */
 	public static boolean is_boolean(CirExpression expression) {
 		if(expression == null) {
@@ -86,7 +86,7 @@ public class CirMutation {
 						return false;
 					}
 				} catch (Exception e) {
-					e.printStackTrace();	
+					e.printStackTrace();
 					return false;
 				}
 			}
@@ -106,7 +106,7 @@ public class CirMutation {
 					return false;
 				}
 			} catch (Exception e) {
-				e.printStackTrace();	
+				e.printStackTrace();
 				return false;
 			}
 		}
@@ -125,7 +125,7 @@ public class CirMutation {
 					return false;
 				}
 			} catch (Exception e) {
-				e.printStackTrace();	
+				e.printStackTrace();
 				return false;
 			}
 		}
@@ -144,10 +144,10 @@ public class CirMutation {
 					return false;
 				}
 			} catch (Exception e) {
-				e.printStackTrace();	
+				e.printStackTrace();
 				return false;
 			}
 		}
 	}
-	
+
 }

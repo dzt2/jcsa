@@ -13,16 +13,16 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class SWDRCirMutationParser extends CirMutationParser {
-	
+
 	@Override
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	private void while_to_do_while(CirTree cir_tree,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		/* constraint: true_branch execute at least 1 times */
-		CirIfStatement if_statement = (CirIfStatement) 
+		CirIfStatement if_statement = (CirIfStatement)
 				this.get_cir_node(cir_tree, mutation.get_location(), CirIfStatement.class);
 		CirExecution if_execution = cir_tree.get_localizer().get_execution(if_statement);
 		CirExecution true_branch = null;
@@ -33,37 +33,37 @@ public class SWDRCirMutationParser extends CirMutationParser {
 			}
 		}
 		CirAttribute constraint = CirAttribute.new_cover_count(true_branch, 1);
-		
+
 		/* beg_stmt.before --> end_stmt */
 		CirStatement beg_statement = this.get_beg_statement(cir_tree, mutation.get_location());
 		CirStatement end_statement = this.get_end_statement(cir_tree, mutation.get_location());
 		CirExecution beg_execution = cir_tree.get_localizer().get_execution(beg_statement);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
-		
+
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(
 				beg_execution.get_in_flow(0).get_source(), end_execution);
 		CirAttribute state_error = CirAttribute.new_flows_error(orig_flow, muta_flow);
-		
+
 		infections.put(state_error, constraint);
 	}
-	
+
 	private void do_while_to_while(CirTree cir_tree,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
 		CirStatement beg_statement = this.get_beg_statement(cir_tree, mutation.get_location());
 		CirExecution beg_execution = cir_tree.get_localizer().get_execution(beg_statement);
 		CirExecutionFlow orig_flow = beg_execution.get_in_flow(0);
-		
-		CirStatement end_statement = (CirStatement) 
+
+		CirStatement end_statement = (CirStatement)
 				this.get_cir_node(cir_tree, mutation.get_location(), CirIfStatement.class);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
-		
+
 		CirAttribute constraint = CirAttribute.new_cover_count(beg_execution, 1);
 		CirAttribute init_error = CirAttribute.new_flows_error(orig_flow, muta_flow);
 		infections.put(init_error, constraint);
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<CirAttribute, CirAttribute> infections) throws Exception {
@@ -73,5 +73,5 @@ public class SWDRCirMutationParser extends CirMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 	}
-	
+
 }

@@ -23,11 +23,11 @@ public class UIOICirMutationParser extends CirMutationParser {
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
-		CirReferExpression reference = (CirReferExpression) 
+		CirReferExpression reference = (CirReferExpression)
 				this.get_cir_expression(cir_tree, mutation.get_location());
 		SymbolExpression muta_expression;
 		SymConstraint constraint = SymInstances.expr_constraint(statement, Boolean.TRUE, true);
-		
+
 		switch(mutation.get_operator()) {
 		case insert_post_inc:
 		{

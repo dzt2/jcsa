@@ -19,7 +19,7 @@ public class STDLCirMutationParser extends CirMutationParser {
 	protected CirStatement get_location(CirTree cir_tree, AstMutation mutation) throws Exception {
 		return this.get_beg_statement(cir_tree, mutation.get_location());
 	}
-	
+
 	/**
 	 * @param statement
 	 * @param location
@@ -41,7 +41,7 @@ public class STDLCirMutationParser extends CirMutationParser {
 			return false;
 		}
 	}
-	
+
 	@Override
 	protected void generate_infections(CirTree cir_tree, CirStatement statement,
 			AstMutation mutation, Map<SymStateError, SymConstraint> infections) throws Exception {
@@ -49,18 +49,18 @@ public class STDLCirMutationParser extends CirMutationParser {
 		CirStatement end_statement = this.get_end_statement(cir_tree, mutation.get_location());
 		CirExecution beg_execution = cir_tree.get_localizer().get_execution(beg_statement);
 		CirExecution end_execution = cir_tree.get_localizer().get_execution(end_statement);
-		
+
 		if(this.in_location(beg_statement, mutation.get_location())) {
 			beg_execution = beg_execution.get_in_flow(0).get_source();
 		}
 		if(this.in_location(end_statement, mutation.get_location())) {
 			end_execution = end_execution.get_ou_flow(0).get_target();
 		}
-		
+
 		CirExecutionFlow orig_flow = beg_execution.get_ou_flow(0);
 		CirExecutionFlow muta_flow = CirExecutionFlow.virtual_flow(beg_execution, end_execution);
 		SymStateError state_error = SymInstances.flow_error(orig_flow, muta_flow);
-		
+
 		infections.put(state_error, SymInstances.expr_constraint(beg_statement, Boolean.TRUE, true));
 	}
 

@@ -12,10 +12,10 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public class UNOIMutationGenerator extends MutationGenerator {
-	
+
 	@Override
 	protected void initialize(AstFunctionDefinition function, Iterable<AstNode> locations) throws Exception { }
-	
+
 	@Override
 	protected boolean available(AstNode location) throws Exception {
 		if(location instanceof AstExpression) {

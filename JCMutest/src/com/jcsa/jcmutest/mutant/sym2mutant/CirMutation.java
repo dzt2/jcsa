@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CirMutation {
-	
+
 	/* definitions */
 	/** the constraint that needs to be satisfied for killing mutation **/
 	private SymConstraint constraint;
@@ -17,7 +17,7 @@ public class CirMutation {
 	 * @param state_error that is expected to occur for killing mutation
 	 * @throws Exception
 	 */
-	public CirMutation(SymConstraint constraint, 
+	public CirMutation(SymConstraint constraint,
 			SymStateError state_error) throws Exception {
 		if(constraint == null)
 			throw new IllegalArgumentException("Invalid constraint: null");
@@ -28,7 +28,7 @@ public class CirMutation {
 			this.state_error = state_error;
 		}
 	}
-	
+
 	/* getters */
 	public CirExecution get_execution() { return this.state_error.get_execution(); }
 	/**
@@ -44,7 +44,7 @@ public class CirMutation {
 	 */
 	public SymStateError get_state_error() { return this.state_error; }
 	@Override
-	public String toString() { 
+	public String toString() {
 		return this.constraint.toString() + " ==> " + this.state_error.toString();
 	}
 	@Override
@@ -60,5 +60,5 @@ public class CirMutation {
 		else
 			return false;
 	}
-	
+
 }

@@ -21,9 +21,9 @@ public class CirArithNegPropagator implements CirErrorPropagator {
 		/* 1. declarations */
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
-		SymConstraint constraint; SymStateError state_error; 
+		SymConstraint constraint; SymStateError state_error;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		
+
 		if(source == target.get_operand(0)) {
 			/* 2. obtain the muta-operand */
 			if(error instanceof SymExpressionError) {
@@ -35,7 +35,7 @@ public class CirArithNegPropagator implements CirErrorPropagator {
 			else {
 				muta_operand = null;
 			}
-			
+
 			/* 3. construct the muta_value */
 			if(muta_operand != null) {
 				muta_value = SymbolFactory.arith_neg(muta_operand);

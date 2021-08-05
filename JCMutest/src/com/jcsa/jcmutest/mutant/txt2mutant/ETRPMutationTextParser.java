@@ -6,9 +6,9 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
 public class ETRPMutationTextParser extends MutationTextParser {
-	
+
 	private static final String template = "(jcm_trap_on_expr(%s))";
-	
+
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();

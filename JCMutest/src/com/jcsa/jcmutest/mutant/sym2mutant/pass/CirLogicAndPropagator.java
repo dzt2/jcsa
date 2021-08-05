@@ -20,8 +20,8 @@ public class CirLogicAndPropagator implements CirErrorPropagator {
 		CirComputeExpression target = (CirComputeExpression) target_location;
 		CirExpression source = (CirExpression) source_location;
 		SymbolExpression muta_operand; SymbolExpression muta_value;
-		SymConstraint constraint; SymStateError state_error; 
-		
+		SymConstraint constraint; SymStateError state_error;
+
 		if(error instanceof SymExpressionError) {
 			muta_operand = ((SymExpressionError) error).get_mutation_value();
 		}
@@ -31,15 +31,15 @@ public class CirLogicAndPropagator implements CirErrorPropagator {
 		else {
 			return;
 		}
-		
+
 		if(source == target.get_operand(0)) {
 			constraint = SymInstances.expr_constraint(
-					target.statement_of(), 
+					target.statement_of(),
 					target.get_operand(1), true);
 		}
 		else if(source == target.get_operand(1)) {
 			constraint = SymInstances.expr_constraint(
-					target.statement_of(), 
+					target.statement_of(),
 					target.get_operand(0), true);
 		}
 		else {
@@ -47,7 +47,7 @@ public class CirLogicAndPropagator implements CirErrorPropagator {
 		}
 		muta_value = muta_operand;
 		state_error = SymInstances.expr_error(target, muta_value);
-		
+
 		propagations.put(state_error, constraint);
 	}
 
