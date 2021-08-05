@@ -992,9 +992,11 @@ public class MuTestProjectFeatureWriter {
 			this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
 			System.out.println("\t==> Select " + test_cases.size() + " test cases to evaluate.");
 			
+			int counter = 0;
 			for(TestInput test_case : test_cases) {
 				lines += this.write_cir_mutation_trees(test_case);
-				System.out.println("\t\tComplete evaluation on test#" + test_case.get_id());
+				System.out.println("\t\tComplete evaluation on test#" + test_case.get_id()
+						+ "\tprocess[" + (++counter) + "/" + test_cases.size() + "]");
 			}
 		}
 		this.close();
