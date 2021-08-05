@@ -27,7 +27,7 @@ public class MuTestprojectFeatureWriting {
 
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, false);
+			testing(root, true);
 		}
 	}
 	

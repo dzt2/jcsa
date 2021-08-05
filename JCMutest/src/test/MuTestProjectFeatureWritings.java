@@ -20,8 +20,8 @@ import com.jcsa.jcparse.test.file.TestInput;
 public class MuTestProjectFeatureWritings {
 
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
-	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features/";
-	private static final int max_distance = 1;
+	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features2/";
+	private static final int max_distance = 0;
 	private static final double random_test_ratio = 0.008;
 	private static final int min_test_number = 28;
 	private static final Random random = new Random(System.currentTimeMillis());

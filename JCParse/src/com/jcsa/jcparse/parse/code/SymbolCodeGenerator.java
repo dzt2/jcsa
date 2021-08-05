@@ -154,6 +154,8 @@ public class SymbolCodeGenerator {
 	private void gen_identifier(SymbolIdentifier node) throws Exception {
 		String name = node.get_name();
 		int index = name.indexOf('#');
+		if(index < 0) { this.buffer.append(name); return; }
+		
 		String base = name.substring(0, index).trim();
 		String bias = name.substring(index + 1).trim();
 		Object source = node.get_source();

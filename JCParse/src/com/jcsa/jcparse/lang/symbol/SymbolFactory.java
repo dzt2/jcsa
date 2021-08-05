@@ -436,7 +436,7 @@ public class SymbolFactory {
 			type = ((CPointerType) type).get_pointed_type();
 		}
 		else {
-			throw new IllegalArgumentException(type.generate_code());
+			type = type_factory.get_pointer_type(CBasicTypeImpl.void_type);
 		}
 		type = CTypeAnalyzer.get_value_type(type);
 		return SymbolUnaryExpression.create(type, SymbolOperator.

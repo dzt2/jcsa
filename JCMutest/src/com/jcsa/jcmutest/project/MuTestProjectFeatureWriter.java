@@ -986,16 +986,21 @@ public class MuTestProjectFeatureWriter {
 		int lines = 0;
 		if(test_cases == null || test_cases.isEmpty()) {
 			lines += this.write_cir_mutation_trees(dependence_graph);
+			System.out.println("\t\tComplete dependence graph based evaluation.");
 		}
 		else {
+			this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
+			System.out.println("\t==> Select " + test_cases.size() + " test cases to evaluate.");
+			
 			for(TestInput test_case : test_cases) {
 				lines += this.write_cir_mutation_trees(test_case);
+				System.out.println("\t\tComplete evaluation on test#" + test_case.get_id());
 			}
 		}
 		this.close();
 		this.open(".sym"); this.write_sym_nodes(); this.close();
 		/* print information to console for debugging */
-		System.out.println("\t\tTODO create " + lines + " trees and " + this.symbol_nodes.size() + " symbolic nodes.");
+		System.out.println("\tcreate " + lines + " trees and " + this.symbol_nodes.size() + " symbolic nodes.");
 	}
 	
 	/* public interfaces for writing */
