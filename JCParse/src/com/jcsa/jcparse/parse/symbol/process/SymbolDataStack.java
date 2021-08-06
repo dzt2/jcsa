@@ -56,7 +56,15 @@ public class SymbolDataStack {
 			return ret_block;
 		}
 		else {
-			throw new IllegalArgumentException("Unmatcked key: " + key);
+			SymbolDataBlock check_block = this.top;
+			while(check_block != null) {
+				if(check_block.get_block_key() == key) {
+					this.top = check_block;
+					return check_block;
+				}
+				check_block = check_block.get_parent();
+			}
+			return this.top;
 		}
 	}
 	/**

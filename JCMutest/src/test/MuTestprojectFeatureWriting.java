@@ -37,7 +37,7 @@ public class MuTestprojectFeatureWriting {
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
 		String[] file_names = new String[] {
-			"bi_search", "check_date", "is_prime", "days", "medium", "minmax", 
+			"check_date", "is_prime", "days", "medium", "minmax", 
 			"prime_factor", "profit", "quick_sort", "tcas", "triangle"
 		};
 		for(String file_name : file_names) {
