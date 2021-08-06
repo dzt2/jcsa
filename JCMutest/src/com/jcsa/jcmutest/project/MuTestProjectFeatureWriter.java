@@ -1024,7 +1024,13 @@ public class MuTestProjectFeatureWriter {
 				Collection<CirMutationTree> trees = new ArrayList<CirMutationTree>();
 				for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 					if(this.is_reached(test_case, mutant, test_space)) {
-						CirMutationTree tree = CirMutationTree.new_tree(mutant, dependence_graph);
+						CirMutationTree tree;
+						try {
+							tree = CirMutationTree.new_tree(mutant, dependence_graph);
+						}
+						catch(Exception ex) {
+							continue;
+						}
 						trees.add(tree);
 					}
 				}

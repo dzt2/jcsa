@@ -25,14 +25,15 @@ public class MuTestprojectFeatureWriting {
 	private static final int min_test_number = 24;
 	private static final int max_infected_times = 3;
 	private static final Random random = new Random(System.currentTimeMillis());
-
+	
 	public static void main(String[] args) throws Exception {
 		/** static features **/
+		/*
 		result_dir = "/home/dzt2/Development/Data/zexp/features_s/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
-		
+		*/
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
 		String[] file_names = new String[] {
