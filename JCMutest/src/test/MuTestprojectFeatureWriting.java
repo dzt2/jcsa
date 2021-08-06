@@ -21,14 +21,19 @@ public class MuTestprojectFeatureWriting {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
 	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features/";
-	private static final double random_test_ratio = 0.008;
+	private static final double random_test_ratio = 0.005;
 	private static final int min_test_number = 24;
+	private static final int max_infected_times = 3;
 	private static final Random random = new Random(System.currentTimeMillis());
 
 	public static void main(String[] args) throws Exception {
+		/*
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, true);
+			testing(root, false);
 		}
+		*/
+		String file_name = "bi_search";
+		testing(new File(root_path + file_name), true);
 	}
 	
 	/* testing functions */
@@ -56,7 +61,7 @@ public class MuTestprojectFeatureWriting {
 		else { test_cases = null; }		/* no test case is used for dynamic generation */
 
 		/* 3. Generate feature information to output directory finally */
-		MuTestProjectFeatureWriter.write_features(code_file, output_directory, test_cases);
+		MuTestProjectFeatureWriter.write_features(code_file, output_directory, test_cases, max_infected_times);
 		System.out.println();
 	}
 	

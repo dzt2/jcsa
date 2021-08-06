@@ -368,11 +368,9 @@ public class SymbolFactory {
 		else if(type instanceof CEnumType) {
 			type = CBasicTypeImpl.int_type;
 		}
-		else if(type instanceof CUnionType) {
-
-		}
 		else {
-			throw new IllegalArgumentException(type.generate_code());
+			/* casting invalid type into integer */
+			type = CBasicTypeImpl.long_type;
 		}
 
 		return SymbolUnaryExpression.create(type, SymbolOperator.create(COperator.bit_not), expression);

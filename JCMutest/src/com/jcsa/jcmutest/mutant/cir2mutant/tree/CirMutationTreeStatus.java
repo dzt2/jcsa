@@ -40,10 +40,10 @@ public class CirMutationTreeStatus {
 		}
 		else {
 			this.attribute = attribute;
-			this.evaluation_results = new ArrayList<>();
-			this.concrete_attributes = new ArrayList<>();
-			this.concrete_annotations = new HashSet<>();
-			this.abstract_annotations = new HashSet<>();
+			this.evaluation_results = new ArrayList<Boolean>();
+			this.concrete_attributes = new ArrayList<CirAttribute>();
+			this.concrete_annotations = new HashSet<CirAnnotation>();
+			this.abstract_annotations = new HashSet<CirAnnotation>();
 		}
 	}
 
@@ -135,6 +135,18 @@ public class CirMutationTreeStatus {
 				if(!result.booleanValue()) {
 					counter++;
 				}
+			}
+		}
+		return counter;
+	}
+	/**
+	 * @return the number of attribute being accepted or likely be acceptable
+	 */
+	public int number_of_acceptable() {
+		int counter = 0;
+		for(Boolean result : this.evaluation_results) {
+			if(result == null || result.booleanValue()) {
+				counter++;
 			}
 		}
 		return counter;

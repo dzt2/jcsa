@@ -2,8 +2,8 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+
 
 public class CirMutationTreeNode {
 
@@ -135,5 +135,5 @@ public class CirMutationTreeNode {
 			return edge;
 		}
 	}
-
+	
 }

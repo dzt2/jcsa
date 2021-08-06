@@ -16,7 +16,12 @@ public class CirConstraint extends CirAttribute {
 	@Override
 	public CirAttribute optimize(SymbolProcess context) throws Exception {
 		SymbolExpression condition = this.get_parameter();
-		condition = SymbolEvaluator.evaluate_on(condition, context);
+		try {
+			condition = SymbolEvaluator.evaluate_on(condition, context);
+		}
+		catch(Exception ex) {
+			return CirAttribute.new_constraint(get_execution(), Boolean.TRUE, true);
+		}
 		if(condition instanceof SymbolConstant) {
 			if(((SymbolConstant) condition).get_bool()) {
 				return CirAttribute.new_cover_count(get_execution(), 1);
@@ -33,7 +38,12 @@ public class CirConstraint extends CirAttribute {
 	@Override
 	public Boolean evaluate(SymbolProcess context) throws Exception {
 		SymbolExpression condition = this.get_parameter();
-		condition = SymbolEvaluator.evaluate_on(condition, context);
+		try {
+			condition = SymbolEvaluator.evaluate_on(condition, context);
+		}
+		catch(Exception ex) {
+			return Boolean.TRUE;
+		}
 		if(condition instanceof SymbolConstant) {
 			return ((SymbolConstant) condition).get_bool();
 		}

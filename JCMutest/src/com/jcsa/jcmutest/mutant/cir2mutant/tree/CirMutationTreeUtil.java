@@ -753,9 +753,10 @@ class CirMutationTreeUtil {
 	/**
 	 * @param tree
 	 * @param context null|CDependGraph|CStatePath
+	 * @return the set of edges from state infection constraint to initial error for each CirMutation in tree's mutant.
 	 * @throws Exception
 	 */
-	protected void construct_mutation_tree_in(CirMutationTree tree, Object context) throws Exception {
+	protected Collection<CirMutationTreeEdge> construct_mutation_tree_in(CirMutationTree tree, Object context) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
 		}
@@ -797,6 +798,7 @@ class CirMutationTreeUtil {
 			for(CirMutationTreeEdge infect_edge : infect_edges) {
 				this.create_propagation_tree(infect_edge.get_target());
 			}
+			return infect_edges;
 		}
 	}
 
@@ -936,7 +938,6 @@ class CirMutationTreeUtil {
 			}
 		}
 	}
-
 	/**
 	 * @param execution
 	 * @param expression
@@ -1838,56 +1839,6 @@ class CirMutationTreeUtil {
 				abstract_annotations.add(CirAnnotation.shk_scop(expression));
 			}
 			else { }
-		}
-	}
-	
-	/* evaluation methods */
-	/**
-	 * @param tree
-	 * @throws Exception
-	 */
-	private void upon_evaluate(CirMutationTree tree) throws Exception {
-		Set<CirMutationTreeNode> prev_nodes = new HashSet<CirMutationTreeNode>();
-		for(CirMutationTreeEdge edge : tree.get_infection_edges()) {
-			CirMutationTreeNode prev_node = edge.get_source().get_parent();
-			while(prev_node != null) {
-				prev_nodes.add(prev_node);
-				prev_node = prev_node.get_parent();
-			}
-		}
-		for(CirMutationTreeNode prev_node : prev_nodes) {
-			prev_node.get_status().add(null);
-		}
-	}
-	/**
-	 * recursively evaluate the attribute in node using context information
-	 * @param node
-	 * @param context
-	 * @throws Exception
-	 */
-	private void down_evaluate(CirMutationTreeNode node, SymbolProcess context) throws Exception {
-		Boolean result = node.get_status().add(context);
-		if(result == null || result.booleanValue()) {
-			for(CirMutationTreeEdge edge : node.get_ou_edges()) {
-				this.down_evaluate(edge.get_target(), context);
-			}
-		}
-	}
-	/**
-	 * perform evaluation from infection-node to the entire of the tree edges
-	 * @param tree
-	 * @param context
-	 * @throws Exception
-	 */
-	protected void evaluate_at(CirMutationTree tree, SymbolProcess context) throws Exception {
-		if(tree == null) {
-			throw new IllegalArgumentException("Invalid tree as null");
-		}
-		else {
-			this.upon_evaluate(tree);
-			for(CirMutationTreeEdge edge : tree.get_infection_edges()) {
-				this.down_evaluate(edge.get_source(), context);
-			}
 		}
 	}
 	
