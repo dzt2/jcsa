@@ -20,21 +20,30 @@ import com.jcsa.jcparse.test.file.TestInput;
 public class MuTestprojectFeatureWriting {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
-	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features2/";
+	private static String result_dir = "/home/dzt2/Development/Data/zexp/features2/";
 	private static final double random_test_ratio = 0.005;
 	private static final int min_test_number = 24;
 	private static final int max_infected_times = 3;
 	private static final Random random = new Random(System.currentTimeMillis());
 
 	public static void main(String[] args) throws Exception {
+		/** static features **/
 		/*
+		result_dir = "/home/dzt2/Development/Data/zexp/features_s/";
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, true);
+			testing(root, false);
 		}
 		*/
 		
-		String file_name = "bi_search";
-		testing(new File(root_path + file_name), true);
+		/** dynamic features **/
+		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
+		String[] file_names = new String[] {
+			"bi_search", "check_date", "is_prime", "days", "medium", "minmax", 
+			"prime_factor", "profit", "quick_sort", "tcas", "triangle"
+		};
+		for(String file_name : file_names) {
+			testing(new File(root_path + file_name), true);
+		}
 	}
 	
 	/* testing functions */

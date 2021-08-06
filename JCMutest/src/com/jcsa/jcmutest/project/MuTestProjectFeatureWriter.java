@@ -903,6 +903,20 @@ public class MuTestProjectFeatureWriter {
 		return nodes;
 	}
 	/**
+	 * node_type$attribute_type$execution$location$parameter
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
+		CirAttribute attribute = node.get_attribute();
+		String node_type = node.get_type().toString();
+		String attr_type = attribute.get_type().toString();
+		String execution = this.encode_token(attribute.get_execution());
+		String parameter = this.encode_token(attribute.get_parameter());
+		this.file_writer.write(node_type + "$" + attr_type + 
+									"$" + execution + "$" + parameter);
+	}
+	/**
 	 * class$operator$execution$location$parameter
 	 * @param annotation
 	 * @throws Exception
@@ -930,14 +944,8 @@ public class MuTestProjectFeatureWriter {
 	 */
 	private void write_cir_mutation_node(CirMutationTreeNode node) throws Exception {
 		if(node.get_status().is_executed()) {
-			/* node_type$attribute_type$execution$location$parameter */
-			CirAttribute attribute = node.get_attribute();
-			String node_type = node.get_type().toString();
-			String attr_type = attribute.get_type().toString();
-			String execution = this.encode_token(attribute.get_execution());
-			String parameter = this.encode_token(attribute.get_parameter());
-			this.file_writer.write("\t" + node_type + "$" + attr_type + "$"
-					+ execution + "$" + parameter);
+			/* \tnode_type$attribute_type$execution$location$parameter */
+			this.file_writer.write("\t"); this.write_cir_attribute(node);
 			
 			/* {\tclass$operator$execution$location$parameter} */
 			for(CirAnnotation annotation : node.get_status().get_abstract_annotations()) {
