@@ -1,10 +1,10 @@
-""" This file defines the model of testing data including xxx.tst, xxx.mut, xxx.res """
+""" This file defines the model to describe mutant and test results """
 
 
 import os
 import random
-import com.jcsa.base as jcbase
-import com.jcsa.code as jccode
+import com.jcsa.libs.base as jcbase
+import com.jcsa.libs.code as jccode
 
 
 class CProject:
@@ -19,11 +19,10 @@ class CProject:
 		"""
 		self.program = jccode.CProgram(directory, file_name)
 		tst_file = os.path.join(directory, file_name + ".tst")
-		stc_file = os.path.join(directory, file_name + ".stc")
 		mut_file = os.path.join(directory, file_name + ".mut")
 		res_file = os.path.join(directory, file_name + ".res")
 		sym_file = os.path.join(directory, file_name + ".sym")
-		self.test_space = TestCaseSpace(self, tst_file, stc_file)
+		self.test_space = TestCaseSpace(self, tst_file)
 		self.muta_space = MutantSpace(self, mut_file, res_file)
 		self.sym_tree = jcbase.SymTree(sym_file)
 		return
@@ -74,16 +73,14 @@ class TestCaseSpace:
 	The space of test cases defined and used in execution.
 	"""
 
-	def __init__(self, project: CProject, tst_file_path: str, stc_file_path: str):
+	def __init__(self, project: CProject, tst_file_path: str):
 		"""
 		:param project:
 		:param tst_file_path: file that provides definition of each test case in space
-		:param stc_file_path: file that provides integer identifiers of tests used in project
 		"""
 		self.project = project
 		self.test_cases = list()
-		self.used_tests = list()
-		self.__parse__(tst_file_path, stc_file_path)
+		self.__parse__(tst_file_path)
 		return
 
 	def get_project(self):
@@ -107,20 +104,12 @@ class TestCaseSpace:
 		test_case: TestCase
 		return test_case
 
-	def get_used_tests(self):
-		"""
-		:return: the collection of test cases used in execution
-		"""
-		return self.used_tests
-
-	def __parse__(self, tst_file: str, stc_file: str):
+	def __parse__(self, tst_file: str):
 		"""
 		:param tst_file:
-		:param stc_file:
 		:return:
 		"""
 		self.test_cases.clear()
-		self.used_tests.clear()
 		test_dict = dict()
 		with open(tst_file, 'r') as reader:
 			for line in reader:
@@ -133,15 +122,6 @@ class TestCaseSpace:
 		for test_id in range(0, len(test_dict)):
 			test_case = test_dict[test_id]
 			self.test_cases.append(test_case)
-		with open(stc_file, 'r') as reader:
-			for line in reader:
-				if len(line.strip()) > 0:
-					test_id = int(line.strip())
-					test_case = self.test_cases[test_id]
-					test_case: TestCase
-					self.used_tests.append(test_case)
-		if len(self.used_tests) == 0:
-			self.used_tests = self.test_cases
 		return
 
 
@@ -495,13 +475,12 @@ class MutationTestEvaluation:
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zexp/features"
+	root_path = "/home/dzt2/Development/Data/zexp/features_s"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_project = CProject(directory, file_name)
 		print(file_name, "loads", len(c_project.muta_space.get_mutants()), "mutations",
-			  "and", len(c_project.test_space.get_test_cases()), "test cases in which",
-			  len(c_project.test_space.get_used_tests()), "test cases are used.")
+			  "and", len(c_project.test_space.get_test_cases()), "test cases.")
 		for mutant in c_project.muta_space.get_mutants():
 			mutant: Mutant
 			mutation = mutant.get_mutation()

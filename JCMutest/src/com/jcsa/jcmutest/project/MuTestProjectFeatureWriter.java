@@ -912,9 +912,14 @@ public class MuTestProjectFeatureWriter {
 		String node_type = node.get_type().toString();
 		String attr_type = attribute.get_type().toString();
 		String execution = this.encode_token(attribute.get_execution());
+		String location  = this.encode_token(attribute.get_location());
 		String parameter = this.encode_token(attribute.get_parameter());
-		this.file_writer.write(node_type + "$" + attr_type + 
-									"$" + execution + "$" + parameter);
+		this.file_writer.write(node_type + "$" + attr_type + "$" + 
+								execution + "$" + location + "$" + parameter);
+		
+		if(attribute.get_parameter() != null) {
+			this.symbol_nodes.add(attribute.get_parameter());
+		}
 	}
 	/**
 	 * class$operator$execution$location$parameter

@@ -28,18 +28,37 @@ public class MuTestprojectFeatureWriting {
 	
 	public static void main(String[] args) throws Exception {
 		/** static features **/
-		/*
 		result_dir = "/home/dzt2/Development/Data/zexp/features_s/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
-		*/
+		
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
 		String[] file_names = new String[] {
-			"bubble_sort", "insert_sort", "insert_sort2", 
-			"calendar", "prime_factor", "quick_sort", "gen_primes", 
+				"bi_search",
+				"check_date",
+				"days",
+				"fizz_buzz",
+				"hereon_triangle",
+				"is_prime",
+				"medium",
+				"min_max",
+				"profit",
+				"tcas",
+				"triangle",
 		};
+		/*
+		String[] file_names = new String[] {
+			"bubble_sort", 
+			"insert_sort", 
+			"insert_sort2", 
+			"calendar", 
+			"prime_factor", 
+			"quick_sort", 
+			"gen_primes", 
+		};
+		*/
 		for(String file_name : file_names) {
 			testing(new File(root_path + file_name), true);
 		}
@@ -53,9 +72,9 @@ public class MuTestprojectFeatureWriting {
 		/* 1. open project and get data interface */
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());
+		System.out.println("Testing on " + project.get_name() + " for writing features.");
 		FileOperations.mkdir(output_directory);
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-		System.out.println("Testing on " + code_file.get_name() + " for writing features.");
 
 		/* 2. select test cases and generate instrumental files. */
 		Collection<TestInput> test_cases;
