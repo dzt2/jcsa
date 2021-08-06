@@ -939,6 +939,7 @@ public class MuTestProjectFeatureWriter {
 	/**
 	 * node_type$attribute_type$execution$location$parameter
 	 * \tattribute{\tannotation}+
+	 * ;
 	 * @param node
 	 * @throws Exception
 	 */
@@ -952,6 +953,8 @@ public class MuTestProjectFeatureWriter {
 				this.file_writer.write("\t");
 				this.write_cir_annotation(annotation);
 			}
+			
+			this.file_writer.write("\t;");
 		}
 	}
 	/**

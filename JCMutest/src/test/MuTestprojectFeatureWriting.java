@@ -28,12 +28,10 @@ public class MuTestprojectFeatureWriting {
 
 	public static void main(String[] args) throws Exception {
 		/** static features **/
-		/*
 		result_dir = "/home/dzt2/Development/Data/zexp/features_s/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
-		*/
 		
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
