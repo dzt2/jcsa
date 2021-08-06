@@ -9,9 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeType;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -845,16 +847,72 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	/**
+	 * @param tree
+	 * @param test
+	 * @return select the "right" nodes available for analysis tree in test
+	 * @throws Exception
+	 */
+	private Iterable<CirMutationTreeNode> select_tree_nodes(CirMutationTree tree, TestInput test) throws Exception {
+		/* extract test result from the mutant */
+		Mutant mutant = tree.get_mutant();
+		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
+		MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
+		MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
+		MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
+		
+		/* select the types of selected mutation tree nodes */
+		Collection<CirMutationTreeType> node_types = new HashSet<CirMutationTreeType>();
+		if(test == null) {
+			if(s_result != null && s_result.get_kill_set().degree() > 0) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.poscondition);
+			}
+			else if(w_result != null && w_result.get_kill_set().degree() > 0) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.poscondition);
+			}
+			else if(c_result != null && c_result.get_kill_set().degree() > 0) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.precondition);
+			}
+			else { /* none of features should be appended into the node type set */ }
+		}
+		else {
+			if(s_result != null && s_result.get_kill_set().get(test.get_id())) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.poscondition);
+			}
+			else if(w_result != null && w_result.get_kill_set().get(test.get_id())) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.poscondition);
+			}
+			else if(c_result != null && c_result.get_kill_set().get(test.get_id())) {
+				node_types.add(CirMutationTreeType.midcondition);
+				node_types.add(CirMutationTreeType.precondition);
+			}
+			else { /* none of features should be appended into the node type set */ }
+		}
+		
+		/* select the set of nodes from tree according to the node_types */
+		Collection<CirMutationTreeNode> nodes = new HashSet<CirMutationTreeNode>();
+		for(CirMutationTreeNode node : tree.get_nodes()) {
+			if(node_types.contains(node.get_type())) {
+				nodes.add(node);
+			}
+		}
+		return nodes;
+	}
+	/**
 	 * class$operator$execution$location$parameter
 	 * @param annotation
 	 * @throws Exception
 	 */
-	private void write_cir_annotation(CirAnnotation condition) throws Exception {
-		String category = condition.get_category().toString();
-		String operator = condition.get_operator().toString();
-		CirExecution execution = condition.get_execution();
-		CirNode location = condition.get_location();
-		SymbolNode parameter = condition.get_parameter();
+	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
+		String category = annotation.get_category().toString();
+		String operator = annotation.get_operator().toString();
+		CirExecution execution = annotation.get_execution();
+		CirNode location = annotation.get_location();
+		SymbolNode parameter = annotation.get_parameter();
 		
 		this.file_writer.write(category.toString());
 		this.file_writer.write("$" + operator.toString());
@@ -865,14 +923,27 @@ public class MuTestProjectFeatureWriter {
 		if(parameter != null) { this.symbol_nodes.add(parameter); }
 	}
 	/**
-	 * (\t feature)+
+	 * node_type$attribute_type$execution$location$parameter
+	 * \tattribute{\tannotation}+
 	 * @param node
 	 * @throws Exception
 	 */
 	private void write_cir_mutation_node(CirMutationTreeNode node) throws Exception {
-		for(CirAnnotation annotation : node.get_status().get_abstract_annotations()) {
-			this.file_writer.write("\t");
-			this.write_cir_annotation(annotation);
+		if(node.get_status().is_executed()) {
+			/* node_type$attribute_type$execution$location$parameter */
+			CirAttribute attribute = node.get_attribute();
+			String node_type = node.get_type().toString();
+			String attr_type = attribute.get_type().toString();
+			String execution = this.encode_token(attribute.get_execution());
+			String parameter = this.encode_token(attribute.get_parameter());
+			this.file_writer.write("\t" + node_type + "$" + attr_type + "$"
+					+ execution + "$" + parameter);
+			
+			/* {\tclass$operator$execution$location$parameter} */
+			for(CirAnnotation annotation : node.get_status().get_abstract_annotations()) {
+				this.file_writer.write("\t");
+				this.write_cir_annotation(annotation);
+			}
 		}
 	}
 	/**
@@ -886,7 +957,7 @@ public class MuTestProjectFeatureWriter {
 		String tid 		= this.encode_token(test);
 		this.file_writer.write(mutant + "\t" + tid);
 		tree.summarize_status();
-		for(CirMutationTreeNode node : tree.get_nodes()) {
+		for(CirMutationTreeNode node : this.select_tree_nodes(tree, test)) {
 			this.write_cir_mutation_node(node);
 		}
 		this.file_writer.write("\n");

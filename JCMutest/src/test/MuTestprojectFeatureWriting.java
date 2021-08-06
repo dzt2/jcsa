@@ -20,7 +20,7 @@ import com.jcsa.jcparse.test.file.TestInput;
 public class MuTestprojectFeatureWriting {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
-	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features/";
+	private static final String result_dir = "/home/dzt2/Development/Data/zexp/features2/";
 	private static final double random_test_ratio = 0.005;
 	private static final int min_test_number = 24;
 	private static final int max_infected_times = 3;
@@ -29,9 +29,10 @@ public class MuTestprojectFeatureWriting {
 	public static void main(String[] args) throws Exception {
 		/*
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, false);
+			testing(root, true);
 		}
 		*/
+		
 		String file_name = "bi_search";
 		testing(new File(root_path + file_name), true);
 	}
