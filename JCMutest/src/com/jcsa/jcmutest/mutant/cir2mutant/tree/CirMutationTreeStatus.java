@@ -90,10 +90,10 @@ public class CirMutationTreeStatus {
 		CirAttribute concrete_attribute = attribute.optimize(context);
 		this.concrete_attributes.add(concrete_attribute);
 		if(concrete_attribute.is_constraint()) {
-			CirMutationTreeUtil.util.generate_annotations(attribute, null, concrete_annotations);
+			CirAnnotationUtil.util.generate_annotations(this.attribute, null, this.concrete_annotations);
 		}
 		else {
-			CirMutationTreeUtil.util.generate_annotations(concrete_attribute, context, concrete_annotations);
+			CirAnnotationUtil.util.generate_annotations(concrete_attribute, context, this.concrete_annotations);
 		}
 		return result;
 	}
@@ -103,7 +103,7 @@ public class CirMutationTreeStatus {
 	 */
 	protected void sum() throws Exception {
 		this.abstract_annotations.clear();
-		CirMutationTreeUtil.util.summarize_annotations(concrete_annotations, abstract_annotations);
+		CirAnnotationUtil.util.summarize_annotations(concrete_annotations, abstract_annotations);
 	}
 
 	/* counters */

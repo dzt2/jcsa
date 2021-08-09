@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
@@ -903,23 +902,24 @@ public class MuTestProjectFeatureWriter {
 		return nodes;
 	}
 	/**
-	 * node_type$attribute_type$execution$location$parameter
+	 * node_type$attr_type$execution$location$parameter
 	 * @param node
 	 * @throws Exception
 	 */
 	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
-		CirAttribute attribute = node.get_attribute();
-		String node_type = node.get_type().toString();
-		String attr_type = attribute.get_type().toString();
-		String execution = this.encode_token(attribute.get_execution());
-		String location  = this.encode_token(attribute.get_location());
-		String parameter = this.encode_token(attribute.get_parameter());
-		this.file_writer.write(node_type + "$" + attr_type + "$" + 
-								execution + "$" + location + "$" + parameter);
+		String category = node.get_type().toString();
+		String operator = node.get_attribute().get_type().toString();
+		CirExecution execution = node.get_attribute().get_execution();
+		CirNode location = node.get_attribute().get_location();
+		SymbolExpression parameter = node.get_attribute().get_parameter();
 		
-		if(attribute.get_parameter() != null) {
-			this.symbol_nodes.add(attribute.get_parameter());
-		}
+		this.file_writer.write(category.toString());
+		this.file_writer.write("$" + operator.toString());
+		this.file_writer.write("$" + this.encode_token(execution));
+		this.file_writer.write("$" + this.encode_token(location));
+		this.file_writer.write("$" + this.encode_token(parameter));
+		
+		if(parameter != null) { this.symbol_nodes.add(parameter); }
 	}
 	/**
 	 * class$operator$execution$location$parameter
