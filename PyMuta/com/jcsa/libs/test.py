@@ -176,7 +176,6 @@ class SymConditions:
 		:return:
 		"""
 		if not(word in self.conditions):
-			print(word)
 			items = word.strip().split('$')
 			category = items[0].strip()
 			operator = items[1].strip()
