@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
@@ -907,11 +908,12 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
+		CirAttribute attribute = node.get_attribute().optimize();
 		String category = node.get_type().toString();
-		String operator = node.get_attribute().get_type().toString();
-		CirExecution execution = node.get_attribute().get_execution();
-		CirNode location = node.get_attribute().get_location();
-		SymbolExpression parameter = node.get_attribute().get_parameter();
+		String operator = attribute.get_type().toString();
+		CirExecution execution = attribute.get_execution();
+		CirNode location = attribute.get_location();
+		SymbolExpression parameter = attribute.get_parameter();
 		
 		this.file_writer.write(category.toString());
 		this.file_writer.write("$" + operator.toString());
