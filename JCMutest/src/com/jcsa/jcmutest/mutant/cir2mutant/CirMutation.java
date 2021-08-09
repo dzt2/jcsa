@@ -149,5 +149,10 @@ public class CirMutation {
 			}
 		}
 	}
-
+	public static boolean is_automic(CirExpression expression) {
+		return !is_boolean(expression) 
+				&& !is_numeric(expression)
+				&& !is_pointer(expression);
+	}
+	
 }

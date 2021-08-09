@@ -37,7 +37,7 @@ public class CirAnnotation {
 	 * @param parameter
 	 * @throws IllegalArgumentException
 	 */
-	protected CirAnnotation(CirAnnotationClass category, CirAnnotationType operator, CirExecution
+	private CirAnnotation(CirAnnotationClass category, CirAnnotationType operator, CirExecution
 			execution, CirNode location, SymbolExpression parameter) throws IllegalArgumentException {
 		if(category == null) {
 			throw new IllegalArgumentException("Invalid category: null");
@@ -106,11 +106,12 @@ public class CirAnnotation {
 			return false;
 		}
 	}
-
-	/* constraint */
+	
+	/* factory approach */
+	/* constraint class */
 	/**
-	 * @param execution
-	 * @param times
+	 * @param execution	the CFG-node to be counted for coverage analysis
+	 * @param times		the minimal time of the statement being executed
 	 * @return constraint:cov_stmt:execution:statement:integer
 	 * @throws Exception
 	 */
@@ -119,37 +120,20 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else if(times <= 0) {
-			throw new IllegalArgumentException("Invalit times:" + times);
+			throw new IllegalArgumentException("Invalid times: " + times);
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.constraint, CirAnnotationType.cov_stmt,
-					execution, execution.get_statement(), SymbolFactory.sym_constant(times));
+			return new CirAnnotation(CirAnnotationClass.constraint,
+					CirAnnotationType.cov_stmt, 
+					execution, execution.get_statement(),
+					SymbolFactory.sym_constant(Integer.valueOf(times)));
 		}
 	}
 	/**
-	 * @param execution
-	 * @param expression
-	 * @param value
-	 * @return constraint:eva_expr:execution:statement:{expression as value}
-	 * @throws Exception
-	 */
-	public static CirAnnotation eva_expr(CirExecution execution, Object expression, boolean value) throws Exception {
-		if(execution == null) {
-			throw new IllegalArgumentException("Invalid execution: null");
-		}
-		else if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.constraint, CirAnnotationType.eva_expr,
-					execution, execution.get_statement(), SymbolFactory.sym_condition(expression, value));
-		}
-	}
-	/**
-	 * @param execution
-	 * @param condition
-	 * @param value
-	 * @return constraint:eva_expr:execution:statement:condition
+	 * @param execution	the CFG-node in which the constraint should be evaluated
+	 * @param condition	the conditional expression being evaluated with CFG-node
+	 * @param value		the boolean value that the condition needs be hold as it
+	 * @return			constraint:eva_expr:execution:statement:{condition as value}
 	 * @throws Exception
 	 */
 	public static CirAnnotation eva_expr(CirExecution execution, Object condition) throws Exception {
@@ -160,43 +144,17 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.constraint, CirAnnotationType.eva_expr,
-					execution, execution.get_statement(), SymbolFactory.sym_condition(condition, true));
+			return new CirAnnotation(CirAnnotationClass.constraint,
+					CirAnnotationType.eva_expr,
+					execution, execution.get_statement(),
+					SymbolFactory.sym_condition(condition, true));
 		}
 	}
-	/* stmt_error */
+	/* stmt_error class */
 	/**
-	 * @param execution
-	 * @return stmt_error:mut_stmt:execution:statement:true
-	 * @throws Exception
-	 */
-	public static CirAnnotation add_stmt(CirExecution execution) throws Exception {
-		if(execution == null) {
-			throw new IllegalArgumentException("Invalid execution: null");
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.stmt_error, CirAnnotationType.mut_stmt,
-					execution, execution.get_statement(), SymbolFactory.sym_constant(Boolean.TRUE));
-		}
-	}
-	/**
-	 * @param execution
-	 * @return stmt_error:mut_stmt:execution:statement:false
-	 * @throws Exception
-	 */
-	public static CirAnnotation del_stmt(CirExecution execution) throws Exception {
-		if(execution == null) {
-			throw new IllegalArgumentException("Invalid execution: null");
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.stmt_error, CirAnnotationType.mut_stmt,
-					execution, execution.get_statement(), SymbolFactory.sym_constant(Boolean.FALSE));
-		}
-	}
-	/**
-	 * @param orig_flow
-	 * @param muta_flow
-	 * @return stmt_error:mut_flow:source:orig_target:muta_target
+	 * @param orig_flow	the original flow being replaced with mutation flow
+	 * @param muta_flow	the mutation flow to replace with the original flow
+	 * @return			stmt_error:mut_flow:orig_source:orig_target:muta_target
 	 * @throws Exception
 	 */
 	public static CirAnnotation mut_flow(CirExecutionFlow orig_flow, CirExecutionFlow muta_flow) throws Exception {
@@ -206,18 +164,51 @@ public class CirAnnotation {
 		else if(muta_flow == null) {
 			throw new IllegalArgumentException("Invalid muta_flow: null");
 		}
-		else if(orig_flow.get_source() != muta_flow.get_source()) {
-			throw new IllegalArgumentException(orig_flow + " --> " + muta_flow);
+		else if(muta_flow.get_source() == orig_flow.get_source()) {
+			throw new IllegalArgumentException(orig_flow + " ==> " + muta_flow);
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.stmt_error, CirAnnotationType.mut_flow,
-					orig_flow.get_source(), orig_flow.get_target().get_statement(),
+			return new CirAnnotation(CirAnnotationClass.stmt_error,
+					CirAnnotationType.mut_flow, orig_flow.get_source(),
+					orig_flow.get_target().get_statement(),
 					SymbolFactory.sym_expression(muta_flow.get_target()));
 		}
 	}
 	/**
-	 * @param execution
-	 * @return stmt_error:trp_stmt:execution:statement:null
+	 * @param execution	the CFG-Node that was executed even when it should not
+	 * @return			stmt_error:mut_stmt:execution:statement:true
+	 * @throws Exception
+	 */
+	public static CirAnnotation add_stmt(CirExecution execution) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			return new CirAnnotation(CirAnnotationClass.stmt_error,
+					CirAnnotationType.mut_stmt, 
+					execution, execution.get_statement(),
+					SymbolFactory.sym_constant(Boolean.TRUE));
+		}
+	}
+	/**
+	 * @param execution	the CFG-Node that is not executed even when it should be
+	 * @return			stmt_error:mut_stmt:execution:statement:false
+	 * @throws Exception
+	 */
+	public static CirAnnotation del_stmt(CirExecution execution) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			return new CirAnnotation(CirAnnotationClass.stmt_error,
+					CirAnnotationType.mut_stmt, 
+					execution, execution.get_statement(),
+					SymbolFactory.sym_constant(Boolean.FALSE));
+		}
+	}
+	/**
+	 * @param execution	the CFG-node where the trapping failure will be produced
+	 * @return			stmt_error:trp_stmt:execution:statement:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation trp_stmt(CirExecution execution) throws Exception {
@@ -225,421 +216,461 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.stmt_error, CirAnnotationType.trp_stmt,
+			return new CirAnnotation(CirAnnotationClass.stmt_error,
+					CirAnnotationType.trp_stmt, 
 					execution, execution.get_statement(), null);
 		}
 	}
-	/* symb_error */
+	/* symb_error class */
 	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return symb_error:mut_expr:execution:expression:symbolic
+	 * @param orig_expression	the original expression to be replaced with mutation value
+	 * @param muta_expression	the mutation expression to replace with the original value
+	 * @return					symb_error:mut_expr:execution:orig_expression:muta_expression
 	 * @throws Exception
 	 */
 	public static CirAnnotation mut_expr(CirExpression orig_expression, Object muta_expression) throws Exception {
-		if(orig_expression == null) {
-			throw new IllegalArgumentException("Invalid orig_expression: null");
+		if(orig_expression == null || orig_expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + orig_expression);
 		}
 		else if(muta_expression == null) {
 			throw new IllegalArgumentException("Invalid muta_expression: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.symb_error, CirAnnotationType.mut_expr,
-					orig_expression.execution_of(), orig_expression, SymbolFactory.sym_expression(muta_expression));
+			return new CirAnnotation(CirAnnotationClass.symb_error,
+					CirAnnotationType.mut_expr, orig_expression.execution_of(),
+					orig_expression, SymbolFactory.sym_expression(muta_expression));
 		}
 	}
 	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return symb_error:mut_refr:execution:expression:symbolic
+	 * @param orig_expression	the original expression to be replaced with mutation value
+	 * @param muta_expression	the mutation expression to replace with the original value
+	 * @return					symb_error:mut_refr:execution:orig_expression:muta_expression
 	 * @throws Exception
 	 */
 	public static CirAnnotation mut_refr(CirExpression orig_expression, Object muta_expression) throws Exception {
-		if(orig_expression == null) {
-			throw new IllegalArgumentException("Invalid orig_expression: null");
+		if(orig_expression == null || orig_expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + orig_expression);
 		}
 		else if(muta_expression == null) {
 			throw new IllegalArgumentException("Invalid muta_expression: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.symb_error, CirAnnotationType.mut_refr,
-					orig_expression.execution_of(), orig_expression, SymbolFactory.sym_expression(muta_expression));
+			return new CirAnnotation(CirAnnotationClass.symb_error,
+					CirAnnotationType.mut_refr, orig_expression.execution_of(),
+					orig_expression, SymbolFactory.sym_expression(muta_expression));
 		}
 	}
 	/**
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @return symb_error:mut_stat:execution:expression:symbolic
+	 * @param orig_expression	the original expression to be replaced with mutation value
+	 * @param muta_expression	the mutation expression to replace with the original value
+	 * @return					symb_error:mut_stat:execution:orig_expression:muta_expression
 	 * @throws Exception
 	 */
 	public static CirAnnotation mut_stat(CirExpression orig_expression, Object muta_expression) throws Exception {
-		if(orig_expression == null) {
-			throw new IllegalArgumentException("Invalid orig_expression: null");
+		if(orig_expression == null || orig_expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + orig_expression);
 		}
 		else if(muta_expression == null) {
 			throw new IllegalArgumentException("Invalid muta_expression: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.symb_error, CirAnnotationType.mut_stat,
-					orig_expression.execution_of(), orig_expression, SymbolFactory.sym_expression(muta_expression));
+			return new CirAnnotation(CirAnnotationClass.symb_error,
+					CirAnnotationType.mut_stat, orig_expression.execution_of(),
+					orig_expression, SymbolFactory.sym_expression(muta_expression));
 		}
 	}
-	/* bool_error */
+	/* bool_error class */
 	/**
-	 * @param expression
-	 * @param value
-	 * @return bool_error:set_bool:execution:expression:{true|false}
+	 * @param expression	the original expression being replaced with the value
+	 * @param value			boolean value to replace with the original expression
+	 * @return				bool_error:set_bool:execution:expression:boolean
 	 * @throws Exception
 	 */
 	public static CirAnnotation set_bool(CirExpression expression, boolean value) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 		else if(CirMutation.is_boolean(expression)) {
-			return new CirAnnotation(CirAnnotationClass.bool_error, CirAnnotationType.set_bool,
-					expression.execution_of(), expression, SymbolFactory.sym_constant(value));
+			return new CirAnnotation(CirAnnotationClass.bool_error,
+					CirAnnotationType.set_bool, expression.execution_of(),
+					expression, SymbolFactory.sym_constant(Boolean.valueOf(value)));
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
 	/**
-	 * @param expression
-	 * @return bool_error:chg_bool:execution:expression:null
+	 * @param expression	the original expression being replaced with any value
+	 * @return				bool_error:chg_bool:execution:expression:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation chg_bool(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 		else if(CirMutation.is_boolean(expression)) {
-			return new CirAnnotation(CirAnnotationClass.bool_error, CirAnnotationType.chg_bool,
+			return new CirAnnotation(CirAnnotationClass.bool_error,
+					CirAnnotationType.chg_bool, 
 					expression.execution_of(), expression, null);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
-	/* numb_error */
+	/* addr_error class */
 	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:set_numb:execution:expression:constant
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_numb(CirExpression expression, long value) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_numb,
-					expression.execution_of(), expression, SymbolFactory.sym_constant(value));
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:set_numb:execution:expression:constant
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_numb(CirExpression expression, double value) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_numb,
-					expression.execution_of(), expression, SymbolFactory.sym_constant(value));
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:chg_numb:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation chg_numb(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.chg_numb,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:set_post:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_post(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_post,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:set_negt:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_negt(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_negt,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:chg_numb:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_npos(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_npos,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:chg_numb:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_nneg(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_nneg,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:chg_numb:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_nzro(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_nzro,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return numb_error:chg_numb:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_zero(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			return new CirAnnotation(CirAnnotationClass.numb_error, CirAnnotationType.set_zero,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/* addr_error */
-	/**
-	 * @param expression
-	 * @param value
-	 * @return addr_error:set_addr:execution:expression:{NULL}
+	 * @param expression	the original expression being replaced with the value
+	 * @param value			the constant of address to replace the original value
+	 * @return				addr_error:set_addr:execution:expression:constant
 	 * @throws Exception
 	 */
 	public static CirAnnotation set_addr(CirExpression expression, long value) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 		else if(CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.set_addr,
-					expression.execution_of(), expression, SymbolFactory.sym_constant(value));
+			return new CirAnnotation(CirAnnotationClass.addr_error,
+					CirAnnotationType.set_addr, 
+					expression.execution_of(), expression,
+					SymbolFactory.sym_constant(Long.valueOf(value)));
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
 	/**
-	 * @param expression
-	 * @return addr_error:set_invp:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation set_invp(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.set_invp,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @return addr_error:set_null:execution:expression:null
+	 * @param expression	the original expression being replaced with the value
+	 * @return				addr_error:set_null:execution:expression:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation set_null(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 		else if(CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.set_null,
+			return new CirAnnotation(CirAnnotationClass.addr_error,
+					CirAnnotationType.set_null,
 					expression.execution_of(), expression, null);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
 	/**
-	 * @param expression
-	 * @return addr_error:chg_addr:execution:expression:null
+	 * @param expression	the original expression being replaced with the value
+	 * @return				addr_error:set_invp:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_invp(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.addr_error,
+					CirAnnotationType.set_invp,
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				addr_error:chg_addr:execution:expression:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation chg_addr(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 		else if(CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.addr_error, CirAnnotationType.chg_addr,
+			return new CirAnnotation(CirAnnotationClass.addr_error,
+					CirAnnotationType.chg_addr,
 					expression.execution_of(), expression, null);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
-	/* scop_error */
+	/* auto_error class */
 	/**
-	 * @param expression
-	 * @return scop_error:inc_scop:execution:expression:null
+	 * @param expression	the original expression being replaced with the value
+	 * @param value			the constant of values to replace with original value
+	 * @return				auto_error:set_auto:execution:expression:constant
 	 * @throws Exception
 	 */
-	public static CirAnnotation inc_scop(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	public static CirAnnotation set_auto(CirExpression expression, Object value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.scop_error, CirAnnotationType.inc_scop,
-					expression.execution_of(), expression, null);
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid value as null");
+		}
+		else if(CirMutation.is_automic(expression)) {
+			return new CirAnnotation(CirAnnotationClass.auto_error,
+					CirAnnotationType.set_auto, 
+					expression.execution_of(), expression,
+					SymbolFactory.sym_constant(value));
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
 	/**
-	 * @param expression
-	 * @return scop_error:dec_scop:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation dec_scop(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.scop_error, CirAnnotationType.dec_scop,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @return scop_error:ext_scop:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation ext_scop(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.scop_error, CirAnnotationType.ext_scop,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/**
-	 * @param expression
-	 * @return scop_error:shk_scop:execution:expression:null
-	 * @throws Exception
-	 */
-	public static CirAnnotation shk_scop(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.scop_error, CirAnnotationType.shk_scop,
-					expression.execution_of(), expression, null);
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
-		}
-	}
-	/* auto_error */
-	/**
-	 * @param expression
-	 * @return auto_error:chg_addr:execution:expression:null
+	 * @param expression	the original expression being replaced with the value
+	 * @return				auto_error:chg_auto:execution:expression:null
 	 * @throws Exception
 	 */
 	public static CirAnnotation chg_auto(CirExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
-		else if(!CirMutation.is_boolean(expression) && !CirMutation.is_numeric(expression) && !CirMutation.is_pointer(expression)) {
-			return new CirAnnotation(CirAnnotationClass.auto_error, CirAnnotationType.chg_auto,
+		else if(CirMutation.is_automic(expression)) {
+			return new CirAnnotation(CirAnnotationClass.auto_error,
+					CirAnnotationType.chg_auto, 
 					expression.execution_of(), expression, null);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + expression.generate_code(true));
+			throw new IllegalArgumentException("Invalid: " + expression);
 		}
 	}
-
-
+	/* numb_error class */
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @param value			the constant of values to replace with original value
+	 * @return				numb_error:set_numb:execution:expression:value
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_numb(CirExpression expression, long value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_numb, expression.execution_of(),
+					expression, SymbolFactory.sym_constant(Long.valueOf(value)));
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @param value			the constant of values to replace with original value
+	 * @return				numb_error:set_numb:execution:expression:value
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_numb(CirExpression expression, double value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_numb, expression.execution_of(),
+					expression, SymbolFactory.sym_constant(Double.valueOf(value)));
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:chg_numb:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation chg_numb(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.chg_numb, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_post:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_post(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_post, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_npos:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_npos(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_npos, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_negt:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_negt(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_negt, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_nneg:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_nneg(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_nneg, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_zero:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_zero(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_zero, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				numb_error:set_nzro:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation set_nzro(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression)) {
+			return new CirAnnotation(CirAnnotationClass.numb_error,
+					CirAnnotationType.set_nzro, 
+					expression.execution_of(), expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/* scop_error class */
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				scop_error:inc_scop:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation inc_scop(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.scop_error,
+					CirAnnotationType.inc_scop, expression.execution_of(),
+					expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				scop_error:dec_scop:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation dec_scop(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.scop_error,
+					CirAnnotationType.dec_scop, expression.execution_of(),
+					expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				scop_error:ext_scop:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation ext_scop(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.scop_error,
+					CirAnnotationType.ext_scop, expression.execution_of(),
+					expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param expression	the original expression being replaced with the value
+	 * @return				scop_error:shk_scop:execution:expression:null
+	 * @throws Exception
+	 */
+	public static CirAnnotation shk_scop(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+			return new CirAnnotation(CirAnnotationClass.scop_error,
+					CirAnnotationType.shk_scop, expression.execution_of(),
+					expression, null);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	
 }
