@@ -43,7 +43,7 @@ public class MuTestprojectFeatureWriting {
 				"hereon_triangle",
 				"is_prime",
 				"medium",
-				"min_max",
+				"minmax",
 				"profit",
 				"tcas",
 				"triangle",
