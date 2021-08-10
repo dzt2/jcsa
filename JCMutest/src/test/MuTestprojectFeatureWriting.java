@@ -28,10 +28,12 @@ public class MuTestprojectFeatureWriting {
 	
 	public static void main(String[] args) throws Exception {
 		/** static features **/
-		result_dir = "/home/dzt2/Development/Data/zexp/features_s/";
+		/*
+		result_dir = "/home/dzt2/Development/Data/zexp/features/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
+		*/
 		
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
@@ -47,18 +49,15 @@ public class MuTestprojectFeatureWriting {
 				"profit",
 				"tcas",
 				"triangle",
+				
+				// "bubble_sort", 
+				// "insert_sort", 
+				// "insert_sort2", 
+				// "calendar", 
+				// "prime_factor", 
+				// "quick_sort", 
+				// "gen_primes", 
 		};
-		/*
-		String[] file_names = new String[] {
-			"bubble_sort", 
-			"insert_sort", 
-			"insert_sort2", 
-			"calendar", 
-			"prime_factor", 
-			"quick_sort", 
-			"gen_primes", 
-		};
-		*/
 		for(String file_name : file_names) {
 			testing(new File(root_path + file_name), true);
 		}

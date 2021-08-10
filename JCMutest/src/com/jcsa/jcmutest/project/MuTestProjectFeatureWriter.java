@@ -852,6 +852,7 @@ public class MuTestProjectFeatureWriter {
 	 * @return select the "right" nodes available for analysis tree in test
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private Iterable<CirMutationTreeNode> select_tree_nodes(CirMutationTree tree, TestInput test) throws Exception {
 		/* extract test result from the mutant */
 		Mutant mutant = tree.get_mutant();
@@ -975,7 +976,7 @@ public class MuTestProjectFeatureWriter {
 		String tid 		= this.encode_token(test);
 		this.file_writer.write(mutant + "\t" + tid);
 		tree.summarize_status();
-		for(CirMutationTreeNode node : this.select_tree_nodes(tree, test)) {
+		for(CirMutationTreeNode node : tree.get_nodes()) {
 			this.write_cir_mutation_node(node);
 		}
 		this.file_writer.write("\n");

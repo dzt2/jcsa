@@ -131,7 +131,7 @@ public class CirMutationTree {
 	 */
 	public Iterable<CirMutationTreeNode> get_nodes() {
 		Queue<CirMutationTreeNode> queue = new LinkedList<CirMutationTreeNode>();
-		Set<CirMutationTreeNode> records = new HashSet<CirMutationTreeNode>();
+		List<CirMutationTreeNode> records = new ArrayList<CirMutationTreeNode>();
 		queue.add(this.root);
 		while(!queue.isEmpty()) {
 			CirMutationTreeNode node = queue.poll();
