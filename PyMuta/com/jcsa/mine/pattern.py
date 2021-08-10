@@ -773,16 +773,17 @@ class KillPredictionOutput:
 		self.miner = KillPredictionMiner(inputs)
 		features = set()
 		orig_mutants, pred_mutants = set(), set()
+		test_cases = inputs.get_document().exec_space.get_test_cases()
 		for execution in self.m_document.exec_space.get_executions():
 			execution: jcenco.MerExecution
-			if execution.get_mutant().get_result().is_killed_in(None):
+			if execution.get_mutant().get_result().is_killed_in(test_cases):
 				pass
 			else:
 				for feature in execution.get_features():
 					features.add(feature)
 				orig_mutants.add(execution.get_mutant())
 		self.miner.middle.get_inputs().max_output_number = len(features)
-		rule_evaluation_dict = self.miner.mine(features, None)
+		rule_evaluation_dict = self.miner.mine(features, test_cases)
 
 		with open(file_path, 'w') as writer:
 			self.writer = writer
@@ -811,7 +812,7 @@ class KillPredictionOutput:
 				length = len(rule.get_features())
 				rule_exec = len(rule.get_executions())
 				rule_muta = len(rule.get_mutants())
-				result, killed, alive, confidence = rule.predict(None)
+				result, killed, alive, confidence = rule.predict(test_cases)
 				self.__output__("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}%\n".format(rid, length, rule_exec, rule_muta,
 																		   result, killed, alive,
 																		   int(confidence * 10000) / 100.0))
@@ -829,8 +830,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	:param output_directory:
 	:return:
 	"""
-	max_length, min_support, min_confidence, max_confidence, \
-	min_output_number, max_output_number = 1, 2, 0.70, 0.99, 4, 8
+	max_length, min_support, min_confidence, max_confidence, min_output_number, max_output_number = 2, 2, 0.75, 0.99, 4, 8
 	for file_name in os.listdir(project_directory):
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)

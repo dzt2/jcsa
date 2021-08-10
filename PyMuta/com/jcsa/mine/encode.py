@@ -451,9 +451,8 @@ class MerConditionSpace:
 		with open(sym_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
-				if len(line) > 0:
-					condition = MerCondition(self, len(self.conditions), line)
-					self.conditions.append(condition)
+				condition = MerCondition(self, len(self.conditions), line)
+				self.conditions.append(condition)
 		return
 
 	def get_document(self):
@@ -578,6 +577,7 @@ class MerExecutionSpace:
 		self.document = document
 		self.executions = list()
 		self.muta_execs = dict()
+		self.test_cases = set()
 		with open(exe_file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
@@ -590,13 +590,17 @@ class MerExecutionSpace:
 					else:
 						test = self.document.test_space.get_test_case(tid)
 					features = set()
-					for k in range(1, len(items)):
+					for k in range(2, len(items)):
 						features.add(int(items[k].strip()))
 					execution = MerExecution(self, len(self.executions), mutant, test, features)
 					self.executions.append(execution)
 					if not (mutant in self.muta_execs):
 						self.muta_execs[mutant] = list()
 					self.muta_execs[mutant].append(execution)
+					if execution.has_test():
+						self.test_cases.add(execution.get_test())
+		if len(self.test_cases) == 0:
+			self.test_cases = self.document.test_space.get_test_cases()
 		return
 
 	def get_document(self):
@@ -616,6 +620,9 @@ class MerExecutionSpace:
 			return self.muta_execs[mutant]
 		else:
 			return list()
+
+	def get_test_cases(self):
+		return self.test_cases
 
 
 ### encoding-decoding
