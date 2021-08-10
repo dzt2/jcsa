@@ -860,7 +860,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 ## EXECUTE SCRIPTS
 
 if __name__ == "__main__":
-	proj_directory = "/home/dzt2/Development/Data/zexp/features"
+	proj_directory = "/home/dzt2/Development/Data/zexp/features_d"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
 	main(proj_directory, enco_directory, outs_directory)

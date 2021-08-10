@@ -5,7 +5,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -819,51 +821,54 @@ public class MuTestProjectFeatureWriter {
 		return number;
 	}
 	/**
-	 * @param mutant
-	 * @param tspace
-	 * @return
+	 * @param test_cases
+	 * @return arrange each test case in set to the corresponding mutants it needs be executed on
 	 * @throws Exception
 	 */
-	private boolean is_reached(TestInput test, Mutant mutant, MuTestProjectTestSpace tspace) throws Exception {
-		Mutant s_mutant = mutant;
-		Mutant w_mutant = mutant.get_weak_mutant();
-		Mutant c_mutant = mutant.get_coverage_mutant();
+	private Map<TestInput, Collection<Mutant>> initial_tests_mutants(Collection<TestInput> test_cases) throws Exception {
+		/* perform executions on instrumental version */
+		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
+		Map<TestInput, Collection<Mutant>> maps = new HashMap<TestInput, Collection<Mutant>>();
+		this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
 		
-		MuTestProjectTestResult s_result = tspace.get_test_result(s_mutant);
-		MuTestProjectTestResult w_result = tspace.get_test_result(w_mutant);
-		MuTestProjectTestResult c_result = tspace.get_test_result(c_mutant);
-		
-		if(s_result != null && s_result.get_kill_set().get(test.get_id())) {
-			return true;
+		/* mapping each test to corresponding mutants */
+		for(TestInput test_case : test_cases) {
+			Collection<Mutant> mutants = new ArrayList<Mutant>();
+			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+				MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
+				MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
+				MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
+				if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+				else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+				else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+			}
+			if(!mutants.isEmpty()) { maps.put(test_case, mutants); }
 		}
-		else if(w_result != null && w_result.get_kill_set().get(test.get_id())) {
-			return true;
-		}
-		else if(c_result != null && c_result.get_kill_set().get(test.get_id())) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return maps;
 	}
 	/**
 	 * @param tree
-	 * @param test
-	 * @return select the "right" nodes available for analysis tree in test
+	 * @param test_case
+	 * @return the set of nodes that should be printed on output stream
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unused")
-	private Iterable<CirMutationTreeNode> select_tree_nodes(CirMutationTree tree, TestInput test) throws Exception {
-		/* extract test result from the mutant */
+	private Iterable<CirMutationTreeNode> get_tree_nodes(CirMutationTree tree, TestInput test_case) throws Exception {
+		/* extract the mutant execution results */
+		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
 		Mutant mutant = tree.get_mutant();
-		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
 		MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
 		MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
 		MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
-		
-		/* select the types of selected mutation tree nodes */
 		Collection<CirMutationTreeType> node_types = new HashSet<CirMutationTreeType>();
-		if(test == null) {
+		
+		/* determine the types of nodes according to RIP model */
+		if(test_case == null) {
 			if(s_result != null && s_result.get_kill_set().degree() > 0) {
 				node_types.add(CirMutationTreeType.midcondition);
 				node_types.add(CirMutationTreeType.poscondition);
@@ -876,26 +881,24 @@ public class MuTestProjectFeatureWriter {
 				node_types.add(CirMutationTreeType.midcondition);
 				node_types.add(CirMutationTreeType.precondition);
 			}
-			else { /* none of features should be appended into the node type set */ }
 		}
 		else {
-			if(s_result != null && s_result.get_kill_set().get(test.get_id())) {
+			if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
 				node_types.add(CirMutationTreeType.midcondition);
 				node_types.add(CirMutationTreeType.poscondition);
 			}
-			else if(w_result != null && w_result.get_kill_set().get(test.get_id())) {
+			else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
 				node_types.add(CirMutationTreeType.midcondition);
 				node_types.add(CirMutationTreeType.poscondition);
 			}
-			else if(c_result != null && c_result.get_kill_set().get(test.get_id())) {
+			else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
 				node_types.add(CirMutationTreeType.midcondition);
 				node_types.add(CirMutationTreeType.precondition);
 			}
-			else { /* none of features should be appended into the node type set */ }
 		}
 		
-		/* select the set of nodes from tree according to the node_types */
-		Collection<CirMutationTreeNode> nodes = new HashSet<CirMutationTreeNode>();
+		/* collect nodes being printed on final features */
+		Collection<CirMutationTreeNode> nodes = new ArrayList<CirMutationTreeNode>();
 		for(CirMutationTreeNode node : tree.get_nodes()) {
 			if(node_types.contains(node.get_type())) {
 				nodes.add(node);
@@ -977,7 +980,7 @@ public class MuTestProjectFeatureWriter {
 			String tid 		= this.encode_token(test);
 			this.file_writer.write(mutant + "\t" + tid);
 			tree.summarize_status();
-			for(CirMutationTreeNode node : tree.get_nodes()) {
+			for(CirMutationTreeNode node : this.get_tree_nodes(tree, test)) {
 				this.write_cir_mutation_node(node);
 			}
 			this.file_writer.write("\n");
@@ -1015,16 +1018,15 @@ public class MuTestProjectFeatureWriter {
 		/** dynamic analysis **/
 		else {
 			/* I. perform instrumental execution to capture state paths */
-			MuTestProjectTestSpace test_space = 
-							this.inputs.get_code_space().get_project().get_test_space();
-			this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
+			MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
+			Map<TestInput, Collection<Mutant>> test_mutants = this.initial_tests_mutants(test_cases);
 			
 			/* II. write trees for every test case in the project space */
-			System.out.println("\t==> Select " + test_cases.size() + " test cases to evaluate.");
+			System.out.println("\t==> Select " + test_mutants.size() + " test cases to evaluate.");
 			int number = 0;
-			for(TestInput test_case : test_cases) {
+			for(TestInput test_case : test_mutants.keySet()) {
 				/* II-A. download the concrete execution path from testing */
-				CStatePath state_path = test_space.load_instrumental_path(
+				CStatePath state_path = tspace.load_instrumental_path(
 						this.inputs.get_sizeof_template(), 
 						this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
 				number++;
@@ -1032,21 +1034,19 @@ public class MuTestProjectFeatureWriter {
 				
 				/* II-B. construct mutation trees for reachable mutants */
 				Collection<CirMutationTree> trees = new ArrayList<CirMutationTree>();
-				for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
-					if(this.is_reached(test_case, mutant, test_space)) {
-						CirMutationTree tree;
-						try {
-							tree = CirMutationTree.new_tree(mutant, state_path);
-						}
-						catch(Exception ex) {
-							continue;
-						}
-						trees.add(tree);
+				for(Mutant mutant : test_mutants.get(test_case)) {
+					CirMutationTree tree;
+					try {
+						tree = CirMutationTree.new_tree(mutant, state_path);
 					}
+					catch(Exception ex) {
+						continue;
+					}
+					trees.add(tree);
 				}
 				System.out.println("\t\tdo evaluation on " + trees.size() + 
 						" against test#" + test_case.get_id() + 
-						"\t[" + number + "/" + test_cases.size() + "]");
+						"\t[" + number + "/" + test_mutants.size() + "]");
 				
 				/* II-C. perform dynamic context-sensitive evaluations */
 				SymbolProcess context = new SymbolProcess(this.inputs.

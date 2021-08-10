@@ -47,7 +47,6 @@ public class MuTestprojectFeatureWriting {
 				"profit",
 				"tcas",
 				"triangle",
-				
 				// "bubble_sort", 
 				// "insert_sort", 
 				// "insert_sort2", 
