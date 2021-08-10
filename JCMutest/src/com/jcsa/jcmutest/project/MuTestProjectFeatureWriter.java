@@ -1033,7 +1033,7 @@ public class MuTestProjectFeatureWriter {
 					if(this.is_reached(test_case, mutant, test_space)) {
 						CirMutationTree tree;
 						try {
-							tree = CirMutationTree.new_tree(mutant, dependence_graph);
+							tree = CirMutationTree.new_tree(mutant, state_path);
 						}
 						catch(Exception ex) {
 							continue;

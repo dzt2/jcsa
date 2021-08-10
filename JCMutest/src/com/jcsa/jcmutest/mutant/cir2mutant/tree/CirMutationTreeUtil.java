@@ -110,11 +110,35 @@ class CirMutationTreeUtil {
 		}
 	}
 	/**
+	 * collect the sequence of control-related flows into output in the specified path
+	 * @param path
+	 * @param flows
+	 */
+	private void collect_execution_flows_in(CirExecutionPath path, List<CirExecutionFlow> flows) {
+		for(CirExecutionEdge edge : path.get_edges()) {
+			/* capture execution flow in edge */
+			CirExecutionFlow flow;
+			switch(edge.get_type()) {
+			case true_flow:
+			case fals_flow:
+			case call_flow:
+			case retr_flow:	flow = edge.get_flow();	break;
+			default:		flow = null;			break;
+			}
+			/* append the flow into simple path */
+			if(flow != null && !flows.contains(flow)) {
+				flows.add(flow);
+			}
+		}
+	}
+	/**
+	 * create a prefix-path reaching the target from its function entry; and 
+	 * capture the sequence of execution flows corresponding with the control 
+	 * flows in CFG of program under test.
 	 * @param target
-	 * @return create a prefix-path reaching the target from its function entry
 	 * @throws Exception
 	 */
-	private CirExecutionPath 	get_execution_path(CirExecution target) throws Exception {
+	private void get_execution_flows_in(CirExecution target, List<CirExecutionFlow> flows) throws Exception {
 		if(target == null) {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
@@ -122,79 +146,92 @@ class CirMutationTreeUtil {
 			CirExecution source = target.get_graph().get_entry();
 			CirExecutionPath path = new CirExecutionPath(source);
 			CirExecutionPathFinder.finder.vf_extend(path, target);
-			return path;
+			this.collect_execution_flows_in(path, flows); 
 		}
 	}
 	/**
+	 * create a prefix-path reaching the target from its function entry; and
+	 * capture the control-related flows in the sequence of generated path.
 	 * @param target
-	 * @param dependence_graph is null will call get_execution_path(target)
-	 * @return generate the execution path for reaching target using static dependence graph model
+	 * @param dependence_graph
+	 * @param flows
 	 * @throws Exception
 	 */
-	private CirExecutionPath 	get_execution_path(CirExecution target, CDependGraph dependence_graph) throws Exception {
+	private void get_execution_flows_in(CirExecution target, CDependGraph 
+			dependence_graph, List<CirExecutionFlow> flows) throws Exception {
 		if(target == null) {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
 		else if(dependence_graph == null) {
-			return this.get_execution_path(target);
+			this.get_execution_flows_in(target, flows);
 		}
 		else {
-			return CirExecutionPathFinder.finder.dependence_path(dependence_graph, target);
+			CirExecutionPath path = CirExecutionPathFinder.
+					finder.dependence_path(dependence_graph, target);
+			this.collect_execution_flows_in(path, flows);
 		}
 	}
 	/**
+	 * 
 	 * @param target
-	 * @param state_path null to call get_execution_path(target)
-	 * @return generate the concrete execution path reaching target using dynamic analysis path
+	 * @param state_path
+	 * @param flows
 	 * @throws Exception
 	 */
-	private CirExecutionPath 	get_execution_path(CirExecution target, CStatePath state_path) throws Exception {
+	private void get_execution_flows_in(CirExecution target, CStatePath 
+			state_path, List<CirExecutionFlow> flows) throws Exception {
 		if(target == null) {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
 		else if(state_path == null || state_path.size() == 0) {
-			return this.get_execution_path(target);
+			this.get_execution_flows_in(target, flows);
 		}
 		else {
 			CirExecution source = state_path.get_node(0).get_execution();
 			CirExecutionPath path = new CirExecutionPath(source);
 			for(CStateNode state_node : state_path.get_nodes()) {
 				CirExecutionPathFinder.finder.vf_extend(path, state_node.get_execution());
+				this.collect_execution_flows_in(path, flows);
 				if(state_node.get_execution() == target) {
 					break;
 				}
+				else {
+					path = new CirExecutionPath(state_node.get_execution());
+				}
 			}
 			CirExecutionPathFinder.finder.vf_extend(path, target);
-			return path;
+			this.collect_execution_flows_in(path, flows);
 		}
 	}
 	/**
 	 * create a reachability path with path constriants from root to the target with specified flows in the
-	 * concrete path.
+	 * concrete path described using the control-related flows among it.
 	 * @param tree
+	 * @param target
 	 * @param path
 	 * @return
 	 * @throws Exception
 	 */
-	private CirMutationTreeNode	create_reachability_tree(CirMutationTree tree, CirExecutionPath path) throws Exception {
+	private CirMutationTreeNode	create_reachability_tree(CirMutationTree tree, 
+			CirExecution target, List<CirExecutionFlow> flows) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
 		}
-		else if(path == null) {
+		else if(flows == null) {
 			throw new IllegalArgumentException("Invalid path: null");
 		}
 		else {
 			/* 1. connect from root to the previous constraint in target */
 			CirMutationTreeNode node = tree.get_root(); CirAttribute attribute;
-			for(CirExecutionEdge edge : path.get_edges()) {
-				attribute = this.get_flow_attribute(edge.get_flow());
-				node = node.link(CirMutationTreeType.precondition,
+			for(CirExecutionFlow flow : flows) {
+				attribute = this.get_flow_attribute(flow);
+				node = node.link(CirMutationTreeType.precondition, 
 						attribute, CirMutationTreeFlow.execute).get_target();
 			}
 
 			/* 2. linking to the target execution if needed */
-			if(node.get_attribute().get_execution() != path.get_target()) {
-				attribute = CirAttribute.new_cover_count(path.get_target(), 1);
+			if(node.get_attribute().get_execution() != target) {
+				attribute = CirAttribute.new_cover_count(target, 1);
 				node = node.link(CirMutationTreeType.precondition,
 						attribute, CirMutationTreeFlow.execute).get_target();
 			}
@@ -766,20 +803,20 @@ class CirMutationTreeUtil {
 			/* reachability & infection construction */
 			Set<CirMutationTreeEdge> infect_edges = new HashSet<>();
 			for(CirExecution execution : maps.keySet()) {
-				CirExecutionPath path;
+				List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
 				if(context == null) {
-					path = this.get_execution_path(execution);
+					this.get_execution_flows_in(execution, flows);
 				}
 				else if(context instanceof CDependGraph) {
-					path = this.get_execution_path(execution, (CDependGraph) context);
+					this.get_execution_flows_in(execution, (CDependGraph) context, flows);
 				}
 				else if(context instanceof CStatePath) {
-					path = this.get_execution_path(execution, (CStatePath) context);
+					this.get_execution_flows_in(execution, (CStatePath) context, flows);
 				}
 				else {
 					throw new IllegalArgumentException("Invalid: " + context);
 				}
-				CirMutationTreeNode reach_node = this.create_reachability_tree(tree, path);
+				CirMutationTreeNode reach_node = this.create_reachability_tree(tree, execution, flows);
 				for(CirMutation cir_mutation : maps.get(execution)) {
 					infect_edges.add(this.create_infection_edge_on(reach_node, cir_mutation));
 				}
