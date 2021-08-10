@@ -15,7 +15,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeType;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -853,60 +852,6 @@ public class MuTestProjectFeatureWriter {
 		return maps;
 	}
 	/**
-	 * @param tree
-	 * @param test_case
-	 * @return the set of nodes that should be printed on output stream
-	 * @throws Exception
-	 */
-	private Iterable<CirMutationTreeNode> get_tree_nodes(CirMutationTree tree, TestInput test_case) throws Exception {
-		/* extract the mutant execution results */
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
-		Mutant mutant = tree.get_mutant();
-		MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
-		MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
-		MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
-		Collection<CirMutationTreeType> node_types = new HashSet<CirMutationTreeType>();
-		
-		/* determine the types of nodes according to RIP model */
-		if(test_case == null) {
-			if(s_result != null && s_result.get_kill_set().degree() > 0) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.poscondition);
-			}
-			else if(w_result != null && w_result.get_kill_set().degree() > 0) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.poscondition);
-			}
-			else if(c_result != null && c_result.get_kill_set().degree() > 0) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.precondition);
-			}
-		}
-		else {
-			if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.poscondition);
-			}
-			else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.poscondition);
-			}
-			else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
-				node_types.add(CirMutationTreeType.midcondition);
-				node_types.add(CirMutationTreeType.precondition);
-			}
-		}
-		
-		/* collect nodes being printed on final features */
-		Collection<CirMutationTreeNode> nodes = new ArrayList<CirMutationTreeNode>();
-		for(CirMutationTreeNode node : tree.get_nodes()) {
-			if(node_types.contains(node.get_type())) {
-				nodes.add(node);
-			}
-		}
-		return nodes;
-	}
-	/**
 	 * node_type$attr_type$execution$location$parameter
 	 * @param node
 	 * @throws Exception
@@ -980,7 +925,7 @@ public class MuTestProjectFeatureWriter {
 			String tid 		= this.encode_token(test);
 			this.file_writer.write(mutant + "\t" + tid);
 			tree.summarize_status();
-			for(CirMutationTreeNode node : this.get_tree_nodes(tree, test)) {
+			for(CirMutationTreeNode node : tree.get_nodes()) {
 				this.write_cir_mutation_node(node);
 			}
 			this.file_writer.write("\n");
