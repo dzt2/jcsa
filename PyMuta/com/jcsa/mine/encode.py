@@ -663,7 +663,7 @@ def main(prev_path: str, post_path: str):
 
 
 if __name__ == "__main__":
-	prev_directory = "/home/dzt2/Development/Data/zexp/features_s"
+	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	exit_code = main(prev_directory, post_directory)
 	exit(exit_code)
