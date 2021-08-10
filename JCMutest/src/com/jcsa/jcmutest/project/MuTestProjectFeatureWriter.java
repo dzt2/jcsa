@@ -972,14 +972,16 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_cir_mutation_tree(CirMutationTree tree, TestInput test) throws Exception {
-		String mutant 	= this.encode_token(tree.get_mutant());
-		String tid 		= this.encode_token(test);
-		this.file_writer.write(mutant + "\t" + tid);
-		tree.summarize_status();
-		for(CirMutationTreeNode node : tree.get_nodes()) {
-			this.write_cir_mutation_node(node);
+		if(tree.has_cir_mutations()) {
+			String mutant 	= this.encode_token(tree.get_mutant());
+			String tid 		= this.encode_token(test);
+			this.file_writer.write(mutant + "\t" + tid);
+			tree.summarize_status();
+			for(CirMutationTreeNode node : tree.get_nodes()) {
+				this.write_cir_mutation_node(node);
+			}
+			this.file_writer.write("\n");
 		}
-		this.file_writer.write("\n");
 	}
 	/**
 	 * 1. construct CirMutationTree for each mutant using PDG
