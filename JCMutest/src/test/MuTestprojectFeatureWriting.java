@@ -27,14 +27,19 @@ public class MuTestprojectFeatureWriting {
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
+		print_static_features();
+		print_dynamic_features();
+	}
+	private static void print_static_features() throws Exception {
 		/** static features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
-		
+	}
+	private static void print_dynamic_features() throws Exception {
 		/** dynamic features **/
-		result_dir = "/home/dzt2/Development/Data/zexp/features_d/";
+		result_dir = "/home/dzt2/Development/Data/zexp/deatures/";
 		String[] file_names = new String[] {
 				"bi_search",
 				"check_date",
@@ -64,7 +69,7 @@ public class MuTestprojectFeatureWriting {
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
-	protected static void testing(File root, boolean selected) throws Exception {
+	private static void testing(File root, boolean selected) throws Exception {
 		/* 1. open project and get data interface */
 		MuTestProject project = get_project(root);
 		File output_directory = new File(result_dir + project.get_name());

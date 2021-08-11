@@ -42,7 +42,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * @author yukimula
  *
  */
-public class CirAnnotationUtil {
+class CirAnnotationUtil {
 	
 	/* singleton mode */	/** constructor **/	private CirAnnotationUtil() { }
 	protected static final CirAnnotationUtil util = new CirAnnotationUtil();
