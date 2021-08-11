@@ -749,14 +749,16 @@ class SymExecutionMiningOutput:
 		orig_mutants, pred_mutants = set(), set()
 		for execution in self.m_document.exec_space.get_executions():
 			execution: jcenco.MerExecution
-			if execution.get_mutant().get_result().is_killed_in(None):
+			if execution.get_mutant().get_result().is_killed_in(used_tests):
 				pass
 			else:
 				for feature in execution.get_features():
 					features.add(feature)
 				orig_mutants.add(execution.get_mutant())
+		orig_output_number = self.miner.middle.get_inputs().max_output_number
 		self.miner.middle.get_inputs().max_output_number = len(features)
 		rule_evaluation_dict = self.miner.mine(features, used_tests)
+		self.miner.middle.get_inputs().max_output_number = orig_output_number
 
 		with open(file_path, 'w') as writer:
 			self.writer = writer
@@ -837,7 +839,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	:param output_directory:
 	:return:
 	"""
-	max_length, min_support, min_confidence, max_confidence = 2, 8, 0.75, 0.99
+	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
 	for file_name in os.listdir(project_directory):
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
