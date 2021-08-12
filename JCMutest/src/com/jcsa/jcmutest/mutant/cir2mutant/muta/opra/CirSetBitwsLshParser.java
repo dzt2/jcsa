@@ -6,7 +6,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 
-public class CirBitwsLshParser extends CirOperatorParser {
+public class CirSetBitwsLshParser extends CirOperatorParser {
 
 	@Override
 	protected boolean to_assign() throws Exception {
