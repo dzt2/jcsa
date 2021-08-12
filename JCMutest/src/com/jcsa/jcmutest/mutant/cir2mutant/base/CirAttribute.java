@@ -94,8 +94,10 @@ public abstract class CirAttribute {
 		return this.type + "$" + this.execution + "$" +
 				this.location.get_node_id() + "$" + this.parameter;
 	}
+	/*
 	@Override
 	public int hashCode() { return this.toString().hashCode(); }
+	*/
 	@Override
 	public boolean equals(Object obj) {
 		if(obj == this) {

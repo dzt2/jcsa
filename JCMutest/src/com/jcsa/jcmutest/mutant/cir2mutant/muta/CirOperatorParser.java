@@ -26,7 +26,7 @@ public abstract class CirOperatorParser {
 	/** the statement where the mutation is reached **/
 	private CirStatement statement;
 	/** the expression being mutated with state error **/
-	private CirExpression expression;
+	protected CirExpression expression;
 	/** the left-operand in the binary expression set **/
 	protected CirExpression loperand;
 	/** the right-operand in the binary expression set **/
@@ -231,28 +231,7 @@ public abstract class CirOperatorParser {
 	 * @throws Exception
 	 */
 	protected SymbolExpression sym_condition(Object expression, boolean value) throws Exception {
-		SymbolExpression condition = SymbolFactory.sym_expression(expression);
-		CType type = CTypeAnalyzer.get_value_type(condition.get_data_type());
-		if(CTypeAnalyzer.is_boolean(type)) {
-			if(value) { }
-			else {
-				condition = SymbolFactory.logic_not(condition);
-			}
-		}
-		else if(CTypeAnalyzer.is_integer(type)
-				|| CTypeAnalyzer.is_real(type)
-				|| CTypeAnalyzer.is_pointer(type)) {
-			if(value) {
-				condition = SymbolFactory.not_equals(condition, Integer.valueOf(0));
-			}
-			else {
-				condition = SymbolFactory.equal_with(condition, Integer.valueOf(0));
-			}
-		}
-		else {
-			throw new IllegalArgumentException(type.generate_code());
-		}
-		return condition;
+		return SymbolFactory.sym_condition(expression, value);
 	}
 	/**
 	 * @param operator {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
@@ -300,7 +279,30 @@ public abstract class CirOperatorParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
 	}
-
+	/**
+	 * @param operand
+	 * @return operand > 1 or operand < 0
+	 * @throws Exception
+	 */
+	protected SymbolExpression non_bool_condition(Object operand) throws Exception {
+		SymbolExpression expression = SymbolFactory.sym_expression(operand);
+		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		if(CTypeAnalyzer.is_boolean(type)) {
+			return SymbolFactory.sym_constant(Boolean.FALSE);
+		}
+		else if(CTypeAnalyzer.is_number(type)) {
+			return SymbolFactory.logic_ior(
+					SymbolFactory.smaller_tn(expression, 0), 
+					SymbolFactory.greater_tn(expression, 1));
+		}
+		else if(CTypeAnalyzer.is_pointer(type)) {
+			return SymbolFactory.not_equals(expression, 0);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid type: " + type);
+		}
+	}
+	
 	/* composite descriptions */
 	/**
 	 * @param descriptions
