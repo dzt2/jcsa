@@ -12,6 +12,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirCoverCount;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirDiferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirFlowsError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
@@ -315,6 +316,9 @@ class CirAnnotationUtil {
 		}
 		else if(attribute instanceof CirStateError) {
 			this.generate_annotations_in((CirStateError) attribute, context, annotations);
+		}
+		else if(attribute instanceof CirDiferError) {
+			this.generate_annotations_in((CirDiferError) attribute, context, annotations);
 		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + attribute);
@@ -633,6 +637,49 @@ class CirAnnotationUtil {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in(CirValueError attribute,
+			SymbolProcess context,
+			Collection<CirAnnotation> annotations) throws Exception {
+		/* 1. initialization */
+		CirExecution execution = attribute.get_execution();
+		CirExpression expression = (CirExpression) attribute.get_location();
+		SymbolExpression orig_expression = SymbolFactory.sym_expression(expression);
+		SymbolExpression muta_expression = attribute.get_muta_expression();
+		orig_expression = this.symbol_evaluate(orig_expression, context);
+		try {
+			muta_expression = this.symbol_evaluate(muta_expression, context);
+		}
+		catch(ArithmeticException ex) {
+			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
+			return;
+		}
+		
+		/* 2. compared with two values and return if they are equivalent */
+		if(orig_expression.equals(muta_expression)) { return;	/* none */ }
+		
+		/* 3. muta_expression as constant will generate set_xxx annotation */
+		if(muta_expression instanceof SymbolConstant) {
+			this.generate_annotations_in_set_constant(
+					expression, (SymbolConstant) muta_expression, annotations);
+		}
+		/* 4. otherwise, it only generates chg_xxx and mut_expr as alternate */
+		else {
+			this.generate_annotations_in_set_symbolic(
+					expression, false, muta_expression, annotations);
+		}
+		
+		/* 5. scope analysis using symbolic difference evaluation */
+		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+			this.generate_annotations_in_scope_compare(expression, 
+					orig_expression, muta_expression, context, annotations);
+		}
+	}
+	/**
+	 * @param attribute
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in(CirDiferError attribute, 
 			SymbolProcess context,
 			Collection<CirAnnotation> annotations) throws Exception {
 		/* 1. initialization */

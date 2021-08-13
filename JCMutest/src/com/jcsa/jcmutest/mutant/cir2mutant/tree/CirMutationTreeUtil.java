@@ -13,6 +13,7 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirDiferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirFlowsError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
@@ -291,6 +292,9 @@ class CirMutationTreeUtil {
 		else if(error instanceof CirReferError) {
 			this.propagate_from_refer_error((CirReferError) error, errors);
 		}
+		else if(error instanceof CirDiferError) {
+			this.propagate_from_difer_error((CirDiferError) error, errors);
+		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + error);
 		}
@@ -374,6 +378,14 @@ class CirMutationTreeUtil {
 	 * @throws Exception
 	 */
 	private void propagate_from_state_error(CirStateError error, Collection<CirAttribute> errors) throws Exception { /* none */ }
+	/**
+	 * @param error
+	 * @param errors
+	 * @throws Exception
+	 */
+	private void propagate_from_difer_error(CirDiferError error, Collection<CirAttribute> errors) throws Exception {
+		errors.add(CirAttribute.new_traps_error(error.get_execution()));
+	}
 	/**
 	 * @param error
 	 * @param errors
