@@ -20,6 +20,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * 		|--	CirBlockError		{blk_error, execution, statement, true|false}	<br>
  * 		|--	CirFlowsError		{flw_error, source, orig_target, muta_target}	<br>
  * 		|--	CirTrapsError		{trp_error, execution, statement, true}			<br>
+ * 		|--	CirDiferError		{dif_error, execution, orig_expr, muta_expr}	<br>
  * 		|--	CirValueError		{val_error, execution, orig_expr, muta_expr}	<br>
  * 		|--	CirReferError		{ref_error, execution, orig_refr, muta_refr}	<br>
  * 		|--	CirStateError		{sta_error, execution, orig_refr, muta_expr}	<br>
@@ -206,6 +207,22 @@ public abstract class CirAttribute {
 		}
 		else {
 			return new CirCoverCount(execution, SymbolFactory.sym_constant(Integer.valueOf(times)));
+		}
+	}
+	/**
+	 * @param orig_expression
+	 * @param muta_expression
+	 * @return {dif_error, execution, orig_expr, muta_expr}
+	 * @throws Exception
+	 */
+	public static CirDiferError new_difer_error(CirExpression orig_expression, SymbolExpression muta_expression) throws Exception {
+		if(orig_expression == null) {
+			throw new IllegalArgumentException("Invalid orig_expression: null");
+		}
+		else {
+			CirStatement statement = orig_expression.statement_of();
+			CirExecution execution = statement.get_tree().get_localizer().get_execution(statement);
+			return new CirDiferError(execution, orig_expression, muta_expression);
 		}
 	}
 	/**

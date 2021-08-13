@@ -4,6 +4,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirOperatorParser;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirSetGreaterEqParser extends CirOperatorParser {
 
@@ -14,330 +15,198 @@ public class CirSetGreaterEqParser extends CirOperatorParser {
 
 	@Override
 	protected boolean arith_add() throws Exception {
-		/**
-		 * [true] --> set_expr(B(x + y))
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x + y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						arith_add, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.arith_add, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean arith_sub() throws Exception {
-		return this.not_equals();
+		/** mutation [x - y >= 0; x - y != 0] :: (x <= y) **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		constraint = this.get_constraint(SymbolFactory.smaller_eq(loperand, roperand));
+		muta_expression = SymbolFactory.sym_condition(this.expression, false);
+		init_error = this.mut_expression(muta_expression);
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean arith_mul() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x * y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						arith_mul, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.arith_mul, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean arith_div() throws Exception {
-		/**
-		 * [y == 0] --> trap()
-		 * [y != 0] --> set_expr(B(x / y))
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
-		if(this.compare_or_mutate) {
-			constraint = this.get_constraint(Boolean.TRUE);
-			init_error = this.trap_statement();
-			return this.add_infection(constraint, init_error);
-		}
-		else {
-			constraint = this.get_constraint(this.sym_expression(
-						COperator.equal_with, loperand, roperand));
-			init_error = this.trap_statement();
-			this.add_infection(constraint, init_error);
-
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.not_equals, loperand, roperand));
-			condition = this.sym_expression(COperator.
-					arith_div, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-			return this.add_infection(constraint, init_error);
-		}
+		/** mutation [x - y >= 0; x / y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
+		constraint = this.get_constraint(Boolean.TRUE);
+		
+		muta_expression = this.sym_expression(COperator.arith_div, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean arith_mod() throws Exception {
-		/**
-		 * [y == 0] --> trap()
-		 * [y != 0] --> set_expr(B(x / y))
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
-		if(this.compare_or_mutate) {
-			constraint = this.get_constraint(Boolean.TRUE);
-			init_error = this.trap_statement();
-			return this.add_infection(constraint, init_error);
-		}
-		else {
-			constraint = this.get_constraint(this.sym_expression(
-						COperator.equal_with, loperand, roperand));
-			init_error = this.trap_statement();
-			this.add_infection(constraint, init_error);
-
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.not_equals, loperand, roperand));
-			condition = this.sym_expression(COperator.
-					arith_mod, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-			return this.add_infection(constraint, init_error);
-		}
+		/** mutation [x - y >= 0; x % y != 0] :: (x <= y) **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		
+		constraint = this.get_constraint(SymbolFactory.smaller_eq(loperand, roperand));
+		muta_expression = this.sym_expression(COperator.arith_mod, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean bitws_and() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x & y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						bit_and, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.bit_and, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean bitws_ior() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x | y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						bit_or, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.bit_or, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean bitws_xor() throws Exception {
-		return this.not_equals();
+		/** mutation [x - y >= 0; x ^ y != 0] :: (x <= y) **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		constraint = this.get_constraint(SymbolFactory.smaller_eq(loperand, roperand));
+		muta_expression = SymbolFactory.sym_condition(this.expression, false);
+		init_error = this.mut_expression(muta_expression);
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean bitws_lsh() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x << y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						left_shift, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.left_shift, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean bitws_rsh() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x - y >= 0; x >> y != 0] :: TRUE **/
+		CirAttribute constraint, init_error; 
+		SymbolExpression muta_expression;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						righ_shift, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		
+		muta_expression = this.sym_expression(COperator.righ_shift, loperand, roperand);
+		init_error = this.mut_expression(SymbolFactory.not_equals(muta_expression, 0));
+		
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean logic_and() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x >= y; x && y] :: TRUE **/
+		CirAttribute constraint, init_error;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						logic_and, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		init_error = this.mut_expression(this.sym_expression(
+				COperator.logic_and, this.loperand, this.roperand));
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean logic_ior() throws Exception {
-		CirAttribute constraint; CirAttribute init_error;
-		SymbolExpression condition;
+		/** mutation [x >= y; x && y] :: TRUE **/
+		CirAttribute constraint, init_error;
 		constraint = this.get_constraint(Boolean.TRUE);
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			condition = this.sym_expression(COperator.
-						logic_or, loperand, roperand);
-			condition = this.sym_condition(condition, true);
-			init_error = this.set_expression(condition);
-		}
+		init_error = this.mut_expression(this.sym_expression(
+				COperator.logic_or, this.loperand, this.roperand));
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean greater_tn() throws Exception {
-		/**
-		 * [x == y] --> set_false
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		constraint = this.get_constraint(this.sym_expression(
-				COperator.equal_with, this.loperand, this.roperand));
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			init_error = this.set_expression(Boolean.FALSE);
-		}
+		/** mutation [x >= y; x > y] :: (x == y; false) **/
+		CirAttribute constraint, init_error;
+		constraint = this.get_constraint(SymbolFactory.equal_with(loperand, roperand));
+		init_error = this.mut_expression(Boolean.FALSE);
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean greater_eq() throws Exception {
-		return this.unsupport_exception();
+		return this.report_equivalence_mutation();
 	}
 
 	@Override
 	protected boolean smaller_tn() throws Exception {
-		/**
-		 * [true] --> not_expr
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		if(this.compare_or_mutate) {
-			constraint = this.get_constraint(Boolean.TRUE);
-			init_error = this.trap_statement();
-			return this.add_infection(constraint, init_error);
-		}
-		else {
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.smaller_tn, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.TRUE);
-			this.add_infection(constraint, init_error);
-
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.greater_eq, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.FALSE);
-			this.add_infection(constraint, init_error);
-
-			return true;
-		}
+		/** mutation [x >= y; x < y] :: TRUE **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		constraint = this.get_constraint(Boolean.TRUE);
+		muta_expression = SymbolFactory.sym_condition(this.expression, false);
+		init_error = this.mut_expression(muta_expression);
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean smaller_eq() throws Exception {
-		/**
-		 * [x < y] --> set_true
-		 * [x > y] --> set_false
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		if(this.compare_or_mutate) {
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.not_equals, this.loperand, this.roperand));
-			init_error = this.trap_statement();
-			return this.add_infection(constraint, init_error);
-		}
-		else {
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.smaller_tn, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.TRUE);
-			this.add_infection(constraint, init_error);
-
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.greater_tn, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.FALSE);
-			this.add_infection(constraint, init_error);
-
-			return true;
-		}
+		/** mutation [x >= y; x <= y] :: (x != y) **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		constraint = this.get_constraint(SymbolFactory.not_equals(loperand, roperand));
+		muta_expression = SymbolFactory.sym_condition(this.expression, false);
+		init_error = this.mut_expression(muta_expression);
+		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean equal_with() throws Exception {
-		/**
-		 * [x > y] --> set_false
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		constraint = this.get_constraint(this.sym_expression(
-				COperator.greater_tn, this.loperand, this.roperand));
-		if(this.compare_or_mutate) {
-			init_error = this.trap_statement();
-		}
-		else {
-			init_error = this.set_expression(Boolean.FALSE);
-		}
+		/** mutation [x >= y; x == y] :: (x > y; false) **/
+		CirAttribute constraint, init_error;
+		constraint = this.get_constraint(SymbolFactory.greater_tn(loperand, roperand));
+		init_error = this.mut_expression(Boolean.FALSE);
 		return this.add_infection(constraint, init_error);
 	}
 
 	@Override
 	protected boolean not_equals() throws Exception {
-		/**
-		 * [x == y] --> set_false
-		 * [x < y] --> set_true
-		 */
-		CirAttribute constraint; CirAttribute init_error;
-		if(this.compare_or_mutate) {
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.smaller_eq, this.loperand, this.roperand));
-			init_error = this.trap_statement();
-			return this.add_infection(constraint, init_error);
-		}
-		else {
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.smaller_tn, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.TRUE);
-			this.add_infection(constraint, init_error);
-
-			constraint = this.get_constraint(this.sym_expression(
-					COperator.equal_with, this.loperand, this.roperand));
-			init_error = this.set_expression(Boolean.FALSE);
-			this.add_infection(constraint, init_error);
-
-			return true;
-		}
+		/** mutation [x >= y; x != y] :: (x <= y) **/
+		CirAttribute constraint, init_error; SymbolExpression muta_expression;
+		constraint = this.get_constraint(SymbolFactory.smaller_eq(loperand, roperand));
+		muta_expression = SymbolFactory.sym_condition(this.expression, false);
+		init_error = this.mut_expression(muta_expression);
+		return this.add_infection(constraint, init_error);
 	}
 
 }

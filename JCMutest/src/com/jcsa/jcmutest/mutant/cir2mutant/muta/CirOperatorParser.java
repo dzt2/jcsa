@@ -121,7 +121,7 @@ public abstract class CirOperatorParser {
 	protected abstract boolean smaller_eq()throws Exception;
 	protected abstract boolean equal_with()throws Exception;
 	protected abstract boolean not_equals()throws Exception;
-
+	
 	/* basic data operations */
 	/**
 	 * @param constraint
@@ -150,7 +150,7 @@ public abstract class CirOperatorParser {
 				get_localizer().get_execution(statement);
 		return CirAttribute.new_traps_error(execution);
 	}
-
+	
 	/* exception handles */
 	/**
 	 * @return report that the mutation operator is not supported in current location
@@ -166,73 +166,75 @@ public abstract class CirOperatorParser {
 	protected boolean report_equivalence_mutation() throws Exception {
 		throw new UnsupportedOperationException("Equivalent mutation: " + this.mutation);
 	}
-
-	/* expression errors */
+	
+	/* constraint errors */
+	/**
+	 * @param condition
+	 * @return the constraint evaluated at given location
+	 * @throws Exception
+	 */
+	protected CirAttribute new_constraint(Object condition) throws Exception {
+		return CirAttribute.new_constraint(this.statement.execution_of(), condition, true);
+	}
 	/**
 	 * @param muta_expression
-	 * @return set_expr(this.expression, muta_expression)
+	 * @return [compare] dif_error || [mutate] val_error
 	 * @throws Exception
 	 */
-	protected CirAttribute set_expression(Object muta_expression) throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.sym_expression(muta_expression));
+	protected CirAttribute mut_expression(Object muta_expression) throws Exception {
+		if(this.compare_or_mutate) {
+			return CirAttribute.new_difer_error(this.expression, 
+					SymbolFactory.sym_expression(muta_expression));
+		}
+		else {
+			return CirAttribute.new_value_error(this.expression, 
+					SymbolFactory.sym_expression(muta_expression));
+		}
 	}
 	/**
-	 * @param operand
-	 * @return add_expr(this.expression, +, operand)
+	 * @param expressions
+	 * @return
 	 * @throws Exception
 	 */
-	protected CirAttribute add_expression(Object operand) throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.arith_add(expression.get_data_type(), expression, operand));
+	protected CirAttribute conjuncts(Collection<SymbolExpression> expressions) throws Exception {
+		CirExecution execution = this.statement.execution_of();
+		if(expressions.isEmpty()) {
+			return CirAttribute.new_constraint(execution, Boolean.TRUE, true);
+		}
+		else {
+			SymbolExpression condition = null;
+			for(SymbolExpression expression : expressions) {
+				if(condition == null)
+					condition = expression;
+				else
+					condition = SymbolFactory.logic_and(condition, expression);
+			}
+			return CirAttribute.new_constraint(execution, condition, true);
+		}
 	}
 	/**
-	 * @param operand
-	 * @return add_expr(this.expression, -, operand)
+	 * @param expressions
+	 * @return
 	 * @throws Exception
 	 */
-	protected CirAttribute sub_expression(Object operand) throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.arith_sub(expression.get_data_type(), expression, operand));
+	protected CirAttribute disjuncts(Collection<SymbolExpression> expressions) throws Exception {
+		CirExecution execution = this.statement.execution_of();
+		if(expressions.isEmpty()) {
+			return CirAttribute.new_constraint(execution, Boolean.TRUE, true);
+		}
+		else {
+			SymbolExpression condition = null;
+			for(SymbolExpression expression : expressions) {
+				if(condition == null)
+					condition = expression;
+				else
+					condition = SymbolFactory.logic_ior(condition, expression);
+			}
+			return CirAttribute.new_constraint(execution, condition, true);
+		}
 	}
-	/**
-	 * @return uny_expr(this.expression, -)
-	 * @throws Exception
-	 */
-	protected CirAttribute neg_expression() throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.arith_neg(expression));
-	}
-	/**
-	 * @return uny_expr(this.expression, ~)
-	 * @throws Exception
-	 */
-	protected CirAttribute rsv_expression() throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.bitws_rsv(expression));
-	}
-	/**
-	 * @return uny_expr(this.expression, !)
-	 * @throws Exception
-	 */
-	protected CirAttribute not_expression() throws Exception {
-		return CirAttribute.new_value_error(expression, SymbolFactory.sym_condition(expression, false));
-	}
-	/**
-	 * @param operand
-	 * @param operator
-	 * @return ins_expr(orig_expr, operator, operand)
-	 * @throws Exception
-	 */
-	protected CirAttribute ins_expression(Object operand, COperator operator) throws Exception {
-		return CirAttribute.new_value_error(expression, this.sym_expression(operator, operand, expression));
-	}
-
-	/* symbolic operations */
-	/**
-	 * @param expression
-	 * @param value
-	 * @return symbolic condition as expression == value
-	 * @throws Exception
-	 */
-	protected SymbolExpression sym_condition(Object expression, boolean value) throws Exception {
-		return SymbolFactory.sym_condition(expression, value);
-	}
+	
+	/* symbolic expressions */
 	/**
 	 * @param operator {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
 	 * @param loperand
@@ -303,50 +305,4 @@ public abstract class CirOperatorParser {
 		}
 	}
 	
-	/* composite descriptions */
-	/**
-	 * @param descriptions
-	 * @return conjunction of the descriptions
-	 * @throws Exception
-	 */
-	protected CirAttribute conjunct(Collection<CirAttribute> constraints) throws Exception {
-		CirExecution execution = this.statement.get_tree().get_localizer().get_execution(statement);
-		if(constraints.isEmpty())
-			return CirAttribute.new_cover_count(execution, 1);
-		else if(constraints.size() == 1)
-			return constraints.iterator().next();
-		else {
-			SymbolExpression condition = null;
-			for(CirAttribute constraint : constraints) {
-				if(condition == null)
-					condition = constraint.get_parameter();
-				else
-					condition = SymbolFactory.logic_and(condition, constraint.get_parameter());
-			}
-			return CirAttribute.new_constraint(execution, condition, true);
-		}
-	}
-	/**
-	 * @param descriptions
-	 * @return disjunction of the descriptions
-	 * @throws Exception
-	 */
-	protected CirAttribute disjunct(Collection<CirAttribute> constraints) throws Exception {
-		CirExecution execution = this.statement.get_tree().get_localizer().get_execution(statement);
-		if(constraints.isEmpty())
-			return CirAttribute.new_constraint(execution, Boolean.FALSE, true);
-		else if(constraints.size() == 1)
-			return constraints.iterator().next();
-		else {
-			SymbolExpression condition = null;
-			for(CirAttribute constraint : constraints) {
-				if(condition == null)
-					condition = constraint.get_parameter();
-				else
-					condition = SymbolFactory.logic_ior(condition, constraint.get_parameter());
-			}
-			return CirAttribute.new_constraint(execution, condition, true);
-		}
-	}
-
 }

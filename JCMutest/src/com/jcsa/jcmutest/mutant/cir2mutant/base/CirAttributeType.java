@@ -5,6 +5,7 @@ public enum CirAttributeType {
 	/** {condition, execution, statement, expression} **/	condition,
 	/** {cov_count, execution, statement, integer} **/		cov_count,
 	/* expression error type */
+	/** {dif_error, execution, orig_expr, muta_expr} **/	dif_error,
 	/** {val_error, execution, orig_expr, muta_expr} **/	val_error,
 	/** {ref_error, execution, orig_refr, muta_refr} **/	ref_error,
 	/** {sta_error, execution, orig_refr, muta_expr} **/	sta_error,
