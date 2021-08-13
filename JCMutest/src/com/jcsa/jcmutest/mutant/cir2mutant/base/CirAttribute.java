@@ -130,7 +130,8 @@ public abstract class CirAttribute {
 		switch(this.type) {
 		case val_error:
 		case ref_error:
-		case sta_error:	return true;
+		case sta_error:	
+		case dif_error:	return true;
 		default:		return false;
 		}
 	}

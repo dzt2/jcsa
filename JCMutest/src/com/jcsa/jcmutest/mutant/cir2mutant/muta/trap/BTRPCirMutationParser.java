@@ -30,10 +30,12 @@ public class BTRPCirMutationParser extends CirMutationParser {
 		}
 
 		/* construct the cir-based mutations */
-		CirExecution execution = statement.execution_of();
-		CirAttribute constraint = CirAttribute.new_constraint(execution, expression, value);
-		CirAttribute init_error = CirAttribute.new_traps_error(execution);
-		infections.put(init_error, constraint);
+		if(expression != null) {
+			CirExecution execution = statement.execution_of();
+			CirAttribute constraint = CirAttribute.new_constraint(execution, expression, value);
+			CirAttribute init_error = CirAttribute.new_traps_error(execution);
+			infections.put(init_error, constraint);
+		}
 	}
 
 }

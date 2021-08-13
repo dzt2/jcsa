@@ -90,8 +90,15 @@ public abstract class CirMutationParser {
 		AstCirPair range = this.get_cir_range(cir_tree, location);
 		if(range != null && range.computational())
 			return range.get_result();
-		else
-			return null;
+		else {
+			List<CirNode> expressions = cir_tree.get_localizer().get_cir_nodes(location, CirExpression.class);
+			if(expressions.isEmpty()) {
+				return null;
+			}
+			else {
+				return (CirExpression) expressions.get(0);	/* default location */
+			}
+		}
 	}
 	/**
 	 * @param cir_tree

@@ -816,7 +816,7 @@ public class MuTestProjectFeatureWriter {
 			}
 		}
 		catch(Exception ex) {
-			return null;
+			throw ex;
 		}
 	}
 	/**
