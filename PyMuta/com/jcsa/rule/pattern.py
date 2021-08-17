@@ -2,7 +2,6 @@
 
 
 import os
-from collections import deque
 from typing import TextIO
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
@@ -903,7 +902,7 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	writer = KillPredictionOutput(c_document, inputs)
 	writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".e2r"))
 	mutant_nodes = writer.write_mutation_rules(os.path.join(o_directory, file_name + ".m2r"), 128)
-	writer.write_available_nodes(mutant_nodes, os.path.join(o_directory, file_name + ".r2n"))
+	writer.write_available_nodes(mutant_nodes, os.path.join(o_directory, file_name + ".r2m"))
 	print("\t(2) Write the symbolic execution patterns to {}.".format(o_directory))
 	return
 
