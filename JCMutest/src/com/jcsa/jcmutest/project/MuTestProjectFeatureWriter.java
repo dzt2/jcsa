@@ -322,26 +322,6 @@ public class MuTestProjectFeatureWriter {
 		return maps;
 	}
 	/**
-	 * node_type$attr_type$execution$location$parameter
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
-		String category = node.get_node_type().toString();
-		String operator = node.get_node_attribute().get_type().toString();
-		CirExecution execution = node.get_node_attribute().get_execution();
-		CirNode location = node.get_node_attribute().get_location();
-		SymbolNode parameter = node.get_node_attribute().get_parameter();
-		
-		this.file_writer.write("\t" + category.toString());
-		this.file_writer.write("$" + operator.toString());
-		this.file_writer.write("$" + this.encode_token(execution));
-		this.file_writer.write("$" + this.encode_token(location));
-		this.file_writer.write("$" + this.encode_token(parameter));
-		
-		if(parameter != null) { this.symbol_nodes.add(parameter); }
-	}
-	/**
 	 * class$operator$execution$location$parameter
 	 * @param annotation
 	 * @throws Exception
@@ -951,7 +931,6 @@ public class MuTestProjectFeatureWriter {
 		}
 		
 		/* II. write the annotations to the file output streams */
-		this.write_cir_attribute(node);
 		for(CirAnnotation annotation : annotations) {
 			this.write_cir_annotation(annotation);
 		}
