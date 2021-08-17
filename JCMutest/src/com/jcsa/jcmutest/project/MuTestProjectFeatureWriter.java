@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeEdge;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -187,7 +187,7 @@ public class MuTestProjectFeatureWriter {
 		}
 	}
 	
-	/* basic encoding methods */
+	/* basic supporting methods */
 	/**
 	 * translate special characters to specified format
 	 * @param text
@@ -287,6 +287,120 @@ public class MuTestProjectFeatureWriter {
 		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
+		}
+	}
+	/**
+	 * @param test_cases
+	 * @return arrange each test case in set to the corresponding mutants it needs be executed on
+	 * @throws Exception
+	 */
+	private Map<TestInput, Collection<Mutant>> initial_tests_mutants(Collection<TestInput> test_cases) throws Exception {
+		/* perform executions on instrumental version */
+		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
+		Map<TestInput, Collection<Mutant>> maps = new HashMap<TestInput, Collection<Mutant>>();
+		this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
+		
+		/* mapping each test to corresponding mutants */
+		for(TestInput test_case : test_cases) {
+			Collection<Mutant> mutants = new ArrayList<Mutant>();
+			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+				MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
+				MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
+				MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
+				if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+				else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+				else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);
+				}
+			}
+			if(!mutants.isEmpty()) { maps.put(test_case, mutants); }
+		}
+		return maps;
+	}
+	/**
+	 * node_type$attr_type$execution$location$parameter
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
+		String category = node.get_node_type().toString();
+		String operator = node.get_node_attribute().get_type().toString();
+		CirExecution execution = node.get_node_attribute().get_execution();
+		CirNode location = node.get_node_attribute().get_location();
+		SymbolNode parameter = node.get_node_attribute().get_parameter();
+		
+		this.file_writer.write("\t" + category.toString());
+		this.file_writer.write("$" + operator.toString());
+		this.file_writer.write("$" + this.encode_token(execution));
+		this.file_writer.write("$" + this.encode_token(location));
+		this.file_writer.write("$" + this.encode_token(parameter));
+		
+		if(parameter != null) { this.symbol_nodes.add(parameter); }
+	}
+	/**
+	 * class$operator$execution$location$parameter
+	 * @param annotation
+	 * @throws Exception
+	 */
+	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
+		String category = annotation.get_category().toString();
+		String operator = annotation.get_operator().toString();
+		CirExecution execution = annotation.get_execution();
+		CirNode location = annotation.get_location();
+		SymbolNode parameter = annotation.get_parameter();
+		
+		this.file_writer.write("\t" + category.toString());
+		this.file_writer.write("$" + operator.toString());
+		this.file_writer.write("$" + this.encode_token(execution));
+		this.file_writer.write("$" + this.encode_token(location));
+		this.file_writer.write("$" + this.encode_token(parameter));
+		
+		if(parameter != null) { this.symbol_nodes.add(parameter); }
+	}
+	/**
+	 * @param mutant
+	 * @param dependence_graph
+	 * @return create the mutation tree featuring mutant based on program dependence analysis (static)
+	 * @throws Exception
+	 */
+	private CirMutationTree new_cir_mutation_tree(Mutant mutant, CDependGraph dependence_graph) throws Exception {
+		CirMutationTree tree;
+		try {
+			tree = CirMutationTree.new_tree(mutant, dependence_graph);
+			if(tree.has_cir_mutations()) {
+				return tree;
+			}
+			else {
+				return null;
+			}
+		}
+		catch(Exception ex) {
+			throw ex;
+		}
+	}
+	/**
+	 * @param mutant
+	 * @param dependence_graph
+	 * @return create the mutation tree featuring mutant based on concrete path (dynamic)
+	 * @throws Exception
+	 */
+	private CirMutationTree new_cir_mutation_tree(Mutant mutant, CStatePath state_path) throws Exception {
+		CirMutationTree tree;
+		try {
+			tree = CirMutationTree.new_tree(mutant, state_path);
+			if(tree.has_cir_mutations()) {
+				return tree;
+			}
+			else {
+				return null;
+			}
+		}
+		catch(Exception ex) {
+			return null;
 		}
 	}
 	
@@ -724,124 +838,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_tst(); this.write_mut(); this.write_res();
 	}
 	
-	/* symbolic related supporting */
-	/**
-	 * @param test_cases
-	 * @return arrange each test case in set to the corresponding mutants it needs be executed on
-	 * @throws Exception
-	 */
-	private Map<TestInput, Collection<Mutant>> initial_tests_mutants(Collection<TestInput> test_cases) throws Exception {
-		/* perform executions on instrumental version */
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
-		Map<TestInput, Collection<Mutant>> maps = new HashMap<TestInput, Collection<Mutant>>();
-		this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
-		
-		/* mapping each test to corresponding mutants */
-		for(TestInput test_case : test_cases) {
-			Collection<Mutant> mutants = new ArrayList<Mutant>();
-			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
-				MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
-				MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
-				MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
-				if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
-				}
-				else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
-				}
-				else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
-				}
-			}
-			if(!mutants.isEmpty()) { maps.put(test_case, mutants); }
-		}
-		return maps;
-	}
-	/**
-	 * node_type$attr_type$execution$location$parameter
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_cir_attribute(CirMutationTreeNode node) throws Exception {
-		CirAttribute attribute = node.get_attribute().optimize();
-		String category = node.get_type().toString();
-		String operator = attribute.get_type().toString();
-		CirExecution execution = attribute.get_execution();
-		CirNode location = attribute.get_location();
-		SymbolExpression parameter = attribute.get_parameter();
-		
-		this.file_writer.write(category.toString());
-		this.file_writer.write("$" + operator.toString());
-		this.file_writer.write("$" + this.encode_token(execution));
-		this.file_writer.write("$" + this.encode_token(location));
-		this.file_writer.write("$" + this.encode_token(parameter));
-		
-		if(parameter != null) { this.symbol_nodes.add(parameter); }
-	}
-	/**
-	 * class$operator$execution$location$parameter
-	 * @param annotation
-	 * @throws Exception
-	 */
-	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
-		String category = annotation.get_category().toString();
-		String operator = annotation.get_operator().toString();
-		CirExecution execution = annotation.get_execution();
-		CirNode location = annotation.get_location();
-		SymbolNode parameter = annotation.get_parameter();
-		
-		this.file_writer.write(category.toString());
-		this.file_writer.write("$" + operator.toString());
-		this.file_writer.write("$" + this.encode_token(execution));
-		this.file_writer.write("$" + this.encode_token(location));
-		this.file_writer.write("$" + this.encode_token(parameter));
-		
-		if(parameter != null) { this.symbol_nodes.add(parameter); }
-	}
-	/**
-	 * @param mutant
-	 * @param dependence_graph
-	 * @return create the mutation tree featuring mutant based on program dependence analysis (static)
-	 * @throws Exception
-	 */
-	private CirMutationTree new_cir_mutation_tree(Mutant mutant, CDependGraph dependence_graph) throws Exception {
-		CirMutationTree tree;
-		try {
-			tree = CirMutationTree.new_tree(mutant, dependence_graph);
-			if(tree.has_cir_mutations()) {
-				return tree;
-			}
-			else {
-				return null;
-			}
-		}
-		catch(Exception ex) {
-			throw ex;
-		}
-	}
-	/**
-	 * @param mutant
-	 * @param dependence_graph
-	 * @return create the mutation tree featuring mutant based on concrete path (dynamic)
-	 * @throws Exception
-	 */
-	private CirMutationTree new_cir_mutation_tree(Mutant mutant, CStatePath state_path) throws Exception {
-		CirMutationTree tree;
-		try {
-			tree = CirMutationTree.new_tree(mutant, state_path);
-			if(tree.has_cir_mutations()) {
-				return tree;
-			}
-			else {
-				return null;
-			}
-		}
-		catch(Exception ex) {
-			return null;
-		}
-	}
-	
-	/* symbolic related data features */
+	/* symbolic expression trees */
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
@@ -936,44 +933,70 @@ public class MuTestProjectFeatureWriter {
 		this.close();
 		return number;
 	}
+	
+	/* cir_mutation tree features */
 	/**
-	 * node_type$attribute_type$execution$location$parameter
-	 * \tattribute{\tannotation}+
-	 * ;
+	 * {\tattribute} {\tannotation}+ \t;
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_node(CirMutationTreeNode node) throws Exception {
-		if(node.get_status().is_executed()) {
-			/* \tnode_type$attribute_type$execution$location$parameter */
-			this.file_writer.write("\t"); this.write_cir_attribute(node);
-			
-			/* {\tclass$operator$execution$location$parameter} */
-			for(CirAnnotation annotation : node.get_status().get_abstract_annotations()) {
-				this.file_writer.write("\t");
-				this.write_cir_annotation(annotation);
-			}
-			
-			this.file_writer.write("\t;");
+	private void write_cir_mutation_tree_node(CirMutationTreeNode node) throws Exception {
+		/* I. capture the annotations to be printed in the node */
+		Collection<CirAnnotation> annotations = new HashSet<CirAnnotation>();
+		for(CirAnnotation annotation : node.get_node_data().get_symbolic_annotations()) {
+			annotations.add(annotation);
 		}
+		for(CirAnnotation annotation : node.get_node_data().get_abstract_annotations()) {
+			annotations.add(annotation);
+		}
+		
+		/* II. write the annotations to the file output streams */
+		this.write_cir_attribute(node);
+		for(CirAnnotation annotation : annotations) {
+			this.write_cir_annotation(annotation);
+		}
+		this.file_writer.write("\t;");
 	}
 	/**
-	 * mid tst {(\t feature)+ by nodes}
-	 * @param tree
-	 * @param killed
+	 * mid tid { attribute {annotation}+ ; }+ \n
+	 * @param mutant
+	 * @param test
+	 * @param leaf
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_tree(CirMutationTree tree, TestInput test) throws Exception {
-		if(tree.has_cir_mutations()) {
-			String mutant 	= this.encode_token(tree.get_mutant());
-			String tid 		= this.encode_token(test);
-			this.file_writer.write(mutant + "\t" + tid);
-			tree.summarize_status();
-			for(CirMutationTreeNode node : tree.get_nodes()) {
-				this.write_cir_mutation_node(node);
-			}
-			this.file_writer.write("\n");
+	private void write_cir_mutation_tree_path(Mutant mutant, TestInput test, CirMutationTreeNode leaf) throws Exception {
+		/* mid tid */
+		String mid = this.encode_token(mutant), tid = this.encode_token(test);
+		this.file_writer.write(mid + "\t" + tid);
+		
+		/* { attribute {annotation}+ ; }+ */
+		for(CirMutationTreeEdge edge : leaf.get_path()) {
+			this.write_cir_mutation_tree_node(edge.get_source());
 		}
+		this.write_cir_mutation_tree_node(leaf);
+		
+		/* next_line */	this.file_writer.write("\n");
+	}
+	/**
+	 * (mid tid { attribute {annotation}+ ; }+ \n)+
+	 * @param tree
+	 * @param test
+	 * @throws Exception
+	 */
+	private int write_cir_mutation_tree(CirMutationTree tree, TestInput test) throws Exception {
+		if(tree.has_cir_mutations()) {
+			/* I. summarize the annotations in evaluation */
+			tree.sum_states(); int number_of_paths = 0;
+			
+			/* II. output the annotations for every path */
+			for(CirMutationTreeNode leaf : tree.get_leafs()) {
+				this.write_cir_mutation_tree_path(tree.get_mutant(), test, leaf);
+				number_of_paths++;
+			}
+			
+			/* III. return the number of path lines */	return number_of_paths;
+		}
+		else { return 0;	/* no available path is generated in this case */ }
 	}
 	/**
 	 * 1. construct CirMutationTree for each mutant using PDG
@@ -984,9 +1007,10 @@ public class MuTestProjectFeatureWriter {
 	 * @return the number of trees being created from mutants
 	 * @throws Exception
 	 */
-	private int write_cir_mutation_trees(CDependGraph dependence_graph,
+	private int[] write_cir_mutation_trees(CDependGraph dependence_graph,
 			Collection<TestInput> test_cases) throws Exception {
-		/** initialize the counter of evaluation **/	int counter = 0;
+		/** initialize the counter of evaluation **/	
+		int number_of_paths = 0, number_of_mutants = 0;
 		
 		/** static analysis **/
 		if(test_cases == null || test_cases.isEmpty()) {
@@ -997,8 +1021,9 @@ public class MuTestProjectFeatureWriter {
 				
 				/* II. write the features into the output file */
 				if(tree != null) {
-					tree.evaluate_status(null, this.max_infected_times, null);
-					this.write_cir_mutation_tree(tree, null); counter++;
+					tree.add_states(null, this.max_infected_times, null);
+					number_of_paths += this.write_cir_mutation_tree(tree, null); 
+					number_of_mutants++;
 				}
 			}
 		}
@@ -1037,39 +1062,51 @@ public class MuTestProjectFeatureWriter {
 					CirExecution execution = state_node.get_execution();
 					context.accumulate(state_node);
 					for(CirMutationTree tree : trees) {
-						tree.evaluate_status(execution, this.max_infected_times, context);
+						tree.add_states(execution, this.max_infected_times, context);
 					}
 				}
 				
 				/* II-D. output the symbolic features to output file */
 				for(CirMutationTree tree : trees) {
-					this.write_cir_mutation_tree(tree, test_case); counter++;
+					number_of_paths += this.write_cir_mutation_tree(tree, test_case); 
+					number_of_mutants++;
 				}
 			}
 			
 		}
 		
-		/** return the counter of cir-mutation trees **/	return counter;
+		/** return the counter of cir-mutation trees **/	
+		return new int[] { number_of_paths, number_of_mutants };
 	}
 	/**
+	 * xxx.stn + xxx.sym
 	 * @param dependence_graph
 	 * @param test_cases
 	 * @throws Exception
 	 */
 	private void write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
+		/* xxx.stn */
 		this.symbol_nodes.clear();
 		this.open(".stn");
-		int lines = 0;
+		int[] paths_and_mutants; 
 		if(test_cases == null || test_cases.isEmpty()) {
-			lines += this.write_cir_mutation_trees(dependence_graph, null);
+			paths_and_mutants = this.write_cir_mutation_trees(dependence_graph, null);
 		}
 		else {
-			this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
-			lines += this.write_cir_mutation_trees(dependence_graph, test_cases);
+			paths_and_mutants = this.write_cir_mutation_trees(dependence_graph, test_cases);
 		}
 		this.close();
-		this.write_sym();
-		System.out.println("\t==> Create " + lines + " trees and " + this.symbol_nodes.size() + " symbolic nodes.");
+		
+		/* xxx.sym */
+		int number_of_nodes = this.write_sym();
+		int number_of_paths = paths_and_mutants[0];
+		int number_of_mutants = paths_and_mutants[1];
+		this.symbol_nodes.clear();
+		
+		/* inform the user some feature information */
+		System.out.println("\t==> Print " + number_of_paths + " paths for " + 
+				number_of_mutants + "/" + this.inputs.get_mutant_space().size() + 
+				" mutants, using " + number_of_nodes + " symbolic expressions.");
 	}
 	
 	/* public interfaces for writing */

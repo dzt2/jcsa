@@ -30,14 +30,14 @@ public class MuTestprojectFeatureWriting {
 		print_static_features();
 		print_dynamic_features();
 	}
-	private static void print_static_features() throws Exception {
+	protected static void print_static_features() throws Exception {
 		/** static features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/features/";
 		for(File root : new File(root_path).listFiles()) {
 			testing(root, false);
 		}
 	}
-	private static void print_dynamic_features() throws Exception {
+	protected static void print_dynamic_features() throws Exception {
 		/** dynamic features **/
 		result_dir = "/home/dzt2/Development/Data/zexp/deatures/";
 		String[] file_names = new String[] {

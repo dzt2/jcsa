@@ -55,6 +55,42 @@ def __sort_rules_by_keys__(input_rules, rule_evaluation_dict: dict, key_index: i
 	return sort_list
 
 
+def do_evaluate_patterns(rules, used_tests):
+	"""
+	:param rules:
+	:param used_tests:
+	:return: mappings from str(SymExecutionPatternRule) to (length, support, confidence)
+	"""
+	evaluation_dict = dict()
+	for rule in rules:
+		rule: SymExecutionPatternRule
+		length, support, confidence, result = rule.evaluate(used_tests)
+		evaluation_dict[str(rule)] = (length, support, confidence)
+	return evaluation_dict
+
+
+def sort_symbolic_patterns(input_rules, used_tests):
+	"""
+	:param input_rules: the set of SymExecutionPatternRule(s) for being sorted
+	:param used_tests: 	the collection of TestCase.id to evaluate input rules
+	:return: 			the sorted sequence of SymExecutionPatternRule(s)
+	"""
+	evaluation_dict = do_evaluate_patterns(input_rules, used_tests)
+
+	confidence_rule_dict, confidence_list = dict(), list()
+	for rule in input_rules:
+		rule: SymExecutionPatternRule
+		evaluation = evaluation_dict[str(rule)]
+		confidence = evaluation[2]
+		key = int(confidence * 1000000)
+		if not (key in confidence_rule_dict):
+			confidence_rule_dict[key] = set()
+			confidence_list.append(key)
+		confidence_rule_dict[key].add(rule)
+	confidence_list.sort(reverse=True)
+
+
+
 def sort_kill_prediction_rules(input_rules, rule_evaluation_dict: dict):
 	"""
 	:param input_rules:
@@ -481,7 +517,7 @@ class SymExecutionPatternMiner:
 	"""
 	def __init__(self, inputs: SymExecutionMiningInputs):
 		self.middle = SymExecutionMiningMiddle(inputs)
-		self.solutions = dict()
+		self.solutions = dict()	# String --> (length, support, confidence)
 		return
 
 	def __pass__(self, tree_node: SymExecutionPatternNode):
@@ -507,7 +543,7 @@ class SymExecutionPatternMiner:
 		:param used_tests: 	the set of test cases to evaluate the input rule of the tree nodes
 		:return:
 		"""
-		if not (tree_node.get_rule() in self.solutions):
+		if not (str(tree_node.get_rule()) in self.solutions):
 			length, support, confidence, result = tree_node.get_rule().evaluate(used_tests)
 			self.solutions[tree_node.get_rule()] = (length, support, confidence)
 		if self.__pass__(tree_node):
@@ -856,7 +892,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 
 
 if __name__ == "__main__":
-	proj_directory = "/home/dzt2/Development/Data/zexp/deatures"
+	proj_directory = "/home/dzt2/Development/Data/zexp/features"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
 	main(proj_directory, enco_directory, outs_directory)

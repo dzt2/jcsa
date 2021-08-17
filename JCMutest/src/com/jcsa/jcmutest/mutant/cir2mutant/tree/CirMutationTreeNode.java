@@ -2,95 +2,139 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
-
+/**
+ * The node in CirMutationTree denotes a CirAttribute uniquely in RIP context.
+ * 
+ * @author yukimula
+ *
+ */
 public class CirMutationTreeNode {
-
+	
 	/* attributes */
-	/** the tree where this node is created **/
+	/** the CIR-based mutation tree where the node is created **/
 	private CirMutationTree 			tree;
-	/** the type of the node before when or after **/
-	private CirMutationTreeType 		type;
-	/** the status of attribute being accumulated **/
-	private CirMutationTreeStatus		status;
-	/** the edge from parent to this node or null **/
+	/** the type denotes in which step the node was evaluated **/
+	private CirMutationTreeType			type;
+	/** it maintains the data state hold by the node in testing **/
+	private CirMutationTreeData 		data;
+	/** the edge from its parent to this node or null if it's a root **/
 	private CirMutationTreeEdge			in_edge;
-	/** the edges from this node linking to its children **/
+	/** the edges from this node to all of its children extended from **/
 	private List<CirMutationTreeEdge>	ou_edges;
-
+	
 	/* constructor */
 	/**
-	 * create a node w.r.t. the attribute and type in the context of tree model
+	 * create a root in the tree w.r.t. the given attribute
 	 * @param tree
-	 * @param type
 	 * @param attribute
-	 * @throws IllegalArgumentException
+	 * @throws Exception
 	 */
-	protected CirMutationTreeNode(CirMutationTree tree, CirMutationTreeType
-			type, CirAttribute attribute) throws IllegalArgumentException {
+	protected CirMutationTreeNode(CirMutationTree tree, CirAttribute attribute) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree as null");
-		}
-		else if(type == null) {
-			throw new IllegalArgumentException("Invalid type as null");
 		}
 		else if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute: null");
 		}
 		else {
 			this.tree = tree;
-			this.type = type;
-			this.status = new CirMutationTreeStatus(attribute);
+			this.type = CirMutationTreeType.pre_condition;
+			this.data = new CirMutationTreeData(attribute);
 			this.in_edge = null;
-			this.ou_edges = new ArrayList<>();
+			this.ou_edges = new ArrayList<CirMutationTreeEdge>();
 		}
 	}
-
+	/**
+	 * create a child node w.r.t. the parent using given node_type and edge of type
+	 * @param parent
+	 * @param type
+	 * @param attribute
+	 * @param flow_type
+	 * @throws Exception
+	 */
+	private CirMutationTreeNode(CirMutationTreeNode parent, CirMutationTreeType type,
+			CirAttribute attribute, CirMutationTreeFlow flow_type) throws Exception {
+		if(parent == null) {
+			throw new IllegalArgumentException("Invalid parent: null");
+		}
+		else if(type == null) {
+			throw new IllegalArgumentException("Invalid node_type: null");
+		}
+		else if(attribute == null) {
+			throw new IllegalArgumentException("Invalid attribute: null");
+		}
+		else if(flow_type == null) {
+			throw new IllegalArgumentException("Invalid flow_type: null");
+		}
+		else {
+			this.tree = parent.tree;
+			this.type = type;
+			this.data = new CirMutationTreeData(attribute);
+			this.in_edge = new CirMutationTreeEdge(flow_type, parent, this);
+			this.ou_edges = new ArrayList<CirMutationTreeEdge>();
+			parent.ou_edges.add(this.in_edge);
+		}
+	}
+	/**	
+	 * @param type		the type of child node
+	 * @param attribute	the attribute of child
+	 * @param flow_type	the type of edge from this node to the child
+	 * @return create or return the child w.r.t. the attribute under this parent and using specified type and flow
+	 * @throws Exception
+	 */
+	protected CirMutationTreeNode new_child(CirMutationTreeType type, 
+			CirAttribute attribute, CirMutationTreeFlow flow_type) throws Exception {
+		if(type == null) {
+			throw new IllegalArgumentException("Invalid type: null");
+		}
+		else if(attribute == null) {
+			throw new IllegalArgumentException("Invalid attribute: null");
+		}
+		else if(flow_type == null) {
+			throw new IllegalArgumentException("Invalid flow_type: null");
+		}
+		else {
+			return new CirMutationTreeNode(this, type, attribute, flow_type);
+		}
+	}
+	
 	/* getters */
 	/**
-	 * @return the tree where this node is created
+	 * @return the CIR-based mutation tree where the node is created
 	 */
-	public CirMutationTree 					get_tree() 			{ return this.tree; }
+	public CirMutationTree get_tree() { return this.tree; }
 	/**
-	 * @return the type of the node before when or after
+	 * @return the type denotes in which step the node was evaluated
 	 */
-	public CirMutationTreeType 				get_type() 			{ return this.type; }
+	public CirMutationTreeType get_node_type() { return this.type; }
 	/**
-	 * @return the attribute that the node represents in the tree
+	 * @return it maintains the data state hold by the node in testing
 	 */
-	public CirAttribute						get_attribute()		{ return this.status.get_attribute(); }
+	public CirMutationTreeData get_node_data() { return this.data; }
 	/**
-	 * @return the status of attribute being accumulated
+	 * @return the attribute that the node represents in the tree 
 	 */
-	public CirMutationTreeStatus			get_status() 		{ return this.status; }
+	public CirAttribute get_node_attribute() { return this.data.get_attribute(); }
 	/**
-	 * @return the edge from parent to this node or null if the node is a root
+	 * @return the execution where the node's attribute should be evaluated
 	 */
-	public CirMutationTreeEdge				get_in_edge() 		{ return this.in_edge; }
+	public CirExecution get_node_execution() { return this.data.get_attribute().get_execution(); }
 	/**
-	 * @return the edges from this node linking to its children
+	 * @return whether this node is a root without any parent
 	 */
-	public Iterable<CirMutationTreeEdge> 	get_ou_edges()		{ return this.ou_edges; }
+	public boolean is_root() { return this.in_edge == null; }
 	/**
-	 * @return the number of the edges from this node linking to its children
+	 * @return the edge from its parent to this node or null if it's a root
 	 */
-	public int 								get_ou_degree()		{ return this.ou_edges.size(); }
+	public CirMutationTreeEdge get_in_edge() { return this.in_edge; }
 	/**
-	 * @param k
-	 * @return the kth edge from this node being linked to one of its child
+	 * @return the parent of this node or null if the node is root
 	 */
-	public CirMutationTreeEdge				get_ou_edge(int k)	{ return this.ou_edges.get(k); }
-
-	/* implication */
-	/**
-	 * @return whether the node is a root without input edge and parent
-	 */
-	public boolean 							is_root()			{ return this.in_edge == null; }
-	/**
-	 * @return the parent pointing to this node directly or null if it is root.
-	 */
-	public CirMutationTreeNode				get_parent()		{
+	public CirMutationTreeNode get_parent() {
 		if(this.in_edge == null) {
 			return null;
 		}
@@ -99,41 +143,52 @@ public class CirMutationTreeNode {
 		}
 	}
 	/**
-	 * @param k
-	 * @return the kth child under the node
+	 * @return whether the node is a leaf without any child
 	 */
-	public CirMutationTreeNode				get_child(int k)	{
-		return this.get_ou_edge(k).get_target();
+	public boolean is_leaf() { return this.ou_edges.isEmpty(); }
+	/**
+	 * @return the edges from this node to all of its children extended from
+	 */
+	public Iterable<CirMutationTreeEdge> get_ou_edges() { return this.ou_edges; }
+	/**
+	 * @return the number of edges from this node to all of its children extended from
+	 */
+	public int get_ou_degree() { return this.ou_edges.size(); }
+	/**
+	 * @param k
+	 * @return the kth edge from this node to all of its children extended from
+	 * @throws IndexOutOfBoundsException
+	 */
+	public CirMutationTreeEdge get_ou_edge(int k) throws IndexOutOfBoundsException {
+		return this.ou_edges.get(k);
 	}
 	/**
-	 * connect this node to a child using a flow-type, of which node type is specified
-	 * @param child_type
-	 * @param child_attribute
-	 * @param edge_type
-	 * @throws Exception
+	 * @param k
+	 * @return the kth child created under this node
+	 * @throws IndexOutOfBoundsException
 	 */
-	protected CirMutationTreeEdge link(CirMutationTreeType child_type, CirAttribute
-			attribute, CirMutationTreeFlow edge_type) throws IllegalArgumentException {
-		if(child_type == null) {
-			throw new IllegalArgumentException("Invalid child_type: null");
-		}
-		else if(attribute == null) {
-			throw new IllegalArgumentException("Invalid: " + attribute);
-		}
-		else if(edge_type == null) {
-			throw new IllegalArgumentException("Invalid edge_type: null");
-		}
-		else {
-			for(CirMutationTreeEdge edge : this.ou_edges) {
-				if(edge.get_target().get_attribute().equals(attribute)) {
-					return edge;
-				}
-			}
-			CirMutationTreeEdge edge = new CirMutationTreeEdge(edge_type, this,
-					new CirMutationTreeNode(this.tree, child_type, attribute));
-			edge.get_target().in_edge = edge; this.ou_edges.add(edge);
-			return edge;
-		}
+	public CirMutationTreeNode get_child(int k) throws IndexOutOfBoundsException {
+		return this.ou_edges.get(k).get_target();
 	}
+	/**
+	 * @return the sequence from root to this node in the tree 
+	 */
+	public Iterable<CirMutationTreeEdge> get_path() {
+		List<CirMutationTreeEdge> path = new ArrayList<CirMutationTreeEdge>();
+		CirMutationTreeNode node = this;
+		while(!node.is_root()) {
+			path.add(node.in_edge);
+			node = node.get_parent();
+		}
+		for(int k = 0; k < path.size() / 2; k++) {
+			int i = k, j = path.size() - 1 - k;
+			CirMutationTreeEdge ei = path.get(i);
+			CirMutationTreeEdge ej = path.get(j);
+			path.set(i, ej);
+			path.set(j, ei);
+		}
+		return path;
+	}
+	
 	
 }

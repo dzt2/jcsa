@@ -527,7 +527,8 @@ class MerExecution:
 		self.features = list()
 		for feature in features:
 			feature: int
-			self.features.append(feature)
+			if not (feature in self.features):
+				self.features.append(feature)
 		self.features.sort()
 		return
 
@@ -670,7 +671,7 @@ def main(prev_path: str, post_path: str):
 
 
 if __name__ == "__main__":
-	prev_directory = "/home/dzt2/Development/Data/zexp/deatures"
+	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	exit_code = main(prev_directory, post_directory)
 	exit(exit_code)

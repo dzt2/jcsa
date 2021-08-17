@@ -6,7 +6,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
  *
  */
 public class CirMutationTreeEdge {
-
+	
 	/* attributes */
 	private CirMutationTreeFlow type;
 	private CirMutationTreeNode	source;
@@ -47,5 +47,5 @@ public class CirMutationTreeEdge {
 	 * @return the child or target node being linked from parent
 	 */
 	public CirMutationTreeNode get_target() { return this.target; }
-
+	
 }

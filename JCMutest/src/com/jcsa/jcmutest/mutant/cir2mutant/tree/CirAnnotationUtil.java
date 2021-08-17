@@ -1,9 +1,11 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,12 +23,14 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
@@ -37,18 +41,18 @@ import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It implement the transformation of CirAnnotation from CirAttribute and
- * summarization of CirAnnotation from concrete CirAnnotation.
+ * It implements the generation, concretization and abstraction of CirAnnotation
+ * from CirAttribute or CirAnnotation themselves.
  * 
  * @author yukimula
  *
  */
-class CirAnnotationUtil {
+public class CirAnnotationUtil {
 	
-	/* singleton mode */	/** constructor **/	private CirAnnotationUtil() { }
-	protected static final CirAnnotationUtil util = new CirAnnotationUtil();
+	/* singleton */	/** constructor **/		private CirAnnotationUtil() {}
+	private static final CirAnnotationUtil util = new CirAnnotationUtil();
 	
-	/* basic approach */
+	/* basic methods */
 	/**
 	 * recursively collect the symbolic references under the node
 	 * @param node
@@ -277,117 +281,114 @@ class CirAnnotationUtil {
 		}
 	}
 	
-	/* concrete annotation generation */
+	/* generation interfaces */
 	/**
-	 * generate the set of concrete annotations from attribute using context 
-	 * @param attribute		the attribute to be translated as concrete annotations
-	 * @param context		the context to be used to evaluate the source attribute
-	 * @param annotations	the collection to collect concrete annotations generated
+	 * generate the symbolic annotations representing the source attribute statically
+	 * @param attribute		the attribute from which the symbolic annotations be generated
+	 * @param annotations	the collection to contain the symbolic annotations be generated 
 	 * @throws Exception
 	 */
-	protected void generate_annotations(CirAttribute attribute, SymbolProcess 
-			context, Collection<CirAnnotation> annotations) throws Exception {
+	public static void generate_annotations(CirAttribute attribute, Collection<CirAnnotation> annotations) throws Exception {
+		util.generate_annotations_in(attribute, annotations);
+	}
+	/**
+	 * @param attribute		the attribute from which the symbolic annotations be generated
+	 * @param annotations	the collection to contain the symbolic annotations be generated 
+	 * @throws Exception
+	 */
+	private void generate_annotations_in(CirAttribute attribute, Collection<CirAnnotation> annotations) throws Exception {
 		if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute as null");
 		}
 		else if(annotations == null) {
-			throw new IllegalArgumentException("No collection to caputure output");
-		}
-		else if(attribute instanceof CirCoverCount) {
-			this.generate_annotations_in((CirCoverCount) attribute, context, annotations);
+			throw new IllegalArgumentException("Invalid annotations as null");
 		}
 		else if(attribute instanceof CirConstraint) {
-			this.generate_annotations_in((CirConstraint) attribute, context, annotations);
+			this.generate_annotations_in_constraints((CirConstraint) attribute, annotations);
+		}
+		else if(attribute instanceof CirCoverCount) {
+			this.generate_annotations_in_cover_count((CirCoverCount) attribute, annotations);
 		}
 		else if(attribute instanceof CirBlockError) {
-			this.generate_annotations_in((CirBlockError) attribute, context, annotations);
+			this.generate_annotations_in_block_error((CirBlockError) attribute, annotations);
 		}
 		else if(attribute instanceof CirFlowsError) {
-			this.generate_annotations_in((CirFlowsError) attribute, context, annotations);
+			this.generate_annotations_in_flows_error((CirFlowsError) attribute, annotations);
 		}
 		else if(attribute instanceof CirTrapsError) {
-			this.generate_annotations_in((CirTrapsError) attribute, context, annotations);
-		}
-		else if(attribute instanceof CirValueError) {
-			this.generate_annotations_in((CirValueError) attribute, context, annotations);
-		}
-		else if(attribute instanceof CirReferError) {
-			this.generate_annotations_in((CirReferError) attribute, context, annotations);
-		}
-		else if(attribute instanceof CirStateError) {
-			this.generate_annotations_in((CirStateError) attribute, context, annotations);
+			this.generate_annotations_in_traps_error((CirTrapsError) attribute, annotations);
 		}
 		else if(attribute instanceof CirDiferError) {
-			this.generate_annotations_in((CirDiferError) attribute, context, annotations);
+			this.generate_annotations_in_difer_error((CirDiferError) attribute, annotations);
+		}
+		else if(attribute instanceof CirValueError) {
+			this.generate_annotations_in_value_error((CirValueError) attribute, annotations);
+		}
+		else if(attribute instanceof CirReferError) {
+			this.generate_annotations_in_refer_error((CirReferError) attribute, annotations);
+		}
+		else if(attribute instanceof CirStateError) {
+			this.generate_annotations_in_state_error((CirStateError) attribute, annotations);
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + attribute);
+			throw new IllegalArgumentException("Unsupported: " + attribute);
 		}
 	}
-	/* constraint or stmt_error class */
 	/**
+	 * divide the constraint into conditions and generate their annotations in the set
 	 * @param attribute
-	 * @param context
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in(CirCoverCount attribute,
-			SymbolProcess context, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		/* declarations and getters */
+	private void generate_annotations_in_constraints(CirConstraint attribute, Collection<CirAnnotation> annotations) throws Exception {
+		/* 1. divide the symbolic constraints into conditions for generation */
+		CirExecution execution = attribute.get_execution(), check_point;
+		SymbolExpression condition = this.symbol_evaluate(attribute.get_condition(), null);
+		Set<SymbolExpression> sub_conditions = new HashSet<SymbolExpression>();
+		this.generate_symbol_conditions_in(condition, sub_conditions);
+		
+		/* 2. generate the symbollic annotations to represent sub_conditions */
+		for(SymbolExpression sub_condition : sub_conditions) {
+			check_point = this.find_prior_checkpoint(execution, sub_condition);
+			annotations.add(CirAnnotation.eva_expr(check_point, sub_condition, true));
+		}
+		
+		/* 3. append the coverage requirement into the annotations if needed */
+		if(sub_conditions.isEmpty()) {
+			check_point = this.find_prior_checkpoint(execution, SymbolFactory.sym_expression(Boolean.TRUE));
+			annotations.add(CirAnnotation.cov_stmt(check_point, 1));
+		}
+	}
+	/**
+	 * generate the coverage constraint to annotations using its execution times limit sequence
+	 * @param attribute
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_cover_count(CirCoverCount attribute, Collection<CirAnnotation> annotations) throws Exception {
+		/* 1. declarations */
 		CirExecution execution = attribute.get_execution();
-		int execute_times = attribute.get_coverage_count();
-		Set<Integer> counters = new HashSet<Integer>();
+		int max_execution_times = attribute.get_coverage_count();
+		List<Integer> execution_times = new ArrayList<Integer>();
 		
-		/* generate domain counters in given times */
-		for(int times = 1; times < execute_times; times = times * 2) {
-			counters.add(Integer.valueOf(times));
+		/* 2. capture the set of execution times for analysis */
+		for(int k = 1; k < max_execution_times; k = k * 2) {
+			execution_times.add(Integer.valueOf(k));
 		}
-		counters.add(Integer.valueOf(execute_times));
+		execution_times.add(Integer.valueOf(max_execution_times));
 		
-		/* concrete annotation generated here... */
-		for(Integer counter : counters) {
-			annotations.add(CirAnnotation.cov_stmt(execution, counter));
-		}
-	}
-	/**
-	 * @param attribute
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in(CirConstraint attribute,
-			SymbolProcess context, 
-			Collection<CirAnnotation> annotations) throws Exception {
-		/* declarations and getters */
-		CirExecution execution = attribute.get_execution(), checkpoint;
-		SymbolExpression condition = attribute.get_condition();
-		condition = this.symbol_evaluate(condition, null);
-		Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
-		this.generate_symbol_conditions_in(condition, conditions);
-		
-		/* generate annotations based on the conditions */
-		for(SymbolExpression sub_condition : conditions) {
-			checkpoint = this.find_prior_checkpoint(execution, sub_condition);
-			annotations.add(CirAnnotation.eva_expr(checkpoint, sub_condition));
-		}
-		
-		/* insert coverage if no other constraint needed */
-		if(!conditions.isEmpty()) {
-			checkpoint = this.find_prior_checkpoint(
-					execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			annotations.add(CirAnnotation.cov_stmt(checkpoint, 1));
+		/* 3. generate the annotations w.r.t. coverage statement */
+		for(Integer execution_time : execution_times) {
+			annotations.add(CirAnnotation.cov_stmt(execution, execution_time));
 		}
 	}
 	/**
+	 * generate the stmt_error annotations from block-error directly
 	 * @param attribute
-	 * @param context
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in(CirBlockError attribute,
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
+	private void generate_annotations_in_block_error(CirBlockError attribute, Collection<CirAnnotation> annotations) throws Exception {
 		CirExecution execution = attribute.get_execution();
 		if(attribute.is_executed()) {
 			annotations.add(CirAnnotation.add_stmt(execution));
@@ -397,693 +398,933 @@ class CirAnnotationUtil {
 		}
 	}
 	/**
+	 * generate the stmt_error annotations in the flows-error directly
 	 * @param attribute
-	 * @param context
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in(CirFlowsError attribute, 
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
-		CirExecution orig_target = attribute.get_original_flow().get_target();
-		CirExecution muta_target = attribute.get_mutation_flow().get_target();
-		Map<Boolean, Collection<CirExecution>> results =
-						this.get_add_del_executions(orig_target, muta_target);
-		for(Boolean result : results.keySet()) {
-			for(CirExecution execution : results.get(result)) {
-				if(result.booleanValue()) {
-					annotations.add(CirAnnotation.add_stmt(execution));
-				}
-				else {
-					annotations.add(CirAnnotation.del_stmt(execution));
+	private void generate_annotations_in_flows_error(CirFlowsError attribute, Collection<CirAnnotation> annotations) throws Exception {
+		CirExecutionFlow orig_flow = attribute.get_original_flow();
+		CirExecutionFlow muta_flow = attribute.get_mutation_flow();
+		if(orig_flow.get_target() != muta_flow.get_target()) {
+			annotations.add(CirAnnotation.mut_flow(orig_flow, muta_flow));
+			Map<Boolean, Collection<CirExecution>> results = this.
+					get_add_del_executions(orig_flow.get_target(), muta_flow.get_target());
+			for(Boolean result : results.keySet()) {
+				for(CirExecution execution : results.get(result)) {
+					if(execution.get_statement() instanceof CirTagStatement) {
+						continue;
+					}
+					else if(result) {
+						annotations.add(CirAnnotation.add_stmt(execution));
+					}
+					else {
+						annotations.add(CirAnnotation.del_stmt(execution));
+					}
 				}
 			}
 		}
 	}
 	/**
 	 * @param attribute
-	 * @param context
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in(CirTrapsError attribute,
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
-		CirExecution execution = attribute.get_execution();
-		execution = execution.get_graph().get_exit();
+	private void generate_annotations_in_traps_error(CirTrapsError attribute, Collection<CirAnnotation> annotations) throws Exception {
+		CirExecution execution = attribute.get_execution().get_graph().get_exit();
 		annotations.add(CirAnnotation.trp_stmt(execution));
 	}
-	/* expr_error class and analysis */
-	/**
-	 * @param expression
-	 * @param muta_value
-	 * @throws Exception
-	 */
-	private void generate_domain_annotations_in_numb(CirExpression expression, 
-			long muta_value, Collection<CirAnnotation> annotations) throws Exception {
-		if(muta_value > 0) {
-			annotations.add(CirAnnotation.set_post(expression));
-			annotations.add(CirAnnotation.set_nneg(expression));
-			annotations.add(CirAnnotation.set_nzro(expression));
-		}
-		else if(muta_value < 0) {
-			annotations.add(CirAnnotation.set_negt(expression));
-			annotations.add(CirAnnotation.set_npos(expression));
-			annotations.add(CirAnnotation.set_nzro(expression));
-		}
-		else {
-			annotations.add(CirAnnotation.set_zero(expression));
-			annotations.add(CirAnnotation.set_npos(expression));
-			annotations.add(CirAnnotation.set_nneg(expression));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param muta_value
-	 * @throws Exception
-	 */
-	private void generate_domain_annotations_in_numb(CirExpression expression, 
-			double muta_value, Collection<CirAnnotation> annotations) throws Exception {
-		if(muta_value > 0) {
-			annotations.add(CirAnnotation.set_post(expression));
-			annotations.add(CirAnnotation.set_nneg(expression));
-			annotations.add(CirAnnotation.set_nzro(expression));
-		}
-		else if(muta_value < 0) {
-			annotations.add(CirAnnotation.set_negt(expression));
-			annotations.add(CirAnnotation.set_npos(expression));
-			annotations.add(CirAnnotation.set_nzro(expression));
-		}
-		else {
-			annotations.add(CirAnnotation.set_zero(expression));
-			annotations.add(CirAnnotation.set_npos(expression));
-			annotations.add(CirAnnotation.set_nneg(expression));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param muta_value
-	 * @throws Exception
-	 */
-	private void generate_domain_annotations_in_addr(CirExpression expression, 
-			long muta_value, Collection<CirAnnotation> annotations) throws Exception {
-		if(muta_value == 0) {
-			annotations.add(CirAnnotation.set_null(expression));
-		}
-		else {
-			annotations.add(CirAnnotation.set_invp(expression));
-		}
-	}
 	/**
 	 * @param expression
 	 * @param muta_expression
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in_set_constant(CirExpression expression,
-			SymbolConstant muta_constant, Collection<CirAnnotation> annotations) throws Exception {
-		if(CirMutation.is_boolean(expression)) {
-			annotations.add(CirAnnotation.set_bool(expression, muta_constant.get_bool()));
-			annotations.add(CirAnnotation.chg_bool(expression));
-		}
-		else if(CirMutation.is_integer(expression)) {
-			annotations.add(CirAnnotation.set_numb(expression, muta_constant.get_long()));
-			this.generate_domain_annotations_in_numb(expression, muta_constant.get_long(), annotations);
-			annotations.add(CirAnnotation.chg_numb(expression));
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			annotations.add(CirAnnotation.set_numb(expression, muta_constant.get_double()));
-			this.generate_domain_annotations_in_numb(expression, muta_constant.get_double(), annotations);
-			annotations.add(CirAnnotation.chg_numb(expression));
-		}
-		else if(CirMutation.is_pointer(expression)) {
-			annotations.add(CirAnnotation.set_addr(expression, muta_constant.get_long()));
-			this.generate_domain_annotations_in_addr(expression, muta_constant.get_long(), annotations);
-			annotations.add(CirAnnotation.chg_addr(expression));
-		}
-		else {
-			annotations.add(CirAnnotation.set_auto(expression, muta_constant.get_constant()));
-			annotations.add(CirAnnotation.chg_auto(expression));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param muta_expression
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in_set_symbolic(CirExpression expression, Boolean is_reference,
+	private void generate_annotations_via_expr_error(CirExpression expression, 
 			SymbolExpression muta_expression, Collection<CirAnnotation> annotations) throws Exception {
-		if(is_reference == null) {
-			annotations.add(CirAnnotation.mut_stat(expression, muta_expression));
-		}
-		else if(is_reference) {
-			annotations.add(CirAnnotation.mut_refr(expression, muta_expression));
-		}
-		else {
-			annotations.add(CirAnnotation.mut_expr(expression, muta_expression));
-		}
-		
-		if(CirMutation.is_boolean(expression)) {
-			annotations.add(CirAnnotation.chg_bool(expression));
-		}
-		else if(CirMutation.is_numeric(expression)) {
-			annotations.add(CirAnnotation.chg_numb(expression));
-		}
-		else if(CirMutation.is_pointer(expression)) {
-			annotations.add(CirAnnotation.chg_addr(expression));
-		}
-		else {
-			annotations.add(CirAnnotation.chg_auto(expression));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_expression
-	 * @param muta_expression
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in_scope_compare(CirExpression expression,
-			SymbolExpression orig_expression, SymbolExpression muta_expression,
-			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
-		/* inc_scop + dec_scop */
-		SymbolExpression difference = SymbolFactory.arith_sub(
-				expression.get_data_type(), muta_expression, orig_expression);
-		difference = this.symbol_evaluate(difference, context);
-		if(difference instanceof SymbolConstant) {
-			Object number = ((SymbolConstant) difference).get_number();
-			if(number instanceof Long) {
-				long value = ((Long) number).longValue();
-				if(value > 0) {
-					annotations.add(CirAnnotation.inc_scop(expression));
-				}
-				else if(value < 0) {
-					annotations.add(CirAnnotation.dec_scop(expression));
-				}
-			}
-			else {
-				double value = ((Double) number).doubleValue();
-				if(value > 0) {
-					annotations.add(CirAnnotation.inc_scop(expression));
-				}
-				else if(value < 0) {
-					annotations.add(CirAnnotation.dec_scop(expression));
-				}
-			}
-		}
-		
-		/* ext_scop + shk_scop */
-		if(orig_expression instanceof SymbolConstant && 
-				muta_expression instanceof SymbolConstant) {
-			SymbolConstant orig_constant = (SymbolConstant) orig_expression;
-			SymbolConstant muta_constant = (SymbolConstant) muta_expression;
-			if(CirMutation.is_integer(expression)) {
-				long orig_value = Math.abs(orig_constant.get_long());
-				long muta_value = Math.abs(muta_constant.get_long());
-				if(muta_value > orig_value) {
-					annotations.add(CirAnnotation.ext_scop(expression));
-				}
-				else if(muta_value < orig_value) {
-					annotations.add(CirAnnotation.shk_scop(expression));
-				} 
-			}
-			else if(CirMutation.is_pointer(expression)) {
-				long orig_value = Math.abs(orig_constant.get_long());
-				long muta_value = Math.abs(muta_constant.get_long());
-				if(muta_value > orig_value) {
-					annotations.add(CirAnnotation.ext_scop(expression));
-				}
-				else if(muta_value < orig_value) {
-					annotations.add(CirAnnotation.shk_scop(expression));
-				}
-			}
-			else {
-				double orig_value = Math.abs(orig_constant.get_double());
-				double muta_value = Math.abs(muta_constant.get_double());
-				if(muta_value > orig_value) {
-					annotations.add(CirAnnotation.ext_scop(expression));
-				}
-				else if(muta_value < orig_value) {
-					annotations.add(CirAnnotation.shk_scop(expression));
-				}
-			}
-		}
-	}
-	/**
-	 * @param attribute
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in(CirValueError attribute,
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. initialization */
-		CirExecution execution = attribute.get_execution();
-		CirExpression expression = (CirExpression) attribute.get_location();
+		/* 1. initialization and computation */
+		CirExecution execution = expression.execution_of(), check_point;
 		SymbolExpression orig_expression = SymbolFactory.sym_expression(expression);
-		SymbolExpression muta_expression = attribute.get_muta_expression();
-		orig_expression = this.symbol_evaluate(orig_expression, context);
+		orig_expression = this.symbol_evaluate(orig_expression, null);
 		try {
-			muta_expression = this.symbol_evaluate(muta_expression, context);
+			muta_expression = this.symbol_evaluate(muta_expression, null);
 		}
 		catch(ArithmeticException ex) {
-			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
+			annotations.add(CirAnnotation.trp_stmt(execution));
 			return;
 		}
 		
-		/* 2. compared with two values and return if they are equivalent */
-		if(orig_expression.equals(muta_expression)) { return;	/* none */ }
-		
-		/* 3. muta_expression as constant will generate set_xxx annotation */
-		if(muta_expression instanceof SymbolConstant) {
-			this.generate_annotations_in_set_constant(
-					expression, (SymbolConstant) muta_expression, annotations);
-		}
-		/* 4. otherwise, it only generates chg_xxx and mut_expr as alternate */
-		else {
-			this.generate_annotations_in_set_symbolic(
-					expression, false, muta_expression, annotations);
-		}
-		
-		/* 5. scope analysis using symbolic difference evaluation */
-		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			this.generate_annotations_in_scope_compare(expression, 
-					orig_expression, muta_expression, context, annotations);
-		}
-	}
-	/**
-	 * @param attribute
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in(CirDiferError attribute, 
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. initialization */
-		CirExecution execution = attribute.get_execution();
-		CirExpression expression = (CirExpression) attribute.get_location();
-		SymbolExpression orig_expression = SymbolFactory.sym_expression(expression);
-		SymbolExpression muta_expression = attribute.get_muta_expression();
-		orig_expression = this.symbol_evaluate(orig_expression, context);
-		try {
-			muta_expression = this.symbol_evaluate(muta_expression, context);
-		}
-		catch(ArithmeticException ex) {
-			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
+		/* 2. compare the original and mutation part and generate good annotations here */
+		if(orig_expression.equals(muta_expression)) {
+			check_point = this.find_prior_checkpoint(execution, SymbolFactory.sym_expression(Boolean.FALSE));
+			annotations.add(CirAnnotation.eva_expr(check_point, Boolean.FALSE, true)); 
 			return;
 		}
-		
-		/* 2. compared with two values and return if they are equivalent */
-		if(orig_expression.equals(muta_expression)) { return;	/* none */ }
-		
-		/* 3. muta_expression as constant will generate set_xxx annotation */
-		if(muta_expression instanceof SymbolConstant) {
-			this.generate_annotations_in_set_constant(
-					expression, (SymbolConstant) muta_expression, annotations);
-		}
-		/* 4. otherwise, it only generates chg_xxx and mut_expr as alternate */
 		else {
-			this.generate_annotations_in_set_symbolic(
-					expression, false, muta_expression, annotations);
+			annotations.add(CirAnnotation.set_expr(expression, muta_expression));
 		}
 		
-		/* 5. scope analysis using symbolic difference evaluation */
+		/* 3. difference by subtract, bitws_xor and extend subtract */
 		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			this.generate_annotations_in_scope_compare(expression, 
-					orig_expression, muta_expression, context, annotations);
+			SymbolExpression sub_difference = 
+					CirAnnotation.sub_value(orig_expression, muta_expression);
+			sub_difference = this.symbol_evaluate(sub_difference, null);
+			annotations.add(CirAnnotation.dif_expr(expression, sub_difference));
+		}
+		if(CirMutation.is_numeric(expression)) {
+			SymbolExpression ext_difference =
+					CirAnnotation.ext_value(orig_expression, muta_expression);
+			ext_difference = this.symbol_evaluate(ext_difference, null);
+			annotations.add(CirAnnotation.ext_expr(expression, ext_difference));
+		}
+		if(CirMutation.is_integer(expression)) {
+			SymbolExpression xor_difference = 
+					CirAnnotation.xor_value(orig_expression, muta_expression);
+			xor_difference = this.symbol_evaluate(xor_difference, null);
+			annotations.add(CirAnnotation.xor_expr(expression, xor_difference));
 		}
 	}
 	/**
 	 * @param attribute
-	 * @param context
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void generate_annotations_in(CirReferError attribute, SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. initialization */
-		CirExecution execution = attribute.get_execution();
-		CirExpression expression = (CirExpression) attribute.get_location();
-		SymbolExpression orig_expression = SymbolFactory.sym_expression(expression);
-		SymbolExpression muta_expression = attribute.get_muta_expression();
-		orig_expression = this.symbol_evaluate(orig_expression, context);
-		try {
-			muta_expression = this.symbol_evaluate(muta_expression, context);
-		}
-		catch(ArithmeticException ex) {
-			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
-			return;
-		}
-		
-		/* 2. compared with two values and return if they are equivalent */
-		if(orig_expression.equals(muta_expression)) { return;	/* none */ }
-		
-		/* 3. muta_expression as constant will generate set_xxx annotation */
-		if(muta_expression instanceof SymbolConstant) {
-			this.generate_annotations_in_set_constant(
-					expression, (SymbolConstant) muta_expression, annotations);
-		}
-		/* 4. otherwise, it only generates chg_xxx and mut_expr as alternate */
-		else {
-			this.generate_annotations_in_set_symbolic(
-					expression, true, muta_expression, annotations);
-		}
-		
-		/* 5. scope analysis using symbolic difference evaluation */
-		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			this.generate_annotations_in_scope_compare(expression, 
-					orig_expression, muta_expression, context, annotations);
-		}
-	}
-	/**
-	 * @param attribute
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void generate_annotations_in(CirStateError attribute,
-			SymbolProcess context,
-			Collection<CirAnnotation> annotations) throws Exception {
+	private void generate_annotations_in_difer_error(CirDiferError attribute, Collection<CirAnnotation> annotations) throws Exception {
 		CirExpression expression = (CirExpression) attribute.get_location();
 		SymbolExpression muta_expression = attribute.get_parameter();
+		this.generate_annotations_via_expr_error(expression, muta_expression, annotations);
+	}
+	/**
+	 * @param attribute
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_value_error(CirValueError attribute, Collection<CirAnnotation> annotations) throws Exception {
+		CirExpression expression = (CirExpression) attribute.get_location();
+		SymbolExpression muta_expression = attribute.get_parameter();
+		this.generate_annotations_via_expr_error(expression, muta_expression, annotations);
+	}
+	/**
+	 * @param attribute
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_refer_error(CirReferError attribute, Collection<CirAnnotation> annotations) throws Exception {
+		CirExpression expression = (CirExpression) attribute.get_location();
+		SymbolExpression muta_expression = attribute.get_parameter();
+		this.generate_annotations_via_expr_error(expression, muta_expression, annotations);
+	}
+	/**
+	 * @param attribute
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void generate_annotations_in_state_error(CirStateError attribute, Collection<CirAnnotation> annotations) throws Exception {
+		CirExecution execution = attribute.get_execution();
+		CirExpression expression = (CirExpression) attribute.get_location();
+		SymbolExpression muta_expression = attribute.get_muta_expression();
 		try {
-			muta_expression = this.symbol_evaluate(muta_expression, context);
+			muta_expression = this.symbol_evaluate(muta_expression, null);
+			annotations.add(CirAnnotation.mut_stat(expression, muta_expression));
 		}
 		catch(ArithmeticException ex) {
-			annotations.add(CirAnnotation.trp_stmt(attribute.get_execution().get_graph().get_exit()));
-		}
-		
-		if(muta_expression instanceof SymbolConstant) {
-			this.generate_annotations_in_set_constant(
-					expression, (SymbolConstant) muta_expression, annotations);
-		}
-		else {
-			this.generate_annotations_in_set_symbolic(
-					expression, null, muta_expression, annotations);
+			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
 		}
 	}
 	
-	/* abstract annotation summarization */
+	/* concretization methods */
+	/**
+	 * @param symbolic_annotations	the set of symbolic annotations from which the concrete ones be created
+	 * @param concrete_annotations	the set of concrete annotations being generated from the symbolic ones.
+	 * @throws Exception
+	 */
+	public static void concretize_annotations(Collection<CirAnnotation> symbolic_annotations,
+			SymbolProcess context, Collection<CirAnnotation> concrete_annotations) throws Exception {
+		for(CirAnnotation symbolic_annotation : symbolic_annotations) {
+			util.concretize_annotations_in(symbolic_annotation, context, concrete_annotations);
+		}
+	}
+	/**
+	 * @param annotation	the symbolic annotation representing the original CirAttribute
+	 * @param annotations	the collection to contain concrete annotations from the source
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		if(annotation == null) {
+			throw new IllegalArgumentException("Invalid annotation: null");
+		}
+		else if(annotations == null) {
+			throw new IllegalArgumentException("Invalid annotations: null");
+		}
+		else {
+			switch(annotation.get_operator()) {
+			case cov_stmt:	this.concretize_annotations_in_cov_stmt(annotation, context, annotations);	break;
+			case eva_expr:	this.concretize_annotations_in_eva_expr(annotation, context, annotations); 	break;
+			case mut_stmt:	this.concretize_annotations_in_mut_stmt(annotation, context, annotations);	break;
+			case mut_flow:	this.concretize_annotations_in_mut_flow(annotation, context, annotations); 	break;
+			case trp_stmt:	this.concretize_annotations_in_trp_stmt(annotation, context, annotations); 	break;
+			case mut_stat:	this.concretize_annotations_in_mut_stat(annotation, context, annotations);	break;
+			case set_expr:	this.concretize_annotations_in_set_expr(annotation, context, annotations); 	break;
+			case dif_expr:	this.concretize_annotations_in_dif_expr(annotation, context, annotations); 	break;
+			case ext_expr:	this.concretize_annotations_in_ext_expr(annotation, context, annotations);  break;
+			case xor_expr:	this.concretize_annotations_in_xor_expr(annotation, context, annotations); 	break;
+			default:		throw new IllegalArgumentException("Unsupport: " + annotation);
+			}
+		}
+	}
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_cov_stmt(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { }
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_eva_expr(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { }
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_mut_flow(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { }
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_mut_stmt(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { }
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_trp_stmt(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { }
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_mut_stat(CirAnnotation annotation, 
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		CirExecution execution = annotation.get_execution();
+		CirExpression expression = (CirExpression) annotation.get_location();
+		SymbolExpression muta_expression = annotation.get_parameter();
+		try {
+			muta_expression = this.symbol_evaluate(muta_expression, context);
+			if(muta_expression instanceof SymbolConstant) {
+				SymbolConstant constant = (SymbolConstant) muta_expression;
+				if(CirMutation.is_boolean(expression)) {
+					annotations.add(CirAnnotation.set_bool(expression, constant.get_bool()));
+				}
+				else if(CirMutation.is_integer(expression)) {
+					annotations.add(CirAnnotation.set_numb(expression, constant.get_long()));
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					annotations.add(CirAnnotation.set_real(expression, constant.get_double()));
+				}
+				else if(CirMutation.is_pointer(expression)) {
+					annotations.add(CirAnnotation.set_addr(expression, constant.get_long()));
+				}
+				else {
+					annotations.add(CirAnnotation.set_auto(expression, constant.get_constant()));
+				}
+			}
+			else {
+				annotations.add(CirAnnotation.chg_expr(expression));
+			}
+		}
+		catch(ArithmeticException ex) {
+			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
+		}
+	}
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_set_expr(CirAnnotation annotation,
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		CirExecution execution = annotation.get_execution();
+		CirExpression expression = (CirExpression) annotation.get_location();
+		SymbolExpression orig_expression = SymbolFactory.sym_expression(expression);
+		SymbolExpression muta_expression = annotation.get_parameter();
+		try {
+			orig_expression = this.symbol_evaluate(orig_expression, context);
+			muta_expression = this.symbol_evaluate(muta_expression, context);
+			if(orig_expression.equals(muta_expression)) { /* no error occurs */ }
+			else if(muta_expression instanceof SymbolConstant) {
+				SymbolConstant constant = (SymbolConstant) muta_expression;
+				if(CirMutation.is_boolean(expression)) {
+					annotations.add(CirAnnotation.set_bool(expression, constant.get_bool()));
+				}
+				else if(CirMutation.is_integer(expression)) {
+					annotations.add(CirAnnotation.set_numb(expression, constant.get_long()));
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					annotations.add(CirAnnotation.set_real(expression, constant.get_double()));
+				}
+				else if(CirMutation.is_pointer(expression)) {
+					annotations.add(CirAnnotation.set_addr(expression, constant.get_long()));
+				}
+				else {
+					annotations.add(CirAnnotation.set_auto(expression, constant.get_constant()));
+				}
+			}
+			else {
+				annotations.add(CirAnnotation.chg_expr(expression));
+			}
+		}
+		catch(ArithmeticException ex) {
+			annotations.add(CirAnnotation.trp_stmt(execution.get_graph().get_exit()));
+		}
+	}
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_dif_expr(CirAnnotation annotation,
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		CirExpression expression = (CirExpression) annotation.get_location();
+		SymbolExpression difference = annotation.get_parameter();
+		try {
+			difference = this.symbol_evaluate(difference, context);
+			if(difference instanceof SymbolConstant) {
+				SymbolConstant constant = (SymbolConstant) difference;
+				if(CirMutation.is_integer(expression)) {
+					annotations.add(CirAnnotation.dif_numb(expression, constant.get_long()));
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					annotations.add(CirAnnotation.dif_real(expression, constant.get_double()));
+				}
+				else if(CirMutation.is_pointer(expression)) {
+					annotations.add(CirAnnotation.dif_addr(expression, constant.get_long()));
+				}
+				else {
+					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
+				}
+			}
+		}
+		catch(ArithmeticException ex) { }
+	}
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_ext_expr(CirAnnotation annotation,
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		CirExpression expression = (CirExpression) annotation.get_location();
+		SymbolExpression difference = annotation.get_parameter();
+		try {
+			difference = this.symbol_evaluate(difference, context);
+			if(difference instanceof SymbolConstant) {
+				SymbolConstant constant = (SymbolConstant) difference;
+				if(CirMutation.is_integer(expression)) {
+					annotations.add(CirAnnotation.ext_numb(expression, constant.get_long()));
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					annotations.add(CirAnnotation.ext_real(expression, constant.get_double()));
+				}
+				else {
+					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
+				}
+			}
+		}
+		catch(ArithmeticException ex) { }
+	}
+	/**
+	 * @param annotation
+	 * @param context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void concretize_annotations_in_xor_expr(CirAnnotation annotation,
+			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
+		CirExpression expression = (CirExpression) annotation.get_location();
+		SymbolExpression difference = annotation.get_parameter();
+		try {
+			difference = this.symbol_evaluate(difference, context);
+			if(difference instanceof SymbolConstant) {
+				SymbolConstant constant = (SymbolConstant) difference;
+				if(CirMutation.is_integer(expression)) {
+					annotations.add(CirAnnotation.xor_numb(expression, constant.get_long()));
+				}
+				else {
+					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
+				}
+			}
+		}
+		catch(ArithmeticException ex) { }
+	}
+	
+	/* domain-abstract methods */
 	/**
 	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	protected void summarize_annotations(
+	public static void summarized_annotations(
+			Collection<CirAnnotation> concrete_annotations, 
+			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		util.summarized_annotations_in(concrete_annotations, abstract_annotations);
+	}
+	/**
+	 * summarize the domain-based annotations from the given concrete annotations
+	 * @param concrete_annotations
+	 * @param abstract_annotations
+	 * @throws Exception
+	 */
+	private void summarized_annotations_in(Collection<CirAnnotation> concrete_annotations,
+			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		if(concrete_annotations == null) {
+			throw new IllegalArgumentException("Invalid type: null");
+		}
+		else if(abstract_annotations == null) {
+			throw new IllegalArgumentException("Invalid abstract_annotations");
+		}
+		else {
+			Map<CirAnnotationType, Collection<CirAnnotation>> maps = 
+					new HashMap<CirAnnotationType, Collection<CirAnnotation>>();
+			for(CirAnnotation concrete_annotation : concrete_annotations) {
+				CirAnnotationType type = concrete_annotation.get_operator();
+				if(!maps.containsKey(type)) {
+					maps.put(type, new HashSet<CirAnnotation>());
+				}
+				maps.get(type).add(concrete_annotation);
+			}
+			for(CirAnnotationType type : maps.keySet()) {
+				this.summarized_annotations_in(type, maps.get(type), abstract_annotations);
+			}
+		}
+	}
+	/**
+	 * summarize the domain-based annotations from the concrete ones under the type
+	 * @param type
+	 * @param concrete_annotations
+	 * @param abstract_annotations
+	 * @throws Exception
+	 */
+	private void summarized_annotations_in(CirAnnotationType type,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Map<CirAnnotationType, Collection<CirAnnotation>> maps = 
-				this.distribute_annotations(concrete_annotations);
-		for(CirAnnotationType type : maps.keySet()) {
-			Collection<CirAnnotation> annotations = maps.get(type);
+		if(type == null) {
+			throw new IllegalArgumentException("Invalid type: null");
+		}
+		else if(concrete_annotations == null) {
+			throw new IllegalArgumentException("Invalid annotations: null");
+		}
+		else if(abstract_annotations == null) {
+			throw new IllegalArgumentException("Invalid abstract_annotations");
+		}
+		else if(!concrete_annotations.isEmpty()) {
 			switch(type) {
-			case cov_stmt:	this.summarize_annotations_in_cov_stmt(annotations, abstract_annotations); break;
-			case eva_expr:	this.summarize_annotations_in_eva_expr(annotations, abstract_annotations); break;
-			case mut_flow:	this.summarize_annotations_in_mut_flow(annotations, abstract_annotations); break;
-			case mut_stmt:	this.summarize_annotations_in_mut_stmt(annotations, abstract_annotations); break;
-			case trp_stmt:	this.summarize_annotations_in_trp_stmt(annotations, abstract_annotations); break;
-			case mut_expr:	this.summarize_annotations_in_mut_expr(annotations, abstract_annotations); break;
-			case mut_refr:	this.summarize_annotations_in_mut_refr(annotations, abstract_annotations); break;
-			case mut_stat:	this.summarize_annotations_in_mut_stat(annotations, abstract_annotations); break;
-			case chg_bool:	this.summarize_annotations_in_chg_xxxx(annotations, abstract_annotations); break;
-			case chg_numb:	this.summarize_annotations_in_chg_xxxx(annotations, abstract_annotations); break;
-			case chg_addr:	this.summarize_annotations_in_chg_xxxx(annotations, abstract_annotations); break;
-			case chg_auto:	this.summarize_annotations_in_chg_xxxx(annotations, abstract_annotations); break;
-			case set_bool:	this.summarize_annotations_in_set_xxxx(annotations, abstract_annotations); break;
-			case set_numb:	this.summarize_annotations_in_set_xxxx(annotations, abstract_annotations); break;
-			case set_addr:	this.summarize_annotations_in_set_xxxx(annotations, abstract_annotations); break;
-			case set_auto:	this.summarize_annotations_in_set_xxxx(annotations, abstract_annotations); break;
-			case set_post:	this.summarize_annotations_in_set_post(annotations, abstract_annotations); break;
-			case set_zero:	this.summarize_annotations_in_set_zero(annotations, abstract_annotations); break;
-			case set_negt:	this.summarize_annotations_in_set_negt(annotations, abstract_annotations); break;
-			case set_null:	this.summarize_annotations_in_set_null(annotations, abstract_annotations); break;
-			case inc_scop:	this.summarize_annotations_in_inc_scop(annotations, abstract_annotations); break;
-			case ext_scop:	this.summarize_annotations_in_ext_scop(annotations, abstract_annotations); break;
-			default: 		throw new IllegalArgumentException(type.toString());
+			case trp_stmt:	this.summarized_annotations_in_trp_stmt(concrete_annotations, abstract_annotations); break;
+			case set_bool:	this.summarized_annotations_in_set_bool(concrete_annotations, abstract_annotations); break;
+			case set_numb:	this.summarized_annotations_in_set_numb(concrete_annotations, abstract_annotations); break;
+			case set_real:	this.summarized_annotations_in_set_real(concrete_annotations, abstract_annotations); break;
+			case set_addr:	this.summarized_annotations_in_set_addr(concrete_annotations, abstract_annotations); break;
+			case set_auto:	this.summarized_annotations_in_set_auto(concrete_annotations, abstract_annotations); break;
+			case dif_numb:	this.summarized_annotations_in_dif_numb(concrete_annotations, abstract_annotations); break;
+			case dif_real:	this.summarized_annotations_in_dif_real(concrete_annotations, abstract_annotations); break;
+			case dif_addr:	this.summarized_annotations_in_dif_addr(concrete_annotations, abstract_annotations); break;
+			case ext_numb:	this.summarized_annotations_in_ext_numb(concrete_annotations, abstract_annotations); break;
+			case ext_real:	this.summarized_annotations_in_ext_real(concrete_annotations, abstract_annotations); break;
+			case xor_numb:	this.summarized_annotations_in_xor_numb(concrete_annotations, abstract_annotations); break;
+			default:		throw new IllegalArgumentException("Unsupport: " + type);
 			}
 		}
 	}
 	/**
-	 * @param annotations
-	 * @return the mapping from unique type to the collection of related annotations
-	 */
-	private Map<CirAnnotationType, Collection<CirAnnotation>> distribute_annotations(Collection<CirAnnotation> annotations) {
-		Map<CirAnnotationType, Collection<CirAnnotation>> results = 
-				new HashMap<CirAnnotationType, Collection<CirAnnotation>>();
-		for(CirAnnotation annotation : annotations) {
-			CirAnnotationType type = annotation.get_operator();
-			switch(type) {
-			case cov_stmt:
-			case eva_expr:
-			case mut_flow:
-			case mut_stmt:
-			case trp_stmt:
-			case mut_expr:
-			case mut_refr:
-			case mut_stat:
-			case set_bool:
-			case set_numb:
-			case set_addr:
-			case set_auto:
-			case chg_addr:
-			case chg_numb:
-			case chg_bool:
-			case chg_auto:	type = annotation.get_operator();	break;
-			case set_post:
-			case set_npos:	type = CirAnnotationType.set_post; 	break;
-			case set_negt:
-			case set_nneg:	type = CirAnnotationType.set_negt;	break;
-			case set_zero:
-			case set_nzro:	type = CirAnnotationType.set_zero;	break;
-			case set_null:
-			case set_invp:	type = CirAnnotationType.set_null;	break;
-			case inc_scop:
-			case dec_scop:	type = CirAnnotationType.inc_scop;	break;
-			case ext_scop:
-			case shk_scop:	type = CirAnnotationType.ext_scop;	break;
-			default:		throw new IllegalArgumentException(annotation.toString());
-			}
-			
-			if(!results.containsKey(type)) 
-				results.put(type, new HashSet<CirAnnotation>());
-			results.get(type).add(annotation);
-		}
-		return results;
-	}
-	/* constraint class */
-	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_cov_stmt(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_trp_stmt(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.addAll(annotations);
+		abstract_annotations.addAll(concrete_annotations);
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_eva_expr(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_set_bool(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.addAll(annotations);
-	}
-	/* stmt_error class */
-	/**
-	 * @param annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
-	private void summarize_annotations_in_mut_flow(Collection<CirAnnotation> annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotations.size() == 1) {
-			CirAnnotation annotation = annotations.iterator().next();
-			CirExecution orig_target = annotation.get_location().execution_of();
-			CirExecution muta_target = (CirExecution) annotation.get_parameter().get_source();
-			Map<Boolean, Collection<CirExecution>> results = this.get_add_del_executions(orig_target, muta_target);
-			for(Boolean result : results.keySet()) {
-				for(CirExecution execution : results.get(result)) {
-					if(result) {
-						abstract_annotations.add(CirAnnotation.add_stmt(execution));
-					}
-					else {
-						abstract_annotations.add(CirAnnotation.del_stmt(execution));
-					}
+		/* domain coverage collection */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_bool()) {
+					domains.add(CirAnnotationScope.get_true_scope());
+				}
+				else {
+					domains.add(CirAnnotationScope.get_fals_scope());
 				}
 			}
 		}
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_true_scope())) {
+			if(domains.contains(CirAnnotationScope.get_fals_scope())) {			/* (T,F) */
+				abstract_annotations.add(CirAnnotation.set_bool_scope(expression));
+			}
+			else {																/* (T) */
+				abstract_annotations.add(CirAnnotation.set_true_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_fals_scope())) {			/* (F) */
+				abstract_annotations.add(CirAnnotation.set_fals_scope(expression));
+			}
+			else {	/* none of value is contained in the coverage domain */	}
+		}
+		if(expression != null) abstract_annotations.add(CirAnnotation.set_bool_scope(expression));
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_mut_stmt(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_set_numb(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.addAll(annotations);
+		/* domain coverage collection */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_long() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+				else {
+					domains.add(CirAnnotationScope.get_zero_scope());
+				}
+			}
+		}
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (+, 0, -) */
+					abstract_annotations.add(CirAnnotation.set_numb_scope(expression));
+				}
+				else {															/* (+, -) */
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+			else {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (+, 0) */
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+				}
+				else {															/* (+) */
+					abstract_annotations.add(CirAnnotation.set_post_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (-, 0) */
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+				}
+				else {															/* (-) */
+					abstract_annotations.add(CirAnnotation.set_negt_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+			else {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (0) */
+					abstract_annotations.add(CirAnnotation.set_zero_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+				}
+				else {	/* none of value is contained in the coverage domain */	}
+			}
+		}
+		if(expression != null) abstract_annotations.add(CirAnnotation.set_numb_scope(expression));
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_trp_stmt(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_set_real(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.addAll(annotations);
+		/* domain coverage collection */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_double() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_double() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+				else {
+					domains.add(CirAnnotationScope.get_zero_scope());
+				}
+			}
+		}
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (+, 0, -) */
+					abstract_annotations.add(CirAnnotation.set_numb_scope(expression));
+				}
+				else {															/* (+, -) */
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+			else {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (+, 0) */
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+				}
+				else {															/* (+) */
+					abstract_annotations.add(CirAnnotation.set_post_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (-, 0) */
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+				}
+				else {															/* (-) */
+					abstract_annotations.add(CirAnnotation.set_negt_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nzro_scope(expression));
+				}
+			}
+			else {
+				if(domains.contains(CirAnnotationScope.get_zero_scope())) {		/* (0) */
+					abstract_annotations.add(CirAnnotation.set_zero_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_npos_scope(expression));
+					abstract_annotations.add(CirAnnotation.set_nneg_scope(expression));
+				}
+				else {	/* none of value is contained in the coverage domain */	}
+			}
+		}
+		if(expression != null) abstract_annotations.add(CirAnnotation.set_numb_scope(expression));
 	}
-	/* symb_error class */
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_mut_expr(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_set_addr(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotations.size() == 1) {
-			CirAnnotation annotation = annotations.iterator().next();
-			abstract_annotations.add(annotation);
+		/* domain coverage collection */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() == 0) {
+					domains.add(CirAnnotationScope.get_null_scope());
+				}
+				else {
+					domains.add(CirAnnotationScope.get_invp_scope());
+				}
+			}
 		}
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_null_scope())) {
+			if(domains.contains(CirAnnotationScope.get_invp_scope())) {
+				abstract_annotations.add(CirAnnotation.set_addr_scope(expression));
+			}
+			else {
+				abstract_annotations.add(CirAnnotation.set_null_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_invp_scope())) {
+				abstract_annotations.add(CirAnnotation.set_invp_scope(expression));
+			}
+			else {	/* none of error is contained in the domains */	}
+		}
+		if(expression != null) abstract_annotations.add(CirAnnotation.set_addr_scope(expression));
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_mut_refr(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_set_auto(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotations.size() == 1) {
-			CirAnnotation annotation = annotations.iterator().next();
-			abstract_annotations.add(annotation);
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			CirExpression expression = (CirExpression) concrete_annotation.get_location();
+			abstract_annotations.add(CirAnnotation.chg_expr(expression));
+			break;
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_mut_stat(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_dif_numb(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotations.size() == 1) {
-			CirAnnotation annotation = annotations.iterator().next();
-			abstract_annotations.add(annotation);
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_long() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-	}
-	/* chg_xxxx class */
-	/**
-	 * @param annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
-	private void summarize_annotations_in_chg_xxxx(Collection<CirAnnotation> annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.addAll(annotations);
-	}
-	/* set_xxxx class */
-	/**
-	 * @param annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
-	private void summarize_annotations_in_set_xxxx(Collection<CirAnnotation> annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotations.size() == 1) {
-			CirAnnotation annotation = annotations.iterator().next();
-			abstract_annotations.add(annotation);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.inc_scope(expression));
+			}
 		}
-	}
-	/* scope analysis */
-	/**
-	 * @param annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
-	private void summarize_annotations_in_set_post(Collection<CirAnnotation> annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
-		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.dec_scope(expression));
+			}
+			else { }
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_set_zero(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_dif_real(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_double() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_double() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.inc_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.dec_scope(expression));
+			}
+			else { }
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_set_negt(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_dif_addr(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_long() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.inc_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.dec_scope(expression));
+			}
+			else { }
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_set_null(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_ext_numb(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_long() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.ext_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.shk_scope(expression));
+			}
+			else { }
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_inc_scop(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_ext_real(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_double() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_double() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.ext_scope(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.shk_scope(expression));
+			}
+			else { }
 		}
 	}
 	/**
-	 * @param annotations
+	 * @param concrete_annotations
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_ext_scop(Collection<CirAnnotation> annotations,
+	private void summarized_annotations_in_xor_numb(
+			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		Set<CirAnnotationType> types = new HashSet<CirAnnotationType>();
-		for(CirAnnotation annotation : annotations) {
-			types.add(annotation.get_operator());
+		/* domain coverage analysis */
+		Collection<SymbolExpression> domains = new HashSet<SymbolExpression>();
+		CirExpression expression = null; SymbolConstant muta_constant;
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			expression = (CirExpression) concrete_annotation.get_location();
+			if(concrete_annotation.has_parameter()) {
+				muta_constant = (SymbolConstant) concrete_annotation.get_parameter();
+				if(muta_constant.get_long() > 0) {
+					domains.add(CirAnnotationScope.get_post_scope());
+				}
+				else if(muta_constant.get_long() < 0) {
+					domains.add(CirAnnotationScope.get_negt_scope());
+				}
+			}
 		}
-		if(types.size() == 1) {
-			abstract_annotations.addAll(annotations);
+		
+		/* domain summarization analysis */
+		if(domains.contains(CirAnnotationScope.get_post_scope())) {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) { }
+			else {
+				abstract_annotations.add(CirAnnotation.xor_post(expression));
+			}
+		}
+		else {
+			if(domains.contains(CirAnnotationScope.get_negt_scope())) {
+				abstract_annotations.add(CirAnnotation.xor_negt(expression));
+			}
+			else { }
 		}
 	}
 	

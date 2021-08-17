@@ -8,7 +8,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.tree;
  *
  */
 public enum CirMutationTreeFlow {
-	/** cov_stmt|eva_expr 	--> cov_stmt|eva_expr **/	execute,
-	/** eva_expr|cov_stmt 	--> any_error **/			infect,
+	/** cov_stmt|eva_expr 	--> cov_stmt|eva_expr **/	execution,
+	/** eva_expr|cov_stmt 	--> any_error **/			infection,
 	/** any_error			-->	any_error **/			propagate,
 }

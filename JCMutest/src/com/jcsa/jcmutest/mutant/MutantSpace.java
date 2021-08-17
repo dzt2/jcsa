@@ -13,8 +13,6 @@ import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.sym2mutant.CirMutation;
-import com.jcsa.jcmutest.mutant.sym2mutant.muta.CirMutationParsers;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 
@@ -209,14 +207,6 @@ public class MutantSpace {
 		}
 
 		/* 4. the number of generated ones */	return mutants.size();
-	}
-	/**
-	 * @param mutation
-	 * @return the cir-mutation generated from the source
-	 * @throws Exception
-	 */
-	protected Iterable<CirMutation> generate_cir_mutation(AstMutation mutation) throws Exception {
-		return CirMutationParsers.parse(this.cir_tree, mutation);
 	}
 
 }
