@@ -1106,7 +1106,7 @@ public class MuTestProjectFeatureWriter {
 		/* inform the user some feature information */
 		System.out.println("\t==> Print " + number_of_paths + " paths for " + 
 				number_of_mutants + "/" + this.inputs.get_mutant_space().size() + 
-				" mutants, using " + number_of_nodes + " symbolic expressions.");
+				" executions with " + number_of_nodes + " symbolic expressions.");
 	}
 	
 	/* public interfaces for writing */

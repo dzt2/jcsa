@@ -281,9 +281,10 @@ class SymExecution:
 				if word != ';':
 					condition = condition_lib.get_condition(word)
 					condition_buffer.append(condition)
-					self.condition_set.add(condition)
 				else:
 					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1:])
+					for sub_condition in state.get_all_conditions():
+						self.condition_set.add(sub_condition)
 					self.state_list.append(state)
 		return
 
