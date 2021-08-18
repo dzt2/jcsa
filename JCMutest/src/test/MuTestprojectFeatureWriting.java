@@ -27,7 +27,7 @@ public class MuTestprojectFeatureWriting {
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
-		// print_static_features();
+		print_static_features();
 		print_dynamic_features();
 	}
 	protected static void print_static_features() throws Exception {

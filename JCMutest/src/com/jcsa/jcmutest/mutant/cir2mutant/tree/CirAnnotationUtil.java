@@ -192,6 +192,31 @@ public class CirAnnotationUtil {
 		}
 	}
 	/**
+	 * @param expression
+	 * @return the set of symbolic conditions divided and inferred from the expression
+	 * @throws Exception
+	 */
+	private Collection<SymbolExpression> generate_symbolic_conditions(SymbolExpression expression) throws Exception {
+		/* 1. simplify the input expression at first */
+		expression = this.symbol_evaluate(expression, null);
+		
+		/* 2. generate sub_expressions from the input */
+		Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
+		this.generate_symbol_conditions_in(expression, conditions);
+		
+		/* 3. simplify the final output expressions */
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		for(SymbolExpression condition : conditions) {
+			expressions.add(this.symbol_evaluate(condition, null));
+		}
+		
+		/* 4. complement the expressions when it is empty */
+		if(expressions.isEmpty()) {
+			expressions.add(SymbolFactory.sym_constant(Boolean.TRUE));
+		}
+		return expressions;
+	}
+	/**
 	 * @param execution
 	 * @param expression
 	 * @return find the previous check-point where the expression should be evaluated
@@ -280,6 +305,25 @@ public class CirAnnotationUtil {
 			return results;
 		}
 	}
+	/**
+	 * @param execution
+	 * @param condition
+	 * @return the annotation that can best describe the input condition at specified point
+	 * @throws Exception
+	 */
+	private CirAnnotation get_condition_annotation(CirExecution check_point, SymbolExpression condition) throws Exception {
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				return CirAnnotation.cov_stmt(check_point, 1);
+			}
+			else {
+				return CirAnnotation.eva_expr(check_point, Boolean.FALSE, true);
+			}
+		}
+		else {
+			return CirAnnotation.eva_expr(check_point, condition, true);
+		}
+	}
 	
 	/* generation interfaces */
 	/**
@@ -341,23 +385,15 @@ public class CirAnnotationUtil {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_constraints(CirConstraint attribute, Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. divide the symbolic constraints into conditions for generation */
+		/* 1. capture the symbolic conditions required in constraint */
 		CirExecution execution = attribute.get_execution(), check_point;
-		SymbolExpression condition = this.symbol_evaluate(attribute.get_condition(), null);
-		Set<SymbolExpression> sub_conditions = new HashSet<SymbolExpression>();
-		this.generate_symbol_conditions_in(condition, sub_conditions);
+		Collection<SymbolExpression> conditions = this.
+				generate_symbolic_conditions(attribute.get_condition());
 		
-		/* 2. generate the symbollic annotations to represent sub_conditions */
-		for(SymbolExpression sub_condition : sub_conditions) {
-			sub_condition = this.symbol_evaluate(sub_condition, null);
-			check_point = this.find_prior_checkpoint(execution, sub_condition);
-			annotations.add(CirAnnotation.eva_expr(check_point, sub_condition, true));
-		}
-		
-		/* 3. append the coverage requirement into the annotations if needed */
-		if(sub_conditions.isEmpty()) {
-			check_point = this.find_prior_checkpoint(execution, SymbolFactory.sym_expression(Boolean.TRUE));
-			annotations.add(CirAnnotation.cov_stmt(check_point, 1));
+		/* 2. determine the check_point and generate the annotations */
+		for(SymbolExpression condition : conditions) {
+			check_point = this.find_prior_checkpoint(execution, condition);
+			annotations.add(this.get_condition_annotation(check_point, condition));
 		}
 	}
 	/**
