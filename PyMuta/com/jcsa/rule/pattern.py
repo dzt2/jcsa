@@ -693,15 +693,16 @@ class KillPredictionOutput:
 
 	# write methods
 
-	def write_unkilled_rules(self, file_path: str):
+	def write_unkilled_rules(self, file_path: str, used_tests):
 		"""
 		:param file_path: xxx.e2r
+		:param used_tests: to classify mutations as killed or not
 		:return:
 		"""
 		## 1. collect features and samples for mining
 		features, orig_mutants, pred_mutants = set(), set(), set()
 		for execution in self.miner.middle.get_inputs().get_document().exec_space.get_executions():
-			if execution.get_mutant().get_result().is_killed_in(None):
+			if execution.get_mutant().get_result().is_killed_in(used_tests):
 				pass
 			else:
 				for feature in execution.get_features():
@@ -711,7 +712,7 @@ class KillPredictionOutput:
 		## 2. perform pattern mining on given inputs
 		old_output_number = self.miner.middle.inputs.max_output_number
 		self.miner.middle.inputs.max_output_number = len(features)
-		good_nodes, node_evaluation_dict = self.miner.mine(features, None)
+		good_nodes, node_evaluation_dict = self.miner.mine(features, used_tests)
 		minimal_nodes = min_prediction(good_nodes)
 		self.miner.middle.inputs.max_output_number = old_output_number
 
@@ -722,7 +723,7 @@ class KillPredictionOutput:
 			## 3-A. node information print
 			for node in good_nodes:
 				rule = node.get_rule()
-				self.__output__("[P]\t{}\n".format(self.__rul2str__(rule, None)))
+				self.__output__("[P]\t{}\n".format(self.__rul2str__(rule, used_tests)))
 				condition_index = 0
 				for condition in rule.get_conditions():
 					condition_index += 1
@@ -754,7 +755,7 @@ class KillPredictionOutput:
 				length = len(rule.get_features())
 				rule_exec = len(rule.get_executions())
 				rule_muta = len(rule.get_mutants())
-				result, killed, survive, confidence = rule.predict(None)
+				result, killed, survive, confidence = rule.predict(used_tests)
 				self.__output__("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}%\n".format(rid, length, rule_exec, rule_muta,
 																		   result, killed, survive,
 																		   int(confidence * 10000) / 100.0))
@@ -874,9 +875,28 @@ class KillPredictionOutput:
 ## testing methods
 
 
+def random_used_tests(m_document: jcenco.MerDocument, number_of_tests: int):
+	"""
+	:param m_document: the document from which the encoded test cases are randomly extracted
+	:param number_of_tests: the number of test cases to be extracted from the given document
+	:return: the set of test cases randomly selected from the document for killing mutations
+	"""
+	test_space = m_document.test_space
+	if number_of_tests > len(test_space.get_test_cases()):
+		return test_space.get_test_cases()
+	else:
+		selected_test_cases, test_cases = set(), test_space.get_test_cases()
+		while len(selected_test_cases) < number_of_tests:
+			random_test_case = jcbase.rand_select(test_cases)
+			random_test_case: jcenco.MerTestCase
+			selected_test_cases.add(random_test_case)
+		return selected_test_cases
+
+
 def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 			  output_directory: str, file_name: str, max_length: int,
-			  min_support: int, min_confidence: float, max_confidence: float):
+			  min_support: int, min_confidence: float, max_confidence: float,
+			  print_equivalence: bool, print_individual: bool):
 	"""
 	:param c_document: original document
 	:param m_document: encoded document
@@ -886,13 +906,16 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	:param min_support: minimal support for mining
 	:param min_confidence: minimal confidence for mining
 	:param max_confidence: maximal confidence for mining
+	:param print_equivalence: whether to print patterns of equivalent and unkilled mutations
+	:param print_individual: whether to print patterns of each individual mutant and their counters
 	:return:
 	"""
 	# I. create output directory for pattern generation
+	print("Start killable prediction mining on Project #{}".format(file_name))
 	o_directory = os.path.join(output_directory, file_name)
 	if not os.path.exists(o_directory):
 		os.mkdir(o_directory)
-	print("\t(1) Load {} executions and {} mutants in {} test cases.".format(
+	print("\t(1) Load {} executions between {} mutants and {} tests.".format(
 		len(m_document.exec_space.get_executions()),
 		len(m_document.exec_space.get_mutants()),
 		len(m_document.test_space.get_test_cases())))
@@ -900,10 +923,23 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	# II. construct the mining modules
 	inputs = KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, 4, 8)
 	writer = KillPredictionOutput(c_document, inputs)
-	writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".e2r"))
-	mutant_nodes = writer.write_mutation_rules(os.path.join(o_directory, file_name + ".m2r"), 128)
-	writer.write_available_nodes(mutant_nodes, os.path.join(o_directory, file_name + ".r2m"))
-	print("\t(2) Write the symbolic execution patterns to {}.".format(o_directory))
+	print("\t(2) Start rule mining on: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(max_length,
+																										  min_support,
+																										  min_confidence,
+																										  max_confidence))
+
+	## III. perform pattern mining and output from equivalent (undetected) mutations
+	if print_equivalence:
+		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".e2r"), None)
+		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".u2r"), random_used_tests(m_document, 256))
+		print("\t(3.E) Generate patterns from equivalent & undetected mutations for", file_name)
+
+	## IV. perform pattern mining and output from
+	if print_individual:
+		mutant_nodes = writer.write_mutation_rules(os.path.join(o_directory, file_name + ".m2r"), 128)
+		writer.write_available_nodes(mutant_nodes, os.path.join(o_directory, file_name + ".r2m"))
+		print("\t(4) Generate patterns from every individual mutation and count the coverage metrics.")
+	print()
 	return
 
 
@@ -914,16 +950,21 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	:param output_directory:
 	:return:
 	"""
+	## initialization
 	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
+	print_equivalent, print_individual = True, False
+	## testing on every project in the project directory
 	for file_name in os.listdir(project_directory):
+		## load document and encoded features into memory
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
 		c_document = jctest.CDocument(c_document_directory, file_name)
 		m_document = jcenco.MerDocument(m_document_directory, file_name)
-		print("Start to test for {} project.".format(file_name))
+
+		## perform pattern mining and generation proceed
 		do_mining(c_document, m_document, output_directory, file_name,
-				  max_length, min_support, min_confidence, max_confidence)
-		print()
+				  max_length, min_support, min_confidence, max_confidence,
+				  print_equivalent, print_individual)
 	return
 
 

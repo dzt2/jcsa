@@ -349,6 +349,7 @@ public class CirAnnotationUtil {
 		
 		/* 2. generate the symbollic annotations to represent sub_conditions */
 		for(SymbolExpression sub_condition : sub_conditions) {
+			sub_condition = this.symbol_evaluate(sub_condition, null);
 			check_point = this.find_prior_checkpoint(execution, sub_condition);
 			annotations.add(CirAnnotation.eva_expr(check_point, sub_condition, true));
 		}
