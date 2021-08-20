@@ -877,7 +877,6 @@ public class CirAnnotationUtil {
 			throw new IllegalArgumentException("Invalid abstract_annotations");
 		}
 		else if(!concrete_annotations.isEmpty()) {
-			CirExpression expression = (CirExpression) location;
 			switch(type) {
 			case trp_stmt:	
 			{
@@ -886,6 +885,7 @@ public class CirAnnotationUtil {
 			}
 			case set_conc:
 			{
+				CirExpression expression = (CirExpression) location;
 				if(CirMutation.is_boolean(expression)) {
 					this.summarized_annotations_in_set_bool(concrete_annotations, abstract_annotations);
 				}
@@ -905,6 +905,7 @@ public class CirAnnotationUtil {
 			}
 			case sub_conc:
 			{
+				CirExpression expression = (CirExpression) location;
 				if(CirMutation.is_integer(expression)) {
 					this.summarized_annotations_in_dif_numb(concrete_annotations, abstract_annotations);
 				}
@@ -918,6 +919,7 @@ public class CirAnnotationUtil {
 			}
 			case ext_conc:
 			{
+				CirExpression expression = (CirExpression) location;
 				if(CirMutation.is_integer(expression)) {
 					this.summarized_annotations_in_ext_numb(concrete_annotations, abstract_annotations);
 				}
