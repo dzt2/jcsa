@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
+import com.jcsa.jcmutest.mutant.cir2mutant.cond.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTree;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirMutationTreeEdge;

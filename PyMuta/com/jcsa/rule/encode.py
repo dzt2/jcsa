@@ -3,7 +3,6 @@
 
 import os
 import com.jcsa.libs.base as jcbase
-import com.jcsa.libs.code as jccode
 import com.jcsa.libs.muta as jcmuta
 import com.jcsa.libs.test as jctest
 
@@ -168,6 +167,19 @@ class MerTestCaseSpace:
 		test_case = self.test_cases[tid]
 		test_case: MerTestCase
 		return test_case
+
+	def rand_test_cases(self, number: int):
+		"""
+		:param number: the number of tests being selected
+		:return: the set of test cases randomly selected
+		"""
+		if number > len(self.test_cases):
+			return self.test_cases
+		else:
+			selected_tests = set()
+			while len(selected_tests) < number:
+				selected_tests.add(jcbase.rand_select(self.test_cases))
+			return selected_tests
 
 
 ## mutation

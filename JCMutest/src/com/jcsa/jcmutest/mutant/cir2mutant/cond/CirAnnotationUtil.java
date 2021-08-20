@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.cond;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +20,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
@@ -41,15 +42,15 @@ import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It implements the generation, concretization and abstraction of CirAnnotation
- * from CirAttribute or CirAnnotation themselves.
+ * It is used to generate, concretize and summarize the annotations from 
+ * CirAttribute or CirAnnotation themselves.
  * 
  * @author yukimula
  *
  */
 public class CirAnnotationUtil {
 	
-	/* singleton */	/** constructor **/		private CirAnnotationUtil() {}
+	/* singleton */	/** constructors **/	private CirAnnotationUtil() {}
 	private static final CirAnnotationUtil util = new CirAnnotationUtil();
 	
 	/* basic methods */
@@ -503,20 +504,17 @@ public class CirAnnotationUtil {
 		
 		/* 3. difference by subtract, bitws_xor and extend subtract */
 		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
-			SymbolExpression sub_difference = 
-					CirAnnotation.sub_value(orig_expression, muta_expression);
+			SymbolExpression sub_difference = CirAnnotation.sub(orig_expression, muta_expression);
 			sub_difference = this.symbol_evaluate(sub_difference, null);
-			annotations.add(CirAnnotation.dif_expr(expression, sub_difference));
+			annotations.add(CirAnnotation.sub_expr(expression, sub_difference));
 		}
 		if(CirMutation.is_numeric(expression)) {
-			SymbolExpression ext_difference =
-					CirAnnotation.ext_value(orig_expression, muta_expression);
+			SymbolExpression ext_difference = CirAnnotation.ext(orig_expression, muta_expression);
 			ext_difference = this.symbol_evaluate(ext_difference, null);
 			annotations.add(CirAnnotation.ext_expr(expression, ext_difference));
 		}
 		if(CirMutation.is_integer(expression)) {
-			SymbolExpression xor_difference = 
-					CirAnnotation.xor_value(orig_expression, muta_expression);
+			SymbolExpression xor_difference = CirAnnotation.xor(orig_expression, muta_expression);
 			xor_difference = this.symbol_evaluate(xor_difference, null);
 			annotations.add(CirAnnotation.xor_expr(expression, xor_difference));
 		}
@@ -603,7 +601,7 @@ public class CirAnnotationUtil {
 			case trp_stmt:	this.concretize_annotations_in_trp_stmt(annotation, context, annotations); 	break;
 			case mut_stat:	this.concretize_annotations_in_mut_stat(annotation, context, annotations);	break;
 			case set_expr:	this.concretize_annotations_in_set_expr(annotation, context, annotations); 	break;
-			case dif_expr:	this.concretize_annotations_in_dif_expr(annotation, context, annotations); 	break;
+			case sub_expr:	this.concretize_annotations_in_sub_expr(annotation, context, annotations); 	break;
 			case ext_expr:	this.concretize_annotations_in_ext_expr(annotation, context, annotations);  break;
 			case xor_expr:	this.concretize_annotations_in_xor_expr(annotation, context, annotations); 	break;
 			default:		throw new IllegalArgumentException("Unsupport: " + annotation);
@@ -666,19 +664,19 @@ public class CirAnnotationUtil {
 			if(muta_expression instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) muta_expression;
 				if(CirMutation.is_boolean(expression)) {
-					annotations.add(CirAnnotation.set_bool(expression, constant.get_bool()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_bool()));
 				}
 				else if(CirMutation.is_integer(expression)) {
-					annotations.add(CirAnnotation.set_numb(expression, constant.get_long()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else if(CirMutation.is_numeric(expression)) {
-					annotations.add(CirAnnotation.set_real(expression, constant.get_double()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_double()));
 				}
 				else if(CirMutation.is_pointer(expression)) {
-					annotations.add(CirAnnotation.set_addr(expression, constant.get_long()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else {
-					annotations.add(CirAnnotation.set_auto(expression, constant.get_constant()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_constant()));
 				}
 			}
 			else {
@@ -708,19 +706,19 @@ public class CirAnnotationUtil {
 			else if(muta_expression instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) muta_expression;
 				if(CirMutation.is_boolean(expression)) {
-					annotations.add(CirAnnotation.set_bool(expression, constant.get_bool()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_bool()));
 				}
 				else if(CirMutation.is_integer(expression)) {
-					annotations.add(CirAnnotation.set_numb(expression, constant.get_long()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else if(CirMutation.is_numeric(expression)) {
-					annotations.add(CirAnnotation.set_real(expression, constant.get_double()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_double()));
 				}
 				else if(CirMutation.is_pointer(expression)) {
-					annotations.add(CirAnnotation.set_addr(expression, constant.get_long()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else {
-					annotations.add(CirAnnotation.set_auto(expression, constant.get_constant()));
+					annotations.add(CirAnnotation.set_conc(expression, constant.get_constant()));
 				}
 			}
 			else {
@@ -737,7 +735,7 @@ public class CirAnnotationUtil {
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void concretize_annotations_in_dif_expr(CirAnnotation annotation,
+	private void concretize_annotations_in_sub_expr(CirAnnotation annotation,
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
 		CirExpression expression = (CirExpression) annotation.get_location();
 		SymbolExpression difference = annotation.get_parameter();
@@ -746,13 +744,13 @@ public class CirAnnotationUtil {
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
 				if(CirMutation.is_integer(expression)) {
-					annotations.add(CirAnnotation.dif_numb(expression, constant.get_long()));
+					annotations.add(CirAnnotation.sub_conc(expression, constant.get_long()));
 				}
 				else if(CirMutation.is_numeric(expression)) {
-					annotations.add(CirAnnotation.dif_real(expression, constant.get_double()));
+					annotations.add(CirAnnotation.sub_conc(expression, constant.get_double()));
 				}
 				else if(CirMutation.is_pointer(expression)) {
-					annotations.add(CirAnnotation.dif_addr(expression, constant.get_long()));
+					annotations.add(CirAnnotation.sub_conc(expression, constant.get_long()));
 				}
 				else {
 					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
@@ -776,10 +774,10 @@ public class CirAnnotationUtil {
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
 				if(CirMutation.is_integer(expression)) {
-					annotations.add(CirAnnotation.ext_numb(expression, constant.get_long()));
+					annotations.add(CirAnnotation.ext_conc(expression, constant.get_long()));
 				}
 				else if(CirMutation.is_numeric(expression)) {
-					annotations.add(CirAnnotation.ext_real(expression, constant.get_double()));
+					annotations.add(CirAnnotation.ext_conc(expression, constant.get_double()));
 				}
 				else {
 					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
@@ -803,7 +801,7 @@ public class CirAnnotationUtil {
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
 				if(CirMutation.is_integer(expression)) {
-					annotations.add(CirAnnotation.xor_numb(expression, constant.get_long()));
+					annotations.add(CirAnnotation.xor_conc(expression, constant.get_long()));
 				}
 				else {
 					throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
@@ -848,8 +846,14 @@ public class CirAnnotationUtil {
 				}
 				maps.get(type).add(concrete_annotation);
 			}
+			
 			for(CirAnnotationType type : maps.keySet()) {
-				this.summarized_annotations_in(type, maps.get(type), abstract_annotations);
+				concrete_annotations = maps.get(type); CirNode location = null;
+				for(CirAnnotation concrete_annotation : concrete_annotations) {
+					location = concrete_annotation.get_location();
+					break;
+				}
+				this.summarized_annotations_in(type, location, maps.get(type), abstract_annotations);
 			}
 		}
 	}
@@ -860,7 +864,7 @@ public class CirAnnotationUtil {
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarized_annotations_in(CirAnnotationType type,
+	private void summarized_annotations_in(CirAnnotationType type, CirNode location,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
 		if(type == null) {
@@ -873,19 +877,60 @@ public class CirAnnotationUtil {
 			throw new IllegalArgumentException("Invalid abstract_annotations");
 		}
 		else if(!concrete_annotations.isEmpty()) {
+			CirExpression expression = (CirExpression) location;
 			switch(type) {
-			case trp_stmt:	this.summarized_annotations_in_trp_stmt(concrete_annotations, abstract_annotations); break;
-			case set_bool:	this.summarized_annotations_in_set_bool(concrete_annotations, abstract_annotations); break;
-			case set_numb:	this.summarized_annotations_in_set_numb(concrete_annotations, abstract_annotations); break;
-			case set_real:	this.summarized_annotations_in_set_real(concrete_annotations, abstract_annotations); break;
-			case set_addr:	this.summarized_annotations_in_set_addr(concrete_annotations, abstract_annotations); break;
-			case set_auto:	this.summarized_annotations_in_set_auto(concrete_annotations, abstract_annotations); break;
-			case dif_numb:	this.summarized_annotations_in_dif_numb(concrete_annotations, abstract_annotations); break;
-			case dif_real:	this.summarized_annotations_in_dif_real(concrete_annotations, abstract_annotations); break;
-			case dif_addr:	this.summarized_annotations_in_dif_addr(concrete_annotations, abstract_annotations); break;
-			case ext_numb:	this.summarized_annotations_in_ext_numb(concrete_annotations, abstract_annotations); break;
-			case ext_real:	this.summarized_annotations_in_ext_real(concrete_annotations, abstract_annotations); break;
-			case xor_numb:	this.summarized_annotations_in_xor_numb(concrete_annotations, abstract_annotations); break;
+			case trp_stmt:	
+			{
+				this.summarized_annotations_in_trp_stmt(concrete_annotations, abstract_annotations); 
+				break;
+			}
+			case set_conc:
+			{
+				if(CirMutation.is_boolean(expression)) {
+					this.summarized_annotations_in_set_bool(concrete_annotations, abstract_annotations);
+				}
+				else if(CirMutation.is_integer(expression)) {
+					this.summarized_annotations_in_set_numb(concrete_annotations, abstract_annotations);
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					this.summarized_annotations_in_set_real(concrete_annotations, abstract_annotations);
+				}
+				else if(CirMutation.is_pointer(expression)) {
+					this.summarized_annotations_in_set_addr(concrete_annotations, abstract_annotations);
+				}
+				else {
+					this.summarized_annotations_in_set_auto(concrete_annotations, abstract_annotations);
+				}
+				break;
+			}
+			case sub_conc:
+			{
+				if(CirMutation.is_integer(expression)) {
+					this.summarized_annotations_in_dif_numb(concrete_annotations, abstract_annotations);
+				}
+				else if(CirMutation.is_numeric(expression)) {
+					this.summarized_annotations_in_dif_real(concrete_annotations, abstract_annotations);
+				}
+				else {
+					this.summarized_annotations_in_dif_addr(concrete_annotations, abstract_annotations);
+				}
+				break;
+			}
+			case ext_conc:
+			{
+				if(CirMutation.is_integer(expression)) {
+					this.summarized_annotations_in_ext_numb(concrete_annotations, abstract_annotations);
+				}
+				else {
+					this.summarized_annotations_in_ext_real(concrete_annotations, abstract_annotations);
+				}
+				break;
+			}
+			case xor_conc:
+			{
+				this.summarized_annotations_in_xor_numb(concrete_annotations, abstract_annotations);
+				break;
+			}
 			default:		throw new IllegalArgumentException("Unsupport: " + type);
 			}
 		}

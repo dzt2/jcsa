@@ -875,24 +875,6 @@ class KillPredictionOutput:
 ## testing methods
 
 
-def random_used_tests(m_document: jcenco.MerDocument, number_of_tests: int):
-	"""
-	:param m_document: the document from which the encoded test cases are randomly extracted
-	:param number_of_tests: the number of test cases to be extracted from the given document
-	:return: the set of test cases randomly selected from the document for killing mutations
-	"""
-	test_space = m_document.test_space
-	if number_of_tests > len(test_space.get_test_cases()):
-		return test_space.get_test_cases()
-	else:
-		selected_test_cases, test_cases = set(), test_space.get_test_cases()
-		while len(selected_test_cases) < number_of_tests:
-			random_test_case = jcbase.rand_select(test_cases)
-			random_test_case: jcenco.MerTestCase
-			selected_test_cases.add(random_test_case)
-		return selected_test_cases
-
-
 def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 			  output_directory: str, file_name: str, max_length: int,
 			  min_support: int, min_confidence: float, max_confidence: float,
@@ -923,15 +905,15 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	# II. construct the mining modules
 	inputs = KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence, 4, 8)
 	writer = KillPredictionOutput(c_document, inputs)
-	print("\t(2) Start rule mining on: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(max_length,
-																										  min_support,
-																										  min_confidence,
-																										  max_confidence))
+	print("\t(2) Mining by: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
+																							   inputs.get_min_support(),
+																							   inputs.get_min_confidence(),
+																							   inputs.get_max_confidence()))
 
 	## III. perform pattern mining and output from equivalent (undetected) mutations
 	if print_equivalence:
 		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".e2r"), None)
-		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".u2r"), random_used_tests(m_document, 256))
+		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".u2r"), m_document.test_space.rand_test_cases(256))
 		print("\t(3.E) Generate patterns from equivalent & undetected mutations for", file_name)
 
 	## IV. perform pattern mining and output from
@@ -953,6 +935,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	## initialization
 	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
 	print_equivalent, print_individual = True, False
+
 	## testing on every project in the project directory
 	for file_name in os.listdir(project_directory):
 		## load document and encoded features into memory
@@ -968,7 +951,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 	return
 
 
-## MAIN TEST SCRIPT
+## execution script
 
 
 if __name__ == "__main__":

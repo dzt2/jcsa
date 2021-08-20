@@ -1,63 +1,59 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.cond;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
-import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It defines the scope domains to describe scop_error in CirAnnotation.
+ * It defines the value scopes (domains) used in scop_error CirAnnotation.
  * 
  * @author yukimula
  *
  */
-final class CirAnnotationScope {
+class CirAnnotationScope {
 	
-	/* scope domain for boolean expression */
+	/* boolean scope definitions */
 	private static SymbolExpression TRUE_Scope;
 	private static SymbolExpression FALS_Scope;
-	private static SymbolExpression BOOL_Scope;
-	
-	/* scope domain for integer or double expression */
+	/* numeric scope definitions */
 	private static SymbolExpression POST_Scope;
 	private static SymbolExpression ZERO_Scope;
 	private static SymbolExpression NEGT_Scope;
+	/* numeric scope definitions */
 	private static SymbolExpression NPOS_Scope;
 	private static SymbolExpression NZRO_Scope;
 	private static SymbolExpression NNEG_Scope;
-	private static SymbolExpression NUMB_Scope;
-	
-	/* scope domain for address or pointer expression */
+	/* pointer scope definitions */
 	private static SymbolExpression NULL_Scope;
 	private static SymbolExpression INVP_Scope;
+	/* abstract scope definitions */
+	private static SymbolExpression BOOL_Scope;
+	private static SymbolExpression NUMB_Scope;
 	private static SymbolExpression ADDR_Scope;
 	
-	/* initialization or definition block */
+	/* definition construction */
 	static {
 		try {
-			TRUE_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, "True");
-			FALS_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, "Fals");
-			BOOL_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, "Bool");
+			TRUE_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, 	"True");
+			FALS_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, 	"Fals");
 			
-			POST_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Post");
-			ZERO_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Zero");
-			NEGT_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Negt");
+			POST_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"Post");
+			ZERO_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"Zero");
+			NEGT_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"Negt");
 			
-			NPOS_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "NPos");
-			NZRO_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "NZro");
-			NNEG_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "NNeg");
+			NPOS_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"NPos");
+			NZRO_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"NZro");
+			NNEG_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"NNeg");
 			
-			NULL_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Null");
-			INVP_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Invp");
+			NULL_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, 	"Null");
+			INVP_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, 	"Invp");
 			
-			NUMB_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Numb");
-			ADDR_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, "Addr");
-		} catch (Exception e) {
-			e.printStackTrace();
+			BOOL_Scope = SymbolFactory.identifier(CBasicTypeImpl.bool_type, 	"Bool");
+			NUMB_Scope = SymbolFactory.identifier(CBasicTypeImpl.double_type, 	"Numb");
+			ADDR_Scope = SymbolFactory.identifier(CBasicTypeImpl.long_type, 	"Addr");
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
 			System.exit(-1);
 		}
 	}
@@ -115,18 +111,5 @@ final class CirAnnotationScope {
 	 * @return { p | p \in P }
 	 */
 	protected static SymbolExpression get_addr_scope() { return ADDR_Scope; }
-	/**
-	 * @param lscope
-	 * @param rscope
-	 * @return domain(lscope, rscope)
-	 * @throws Exception
-	 */
-	protected static SymbolExpression get_cons_scope(Object lscope, Object rscope) throws Exception {
-		CType ftype = (new CTypeFactory()).get_variable_function_type(CBasicTypeImpl.double_type);
-		SymbolExpression function = SymbolFactory.identifier(ftype, "JcmutaDomain");
-		List<Object> arguments = new ArrayList<Object>(); 
-		arguments.add(lscope); arguments.add(rscope);
-		return SymbolFactory.call_expression(function, arguments);
-	}
 	
 }
