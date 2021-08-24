@@ -210,15 +210,13 @@ class SymExecutionState:
 	It represents the state at a particular point in the program
 	"""
 
-	def __init__(self, sym_execution, head_condition: SymCondition, all_conditions):
+	def __init__(self, sym_execution, all_conditions):
 		"""
 		:param sym_execution: 	SymExecution
-		:param head_condition: 	CirAttribute
 		:param all_conditions: 	CirAnnotation+
 		"""
 		sym_execution: SymExecution
 		self.sym_execution = sym_execution
-		self.head_condition = head_condition
 		self.all_conditions = list()
 		for condition in all_conditions:
 			condition: SymCondition
@@ -231,23 +229,11 @@ class SymExecutionState:
 		"""
 		return self.sym_execution
 
-	def get_head_condition(self):
-		"""
-		:return: attribute of the state
-		"""
-		return self.head_condition
-
 	def get_all_conditions(self):
 		"""
 		:return: annotations of the state
 		"""
 		return self.all_conditions
-
-	def get_cir_execution(self):
-		"""
-		:return: the CFG-node where the state is defined and evaluated
-		"""
-		return self.head_condition.get_execution()
 
 
 class SymExecution:
@@ -282,7 +268,7 @@ class SymExecution:
 					condition = condition_lib.get_condition(word)
 					condition_buffer.append(condition)
 				else:
-					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1:])
+					state = SymExecutionState(self, condition_buffer)
 					for sub_condition in state.get_all_conditions():
 						self.condition_set.add(sub_condition)
 					self.state_list.append(state)
