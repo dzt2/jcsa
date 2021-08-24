@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.trees;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,12 +11,12 @@ import com.jcsa.jcmutest.mutant.cir2mutant.cond.CirAnnotationUtil;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It manages the data state hold in CirMutationTreeNode.
+ * It maintains the evaluation status of a CirInfectionNode
  * 
  * @author yukimula
  *
  */
-public class CirMutationTreeData {
+public class CirInfectionNodeData {
 	
 	/* attributes */
 	/** the symbolic attribute that the node maintains state **/
@@ -36,7 +36,7 @@ public class CirMutationTreeData {
 	 * @param attribute
 	 * @throws Exception
 	 */
-	protected CirMutationTreeData(CirAttribute attribute) throws Exception {
+	protected CirInfectionNodeData(CirAttribute attribute) throws Exception {
 		if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute as null");
 		}

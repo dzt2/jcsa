@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.trees;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
@@ -53,25 +53,27 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It implement the construction of CirMutationTree using RIP-hierarchy model.
+ * It implements the construction of CirInfectionTree along with its nodes and
+ * edges structurally.
  * 
  * @author yukimula
  *
  */
-public class CirMutationTreeUtil {
+class CirInfectionTreeUtil {
 	
-	/* singleton mode */ /** constructor **/ private CirMutationTreeUtil() { }
-	private static final CirMutationTreeUtil util = new CirMutationTreeUtil();
+	/* singleton mode */	
+	/** constructor **/	private CirInfectionTreeUtil() { }
+	private static final CirInfectionTreeUtil util = new CirInfectionTreeUtil();
 	
-	/* pre_condition (execution) construction */
+	/* pre_condition nodes generation */
 	/**
-	 * @param flow	{true_flow; fals_flow; call_flow; retr_flow}
-	 * @return the coverage or constraint attribute to cover the given flow
+	 * @param flow
+	 * @return the attribute representing the coverage of the specified flow
 	 * @throws Exception
 	 */
 	private CirAttribute get_flow_attribute(CirExecutionFlow flow) throws Exception {
 		if(flow == null) {
-			throw new IllegalArgumentException("Invalid flow: null");
+			throw new IllegalArgumentException("Invalid flow as null");
 		}
 		else if(flow.get_type() == CirExecutionFlowType.true_flow) {
 			CirStatement statement = flow.get_source().get_statement();
@@ -102,11 +104,11 @@ public class CirMutationTreeUtil {
 			return CirAttribute.new_cover_count(flow.get_target(), 1);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid: " + flow);
+			throw new IllegalArgumentException("Invalid: " + flow.get_type());
 		}
 	}
 	/**
-	 * collect the execution flows in the path to the given collection.
+	 * collect the execution flows in the path to the given sequences 
 	 * @param path
 	 * @param flows
 	 */
@@ -129,7 +131,7 @@ public class CirMutationTreeUtil {
 		}
 	}
 	/**
-	 * generate the execution flows from program entry to the target in decidable linking paths.
+	 * generate the execution flows in sequence from function entry to the target using decidable path analysis
 	 * @param target
 	 * @param flows
 	 * @throws Exception
@@ -149,13 +151,14 @@ public class CirMutationTreeUtil {
 		}
 	}
 	/**
-	 * generate the execution flows from program entry to the target using dependence analysis
+	 * generate the execution flows in sequence from program entry to the target using dependence path analysis
 	 * @param target
 	 * @param dependence_graph
 	 * @param flows
 	 * @throws Exception
 	 */
-	private void generate_execution_flows(CirExecution target, CDependGraph dependence_graph, List<CirExecutionFlow> flows) throws Exception {
+	private void generate_execution_flows(CirExecution target, 
+			CDependGraph dependence_graph, List<CirExecutionFlow> flows) throws Exception {
 		if(target == null) {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
@@ -169,13 +172,14 @@ public class CirMutationTreeUtil {
 		}
 	}
 	/**
-	 * generate the execution flows from program entry to the target using the testing paths if it can reach it.
+	 * generate the execution flows in sequence from program entry to the target using dynamic state analysis
 	 * @param target
 	 * @param state_path
 	 * @param flows
-	 * @throws Exception if the target cannot be reached by the state path
+	 * @throws Exception
 	 */
-	private void generate_execution_flows(CirExecution target, CStatePath state_path, List<CirExecutionFlow> flows) throws Exception {
+	private void generate_execution_flows(CirExecution target, 
+			CStatePath state_path, List<CirExecutionFlow> flows) throws Exception {
 		if(target == null) {
 			throw new IllegalArgumentException("Invalid target: null");
 		}
@@ -200,14 +204,15 @@ public class CirMutationTreeUtil {
 		}
 	}
 	/**
-	 * create the pre-condition path from program entry to the specified node using the given flows path
-	 * @param tree
-	 * @param target
-	 * @param flows
-	 * @return the reach_ability node to execute the target execution
+	 * construct the pre_condition nodes path from root to the execution of faulty statement (target) using the
+	 * path of specified flows in the parameters
+	 * @param tree		the tree in which the pre_condition path will be constructed
+	 * @param target	the faulty statement where the state infection is introduced
+	 * @param flows		the flows in the path from program entry to faulty statement
+	 * @return
 	 * @throws Exception
 	 */
-	private CirMutationTreeNode construct_pre_conditions(CirMutationTree tree, 
+	private CirInfectionNode construct_pre_condition_nodes(CirInfectionTree tree, 
 			CirExecution target, List<CirExecutionFlow> flows) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
@@ -219,104 +224,128 @@ public class CirMutationTreeUtil {
 			throw new IllegalArgumentException("Invalid flows: null");
 		}
 		else {
-			/* initialization */
-			CirMutationTreeNode node = tree.get_root(); 
+			/* 1. initialization and declarations */
+			CirInfectionNode node = tree.get_root();
 			CirAttribute flow_attribute;
 			
-			/* connecting over the path's flows */
+			/* 2. construct pre_condition path on the flows */
 			for(CirExecutionFlow flow : flows) {
 				flow_attribute = this.get_flow_attribute(flow);
-				node = node.new_child(CirMutationTreeType.pre_condition, 
-						flow_attribute, CirMutationTreeFlow.execution);
+				node = node.link_to(CirInfectionNodeType.pre_condition, 
+						flow_attribute, CirInfectionEdgeType.execution);
 			}
 			
-			/* link to the target finally */
-			if(node.get_node_execution() != target) {
+			/* 3. link the node to target location in needed */
+			if(node.get_execution() != target) {
 				flow_attribute = CirAttribute.new_cover_count(target, 1);
-				node = node.new_child(CirMutationTreeType.pre_condition, 
-						flow_attribute, CirMutationTreeFlow.execution);
+				node = node.link_to(CirInfectionNodeType.pre_condition, 
+						flow_attribute, CirInfectionEdgeType.execution);
 			}
 			
-			/* return the reach_ability node of target */	return node;
+			/* 4. return execution of target as output */	return node;
 		}
 	}
 	
-	/* mid_condition (infection) construction */
+	/* mid_condition nodes generation */
 	/**
+	 * collect the sub_conditions in the given disjunction of expression
 	 * @param condition
-	 * @param conditions	the collection to preserve the conditions in disjunction way
+	 * @param sub_conditions
 	 * @throws Exception
 	 */
-	private void divide_conditions_in_disjunct(SymbolExpression condition, Collection<SymbolExpression> conditions) throws Exception {
+	private void collect_conditions_in_disjunction(SymbolExpression condition, 
+			Collection<SymbolExpression> sub_conditions) throws Exception {
+		/* I. constant: only to capture TRUE branch */
 		if(condition instanceof SymbolConstant) {
 			if(((SymbolConstant) condition).get_bool()) {
-				conditions.add(SymbolFactory.sym_condition(Boolean.TRUE, true));
+				sub_conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
 			}
-			else { }
 		}
-		if(condition instanceof SymbolBinaryExpression) {
+		/* II. logic-or: recursively capture operands */
+		else if(condition instanceof SymbolBinaryExpression) {
 			COperator operator = ((SymbolBinaryExpression) condition).get_operator().get_operator();
 			if(operator == COperator.logic_or) {
-				this.divide_conditions_in_disjunct(((SymbolBinaryExpression) condition).get_loperand(), conditions);
-				this.divide_conditions_in_disjunct(((SymbolBinaryExpression) condition).get_roperand(), conditions);
+				SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
+				SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
+				this.collect_conditions_in_disjunction(loperand, sub_conditions);
+				this.collect_conditions_in_disjunction(roperand, sub_conditions);
 			}
 			else {
-				conditions.add(SymbolFactory.sym_condition(condition, true));
+				sub_conditions.add(SymbolFactory.sym_condition(condition, true));
 			}
 		}
+		/* III. terminate to collect the condition itself */
 		else {
-			conditions.add(SymbolFactory.sym_condition(condition, true));
+			sub_conditions.add(SymbolFactory.sym_condition(condition, true));
 		}
 	}
 	/**
+	 * construct the infection-module from reach-node until its initial error node via the mutation pair
+	 * using structure of: reach_node (--> (constraint --> init_state_error))+
 	 * @param reach_node
-	 * @param mutation
-	 * @return the set of infection edges created from the CIR-based mutation under the reaching node
+	 * @param cir_infection
+	 * @return the set of state infection edges created from the reach_node
 	 * @throws Exception
 	 */
-	private Collection<CirMutationTreeEdge> construct_mid_conditions(CirMutationTreeNode reach_node, CirMutation mutation) throws Exception {
+	private Iterable<CirInfectionEdge> construct_mid_condition_nodes(
+			CirInfectionNode reach_node, CirInfection cir_infection) throws Exception {
 		if(reach_node == null) {
 			throw new IllegalArgumentException("Invalid reach_node: null");
 		}
-		else if(mutation == null) {
-			throw new IllegalArgumentException("Invalid mutation as null");
+		else if(cir_infection == null) {
+			throw new IllegalArgumentException("Invalid cir_infection: null");
 		}
 		else {
-			CirMutationTreeNode pred_node, post_node;
-			Collection<CirMutationTreeEdge> edges = new HashSet<CirMutationTreeEdge>();
-			CirAttribute constraint = mutation.get_constraint();
-			CirAttribute init_error = mutation.get_init_error();
+			/* 1. declarations and initializations */
+			CirInfectionNode pred_node, next_node; SymbolExpression condition;
+			Set<CirInfectionEdge> infection_edges = new HashSet<CirInfectionEdge>();
+			Set<SymbolExpression> sub_conditions = new HashSet<SymbolExpression>();
+			CirAttribute constraint = cir_infection.get_constraint(), sub_constraint;
+			CirAttribute init_error = cir_infection.get_init_error();
 			
+			/* 2. case: state infection condition */
 			if(constraint instanceof CirConstraint) {
-				SymbolExpression condition = ((CirConstraint) constraint).get_condition();
-				condition = condition.evaluate(null);
-				Set<SymbolExpression> sub_conditions = new HashSet<SymbolExpression>();
-				this.divide_conditions_in_disjunct(condition, sub_conditions);
-				CirExecution execution = constraint.get_execution();
-				for(SymbolExpression sub_condition : sub_conditions) {
-					pred_node = reach_node.new_child(CirMutationTreeType.mid_condition, 
-							CirAttribute.new_constraint(execution, sub_condition, true), 
-							CirMutationTreeFlow.execution);
-					post_node = pred_node.new_child(CirMutationTreeType.mid_condition, 
-							init_error, CirMutationTreeFlow.infection);
-					edges.add(post_node.get_in_edge());
+				/* 2-A. capture the sub-conditions if the constraint is disjunction */
+				condition = ((CirConstraint) constraint).get_condition().evaluate(null);
+				this.collect_conditions_in_disjunction(condition, sub_conditions);
+				
+				/* 2-B. when the condition is purely FALSE */
+				if(sub_conditions.isEmpty()) {
+					sub_constraint = CirAttribute.new_constraint(
+							constraint.get_execution(), Boolean.FALSE, true);
+					pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
+							sub_constraint, CirInfectionEdgeType.execution);
+					next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
+							init_error, CirInfectionEdgeType.infection);
+					infection_edges.add(next_node.get_in_edge());
+				}
+				/* 2-C. otherwise, create condition-error pairs */
+				else {
+					for(SymbolExpression sub_condition : sub_conditions) {
+						sub_constraint = CirAttribute.new_constraint(
+								constraint.get_execution(), sub_condition, true);
+						pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
+								sub_constraint, CirInfectionEdgeType.execution);
+						next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
+								init_error, CirInfectionEdgeType.infection);
+						infection_edges.add(next_node.get_in_edge());
+					}
 				}
 			}
+			/* 3. case: coverage infection points */
 			else {
-				pred_node = reach_node.new_child(
-						CirMutationTreeType.mid_condition, 
-						constraint, CirMutationTreeFlow.execution);
-				post_node = pred_node.new_child(
-						CirMutationTreeType.mid_condition, 
-						init_error, CirMutationTreeFlow.infection);
-				edges.add(post_node.get_in_edge());
+				pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
+							constraint, CirInfectionEdgeType.execution);
+				next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
+							init_error, CirInfectionEdgeType.infection);
+				infection_edges.add(next_node.get_in_edge());
 			}
 			
-			return edges;
+			/* 4. return the infection edges */	return infection_edges;	
 		}
 	}
 	
-	/* poscondition tree construction */
+	/* static error propagation analysis */
 	/**
 	 * generate the next set of errors directly propagated from the input error as source
 	 * @param error		source error
@@ -804,70 +833,81 @@ public class CirMutationTreeUtil {
 			throw new IllegalArgumentException("Invalid parent: " + parent);
 		}
 	}
+	
+	/* nex_condition nodes generation */
 	/**
-	 * recursively generate propagation tree from source error node
-	 * @param error_node
+	 * @param source
+	 * @return construct the error propagation edges from the source and return its children
 	 * @throws Exception
 	 */
-	private Iterable<CirMutationTreeNode> create_propagation_tree_on(CirMutationTreeNode source) throws Exception {
+	private Iterable<CirInfectionNode> construct_nex_condition_nodes(CirInfectionNode source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid error_node: null");
 		}
 		else {
-			Set<CirAttribute> errors = new HashSet<>();
-			this.propagate_from(source.get_node_attribute(), errors);
-			Set<CirMutationTreeNode> targets = new HashSet<>();
+			/* 1. capture the error-propagation nodes list */
+			Set<CirAttribute> errors = new HashSet<CirAttribute>();
+			this.propagate_from(source.get_attribute(), errors);
+			
+			/* 2. construct the next_nodes from propagation */
+			Set<CirInfectionNode> targets = new HashSet<CirInfectionNode>();
 			for(CirAttribute error : errors) {
-				CirMutationTreeNode target = source.new_child(
-						CirMutationTreeType.pos_condition, error, 
-						CirMutationTreeFlow.propagate);
-				targets.add(target);
+				targets.add(source.link_to(
+						CirInfectionNodeType.nex_condition, 
+						error, CirInfectionEdgeType.propagate));
 			}
 			return targets;
 		}
 	}
 	/**
-	 * @param init_error_node
+	 * construct the nodes from infection edge using recursive and static error propagation analysis
+	 * @param infection_edge
 	 * @throws Exception
 	 */
-	private void construct_pos_conditions(CirMutationTreeNode init_error_node) throws Exception {
-		Queue<CirMutationTreeNode> queue = new LinkedList<>();
-		queue.add(init_error_node);
-		while(!queue.isEmpty()) {
-			CirMutationTreeNode source = queue.poll();
-			Iterable<CirMutationTreeNode> targets = this.create_propagation_tree_on(source);
-			for(CirMutationTreeNode target : targets) {
-				queue.add(target);
+	private void construct_nex_condition_nodes(CirInfectionEdge infection_edge) throws Exception {
+		if(infection_edge == null) {
+			throw new IllegalArgumentException("Invalid infection_edge: null");
+		}
+		else {
+			Queue<CirInfectionNode> queue = new LinkedList<CirInfectionNode>();
+			queue.add(infection_edge.get_target());
+			
+			while(!queue.isEmpty()) {
+				CirInfectionNode source = queue.poll();
+				Iterable<CirInfectionNode> targets = this.construct_nex_condition_nodes(source);
+				for(CirInfectionNode target : targets) {
+					queue.add(target);
+				}
 			}
 		}
 	}
 	
-	/* construction */
+	/* entire tree construction */
 	/**
-	 * construct the CIR_based mutation tree in terms of RIP framework
+	 * construct the state infection tree using context (null | CDependGraph | CStatePath)
 	 * @param tree
 	 * @param context
 	 * @throws Exception
 	 */
-	private void construct_mutation_tree(CirMutationTree tree, Object context) throws Exception {
+	private void construct_state_infection_tree(CirInfectionTree tree, Object context) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
 		}
 		else {
-			/* I. maps each execution to the corresponding CirMutation(s) */
-			Map<CirExecution, Collection<CirMutation>> maps =
-					new HashMap<CirExecution, Collection<CirMutation>>();
-			for(CirMutation cir_mutation : tree.get_cir_mutations()) {
-				CirExecution execution = cir_mutation.get_execution();
+			/* 1. divide the cir_infection pair to corresponding location */
+			Map<CirExecution, Collection<CirInfection>> maps = 
+					new HashMap<CirExecution, Collection<CirInfection>>();
+			for(CirInfection cir_infection : tree.get_cir_infections()) {
+				CirExecution execution = cir_infection.get_execution();
 				if(!maps.containsKey(execution)) {
-					maps.put(execution, new HashSet<CirMutation>());
+					maps.put(execution, new HashSet<CirInfection>());
 				}
-				maps.get(execution).add(cir_mutation);
+				maps.get(execution).add(cir_infection);
 			}
 			
-			/* II. construct pre_condition and mid_condition parts */
+			/* 2. construct the pre_condition nodes until execution(s) */
 			for(CirExecution execution : maps.keySet()) {
-				/* II-A. Construct the execution path using context and build pre-conditions */
+				/* 2-A. generate the execution flows reaching the target */
 				List<CirExecutionFlow> flows = new ArrayList<CirExecutionFlow>();
 				if(context == null) {
 					this.generate_execution_flows(execution, flows);
@@ -879,31 +919,30 @@ public class CirMutationTreeUtil {
 					this.generate_execution_flows(execution, (CStatePath) context, flows);
 				}
 				else {
-					throw new IllegalArgumentException("Invalid context: " + context);
+					throw new IllegalArgumentException("Invalid: " + context);
 				}
-				CirMutationTreeNode reach_node = this.construct_pre_conditions(tree, execution, flows);
 				
-				/* II-B. Construct the infection edges from CIR_based mutations as given */
-				for(CirMutation cir_mutation : maps.get(execution)) {
-					this.construct_mid_conditions(reach_node, cir_mutation);
+				/* 2-B. generate the infection nodes from reach_node */
+				CirInfectionNode reach_node = this.construct_pre_condition_nodes(tree, execution, flows);
+				for(CirInfection cir_infection : maps.get(execution)) {
+					this.construct_mid_condition_nodes(reach_node, cir_infection);
 				}
 			}
-			tree.set_infection_edges();		/* update the state infection edges after that */
 			
-			/* III. construct pos_condition parts of that tree */
-			for(CirMutationTreeEdge infection_edge : tree.get_infection_edges()) {
-				this.construct_pos_conditions(infection_edge.get_target());
+			/* 3. construct the nex_condition nodes from infection_edges */
+			for(CirInfectionEdge infection_edge : tree.get_infection_edges()) {
+				this.construct_nex_condition_nodes(infection_edge);
 			}
 		}
 	}
 	/**
-	 * construct the CIR_based mutation tree in terms of RIP framework
+	 * construct the state infection tree using context (null | CDependGraph | CStatePath)
 	 * @param tree
 	 * @param context
 	 * @throws Exception
 	 */
-	protected static void construct(CirMutationTree tree, Object context) throws Exception {
-		util.construct_mutation_tree(tree, context);
+	protected static void construct_tree(CirInfectionTree tree, Object context) throws Exception {
+		util.construct_state_infection_tree(tree, context);
 	}
 	
 }

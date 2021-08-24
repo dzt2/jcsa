@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.cond;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
@@ -272,7 +272,7 @@ public class CirAnnotation {
 		else if(sub_value == null) {
 			throw new IllegalArgumentException("Invalid sub_value as null");
 		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.sub_expr,
 					expression.execution_of(), expression, sub_value);
@@ -294,7 +294,7 @@ public class CirAnnotation {
 		else if(xor_value == null) {
 			throw new IllegalArgumentException("Invalid xor_value as null");
 		}
-		else if(CirMutation.is_integer(expression)) {
+		else if(CirInfection.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.xor_expr,
 					expression.execution_of(), expression, xor_value);
@@ -316,7 +316,7 @@ public class CirAnnotation {
 		else if(ext_value == null) {
 			throw new IllegalArgumentException("Invalid ext_value as null");
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.ext_expr,
 					expression.execution_of(), expression, ext_value);
@@ -336,7 +336,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_boolean(expression)) {
+		else if(CirInfection.is_boolean(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.set_conc,
 					expression.execution_of(), expression,
@@ -356,7 +356,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression) || CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_integer(expression) || CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.set_conc,
 					expression.execution_of(), expression,
@@ -376,7 +376,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.set_conc,
 					expression.execution_of(), expression,
@@ -396,7 +396,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_automic(expression)) {
+		else if(CirInfection.is_automic(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.set_conc,
 					expression.execution_of(), expression,
@@ -416,7 +416,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression) || CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_integer(expression) || CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.sub_conc,
 					expression.execution_of(), expression,
@@ -436,7 +436,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.sub_conc,
 					expression.execution_of(), expression,
@@ -456,7 +456,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression)) {
+		else if(CirInfection.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.xor_conc,
 					expression.execution_of(), expression,
@@ -476,7 +476,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression)) {
+		else if(CirInfection.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.ext_conc,
 					expression.execution_of(), expression,
@@ -496,7 +496,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.conc_error,
 					CirAnnotationType.ext_conc,
 					expression.execution_of(), expression,
@@ -531,7 +531,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_boolean(expression)) {
+		else if(CirInfection.is_boolean(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -550,7 +550,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_boolean(expression)) {
+		else if(CirInfection.is_boolean(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -569,7 +569,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -588,7 +588,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -607,7 +607,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -626,7 +626,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -645,7 +645,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -664,7 +664,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -683,7 +683,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -702,7 +702,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -721,7 +721,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_boolean(expression)) {
+		else if(CirInfection.is_boolean(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -740,7 +740,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -759,7 +759,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.set_scop,
 					expression.execution_of(), expression,
@@ -779,7 +779,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.sub_scop,
 					expression.execution_of(), expression,
@@ -798,7 +798,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+		else if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.sub_scop,
 					expression.execution_of(), expression,
@@ -817,7 +817,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.ext_scop,
 					expression.execution_of(), expression,
@@ -836,7 +836,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_numeric(expression)) {
+		else if(CirInfection.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.ext_scop,
 					expression.execution_of(), expression,
@@ -855,7 +855,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression)) {
+		else if(CirInfection.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.xor_scop,
 					expression.execution_of(), expression,
@@ -874,7 +874,7 @@ public class CirAnnotation {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
-		else if(CirMutation.is_integer(expression)) {
+		else if(CirInfection.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.scop_error,
 					CirAnnotationType.xor_scop,
 					expression.execution_of(), expression,

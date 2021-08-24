@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
@@ -503,17 +503,17 @@ public class CirAnnotationUtil {
 		}
 		
 		/* 3. difference by subtract, bitws_xor and extend subtract */
-		if(CirMutation.is_numeric(expression) || CirMutation.is_pointer(expression)) {
+		if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
 			SymbolExpression sub_difference = CirAnnotation.sub(orig_expression, muta_expression);
 			sub_difference = this.symbol_evaluate(sub_difference, null);
 			annotations.add(CirAnnotation.sub_expr(expression, sub_difference));
 		}
-		if(CirMutation.is_numeric(expression)) {
+		if(CirInfection.is_numeric(expression)) {
 			SymbolExpression ext_difference = CirAnnotation.ext(orig_expression, muta_expression);
 			ext_difference = this.symbol_evaluate(ext_difference, null);
 			annotations.add(CirAnnotation.ext_expr(expression, ext_difference));
 		}
-		if(CirMutation.is_integer(expression)) {
+		if(CirInfection.is_integer(expression)) {
 			SymbolExpression xor_difference = CirAnnotation.xor(orig_expression, muta_expression);
 			xor_difference = this.symbol_evaluate(xor_difference, null);
 			annotations.add(CirAnnotation.xor_expr(expression, xor_difference));
@@ -663,16 +663,16 @@ public class CirAnnotationUtil {
 			muta_expression = this.symbol_evaluate(muta_expression, context);
 			if(muta_expression instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) muta_expression;
-				if(CirMutation.is_boolean(expression)) {
+				if(CirInfection.is_boolean(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_bool()));
 				}
-				else if(CirMutation.is_integer(expression)) {
+				else if(CirInfection.is_integer(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_double()));
 				}
-				else if(CirMutation.is_pointer(expression)) {
+				else if(CirInfection.is_pointer(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else {
@@ -705,16 +705,16 @@ public class CirAnnotationUtil {
 			if(orig_expression.equals(muta_expression)) { /* no error occurs */ }
 			else if(muta_expression instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) muta_expression;
-				if(CirMutation.is_boolean(expression)) {
+				if(CirInfection.is_boolean(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_bool()));
 				}
-				else if(CirMutation.is_integer(expression)) {
+				else if(CirInfection.is_integer(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_double()));
 				}
-				else if(CirMutation.is_pointer(expression)) {
+				else if(CirInfection.is_pointer(expression)) {
 					annotations.add(CirAnnotation.set_conc(expression, constant.get_long()));
 				}
 				else {
@@ -743,13 +743,13 @@ public class CirAnnotationUtil {
 			difference = this.symbol_evaluate(difference, context);
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
-				if(CirMutation.is_integer(expression)) {
+				if(CirInfection.is_integer(expression)) {
 					annotations.add(CirAnnotation.sub_conc(expression, constant.get_long()));
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					annotations.add(CirAnnotation.sub_conc(expression, constant.get_double()));
 				}
-				else if(CirMutation.is_pointer(expression)) {
+				else if(CirInfection.is_pointer(expression)) {
 					annotations.add(CirAnnotation.sub_conc(expression, constant.get_long()));
 				}
 				else {
@@ -773,10 +773,10 @@ public class CirAnnotationUtil {
 			difference = this.symbol_evaluate(difference, context);
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
-				if(CirMutation.is_integer(expression)) {
+				if(CirInfection.is_integer(expression)) {
 					annotations.add(CirAnnotation.ext_conc(expression, constant.get_long()));
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					annotations.add(CirAnnotation.ext_conc(expression, constant.get_double()));
 				}
 				else {
@@ -800,7 +800,7 @@ public class CirAnnotationUtil {
 			difference = this.symbol_evaluate(difference, context);
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
-				if(CirMutation.is_integer(expression)) {
+				if(CirInfection.is_integer(expression)) {
 					annotations.add(CirAnnotation.xor_conc(expression, constant.get_long()));
 				}
 				else {
@@ -886,16 +886,16 @@ public class CirAnnotationUtil {
 			case set_conc:
 			{
 				CirExpression expression = (CirExpression) location;
-				if(CirMutation.is_boolean(expression)) {
+				if(CirInfection.is_boolean(expression)) {
 					this.summarized_annotations_in_set_bool(concrete_annotations, abstract_annotations);
 				}
-				else if(CirMutation.is_integer(expression)) {
+				else if(CirInfection.is_integer(expression)) {
 					this.summarized_annotations_in_set_numb(concrete_annotations, abstract_annotations);
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					this.summarized_annotations_in_set_real(concrete_annotations, abstract_annotations);
 				}
-				else if(CirMutation.is_pointer(expression)) {
+				else if(CirInfection.is_pointer(expression)) {
 					this.summarized_annotations_in_set_addr(concrete_annotations, abstract_annotations);
 				}
 				else {
@@ -906,10 +906,10 @@ public class CirAnnotationUtil {
 			case sub_conc:
 			{
 				CirExpression expression = (CirExpression) location;
-				if(CirMutation.is_integer(expression)) {
+				if(CirInfection.is_integer(expression)) {
 					this.summarized_annotations_in_dif_numb(concrete_annotations, abstract_annotations);
 				}
-				else if(CirMutation.is_numeric(expression)) {
+				else if(CirInfection.is_numeric(expression)) {
 					this.summarized_annotations_in_dif_real(concrete_annotations, abstract_annotations);
 				}
 				else {
@@ -920,7 +920,7 @@ public class CirAnnotationUtil {
 			case ext_conc:
 			{
 				CirExpression expression = (CirExpression) location;
-				if(CirMutation.is_integer(expression)) {
+				if(CirInfection.is_integer(expression)) {
 					this.summarized_annotations_in_ext_numb(concrete_annotations, abstract_annotations);
 				}
 				else {

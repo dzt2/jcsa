@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -46,13 +46,13 @@ public abstract class CirMutationParser {
 	 * @return It parses the mutation in AST into CIR versions
 	 * @throws Exception
 	 */
-	protected Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+	protected Iterable<CirInfection> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else if(mutation == null)
 			throw new IllegalArgumentException("Invalid mutation: null");
 		else {
-			Set<CirMutation> cir_mutations = new HashSet<>();
+			Set<CirInfection> cir_mutations = new HashSet<>();
 			CirStatement statement = this.get_location(cir_tree, mutation);
 			if(statement != null) {
 				Map<CirAttribute, CirAttribute> infections =

@@ -16,12 +16,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
  * @author yukimula
  *
  */
-public class CirMutation {
+public class CirInfection {
 
 	/* definitions */
 	private CirAttribute constraint;
 	private CirAttribute init_error;
-	public CirMutation(CirAttribute constraint, CirAttribute
+	public CirInfection(CirAttribute constraint, CirAttribute
 				init_error) throws IllegalArgumentException {
 		if(constraint == null || !constraint.is_constraint()) {
 			throw new IllegalArgumentException("Invalid constraint: " + constraint);
@@ -58,7 +58,7 @@ public class CirMutation {
 		if(obj == this) {
 			return true;
 		}
-		else if(obj instanceof CirMutation) {
+		else if(obj instanceof CirInfection) {
 			return this.toString().equals(obj.toString());
 		}
 		else {
