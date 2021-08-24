@@ -930,6 +930,7 @@ class CirInfectionTreeUtil {
 			}
 			
 			/* 3. construct the nex_condition nodes from infection_edges */
+			tree.set_infection_edges();
 			for(CirInfectionEdge infection_edge : tree.get_infection_edges()) {
 				this.construct_nex_condition_nodes(infection_edge);
 			}

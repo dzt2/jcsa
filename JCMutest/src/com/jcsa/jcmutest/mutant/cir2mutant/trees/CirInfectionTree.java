@@ -34,6 +34,8 @@ public class CirInfectionTree {
 	private List<CirInfection> cir_infections;
 	/** the root node of tree to execute program entry **/
 	private CirInfectionNode root;
+	/** the set of infection edges in the tree for updating **/
+	private Set<CirInfectionEdge> infection_edges;
 	
 	/* constructor */
 	/**
@@ -61,6 +63,7 @@ public class CirInfectionTree {
 				this.cir_infections.clear();
 			}
 			this.root = CirInfectionNode.new_root(this);
+			this.infection_edges = new HashSet<CirInfectionEdge>();
 		}
 	}
 	
@@ -166,17 +169,7 @@ public class CirInfectionTree {
 	 * @return the set of edges representing the infection relationships from
 	 * state infection condition(s) to its initial state errors for mutation.
 	 */
-	public Iterable<CirInfectionEdge> get_infection_edges() { 
-		Iterator<CirInfectionEdge> edges = this.get_edges();
-		Set<CirInfectionEdge> infection_edges = new HashSet<CirInfectionEdge>();
-		while(edges.hasNext()) {
-			CirInfectionEdge edge = edges.next();
-			if(edge.get_type() == CirInfectionEdgeType.infection) {
-				infection_edges.add(edge);
-			}
-		}
-		return infection_edges;
-	}
+	public Iterable<CirInfectionEdge> get_infection_edges() { return this.infection_edges; }
 	/**
 	 * @return the set of leaf nodes in the tree
 	 */
@@ -228,7 +221,7 @@ public class CirInfectionTree {
 		Set<CirInfectionEdge> infection_edges = new HashSet<CirInfectionEdge>();
 		for(CirInfectionEdge infection_edge : this.get_infection_edges()) {
 			CirInfectionNode infection_node = infection_edge.get_target();
-			if(infection_node.get_data().number_of_acceptable() < max_infecting_times) {
+			if(infection_node.get_data().number_of_acceptions() < max_infecting_times) {
 				if(execution == null || execution == infection_node.get_execution()) {
 					infection_edges.add(infection_edge);
 				}
@@ -263,6 +256,19 @@ public class CirInfectionTree {
 		while(nodes.hasNext()) {
 			CirInfectionNode node = nodes.next();
 			node.get_data().sum();
+		}
+	}
+	/**
+	 * update the set of infection edges in this tree
+	 */
+	protected void set_infection_edges() {
+		Iterator<CirInfectionEdge> iterator = this.get_edges();
+		this.infection_edges.clear();
+		while(iterator.hasNext()) {
+			CirInfectionEdge edge = iterator.next();
+			if(edge.get_type() == CirInfectionEdgeType.infection) {
+				this.infection_edges.add(edge);
+			}
 		}
 	}
 	
