@@ -228,7 +228,7 @@ public class CirInfectionTree {
 		Set<CirInfectionEdge> infection_edges = new HashSet<CirInfectionEdge>();
 		for(CirInfectionEdge infection_edge : this.get_infection_edges()) {
 			CirInfectionNode infection_node = infection_edge.get_target();
-			if(infection_node.get_data().number_of_acceptions() < max_infecting_times) {
+			if(infection_node.get_data().number_of_acceptable() < max_infecting_times) {
 				if(execution == null || execution == infection_node.get_execution()) {
 					infection_edges.add(infection_edge);
 				}
