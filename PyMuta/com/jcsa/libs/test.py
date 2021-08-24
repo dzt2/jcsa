@@ -210,17 +210,19 @@ class SymExecutionState:
 	It represents the state at a particular point in the program
 	"""
 
-	def __init__(self, sym_execution, all_conditions):
+	def __init__(self, sym_execution, attribute: SymCondition, annotations):
 		"""
 		:param sym_execution: 	SymExecution
-		:param all_conditions: 	CirAnnotation+
+		:param attribute: CirAttribute
+		:param annotations: the set of CirAnnotation
 		"""
 		sym_execution: SymExecution
 		self.sym_execution = sym_execution
-		self.all_conditions = list()
-		for condition in all_conditions:
-			condition: SymCondition
-			self.all_conditions.append(condition)
+		self.attribute = attribute
+		self.annotations = list()
+		for annotation in annotations:
+			annotation: SymCondition
+			self.annotations.append(annotation)
 		return
 
 	def get_sym_execution(self):
@@ -229,11 +231,11 @@ class SymExecutionState:
 		"""
 		return self.sym_execution
 
-	def get_all_conditions(self):
-		"""
-		:return: annotations of the state
-		"""
-		return self.all_conditions
+	def get_attribute(self):
+		return self.attribute
+
+	def get_annotations(self):
+		return self.annotations
 
 
 class SymExecution:
@@ -268,9 +270,9 @@ class SymExecution:
 					condition = condition_lib.get_condition(word)
 					condition_buffer.append(condition)
 				else:
-					state = SymExecutionState(self, condition_buffer)
-					for sub_condition in state.get_all_conditions():
-						self.condition_set.add(sub_condition)
+					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1:])
+					for annotation in state.get_annotations():
+						self.condition_set.add(annotation)
 					self.state_list.append(state)
 		return
 
