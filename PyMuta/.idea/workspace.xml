@@ -20,22 +20,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/CirMutation.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/CirInfection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/base/CirAttribute.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/base/CirAttribute.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/cond/CirAnnotation.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/cond/CirAnnotation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/cond/CirAnnotationUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/cond/CirAnnotationUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/CirMutationParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/CirMutationParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/CirMutationParsers.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/CirMutationParsers.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/trap/VTRPCirMutationParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/trap/VTRPCirMutationParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/unry/UNOICirMutationParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/muta/unry/UNOICirMutationParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTree.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeEdge.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeFlow.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeNode.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeUtil.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/project/MuTestProjectFeatureWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/project/MuTestProjectFeatureWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/trees/CirInfectionTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/trees/CirInfectionTree.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
