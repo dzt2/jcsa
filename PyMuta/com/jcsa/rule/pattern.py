@@ -676,7 +676,7 @@ class KillPredictionOutput:
 		:param condition:
 		:return: class operator execution line statement location [parameter]
 		"""
-		source_condition = self.c_document.get_conditions_lib().get_condition(condition.get_code())
+		source_condition = self.c_document.get_condition_space().decode(condition.get_code())
 		category = source_condition.get_category()
 		operator = source_condition.get_operator()
 		execution = source_condition.get_execution()
@@ -734,7 +734,7 @@ class KillPredictionOutput:
 					self.__output__("\t[M.{}]\t{}\n".format(mutant_index, self.__mut2str__(mutant)))
 					pred_mutants.add(mutant)
 				self.__output__("\n")
-			optimal_rate = len(minimal_nodes) / len(pred_mutants)
+			optimal_rate = len(minimal_nodes) / (len(pred_mutants) + 0.0001)
 
 			## 3-B. summarized of metrics
 			precision, recall, f1_score = prf_evaluation(orig_mutants, pred_mutants)
@@ -925,11 +925,12 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	return
 
 
-def main(project_directory: str, encoding_directory: str, output_directory: str):
+def main(project_directory: str, encoding_directory: str, output_directory: str, exec_postfix: str):
 	"""
 	:param project_directory:
 	:param encoding_directory:
 	:param output_directory:
+	:param exec_postfix: .stn or .stp
 	:return:
 	"""
 	## initialization
@@ -941,7 +942,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 		## load document and encoded features into memory
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
-		c_document = jctest.CDocument(c_document_directory, file_name)
+		c_document = jctest.CDocument(c_document_directory, file_name, exec_postfix)
 		m_document = jcenco.MerDocument(m_document_directory, file_name)
 
 		## perform pattern mining and generation proceed
@@ -958,5 +959,5 @@ if __name__ == "__main__":
 	proj_directory = "/home/dzt2/Development/Data/zexp/features"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
-	main(proj_directory, enco_directory, outs_directory)
+	main(proj_directory, enco_directory, outs_directory, ".stn")
 

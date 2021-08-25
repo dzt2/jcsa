@@ -1,4 +1,4 @@
-""" This file develops the model to describe the symbolic features used to describe mutant execution """
+""" This file refines the model of symbolic execution along with condition for description. """
 
 
 import os
@@ -9,77 +9,64 @@ import com.jcsa.libs.muta as jcmuta
 
 class CDocument:
 	"""
-	It defines the group of features and source program
+	It denotes the document of mutation testing project features.
 	"""
-	def __init__(self, directory: str, name: str):
-		"""
-		:param directory: feature directory with project data
-		:param name: project name
-		"""
-		self.project = jcmuta.CProject(directory, name)
-		self.conditions = SymConditions(self)
-		self.executions = list()
-		self.muta_executions = dict()  # mapping from each mutant to the executions for killing it
 
-		stn_file_path = os.path.join(directory, name + ".stn")
-		with open(stn_file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					sym_execution = SymExecution(self, len(self.executions), line)
-					self.executions.append(sym_execution)
-					if not (sym_execution.get_mutant() in self.muta_executions):
-						self.muta_executions[sym_execution.get_mutant()] = list()
-					self.muta_executions[sym_execution.get_mutant()].append(sym_execution)
+	def __init__(self, directory: str, file_name: str, exec_postfix: str):
+		"""
+		:param directory:	feature directory using project data
+		:param file_name:	the name of mutation testing project
+		:param exec_postfix:	the postfix of file to preserve the symbolic execution features.
+		"""
+		self.project = jcmuta.CProject(directory, file_name)
+		self.conditions = SymConditionSpace(self)
+		exec_file = os.path.join(directory, file_name + exec_postfix)
+		self.exec_space = SymExecutionSpace(self, exec_file)
 		return
 
 	def get_project(self):
+		"""
+		:return: the mutation testing project as the basis of this document
+		"""
 		return self.project
 
 	def get_program(self):
+		"""
+		:return: the source program on which the mutation test project is defined
+		"""
 		return self.project.program
 
-	def get_conditions_lib(self):
+	def get_condition_space(self):
+		"""
+		:return: the space where the symbolic conditions are created and defined
+		"""
 		return self.conditions
 
-	def get_executions(self):
-		"""
-		:return: the collection of symbolized executions for killing mutants
-		"""
-		return self.executions
-
-	def get_execution(self, eid: int):
-		return self.executions[eid]
-
-	def get_mutants(self):
-		"""
-		:return: the set of mutants being killed by any executions in the document
-		"""
-		return self.muta_executions.keys()
-
-	def get_executions_of(self, mutant: jcmuta.Mutant):
-		"""
-		:param mutant:
-		:return: the set of executions for killing the specified mutant
-		"""
-		if not (mutant in self.muta_executions):
-			return list()
+	def get_condition(self, word: str):
+		if word:
+			return self.conditions.decode(word)
 		else:
-			return self.muta_executions[mutant]
+			return None
 
-	@staticmethod
-	def load_document(directory: str, name: str):
+	def get_conditions(self, words):
 		"""
-				:param directory: feature directory with project data
-				:param name: project name
-				:return: document with execution paths of each mutant
-				"""
-		return CDocument(directory, name)
+		:param words: the set of words encoding symbolic conditions
+		:return:
+		"""
+		conditions = set()
+		for word in words:
+			condition = self.get_condition(word)
+			if not (condition is None):
+				conditions.add(condition)
+		return conditions
+
+	def get_execution_space(self):
+		return self.exec_space
 
 
 class SymCondition:
 	"""
-	The symbolic condition defined in program context for killing a mutation.
+	It models a symbolic condition defined in C-intermediate representation of source program.
 	"""
 
 	def __init__(self, category: str, operator: str, execution: jccode.CirExecution,
@@ -126,7 +113,7 @@ class SymCondition:
 		"""
 		:return: False if no parameter is needed to refine the description.
 		"""
-		return not(self.parameter is None)
+		return not (self.parameter is None)
 
 	def get_parameter(self):
 		"""
@@ -145,91 +132,77 @@ class SymCondition:
 		return "{}${}${}${}${}".format(category, operator, execution, location, parameter)
 
 
-class SymConditions:
+class SymConditionSpace:
 	"""
-	The library of symbolic conditions applied to describe symbolic execution for killing mutation.
+	It maintains the mapping from string-key to unique SymCondition defined in execution file.
 	"""
 
 	def __init__(self, document: CDocument):
 		"""
-		:param document: the original data document as database
+		:param document: the feature document of mutation test project
 		"""
 		self.document = document
-		self.conditions = dict()
+		self.condition_dict = dict()
 		return
 
-	def get_all_words(self):
-		"""
-		:return: the set of words encoding all the symbolic conditions defined in library
-		"""
-		return self.conditions.keys()
+	def get_document(self):
+		return self.document
 
-	def get_all_conditions(self):
-		"""
-		:return: the set of all symbolic conditions encoded in the library
-		"""
-		return self.conditions.values()
+	def get_words(self):
+		return self.condition_dict.keys()
 
-	def get_condition(self, word: str):
+	def get_conditions(self):
+		return self.condition_dict.values()
+
+	def decode(self, word: str):
 		"""
-		:param word: category$operator$execution$location$parameter
-		:return:
+		:param word: in terms of category$operator$execution$location$parameter
+		:return: SymCondition (unique)
 		"""
-		if not(word in self.conditions):
+		if not (word in self.condition_dict):
 			items = word.strip().split('$')
 			category = items[0].strip()
 			operator = items[1].strip()
 			exec_tok = jcbase.CToken.parse(items[2].strip()).get_token_value()
 			loct_tok = jcbase.CToken.parse(items[3].strip()).get_token_value()
-			execution= self.document.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
+			execution = self.document.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
 			location = self.document.project.program.cir_tree.get_cir_node(loct_tok)
 			para_tok = jcbase.CToken.parse(items[4].strip()).get_token_value()
 			if para_tok is None:
 				parameter = None
 			else:
 				parameter = self.document.project.sym_tree.get_sym_node(items[4].strip())
-			self.conditions[word] = SymCondition(category, operator, execution, location, parameter)
-		cond_instance = self.conditions[word]
-		cond_instance: SymCondition
-		return cond_instance
-
-	def get_conditions(self, words):
-		"""
-		:param words: the collection of words encoding the symbolic conditions being extracted
-		:return: the collection of symbolic conditions being extracted from the input words
-		"""
-		conditions = list()
-		for word in words:
-			word: str
-			conditions.append(self.get_condition(word.strip()))
-		return conditions
+			self.condition_dict[word] = SymCondition(category, operator, execution, location, parameter)
+		condition = self.condition_dict[word]
+		condition: SymCondition
+		return condition
 
 
 class SymExecutionState:
 	"""
-	It represents the state at a particular point in the program
+	It denotes a state node in symbolic mutant execution
 	"""
 
-	def __init__(self, sym_execution, attribute: SymCondition, annotations):
+	def __init__(self, execution, attribute: SymCondition, annotations):
 		"""
-		:param sym_execution: 	SymExecution
-		:param attribute: CirAttribute
-		:param annotations: the set of CirAnnotation
+		:param execution: 	symbolic mutant execution
+		:param attribute: 	the condition to represent
+		:param annotations: the set of conditions being annotated
 		"""
-		sym_execution: SymExecution
-		self.sym_execution = sym_execution
+		execution: SymExecution
+		self.execution = execution
 		self.attribute = attribute
-		self.annotations = list()
+		self.annotations = set()
 		for annotation in annotations:
 			annotation: SymCondition
-			self.annotations.append(annotation)
+			self.annotations.add(annotation)
 		return
 
 	def get_sym_execution(self):
-		"""
-		:return: the execution where the state is defined
-		"""
-		return self.sym_execution
+		return self.execution
+
+	def get_cir_execution(self):
+		return self.attribute.get_execution()
 
 	def get_attribute(self):
 		return self.attribute
@@ -240,15 +213,19 @@ class SymExecutionState:
 
 class SymExecution:
 	"""
-	mutant, test_case, result, state+
+	It denotes an execution between mutant and test case
 	"""
-	def __init__(self, document: CDocument, eid:int, line: str):
+
+	def __init__(self, space, eid: int, line: str):
 		"""
 		:param document:
-		:param line: mid tid [attribute annotation* ;]*
+		:param eid: the integer of the execution in document
+		:param line: mid tid {attribute {annotation}* ;}* \n
 		"""
-		self.document = document
+		space: SymExecutionSpace
+		self.space = space
 		self.eid = eid
+		document = space.document
 
 		items = line.strip().split('\t')
 		project = document.get_project()
@@ -256,70 +233,148 @@ class SymExecution:
 		test_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
 		self.mutant = project.muta_space.get_mutant(mutant_token)
 		self.test_case = None
-		if not(test_token is None):
+		if not (test_token is None):
 			self.test_case = project.test_space.get_test_case(test_token)
 
-		self.state_list = list()
-		condition_lib = document.get_conditions_lib()
+		self.states = list()
+		self.conditions = set()
 		condition_buffer = list()
-		self.condition_set = set()
 		for k in range(2, len(items)):
 			word = items[k].strip()
 			if len(word) > 0:
-				if word != ';':
-					condition = condition_lib.get_condition(word)
+				if word != ";":
+					condition = document.get_condition(word)
 					condition_buffer.append(condition)
 				else:
-					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1:])
+					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1: ])
+					condition_buffer.clear()
 					for annotation in state.get_annotations():
-						self.condition_set.add(annotation)
-					self.state_list.append(state)
+						self.conditions.add(annotation)
+					self.states.append(state)
+
+		return
+
+	def get_space(self):
+		"""
+		:return: the space where the execution is defined
+		"""
+		return self.space
+
+	def get_eid(self):
+		"""
+		:return: the integer ID of the execution in space
+		"""
+		return self.eid
+
+	def get_mutant(self):
+		"""
+		:return: the mutant to be killed
+		"""
+		return self.mutant
+
+	def get_test(self):
+		"""
+		:return: the test case used to execute
+		"""
+		return self.test_case
+
+	def has_test(self):
+		"""
+		:return: False if the execution is generated symbolically
+		"""
+		return not (self.test_case is None)
+
+	def get_states(self):
+		"""
+		:return: the sequence of state nodes in the execution
+		"""
+		return self.states
+
+	def get_conditions(self):
+		"""
+		:return: the set of symbolic conditions required in the execution
+		"""
+		return self.conditions
+
+
+class SymExecutionSpace:
+	"""
+	It defines the space of symbolic mutant executions
+	"""
+
+	def __init__(self, document: CDocument, exec_file: str):
+		"""
+		:param document: the feature document of project
+		:param exec_file: xxx.stn or xxx.stp
+		"""
+		self.document = document
+		self.exec_list = list()
+		self.muta_exec = dict()		# Mutant 	--> SymExecution+
+		self.test_exec = dict()		# TestCase	-->	SymExecution+
+		with open(exec_file, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					execution = SymExecution(self, len(self.exec_list), line)
+					self.exec_list.append(execution)
+					mutant = execution.get_mutant()
+					if not (mutant in self.muta_exec):
+						self.muta_exec[mutant] = list()
+					self.muta_exec[mutant].append(execution)
+					test = execution.get_test()
+					if not (test in self.test_exec):
+						self.test_exec[test] = list()
+					self.test_exec[test].append(execution)
 		return
 
 	def get_document(self):
 		return self.document
 
-	def get_id(self):
-		return self.eid
+	def get_executions(self):
+		return self.exec_list
 
-	def get_mutant(self):
-		return self.mutant
+	def get_execution(self, eid: int):
+		return self.exec_list[eid]
 
-	def get_test_case(self):
-		return self.test_case
-
-	def has_test_case(self):
-		return not(self.test_case is None)
-
-	def get_state_list(self):
-		return self.state_list
-
-	def get_condition_set(self):
+	def get_executions_of(self, key):
 		"""
-		:return: the set of conditions used in execution states
+		:param key: either Mutant or TestCase or None
+		:return: the set of SymExecution* referring to the key
 		"""
-		return self.condition_set
+		if key in self.muta_exec:
+			return self.muta_exec[key]
+		elif key in self.test_exec:
+			return self.test_exec[key]
+		else:
+			return list()
+
+	def get_mutants(self):
+		return self.muta_exec.keys()
+
+	def get_tests(self):
+		return self.test_exec.keys()
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zexp/features_s"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
 	print_condition = False
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
-		c_document = CDocument.load_document(c_directory, file_name)
-		print(file_name, "loads", len(c_document.get_mutants()), "mutants used and",
-			  len(c_document.get_executions()), "symbolic instance paths annotated with",
-			  len(c_document.get_conditions_lib().get_all_conditions()), "conditions.")
+		c_document = CDocument(c_directory, file_name, ".stn")
+		exec_space = c_document.get_execution_space()
+		print(file_name, "loads", len(exec_space.get_mutants()), "mutants used and",
+			  len(exec_space.get_executions()), "symbolic instance paths annotated with",
+			  len(c_document.get_condition_space().get_conditions()), "conditions.")
 
-		for sym_execution in c_document.get_executions():
+		for sym_execution in exec_space.get_executions():
 			print("\tPath[{}]: Killing mutant#{} using {} instances and {} conditions.".
-				  format(sym_execution.get_id(),
+				  format(sym_execution.get_eid(),
 						 sym_execution.get_mutant().get_muta_id(),
-						 len(sym_execution.get_state_list()),
-						 len(sym_execution.get_condition_set())))
+						 len(sym_execution.get_states()),
+						 len(sym_execution.get_conditions())))
 			if print_condition:
-				for condition in sym_execution.get_condition_set():
+				for condition in sym_execution.get_conditions():
 					print("\t\t--> {}\t{}\t{}\t{}\t{}".format(condition.get_category(),
 															  condition.get_operator(),
 															  condition.get_execution(),
