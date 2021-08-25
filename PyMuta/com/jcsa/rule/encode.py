@@ -62,19 +62,19 @@ class MerDocument:
 		## xxx.sym
 		cid, condition_index_dict = 0, dict()
 		with open(os.path.join(directory, file_name + ".sym"), 'w') as writer:
-			for condition in c_document.get_conditions_lib().get_all_conditions():
+			for condition in c_document.get_condition_space().get_conditions():
 				writer.write("{}\n".format(str(condition)))
 				condition_index_dict[condition] = cid
 				cid += 1
 		### xxx.exc
 		with open(os.path.join(directory, file_name + ".exc"), 'w') as writer:
-			for execution in c_document.get_executions():
+			for execution in c_document.get_execution_space().get_executions():
 				mid = execution.get_mutant().get_muta_id()
 				tid = -1
-				if execution.has_test_case():
-					tid = execution.test_case.get_test_id()
+				if execution.has_test():
+					tid = execution.get_test().get_test_id()
 				writer.write("{}\t{}".format(mid, tid))
-				for condition in execution.get_condition_set():
+				for condition in execution.get_conditions():
 					cid = condition_index_dict[condition]
 					writer.write("\t{}".format(cid))
 				writer.write("\n")
@@ -643,15 +643,16 @@ class MerExecutionSpace:
 ### encoding-decoding
 
 
-def encode_c_documents(prev_path: str, post_path: str):
+def encode_c_documents(prev_path: str, post_path: str, exec_postfix: str):
 	"""
 	:param prev_path:
 	:param post_path:
+	:param exec_postfix: .stn or .stp
 	:return:
 	"""
 	for file_name in os.listdir(prev_path):
 		inputs_directory = os.path.join(prev_path, file_name)
-		c_document = jctest.CDocument(inputs_directory, file_name)
+		c_document = jctest.CDocument(inputs_directory, file_name, exec_postfix)
 		MerDocument.encode_mer_document(c_document, post_path)
 		print("Encode project for", file_name)
 	print()
@@ -675,8 +676,8 @@ def decode_m_documents(post_path: str):
 	return
 
 
-def main(prev_path: str, post_path: str):
-	encode_c_documents(prev_path, post_path)
+def main(prev_path: str, post_path: str, exec_postfix: str):
+	encode_c_documents(prev_path, post_path, exec_postfix)
 	decode_m_documents(post_path)
 	return 0
 
@@ -687,6 +688,6 @@ def main(prev_path: str, post_path: str):
 if __name__ == "__main__":
 	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
-	exit_code = main(prev_directory, post_directory)
+	exit_code = main(prev_directory, post_directory, ".stn")
 	exit(exit_code)
 
