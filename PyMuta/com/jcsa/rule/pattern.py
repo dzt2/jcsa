@@ -959,5 +959,5 @@ if __name__ == "__main__":
 	proj_directory = "/home/dzt2/Development/Data/zexp/features"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
-	main(proj_directory, enco_directory, outs_directory, ".stn")
+	main(proj_directory, enco_directory, outs_directory, ".stp")
 
