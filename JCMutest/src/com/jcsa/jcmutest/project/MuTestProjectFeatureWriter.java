@@ -1155,7 +1155,7 @@ public class MuTestProjectFeatureWriter {
 					this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
 			proceed_counters++;
 			if(state_path == null) { continue; /* avoid useless test case */ }
-			System.out.println("\t\tSTN_Proceed[" + proceed_counters + "/" + test_mutants.size() + "]");
+			System.out.println("\t\tSTP_Proceed[" + proceed_counters + "/" + test_mutants.size() + "]");
 			
 			/* 3-2. construct the state infection trees for every available mutation */
 			Collection<CirInfectionTree> trees = new ArrayList<CirInfectionTree>();
