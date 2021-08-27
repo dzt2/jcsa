@@ -305,21 +305,30 @@ public class MuTestProjectFeatureWriter {
 		
 		/* mapping each test to corresponding mutants */
 		for(TestInput test_case : test_cases) {
+			/* create the mutation buffer to preserve available ones */
 			Collection<Mutant> mutants = new ArrayList<Mutant>();
+			
 			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+				/* 1. capture the strong, weak and coverage execution results */
 				MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
 				MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
 				MuTestProjectTestResult c_result = tspace.get_test_result(mutant.get_coverage_mutant());
-				if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
+				
+				/* 2. determine whether to include the mutation for that test */
+				if(s_result == null) {	continue; }			/** ignore the untested mutation **/
+				else if(s_result != null && s_result.get_kill_set().get(test_case.get_id())) {
+					mutants.add(mutant);					/** add mutant when it is killed **/
 				}
 				else if(w_result != null && w_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
+					mutants.add(mutant);					/** add mutant when it is infected **/
 				}
 				else if(c_result != null && c_result.get_kill_set().get(test_case.get_id())) {
-					mutants.add(mutant);
+					mutants.add(mutant);					/** add mutant at least when it is reached **/
 				}
+				else { continue; }							/** ignore the un-covered mutation **/
 			}
+			
+			/* update the mapping from test case to its available mutations */
 			if(!mutants.isEmpty()) { maps.put(test_case, mutants); }
 		}
 		return maps;
@@ -380,6 +389,25 @@ public class MuTestProjectFeatureWriter {
 		else {
 			return tree.has_cir_infections();
 		}
+	}
+	/**
+	 * report information to users for debugging
+	 * @param title
+	 * @param number_of_mutas
+	 * @param number_of_symbs
+	 * @param number_of_trees
+	 * @param number_of_lines
+	 * @param number_of_nodes
+	 * @param number_of_words
+	 */
+	private void report_cir_infection_counters(
+			String title, 	int number_of_mutations,
+			int number_of_trees, int number_of_lines,
+			int number_of_nodes, int number_of_words) {
+		System.out.println(String.format(
+				"\t\t--> %s: %d trees, %d lines, %d nodes, %d words, %d/%d mutants by %d expressions.", 
+				title, number_of_trees, number_of_lines, number_of_nodes, number_of_words,
+				number_of_mutations, this.inputs.get_mutant_space().size(), this.symbol_nodes.size()));
 	}
 	
 	/* static code information */
@@ -629,7 +657,7 @@ public class MuTestProjectFeatureWriter {
 		this.write_flw();
 	}
 	
-	/* dependence analysis */
+	/* dependence model information */
 	/**
 	 * [edge] type source target
 	 * @param edge
@@ -816,13 +844,13 @@ public class MuTestProjectFeatureWriter {
 		this.write_tst(); this.write_mut(); this.write_res();
 	}
 	
-	/* symbolic expression trees */
+	/* symbolic expression features */
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_sym_node(SymbolNode node, Set<String> records) throws Exception {
+	private void 	write_sym_node(SymbolNode node, Set<String> records) throws Exception {
 		String node_key = this.encode_token(node);
 
 		if(!records.contains(node_key)) {
@@ -893,7 +921,7 @@ public class MuTestProjectFeatureWriter {
 	 * @return
 	 * @throws Exception
 	 */
-	private int write_sym_nodes() throws Exception {
+	private int 	write_sym_nodes() throws Exception {
 		Set<String> records = new HashSet<>();
 		for(SymbolNode node : this.symbol_nodes) {
 			this.write_sym_node(node, records);
@@ -905,270 +933,207 @@ public class MuTestProjectFeatureWriter {
 	 * @return
 	 * @throws Exception
 	 */
-	private int write_sym() throws Exception {
+	private int 	write_sym() throws Exception {
 		this.open(".sym");
 		int number = this.write_sym_nodes();
 		this.close();
 		return number;
 	}
+	/* state infection tree features */
 	/**
-	 * (\tattribute) (\tannotation)+ (\t;)
+	 * {\t attribute} {\t annotation}+ {\t ;}
 	 * @param node
-	 * @return whether the node is successfully printed on line
+	 * @return the number of annotations being printed in that node
 	 * @throws Exception
 	 */
-	private boolean write_cir_infection_node(CirInfectionNode node) throws Exception {
+	private int		write_cir_infection_node(CirInfectionNode node) throws Exception {
+		/* 1. capture the available annotations for printing */
+		Collection<CirAnnotation> annotations = new HashSet<CirAnnotation>();
+		for(CirAnnotation annotation : node.get_data().get_symbolic_annotations()) {
+			annotations.add(annotation);
+		}
+		for(CirAnnotation annotation : node.get_data().get_abstract_annotations()) {
+			annotations.add(annotation);
+		}
+		
+		/* 2. print: {\t attribute} {\t annotation}+ {\t ;} */
 		if(node.get_data().is_executed()) {
-			/* I. capture the annotations to be printed in the node */
-			Collection<CirAnnotation> annotations = new HashSet<CirAnnotation>();
-			for(CirAnnotation annotation : node.get_data().get_symbolic_annotations()) {
-				annotations.add(annotation);
-			}
-			for(CirAnnotation annotation : node.get_data().get_abstract_annotations()) {
-				annotations.add(annotation);
-			}
-			
-			/* II. output: (\tattribute) (\tannotation)+ (\t;) */
 			this.write_cir_attribute(node);
 			for(CirAnnotation annotation : annotations) {
 				this.write_cir_annotation(annotation);
 			}
 			this.file_writer.write("\t;");
-			
-			return true;
+			return annotations.size() + 1;
 		}
+		/* 3. do not print the node if it is not evaluated */
 		else {
-			return false;
+			return 0;
 		}
 	}
 	/**
-	 * mid tid {(\t attribute) (\t annotation)+ (\t ;)}+ \n
+	 * mid tid { {\t attribute} {\t annotation}+ {\t ;} }+ \n
 	 * @param mutant
 	 * @param test_case
 	 * @param node_list
-	 * @return the number of nodes being printed on the line
+	 * @return number_of_nodes, number_of_words
 	 * @throws Exception
 	 */
-	private int write_cir_infection_line(Mutant mutant, TestInput test_case, Iterable<CirInfectionNode> node_list) throws Exception {
-		/* mid tid */
-		String mid = this.encode_token(mutant);
-		String tid = this.encode_token(test_case);
-		this.file_writer.write(mid + "\t" + tid);
+	private int[]	write_cir_infection_line(Mutant mutant, TestInput test_case, List<CirInfectionNode> node_list) throws Exception {
+		/* initialize the counters for returning */
+		int number_of_nodes = 0, number_of_words = 0;
 		
-		/* { (\t attribute) (\t annotation)* (\t ;) }* */
-		int number_of_nodes = 0;
+		/* head: mid tid */
+		this.file_writer.write(this.encode_token(mutant) + 
+						"\t" + this.encode_token(test_case));
+		
+		/* ({\t attribute} {\t annotation}+ {\t ;})+ */
 		for(CirInfectionNode node : node_list) {
-			if(this.write_cir_infection_node(node))
-				number_of_nodes++;
+			int number = this.write_cir_infection_node(node);
+			if(number > 0) {
+				number_of_words += number;
+				number_of_nodes += 1;
+			}
 		}
+		this.file_writer.write("\n");	/* new a line */
 		
-		/* new_line */	this.file_writer.write("\n");
-		
-		return number_of_nodes;	/* number of nodes being printed on line */
+		/* return [number_of_nodes, number_of_words] */
+		return new int[] { number_of_nodes, number_of_words };
 	}
 	/**
-	 * Write all the nodes in BFS traversal sequence in the tree to xxx.stn
+	 * print each tree a line with BFS-sequence of the tree nodes within it.
 	 * @param tree
 	 * @param test_case
-	 * @return the number of tree nodes being printed into the line
+	 * @return [number_of_lines, number_of_nodes, number_of_words]
 	 * @throws Exception
 	 */
-	private int write_cir_infection_nodes(CirInfectionTree tree, TestInput test_case) throws Exception {
-		/* 1. collect the sequence of nodes for being printed */
+	private int[]	write_cir_infection_tree_by_nodes(CirInfectionTree tree, TestInput test_case) throws Exception {
+		/* 1. initialize the counters for returning */
+		int number_of_lines = 0, number_of_nodes = 0, number_of_words = 0;
+		
+		/* 2. collect the nodes being printed in BFS-sequence of the tree */
 		List<CirInfectionNode> node_list = new ArrayList<CirInfectionNode>();
 		Iterator<CirInfectionNode> node_iterator = tree.get_nodes();
 		while(node_iterator.hasNext()) { node_list.add(node_iterator.next()); }
 		
-		/* 2. print the nodes in BFS traversal from the tree to xxx.stn */
-		return this.write_cir_infection_line(tree.get_mutant(), test_case, node_list);
+		/* 3. print each line for all the nodes in the tree */
+		if(this.is_tree_available(tree)) {
+			tree.sum_states();
+			int[] nodes_words = this.
+					write_cir_infection_line(tree.get_mutant(), test_case, node_list);
+			number_of_lines += 1;
+			number_of_nodes += nodes_words[0];
+			number_of_words += nodes_words[1];
+		}
+		
+		/* 4. return */
+		return new int[] { number_of_lines, number_of_nodes, number_of_words };
 	}
 	/**
-	 * Write every root-leaf path in the tree to multiple lines of the xxx.stp
+	 * print each root-leaf path in the tree for each line in xxx.stp
 	 * @param tree
 	 * @param test_case
-	 * @return number_of_paths
+	 * @return [number_of_lines, number_of_nodes, number_of_words]
 	 * @throws Exception
 	 */
-	private int[] write_cir_infection_paths(CirInfectionTree tree, TestInput test_case) throws Exception {
-		/* every root-leaf path refers to one single line in xxx.stp */
-		int number_of_paths = 0, number_of_nodes = 0;
-		for(CirInfectionNode leaf : tree.get_leafs()) {
-			/* collect the nodes in sequence of each root-leaf path */
-			Iterable<CirInfectionEdge> path = leaf.get_root_path();
-			List<CirInfectionNode> node_list = new ArrayList<CirInfectionNode>();
-			for(CirInfectionEdge edge : path) { node_list.add(edge.get_source()); } 
-			node_list.add(leaf);
-			
-			/* print one line for every root-leaf path into xxx.stp */
-			number_of_nodes += this.write_cir_infection_line(tree.get_mutant(), test_case, node_list);
-			number_of_paths++; 
-		}
-		return new int[] { number_of_nodes, number_of_paths };
-	}
-	/**
-	 * @param number_of_nodes
-	 * @param number_of_lines
-	 * @param number_of_mutants
-	 * @param number_of_annotations
-	 */
-	private void report_infection_outputs(String head, int number_of_nodes, int number_of_lines, int number_of_mutants) {
-		System.out.println(String.format("\t\t--> [%s] %d nodes, %d lines, %d of %d mutations from program, using %d symbolic annotations.", 
-				head, number_of_nodes, number_of_lines, number_of_mutants, this.inputs.get_mutant_space().size(), this.symbol_nodes.size()));
-	}
-	/**
-	 * write the xxx.stn using BFS-sequence of tree nodes in each available mutation statically
-	 * @param dependence_graph
-	 * @throws Exception
-	 */
-	private void write_stn(CDependGraph dependence_graph) throws Exception {
-		/* 1. declaration of initial counters */
-		int number_of_nodes = 0, number_of_trees = 0;
+	private int[]	write_cir_infection_tree_by_paths(CirInfectionTree tree, TestInput test_case) throws Exception {
+		/* 1. initialize the counters for returning */
+		int number_of_lines = 0, number_of_nodes = 0, number_of_words = 0;
 		
-		/* 2. write xxx.stn and statically evaluate each tree */
-		this.open(".stn");
-		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
-			/* 2.1. Create state infection tree statically using dependence model */
-			CirInfectionTree tree = CirInfectionTree.new_tree(mutant, dependence_graph);
-			if(!this.is_tree_available(tree)) { continue; /* to avoid useless trees */ }
-			
-			/* 2.2. Perform static evaluation and generating annotations for prints */
-			tree.add_states(null, this.max_infecting_times, null); tree.sum_states();
-			
-			/* 2.3. Write the static state infection tree's nodes into the xxx.stn */
-			number_of_nodes += this.write_cir_infection_nodes(tree, null);
-			number_of_trees++;
-		}
-		this.close();
-		
-		/* 3. report the output summarization to users for further analysis */
-		this.report_infection_outputs("S_STN", number_of_nodes, number_of_trees, number_of_trees);
-	}
-	/**
-	 * write the xxx.stn using BFS-sequence of tree nodes in each available mutation dynamically
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_stn(Collection<TestInput> test_cases) throws Exception {
-		/* 1. declaration of initial counters */
-		int number_of_nodes = 0, number_of_trees = 0, proceed_counters = 0;
-		Set<Mutant> mutants = new HashSet<Mutant>();
-		
-		/* 2. perform instrumental execution for extracting dynamic states */
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
-		Map<TestInput, Collection<Mutant>> test_mutants = this.initial_tests_mutants(test_cases);
-		System.out.println("\t==> Select " + test_mutants.size() + " test cases to evaluate.");
-		
-		/* 3. write the xxx.stn using the dynamic features of infection nodes */
-		this.open(".stn");
-		for(TestInput test_case : test_cases) {
-			/* 3-1. extract the execution paths for analyzing infection trees */
-			CStatePath state_path = tspace.load_instrumental_path(
-					this.inputs.get_sizeof_template(), 
-					this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
-			proceed_counters++;
-			if(state_path == null) { continue; /* avoid useless test case */ }
-			System.out.println("\t\tSTN_Proceed[" + proceed_counters + "/" + test_mutants.size() + "]");
-			
-			/* 3-2. construct the state infection trees for every available mutation */
-			Collection<CirInfectionTree> trees = new ArrayList<CirInfectionTree>();
-			for(Mutant mutant : test_mutants.get(test_case)) {
-				CirInfectionTree tree = CirInfectionTree.new_tree(mutant, state_path);
-				if(this.is_tree_available(tree)) { 
-					trees.add(tree); 
-					number_of_trees++;
-					mutants.add(tree.get_mutant());
+		/* 2. print each root-leaf path for each line */
+		if(this.is_tree_available(tree)) {
+			tree.sum_states();
+			for(CirInfectionNode leaf : tree.get_leafs()) {
+				/* 2-1. generate the root-leaf path into node_list */
+				List<CirInfectionNode> node_list = new ArrayList<CirInfectionNode>();
+				Iterable<CirInfectionEdge> path = leaf.get_root_path();
+				for(CirInfectionEdge edge : path) {
+					node_list.add(edge.get_source());
 				}
-			}
-			
-			/* 3-3. do dynamic state evaluation on state infection trees of mutation */
-			SymbolProcess context = new SymbolProcess(this.inputs.get_ast_tree(), this.inputs.get_cir_tree());
-			for(CStateNode state_node : state_path.get_nodes()) {
-				context.accumulate(state_node);
-				for(CirInfectionTree tree : trees) {
-					tree.add_states(state_node.get_execution(), this.max_infecting_times, context);
-				}
-			}
-			
-			/* 3-4. summarize the state infection trees and output features to xxx.stn */
-			for(CirInfectionTree tree : trees) {
-				tree.sum_states();
-				number_of_nodes += this.write_cir_infection_nodes(tree, test_case);
+				node_list.add(leaf);
 				
+				/* 2-2. print each path for each line in the xxx.stp */
+				int[] nodes_words = this.
+						write_cir_infection_line(tree.get_mutant(), test_case, node_list);
+				number_of_lines += 1;
+				number_of_nodes += nodes_words[0];
+				number_of_words += nodes_words[1];
 			}
 		}
-		this.close();
 		
-		/* 4. report the output summarization to users for further analysis */
-		this.report_infection_outputs("D_STN", number_of_nodes, number_of_trees, mutants.size());
+		/* 4. return */
+		return new int[] { number_of_lines, number_of_nodes, number_of_words };
 	}
 	/**
-	 * write the xxx.stp using DFS-sequence path for each leaf in state infection tree statically
+	 * write xxx.stn using static evaluated tree
 	 * @param dependence_graph
 	 * @throws Exception
 	 */
-	private void write_stp(CDependGraph dependence_graph) throws Exception {
-		/* 1. declarations of counter for analysis and summarization */
-		int number_of_paths = 0, number_of_nodes = 0, number_of_trees = 0; 
+	private void 	write_stn(CDependGraph dependence_graph) throws Exception {
+		/* 1. initialize the counter and open file stream */
+		int number_of_trees = 0, number_of_lines = 0;
+		int number_of_nodes = 0, number_of_words = 0;
+		Set<Mutant> mutants = new HashSet<Mutant>();
 		
-		/* 2. write xxx.stp and statically evaluate the tree and path */
-		this.open(".stp");
+		/* 2. write the tree's nodes in BFS sequence to xxx.stn */
+		this.open(".stn");
 		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
-			/* 2.1. Create state infection tree statically using dependence model */
+			/* 2-1. create the static state infection tree for mutant */
 			CirInfectionTree tree = CirInfectionTree.new_tree(mutant, dependence_graph);
-			if(!this.is_tree_available(tree)) { continue; /* to avoid useless trees */ }
+			if(!this.is_tree_available(tree)) { continue;	/* ignore useless trees */ }
+			else { tree.add_states(null, this.max_infecting_times, null); }
 			
-			/* 2.2. Perform static evaluation and generating annotations for prints */
-			tree.add_states(null, this.max_infecting_times, null); tree.sum_states();
+			/* 2-2. print the node_sequence of tree into xxx.stn file */
+			int[] lines_nodes_words = this.write_cir_infection_tree_by_nodes(tree, null);
 			
-			/* 2-3. Print the state infection tree's DFS paths on the xxx.stp files  */
-			int[] nodes_paths = this.write_cir_infection_paths(tree, null);
-			number_of_nodes += nodes_paths[0];
-			number_of_paths += nodes_paths[1];
-			number_of_trees++;
+			/* 2-3. accumulate the counters for further analysis */
+			number_of_trees += 1;
+			number_of_lines += lines_nodes_words[0];
+			number_of_nodes += lines_nodes_words[1];
+			number_of_words += lines_nodes_words[2];
+			mutants.add(mutant);
 		}
 		this.close();
 		
-		/* 3. report the output summarization to users for further analysis */
-		this.report_infection_outputs("S_STP", number_of_nodes, number_of_paths, number_of_trees);
+		/* 3. report the users in finally */
+		this.report_cir_infection_counters("STN_S", mutants.size(), 
+				number_of_trees, number_of_lines, number_of_nodes, number_of_words);
 	}
 	/**
-	 * write the xxx.stp using DFS-sequence path of each leaf in state infection tree dynamically
+	 * write xxx.stn using dynamic evaluated tree
 	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void write_stp(Collection<TestInput> test_cases) throws Exception {
-		/* 1. declaration of initial counters */
-		int number_of_paths = 0, proceed_counters = 0, number_of_nodes = 0;
+	private void 	write_stn(Collection<TestInput> test_cases) throws Exception {
+		/* 1. initialize the counter and open file stream */
+		int number_of_trees = 0, number_of_lines = 0;
+		int number_of_nodes = 0, number_of_words = 0;
 		Set<Mutant> mutants = new HashSet<Mutant>();
+		int proceed_counter = 0, number_of_tests = test_cases.size();
 		
-		/* 2. perform instrumental execution for extracting dynamic states */
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
-		Map<TestInput, Collection<Mutant>> test_mutants = this.initial_tests_mutants(test_cases);
-		System.out.println("\t==> Select " + test_mutants.size() + " test cases to evaluate.");
+		/* 2. generate instrumental files and connecting */
+		Map<TestInput, Collection<Mutant>> maps = this.initial_tests_mutants(test_cases);
 		
-		/* 3. write the xxx.stn using the dynamic features of infection paths */
-		this.open(".stp");
-		for(TestInput test_case : test_cases) {
-			/* 3-1. extract the execution paths for analyzing infection trees */
-			CStatePath state_path = tspace.load_instrumental_path(
-					this.inputs.get_sizeof_template(), 
-					this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
-			proceed_counters++;
-			if(state_path == null) { continue; /* avoid useless test case */ }
-			System.out.println("\t\tSTP_Proceed[" + proceed_counters + "/" + test_mutants.size() + "]");
+		/* 3. create the state infection trees for each test */
+		this.open(".stn");
+		for(TestInput test_case : maps.keySet()) {
+			/* 3-1. obtain the execution path with state from */
+			CStatePath state_path = this.inputs.get_code_space().get_project().get_test_space().
+					load_instrumental_path(this.inputs.get_sizeof_template(), 
+							this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
+			proceed_counter++;
+			if(state_path == null) { continue; }	/** ignore the test if it cannot be instrumented analysis **/
+			System.out.println(String.format("\t\t==> Proceeding [%d/%d]", proceed_counter, number_of_tests));
 			
-			/* 3-2. construct the state infection trees for every available mutation */
+			/* 3-2. construct the state infection tree for each available mutation */
 			Collection<CirInfectionTree> trees = new ArrayList<CirInfectionTree>();
-			for(Mutant mutant : test_mutants.get(test_case)) {
+			for(Mutant mutant : maps.get(test_case)) {
 				CirInfectionTree tree = CirInfectionTree.new_tree(mutant, state_path);
-				if(this.is_tree_available(tree)) { 
-					trees.add(tree); 
-					mutants.add(tree.get_mutant());
-				}
+				if(this.is_tree_available(tree)) { trees.add(tree); }
 			}
 			
-			/* 3-3. do dynamic state evaluation on state infection trees of mutation */
-			SymbolProcess context = new SymbolProcess(this.inputs.get_ast_tree(), this.inputs.get_cir_tree());
+			/* 3. perform dynamic analysis for evaluating the state infection tree */
+			SymbolProcess context = new SymbolProcess(
+							this.inputs.get_ast_tree(), this.inputs.get_cir_tree());
 			for(CStateNode state_node : state_path.get_nodes()) {
 				context.accumulate(state_node);
 				for(CirInfectionTree tree : trees) {
@@ -1176,25 +1141,123 @@ public class MuTestProjectFeatureWriter {
 				}
 			}
 			
-			/* 3-4. summarize the state infection trees and output features to xxx.stn */
+			/* 4. print each tree's nodes onto the lines in the xxx.stn */
 			for(CirInfectionTree tree : trees) {
-				tree.sum_states();
-				int[] nodes_paths = this.write_cir_infection_paths(tree, test_case);
-				number_of_nodes += nodes_paths[0];
-				number_of_paths += nodes_paths[1];
+				int[] lines_nodes_words = this.write_cir_infection_tree_by_nodes(tree, test_case);
+				number_of_trees += 1;
+				number_of_lines += lines_nodes_words[0];
+				number_of_nodes += lines_nodes_words[1];
+				number_of_words += lines_nodes_words[2];
+				mutants.add(tree.get_mutant());
 			}
 		}
 		this.close();
 		
-		/* 4. report the output summarization to users for further analysis */
-		this.report_infection_outputs("D_STP", number_of_nodes, number_of_paths, mutants.size());
+		/* 3. report the users in finally */
+		this.report_cir_infection_counters("STN_D", mutants.size(), 
+				number_of_trees, number_of_lines, number_of_nodes, number_of_words);
 	}
 	/**
-	 * Write the xxx.stn, xxx.stp and xxx.sym using static evaluation
+	 * write xxx.stp using static evaluated trees
 	 * @param dependence_graph
 	 * @throws Exception
 	 */
-	private void write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
+	private void	write_stp(CDependGraph dependence_graph) throws Exception {
+		/* 1. initialize the counter and open file stream */
+		int number_of_trees = 0, number_of_lines = 0;
+		int number_of_nodes = 0, number_of_words = 0;
+		Set<Mutant> mutants = new HashSet<Mutant>();
+		
+		/* 2. write the tree's nodes in BFS sequence to xxx.stn */
+		this.open(".stp");
+		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+			/* 2-1. create the static state infection tree for mutant */
+			CirInfectionTree tree = CirInfectionTree.new_tree(mutant, dependence_graph);
+			if(!this.is_tree_available(tree)) { continue;	/* ignore useless trees */ }
+			else { tree.add_states(null, this.max_infecting_times, null); }
+			
+			/* 2-2. print the node_sequence of tree into xxx.stn file */
+			int[] lines_nodes_words = this.write_cir_infection_tree_by_paths(tree, null);
+			
+			/* 2-3. accumulate the counters for further analysis */
+			number_of_trees += 1;
+			number_of_lines += lines_nodes_words[0];
+			number_of_nodes += lines_nodes_words[1];
+			number_of_words += lines_nodes_words[2];
+			mutants.add(mutant);
+		}
+		this.close();
+		
+		/* 3. report the users in finally */
+		this.report_cir_infection_counters("STP_S", mutants.size(), 
+				number_of_trees, number_of_lines, number_of_nodes, number_of_words);
+	}
+	/**
+	 * write xxx.stp using dynamic evaluated tree
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void	write_stp(Collection<TestInput> test_cases) throws Exception {
+		/* 1. initialize the counter and open file stream */
+		int number_of_trees = 0, number_of_lines = 0;
+		int number_of_nodes = 0, number_of_words = 0;
+		Set<Mutant> mutants = new HashSet<Mutant>();
+		int proceed_counter = 0, number_of_tests = test_cases.size();
+		
+		/* 2. generate instrumental files and connecting */
+		Map<TestInput, Collection<Mutant>> maps = this.initial_tests_mutants(test_cases);
+		
+		/* 3. create the state infection trees for each test */
+		this.open(".stp");
+		for(TestInput test_case : maps.keySet()) {
+			/* 3-1. obtain the execution path with state from */
+			CStatePath state_path = this.inputs.get_code_space().get_project().get_test_space().
+					load_instrumental_path(this.inputs.get_sizeof_template(), 
+							this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
+			proceed_counter++;
+			if(state_path == null) { continue; }	/** ignore the test if it cannot be instrumented analysis **/
+			System.out.println(String.format("\t\t==> Proceeding [%d/%d]", proceed_counter, number_of_tests));
+			
+			/* 3-2. construct the state infection tree for each available mutation */
+			Collection<CirInfectionTree> trees = new ArrayList<CirInfectionTree>();
+			for(Mutant mutant : maps.get(test_case)) {
+				CirInfectionTree tree = CirInfectionTree.new_tree(mutant, state_path);
+				if(this.is_tree_available(tree)) { trees.add(tree); }
+			}
+			
+			/* 3. perform dynamic analysis for evaluating the state infection tree */
+			SymbolProcess context = new SymbolProcess(
+							this.inputs.get_ast_tree(), this.inputs.get_cir_tree());
+			for(CStateNode state_node : state_path.get_nodes()) {
+				context.accumulate(state_node);
+				for(CirInfectionTree tree : trees) {
+					tree.add_states(state_node.get_execution(), this.max_infecting_times, context);
+				}
+			}
+			
+			/* 4. print each tree's nodes onto the lines in the xxx.stn */
+			for(CirInfectionTree tree : trees) {
+				int[] lines_nodes_words = this.write_cir_infection_tree_by_paths(tree, test_case);
+				number_of_trees += 1;
+				number_of_lines += lines_nodes_words[0];
+				number_of_nodes += lines_nodes_words[1];
+				number_of_words += lines_nodes_words[2];
+				mutants.add(tree.get_mutant());
+			}
+		}
+		this.close();
+		
+		/* 3. report the users in finally */
+		this.report_cir_infection_counters("STP_D", mutants.size(), 
+				number_of_trees, number_of_lines, number_of_nodes, number_of_words);
+	}
+	/**
+	 * xxx.stn, xxx.stp, xxx.sym
+	 * @param dependence_graph
+	 * @param test_cases
+	 * @throws Exception
+	 */
+	private void	write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.symbol_nodes.clear();
 		if(test_cases == null || test_cases.isEmpty()) {
 			this.write_stn(dependence_graph);
