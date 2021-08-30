@@ -90,7 +90,7 @@ public class MuTestprojectFeatureWriting {
 		else { test_cases = null; }		/* no test case is used for dynamic generation */
 
 		/* 3. Generate feature information to output directory finally */
-		MuTestProjectFeatureWriter.write(code_file, output_directory, max_infecting_times, test_cases);
+		MuTestProjectFeatureWriter.write_features(code_file, output_directory, max_infecting_times, test_cases);
 		System.out.println();
 	}
 	
