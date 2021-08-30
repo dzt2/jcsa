@@ -935,7 +935,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 	"""
 	## initialization
 	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
-	print_equivalent, print_individual = False, True
+	print_equivalent, print_individual = True, False
 
 	## testing on every project in the project directory
 	for file_name in os.listdir(project_directory):
