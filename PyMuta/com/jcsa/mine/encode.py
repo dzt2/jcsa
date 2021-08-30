@@ -1,4 +1,4 @@
-""" This file defines the memory-reduced model for encoding features to describe symbolic executions """
+""" This file defines the encoded model for feature engineering and pattern generation. """
 
 
 import os
@@ -29,23 +29,27 @@ class MerDocument:
 		return
 
 	@staticmethod
-	def encode_mer_document(c_document: jctest.CDocument, directory: str):
+	def encode_tst_file(c_document: jctest.CDocument, directory: str, file_name: str):
 		"""
-		:param c_document: original document and data features
-		:param directory: where the encoding features are printed
+		:param c_document:
+		:param file_name:
+		:param directory: xxx.tst
 		:return:
 		"""
-		## 1. directory determination
-		file_name = c_document.project.program.name
-		directory = os.path.join(directory, file_name)
-		if not os.path.exists(directory):
-			os.mkdir(directory)
-		## xxx.tst
 		with open(os.path.join(directory, file_name + ".tst"), 'w') as writer:
 			for test in c_document.project.test_space.get_test_cases():
 				test: jcmuta.TestCase
 				writer.write("{}\n".format(test.get_test_id()))
-		## xxx.mut
+		return
+
+	@staticmethod
+	def encode_mut_file(c_document: jctest.CDocument, directory: str, file_name: str):
+		"""
+		:param c_document:
+		:param directory:
+		:param file_name:
+		:return: xxx.mut
+		"""
 		with open(os.path.join(directory, file_name + ".mut"), 'w') as writer:
 			for mutant in c_document.project.muta_space.get_mutants():
 				mutant: jcmuta.Mutant
@@ -53,31 +57,104 @@ class MerDocument:
 													   mutant.get_c_mutant().get_muta_id(),
 													   mutant.get_w_mutant().get_muta_id(),
 													   mutant.get_s_mutant().get_muta_id()))
-		## xxx.res
+		return
+
+	@staticmethod
+	def encode_res_file(c_document: jctest.CDocument, directory: str, file_name: str):
+		"""
+		:param c_document:
+		:param directory:
+		:param file_name:
+		:return: xxx.res
+		"""
 		with open(os.path.join(directory, file_name + ".res"), 'w') as writer:
 			for mutant in c_document.project.muta_space.get_mutants():
 				mutant: jcmuta.Mutant
 				result = mutant.get_result()
 				writer.write("{}\t{}\n".format(mutant.get_muta_id(), result.result))
-		## xxx.sym
+		return
+
+	@staticmethod
+	def encode_sym_file(c_document: jctest.CDocument, directory: str, file_name: str):
+		"""
+		:param c_document:
+		:param directory:
+		:param file_name:
+		:return: xxx.sym
+		"""
 		cid, condition_index_dict = 0, dict()
 		with open(os.path.join(directory, file_name + ".sym"), 'w') as writer:
 			for condition in c_document.get_condition_space().get_conditions():
 				writer.write("{}\n".format(str(condition)))
 				condition_index_dict[condition] = cid
 				cid += 1
-		### xxx.exc
+		return condition_index_dict
+
+	@staticmethod
+	def __collect_annotations__(execution: jctest.SymExecution, max_propagate_distance: int):
+		state_nodes = list()
+		for state_node in execution.get_states():
+			if state_node.get_attribute().get_category() != "nex_condition":
+				state_nodes.append(state_node)
+			elif max_propagate_distance > 0:
+				max_propagate_distance = max_propagate_distance - 1
+				state_nodes.append(state_node)
+		annotations = set()
+		for state_node in state_nodes:
+			for annotation in state_node.get_annotations():
+				annotations.add(annotation)
+		return annotations
+
+	@staticmethod
+	def encode_exc_file(c_document: jctest.CDocument, directory: str, file_name: str,
+						max_propagate_distance: int, condition_index_dict: dict):
+		"""
+		:param c_document:
+		:param directory:
+		:param file_name:
+		:param max_propagate_distance:
+		:param condition_index_dict:
+		:return: xxx.exc
+		"""
 		with open(os.path.join(directory, file_name + ".exc"), 'w') as writer:
 			for execution in c_document.get_execution_space().get_executions():
+				## mid tid head
 				mid = execution.get_mutant().get_muta_id()
 				tid = -1
 				if execution.has_test():
 					tid = execution.get_test().get_test_id()
 				writer.write("{}\t{}".format(mid, tid))
-				for condition in execution.get_conditions():
-					cid = condition_index_dict[condition]
+
+				## collect conditions required
+				annotations = MerDocument.__collect_annotations__(execution, max_propagate_distance)
+
+				## annotation+
+				for annotation in annotations:
+					cid = condition_index_dict[annotation]
 					writer.write("\t{}".format(cid))
 				writer.write("\n")
+		return
+
+	@staticmethod
+	def encode_c_document(c_document: jctest.CDocument, directory: str, max_propagate_distance: int):
+		"""
+		:param c_document: the document of data source to be encoded as features
+		:param directory: the directory where the encoded document will be generated in the file
+		:param max_propagate_distance: the maximal distance of propagation from the mid_condition parts
+		:return:
+		"""
+		## 1. directory determination
+		file_name = c_document.project.program.name
+		directory = os.path.join(directory, file_name)
+		if not os.path.exists(directory):
+			os.mkdir(directory)
+
+		## 2. encode the feature files
+		MerDocument.encode_mut_file(c_document, directory, file_name)
+		MerDocument.encode_tst_file(c_document, directory, file_name)
+		MerDocument.encode_res_file(c_document, directory, file_name)
+		condition_index_dict = MerDocument.encode_sym_file(c_document, directory, file_name)
+		MerDocument.encode_exc_file(c_document, directory, file_name, max_propagate_distance, condition_index_dict)
 		return
 
 
@@ -643,17 +720,18 @@ class MerExecutionSpace:
 ### encoding-decoding
 
 
-def encode_c_documents(prev_path: str, post_path: str, exec_postfix: str):
+def encode_c_documents(prev_path: str, post_path: str, exec_postfix: str, max_propagate_distance: int):
 	"""
 	:param prev_path:
 	:param post_path:
 	:param exec_postfix: .stn or .stp
+	:param max_propagate_distance:
 	:return:
 	"""
 	for file_name in os.listdir(prev_path):
 		inputs_directory = os.path.join(prev_path, file_name)
 		c_document = jctest.CDocument(inputs_directory, file_name, exec_postfix)
-		MerDocument.encode_mer_document(c_document, post_path)
+		MerDocument.encode_c_document(c_document, post_path, max_propagate_distance)
 		print("Encode project for", file_name)
 	print()
 	return
@@ -676,8 +754,8 @@ def decode_m_documents(post_path: str):
 	return
 
 
-def main(prev_path: str, post_path: str, exec_postfix: str):
-	encode_c_documents(prev_path, post_path, exec_postfix)
+def main(prev_path: str, post_path: str, exec_postfix: str, max_propagate_distance: int):
+	encode_c_documents(prev_path, post_path, exec_postfix, max_propagate_distance)
 	decode_m_documents(post_path)
 	return 0
 
@@ -688,6 +766,6 @@ def main(prev_path: str, post_path: str, exec_postfix: str):
 if __name__ == "__main__":
 	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
-	exit_code = main(prev_directory, post_directory, ".stp")
+	exit_code = main(prev_directory, post_directory, ".stp", 1)
 	exit(exit_code)
 
