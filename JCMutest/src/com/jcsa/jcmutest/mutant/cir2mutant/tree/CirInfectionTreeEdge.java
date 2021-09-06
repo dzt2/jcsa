@@ -1,21 +1,17 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.trees;
+package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 /**
- * It represents an edge from parent to child in CirInfectionEdge, which defines 
- * the relationships between CirInfectionNode.
+ * The edge connecting from parent to its child node in CirInfectionTree.
  * 
  * @author yukimula
  *
  */
-public class CirInfectionEdge {
+public class CirInfectionTreeEdge {
 	
 	/* attributes */
-	/** type of the edge using RIP process frameworks **/	
-	private CirInfectionEdgeType type;
-	/** the node from which the edge points to target **/
-	private CirInfectionNode	source;
-	/** the node to which the edge points from source **/
-	private CirInfectionNode	target;
+	private CirInfectionTreeFlow type;
+	private CirInfectionTreeNode source;
+	private CirInfectionTreeNode target;
 	
 	/* constructor */
 	/**
@@ -25,9 +21,9 @@ public class CirInfectionEdge {
 	 * @param target
 	 * @throws IllegalArgumentException
 	 */
-	protected CirInfectionEdge(CirInfectionEdgeType edge_type,
-			CirInfectionNode source,
-			CirInfectionNode target) throws IllegalArgumentException {
+	protected CirInfectionTreeEdge(CirInfectionTreeFlow edge_type,
+			CirInfectionTreeNode source,
+			CirInfectionTreeNode target) throws IllegalArgumentException {
 		if(edge_type == null) {
 			throw new IllegalArgumentException("Invalid edge_type: null");
 		}
@@ -49,26 +45,26 @@ public class CirInfectionEdge {
 	 * @throws IllegalArgumentException
 	 */
 	private void validate_edge_type() throws IllegalArgumentException {
-		if(this.type == CirInfectionEdgeType.execution) {
-			if(this.source.get_type() == CirInfectionNodeType.pre_condition) {
-				if(this.target.get_type() == CirInfectionNodeType.pre_condition
-					|| this.target.get_type() == CirInfectionNodeType.mid_condition) {
+		if(this.type == CirInfectionTreeFlow.execution) {
+			if(this.source.get_type() == CirInfectionTreeType.pre_condition) {
+				if(this.target.get_type() == CirInfectionTreeType.pre_condition
+					|| this.target.get_type() == CirInfectionTreeType.mid_condition) {
 					return;		/* pass through the validation */
 				}
 			}
 			throw new IllegalArgumentException(this.source.get_type() + " --> " + this.target.get_type());
 		}
-		else if(this.type == CirInfectionEdgeType.infection) {
-			if(this.source.get_type() == CirInfectionNodeType.mid_condition
-				&& this.target.get_type() == CirInfectionNodeType.mid_condition) {
+		else if(this.type == CirInfectionTreeFlow.infection) {
+			if(this.source.get_type() == CirInfectionTreeType.mid_condition
+				&& this.target.get_type() == CirInfectionTreeType.mid_condition) {
 				return;			/* pass through the validation */
 			}
 			throw new IllegalArgumentException(this.source.get_type() + " --> " + this.target.get_type());
 		}
-		else if(this.type == CirInfectionEdgeType.propagate) {
-			if(this.source.get_type() == CirInfectionNodeType.mid_condition
-				|| this.source.get_type() == CirInfectionNodeType.nex_condition) {
-				if(this.target.get_type() == CirInfectionNodeType.nex_condition) {
+		else if(this.type == CirInfectionTreeFlow.propagate) {
+			if(this.source.get_type() == CirInfectionTreeType.mid_condition
+				|| this.source.get_type() == CirInfectionTreeType.nex_condition) {
+				if(this.target.get_type() == CirInfectionTreeType.nex_condition) {
 					return;		/* pass through the validation */
 				}
 			}
@@ -83,14 +79,15 @@ public class CirInfectionEdge {
 	/**
 	 * @return type of the edge using RIP process frameworks
 	 */
-	public CirInfectionEdgeType get_type() { return this.type; }
+	public CirInfectionTreeFlow get_type() { return this.type; }
 	/**
 	 * @return the node from which the edge points to target
 	 */
-	public CirInfectionNode get_source() { return this.source; }
+	public CirInfectionTreeNode get_source() { return this.source; }
 	/**
 	 * @return the node to which the edge points from source
 	 */
-	public CirInfectionNode get_target() { return this.target; }
-
+	public CirInfectionTreeNode get_target() { return this.target; }
+	
+	
 }

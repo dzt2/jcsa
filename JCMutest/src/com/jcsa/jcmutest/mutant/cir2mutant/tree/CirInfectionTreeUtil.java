@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.trees;
+package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,13 +52,6 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
-/**
- * It implements the construction of CirInfectionTree along with its nodes and
- * edges structurally.
- * 
- * @author yukimula
- *
- */
 class CirInfectionTreeUtil {
 	
 	/* singleton mode */	
@@ -212,7 +205,7 @@ class CirInfectionTreeUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirInfectionNode construct_pre_condition_nodes(CirInfectionTree tree, 
+	private CirInfectionTreeNode construct_pre_condition_nodes(CirInfectionTree tree, 
 			CirExecution target, List<CirExecutionFlow> flows) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
@@ -225,21 +218,21 @@ class CirInfectionTreeUtil {
 		}
 		else {
 			/* 1. initialization and declarations */
-			CirInfectionNode node = tree.get_root();
+			CirInfectionTreeNode node = tree.get_root();
 			CirAttribute flow_attribute;
 			
 			/* 2. construct pre_condition path on the flows */
 			for(CirExecutionFlow flow : flows) {
 				flow_attribute = this.get_flow_attribute(flow);
-				node = node.link_to(CirInfectionNodeType.pre_condition, 
-						flow_attribute, CirInfectionEdgeType.execution);
+				node = node.link_to(CirInfectionTreeType.pre_condition, 
+						flow_attribute, CirInfectionTreeFlow.execution);
 			}
 			
 			/* 3. link the node to target location in needed */
 			if(node.get_execution() != target) {
 				flow_attribute = CirAttribute.new_cover_count(target, 1);
-				node = node.link_to(CirInfectionNodeType.pre_condition, 
-						flow_attribute, CirInfectionEdgeType.execution);
+				node = node.link_to(CirInfectionTreeType.pre_condition, 
+						flow_attribute, CirInfectionTreeFlow.execution);
 			}
 			
 			/* 4. return execution of target as output */	return node;
@@ -287,8 +280,8 @@ class CirInfectionTreeUtil {
 	 * @return the set of state infection edges created from the reach_node
 	 * @throws Exception
 	 */
-	private Iterable<CirInfectionEdge> construct_mid_condition_nodes(
-			CirInfectionNode reach_node, CirInfection cir_infection) throws Exception {
+	private Iterable<CirInfectionTreeEdge> construct_mid_condition_nodes(
+			CirInfectionTreeNode reach_node, CirInfection cir_infection) throws Exception {
 		if(reach_node == null) {
 			throw new IllegalArgumentException("Invalid reach_node: null");
 		}
@@ -297,8 +290,8 @@ class CirInfectionTreeUtil {
 		}
 		else {
 			/* 1. declarations and initializations */
-			CirInfectionNode pred_node, next_node; SymbolExpression condition;
-			Set<CirInfectionEdge> infection_edges = new HashSet<CirInfectionEdge>();
+			CirInfectionTreeNode pred_node, next_node; SymbolExpression condition;
+			Set<CirInfectionTreeEdge> infection_edges = new HashSet<CirInfectionTreeEdge>();
 			Set<SymbolExpression> sub_conditions = new HashSet<SymbolExpression>();
 			CirAttribute constraint = cir_infection.get_constraint(), sub_constraint;
 			CirAttribute init_error = cir_infection.get_init_error();
@@ -313,10 +306,10 @@ class CirInfectionTreeUtil {
 				if(sub_conditions.isEmpty()) {
 					sub_constraint = CirAttribute.new_constraint(
 							constraint.get_execution(), Boolean.FALSE, true);
-					pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
-							sub_constraint, CirInfectionEdgeType.execution);
-					next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
-							init_error, CirInfectionEdgeType.infection);
+					pred_node = reach_node.link_to(CirInfectionTreeType.mid_condition, 
+							sub_constraint, CirInfectionTreeFlow.execution);
+					next_node = pred_node.link_to(CirInfectionTreeType.mid_condition, 
+							init_error, CirInfectionTreeFlow.infection);
 					infection_edges.add(next_node.get_in_edge());
 				}
 				/* 2-C. otherwise, create condition-error pairs */
@@ -324,20 +317,20 @@ class CirInfectionTreeUtil {
 					for(SymbolExpression sub_condition : sub_conditions) {
 						sub_constraint = CirAttribute.new_constraint(
 								constraint.get_execution(), sub_condition, true);
-						pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
-								sub_constraint, CirInfectionEdgeType.execution);
-						next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
-								init_error, CirInfectionEdgeType.infection);
+						pred_node = reach_node.link_to(CirInfectionTreeType.mid_condition, 
+								sub_constraint, CirInfectionTreeFlow.execution);
+						next_node = pred_node.link_to(CirInfectionTreeType.mid_condition, 
+								init_error, CirInfectionTreeFlow.infection);
 						infection_edges.add(next_node.get_in_edge());
 					}
 				}
 			}
 			/* 3. case: coverage infection points */
 			else {
-				pred_node = reach_node.link_to(CirInfectionNodeType.mid_condition, 
-							constraint, CirInfectionEdgeType.execution);
-				next_node = pred_node.link_to(CirInfectionNodeType.mid_condition, 
-							init_error, CirInfectionEdgeType.infection);
+				pred_node = reach_node.link_to(CirInfectionTreeType.mid_condition, 
+							constraint, CirInfectionTreeFlow.execution);
+				next_node = pred_node.link_to(CirInfectionTreeType.mid_condition, 
+							init_error, CirInfectionTreeFlow.infection);
 				infection_edges.add(next_node.get_in_edge());
 			}
 			
@@ -840,7 +833,7 @@ class CirInfectionTreeUtil {
 	 * @return construct the error propagation edges from the source and return its children
 	 * @throws Exception
 	 */
-	private Iterable<CirInfectionNode> construct_nex_condition_nodes(CirInfectionNode source) throws Exception {
+	private Iterable<CirInfectionTreeNode> construct_nex_condition_nodes(CirInfectionTreeNode source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid error_node: null");
 		}
@@ -850,11 +843,11 @@ class CirInfectionTreeUtil {
 			this.propagate_from(source.get_attribute(), errors);
 			
 			/* 2. construct the next_nodes from propagation */
-			Set<CirInfectionNode> targets = new HashSet<CirInfectionNode>();
+			Set<CirInfectionTreeNode> targets = new HashSet<CirInfectionTreeNode>();
 			for(CirAttribute error : errors) {
 				targets.add(source.link_to(
-						CirInfectionNodeType.nex_condition, 
-						error, CirInfectionEdgeType.propagate));
+						CirInfectionTreeType.nex_condition, 
+						error, CirInfectionTreeFlow.propagate));
 			}
 			return targets;
 		}
@@ -864,18 +857,18 @@ class CirInfectionTreeUtil {
 	 * @param infection_edge
 	 * @throws Exception
 	 */
-	private void construct_nex_condition_nodes(CirInfectionEdge infection_edge) throws Exception {
+	private void construct_nex_condition_nodes(CirInfectionTreeEdge infection_edge) throws Exception {
 		if(infection_edge == null) {
 			throw new IllegalArgumentException("Invalid infection_edge: null");
 		}
 		else {
-			Queue<CirInfectionNode> queue = new LinkedList<CirInfectionNode>();
+			Queue<CirInfectionTreeNode> queue = new LinkedList<CirInfectionTreeNode>();
 			queue.add(infection_edge.get_target());
 			
 			while(!queue.isEmpty()) {
-				CirInfectionNode source = queue.poll();
-				Iterable<CirInfectionNode> targets = this.construct_nex_condition_nodes(source);
-				for(CirInfectionNode target : targets) {
+				CirInfectionTreeNode source = queue.poll();
+				Iterable<CirInfectionTreeNode> targets = this.construct_nex_condition_nodes(source);
+				for(CirInfectionTreeNode target : targets) {
 					queue.add(target);
 				}
 			}
@@ -923,7 +916,7 @@ class CirInfectionTreeUtil {
 				}
 				
 				/* 2-B. generate the infection nodes from reach_node */
-				CirInfectionNode reach_node = this.construct_pre_condition_nodes(tree, execution, flows);
+				CirInfectionTreeNode reach_node = this.construct_pre_condition_nodes(tree, execution, flows);
 				for(CirInfection cir_infection : maps.get(execution)) {
 					this.construct_mid_condition_nodes(reach_node, cir_infection);
 				}
@@ -931,7 +924,7 @@ class CirInfectionTreeUtil {
 			
 			/* 3. construct the nex_condition nodes from infection_edges */
 			tree.set_infection_edges();
-			for(CirInfectionEdge infection_edge : tree.get_infection_edges()) {
+			for(CirInfectionTreeEdge infection_edge : tree.get_infection_edges()) {
 				this.construct_nex_condition_nodes(infection_edge);
 			}
 		}

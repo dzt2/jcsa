@@ -14,11 +14,12 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
-import com.jcsa.jcmutest.mutant.cir2mutant.cond.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.trees.CirInfectionEdge;
-import com.jcsa.jcmutest.mutant.cir2mutant.trees.CirInfectionNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.trees.CirInfectionNodeType;
-import com.jcsa.jcmutest.mutant.cir2mutant.trees.CirInfectionTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotationUnit;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeEdge;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeType;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -908,7 +909,7 @@ public class MuTestProjectFeatureWriter {
 	 * @param attribute
 	 * @throws Exception
 	 */
-	private void write_cir_attribute(CirInfectionNodeType type, CirAttribute attribute) throws Exception {
+	private void write_cir_attribute(CirInfectionTreeType type, CirAttribute attribute) throws Exception {
 		String category = type.toString();
 		String operator = attribute.get_type().toString();
 		CirExecution execution = attribute.get_execution();
@@ -935,15 +936,14 @@ public class MuTestProjectFeatureWriter {
 	 * @return the number of words (features) being printed from the node
 	 * @throws Exception
 	 */
-	private int write_cir_infection_node(CirInfectionNode node) throws Exception {
-		if(node.get_data().is_executed()) {
+	private int write_cir_infection_node(CirInfectionTreeNode node) throws Exception {
+		if(node.get_state().is_executed()) {
 			/* collect the right annotations for being printed */
 			Collection<CirAnnotation> annotations = new HashSet<CirAnnotation>();
-			for(CirAnnotation annotation : node.get_data().get_symbolic_annotations()) {
-				annotations.add(annotation);
-			}
-			for(CirAnnotation annotation : node.get_data().get_abstract_annotations()) {
-				annotations.add(annotation);
+			for(CirAnnotationUnit unit : node.get_state().get_units()) {
+				for(CirAnnotation annotation : unit.get_abstract_annotations()) {
+					annotations.add(annotation);
+				}
 			}
 			
 			if(annotations.isEmpty()) { return 0;	/* to avoid meaningless tree node*/ }
@@ -967,14 +967,14 @@ public class MuTestProjectFeatureWriter {
 	 * @return number_of_words, number_of_nodes, number_of_lines
 	 * @throws Exception
 	 */
-	private int[] write_cir_infection_line(Mutant mutant, TestInput test_case, List<CirInfectionNode> node_list) throws Exception {
+	private int[] write_cir_infection_line(Mutant mutant, TestInput test_case, List<CirInfectionTreeNode> node_list) throws Exception {
 		/* declarations of counter variables */
 		int number_of_words = 0, number_of_nodes = 0, number_of_lines = 0;
 		
 		/* write the line only if the nodes are non-empty */
 		if(!node_list.isEmpty()) {
 			this.file_writer.write(this.encode_token(mutant) + "\t" + this.encode_token(test_case));
-			for(CirInfectionNode node : node_list) {
+			for(CirInfectionTreeNode node : node_list) {
 				int word_number = this.write_cir_infection_node(node);
 				if(word_number > 0) {
 					number_of_words += word_number;
@@ -1004,8 +1004,8 @@ public class MuTestProjectFeatureWriter {
 			tree.sum_states();		/** summarize for generating annotations **/
 			if(node_or_path) {										// xxx.stn
 				/* generate the node_list using BFS-sequence of tree nodes */
-				List<CirInfectionNode> node_list = new ArrayList<CirInfectionNode>();
-				Iterator<CirInfectionNode> node_iterator = tree.get_nodes();
+				List<CirInfectionTreeNode> node_list = new ArrayList<CirInfectionTreeNode>();
+				Iterator<CirInfectionTreeNode> node_iterator = tree.get_nodes();
 				while(node_iterator.hasNext()) { node_list.add(node_iterator.next()); }
 				
 				/* write only one line for the node-list in the tree */
@@ -1017,10 +1017,10 @@ public class MuTestProjectFeatureWriter {
 			}
 			else {													// xxx.stp
 				/* write for each root-leaf path a line in the xxx.stp */
-				for(CirInfectionNode leaf : tree.get_leafs()) {
+				for(CirInfectionTreeNode leaf : tree.get_leafs()) {
 					/* generate the node_list using the sequence of tree nodes in path */
-					List<CirInfectionNode> node_list = new ArrayList<CirInfectionNode>();
-					for(CirInfectionEdge edge : leaf.get_root_path()) {
+					List<CirInfectionTreeNode> node_list = new ArrayList<CirInfectionTreeNode>();
+					for(CirInfectionTreeEdge edge : leaf.get_root_path()) {
 						node_list.add(edge.get_source());
 					}
 					node_list.add(leaf);

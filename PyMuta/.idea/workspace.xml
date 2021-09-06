@@ -20,12 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/com/jcsa/mine/encode.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/com/jcsa/mine/pattern.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/rule/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/rule/encode.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/rule/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/mine/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/rule/encode.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/rule/pattern.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +73,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.pattern">
+  <component name="RunManager" selected="Python.encode (1)">
     <configuration name="encode (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -205,10 +202,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.encode (1)" />
         <item itemvalue="Python.pattern" />
         <item itemvalue="Python.encode" />
         <item itemvalue="Python.pattern (1)" />
-        <item itemvalue="Python.encode (1)" />
       </list>
     </recent_temporary>
   </component>
