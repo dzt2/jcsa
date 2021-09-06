@@ -667,11 +667,14 @@ class CirAnnotationUtil {
 		
 		/* 2. generate the annotations for concretization */
 		if(condition instanceof SymbolConstant) {
-			SymbolConstant constant = (SymbolConstant) condition;
-			condition = SymbolFactory.sym_constant(constant.get_bool());
-			CirExecution execution = annotation.get_execution();
-			execution = this.find_prior_checkpoint(execution, condition);
-			annotations.add(CirAnnotation.eva_expr(execution, condition, true));
+			if(((SymbolConstant) condition).get_bool()) {
+				annotations.add(CirAnnotation.eva_expr(
+						annotation.get_execution(), Boolean.TRUE, true));
+			}
+			else {
+				annotations.add(CirAnnotation.eva_expr(
+						annotation.get_execution(), Boolean.FALSE, true));
+			}
 			return ((SymbolConstant) condition).get_bool();
 		}
 		else {
@@ -1282,18 +1285,6 @@ class CirAnnotationUtil {
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
 		abstract_annotations.add(symbolic_annotation);
-		
-		Collection<SymbolExpression> values = 
-				this.capture_domains_in_boolean(concrete_annotations);
-		CirExecution execution = symbolic_annotation.get_execution();
-		if(values.contains(CirAnnotationScope.get_true_scope())) {
-			abstract_annotations.add(CirAnnotation.eva_expr(execution, 
-							CirAnnotationScope.get_true_scope(), true));
-		}
-		else if(values.contains(CirAnnotationScope.get_fals_scope())) {
-			abstract_annotations.add(CirAnnotation.eva_expr(execution, 
-							CirAnnotationScope.get_fals_scope(), true));
-		}
 	}
 	/**
 	 * It summarizes the eva_expr annotation from its concrete instances 
@@ -1306,18 +1297,6 @@ class CirAnnotationUtil {
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
 		abstract_annotations.add(symbolic_annotation);
-		
-		Collection<SymbolExpression> values = 
-				this.capture_domains_in_boolean(concrete_annotations);
-		CirExecution execution = symbolic_annotation.get_execution();
-		if(values.contains(CirAnnotationScope.get_true_scope())) {
-			abstract_annotations.add(CirAnnotation.eva_expr(execution, 
-							CirAnnotationScope.get_true_scope(), true));
-		}
-		else if(values.contains(CirAnnotationScope.get_fals_scope())) {
-			abstract_annotations.add(CirAnnotation.eva_expr(execution, 
-							CirAnnotationScope.get_fals_scope(), true));
-		}
 	}
 	/**
 	 * It summarizes the mut_stmt annotation from concrete ones
@@ -1329,7 +1308,8 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_mut_stmt(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		abstract_annotations.add(symbolic_annotation);
+		if(!concrete_annotations.isEmpty())
+			abstract_annotations.add(symbolic_annotation);
 	}
 	/**
 	 * It summarizes the mut_stmt annotation from concrete ones
@@ -1341,9 +1321,7 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_mut_flow(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(!concrete_annotations.isEmpty()) {
-			abstract_annotations.addAll(concrete_annotations);
-		}
+		abstract_annotations.addAll(concrete_annotations);
 	}
 	/**
 	 * It summarizes the mut_stmt annotation from concrete ones
@@ -1355,9 +1333,7 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_trp_stmt(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(!concrete_annotations.isEmpty()) {
-			abstract_annotations.add(symbolic_annotation);
-		}
+		abstract_annotations.addAll(concrete_annotations);
 	}
 	/**
 	 * @param symbolic_annotation
@@ -1368,19 +1344,23 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_mut_stat(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		/* 1. incorporate trp_stmt if exception occurs in testing */
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			if(concrete_annotation.get_operator() == CirAnnotationType.trp_stmt) {
+				abstract_annotations.add(concrete_annotation);
+				return;
+			}
+		}
+		
+		/* 2. otherwise, incorporate the set-state annotation */
 		abstract_annotations.add(symbolic_annotation);
 		
+		/* 3. summarize the value scopes from concrete ones */
 		CirExpression expression = (CirExpression) symbolic_annotation.get_location();
 		Collection<SymbolExpression> scopes = new HashSet<SymbolExpression>();
 		this.summarize_value_domains_in(expression, concrete_annotations, scopes);
 		for(SymbolExpression scope : scopes) {
 			abstract_annotations.add(CirAnnotation.mut_stat(expression, scope));
-		}
-		
-		for(CirAnnotation annotation : concrete_annotations) {
-			if(annotation.get_operator() == CirAnnotationType.trp_stmt) {
-				abstract_annotations.add(annotation);
-			}
 		}
 	}
 	/**
@@ -1392,19 +1372,23 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_set_expr(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		/* 1. incorporate trp_stmt if exception occurs in testing */
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			if(concrete_annotation.get_operator() == CirAnnotationType.trp_stmt) {
+				abstract_annotations.add(concrete_annotation);
+				return;
+			}
+		}
+		
+		/* 2. otherwise, incorporate the set-state annotation */
 		abstract_annotations.add(symbolic_annotation);
 		
+		/* 3. summarize the value scopes from concrete ones */
 		CirExpression expression = (CirExpression) symbolic_annotation.get_location();
 		Collection<SymbolExpression> scopes = new HashSet<SymbolExpression>();
 		this.summarize_value_domains_in(expression, concrete_annotations, scopes);
 		for(SymbolExpression scope : scopes) {
 			abstract_annotations.add(CirAnnotation.set_expr(expression, scope));
-		}
-		
-		for(CirAnnotation annotation : concrete_annotations) {
-			if(annotation.get_operator() == CirAnnotationType.trp_stmt) {
-				abstract_annotations.add(annotation);
-			}
 		}
 	}
 	/**
@@ -1416,19 +1400,23 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_sub_expr(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		/* 1. incorporate trp_stmt if exception occurs in testing */
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			if(concrete_annotation.get_operator() == CirAnnotationType.trp_stmt) {
+				abstract_annotations.add(concrete_annotation);
+				return;
+			}
+		}
+		
+		/* 2. otherwise, incorporate the set-state annotation */
 		abstract_annotations.add(symbolic_annotation);
 		
+		/* 3. summarize the value scopes from concrete ones */
 		CirExpression expression = (CirExpression) symbolic_annotation.get_location();
 		Collection<SymbolExpression> scopes = new HashSet<SymbolExpression>();
 		this.summarize_value_domains_in(expression, concrete_annotations, scopes);
 		for(SymbolExpression scope : scopes) {
 			abstract_annotations.add(CirAnnotation.sub_expr(expression, scope));
-		}
-		
-		for(CirAnnotation annotation : concrete_annotations) {
-			if(annotation.get_operator() == CirAnnotationType.trp_stmt) {
-				abstract_annotations.add(annotation);
-			}
 		}
 	}
 	/**
@@ -1440,19 +1428,23 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_ext_expr(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		/* 1. incorporate trp_stmt if exception occurs in testing */
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			if(concrete_annotation.get_operator() == CirAnnotationType.trp_stmt) {
+				abstract_annotations.add(concrete_annotation);
+				return;
+			}
+		}
+		
+		/* 2. otherwise, incorporate the set-state annotation */
 		abstract_annotations.add(symbolic_annotation);
 		
+		/* 3. summarize the value scopes from concrete ones */
 		CirExpression expression = (CirExpression) symbolic_annotation.get_location();
 		Collection<SymbolExpression> scopes = new HashSet<SymbolExpression>();
 		this.summarize_value_domains_in(expression, concrete_annotations, scopes);
 		for(SymbolExpression scope : scopes) {
 			abstract_annotations.add(CirAnnotation.ext_expr(expression, scope));
-		}
-		
-		for(CirAnnotation annotation : concrete_annotations) {
-			if(annotation.get_operator() == CirAnnotationType.trp_stmt) {
-				abstract_annotations.add(annotation);
-			}
 		}
 	}
 	/**
@@ -1464,19 +1456,23 @@ class CirAnnotationUtil {
 	private void summarize_annotations_in_xor_expr(CirAnnotation symbolic_annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
+		/* 1. incorporate trp_stmt if exception occurs in testing */
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			if(concrete_annotation.get_operator() == CirAnnotationType.trp_stmt) {
+				abstract_annotations.add(concrete_annotation);
+				return;
+			}
+		}
+		
+		/* 2. otherwise, incorporate the set-state annotation */
 		abstract_annotations.add(symbolic_annotation);
 		
+		/* 3. summarize the value scopes from concrete ones */
 		CirExpression expression = (CirExpression) symbolic_annotation.get_location();
 		Collection<SymbolExpression> scopes = new HashSet<SymbolExpression>();
 		this.summarize_value_domains_in(expression, concrete_annotations, scopes);
 		for(SymbolExpression scope : scopes) {
 			abstract_annotations.add(CirAnnotation.xor_expr(expression, scope));
-		}
-		
-		for(CirAnnotation annotation : concrete_annotations) {
-			if(annotation.get_operator() == CirAnnotationType.trp_stmt) {
-				abstract_annotations.add(annotation);
-			}
 		}
 	}
 	/**
