@@ -766,6 +766,6 @@ def main(prev_path: str, post_path: str, exec_postfix: str, max_propagate_distan
 if __name__ == "__main__":
 	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
-	exit_code = main(prev_directory, post_directory, ".stp", 1)
+	exit_code = main(prev_directory, post_directory, ".stp", 2)
 	exit(exit_code)
 
