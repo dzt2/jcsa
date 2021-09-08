@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
@@ -281,7 +281,7 @@ class CirInfectionTreeUtil {
 	 * @throws Exception
 	 */
 	private Iterable<CirInfectionTreeEdge> construct_mid_condition_nodes(
-			CirInfectionTreeNode reach_node, CirInfection cir_infection) throws Exception {
+			CirInfectionTreeNode reach_node, CirMutation cir_infection) throws Exception {
 		if(reach_node == null) {
 			throw new IllegalArgumentException("Invalid reach_node: null");
 		}
@@ -888,12 +888,12 @@ class CirInfectionTreeUtil {
 		}
 		else {
 			/* 1. divide the cir_infection pair to corresponding location */
-			Map<CirExecution, Collection<CirInfection>> maps = 
-					new HashMap<CirExecution, Collection<CirInfection>>();
-			for(CirInfection cir_infection : tree.get_cir_infections()) {
+			Map<CirExecution, Collection<CirMutation>> maps = 
+					new HashMap<CirExecution, Collection<CirMutation>>();
+			for(CirMutation cir_infection : tree.get_cir_infections()) {
 				CirExecution execution = cir_infection.get_execution();
 				if(!maps.containsKey(execution)) {
-					maps.put(execution, new HashSet<CirInfection>());
+					maps.put(execution, new HashSet<CirMutation>());
 				}
 				maps.get(execution).add(cir_infection);
 			}
@@ -917,7 +917,7 @@ class CirInfectionTreeUtil {
 				
 				/* 2-B. generate the infection nodes from reach_node */
 				CirInfectionTreeNode reach_node = this.construct_pre_condition_nodes(tree, execution, flows);
-				for(CirInfection cir_infection : maps.get(execution)) {
+				for(CirMutation cir_infection : maps.get(execution)) {
 					this.construct_mid_condition_nodes(reach_node, cir_infection);
 				}
 			}

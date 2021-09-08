@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.tree;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -272,7 +272,7 @@ public class CirAnnotation {
 		else if(sub_value == null) {
 			throw new IllegalArgumentException("Invalid sub_value as null");
 		}
-		else if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
+		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.sub_expr,
 					expression.execution_of(), expression, sub_value);
@@ -294,7 +294,7 @@ public class CirAnnotation {
 		else if(xor_value == null) {
 			throw new IllegalArgumentException("Invalid xor_value as null");
 		}
-		else if(CirInfection.is_integer(expression)) {
+		else if(CirMutations.is_integer(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.xor_expr,
 					expression.execution_of(), expression, xor_value);
@@ -316,7 +316,7 @@ public class CirAnnotation {
 		else if(ext_value == null) {
 			throw new IllegalArgumentException("Invalid ext_value as null");
 		}
-		else if(CirInfection.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			return new CirAnnotation(CirAnnotationClass.expr_error,
 					CirAnnotationType.ext_expr,
 					expression.execution_of(), expression, ext_value);

@@ -9,7 +9,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
@@ -30,7 +30,7 @@ public class CirInfectionTree {
 	/** the syntactic mutation that the tree represent **/
 	private Mutant mutant;
 	/** the set of state infection(s) introduced by the mutant in CIR code **/
-	private List<CirInfection> cir_infections;
+	private List<CirMutation> cir_infections;
 	/** the root node of tree to execute program entry **/
 	private CirInfectionTreeNode root;
 	/** the set of infection edges in the tree for updating **/
@@ -49,11 +49,11 @@ public class CirInfectionTree {
 		}
 		else {
 			this.mutant = mutant;
-			this.cir_infections = new ArrayList<CirInfection>();
+			this.cir_infections = new ArrayList<CirMutation>();
 			try {
-				Iterable<CirInfection> infections = CirMutationParsers.
+				Iterable<CirMutation> infections = CirMutationParsers.
 						parse(this.get_cir_tree(), mutant.get_mutation());
-				for(CirInfection infection : infections) {
+				for(CirMutation infection : infections) {
 					this.cir_infections.add(infection);
 				}
 			}
@@ -90,7 +90,7 @@ public class CirInfectionTree {
 	/**
 	 * @return the set of state infection(s) introduced by the mutant in CIR code
 	 */
-	public Iterable<CirInfection> get_cir_infections() { return this.cir_infections; }
+	public Iterable<CirMutation> get_cir_infections() { return this.cir_infections; }
 	/**
 	 * @return the root node of tree to execute program entry
 	 */

@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OAXACirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OAXNCirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OBXACirMutationParser;
@@ -96,7 +96,7 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 		parsers.put(MutaClass.RTRP, new RTRPCirMutationParser());
 	}
 
-	public static Iterable<CirInfection> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+	public static Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else if(mutation == null)

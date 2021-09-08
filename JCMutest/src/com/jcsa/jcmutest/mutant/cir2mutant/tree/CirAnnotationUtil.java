@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
@@ -505,17 +505,17 @@ class CirAnnotationUtil {
 		
 		/* 3. differential analysis between original and mutation values */
 		SymbolExpression difference;
-		if(CirInfection.is_numeric(expression) || CirInfection.is_pointer(expression)) {
+		if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			difference = CirAnnotationScope.sub_difference(orig_expression, muta_expression);
 			difference = this.symbol_evaluate(difference, null);
 			annotations.add(CirAnnotation.sub_expr(expression, difference));
 		}
-		if(CirInfection.is_numeric(expression)) {
+		if(CirMutations.is_numeric(expression)) {
 			difference = CirAnnotationScope.ext_difference(orig_expression, muta_expression);
 			difference = this.symbol_evaluate(difference, null);
 			annotations.add(CirAnnotation.ext_expr(expression, difference));
 		}
-		if(CirInfection.is_integer(expression)) {
+		if(CirMutations.is_integer(expression)) {
 			difference = CirAnnotationScope.xor_difference(orig_expression, muta_expression);
 			difference = this.symbol_evaluate(difference, null);
 			annotations.add(CirAnnotation.xor_expr(expression, difference));
@@ -801,16 +801,16 @@ class CirAnnotationUtil {
 			if(orig_expression.equals(muta_expression)) { return Boolean.FALSE; }
 			else if(muta_expression instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) muta_expression;
-				if(CirInfection.is_boolean(expression)) {
+				if(CirMutations.is_boolean(expression)) {
 					muta_expression = SymbolFactory.sym_constant(constant.get_bool());
 				}
-				else if(CirInfection.is_integer(expression)) {
+				else if(CirMutations.is_integer(expression)) {
 					muta_expression = SymbolFactory.sym_constant(constant.get_long());
 				}
-				else if(CirInfection.is_numeric(expression)) {
+				else if(CirMutations.is_numeric(expression)) {
 					muta_expression = SymbolFactory.sym_constant(constant.get_double());
 				}
-				else if(CirInfection.is_pointer(expression)) {
+				else if(CirMutations.is_address(expression)) {
 					muta_expression = SymbolFactory.sym_constant(constant.get_long());
 				}
 				else {
@@ -844,7 +844,7 @@ class CirAnnotationUtil {
 			difference = this.symbol_evaluate(difference, context);
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
-				if(CirInfection.is_integer(expression)) {
+				if(CirMutations.is_integer(expression)) {
 					if(constant.get_long().longValue() == 0L) {
 						return Boolean.FALSE;
 					}
@@ -854,7 +854,7 @@ class CirAnnotationUtil {
 						return Boolean.TRUE;
 					}
 				}
-				else if(CirInfection.is_numeric(expression)) {
+				else if(CirMutations.is_numeric(expression)) {
 					if(constant.get_double() == 0.0) {
 						return Boolean.FALSE;
 					}
@@ -901,7 +901,7 @@ class CirAnnotationUtil {
 			difference = this.symbol_evaluate(difference, context);
 			if(difference instanceof SymbolConstant) {
 				SymbolConstant constant = (SymbolConstant) difference;
-				if(CirInfection.is_integer(expression)) {
+				if(CirMutations.is_integer(expression)) {
 					if(constant.get_long().longValue() == 0L) {
 						return Boolean.FALSE;
 					}
@@ -1081,7 +1081,7 @@ class CirAnnotationUtil {
 	private void summarize_value_domains_in(CirExpression expression, 
 			Collection<CirAnnotation> concrete_annotations, Collection<SymbolExpression> scopes) throws Exception {
 		Collection<SymbolExpression> domains;
-		if(CirInfection.is_boolean(expression)) {
+		if(CirMutations.is_boolean(expression)) {
 			domains = this.capture_domains_in_boolean(concrete_annotations);
 			if(domains.contains(CirAnnotationScope.get_true_scope())) {
 				if(domains.contains(CirAnnotationScope.get_fals_scope())) {
@@ -1100,7 +1100,7 @@ class CirAnnotationUtil {
 				else { }
 			}
 		}
-		else if(CirInfection.is_integer(expression)) {
+		else if(CirMutations.is_integer(expression)) {
 			domains = this.capture_domains_in_integer(concrete_annotations);
 			if(domains.contains(CirAnnotationScope.get_post_scope())) {
 				if(domains.contains(CirAnnotationScope.get_negt_scope())) {
@@ -1149,7 +1149,7 @@ class CirAnnotationUtil {
 				}
 			}
 		}
-		else if(CirInfection.is_numeric(expression)) {
+		else if(CirMutations.is_numeric(expression)) {
 			domains = this.capture_domains_in_double(concrete_annotations);
 			if(domains.contains(CirAnnotationScope.get_post_scope())) {
 				if(domains.contains(CirAnnotationScope.get_negt_scope())) {
@@ -1198,7 +1198,7 @@ class CirAnnotationUtil {
 				}
 			}
 		}
-		else if(CirInfection.is_pointer(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			domains = this.capture_domains_in_pointer(concrete_annotations);
 			if(domains.contains(CirAnnotationScope.get_null_scope())) {
 				if(domains.contains(CirAnnotationScope.get_invp_scope())) {

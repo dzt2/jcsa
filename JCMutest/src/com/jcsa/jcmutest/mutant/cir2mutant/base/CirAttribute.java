@@ -1,6 +1,5 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
-import com.jcsa.jcmutest.mutant.cir2mutant.CirInfection;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -321,14 +320,5 @@ public abstract class CirAttribute {
 			return new CirTrapsError(execution, SymbolFactory.sym_constant(Boolean.TRUE));
 		}
 	}
-	/**
-	 * @param constraint
-	 * @param init_error
-	 * @return
-	 * @throws Exception
-	 */
-	public static CirInfection new_cir_mutation(CirAttribute constraint, CirAttribute init_error) throws Exception {
-		return new CirInfection(constraint, init_error);
-	}
-
+	
 }

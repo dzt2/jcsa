@@ -16,12 +16,12 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
  * @author yukimula
  *
  */
-public class CirInfection {
+public class CirMutation {
 
 	/* definitions */
 	private CirAttribute constraint;
 	private CirAttribute init_error;
-	public CirInfection(CirAttribute constraint, CirAttribute
+	protected CirMutation(CirAttribute constraint, CirAttribute
 				init_error) throws IllegalArgumentException {
 		if(constraint == null || !constraint.is_constraint()) {
 			throw new IllegalArgumentException("Invalid constraint: " + constraint);
@@ -58,7 +58,7 @@ public class CirInfection {
 		if(obj == this) {
 			return true;
 		}
-		else if(obj instanceof CirInfection) {
+		else if(obj instanceof CirMutation) {
 			return this.toString().equals(obj.toString());
 		}
 		else {
@@ -120,6 +120,25 @@ public class CirInfection {
 				CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 				if(CTypeAnalyzer.is_integer(type)) {
 					return true;
+				}
+				else {
+					return false;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+	}
+	public static boolean is_usigned(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			try {
+				CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+				if(CTypeAnalyzer.is_integer(type)) {
+					return CTypeAnalyzer.is_unsigned(type);
 				}
 				else {
 					return false;
