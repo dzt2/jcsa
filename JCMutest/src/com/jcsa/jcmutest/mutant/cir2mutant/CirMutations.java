@@ -6,6 +6,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -212,6 +213,22 @@ public class CirMutations {
 		}
 		else {
 			return is_address(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression is a reference defined in left-side of assignment
+	 */
+	public static boolean is_assigned(CirExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else if(expression.get_parent() instanceof CirAssignStatement) {
+			CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+			return statement.get_lvalue() == expression;
+		}
+		else {
+			return false;
 		}
 	}
 	

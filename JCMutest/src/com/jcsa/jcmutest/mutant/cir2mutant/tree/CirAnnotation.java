@@ -242,6 +242,22 @@ public class CirAnnotation {
 	/* expr_error class */
 	/**
 	 * @param expression
+	 * @return 
+	 * @throws Exception
+	 */
+	protected static CirAnnotation ori_expr(CirExpression expression) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid expression: " + expression);
+		}
+		else {
+			return new CirAnnotation(CirAnnotationClass.expr_error,
+					CirAnnotationType.ori_expr,
+					expression.execution_of(), expression, 
+					SymbolFactory.sym_expression(expression));
+		}
+	}
+	/**
+	 * @param expression
 	 * @param muta_value
 	 * @return expr_error:execution:expression:muta_value
 	 * @throws Exception

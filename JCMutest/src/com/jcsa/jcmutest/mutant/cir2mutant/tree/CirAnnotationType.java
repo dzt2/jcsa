@@ -19,6 +19,7 @@ public enum CirAnnotationType {
 	/** stmt_error:mut_stat:execution:statement:muta_value **/		mut_stat,
 	
 	/* expr_error class */
+	/** expr_error:ori_expr:execution:orig_expr:orig_value **/		ori_expr,
 	/** expr_error:set_expr:execution:orig_expr:muta_value **/		set_expr,
 	/** expr_error:sub_expr:execution:orig_expr:sub_difference **/	sub_expr,
 	/** expr_error:ext_expr:execution:orig_expr:ext_difference **/	ext_expr,
