@@ -78,7 +78,7 @@ public class CirStoreValue {
 			store_unit = store_unit + "%" + this.store_unit.get_node_id();
 			String value_type = this.value_type.toString();
 			String symb_value = this.symb_value.generate_code(true);
-			return String.format("%s[%s] --> (%s::%s)", store_type, store_unit, value_type, symb_value);
+			return String.format("%s[%s](%s::%s)", store_type, store_unit, value_type, symb_value);
 		}
 		catch(Exception ex) {
 			return null;

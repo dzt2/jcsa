@@ -63,6 +63,22 @@ public class CirStateData {
 	public CirStoreValue get_expr_value(CirExpression expression) {
 		return this.expr_values.get(expression);
 	}
+	@Override
+	public String toString() {
+		StringBuilder buffer = new StringBuilder();
+		buffer.append("{ ");
+		for(CirStoreValue condition : this.conditions) {
+			buffer.append(condition.toString() + "; ");
+		}
+		for(CirStoreValue expr_value : this.expr_values.values()) {
+			buffer.append(expr_value.toString() + "; ");
+		}
+		for(CirStoreValue stmt_value : this.stmt_values.values()) {
+			buffer.append(stmt_value.toString() + "; ");
+		}
+		buffer.append(" }");
+		return buffer.toString();
+	}
 	
 	/* setters */
 	/**

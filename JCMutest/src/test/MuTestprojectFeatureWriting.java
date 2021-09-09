@@ -3,10 +3,13 @@ package test;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirStateNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirStateTree;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
@@ -15,6 +18,10 @@ import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
+import com.jcsa.jcparse.flwa.context.CirCallContextInstanceGraph;
+import com.jcsa.jcparse.flwa.context.CirFunctionCallPathType;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.test.file.TestInput;
 
 public class MuTestprojectFeatureWriting {
@@ -27,7 +34,8 @@ public class MuTestprojectFeatureWriting {
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
-		print_static_features();
+		print_state_tree_infos();
+		// print_static_features();
 		// print_dynamic_features();
 	}
 	protected static void print_static_features() throws Exception {
@@ -64,6 +72,16 @@ public class MuTestprojectFeatureWriting {
 			testing(new File(root_path + file_name), true);
 		}
 	}
+	protected static void print_state_tree_infos() throws Exception {
+		/** static features **/
+		result_dir = "/home/dzt2/Development/Data/zexp/features/";
+		for(File root : new File(root_path).listFiles()) {
+			MuTestProject project = get_project(root);
+			System.out.println("Testing on " + project.get_name());
+			test_state_tree(project.get_code_space().get_code_files().iterator().next());
+			System.out.println();
+		}
+	}
 	
 	/* testing functions */
 	private static MuTestProject get_project(File root) throws Exception {
@@ -92,6 +110,22 @@ public class MuTestprojectFeatureWriting {
 		/* 3. Generate feature information to output directory finally */
 		MuTestProjectFeatureWriter.write_features(code_file, output_directory, max_infecting_times, test_cases);
 		System.out.println();
+	}
+	private static void test_state_tree(MuTestProjectCodeFile code_file) throws Exception {
+		CirFunction root_function =
+				code_file.get_cir_tree().get_function_call_graph().get_main_function();
+		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.
+					graph(root_function, CirFunctionCallPathType.unique_path, -1));
+		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+			CirStateTree tree = CirStateTree.new_tree(mutant, dependence_graph);
+			System.out.println("\tMutant#" + mutant.get_mutation().get_operator() + "#" + mutant.get_id());
+			Iterator<CirStateNode> nodes = tree.get_nodes();
+			while(nodes.hasNext()) {
+				CirStateNode node = nodes.next();
+				System.out.println(String.format("\t\t%s[%s]: %s", node.get_type(), node.get_execution(), node.get_data()));
+			}
+			// System.out.println("\t\t==> Mutant#" + mutant.get_id() + ": " + tree.get_mid_state_nodes());
+		}
 	}
 	
 	/* dynamic test cases selection and generation */

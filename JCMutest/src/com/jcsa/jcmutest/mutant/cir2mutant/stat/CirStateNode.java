@@ -103,5 +103,7 @@ public class CirStateNode {
 	 * @return whether the node is a leaf without children
 	 */
 	public boolean is_leaf() { return this.children.isEmpty(); }
+	@Override
+	public String toString() { return this.data.toString(); }
 	
 }

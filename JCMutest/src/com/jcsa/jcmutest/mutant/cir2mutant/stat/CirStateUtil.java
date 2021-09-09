@@ -699,7 +699,7 @@ public class CirStateUtil {
 		node.get_data().add_store_value(CirStoreValue.new_expr(init_error.get_orig_expression(), init_error.get_muta_expression()));
 		node.get_data().add_store_value(CirStoreValue.new_trap(init_error.get_execution()));
 	}
-	private void construct_muta_state_in_value_error(CirStateNode node, CirDiferError init_error) throws Exception {
+	private void construct_muta_state_in_value_error(CirStateNode node, CirValueError init_error) throws Exception {
 		this.construct_muta_state_in_expressions(node, init_error.get_orig_expression(), init_error.get_muta_expression());
 	}
 	private void construct_muta_state_in_refer_error(CirStateNode node, CirReferError init_error) throws Exception {
@@ -738,7 +738,7 @@ public class CirStateUtil {
 			this.construct_muta_state_in_difer_error(node, (CirDiferError) init_error);
 		}
 		else if(init_error instanceof CirValueError) {
-			this.construct_muta_state_in_value_error(node, (CirDiferError) init_error);
+			this.construct_muta_state_in_value_error(node, (CirValueError) init_error);
 		}
 		else if(init_error instanceof CirReferError) {
 			this.construct_muta_state_in_refer_error(node, (CirReferError) init_error);
@@ -1016,6 +1016,7 @@ public class CirStateUtil {
 				if(!maps.containsKey(execution)) {
 					maps.put(execution, new ArrayList<CirMutation>());
 				}
+				maps.get(execution).add(cir_mutation);
 			}
 			
 			for(CirExecution execution : maps.keySet()) {
@@ -1027,7 +1028,5 @@ public class CirStateUtil {
 			tree.update_mid_state_nodes();
 		}
 	}
-	
-	
 	
 }
