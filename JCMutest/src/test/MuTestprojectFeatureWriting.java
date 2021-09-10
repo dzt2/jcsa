@@ -8,8 +8,8 @@ import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirStateNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirStateTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.CirStateNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.path.CirStateTree;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;

@@ -53,6 +53,19 @@ public class CirMutations {
 	/* type classifier */
 	/**
 	 * @param data_type
+	 * @return
+	 */
+	public static boolean is_void(CType data_type) {
+		try {
+			return CTypeAnalyzer.is_void(data_type);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	/**
+	 * @param data_type
 	 * @return whether the data type is a boolean
 	 */
 	public static boolean is_boolean(CType data_type) {
@@ -136,6 +149,13 @@ public class CirMutations {
 	}
 	
 	/* location classifier */
+	/**
+	 * @param expression
+	 * @return
+	 */
+	public static boolean is_void(CirExpression expression) {
+		return CirMutations.is_void(expression.get_data_type());
+	}
 	/**
 	 * @param location
 	 * @return whether the expression is a boolean

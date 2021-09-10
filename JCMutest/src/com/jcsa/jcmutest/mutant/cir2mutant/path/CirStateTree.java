@@ -1,11 +1,7 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.stat;
+package com.jcsa.jcmutest.mutant.cir2mutant.path;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -22,8 +18,9 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.test.state.CStatePath;
 
+
 /**
- * The symbolic execution state tree to generate killing process of mutant.
+ * The execution state representing killing process of a mutation.
  * 
  * @author yukimula
  *
@@ -31,17 +28,28 @@ import com.jcsa.jcparse.test.state.CStatePath;
 public class CirStateTree {
 	
 	/* definitions */
+	/** the mutation that the tree is going to kill **/
 	private Mutant 				mutant;
-	private List<CirMutation> 	cir_mutations;
-	private CirStateNode		root;
-	private Set<CirStateNode>	mid_state_nodes;
+	/** the set of cir-based mutations generated from mutant **/
+	private Set<CirMutation>	cir_mutations;
+	/** the root node for covering the program entry **/
+	private CirStateNode 		root;
+	/** the set of state nodes for covering faulty statements **/
+	private Set<CirStateNode> 	mid_nodes;
+	
+	/* constructor */
+	/**
+	 * It creates an empty execution state tree for killing the mutation
+	 * @param mutant
+	 * @throws Exception
+	 */
 	private CirStateTree(Mutant mutant) throws Exception {
 		if(mutant == null) {
-			throw new IllegalArgumentException("Invalid mutant: null");
+			throw new IllegalArgumentException("Invalid mutant as null");
 		}
 		else {
 			this.mutant = mutant;
-			this.cir_mutations = new ArrayList<CirMutation>();
+			this.cir_mutations = new HashSet<CirMutation>();
 			try {
 				for(CirMutation cir_mutation : CirMutations.parse(mutant)) {
 					this.cir_mutations.add(cir_mutation);
@@ -49,9 +57,14 @@ public class CirStateTree {
 			}
 			catch(Exception ex) { /* none of mutations created */ }
 			this.root = new CirStateNode(this, this.find_program_entry(mutant));
-			this.mid_state_nodes = new HashSet<CirStateNode>();
+			this.mid_nodes = new HashSet<CirStateNode>();
 		}
 	}
+	/**
+	 * @param mutant
+	 * @return find the program entry of the mutation
+	 * @throws Exception
+	 */
 	private CirExecution find_program_entry(Mutant mutant) throws Exception {
 		CirTree cir_tree = mutant.get_space().get_cir_tree();
 		CirFunction main_function = cir_tree.get_function_call_graph().get_main_function();
@@ -85,31 +98,6 @@ public class CirStateTree {
 		}
 	}
 	
-	/* iterator */
-	private static class CirStateNodeIterator implements Iterator<CirStateNode> {
-		private Queue<CirStateNode> queue;
-		
-		private CirStateNodeIterator(CirStateTree tree) {
-			queue = new LinkedList<CirStateNode>();
-			this.queue.add(tree.get_root());
-		}
-
-		@Override
-		public boolean hasNext() {
-			return !this.queue.isEmpty();
-		}
-
-		@Override
-		public CirStateNode next() {
-			CirStateNode node = this.queue.poll();
-			for(CirStateNode child : node.get_children()) {
-				this.queue.add(child);
-			}
-			return node;
-		}
-		
-	}
-	
 	/* getters */
 	/**
 	 * @return the mutant to generate symbolic execution state tree
@@ -138,21 +126,21 @@ public class CirStateTree {
 	/**
 	 * @return the state nodes to annotate the reaching of faulty statement
 	 */
-	public Iterable<CirStateNode> get_mid_state_nodes() { return this.mid_state_nodes; }
+	public Iterable<CirStateNode> get_mid_state_nodes() { return this.mid_nodes; }
 	/**
 	 * @return all the nodes created under the tree in BFS-traversal
 	 */
-	public Iterator<CirStateNode> get_nodes() { return new CirStateNodeIterator(this); }
+	public Iterator<CirStateNode> get_nodes() { return this.root.get_post_nodes(); }
 	/**
 	 * update the state nodes to annotate the reaching of faulty statement
 	 */
 	protected void update_mid_state_nodes() {
 		Iterator<CirStateNode> iterator = this.get_nodes();
-		this.mid_state_nodes.clear();
+		this.mid_nodes.clear();
 		while(iterator.hasNext()) {
 			CirStateNode node = iterator.next();
-			if(node.get_type() == CirStateType.mid) {
-				this.mid_state_nodes.add(node);
+			if(node.get_type() == CirStateType.mid_condition) {
+				this.mid_nodes.add(node);
 			}
 		}
 	}

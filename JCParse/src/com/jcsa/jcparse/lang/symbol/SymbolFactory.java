@@ -749,7 +749,7 @@ public class SymbolFactory {
 
 		return SymbolFieldExpression.create(data_type, sbody, sfield);
 	}
-
+	
 	/* static singleton instance */
 	/** singleton for static constructors **/
 	public static final SymbolFactory factory = new SymbolFactory();
@@ -1154,5 +1154,20 @@ public class SymbolFactory {
 	public static SymbolExpression not_equals(Object loperand, Object roperand) throws Exception {
 		return factory.new_not_equals(loperand, roperand);
 	}
-
+	/**
+	 * No-exception thrown to create identifier of specified name
+	 * @param data_type
+	 * @param name
+	 * @return
+	 */
+	public static SymbolExpression variable(CType data_type, String name) {
+		try {
+			return SymbolIdentifier.create(data_type, name);
+		}
+		catch(Exception ex) {
+			ex.printStackTrace(System.err);
+			return null;
+		}
+	}
+	
 }
