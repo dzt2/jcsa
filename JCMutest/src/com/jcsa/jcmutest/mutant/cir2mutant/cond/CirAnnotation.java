@@ -209,6 +209,7 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid execution as null");
 		}
 		else {
+			execution = execution.get_graph().get_exit();
 			return new CirAnnotation(CirStoreClass.stmt, 
 					execution.get_statement(), 
 					CirValueClass.trp_stmt, 
