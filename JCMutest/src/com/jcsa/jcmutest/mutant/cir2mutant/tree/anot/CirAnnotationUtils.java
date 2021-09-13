@@ -368,7 +368,7 @@ final class CirAnnotationUtils {
 		}
 		annotations.add(CirAnnotation.ori_stmt(execution, original_execution));
 		annotations.add(CirAnnotation.mut_stmt(execution, mutation_execution));
-		annotations.add(CirAnnotation.cmp_diff(execution, original_execution, mutation_execution));
+		annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(mutation_execution)));
 	}
 	/**
 	 * @param attribute
@@ -388,12 +388,12 @@ final class CirAnnotationUtils {
 					else if(executed.booleanValue()) {
 						annotations.add(CirAnnotation.ori_stmt(execution, false));
 						annotations.add(CirAnnotation.mut_stmt(execution, true));
-						annotations.add(CirAnnotation.cmp_diff(execution, false, true));
+						annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(true)));
 					}
 					else {
 						annotations.add(CirAnnotation.ori_stmt(execution, true));
 						annotations.add(CirAnnotation.mut_stmt(execution, false));
-						annotations.add(CirAnnotation.cmp_diff(execution, true, false));
+						annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(false)));
 					}
 				}
 			}
@@ -445,19 +445,19 @@ final class CirAnnotationUtils {
 		else {
 			annotations.add(orig_annotation);
 			annotations.add(muta_annotation);
-			annotations.add(CirAnnotation.cmp_diff(expression, orig_value, muta_value));
+			annotations.add(CirAnnotation.cmp_diff(expression, SymbolFactory.not_equals(orig_value, muta_value)));
 		}
 		
 		/* 4. difference generation based on its data type */
 		if(CirMutations.is_numeric(expression)) {
-			annotations.add(CirAnnotation.sub_diff(expression, orig_value, muta_value));
-			annotations.add(CirAnnotation.ext_diff(expression, orig_value, muta_value));
+			annotations.add(CirAnnotation.sub_diff(expression, CirAnnotationValue.sub_difference(expression, orig_value, muta_value)));
+			annotations.add(CirAnnotation.ext_diff(expression, CirAnnotationValue.ext_difference(expression, orig_value, muta_value)));
 		}
 		if(CirMutations.is_address(expression)) {
-			annotations.add(CirAnnotation.sub_diff(expression, orig_value, muta_value));
+			annotations.add(CirAnnotation.sub_diff(expression, CirAnnotationValue.sub_difference(expression, orig_value, muta_value)));
 		}
 		if(CirMutations.is_integer(expression)) {
-			annotations.add(CirAnnotation.xor_diff(expression, orig_value, muta_value));
+			annotations.add(CirAnnotation.xor_diff(expression, CirAnnotationValue.xor_difference(expression, orig_value, muta_value)));
 		}
 	}
 	/**
@@ -739,8 +739,7 @@ final class CirAnnotationUtils {
 		/* 3. accumulate the constants when it is evaluated */
 		else if(value instanceof SymbolConstant) {
 			if(location instanceof CirStatement) {
-				annotations.add(CirAnnotation.cmp_diff(execution, 
-							((SymbolConstant) value).get_bool()));
+				annotations.add(CirAnnotation.cmp_diff(execution, value));
 			}
 			else if(location instanceof CirExpression) {
 				annotations.add(CirAnnotation.cmp_diff((CirExpression) location, value));
@@ -1028,34 +1027,40 @@ final class CirAnnotationUtils {
 				abstract_annotations.add(annotation);
 			}
 			else if(values.contains(Boolean.TRUE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(execution, true));
+				abstract_annotations.add(CirAnnotation.cmp_diff(execution, CirAnnotationValue.true_value));
 			}
 			else if(values.contains(Boolean.FALSE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(execution, false));
+				abstract_annotations.add(CirAnnotation.cmp_diff(execution, CirAnnotationValue.fals_value));
 			}
 			else { /* none of values are created */ }
 		}
 		else {
-			/* E-1. capture the scopes of value domains in target expression */
+			/* S-1. capture the boolean values hold by concrete annotations */
+			Collection<Boolean> values = new HashSet<Boolean>();
 			CirExecution execution = annotation.get_exec_point();
 			CirExpression expression = (CirExpression) annotation.get_store_unit();
-			Set<SymbolExpression> values = new HashSet<SymbolExpression>();
 			for(CirAnnotation concrete_annotation : concrete_annotations) {
 				SymbolExpression value = concrete_annotation.get_symb_value();
-				if(value == CirAnnotationValue.expt_value) {
+				if(value instanceof SymbolConstant) {
+					values.add(((SymbolConstant) value).get_bool());
+				}
+				else if(value == CirAnnotationValue.expt_value) {
 					abstract_annotations.add(CirAnnotation.trp_stmt(execution));
 					return;
 				}
-				else if(value instanceof SymbolConstant) {
-					values.add(value);
-				}
 			}
-			Collection<SymbolExpression> scopes = CirAnnotationValue.find_scopes(expression, values);
 			
 			/* E-2. summarize the abstract annotations from the concrete ones */
-			for(SymbolExpression scope : scopes) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(expression, scope));
+			if(values.size() > 1) {
+				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.bool_value));
 			}
+			else if(values.contains(Boolean.TRUE)) {
+				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.true_value));
+			}
+			else if(values.contains(Boolean.FALSE)) {
+				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.fals_value));
+			}
+			else { /* none of values are created */ }
 		}
 	}
 	/**

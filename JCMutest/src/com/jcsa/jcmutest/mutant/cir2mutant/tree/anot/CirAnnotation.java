@@ -274,144 +274,20 @@ public class CirAnnotation {
 		}
 	}
 	
-	/* difference */
-	/**
-	 * @param execution
-	 * @param orig_value
-	 * @param muta_value
-	 * @return [stmt:statement] --> (cmp_diff:muta_value)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation cmp_diff(CirExecution execution, boolean orig_value, boolean muta_value) throws Exception {
-		if(execution == null || execution.get_statement() instanceof CirTagStatement) {
-			throw new IllegalArgumentException("Invalid execution: " + execution);
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.stmt, 
-					execution.get_statement(), CirAnnotationType.cmp_diff, 
-					SymbolFactory.sym_constant(Boolean.valueOf(muta_value)));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return [expr:expression] --> (cmp_diff:{orig_value != muta_value})
-	 * @throws Exception
-	 */
-	protected static CirAnnotation cmp_diff(CirExpression expression, 
-			SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_assigned(expression)) {
-			return new CirAnnotation(CirAnnotationClass.refr,
-					expression, CirAnnotationType.cmp_diff,
-					SymbolFactory.not_equals(orig_value, muta_value));
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.expr,
-					expression, CirAnnotationType.cmp_diff,
-					SymbolFactory.not_equals(orig_value, muta_value));
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return [expr:expression] --> (sub_diff:{muta_value - orig_value})
-	 * @throws Exception
-	 */
-	protected static CirAnnotation sub_diff(CirExpression expression, 
-			SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
-			SymbolExpression difference = CirAnnotationValue.sub_difference(expression, orig_value, muta_value);
-			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.sub_diff, difference);
-			}
-			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.sub_diff, difference);
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return [expr:expression] --> (xor_diff:{muta_value ^ orig_value})
-	 * @throws Exception
-	 */
-	protected static CirAnnotation xor_diff(CirExpression expression, 
-			SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_integer(expression)) {
-			SymbolExpression difference = CirAnnotationValue.xor_difference(expression, orig_value, muta_value);
-			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.xor_diff, difference);
-			}
-			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.xor_diff, difference);
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return [expr:expression] --> (ext_diff:{abs(muta_value) - abs(orig_value)})
-	 * @throws Exception
-	 */
-	protected static CirAnnotation ext_diff(CirExpression expression, 
-			SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_numeric(expression)) {
-			SymbolExpression difference = CirAnnotationValue.ext_difference(expression, orig_value, muta_value);
-			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.ext_diff, difference);
-			}
-			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.ext_diff, difference);
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
-		}
-	}
-	
-	/* prediction */
+	/* differ */
 	/**
 	 * @param execution
 	 * @param difference
 	 * @return [stmt:statement] --> (cmp_diff:difference)
 	 * @throws Exception
 	 */
-	protected static CirAnnotation cmp_diff(CirExecution execution, boolean difference) throws Exception {
+	protected static CirAnnotation cmp_diff(CirExecution execution, SymbolExpression difference) throws Exception {
 		if(execution == null || execution.get_statement() instanceof CirTagStatement) {
 			throw new IllegalArgumentException("Invalid execution: " + execution);
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.stmt, 
-					execution.get_statement(), CirAnnotationType.cmp_diff, 
-					SymbolFactory.sym_constant(Boolean.valueOf(difference)));
+			return new CirAnnotation(CirAnnotationClass.stmt, execution.
+					get_statement(), CirAnnotationType.cmp_diff, difference);
 		}
 	}
 	/**
