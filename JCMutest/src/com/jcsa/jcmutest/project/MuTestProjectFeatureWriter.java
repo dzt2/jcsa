@@ -13,13 +13,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirAnnotation;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirAnnotationUnit;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirInfectionTree;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirInfectionTreeEdge;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirInfectionTreeNode;
-import com.jcsa.jcmutest.mutant.cir2mutant.backup.CirInfectionTreeType;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeEdge;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirInfectionTreeType;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.anot.CirAnnotation;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcparse.base.Complex;
 import com.jcsa.jcparse.flwa.CirInstance;
@@ -923,11 +922,11 @@ public class MuTestProjectFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
-		String category = annotation.get_category().toString();
-		String operator = annotation.get_operator().toString();
-		CirExecution execution = annotation.get_execution();
-		CirNode location = annotation.get_location();
-		SymbolNode parameter = annotation.get_parameter();
+		String category = annotation.get_store_type().toString();
+		String operator = annotation.get_value_type().toString();
+		CirExecution execution = annotation.get_exec_point();
+		CirNode location = annotation.get_store_unit();
+		SymbolNode parameter = annotation.get_symb_value();
 		this.write_cir_feature(category, operator, execution, location, parameter);
 	}
 	/**
@@ -940,10 +939,8 @@ public class MuTestProjectFeatureWriter {
 		if(node.get_state().is_executed()) {
 			/* collect the right annotations for being printed */
 			Collection<CirAnnotation> annotations = new HashSet<CirAnnotation>();
-			for(CirAnnotationUnit unit : node.get_state().get_units()) {
-				for(CirAnnotation annotation : unit.get_abstract_annotations()) {
-					annotations.add(annotation);
-				}
+			for(CirAnnotation annotation : node.get_state().get_abs_annotations()) {
+				annotations.add(annotation);
 			}
 			
 			if(annotations.isEmpty()) { return 0;	/* to avoid meaningless tree node*/ }

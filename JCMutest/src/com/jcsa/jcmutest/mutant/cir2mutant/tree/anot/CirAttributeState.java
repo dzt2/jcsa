@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,10 +18,11 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * @author yukimula
  *
  */
-public class CirAnnotationUnit {
+public class CirAttributeState {
 	
 	/* definitions */
 	private CirAttribute 				attribute;
+	private List<Boolean>				evaluation_results;
 	private Map<CirAnnotation, Collection<CirAnnotation>> con_annotations;
 	private Collection<CirAnnotation>	abs_annotations;
 	
@@ -30,7 +32,7 @@ public class CirAnnotationUnit {
 	 * @param attribute
 	 * @throws Exception
 	 */
-	public CirAnnotationUnit(CirAttribute attribute) throws Exception {
+	public CirAttributeState(CirAttribute attribute) throws Exception {
 		if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute: null");
 		}
@@ -38,6 +40,7 @@ public class CirAnnotationUnit {
 			this.attribute = attribute;
 			this.con_annotations = new HashMap<CirAnnotation, Collection<CirAnnotation>>();
 			this.abs_annotations = new HashSet<CirAnnotation>();
+			this.evaluation_results = new ArrayList<Boolean>();
 			
 			Set<CirAnnotation> sym_annotations = new HashSet<CirAnnotation>();
 			CirAnnotationUtils.generate_annotations(attribute, sym_annotations);
@@ -59,6 +62,93 @@ public class CirAnnotationUnit {
 		}
 	}
 	public Iterable<CirAnnotation> get_abs_annotations() { return this.abs_annotations; }
+	public Iterable<Boolean>		get_evaluation_results() { return this.evaluation_results; }
+	
+	/* counters */
+	/**
+	 * @return the number of attribute being executed in dynamic analysis
+	 */
+	public int number_of_executions() { return this.evaluation_results.size(); }
+	/**
+	 * @return the number of attribute being accepted in dynamic analysis
+	 */
+	public int number_of_acceptions() {
+		int counter = 0;
+		for(Boolean result : this.evaluation_results) {
+			if(result != null) {
+				if(result.booleanValue()) {
+					counter++;
+				}
+			}
+		}
+		return counter;
+	}
+	/**
+	 * @return the number of attribute being rejected in dynamic analysis
+	 */
+	public int number_of_rejections() {
+		int counter = 0;
+		for(Boolean result : this.evaluation_results) {
+			if(result != null) {
+				if(!result.booleanValue()) {
+					counter++;
+				}
+			}
+		}
+		return counter;
+	}
+	/**
+	 * @return the number of attribute being accepted or likely be acceptable
+	 */
+	public int number_of_acceptable() {
+		int counter = 0;
+		for(Boolean result : this.evaluation_results) {
+			if(result == null || result.booleanValue()) {
+				counter++;
+			}
+		}
+		return counter;
+	}
+	/**
+	 * @return whether the attribute in the node has been evaluated before
+	 */
+	public boolean is_executed() { return !this.evaluation_results.isEmpty(); }
+	/**
+	 * @return whether the attribute in the node has been accepted before.
+	 */
+	public boolean is_accepted() {
+		for(Boolean result: this.evaluation_results) {
+			if(result != null && result) {
+				return true;
+			}
+		}
+		return false;
+	}
+	/**
+	 * @return whether the attribute in the node has always been rejected.
+	 */
+	public boolean is_rejected() {
+		for(Boolean result: this.evaluation_results) {
+			if(result == null) {
+				return false;
+			}
+			else if(result) {
+				return false;
+			}
+		}
+		return true;
+	}
+	/**
+	 * @return whether the attribute in the node can be accepted before.
+	 */
+	public boolean is_acceptable() {
+		for(Boolean result: this.evaluation_results) {
+			if(result == null || result.booleanValue()) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/* setters */
 	/**
@@ -75,11 +165,13 @@ public class CirAnnotationUnit {
 	 * @param context
 	 * @throws Exception
 	 */
-	public void add(SymbolProcess context) throws Exception {
+	public Boolean add(SymbolProcess context) throws Exception {
 		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
 			CirAnnotationUtils.concretize_annotations(sym_annotation, 
 					context, con_annotations.get(sym_annotation));
 		}
+		Boolean result = this.attribute.evaluate(context);
+		this.evaluation_results.add(result); return result;
 	}
 	/**
 	 * Summarize the abstract annotations from concrete ones
