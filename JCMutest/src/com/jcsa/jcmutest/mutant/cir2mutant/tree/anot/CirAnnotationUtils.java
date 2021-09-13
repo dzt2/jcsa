@@ -356,7 +356,10 @@ final class CirAnnotationUtils {
 	 */
 	private void generate_annotations_in_block_error(CirBlockError attribute, Collection<CirAnnotation> annotations) throws Exception {
 		CirExecution execution = attribute.get_execution();
-		if(attribute.is_executed()) {
+		if(execution.get_statement() instanceof CirTagStatement) {
+			/* ignore the tag-statement from analysis */
+		}
+		else if(attribute.is_executed()) {
 			annotations.add(CirAnnotation.mut_stmt(execution, true));
 		}
 		else {
