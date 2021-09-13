@@ -45,7 +45,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * @author yukimula
  *
  */
-public class CirAnnotationUtils {
+final class CirAnnotationUtils {
 	
 	/* singleton */	/** constructor **/	private CirAnnotationUtils() {}
 	private static final CirAnnotationUtils utils = new CirAnnotationUtils();
@@ -550,7 +550,7 @@ public class CirAnnotationUtils {
 	 * @param annotations
 	 * @throws Exception
 	 */
-	public static void generate_annotations(CirAttribute attribute, Collection<CirAnnotation> annotations) throws Exception {
+	protected static void generate_annotations(CirAttribute attribute, Collection<CirAnnotation> annotations) throws Exception {
 		utils.generate_annotations_in(attribute, annotations);
 	}
 	
@@ -874,7 +874,7 @@ public class CirAnnotationUtils {
 	 * @param annotations
 	 * @throws Exception
 	 */
-	public static void concretize_annotations(CirAnnotation annotation, 
+	protected static void concretize_annotations(CirAnnotation annotation, 
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
 		utils.concretize_annotations_in(annotation, context, annotations);
 	}
@@ -1191,7 +1191,7 @@ public class CirAnnotationUtils {
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	public void summarize_annotations(CirAnnotation annotation,
+	protected static void summarize_annotations(CirAnnotation annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
 		utils.summarize_annotations_in(annotation, concrete_annotations, abstract_annotations);
