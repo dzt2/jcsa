@@ -151,22 +151,6 @@ public class CirAnnotation {
 	/**
 	 * @param execution
 	 * @param do_or_not
-	 * @return [stmt:statement] --> (ori_stmt:do_or_not)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation ori_stmt(CirExecution execution, boolean do_or_not) throws Exception {
-		if(execution == null || execution.get_statement() instanceof CirTagStatement) {
-			throw new IllegalArgumentException("Invalid execution: null");
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.stmt,
-					execution.get_statement(), CirAnnotationType.ori_stmt,
-					SymbolFactory.sym_constant(Boolean.valueOf(do_or_not)));
-		}
-	}
-	/**
-	 * @param execution
-	 * @param do_or_not
 	 * @return [stmt:statement] --> (mut_stmt:do_or_not)
 	 * @throws Exception
 	 */
@@ -194,44 +178,6 @@ public class CirAnnotation {
 			return new CirAnnotation(CirAnnotationClass.stmt,
 					execution.get_statement(), CirAnnotationType.trp_stmt,
 					CirAnnotationValue.expt_value);
-		}
-	}
-	/**
-	 * @param expression
-	 * @return [expr|refr:expression] --> (ori_expr:original_value)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation ori_expr(CirExpression expression, Object value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid value as null");
-		}
-		else if(CirMutations.is_assigned(expression)) {
-			CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-			CirExpression orig_expression = statement.get_rvalue();
-			
-			SymbolExpression original_value;
-			if(CirMutations.is_boolean(orig_expression)) {
-				original_value = SymbolFactory.sym_condition(value, true);
-			}
-			else {
-				original_value = SymbolFactory.sym_expression(value);
-			}
-			return new CirAnnotation(CirAnnotationClass.refr, expression,
-					CirAnnotationType.ori_expr, original_value);
-		}
-		else {
-			SymbolExpression original_value;
-			if(CirMutations.is_boolean(expression)) {
-				original_value = SymbolFactory.sym_condition(value, true);
-			}
-			else {
-				original_value = SymbolFactory.sym_expression(value);
-			}
-			return new CirAnnotation(CirAnnotationClass.expr, expression,
-					CirAnnotationType.ori_expr, original_value);
 		}
 	}
 	/**
@@ -271,23 +217,6 @@ public class CirAnnotation {
 			}
 			return new CirAnnotation(CirAnnotationClass.expr, expression,
 					CirAnnotationType.mut_expr, mutation_value);
-		}
-	}
-	
-	/* differ */
-	/**
-	 * @param execution
-	 * @param difference
-	 * @return [stmt:statement] --> (cmp_diff:difference)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation cmp_diff(CirExecution execution, SymbolExpression difference) throws Exception {
-		if(execution == null || execution.get_statement() instanceof CirTagStatement) {
-			throw new IllegalArgumentException("Invalid execution: " + execution);
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.stmt, execution.
-					get_statement(), CirAnnotationType.cmp_diff, difference);
 		}
 	}
 	/**

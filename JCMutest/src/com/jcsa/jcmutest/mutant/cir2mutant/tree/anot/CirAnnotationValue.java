@@ -78,6 +78,16 @@ public final class CirAnnotationValue {
 	
 	/* symbolic difference create */
 	/**
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @return
+	 * @throws Exception
+	 */
+	protected static SymbolExpression cmp_difference(CirExpression expression, Object orig_value, Object muta_value) throws Exception {
+		return SymbolFactory.not_equals(orig_value, muta_value);
+	}
+	/**
 	 * @param orig_value
 	 * @param muta_value
 	 * @return muta_value - orig_value

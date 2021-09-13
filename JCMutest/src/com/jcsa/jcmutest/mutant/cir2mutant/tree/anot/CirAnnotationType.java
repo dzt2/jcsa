@@ -13,13 +13,9 @@ public enum CirAnnotationType {
 	/** [cond:statement]	-->	(cov_stmt:integer) 				**/	cov_stmt,
 	/** [cond:statement]	-->	(eva_expr:condition) 			**/	eva_expr,
 	
-	/* value annotated with statement-related error with program */
+	/* value annotated with state-related data error for program */
 	/** [stmt:statement]	-->	(trp_stmt:expt_value) 			**/	trp_stmt,
-	/** [stmt:statement]	-->	(ori_stmt:boolean) 				**/	ori_stmt,
 	/** [stmt:statement]	-->	(mut_stmt:boolean)				**/	mut_stmt,
-	
-	/* value annotated with value-correlated errors with program */
-	/** [expr|refr:xxxx]	-->	(ori_expr:original_value) 		**/	ori_expr,
 	/** [expr|refr:xxxx]	-->	(mut_expr:mutation_value) 		**/	mut_expr,
 	
 	/* value annotated with difference-based features in testing */

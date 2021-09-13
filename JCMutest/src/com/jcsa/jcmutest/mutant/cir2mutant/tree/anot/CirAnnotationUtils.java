@@ -19,7 +19,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
-import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
@@ -37,6 +36,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
+
 
 /**
  * It implements the generation, concretization as well as summarization from the
@@ -356,19 +356,12 @@ final class CirAnnotationUtils {
 	 */
 	private void generate_annotations_in_block_error(CirBlockError attribute, Collection<CirAnnotation> annotations) throws Exception {
 		CirExecution execution = attribute.get_execution();
-		boolean original_execution, mutation_execution;
-		if(execution.get_statement() instanceof CirTagStatement) { return; }
-		else if(attribute.is_executed()) {
-			original_execution = Boolean.FALSE;
-			mutation_execution = Boolean.TRUE;
+		if(attribute.is_executed()) {
+			annotations.add(CirAnnotation.mut_stmt(execution, true));
 		}
 		else {
-			original_execution = Boolean.TRUE;
-			mutation_execution = Boolean.FALSE;
+			annotations.add(CirAnnotation.mut_stmt(execution, false));
 		}
-		annotations.add(CirAnnotation.ori_stmt(execution, original_execution));
-		annotations.add(CirAnnotation.mut_stmt(execution, mutation_execution));
-		annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(mutation_execution)));
 	}
 	/**
 	 * @param attribute
@@ -386,14 +379,10 @@ final class CirAnnotationUtils {
 						continue;
 					}
 					else if(executed.booleanValue()) {
-						annotations.add(CirAnnotation.ori_stmt(execution, false));
 						annotations.add(CirAnnotation.mut_stmt(execution, true));
-						annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(true)));
 					}
 					else {
-						annotations.add(CirAnnotation.ori_stmt(execution, true));
 						annotations.add(CirAnnotation.mut_stmt(execution, false));
-						annotations.add(CirAnnotation.cmp_diff(execution, SymbolFactory.sym_constant(false)));
 					}
 				}
 			}
@@ -417,20 +406,21 @@ final class CirAnnotationUtils {
 			Object value, Collection<CirAnnotation> annotations) throws Exception {
 		/* 1. initialize the original and mutated annotation */
 		CirExecution execution = expression.execution_of();
-		CirAnnotation orig_annotation;
+		CirAnnotation orig_annotation, muta_annotation;
 		if(CirMutations.is_assigned(expression)) {
 			CirAssignStatement stmt = (CirAssignStatement) expression.statement_of();
-			orig_annotation = CirAnnotation.ori_expr(expression, stmt.get_rvalue());
+			orig_annotation = CirAnnotation.mut_expr(expression, stmt.get_rvalue());
 		}
 		else {
-			orig_annotation = CirAnnotation.ori_expr(expression, expression);
+			orig_annotation = CirAnnotation.mut_expr(expression, expression);
 		}
-		CirAnnotation muta_annotation = CirAnnotation.mut_expr(expression, value);
+		muta_annotation = CirAnnotation.mut_expr(expression, value);
 		if(orig_annotation.get_symb_value() == CirAnnotationValue.expt_value
 			|| muta_annotation.get_symb_value() == CirAnnotationValue.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution)); 
 			return;	/* simply return traps when arithmetic exception is thrown */
 		}
+		
 		
 		/* 2. compare whether original equals with mutated values */
 		SymbolExpression orig_value = orig_annotation.get_symb_value();
@@ -443,9 +433,9 @@ final class CirAnnotationUtils {
 		}
 		/* 3. otherwise, insert the annotation along with cmp_diff */
 		else {
-			annotations.add(orig_annotation);
 			annotations.add(muta_annotation);
-			annotations.add(CirAnnotation.cmp_diff(expression, SymbolFactory.not_equals(orig_value, muta_value)));
+			annotations.add(CirAnnotation.cmp_diff(expression, 
+					CirAnnotationValue.cmp_difference(expression, orig_value, muta_value)));
 		}
 		
 		/* 4. difference generation based on its data type */
@@ -626,65 +616,16 @@ final class CirAnnotationUtils {
 	 * @param annotations
 	 * @throws Exception
 	 */
-	private void concretize_annotations_in_ori_stmt(CirAnnotation annotation,
-			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. evaluate the symbolic expression under execution */
-		CirExecution execution = annotation.get_exec_point();
-		SymbolExpression value = annotation.get_symb_value();
-		
-		/* 3. accumulate the evaluation results as constants */
-		if(value instanceof SymbolConstant) {
-			Boolean result = ((SymbolConstant) value).get_bool();
-			annotations.add(CirAnnotation.ori_stmt(execution, result));
-		}
-		/* 4. otherwise, ignore the evaluation result when it is not constant */
-		else {
-			return;
-		}
-	}
-	/**
-	 * @param annotation
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
 	private void concretize_annotations_in_mut_stmt(CirAnnotation annotation,
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
 		/* 1. evaluate the symbolic expression under execution */
 		CirExecution execution = annotation.get_exec_point();
-		SymbolExpression value = annotation.get_symb_value();
+		SymbolExpression value = CirAnnotationValue.safe_evaluate(annotation.get_symb_value(), context);
 		
 		/* 3. accumulate the evaluation results as constants */
 		if(value instanceof SymbolConstant) {
 			Boolean result = ((SymbolConstant) value).get_bool();
 			annotations.add(CirAnnotation.mut_stmt(execution, result));
-		}
-		/* 4. otherwise, ignore the evaluation result when it is not constant */
-		else {
-			return;
-		}
-	}
-	/**
-	 * @param annotation
-	 * @param context
-	 * @param annotations
-	 * @throws Exception
-	 */
-	private void concretize_annotations_in_ori_expr(CirAnnotation annotation,
-			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
-		/* 1. evaluate the symbolic expression under context */
-		CirExecution execution = annotation.get_exec_point();
-		CirExpression expression = (CirExpression) annotation.get_store_unit();
-		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
-		
-		/* 2. trap occurs will transformed as trapping error */
-		if(value == CirAnnotationValue.expt_value) {
-			annotations.add(CirAnnotation.trp_stmt(execution));
-		}
-		/* 3. accumulate the evaluation results as constants */
-		else if(value instanceof SymbolConstant) {
-			annotations.add(CirAnnotation.ori_expr(expression, value));
 		}
 		/* 4. otherwise, ignore the evaluation result when it is not constant */
 		else {
@@ -730,7 +671,7 @@ final class CirAnnotationUtils {
 		SymbolExpression value = annotation.get_symb_value();
 		value = CirAnnotationValue.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_exec_point();
-		CirNode location = annotation.get_store_unit();
+		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		
 		/* 2. accumulate the trapping when it simply happens */
 		if(value == CirAnnotationValue.expt_value) {
@@ -738,15 +679,7 @@ final class CirAnnotationUtils {
 		}
 		/* 3. accumulate the constants when it is evaluated */
 		else if(value instanceof SymbolConstant) {
-			if(location instanceof CirStatement) {
-				annotations.add(CirAnnotation.cmp_diff(execution, value));
-			}
-			else if(location instanceof CirExpression) {
-				annotations.add(CirAnnotation.cmp_diff((CirExpression) location, value));
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + location);
-			}
+			annotations.add(CirAnnotation.cmp_diff(expression, value));
 		}
 		/* 4. otherwise, ignore the evaluation result anyway */
 		else {
@@ -854,9 +787,7 @@ final class CirAnnotationUtils {
 			case cov_stmt:	this.concretize_annotations_in_cov_stmt(annotation, context, annotations); break;
 			case eva_expr:	this.concretize_annotations_in_eva_expr(annotation, context, annotations); break;
 			case trp_stmt:	this.concretize_annotations_in_trp_stmt(annotation, context, annotations); break;
-			case ori_stmt:	this.concretize_annotations_in_ori_stmt(annotation, context, annotations); break;
 			case mut_stmt:	this.concretize_annotations_in_mut_stmt(annotation, context, annotations); break;
-			case ori_expr:	this.concretize_annotations_in_ori_expr(annotation, context, annotations); break;
 			case mut_expr:	this.concretize_annotations_in_mut_expr(annotation, context, annotations); break;
 			case cmp_diff:	this.concretize_annotations_in_cmp_diff(annotation, context, annotations); break;
 			case sub_diff:	this.concretize_annotations_in_sub_diff(annotation, context, annotations); break;
@@ -920,52 +851,12 @@ final class CirAnnotationUtils {
 	 * @param abstract_annotations
 	 * @throws Exception
 	 */
-	private void summarize_annotations_in_ori_stmt(CirAnnotation annotation,
-			Collection<CirAnnotation> concrete_annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		/* NOTE: mut_stmt and ori_stmt are not considered in features */
-	}
-	/**
-	 * @param annotation
-	 * @param concrete_annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
 	private void summarize_annotations_in_mut_stmt(CirAnnotation annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		/* NOTE: mut_stmt and ori_stmt are not considered in features */
-	}
-	/**
-	 * @param annotation
-	 * @param concrete_annotations
-	 * @param abstract_annotations
-	 * @throws Exception
-	 */
-	private void summarize_annotations_in_ori_expr(CirAnnotation annotation,
-			Collection<CirAnnotation> concrete_annotations,
-			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		/* 1. collect the concrete values or return as trapping */
-		CirExecution execution = annotation.get_exec_point();
-		CirExpression expression = (CirExpression) annotation.get_store_unit();
-		Set<SymbolExpression> values = new HashSet<SymbolExpression>();
-		for(CirAnnotation concrete_annotation : concrete_annotations) {
-			SymbolExpression value = concrete_annotation.get_symb_value();
-			if(value instanceof SymbolConstant) {
-				values.add(value);
-			}
-			else if(value == CirAnnotationValue.expt_value) {
-				abstract_annotations.add(CirAnnotation.trp_stmt(execution));
-				return;
-			}
+		if(!concrete_annotations.isEmpty()) {
+			abstract_annotations.add(annotation);
 		}
-		
-		/* 2. summarize the abstract values and update into annotations */
-		Collection<SymbolExpression> scopes = CirAnnotationValue.find_scopes(expression, values);
-		for(SymbolExpression scope : scopes) {
-			abstract_annotations.add(CirAnnotation.ori_expr(expression, scope));
-		}
-		abstract_annotations.add(annotation);
 	}
 	/**
 	 * @param annotation
@@ -1007,61 +898,29 @@ final class CirAnnotationUtils {
 	private void summarize_annotations_in_cmp_diff(CirAnnotation annotation,
 			Collection<CirAnnotation> concrete_annotations,
 			Collection<CirAnnotation> abstract_annotations) throws Exception {
-		if(annotation.get_store_unit() instanceof CirStatement) {
-			/* S-1. capture the boolean values hold by concrete annotations */
-			Collection<Boolean> values = new HashSet<Boolean>();
-			CirExecution execution = annotation.get_exec_point();
-			for(CirAnnotation concrete_annotation : concrete_annotations) {
-				SymbolExpression value = concrete_annotation.get_symb_value();
-				if(value instanceof SymbolConstant) {
-					values.add(((SymbolConstant) value).get_bool());
-				}
-				else if(value == CirAnnotationValue.expt_value) {
-					abstract_annotations.add(CirAnnotation.trp_stmt(execution));
-					return;
-				}
+		/* 1. capture the difference values in boolean */
+		Collection<Boolean> values = new HashSet<Boolean>();
+		CirExecution execution = annotation.get_exec_point();
+		CirExpression expression = (CirExpression) annotation.get_store_unit();
+		for(CirAnnotation concrete_annotation : concrete_annotations) {
+			SymbolExpression value = concrete_annotation.get_symb_value();
+			if(value instanceof SymbolConstant) {
+				values.add(((SymbolConstant) value).get_bool());
 			}
-			
-			/* S-2. summarize the abstract annotations from concrete ones */
-			if(values.size() > 1) {
-				abstract_annotations.add(annotation);
+			else if(value == CirAnnotationValue.expt_value) {
+				abstract_annotations.add(CirAnnotation.trp_stmt(execution));
+				return;
 			}
-			else if(values.contains(Boolean.TRUE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(execution, CirAnnotationValue.true_value));
-			}
-			else if(values.contains(Boolean.FALSE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(execution, CirAnnotationValue.fals_value));
-			}
-			else { /* none of values are created */ }
 		}
-		else {
-			/* S-1. capture the boolean values hold by concrete annotations */
-			Collection<Boolean> values = new HashSet<Boolean>();
-			CirExecution execution = annotation.get_exec_point();
-			CirExpression expression = (CirExpression) annotation.get_store_unit();
-			for(CirAnnotation concrete_annotation : concrete_annotations) {
-				SymbolExpression value = concrete_annotation.get_symb_value();
-				if(value instanceof SymbolConstant) {
-					values.add(((SymbolConstant) value).get_bool());
-				}
-				else if(value == CirAnnotationValue.expt_value) {
-					abstract_annotations.add(CirAnnotation.trp_stmt(execution));
-					return;
-				}
-			}
-			
-			/* E-2. summarize the abstract annotations from the concrete ones */
-			if(values.size() > 1) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.bool_value));
-			}
-			else if(values.contains(Boolean.TRUE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.true_value));
-			}
-			else if(values.contains(Boolean.FALSE)) {
-				abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.fals_value));
-			}
-			else { /* none of values are created */ }
+		
+		/* 2. determine the abstract value in the comparison */
+		if(values.contains(Boolean.TRUE)) {
+			abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.true_value));
 		}
+		else if(values.contains(Boolean.FALSE)) {
+			abstract_annotations.add(CirAnnotation.cmp_diff(expression, CirAnnotationValue.fals_value));
+		}
+		else { /* none of difference is introduced between original and mutated expressions there! */ }
 	}
 	/**
 	 * @param annotation
@@ -1177,15 +1036,13 @@ final class CirAnnotationUtils {
 			case cov_stmt:	this.summarize_annotations_in_cov_stmt(annotation, concrete_annotations, abstract_annotations); break;
 			case eva_expr:	this.summarize_annotations_in_eva_expr(annotation, concrete_annotations, abstract_annotations); break;
 			case trp_stmt:	this.summarize_annotations_in_trp_stmt(annotation, concrete_annotations, abstract_annotations); break;
-			case ori_stmt:	this.summarize_annotations_in_ori_stmt(annotation, concrete_annotations, abstract_annotations); break;
 			case mut_stmt:	this.summarize_annotations_in_mut_stmt(annotation, concrete_annotations, abstract_annotations); break;
-			case ori_expr:	this.summarize_annotations_in_ori_expr(annotation, concrete_annotations, abstract_annotations); break;
 			case mut_expr:	this.summarize_annotations_in_mut_expr(annotation, concrete_annotations, abstract_annotations); break;
 			case cmp_diff:	this.summarize_annotations_in_cmp_diff(annotation, concrete_annotations, abstract_annotations); break;
 			case sub_diff:	this.summarize_annotations_in_sub_diff(annotation, concrete_annotations, abstract_annotations); break;
 			case xor_diff:	this.summarize_annotations_in_xor_diff(annotation, concrete_annotations, abstract_annotations); break;
 			case ext_diff:	this.summarize_annotations_in_ext_diff(annotation, concrete_annotations, abstract_annotations); break;
-			default:		throw new IllegalArgumentException("Unsupport: " + annotation);
+			default:		throw new IllegalArgumentException("Unsupport annotation as: " + annotation.toString());
 			}
 		}
 	}
