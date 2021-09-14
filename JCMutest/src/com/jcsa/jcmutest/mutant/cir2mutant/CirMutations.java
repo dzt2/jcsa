@@ -220,7 +220,7 @@ public class CirMutations {
 			return false;
 		}
 		else {
-			return is_numeric(expression.get_data_type());
+			return is_integer(expression) || is_doubles(expression);
 		}
 	}
 	/**

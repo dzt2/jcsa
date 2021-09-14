@@ -43,7 +43,7 @@ public class CirAttributeState {
 			this.evaluation_results = new ArrayList<Boolean>();
 			
 			Set<CirAnnotation> sym_annotations = new HashSet<CirAnnotation>();
-			CirAnnotationUtils.generate_annotations(attribute, sym_annotations);
+			CirAnnotationUtil.generate_annotations(attribute, sym_annotations);
 			for(CirAnnotation sym_annotation : sym_annotations) {
 				this.con_annotations.put(sym_annotation, new HashSet<CirAnnotation>());
 			}
@@ -167,7 +167,7 @@ public class CirAttributeState {
 	 */
 	public Boolean add(SymbolProcess context) throws Exception {
 		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
-			CirAnnotationUtils.concretize_annotations(sym_annotation, 
+			CirAnnotationUtil.concretize_annotations(sym_annotation, 
 					context, con_annotations.get(sym_annotation));
 		}
 		Boolean result = this.attribute.evaluate(context);
@@ -180,7 +180,7 @@ public class CirAttributeState {
 	public void sum() throws Exception {
 		this.abs_annotations.clear();
 		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
-			CirAnnotationUtils.summarize_annotations(sym_annotation, con_annotations.get(sym_annotation), this.abs_annotations);
+			CirAnnotationUtil.summarize_annotations(sym_annotation, con_annotations.get(sym_annotation), this.abs_annotations);
 		}
 	}
 	

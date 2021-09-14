@@ -4,14 +4,13 @@ import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It defines the annotation value that is annotated at some store unit with a 
- * specified value category to describe the semantic property.
+ * It describes a basic value which is annotated at some store unit defined in
+ * the program under test.
  * 
  * @author yukimula
  *
@@ -19,25 +18,12 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 public class CirAnnotation {
 	
 	/* definitions */
-	/** the type of store unit to be annotated **/
-	private CirAnnotationClass	store_type;
-	/** the C-based store unit to be annotated **/
+	private CirStoreClass		store_type;
 	private CirNode				store_unit;
-	/** the type of value annotated on a store **/
-	private CirAnnotationType	value_type;
-	/** the symbolic value annotated on a unit **/
+	private CirValueClass		value_type;
 	private SymbolExpression	symb_value;
-	
-	/* constructor */
-	/**
-	 * @param store_type
-	 * @param store_unit
-	 * @param value_type
-	 * @param symb_value
-	 * @throws Exception
-	 */
-	private CirAnnotation(CirAnnotationClass store_type, CirNode store_unit,
-			CirAnnotationType value_type, SymbolExpression symb_value) throws Exception {
+	private CirAnnotation(CirStoreClass store_type, CirNode store_unit,
+			CirValueClass value_type, SymbolExpression symb_value) throws Exception {
 		if(store_type == null) {
 			throw new IllegalArgumentException("Invalid store_type: null");
 		}
@@ -54,37 +40,37 @@ public class CirAnnotation {
 			this.store_type = store_type;
 			this.store_unit = store_unit;
 			this.value_type = value_type;
-			this.symb_value = CirAnnotationValue.safe_evaluate(symb_value, null);
+			this.symb_value = CirValueScope.safe_evaluate(symb_value, null);
 		}
 	}
 	
 	/* getters */
 	/**
-	 * @return the control-flow node where the annotation is inserted to be evaluated in
+	 * @return the execution point where the annotation is introduced
 	 */
-	public CirExecution			get_exec_point() { return this.store_unit.execution_of(); }
+	public CirExecution		get_execution()	 { return this.store_unit.execution_of(); }
 	/**
-	 * @return the type of store unit to be annotated
+	 * @return the type of the store unit being annotated with the value
 	 */
-	public CirAnnotationClass	get_store_type() { return this.store_type; }
+	public CirStoreClass 	get_store_type() { return this.store_type; }
 	/**
-	 * @return the C-based store unit to be annotated
+	 * @return the location of store unit being annotated with the value
 	 */
-	public CirNode				get_store_unit() { return this.store_unit; }
+	public CirNode			get_store_unit() { return this.store_unit; }
+	/** 
+	 * @return the type of the value being annotated with the location
+	 */
+	public CirValueClass	get_value_type() { return this.value_type; }
 	/**
-	 * @return the type of value annotated on a store
+	 * @return the symbolic value being annotated with the store units
 	 */
-	public CirAnnotationType	get_value_type() { return this.value_type; }
-	/**
-	 * @return the symbolic value annotated on a unit
-	 */
-	public SymbolExpression		get_symb_value() { return this.symb_value; } 
+	public SymbolExpression	get_symb_value() { return this.symb_value; } 
 	@Override
 	public String toString() {
 		try {
-			return String.format("[%s:%d] --> (%s:%s)", 
+			return String.format("[%s:%d]->(%s:%s)", 
 					this.store_type.toString(),
-					this.store_unit.get_node_id(), 
+					this.store_unit.get_node_id(),
 					this.value_type.toString(),
 					this.symb_value.generate_code(true));
 		}
@@ -93,8 +79,6 @@ public class CirAnnotation {
 			return null;
 		}
 	}
-	@Override
-	public int hashCode() { return this.toString().hashCode(); }
 	@Override
 	public boolean equals(Object obj) {
 		if(obj == this) {
@@ -107,12 +91,14 @@ public class CirAnnotation {
 			return false;
 		}
 	}
+	@Override
+	public int hashCode() { return this.toString().hashCode(); }
 	
-	/* factory */
+	/* constructor */
 	/**
 	 * @param execution
 	 * @param times
-	 * @return [cond:statement] --> (cov_stmt:times)
+	 * @return [cond:statement]-->(cov_stmt:times)
 	 * @throws Exception
 	 */
 	protected static CirAnnotation cov_stmt(CirExecution execution, int times) throws Exception {
@@ -123,19 +109,18 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid times: " + times);
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.cond, 
-					execution.get_statement(), CirAnnotationType.cov_stmt,
+			return new CirAnnotation(CirStoreClass.cond,
+					execution.get_statement(), CirValueClass.cov_stmt,
 					SymbolFactory.sym_constant(Integer.valueOf(times)));
 		}
 	}
 	/**
 	 * @param execution
 	 * @param condition
-	 * @param value
-	 * @return [cond:statement] --> (eva_expr:{condition as value})
+	 * @return [cond:statement]-->(eva_expr:condition)
 	 * @throws Exception
 	 */
-	protected static CirAnnotation eva_expr(CirExecution execution, Object condition, boolean value) throws Exception {
+	protected static CirAnnotation eva_expr(CirExecution execution, Object condition) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -143,30 +128,73 @@ public class CirAnnotation {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.cond,
-					execution.get_statement(), CirAnnotationType.eva_expr,
-					SymbolFactory.sym_condition(condition, value));
+			return new CirAnnotation(CirStoreClass.cond,
+					execution.get_statement(), CirValueClass.eva_expr,
+					SymbolFactory.sym_condition(condition, true));
 		}
 	}
 	/**
 	 * @param execution
 	 * @param do_or_not
-	 * @return [stmt:statement] --> (mut_stmt:do_or_not)
+	 * @return [stmt:statement]-->(mut_stmt:do_or_not)
 	 * @throws Exception
 	 */
 	protected static CirAnnotation mut_stmt(CirExecution execution, boolean do_or_not) throws Exception {
-		if(execution == null || execution.get_statement() instanceof CirTagStatement) {
+		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
+		else if(execution.get_statement() instanceof CirTagStatement) {
+			throw new IllegalArgumentException("Invalid: " + execution);
+		}
 		else {
-			return new CirAnnotation(CirAnnotationClass.stmt,
-					execution.get_statement(), CirAnnotationType.mut_stmt,
+			return new CirAnnotation(CirStoreClass.stmt, 
+					execution.get_statement(), CirValueClass.mut_stmt,
 					SymbolFactory.sym_constant(Boolean.valueOf(do_or_not)));
 		}
 	}
 	/**
+	 * @param expression
+	 * @param value
+	 * @return [expr:expression]-->(mut_expr:value)
+	 * @throws Exception
+	 */
+	protected static CirAnnotation mut_expr(CirExpression expression, Object value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid expression: " + expression);
+		}
+		else if(value == null) {
+			throw new IllegalArgumentException("No mutated values are established");
+		}
+		else {
+			/* declarations */
+			CirStoreClass store_type; CirNode store_unit;
+			CirValueClass value_type; SymbolExpression symb_value;
+			
+			/* determine store-part */
+			if(CirMutations.is_assigned(expression)) {
+				store_type = CirStoreClass.refr;
+			}
+			else {
+				store_type = CirStoreClass.expr;
+			}
+			store_unit = expression;
+			
+			/* determine value-part */
+			if(CirMutations.is_boolean(expression)) {
+				symb_value = SymbolFactory.sym_condition(value, true);
+			}
+			else {
+				symb_value = SymbolFactory.sym_expression(value);
+			}
+			value_type = CirValueClass.mut_expr;
+			
+			/* return finally */
+			return new CirAnnotation(store_type, store_unit, value_type, symb_value);
+		}
+	}
+	/**
 	 * @param execution
-	 * @return [stmt:statement] --> (trp_stmt:expt_value)
+	 * @return [stmt:statement]-->(trp_stmt:expt_value)
 	 * @throws Exception
 	 */
 	protected static CirAnnotation trp_stmt(CirExecution execution) throws Exception {
@@ -175,139 +203,84 @@ public class CirAnnotation {
 		}
 		else {
 			execution = execution.get_graph().get_exit();
-			return new CirAnnotation(CirAnnotationClass.stmt,
-					execution.get_statement(), CirAnnotationType.trp_stmt,
-					CirAnnotationValue.expt_value);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param value
-	 * @return [expr|refr:expression] --> (mut_expr:value)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation mut_expr(CirExpression expression, Object value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid value as null");
-		}
-		else if(CirMutations.is_assigned(expression)) {
-			CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-			CirExpression orig_expression = statement.get_rvalue();
-			
-			SymbolExpression mutation_value;
-			if(CirMutations.is_boolean(orig_expression)) {
-				mutation_value = SymbolFactory.sym_condition(value, true);
-			}
-			else {
-				mutation_value = SymbolFactory.sym_expression(value);
-			}
-			return new CirAnnotation(CirAnnotationClass.refr, expression,
-					CirAnnotationType.mut_expr, mutation_value);
-		}
-		else {
-			SymbolExpression mutation_value;
-			if(CirMutations.is_boolean(expression)) {
-				mutation_value = SymbolFactory.sym_condition(value, true);
-			}
-			else {
-				mutation_value = SymbolFactory.sym_expression(value);
-			}
-			return new CirAnnotation(CirAnnotationClass.expr, expression,
-					CirAnnotationType.mut_expr, mutation_value);
+			return new CirAnnotation(CirStoreClass.stmt, 
+					execution.get_statement(), 
+					CirValueClass.trp_stmt, CirValueScope.expt_value);
 		}
 	}
 	/**
 	 * @param expression
 	 * @param difference
-	 * @return [expr:expression] --> (cmp_diff:difference)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation cmp_diff(CirExpression expression, SymbolExpression difference) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_assigned(expression)) {
-			return new CirAnnotation(CirAnnotationClass.refr,
-					expression, CirAnnotationType.cmp_diff, difference);
-		}
-		else {
-			return new CirAnnotation(CirAnnotationClass.expr,
-					expression, CirAnnotationType.cmp_diff, difference);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param difference
-	 * @return [expr:expression] --> (sub_diff:difference)
+	 * @return [expr:expression]-->(sub_diff:difference)
 	 * @throws Exception
 	 */
 	protected static CirAnnotation sub_diff(CirExpression expression, SymbolExpression difference) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+			throw new IllegalArgumentException("Invalid expression: " + expression);
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("No difference has been established");
 		}
 		else if(CirMutations.is_numeric(expression) || CirMutations.is_address(expression)) {
 			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.sub_diff, difference);
+				return new CirAnnotation(CirStoreClass.refr, expression, CirValueClass.sub_diff, difference);
 			}
 			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.sub_diff, difference);
+				return new CirAnnotation(CirStoreClass.expr, expression, CirValueClass.sub_diff, difference);
 			}
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
+			throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
 		}
 	}
 	/**
 	 * @param expression
 	 * @param difference
-	 * @return [expr:expression] --> (xor_diff:difference)
-	 * @throws Exception
-	 */
-	protected static CirAnnotation xor_diff(CirExpression expression, SymbolExpression difference) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(CirMutations.is_integer(expression)) {
-			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.xor_diff, difference);
-			}
-			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.xor_diff, difference);
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param difference
-	 * @return [expr:expression] --> (ext_diff:difference)
+	 * @return [expr:expression]-->(ext_diff:difference)
 	 * @throws Exception
 	 */
 	protected static CirAnnotation ext_diff(CirExpression expression, SymbolExpression difference) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+			throw new IllegalArgumentException("Invalid expression: " + expression);
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("No difference has been established");
 		}
 		else if(CirMutations.is_numeric(expression)) {
 			if(CirMutations.is_assigned(expression)) {
-				return new CirAnnotation(CirAnnotationClass.refr, expression,
-						CirAnnotationType.ext_diff, difference);
+				return new CirAnnotation(CirStoreClass.refr, expression, CirValueClass.ext_diff, difference);
 			}
 			else {
-				return new CirAnnotation(CirAnnotationClass.expr, expression,
-						CirAnnotationType.ext_diff, difference);
+				return new CirAnnotation(CirStoreClass.expr, expression, CirValueClass.ext_diff, difference);
 			}
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
+			throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @param difference
+	 * @return [expr:expression]-->(ext_diff:difference)
+	 * @throws Exception
+	 */
+	protected static CirAnnotation xor_diff(CirExpression expression, SymbolExpression difference) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid expression: " + expression);
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("No difference has been established");
+		}
+		else if(CirMutations.is_integer(expression)) {
+			if(CirMutations.is_assigned(expression)) {
+				return new CirAnnotation(CirStoreClass.refr, expression, CirValueClass.xor_diff, difference);
+			}
+			else {
+				return new CirAnnotation(CirStoreClass.expr, expression, CirValueClass.xor_diff, difference);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + expression.get_data_type());
 		}
 	}
 	

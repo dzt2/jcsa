@@ -924,7 +924,7 @@ public class MuTestProjectFeatureWriter {
 	private void write_cir_annotation(CirAnnotation annotation) throws Exception {
 		String category = annotation.get_store_type().toString();
 		String operator = annotation.get_value_type().toString();
-		CirExecution execution = annotation.get_exec_point();
+		CirExecution execution = annotation.get_execution();
 		CirNode location = annotation.get_store_unit();
 		SymbolNode parameter = annotation.get_symb_value();
 		this.write_cir_feature(category, operator, execution, location, parameter);
