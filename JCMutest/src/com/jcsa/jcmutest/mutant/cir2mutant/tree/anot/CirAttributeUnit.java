@@ -12,59 +12,85 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It preserves the symbolic, concrete and abstract annotations w.r.t. a given
- * attribute (CirAttribute).
+ * It maintains the set of CirAnnotation generated, concretized and summarized
+ * from a given CirAttribute.
  * 
  * @author yukimula
  *
  */
-public class CirAttributeState {
+public class CirAttributeUnit {
 	
 	/* definitions */
 	private CirAttribute 				attribute;
 	private List<Boolean>				evaluation_results;
-	private Map<CirAnnotation, Collection<CirAnnotation>> con_annotations;
+	private Map<CirAnnotation, Collection<CirAnnotation>> annotation_maps;
 	private Collection<CirAnnotation>	abs_annotations;
 	
 	/* constructor */
 	/**
-	 * It generates a unit for incorporating annotations w.r.t. the attribute
+	 * It constructs a data unit to preserve the annotations referring to a
+	 * given attribute.
 	 * @param attribute
 	 * @throws Exception
 	 */
-	public CirAttributeState(CirAttribute attribute) throws Exception {
+	public CirAttributeUnit(CirAttribute attribute) throws Exception {
 		if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute: null");
 		}
 		else {
 			this.attribute = attribute;
-			this.con_annotations = new HashMap<CirAnnotation, Collection<CirAnnotation>>();
-			this.abs_annotations = new HashSet<CirAnnotation>();
 			this.evaluation_results = new ArrayList<Boolean>();
-			
-			Set<CirAnnotation> sym_annotations = new HashSet<CirAnnotation>();
-			CirAnnotationUtil.generate_annotations(attribute, sym_annotations);
-			for(CirAnnotation sym_annotation : sym_annotations) {
-				this.con_annotations.put(sym_annotation, new HashSet<CirAnnotation>());
-			}
+			this.annotation_maps = new HashMap<
+					CirAnnotation, Collection<CirAnnotation>>();
+			this.abs_annotations = new HashSet<CirAnnotation>();
+			this.initialize();	/* generate symbolic annotations */
+		}
+	}
+	/**
+	 * It initializes the symbolic annotations and maps
+	 * @throws Exception
+	 */
+	private void initialize() throws Exception {
+		Set<CirAnnotation> sym_annotations = new HashSet<CirAnnotation>();
+		CirAnnotationUtil.generate_annotations(this.attribute, sym_annotations);
+		this.annotation_maps.clear();
+		this.abs_annotations.clear();
+		for(CirAnnotation sym_annotation : sym_annotations) {
+			this.annotation_maps.put(sym_annotation, new ArrayList<CirAnnotation>());
 		}
 	}
 	
 	/* getters */
+	/**
+	 * @return the attribute that the unit describes and evaluates
+	 */
 	public CirAttribute get_attribute() { return this.attribute; }
-	public Iterable<CirAnnotation> get_sym_annotations() { return this.con_annotations.keySet(); }
+	/**
+	 * @return the sequence of evaluation results of the attribute during testing.
+	 */
+	public Iterable<Boolean>		get_evaluation_results() { return this.evaluation_results; }
+	/**
+	 * @return the set of symbolic annotations generated from the input attribute
+	 */
+	public Iterable<CirAnnotation> get_sym_annotations() { return this.annotation_maps.keySet(); }
+	/**
+	 * @param sym_annotation
+	 * @return the set of concrete annotations produced from input symbolic annotation if it is defined
+	 */
 	public Iterable<CirAnnotation> get_con_annotations(CirAnnotation sym_annotation) {
-		if(this.con_annotations.containsKey(sym_annotation)) {
-			return this.con_annotations.get(sym_annotation);
+		if(this.annotation_maps.containsKey(sym_annotation)) {
+			return this.annotation_maps.get(sym_annotation);
 		}
 		else {
 			return new ArrayList<CirAnnotation>();
 		}
 	}
+	/**
+	 * @return the set of abstract annotations summarized from the concrete annotations of each symbolic
+	 */
 	public Iterable<CirAnnotation> get_abs_annotations() { return this.abs_annotations; }
-	public Iterable<Boolean>		get_evaluation_results() { return this.evaluation_results; }
 	
-	/* counters */
+	/* results */
 	/**
 	 * @return the number of attribute being executed in dynamic analysis
 	 */
@@ -152,35 +178,40 @@ public class CirAttributeState {
 	
 	/* setters */
 	/**
-	 * Clear the concrete and abstract annotations in the unit.
+	 * It clears the evaluation results and generated annotations in the attribute
 	 */
 	public void clc() { 
-		this.abs_annotations.clear(); 
-		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
-			con_annotations.get(sym_annotation).clear();
+		this.abs_annotations.clear();
+		for(CirAnnotation sym_annotation : this.annotation_maps.keySet()) {
+			this.annotation_maps.get(sym_annotation).clear();
 		}
+		this.evaluation_results.clear();
 	}
 	/**
-	 * Update the concrete annotations for each symbolic one under the context
 	 * @param context
+	 * @return true (satisfied), false (not-satisfied), null (unknown).
 	 * @throws Exception
 	 */
 	public Boolean add(SymbolProcess context) throws Exception {
-		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
+		/* 1. generate the concrete annotations from context */
+		for(CirAnnotation sym_annotation : this.annotation_maps.keySet()) {
 			CirAnnotationUtil.concretize_annotations(sym_annotation, 
-					context, con_annotations.get(sym_annotation));
+					context, this.annotation_maps.get(sym_annotation));
 		}
+		
+		/* 2. record the evaluation result of the attribute */
 		Boolean result = this.attribute.evaluate(context);
 		this.evaluation_results.add(result); return result;
 	}
 	/**
-	 * Summarize the abstract annotations from concrete ones
+	 * It summarizes the concrete annotations to produce their abstract annotations.
 	 * @throws Exception
 	 */
 	public void sum() throws Exception {
 		this.abs_annotations.clear();
-		for(CirAnnotation sym_annotation : con_annotations.keySet()) {
-			CirAnnotationUtil.summarize_annotations(sym_annotation, con_annotations.get(sym_annotation), this.abs_annotations);
+		for(CirAnnotation sym_annotation : this.annotation_maps.keySet()) {
+			CirAnnotationUtil.summarize_annotations(sym_annotation, 
+					this.annotation_maps.get(sym_annotation), this.abs_annotations);
 		}
 	}
 	
