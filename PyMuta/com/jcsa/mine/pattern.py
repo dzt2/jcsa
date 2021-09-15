@@ -690,7 +690,7 @@ class KillPredictionOutput:
 		return "{}\t{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(category, operator,
 															  execution, line, statement,
 															  location.get_cir_code(), parameter)
-
+	
 	# write methods
 
 	def write_unkilled_rules(self, file_path: str, used_tests):
