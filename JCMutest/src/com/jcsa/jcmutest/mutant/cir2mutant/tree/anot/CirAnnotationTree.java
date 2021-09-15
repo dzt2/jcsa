@@ -32,24 +32,18 @@ public class CirAnnotationTree {
 	 * @return the node w.r.t. the annotation unique
 	 * @throws IllegalArgumentException
 	 */
-	public CirAnnotationNode get_node(CirAnnotation annotation) throws IllegalArgumentException {
+	public CirAnnotationNode get_node(CirAnnotation annotation) throws Exception {
 		if(annotation == null) {
 			throw new IllegalArgumentException("Invalid annotation: null");
 		}
 		else {
 			if(!this.nodes.containsKey(annotation)) {
-				this.nodes.put(annotation, new CirAnnotationNode(this, annotation));
+				CirAnnotationNode node = new CirAnnotationNode(this, annotation);
+				this.nodes.put(annotation, node);
+				CirAnnotationUtil.extend_annotations(node);
 			}
 			return this.nodes.get(annotation);
 		}
-	}
-	/**
-	 * It constructs the nodes from the source of the annotation as given.
-	 * @param annotation
-	 * @throws Exception
-	 */
-	public void extend(CirAnnotation annotation) throws Exception {
-		CirAnnotationUtil.extend_annotations(this.get_node(annotation));
 	}
 	
 }
