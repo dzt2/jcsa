@@ -128,7 +128,7 @@ public class CirAnnotation {
 	 * @return cov_stmt{execution}([stmt:statement], [usig:execution_times])
 	 * @throws Exception
 	 */
-	public static CirAnnotation cov_stmt(CirExecution execution, int times) throws Exception {
+	protected static CirAnnotation cov_stmt(CirExecution execution, int times) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -147,7 +147,7 @@ public class CirAnnotation {
 	 * @return eva_expr{execution}([cond:statement], [bool:condition])
 	 * @throws Exception
 	 */
-	public static CirAnnotation eva_expr(CirExecution execution, Object condition) throws Exception {
+	protected static CirAnnotation eva_expr(CirExecution execution, Object condition) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -166,7 +166,7 @@ public class CirAnnotation {
 	 * @return trp_stmt{execution}([stmt:statement], [bool:expt_value])
 	 * @throws Exception
 	 */
-	public static CirAnnotation trp_stmt(CirExecution execution) throws Exception {
+	protected static CirAnnotation trp_stmt(CirExecution execution) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -183,7 +183,7 @@ public class CirAnnotation {
 	 * @return mut_stmt{execution}([stmt:statement], [bool:exec_flag])
 	 * @throws Exception
 	 */
-	public static CirAnnotation mut_stmt(CirExecution execution, Object exec_flag) throws Exception {
+	protected static CirAnnotation mut_stmt(CirExecution execution, Object exec_flag) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -203,7 +203,7 @@ public class CirAnnotation {
 	 * @return mut_expr{execution}([expr:expression], [type:muta_value])
 	 * @throws Exception 
 	 */
-	public static CirAnnotation mut_expr(CirExpression expression, Object muta_value) throws Exception {
+	protected static CirAnnotation mut_expr(CirExpression expression, Object muta_value) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
@@ -249,7 +249,7 @@ public class CirAnnotation {
 	 * @return mut_refr{execution}([refr:reference], [type:muta_value])
 	 * @throws Exception
 	 */
-	public static CirAnnotation mut_refr(CirExpression reference, Object muta_value) throws Exception {
+	protected static CirAnnotation mut_refr(CirExpression reference, Object muta_value) throws Exception {
 		if(reference == null || reference.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
@@ -299,7 +299,7 @@ public class CirAnnotation {
 	 * @return sub_diff{execution}([expr|refr], (type:difference))
 	 * @throws Exception
 	 */
-	public static CirAnnotation sub_diff(CirExpression expression, Object difference) throws Exception {
+	protected static CirAnnotation sub_diff(CirExpression expression, Object difference) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
@@ -350,7 +350,7 @@ public class CirAnnotation {
 	 * @return xor_diff{execution}([expr:refr], [sign:difference])
 	 * @throws Exception
 	 */
-	public static CirAnnotation xor_diff(CirExpression expression, Object difference) throws Exception {
+	protected static CirAnnotation xor_diff(CirExpression expression, Object difference) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
@@ -388,7 +388,7 @@ public class CirAnnotation {
 	 * @return ext_diff{execution}([expr:refr], [type:difference])
 	 * @throws Exception
 	 */
-	public static CirAnnotation ext_diff(CirExpression expression, Object difference) throws Exception {
+	protected static CirAnnotation ext_diff(CirExpression expression, Object difference) throws Exception {
 		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}

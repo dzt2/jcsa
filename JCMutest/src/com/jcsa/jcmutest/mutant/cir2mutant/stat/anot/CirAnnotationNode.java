@@ -97,7 +97,7 @@ public class CirAnnotationNode {
 			}
 			
 			/* 2. create a new child w.r.t. the target annotation under */
-			CirAnnotationNode target = new CirAnnotationNode(this.tree, target_annotation);
+			CirAnnotationNode target = this.tree.new_node(target_annotation);
 			this.ou_nodes.add(target); target.in_nodes.add(this); return target;
 		}
 	}
