@@ -383,6 +383,9 @@ class CirNode:
 		self.children.append(child)
 		return
 
+	def __str__(self):
+		return self.class_name + "[" + str(self.get_cir_id()) + "]"
+
 
 class CirTree:
 	"""

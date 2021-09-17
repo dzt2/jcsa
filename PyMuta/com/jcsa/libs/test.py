@@ -84,10 +84,26 @@ class CirAnnotation:
 
 	def __str__(self):
 		logic_type = self.logic_type
-		execution = self.execution.get_function().name + "@" + str(self.execution.get_exe_id())
+		execution = "exe@" + self.execution.function.name + "@" + str(self.execution.get_exe_id())
 		store_unit = "cir@" + str(self.store_unit.get_cir_id())
 		sym_value = "sym@" + self.symb_value.class_name + "@" + str(self.symb_value.get_class_id())
-		return str.format("%s$%s$%s$%s", logic_type, execution, store_unit, sym_value)
+		return logic_type + "$" + execution + "$" + store_unit + "$" + sym_value
+
+	def get_all_children(self):
+		"""
+		:return: the set of all the subsumed annotations by this one
+		"""
+		annotations = set()
+		self.__all_children__(annotations)
+		return annotations
+
+	def __all_children__(self, annotations: set):
+		if not (self in annotations):
+			annotations.add(self)
+			for child in self.next_annotations:
+				child: CirAnnotation
+				child.__all_children__(annotations)
+		return
 
 
 class CirAnnotationTree:
@@ -245,7 +261,7 @@ class SymExecutionSpace:
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
-	print_condition = False
+	print_condition = True
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
@@ -264,7 +280,7 @@ if __name__ == "__main__":
 				for annotation in sym_execution.get_annotations():
 					print("\t\t--> {}[{}]({}, {})".format(annotation.get_logic_type(),
 														  annotation.get_execution(),
-														  annotation.get_store_unit(),
+														  annotation.get_store_unit().get_cir_code(),
 														  annotation.get_symb_value()))
 		print()
 	print("Testing end for all.")

@@ -5,7 +5,7 @@ import os
 from typing import TextIO
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
-import com.jcsa.rule.encode as jcenco
+import com.jcsa.mine.encode as jcenco
 
 
 ## definition
@@ -676,20 +676,17 @@ class KillPredictionOutput:
 		:param condition:
 		:return: class operator execution line statement location [parameter]
 		"""
-		source_condition = self.c_document.get_condition_space().decode(condition.get_code())
-		category = source_condition.get_category()
-		operator = source_condition.get_operator()
+		source_condition = self.c_document.get_annotation_tree().get_annotation(condition.get_code())
+		logic_type = source_condition.get_logic_type()
 		execution = source_condition.get_execution()
-		statement = execution.get_statement().get_cir_code()
-		location = source_condition.get_location()
-		if location.has_ast_source():
-			line = location.get_ast_source().line_of(tail=False) + 1
+		store_unit = source_condition.get_store_unit()
+		symb_value = source_condition.get_symb_value()
+		statement = execution.get_statement()
+		if store_unit.has_ast_source():
+			line = store_unit.get_ast_source().line_of(tail=False) + 1
 		else:
 			line = None
-		parameter = source_condition.get_parameter()
-		return "{}\t{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(category, operator,
-															  execution, line, statement,
-															  location.get_cir_code(), parameter)
+		return "{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(logic_type, execution, line, statement, store_unit.get_cir_code(), symb_value)
 
 	# write methods
 
