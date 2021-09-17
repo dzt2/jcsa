@@ -19,7 +19,8 @@ class CDocument:
 		:param exec_postfix:	the postfix of file to preserve the symbolic execution features.
 		"""
 		self.project = jcmuta.CProject(directory, file_name)
-		self.conditions = SymConditionSpace(self)
+		anot_file = os.path.join(directory, file_name + ".ant")
+		self.annotation_tree = CirAnnotationTree(self, anot_file)
 		exec_file = os.path.join(directory, file_name + exec_postfix)
 		self.exec_space = SymExecutionSpace(self, exec_file)
 		return
@@ -36,323 +37,210 @@ class CDocument:
 		"""
 		return self.project.program
 
-	def get_condition_space(self):
-		"""
-		:return: the space where the symbolic conditions are created and defined
-		"""
-		return self.conditions
-
-	def get_condition(self, word: str):
-		if word:
-			return self.conditions.decode(word)
-		else:
-			return None
-
-	def get_conditions(self, words):
-		"""
-		:param words: the set of words encoding symbolic conditions
-		:return:
-		"""
-		conditions = set()
-		for word in words:
-			condition = self.get_condition(word)
-			if not (condition is None):
-				conditions.add(condition)
-		return conditions
+	def get_annotation_tree(self):
+		return self.annotation_tree
 
 	def get_execution_space(self):
 		return self.exec_space
 
 
-class SymCondition:
+class CirAnnotation:
 	"""
-	It models a symbolic condition defined in C-intermediate representation of source program.
+	It defines an annotation feature that is annotated with some execution point and store_unit with specified
+	logical predicate as: logic_type{execution}(store_unit, symb_value)
 	"""
 
-	def __init__(self, category: str, operator: str, execution: jccode.CirExecution,
-				 location: jccode.CirNode, parameter: jcbase.SymNode):
+	def __init__(self, logic_type: str, execution: jccode.CirExecution, store_unit: jccode.CirNode, value: jcbase.SymNode):
 		"""
-		:param category:	either "satisfaction" for constraint or "observations" for state error.
-		:param operator:	the type of the symbolic condition being analyzed.
-		:param execution:	the execution point in control flow graph where the condition is checked.
-		:param location:	the C-intermediate code location where the condition is defined upon.
-		:param parameter:	the symbolic expression to refine the condition or None if not needed.
+		:param logic_type: 	the logical predicate defining this annotation
+		:param execution: 	the execution point where this annotation is introduced
+		:param store_unit: 	the location on which the feature is annotated with
+		:param value: 		the symbolic value to refine the description of the logic predicate
 		"""
-		self.category = category
-		self.operator = operator
+		self.logic_type = logic_type
 		self.execution = execution
-		self.location = location
-		self.parameter = parameter
+		self.store_unit = store_unit
+		self.symb_value = value
+		self.next_annotations = list()
 		return
 
-	def get_category(self):
-		"""
-		:return: either "satisfaction" for constraint or "observations" for state error.
-		"""
-		return self.category
-
-	def get_operator(self):
-		"""
-		:return: the type of the symbolic condition being analyzed.
-		"""
-		return self.operator
+	def get_logic_type(self):
+		return self.logic_type
 
 	def get_execution(self):
-		"""
-		:return: the execution point in control flow graph where the condition is checked.
-		"""
 		return self.execution
 
-	def get_location(self):
-		"""
-		:return: the C-intermediate code location where the condition is defined upon.
-		"""
-		return self.location
+	def get_store_unit(self):
+		return self.store_unit
 
-	def has_parameter(self):
-		"""
-		:return: False if no parameter is needed to refine the description.
-		"""
-		return not (self.parameter is None)
+	def get_symb_value(self):
+		return self.symb_value
 
-	def get_parameter(self):
+	def get_next_annotations(self):
 		"""
-		:return: the symbolic expression to refine the condition or None if not needed.
+		:return: the set of CirAnnotation(s) subsumed by this one
 		"""
-		return self.parameter
+		return self.next_annotations
 
 	def __str__(self):
-		category = self.category
-		operator = self.operator
-		execution = "exe@{}@{}".format(self.execution.get_function().get_name(), self.execution.get_exe_id())
-		location = "cir@{}".format(self.location.get_cir_id())
-		parameter = "n@null"
-		if self.has_parameter():
-			parameter = "sym@{}@{}".format(self.parameter.get_class_name(), self.parameter.get_class_id())
-		return "{}${}${}${}${}".format(category, operator, execution, location, parameter)
+		logic_type = self.logic_type
+		execution = self.execution.get_function().name + "@" + str(self.execution.get_exe_id())
+		store_unit = "cir@" + str(self.store_unit.get_cir_id())
+		sym_value = "sym@" + self.symb_value.class_name + "@" + str(self.symb_value.get_class_id())
+		return str.format("%s$%s$%s$%s", logic_type, execution, store_unit, sym_value)
 
 
-class SymConditionSpace:
+class CirAnnotationTree:
 	"""
-	It maintains the mapping from string-key to unique SymCondition defined in execution file.
+	The hierarchical structure to manage the CirAnnotation being created
 	"""
 
-	def __init__(self, document: CDocument):
+	def __init__(self, document: CDocument, file_path: str):
 		"""
-		:param document: the feature document of mutation test project
+		:param document:
+		:param file_path:
 		"""
 		self.document = document
-		self.condition_dict = dict()
+		self.annotations = dict()
+		words = set()
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.strip().split('\t')
+					for item in items:
+						word = item.strip()
+						if len(word) > 0:
+							words.add(word)
+		for word in words:
+			items = word.split('$')
+			logic_type = items[0].strip()
+			exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+			unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			execution = document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
+			store_unit = document.get_program().cir_tree.get_cir_node(unit_token)
+			symb_value = document.get_project().sym_tree.get_sym_node(items[3].strip())
+			self.annotations[word] = CirAnnotation(logic_type, execution, store_unit, symb_value)
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.strip().split('\t')
+					head = self.annotations[items[0].strip()]
+					for k in range(1, len(items)):
+						child = self.annotations[items[k].strip()]
+						head.next_annotations.append(child)
 		return
 
 	def get_document(self):
 		return self.document
 
-	def get_words(self):
-		return self.condition_dict.keys()
+	def get_annotations(self):
+		return self.annotations.values()
 
-	def get_conditions(self):
-		return self.condition_dict.values()
-
-	def decode(self, word: str):
-		"""
-		:param word: in terms of category$operator$execution$location$parameter
-		:return: SymCondition (unique)
-		"""
-		if not (word in self.condition_dict):
-			items = word.strip().split('$')
-			category = items[0].strip()
-			operator = items[1].strip()
-			exec_tok = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			loct_tok = jcbase.CToken.parse(items[3].strip()).get_token_value()
-			execution = self.document.project.program.function_call_graph.get_execution(exec_tok[0], exec_tok[1])
-			location = self.document.project.program.cir_tree.get_cir_node(loct_tok)
-			para_tok = jcbase.CToken.parse(items[4].strip()).get_token_value()
-			if para_tok is None:
-				parameter = None
-			else:
-				parameter = self.document.project.sym_tree.get_sym_node(items[4].strip())
-			self.condition_dict[word] = SymCondition(category, operator, execution, location, parameter)
-		condition = self.condition_dict[word]
-		condition: SymCondition
-		return condition
+	def get_annotation(self, word: str):
+		return self.annotations[word]
 
 
-class SymExecutionState:
-	"""
-	It denotes a state node in symbolic mutant execution
-	"""
-
-	def __init__(self, execution, attribute: SymCondition, annotations):
-		"""
-		:param execution: 	symbolic mutant execution
-		:param attribute: 	the condition to represent
-		:param annotations: the set of conditions being annotated
-		"""
-		execution: SymExecution
-		self.execution = execution
-		self.attribute = attribute
+class SymExecution:
+	def __init__(self, space, eid: int, mutant: jcmuta.Mutant, test: jcmuta.TestCase, annotations):
+		space: SymExecutionSpace
+		self.space = space
+		self.eid = eid
+		self.mutant = mutant
+		self.test = test
 		self.annotations = set()
 		for annotation in annotations:
-			annotation: SymCondition
+			annotation: CirAnnotation
 			self.annotations.add(annotation)
 		return
 
-	def get_sym_execution(self):
-		return self.execution
+	def get_space(self):
+		return self.space
 
-	def get_cir_execution(self):
-		return self.attribute.get_execution()
+	def get_eid(self):
+		return self.eid
 
-	def get_attribute(self):
-		return self.attribute
+	def get_mutant(self):
+		return self.mutant
+
+	def has_test(self):
+		return not (self.test is None)
+
+	def get_test(self):
+		return self.test
 
 	def get_annotations(self):
 		return self.annotations
 
 
-class SymExecution:
-	"""
-	It denotes an execution between mutant and test case
-	"""
-
-	def __init__(self, space, eid: int, line: str):
-		"""
-		:param document:
-		:param eid: the integer of the execution in document
-		:param line: mid tid {attribute {annotation}* ;}* \n
-		"""
-		space: SymExecutionSpace
-		self.space = space
-		self.eid = eid
-		document = space.document
-
-		items = line.strip().split('\t')
-		project = document.get_project()
-		mutant_token = jcbase.CToken.parse(items[0].strip()).get_token_value()
-		test_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-		self.mutant = project.muta_space.get_mutant(mutant_token)
-		self.test_case = None
-		if not (test_token is None):
-			self.test_case = project.test_space.get_test_case(test_token)
-
-		self.states = list()
-		self.conditions = set()
-		condition_buffer = list()
-		for k in range(2, len(items)):
-			word = items[k].strip()
-			if len(word) > 0:
-				if word != ";":
-					condition = document.get_condition(word)
-					condition_buffer.append(condition)
-				else:
-					state = SymExecutionState(self, condition_buffer[0], condition_buffer[1: ])
-					condition_buffer.clear()
-					for annotation in state.get_annotations():
-						self.conditions.add(annotation)
-					self.states.append(state)
-
-		return
-
-	def get_space(self):
-		"""
-		:return: the space where the execution is defined
-		"""
-		return self.space
-
-	def get_eid(self):
-		"""
-		:return: the integer ID of the execution in space
-		"""
-		return self.eid
-
-	def get_mutant(self):
-		"""
-		:return: the mutant to be killed
-		"""
-		return self.mutant
-
-	def get_test(self):
-		"""
-		:return: the test case used to execute
-		"""
-		return self.test_case
-
-	def has_test(self):
-		"""
-		:return: False if the execution is generated symbolically
-		"""
-		return not (self.test_case is None)
-
-	def get_states(self):
-		"""
-		:return: the sequence of state nodes in the execution
-		"""
-		return self.states
-
-	def get_conditions(self):
-		"""
-		:return: the set of symbolic conditions required in the execution
-		"""
-		return self.conditions
-
-
 class SymExecutionSpace:
 	"""
-	It defines the space of symbolic mutant executions
+	The set of symbolic execution lines
 	"""
-
-	def __init__(self, document: CDocument, exec_file: str):
+	def __init__(self, document: CDocument, file_path: str):
 		"""
-		:param document: the feature document of project
-		:param exec_file: xxx.stn or xxx.stp
+		:param document:
+		:param file_path:
 		"""
 		self.document = document
-		self.exec_list = list()
-		self.muta_exec = dict()		# Mutant 	--> SymExecution+
-		self.test_exec = dict()		# TestCase	-->	SymExecution+
-		with open(exec_file, 'r') as reader:
+		self.executions = list()
+		self.muta_execs = dict()
+		self.test_execs = dict()
+		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
-					execution = SymExecution(self, len(self.exec_list), line)
-					self.exec_list.append(execution)
-					mutant = execution.get_mutant()
-					if not (mutant in self.muta_exec):
-						self.muta_exec[mutant] = list()
-					self.muta_exec[mutant].append(execution)
-					test = execution.get_test()
-					if not (test in self.test_exec):
-						self.test_exec[test] = list()
-					self.test_exec[test].append(execution)
+					items = line.split('\t')
+					muta_token = jcbase.CToken.parse(items[0].strip()).get_token_value()
+					test_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+					mutant = document.get_project().muta_space.get_mutant(muta_token)
+					if test_token is None:
+						test = None
+					else:
+						test = document.get_project().test_space.get_test_case(test_token)
+					annotations = set()
+					for k in range(2, len(items)):
+						word = items[k].strip()
+						if word != ';':
+							annotation = document.get_annotation_tree().get_annotation(word)
+							annotations.add(annotation)
+					sym_execution = SymExecution(self, len(self.executions), mutant, test, annotations)
+					self.executions.append(sym_execution)
+					if not (mutant in self.muta_execs):
+						self.muta_execs[mutant] = set()
+					self.muta_execs[mutant].add(sym_execution)
+					if not (test in self.test_execs):
+						self.test_execs[test] = set()
+					self.test_execs[test].add(sym_execution)
 		return
 
 	def get_document(self):
 		return self.document
 
 	def get_executions(self):
-		return self.exec_list
+		return self.executions
 
 	def get_execution(self, eid: int):
-		return self.exec_list[eid]
+		return self.executions[eid]
 
 	def get_executions_of(self, key):
 		"""
-		:param key: either Mutant or TestCase or None
-		:return: the set of SymExecution* referring to the key
+		:param key: Mutant or TestCase
+		:return:
 		"""
-		if key in self.muta_exec:
-			return self.muta_exec[key]
-		elif key in self.test_exec:
-			return self.test_exec[key]
+		if key in self.muta_execs:
+			return self.muta_execs[key]
+		elif key in self.test_execs:
+			return self.test_execs[key]
 		else:
-			return list()
+			return set()
 
 	def get_mutants(self):
-		return self.muta_exec.keys()
+		return self.muta_execs.keys()
 
 	def get_tests(self):
-		return self.test_exec.keys()
+		return self.test_execs.keys()
 
 
 if __name__ == "__main__":
@@ -365,21 +253,19 @@ if __name__ == "__main__":
 		exec_space = c_document.get_execution_space()
 		print(file_name, "loads", len(exec_space.get_mutants()), "mutants used and",
 			  len(exec_space.get_executions()), "symbolic instance paths annotated with",
-			  len(c_document.get_condition_space().get_conditions()), "conditions.")
+			  len(c_document.get_annotation_tree().get_annotations()), "annotations.")
 
 		for sym_execution in exec_space.get_executions():
-			print("\tPath[{}]: Killing mutant#{} using {} instances and {} conditions.".
+			print("\tPath[{}]: Killing mutant#{} using {} annotations in.".
 				  format(sym_execution.get_eid(),
 						 sym_execution.get_mutant().get_muta_id(),
-						 len(sym_execution.get_states()),
-						 len(sym_execution.get_conditions())))
+						 len(sym_execution.get_annotations())))
 			if print_condition:
-				for condition in sym_execution.get_conditions():
-					print("\t\t--> {}\t{}\t{}\t{}\t{}".format(condition.get_category(),
-															  condition.get_operator(),
-															  condition.get_execution(),
-															  condition.get_location().get_cir_code(),
-															  condition.get_parameter()))
+				for annotation in sym_execution.get_annotations():
+					print("\t\t--> {}[{}]({}, {})".format(annotation.get_logic_type(),
+														  annotation.get_execution(),
+														  annotation.get_store_unit(),
+														  annotation.get_symb_value()))
 		print()
 	print("Testing end for all.")
 
