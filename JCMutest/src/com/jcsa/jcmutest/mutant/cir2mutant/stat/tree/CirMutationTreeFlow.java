@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.stat.tree;
 
 /**
  * It denotes the type of CirMutationTreeEdge linking two nodes in the tree.

@@ -20,7 +20,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/base/CirAttribute.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/base/CirAttribute.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTree.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeEdge.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTreeEdge.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTreeFlow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTreeNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeType.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTreeType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/CirMutationTreeUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/stat/tree/CirMutationTreeUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirAnnotation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirAnnotationNode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirAnnotationTree.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirAnnotationUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirAttributeUnit.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirStoreClass.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirValueClass.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/tree/anot/CirValueScope.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/project/MuTestProjectFeatureWriter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestprojectFeatureWriting.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestprojectFeatureWriting.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/libs/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/libs/test.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/com/jcsa/mine/pattern.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/mine/pattern.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -72,7 +90,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.pattern">
+  <component name="RunManager" selected="Python.test">
     <configuration name="encode (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -201,6 +219,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test" />
         <item itemvalue="Python.pattern" />
         <item itemvalue="Python.encode" />
         <item itemvalue="Python.encode (1)" />

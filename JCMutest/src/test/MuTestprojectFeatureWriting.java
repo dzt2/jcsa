@@ -7,10 +7,10 @@ import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirMutationFeatureWriter;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
-import com.jcsa.jcmutest.project.MuTestProjectFeatureWriter;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -90,7 +90,7 @@ public class MuTestprojectFeatureWriting {
 		else { test_cases = null; }		/* no test case is used for dynamic generation */
 
 		/* 3. Generate feature information to output directory finally */
-		MuTestProjectFeatureWriter.write_features(code_file, output_directory, max_infecting_times, test_cases);
+		CirMutationFeatureWriter.write_features(code_file, output_directory, max_infecting_times, test_cases);
 		System.out.println();
 	}
 	

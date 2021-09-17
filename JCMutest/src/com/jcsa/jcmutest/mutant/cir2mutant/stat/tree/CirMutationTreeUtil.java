@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.stat.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.stat.tree;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
-import com.jcsa.jcmutest.mutant.cir2mutant.tree.anot.CirAttributeUnit;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAttributeState;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -28,7 +28,7 @@ public class CirMutationTreeNode {
 	/* definitions */
 	private CirMutationTree				tree;
 	private CirMutationTreeType			type;
-	private CirAttributeUnit			data;
+	private CirAttributeState			data;
 	private CirMutationTreeEdge 		in_edge;
 	private List<CirMutationTreeEdge> 	ou_edges;
 	
@@ -49,7 +49,7 @@ public class CirMutationTreeNode {
 		else {
 			this.tree = tree;
 			this.type = CirMutationTreeType.pre_condition;
-			this.data = new CirAttributeUnit(CirAttribute.new_cover_count(entry, 1));
+			this.data = new CirAttributeState(CirAttribute.new_cover_count(entry, 1));
 			this.in_edge = null;
 			this.ou_edges = new ArrayList<CirMutationTreeEdge>();
 		}
@@ -79,7 +79,7 @@ public class CirMutationTreeNode {
 		else {
 			this.tree = parent.tree;
 			this.type = node_type;
-			this.data = new CirAttributeUnit(node_attribute);
+			this.data = new CirAttributeState(node_attribute);
 			this.in_edge = new CirMutationTreeEdge(edge_type, parent, this);
 			this.ou_edges = new ArrayList<CirMutationTreeEdge>();
 		}
@@ -173,7 +173,7 @@ public class CirMutationTreeNode {
 	/**
 	 * @return the data unit of CirAttribute and its annotations in the node
 	 */
-	public CirAttributeUnit get_data() { return this.data; }
+	public CirAttributeState get_data() { return this.data; }
 	/**
 	 * @return the attribute that is represented by this tree node
 	 */

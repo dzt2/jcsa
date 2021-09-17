@@ -690,7 +690,7 @@ class KillPredictionOutput:
 		return "{}\t{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(category, operator,
 															  execution, line, statement,
 															  location.get_cir_code(), parameter)
-	
+
 	# write methods
 
 	def write_unkilled_rules(self, file_path: str, used_tests):
@@ -761,6 +761,20 @@ class KillPredictionOutput:
 																		   int(confidence * 10000) / 100.0))
 		return
 
+	def __mine_in_mutant__(self, mutant: jcenco.MerMutant, used_tests):
+		"""
+		:param mutant:
+		:param used_tests:
+		:return:
+		"""
+		features = set()
+		for execution in self.m_document.exec_space.get_executions_of(mutant):
+			execution: jcenco.MerExecution
+			for feature in execution.get_features():
+				features.add(feature)
+		good_nodes, node_evaluation_dict = self.miner.mine(features, used_tests)
+		return good_nodes, node_evaluation_dict
+
 	def __mine_mutant__(self, mutant: jcenco.MerMutant, max_tests: int):
 		"""
 		:param mutant:
@@ -786,6 +800,44 @@ class KillPredictionOutput:
 		## 3. perform pattern mining on one mutant
 		good_nodes, node_evaluation_dict = self.miner.mine(features, used_tests)
 		return good_nodes, node_evaluation_dict, used_tests
+
+	def write_unkilled_mutants(self, file_path: str, used_tests):
+		"""
+		:param file_path:
+		:param used_tests:
+		:return:
+		"""
+		mutant_rule_dict = dict()
+		with open(file_path, 'w') as writer:
+			self.writer = writer		# set the file output stream
+			proceed_counter, proceed_summary = 0, len(self.m_document.exec_space.get_mutants())
+			for mutant in self.m_document.exec_space.get_mutants():
+				## A. mine the good nodes for predicting mutation equivalence
+				proceed_counter += 1
+				if mutant.get_result().is_killed_in(used_tests):
+					continue
+				else:
+					## A. mining the best matched prediction rule for the specific mutant
+					good_nodes, node_evaluation_dict = self.__mine_in_mutant__(mutant, used_tests)
+					if len(good_nodes) > 0:
+						good_node = good_nodes[0]
+						length, support, confidence = node_evaluation_dict[good_node]
+						mutant_rule_dict[mutant] = (good_node, length, support, confidence)
+
+					## B. print the mutant and its corresponding prediction rules
+					self.__output__("[M]\t{}\n".format(self.__mut2str__(mutant)))
+					rule_index = 0
+					for good_node in good_nodes:
+						rule_index += 1
+						self.__output__("\t[R.{}]\t{}\n".format(rule_index,
+																self.__rul2str__(good_node.get_rule(), used_tests)))
+						condition_index = 0
+						for condition in good_node.get_rule().get_conditions():
+							condition_index += 1
+							self.__output__(
+								"\t\t[C.{}.{}]\t{}\n".format(rule_index, condition_index, self.__cod2str__(condition)))
+					self.__output__("\n")
+		return mutant_rule_dict
 
 	def write_mutation_rules(self, file_path: str, max_tests: int):
 		"""
@@ -914,6 +966,8 @@ def do_mining(c_document: jctest.CDocument, m_document: jcenco.MerDocument,
 	if print_equivalence:
 		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".e2r"), None)
 		writer.write_unkilled_rules(os.path.join(o_directory, file_name + ".u2r"), m_document.test_space.rand_test_cases(256))
+		writer.write_unkilled_mutants(os.path.join(o_directory, file_name + ".r2e"), None)
+		writer.write_unkilled_mutants(os.path.join(o_directory, file_name + ".r2u"), m_document.test_space.rand_test_cases(256))
 		print("\t(3.E) Generate patterns from equivalent & undetected mutations for", file_name)
 
 	## IV. perform pattern mining and output from
