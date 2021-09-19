@@ -652,7 +652,7 @@ class KillPredictionOutput:
 		func_name = m_function.get_code(True)
 		index = func_name.index('(')
 		func_name = func_name[0: index].strip()
-		line = m_location.line_of(tail=False) + 1
+		line = m_location.line_of(tail=False)
 		code = m_location.get_code(True)
 		parameter = source_mutant.get_mutation().get_parameter()
 		return "{}\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t[{}]".format(mid, result, m_class, m_operator,
@@ -683,7 +683,7 @@ class KillPredictionOutput:
 		symb_value = source_condition.get_symb_value()
 		statement = execution.get_statement()
 		if store_unit.has_ast_source():
-			line = store_unit.get_ast_source().line_of(tail=False) + 1
+			line = store_unit.get_ast_source().line_of(tail=False)
 		else:
 			line = None
 		return "{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(logic_type, execution, line, statement, store_unit.get_cir_code(), symb_value)

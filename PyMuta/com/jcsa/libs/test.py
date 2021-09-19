@@ -61,7 +61,7 @@ class CirAnnotation:
 		self.execution = execution
 		self.store_unit = store_unit
 		self.symb_value = value
-		self.next_annotations = list()
+		self.children = list()
 		return
 
 	def get_logic_type(self):
@@ -76,11 +76,11 @@ class CirAnnotation:
 	def get_symb_value(self):
 		return self.symb_value
 
-	def get_next_annotations(self):
+	def get_children(self):
 		"""
 		:return: the set of CirAnnotation(s) subsumed by this one
 		"""
-		return self.next_annotations
+		return self.children
 
 	def __str__(self):
 		logic_type = self.logic_type
@@ -100,7 +100,7 @@ class CirAnnotation:
 	def __all_children__(self, annotations: set):
 		if not (self in annotations):
 			annotations.add(self)
-			for child in self.next_annotations:
+			for child in self.children:
 				child: CirAnnotation
 				child.__all_children__(annotations)
 		return
@@ -118,7 +118,18 @@ class CirAnnotationTree:
 		"""
 		self.document = document
 		self.annotations = dict()
+		words = self.__load_words__(file_path)
+		self.__build_from__(words)
+		self.__link_nodes__(file_path)
+		return
+
+	def __load_words__(self, file_path: str):
+		"""
+		:param file_path:
+		:return: the set of words encoding the annotations uniquely
+		"""
 		words = set()
+		self.annotations.clear()
 		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
@@ -128,34 +139,71 @@ class CirAnnotationTree:
 						word = item.strip()
 						if len(word) > 0:
 							words.add(word)
+		return words
+
+	def __build_from__(self, words: set):
+		"""
+		:param words: set of words encoding annotations uniquely
+		:return:
+		"""
+		program = self.document.get_program()
+		project = self.document.get_project()
 		for word in words:
+			word: str
 			items = word.split('$')
 			logic_type = items[0].strip()
 			exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
 			unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			execution = document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
-			store_unit = document.get_program().cir_tree.get_cir_node(unit_token)
-			symb_value = document.get_project().sym_tree.get_sym_node(items[3].strip())
+			execution = program.function_call_graph.get_execution(exec_token[0], exec_token[1])
+			store_unit = program.cir_tree.get_cir_node(unit_token)
+			symb_value = project.sym_tree.get_sym_node(items[3].strip())
 			self.annotations[word] = CirAnnotation(logic_type, execution, store_unit, symb_value)
+		return
+
+	def __link_nodes__(self, file_path: str):
+		"""
+		:param file_path:
+		:return: connects each annotation to their directly subsumed ones
+		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
 					items = line.strip().split('\t')
-					head = self.annotations[items[0].strip()]
+					parent = self.annotations[items[0].strip()]
+					parent.children.clear()
 					for k in range(1, len(items)):
 						child = self.annotations[items[k].strip()]
-						head.next_annotations.append(child)
+						parent.children.append(child)
 		return
 
 	def get_document(self):
 		return self.document
 
+	def get_words(self):
+		"""
+		:return: the set of words encoding the annotations uniquely
+		"""
+		return self.annotations.keys()
+
 	def get_annotations(self):
+		"""
+		:return: the set of annotations that are uniquely defined
+		"""
 		return self.annotations.values()
 
 	def get_annotation(self, word: str):
+		"""
+		:param word:
+		:return: the annotation w.r.t. the word encoding it in the tree
+		"""
 		return self.annotations[word]
+
+	def __len__(self):
+		"""
+		:return: the number of nodes under the tree
+		"""
+		return len(self.annotations)
 
 
 class SymExecution:
@@ -202,7 +250,17 @@ class SymExecutionSpace:
 		self.document = document
 		self.executions = list()
 		self.muta_execs = dict()
-		self.test_execs = dict()
+		self.__load__(file_path)
+		self.__link__()
+		return
+
+	def __load__(self, file_path: str):
+		"""
+		:param file_path:
+		:return: it loads the execution lines from given file
+		"""
+		document = self.get_document()
+		self.executions.clear()
 		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
@@ -223,12 +281,18 @@ class SymExecutionSpace:
 							annotations.add(annotation)
 					sym_execution = SymExecution(self, len(self.executions), mutant, test, annotations)
 					self.executions.append(sym_execution)
-					if not (mutant in self.muta_execs):
-						self.muta_execs[mutant] = set()
-					self.muta_execs[mutant].add(sym_execution)
-					if not (test in self.test_execs):
-						self.test_execs[test] = set()
-					self.test_execs[test].add(sym_execution)
+		return
+
+	def __link__(self):
+		"""
+		:return: builds the links between executions and mutations
+		"""
+		self.muta_execs.clear()
+		for sym_execution in self.executions:
+			mutant = sym_execution.get_mutant()
+			if not (mutant in self.muta_execs):
+				self.muta_execs[mutant] = set()
+			self.muta_execs[mutant].add(sym_execution)
 		return
 
 	def get_document(self):
@@ -240,23 +304,18 @@ class SymExecutionSpace:
 	def get_execution(self, eid: int):
 		return self.executions[eid]
 
-	def get_executions_of(self, key):
+	def get_executions_of(self, mutant: jcmuta.Mutant):
 		"""
-		:param key: Mutant or TestCase
+		:param mutant:
 		:return:
 		"""
-		if key in self.muta_execs:
-			return self.muta_execs[key]
-		elif key in self.test_execs:
-			return self.test_execs[key]
+		if mutant in self.muta_execs:
+			return self.muta_execs[mutant]
 		else:
 			return set()
 
 	def get_mutants(self):
 		return self.muta_execs.keys()
-
-	def get_tests(self):
-		return self.test_execs.keys()
 
 
 if __name__ == "__main__":
