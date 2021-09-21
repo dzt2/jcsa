@@ -605,7 +605,9 @@ class MerAnnotation:
 		:param document:
 		:return: the original CirAnnotation encoded by this element
 		"""
-		return document.annotation_tree.get_annotation(self.code)
+		source = document.annotation_tree.get_annotation(self.code)
+		source: jctest.CirAnnotation
+		return source
 
 
 class MerExecutionSpace:
