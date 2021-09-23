@@ -831,37 +831,79 @@ class StateDifferencePatternWriter:
 
 	## writing methods
 
-	def write_patterns(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+	def write_pattern_objects(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
 		"""
-		:param middle: 		the module for mining state difference patterns and sorting the output for printing
-		:param patterns:	the set of state difference patterns being generated and printed to output file
-		:param file_path:	the path of the file to preserve the pattern information, as xxx.x2p
-		:param used_tests:	the set of test cases used to evaluate the metrics of each pattern when prints them
+		:param middle:		the middle module used to sort the output patterns for being printed to out files
+		:param patterns: 	the set of state difference patterns to be printed on file with single visualized
+		:param file_path: 	the path of output file (xxx.x.pat) to preserve single features of input patterns
+		:param used_tests: 	the set of test used to evaluate the effectiveness of patterns outputted to files
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
+			## 1. initialize the output stream writer
 			self.writer = writer
 
-			## 1. single pattern printing
+			## 2. sort the patterns to be printed for
 			output_patterns = middle.sort_patterns(patterns, used_tests)
+
+			## 3. single pattern line being printed
 			for pattern in output_patterns:
-				## 1-1. [P] length executions mutants support confidence(%)
-				self.__output_text__("[P]\tlength\texecutions\tmutants\tsupport\tconfidence(%)\n")
-				self.__output_text__("p.{}\n".format(self.__pat2str__(pattern, used_tests)))
-				## 1-2. [A] class execution line statement store_unit symb_value
-				self.__output_text__("\t[A]\tclass\texecution\tline\statement\tstore_unit\tsymb_value\n")
-				annotation_id = 0
-				for annotation in pattern.get_annotations():
-					annotation_id = annotation_id + 1
-					self.__output_text__("\ta.{}\t{}\n".format(annotation_id, self.__ant2str__(annotation)))
-				## 1-3. [M] result class operator function line "code" [parameter]
-				self.__output_text__("\t[M]\tresult\tclass\toperator\tfunction\tline\tcode\tparameter\n")
-				for mutant in pattern.get_mutants():
-					self.__output_text__("\tm.{}\n".format(self.__mut2str__(mutant)))
+				## 3-0. start of the pattern XML block
+				self.__output_text__("BEG_PATTERN\n")
+
+				# 3-1. [PID] length executions mutations support confidence(%)
+				self.__output_text__("\t[PID]\tlength\texecutions\tmutations\tsupport\tconfidence(%)\n")
+				self.__output_text__("\t{}\n".format(self.__pat2str__(pattern, used_tests)))
 				self.__output_text__("\n")
 
-			## 2. summary of every output patterns
-			self.__output_text__("\nSummary Table of Each Pattern\n")
+				## 3-2. [AID] class execution line statement store_unit symb_value
+				self.__output_text__("\t[AID]\tclass\texecution\tline\tstatement\tstore_unit\tsymb_value\n")
+				annotation_index = 0
+				for annotation in pattern.get_annotations():
+					annotation_index += 1
+					self.__output_text__("\t{}\t{}\n".format(annotation_index, self.__ant2str__(annotation)))
+				self.__output_text__("\n")
+
+				## 3-3. [MID] result class operator function line "code" [parameter]
+				self.__output_text__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tcode\tparameter\n")
+				for mutant in pattern.get_mutants():
+					self.__output_text__("\t{}\n".format(self.__mut2str__(mutant)))
+				self.__output_text__("\n")
+
+				## end of the pattern XML block
+				self.__output_text__("END_PATTERN\n\n")
+
+			## 4. close the output file and print EOF
+			self.__output_text__("End_Of_File")
+			self.writer = None
+		return
+
+	def write_pattern_metrics(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+		"""
+		:param middle:		the middle module used for evaluating state difference patterns being printed
+		:param patterns:	the set of patterns to be evaluated and printed their scores to the out files
+		:param file_path:	the path of the output file to preserve the metrics of the output patterns in
+		:param used_tests:	the set of test cases used for evaluating the effectiveness of output pattern
+		:return:
+		"""
+		with open(file_path, 'w') as writer:
+			## 1. initialize the writer and start output
+			self.writer = writer
+
+			## 2. print the summary scores at the very beginning
+			min_patterns = self.__mini_select__(patterns)
+			all_number, pre_number, mat_number, precision, recall, f1_score = self.__prf_measure__(used_tests, patterns)
+			optimized_ratio = len(min_patterns) / (all_number + 0.00000001)
+			optimized_ratio = int(optimized_ratio * 1000000) / 10000.0
+			self.__output_text__("Pattern Mining Evaluation Metrics\n")
+			self.__output_text__("\tUndetected\t{}\tPredicted\t{}\tMatched\t{}\n".format(all_number, pre_number, mat_number))
+			self.__output_text__("\tOutput\t{}\tMinimal\t{}\tRatio\t{}%\n".format(len(patterns), len(min_patterns), optimized_ratio))
+			self.__output_text__("\tPrecision\t{}%\tRecall\t{}%\tF1_Score\t{}\n".format(precision, recall, f1_score))
+			self.__output_text__("\n")
+
+			## 3. evaluation metrics for every input patterns by sort
+			output_patterns = middle.sort_patterns(patterns, used_tests)
+			self.__output_text__("Summary Table of Each Pattern\n")
 			self.__output_text__("Pid\tLength\tExecutions\tMutants\tResult\tKilled\tAlive\tConfidence(%)\n")
 			for pattern in output_patterns:
 				pid = str(pattern.get_features())
@@ -870,22 +912,12 @@ class StateDifferencePatternWriter:
 				mutants = len(pattern.get_mutants())
 				result, killed, survive, confidence = pattern.predict(used_tests)
 				confidence = int(confidence * 1000000) / 10000.0
-				self.__output_text__("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}%\n".format(pid, length, executions,
-																				mutants, result, killed,
-																				survive, confidence))
+				self.__output_text__("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}%\n".format(pid, length, executions, mutants,
+																				result, killed, survive, confidence))
+			self.__output_text__("\n")
 
-			## 3. precision-recall evaluation metrics
-			self.__output_text__("\nPattern Mining Evaluation Metrics\n")
-			min_patterns = self.__mini_select__(patterns)
-			undetected_number, predicted_number, matched_number, precision, recall, f1_score = self.__prf_measure__(used_tests, patterns)
-			optimized_ratio = len(min_patterns) / (undetected_number + 0.00000000001)
-			optimized_ratio = int(optimized_ratio * 1000000) / 10000.0
-			self.__output_text__("\tUndetected\t{}\tPredicted\t{}\tMatched\t{}\n".format(undetected_number, predicted_number, matched_number))
-			self.__output_text__("\tOutput\t{}\tMinimal\t{}\tRatio\t{}%\n".format(len(patterns), len(min_patterns), optimized_ratio))
-			self.__output_text__("\tPrecision\t{}%\tRecall\t{}%\tF1_Score\t{}\n".format(precision, recall, f1_score))
-
-			## 4. end of the file output stream
-			self.__output_text__("\nEND_OF_ALL\n")
+			## 4. close the output file and print EOF
+			self.__output_text__("End_Of_File")
 			self.writer = None
 		return
 
@@ -909,9 +941,13 @@ class StateDifferencePatternWriter:
 		with open(file_path, 'w') as writer:
 			self.writer = writer
 			for mutant in mutants:
-				## 2-1. write the mutant information at first
-				self.__output_text__("[M]\tresult\tclass\toperator\tfunction\tline\tcode\tparameter\n")
-				self.__output_text__("{}\n".format(self.__mut2str__(mutant)))
+				## 2-0. start flag of the mutation and patterns
+				self.__output_text__("BEG_MUTATION\n")
+
+				## 2-1. write the mutation information as head
+				self.__output_text__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tcode\tparameter\n")
+				self.__output_text__("\t{}\n".format(self.__mut2str__(mutant)))
+				self.__output_text__("\n")
 
 				## 2-2. collect the patterns matching with the mutant
 				mutant_patterns = set()
@@ -920,17 +956,85 @@ class StateDifferencePatternWriter:
 						mutant_patterns.add(pattern)
 				pattern_list = middle.sort_patterns(mutant_patterns, used_tests)
 
-				## 2-3. write each pattern w.r.t. the mutant on stream
-				self.__output_text__("\t[P]\tlength\texecutions\tmutants\tsupport\tconfidence(%)\n")
+				## 2-3. write each pattern w.r.t. the mutant on to file
 				for pattern in pattern_list:
-					self.__output_text__("\tp.{}\n".format(self.__pat2str__(pattern, used_tests)))
-					self.__output_text__("\t\t[A]\tclass\texecution\tline\statement\tstore_unit\tsymb_value\n")
-					annotation_id = 0
+					self.__output_text__("\t[PID]\tlength\texecutions\tmutants\tsupport\tconfidence(%)\n")
+					self.__output_text__("\t{}\n".format(self.__pat2str__(pattern, used_tests)))
+					self.__output_text__("\tclass\texecution\tline\tstatement\tstore_unit\tsymb_value\n")
 					for annotation in pattern.get_annotations():
-						annotation_id = annotation_id + 1
-						self.__output_text__("\t\ta.{}\t{}\n".format(annotation_id, self.__ant2str__(annotation)))
-				self.__output_text__("\n")
+						self.__output_text__("\t{}\n".format(self.__ant2str__(annotation)))
+					self.__output_text__("\n")
+
+				## 2-4. end flag of the mutation and patterns
+				self.__output_text__("END_MUTATION\n\n")
 			self.writer = None
+		return
+
+	def write_failed_mutation(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+		"""
+		:param middle:
+		:param patterns:
+		:param file_path:
+		:param used_tests:
+		:return: the set of mutants and their annotations that are not covered by the patterns
+		"""
+		## 1. collect all the undetected mutants by the used tests in current program
+		undetected_mutants, predicted_mutants = set(), set()
+		for mutant in self.m_document.exec_space.get_mutants():
+			mutant: jecode.MerMutant
+			if not mutant.is_killed_in(used_tests):
+				undetected_mutants.add(mutant)
+		for pattern in patterns:
+			pattern: StateDifferencePattern
+			for mutant in pattern.get_mutants():
+				predicted_mutants.add(mutant)
+		uncovered_mutants = undetected_mutants - predicted_mutants
+
+		## 2. output the uncovered mutants to file for further debugging
+		with open(file_path, 'w') as writer:
+			## 2-1. initialize the output stream writer
+			self.writer = writer
+
+			## 2-2. write the mutant and its annotation patterns for debugging
+			for mutant in uncovered_mutants:
+				## A. start flag of each uncovered mutant
+				self.__output_text__("BEG_UNCOVERED\n")
+
+				## B. mutation information as the header
+				self.__output_text__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tcode\tparameter\n")
+				self.__output_text__("\t{}\n".format(self.__mut2str__(mutant)))
+				self.__output_text__("\n")
+
+				## C. collect the annotations and produce corresponding single patterns.
+				features = set()
+				for execution in self.m_document.exec_space.get_executions_of(mutant):
+					execution: jecode.MerExecution
+					for feature in execution.get_features():
+						features.add(feature)
+				mutant_patterns = set()
+				for feature in features:
+					pattern = middle.get_node([feature]).get_pattern()
+					mutant_patterns.add(pattern)
+				pattern_list = middle.sort_patterns(mutant_patterns, used_tests)
+				if len(pattern_list) > 12:
+					pattern_list = pattern_list[0: 12]
+
+				## D. output the annotation-based pattern set to further debugging
+				for pattern in pattern_list:
+					self.__output_text__("\t[PID]\tlength\texecutions\tmutants\tsupport\tconfidence(%)\n")
+					self.__output_text__("\t{}\n".format(self.__pat2str__(pattern, used_tests)))
+					self.__output_text__("\tclass\texecution\tline\tstatement\tstore_unit\tsymb_value\n")
+					for annotation in pattern.get_annotations():
+						self.__output_text__("\t{}\n".format(self.__ant2str__(annotation)))
+					self.__output_text__("\n")
+
+				## E. end flag of the uncovered mutation
+				self.__output_text__("END_UNCOVERED\n\n")
+
+			## 2-3. close the output stream and set None
+			self.__output_text__("END_OF_FILE")
+			self.writer = None
+
 		return
 
 
@@ -938,9 +1042,8 @@ class StateDifferencePatternWriter:
 
 
 def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
-			  output_directory: str, file_name: str, max_length: int,
-			  min_support: int, min_confidence: float, max_confidence: float,
-			  used_tests):
+			  output_directory: str, file_name: str, used_tests,
+			  max_length: int, min_support: int, min_confidence: float, max_confidence: float):
 	"""
 	:param used_tests:
 	:param c_document: original document
@@ -981,16 +1084,28 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 			for feature in execution.get_features():
 				unkilled_features.add(feature)
 	fp_miner = StateDifferenceFPMiner(inputs)
-	fp_rules = fp_miner.mine(unkilled_features, used_tests, True)
-	writer.write_patterns(fp_miner.middle, fp_rules, os.path.join(o_directory, file_name + ".f2r"), used_tests)
-	writer.write_mutant_patterns(fp_miner.middle, fp_rules, os.path.join(o_directory, file_name + ".f2m"), used_tests)
+	fp_patterns = fp_miner.mine(unkilled_features, used_tests, True)
+	fp_middle = fp_miner.middle
+	mi_patterns = writer.__mini_select__(fp_patterns)
+	writer.write_pattern_objects(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
+	writer.write_pattern_objects(fp_middle, mi_patterns, os.path.join(o_directory, file_name + ".fpm.p2z"), used_tests)
+	writer.write_pattern_metrics(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
+	writer.write_mutant_patterns(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.m2p"), used_tests)
+	writer.write_failed_mutation(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.m2u"), used_tests)
+	print("\t(3) Frequent Pattern Mining is Done.")
 
 	## IV. decision tree based pattern mining
 	inputs.max_length = 256
 	dc_miner = StateDifferenceDTMiner(inputs)
-	dc_rules = dc_miner.mine(used_tests, c_document, os.path.join(o_directory, file_name + ".tree.pdf"))
-	writer.write_patterns(dc_miner.middle, dc_rules, os.path.join(o_directory, file_name + ".d2r"), used_tests)
-	writer.write_mutant_patterns(dc_miner.middle, dc_rules, os.path.join(o_directory, file_name + ".d2m"), used_tests)
+	dc_patterns = dc_miner.mine(used_tests, c_document, os.path.join(o_directory, file_name + ".tree.pdf"))
+	dc_middle = dc_miner.middle
+	mi_patterns = writer.__mini_select__(dc_patterns)
+	writer.write_pattern_objects(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests)
+	writer.write_pattern_objects(dc_middle, mi_patterns, os.path.join(o_directory, file_name + ".dtm.p2z"), used_tests)
+	writer.write_pattern_metrics(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests)
+	writer.write_mutant_patterns(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.m2p"), used_tests)
+	writer.write_failed_mutation(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.m2u"), used_tests)
+	print("\t(4) Decision Tree based Mining is Done.")
 	print()
 	return
 
@@ -1005,7 +1120,6 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 	"""
 	## initialization
 	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
-	print_equivalent, print_individual = True, False
 
 	## testing on every project in the project directory
 	for file_name in os.listdir(project_directory):
@@ -1016,8 +1130,8 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 		m_document = jecode.MerDocument(m_document_directory, file_name)
 
 		## perform pattern mining and generation proceed
-		do_mining(c_document, m_document, output_directory, file_name,
-				  max_length, min_support, min_confidence, max_confidence, None)
+		do_mining(c_document, m_document, output_directory, file_name, None,
+				  max_length, min_support, min_confidence, max_confidence)
 	return
 
 
