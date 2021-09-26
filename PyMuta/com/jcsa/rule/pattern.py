@@ -5,6 +5,7 @@ import os
 from collections import deque
 from typing import TextIO
 import pydotplus
+import graphviz
 from sklearn import metrics
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
@@ -318,6 +319,51 @@ class StateDifferencePattern:
 			confidence = support / (killed + alive)
 		return length, support, confidence
 
+	def subsume(self, pattern, c_document: jctest.CDocument):
+		"""
+		:param pattern:
+		:return: whether this pattern directly subsumes the given pattern
+		"""
+		## 1. data sample validation
+		pattern: StateDifferencePattern
+		for execution in pattern.get_executions():
+			if not (execution in self.executions):
+				return False
+
+		## 2. extension validation
+		if len(self) > len(pattern):				## more concrete cannot subsume
+			return False
+		elif len(self) == len(pattern) - 1:			## one node differentiated need
+			for feature in self.features:
+				if not (feature in pattern.get_features()):
+					return False
+			return True
+		elif len(self) == len(pattern):				## differential matching analysis
+			a_features, b_features = set(), set()
+			for feature in self.features:
+				a_features.add(feature)
+			for feature in pattern.get_features():
+				b_features.add(feature)
+			a_b_difference = a_features - b_features
+			b_a_difference = b_features - a_features
+			if len(a_b_difference) == 1:
+				a_feature = -1
+				for feature in a_b_difference:
+					a_feature = feature
+					break
+				b_feature = -1
+				for feature in b_a_difference:
+					b_feature = feature
+					break
+				a_annotation = self.document.anto_space.get_annotation(a_feature).find_source(c_document)
+				b_annotation = self.document.anto_space.get_annotation(b_feature).find_source(c_document)
+				for child in a_annotation.get_children():
+					if child == b_annotation:
+						return True
+				return False
+		else:										## indirect being subsumed anyway
+			return False
+
 
 ## inputs modules
 
@@ -510,24 +556,27 @@ class StateDifferenceMineMiddle:
 
 class StateDifferenceFPMiner:
 	"""
-	Frequent pattern mining for state difference patterns
+	It implements the frequent pattern mining.
 	"""
 
 	def __init__(self, inputs: StateDifferenceMineInputs):
-		self.middle = inputs.get_middle_module()
-		self.solutions = dict()	# StateDifferencePattern --> [length, support, confidence]
+		self.middle = StateDifferenceMineMiddle(inputs)
+		self.caches = dict()	## StateDifferencePattern --> {length, support, confidence}
 		return
 
 	def __mine__(self, parent: StateDifferenceTreeNode, features: list, used_tests):
 		"""
-		:param parent:
-		:param features:
-		:param used_tests:
-		:return:
+		:param parent: 		the parent node from which the recursive children are created
+		:param features: 	the set of features used to extend and created children from
+		:param used_tests: 	the set of test cases used for evaluating generated patterns
+		:return: it recursively mines the patterns from state difference in the tree.
 		"""
+		## 1. evaluate the pattern of the input parent node
 		length, support, confidence = parent.get_pattern().evaluate(used_tests)
-		self.solutions[parent.get_pattern()] = (length, support, confidence)
+		self.caches[parent.get_pattern()] = (length, support, confidence)
 		inputs = self.middle.get_inputs()
+
+		## 2. validate whether the recursive children needs be traversed
 		if (length < inputs.get_max_length()) and (support >= inputs.get_min_support()) and (confidence < inputs.get_max_confidence()):
 			for k in range(0, len(features)):
 				child = self.middle.get_child(parent, features[k])
@@ -535,12 +584,49 @@ class StateDifferenceFPMiner:
 					self.__mine__(child, features[k + 1:], used_tests)
 		return
 
-	def mine(self, features, used_tests, report_data=False):
+	def __outs__(self, o_directory: str, file_name: str, c_document: jctest.CDocument, good_patterns):
 		"""
-		:param features: the set of features from which the patterns are generated
-		:param used_tests: used to evaluate state difference patterns and filter the good ones
-		:param report_data: whether to report the inputs-output information of mining, default as false
-		:return: the set of good patterns that match with the input parameters in module
+		:param o_directory:
+		:param file_name:
+		:param c_document:
+		:return:
+		"""
+		## 1. collect the c_annotations for printing
+		c_annotations = set()
+		for pattern in good_patterns:
+			pattern: StateDifferencePattern
+			for annotation in pattern.get_annotations():
+				c_annotation = annotation.find_source(c_document)
+				c_annotations.add(c_annotation)
+				for child in c_annotation.get_all_children():
+					child: jctest.CirAnnotation
+					c_annotations.add(child)
+
+		## 2. create nodes and edges in DiGraph
+		graph = graphviz.Digraph(comment="Frequent Pattern Tree for {}".format(file_name))
+		for c_annotation in  c_annotations:
+			key = str(c_annotation)
+			text = "C: {}\nE: {}\nU: {}\nV: {}".format(c_annotation.get_logic_type(),
+													   c_annotation.get_execution(),
+													   c_annotation.get_store_unit().code,
+													   c_annotation.get_symb_value().code)
+			graph.node(key, text)
+		for c_annotation in c_annotations:
+			for child in c_annotation.get_children():
+				graph.edge(str(c_annotation), str(child))
+
+		## 3. output the pdf file anyway
+		graph.render(filename=file_name + ".fpm", directory=o_directory, format="pdf")
+		return
+
+	def mine(self, features, used_tests, is_reported, c_document: jctest.CDocument, o_directory: str):
+		"""
+		:param features:		the set of features from which the patterns will be generated.
+		:param used_tests:		the set of test cases used to evaluate the metrics of each pattern
+		:param is_reported:		whether to report the debugging information in pattern mining process.
+		:param c_document:		the data source document for visualization of frequent pattern mining.
+		:param o_directory: 	the directory where the pattern tree is printed
+		:return:
 		"""
 		## 1. initialize the feature vector and used test number for reporting
 		feature_list = self.middle.get_document().anto_space.normal(features)
@@ -549,17 +635,20 @@ class StateDifferenceFPMiner:
 		else:
 			number_of_tests = len(used_tests)
 
-		## 2. perform frequent pattern mining on the tree.
-		if report_data:
+		## 2. perform frequent pattern mining algorithm for association mining
+		if is_reported:
 			print("\t\t--> Mine({}, {})".format(len(feature_list), number_of_tests), end='\t')
-		self.solutions.clear()
+		self.caches.clear()
 		self.__mine__(self.middle.get_root(), feature_list, used_tests)
-		good_patterns = self.middle.filter_patterns(self.solutions.keys(), used_tests)
-		if report_data:
-			print("[{} rules; {} goods]".format(len(self.solutions), len(good_patterns)))
-		self.solutions.clear()
+		good_patterns = self.middle.filter_patterns(self.caches.keys(), used_tests)
+		if is_reported:
+			print("[{} rules; {} goods]".format(len(self.caches), len(good_patterns)))
 
-		## 3. return only the patterns matching the criteria
+		## 3. output the annotation tree to specified file if it is specified
+		if not (c_document is None):
+			file_name = c_document.get_program().name
+			self.__outs__(o_directory, file_name, c_document, good_patterns)
+		self.caches.clear()
 		return good_patterns
 
 
@@ -572,7 +661,7 @@ class StateDifferenceDTMiner:
 		self.middle = inputs.get_middle_module()
 		return
 
-	def __new_decision_tree__(self, used_tests):
+	def __new_decision_tree__(self, used_tests, is_reported: bool):
 		"""
 		:param used_tests:
 		:return: it generates the decision tree for best classifying samples
@@ -581,8 +670,9 @@ class StateDifferenceDTMiner:
 		ylabels = self.middle.get_document().exec_space.new_label_list(used_tests)
 		dc_tree = sktree.DecisionTreeClassifier()
 		dc_tree.fit(xmatrix, ylabels)
-		plabels = dc_tree.predict(xmatrix)
-		print(metrics.classification_report(ylabels, plabels))
+		if is_reported:
+			plabels = dc_tree.predict(xmatrix)
+			print(metrics.classification_report(ylabels, plabels), end='')
 		return dc_tree
 
 	@staticmethod
@@ -598,10 +688,7 @@ class StateDifferenceDTMiner:
 		code = c_annotation.store_unit.get_cir_code()
 		parameter = c_annotation.symb_value.get_code()
 		text = "{}::{}({}::{})".format(logic_type, execution, code, parameter)
-		text = text.replace(';', ' ')
-		text = text.replace('{', ' ')
-		text = text.replace('}', ' ')
-		text = text.replace('\"', '')
+		text = text.replace('\"', '\'\'')
 		return text
 
 	def __out_decision_tree__(self, dc_tree: sktree.DecisionTreeClassifier, tree_file_path: str, c_document: jctest.CDocument):
@@ -642,14 +729,15 @@ class StateDifferenceDTMiner:
 			patterns.add(pattern)
 		return patterns
 
-	def mine(self, used_tests, c_document: jctest.CDocument, tree_file_path=None):
+	def mine(self, used_tests, c_document: jctest.CDocument, tree_file_path: str, is_reported: bool):
 		"""
 		:param used_tests:
 		:param c_document:
 		:param tree_file_path: pdf file of decision tree
+		:param is_reported: whether to report the classification metrics
 		:return:
 		"""
-		dc_tree = self.__new_decision_tree__(used_tests)
+		dc_tree = self.__new_decision_tree__(used_tests, is_reported)
 		if tree_file_path is not None:
 			self.__out_decision_tree__(dc_tree, tree_file_path, c_document)
 		patterns = self.__min_decision_path__(dc_tree)
@@ -1041,8 +1129,70 @@ class StateDifferencePatternWriter:
 ## testing method
 
 
+def do_fpm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
+				  o_directory: str, file_name: str, used_tests, is_reported: bool):
+	"""
+	:param c_document: 		the document of mutation testing project and its data source
+	:param inputs: 			the input module to drive the pattern mining procedures
+	:param o_directory:		the directory where the pattern files will be generated
+	:param file_name:		the name of the project file as the prefix of output files
+	:param used_tests:		the set of test cases used to evaluate patterns or None for all
+	:param is_reported:		whether to report the mining algorithm debugging details
+	:return:
+	"""
+	## 1. collect the features from undetected mutants within the project
+	features = set()
+	for execution in inputs.get_document().exec_space.get_executions():
+		execution: jecode.MerExecution
+		if not execution.get_mutant().is_killed_in(used_tests):
+			for feature in execution.get_features():
+				features.add(feature)
+
+	## 2. construct the frequent pattern mining and its middle module
+	fp_miner = StateDifferenceFPMiner(inputs)
+	fp_middle = fp_miner.middle
+	ou_patterns = fp_miner.mine(features, used_tests, is_reported, c_document, o_directory)
+
+	## 3. write the output patterns and their scores to specified directory
+	writer = StateDifferencePatternWriter(c_document, inputs)
+	mi_patterns = writer.__mini_select__(ou_patterns)
+	writer.write_pattern_objects(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
+	writer.write_pattern_objects(fp_middle, mi_patterns, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
+	writer.write_mutant_patterns(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2p"), used_tests)
+	writer.write_failed_mutation(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2u"), used_tests)
+	writer.write_pattern_metrics(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.e2s"), used_tests)
+	return
+
+
+def do_dtm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
+				  o_directory: str, file_name: str, used_tests, is_reported: bool):
+	"""
+	:param c_document: 		the document of mutation testing project and its data source
+	:param inputs: 			the input module to drive the pattern mining procedures
+	:param o_directory:		the directory where the pattern files will be generated
+	:param file_name:		the name of the project file as the prefix of output files
+	:param used_tests:		the set of test cases used to evaluate patterns or None for all
+	:param is_reported:		whether to report the mining algorithm debugging details
+	:return:
+	"""
+	## 1. construct the decision tree based mining and its middle module
+	dt_miner = StateDifferenceDTMiner(inputs)
+	dt_middle = dt_miner.middle
+	ou_patterns = dt_miner.mine(used_tests, c_document, os.path.join(o_directory, file_name + ".dtm.pdf"), is_reported)
+
+	## 2. write the output patterns and their scores to specified directory
+	writer = StateDifferencePatternWriter(c_document, inputs)
+	mi_patterns = writer.__mini_select__(ou_patterns)
+	writer.write_pattern_objects(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests)
+	writer.write_pattern_objects(dt_middle, mi_patterns, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests)
+	writer.write_mutant_patterns(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2p"), used_tests)
+	writer.write_failed_mutation(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2u"), used_tests)
+	writer.write_pattern_metrics(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.e2s"), used_tests)
+	return
+
+
 def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
-			  output_directory: str, file_name: str, used_tests,
+			  output_directory: str, file_name: str, used_tests, is_reported: bool,
 			  max_length: int, min_support: int, min_confidence: float, max_confidence: float):
 	"""
 	:param used_tests:
@@ -1050,6 +1200,7 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	:param m_document: encoded document
 	:param output_directory: the output directory where files are printed
 	:param file_name: the project name
+	:param is_reported: whether to report the pattern mining details
 	:param max_length: the maximal length of generated patterns
 	:param min_support: minimal support for mining
 	:param min_confidence: minimal confidence for mining
@@ -1057,56 +1208,35 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	:return:
 	"""
 	# I. create output directory for pattern generation
-	print("Start killable prediction mining on Project #{}".format(file_name))
+	print("BEG-Project #{}".format(file_name))
 	o_directory = os.path.join(output_directory, file_name)
 	if not os.path.exists(o_directory):
 		os.mkdir(o_directory)
-	print("\t(1) Load {} executions between {} mutants and {} tests.".format(
+	print("\tI. Load {} executions between {} mutants and {} tests.".format(
 		len(m_document.exec_space.get_executions()),
 		len(m_document.exec_space.get_mutants()),
 		len(m_document.test_space.get_test_cases())))
 
-	# II. construct the mining modules
+	# II. construct the input module for driving pattern mining procedures
 	inputs = StateDifferenceMineInputs(m_document, max_length, min_support, min_confidence, max_confidence)
-	writer = StateDifferencePatternWriter(c_document, inputs)
-	print("\t(2) Mining by: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
+	print("\tII. Inputs: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
 																							   inputs.get_min_support(),
 																							   inputs.get_min_confidence(),
 																							   inputs.get_max_confidence()))
 
-	## III. generate patterns from frequent pattern mining
-	unkilled_features = set()
-	for execution in m_document.exec_space.get_executions():
-		execution: jecode.MerExecution
-		if execution.get_mutant().is_killed_in(used_tests):
-			continue
-		else:
-			for feature in execution.get_features():
-				unkilled_features.add(feature)
-	fp_miner = StateDifferenceFPMiner(inputs)
-	fp_patterns = fp_miner.mine(unkilled_features, used_tests, True)
-	fp_middle = fp_miner.middle
-	mi_patterns = writer.__mini_select__(fp_patterns)
-	writer.write_pattern_objects(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
-	writer.write_pattern_objects(fp_middle, mi_patterns, os.path.join(o_directory, file_name + ".fpm.p2z"), used_tests)
-	writer.write_pattern_metrics(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
-	writer.write_mutant_patterns(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.m2p"), used_tests)
-	writer.write_failed_mutation(fp_middle, fp_patterns, os.path.join(o_directory, file_name + ".fpm.m2u"), used_tests)
-	print("\t(3) Frequent Pattern Mining is Done.")
+	## III. perform frequent pattern mining and evaluate it
+	print("\tIII. Perform Frequent Pattern Mining and Evaluate for Output.")
+	do_fpm_mining(c_document, inputs, o_directory, file_name, used_tests, is_reported)
 
-	## IV. decision tree based pattern mining
+	## IV. perform decision tree based mining and evaluated
+	print("\tIV. Perform Decision Tree Mining and Evaluate it for Output.")
+	old_max_length = inputs.get_max_length()
 	inputs.max_length = 256
-	dc_miner = StateDifferenceDTMiner(inputs)
-	dc_patterns = dc_miner.mine(used_tests, c_document, os.path.join(o_directory, file_name + ".tree.pdf"))
-	dc_middle = dc_miner.middle
-	mi_patterns = writer.__mini_select__(dc_patterns)
-	writer.write_pattern_objects(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests)
-	writer.write_pattern_objects(dc_middle, mi_patterns, os.path.join(o_directory, file_name + ".dtm.p2z"), used_tests)
-	writer.write_pattern_metrics(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests)
-	writer.write_mutant_patterns(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.m2p"), used_tests)
-	writer.write_failed_mutation(dc_middle, dc_patterns, os.path.join(o_directory, file_name + ".dtm.m2u"), used_tests)
-	print("\t(4) Decision Tree based Mining is Done.")
-	print()
+	do_dtm_mining(c_document, inputs, o_directory, file_name, used_tests, is_reported)
+	inputs.max_length = old_max_length
+
+	## V. end of the project
+	print("END-Project #{}".format(file_name))
 	return
 
 
@@ -1118,8 +1248,8 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 	:param exec_postfix: .stn or .stp
 	:return:
 	"""
-	## initialization
-	max_length, min_support, min_confidence, max_confidence = 1, 2, 0.75, 0.99
+	## establish the pattern mining and output parameters
+	max_length, min_support, min_confidence, max_confidence, used_tests, is_reported = 1, 2, 0.75, 0.99, None, True
 
 	## testing on every project in the project directory
 	for file_name in os.listdir(project_directory):
@@ -1129,9 +1259,11 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 		c_document = jctest.CDocument(c_document_directory, file_name, exec_postfix)
 		m_document = jecode.MerDocument(m_document_directory, file_name)
 
-		## perform pattern mining and generation proceed
-		do_mining(c_document, m_document, output_directory, file_name, None,
+		## perform pattern mining and evaluation proceed
+		do_mining(c_document, m_document,
+				  output_directory, file_name, used_tests, is_reported,
 				  max_length, min_support, min_confidence, max_confidence)
+		print()
 	return
 
 

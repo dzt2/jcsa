@@ -23,7 +23,7 @@ public class MuTestprojectFeatureWriting {
 	private static String result_dir = "/home/dzt2/Development/Data/zexp/features2/";
 	private static final double random_test_ratio = 0.005;
 	private static final int min_test_number = 24;
-	private static final int max_infecting_times = 8;
+	private static final int max_infecting_times = 6;
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
