@@ -584,11 +584,12 @@ class StateDifferenceFPMiner:
 					self.__mine__(child, features[k + 1:], used_tests)
 		return
 
-	def __outs__(self, o_directory: str, file_name: str, c_document: jctest.CDocument, good_patterns):
+	def __outs__(self, o_directory: str, file_name: str, c_document: jctest.CDocument, good_patterns, used_tests):
 		"""
 		:param o_directory:
 		:param file_name:
 		:param c_document:
+		:param used_tests
 		:return:
 		"""
 		## 1. collect the c_annotations for printing
@@ -606,11 +607,16 @@ class StateDifferenceFPMiner:
 		graph = graphviz.Digraph(comment="Frequent Pattern Tree for {}".format(file_name))
 		for c_annotation in  c_annotations:
 			key = str(c_annotation)
-			text = "C: {}\nE: {}\nS: {}\nU: {}\nV: {}".format(c_annotation.get_logic_type(),
-															  c_annotation.get_execution(),
-															  c_annotation.get_execution().get_statement().code,
-															  c_annotation.get_store_unit().code,
-															  c_annotation.get_symb_value().code)
+			m_annotation = self.middle.get_document().anto_space.find_annotation(str(c_annotation))
+			m_pattern = self.middle.get_node([m_annotation.aid]).get_pattern()
+			length, support, confidence = m_pattern.evaluate(used_tests)
+			confidence = int(confidence * 10000) / 100.0
+			text = "C: {}\nE: {}\nS: {}\nU: {}\nV: {}\t[{}, {}%]".format(c_annotation.get_logic_type(),
+																		 c_annotation.get_execution(),
+																		 c_annotation.get_execution().get_statement().code,
+																		 c_annotation.get_store_unit().code,
+																		 c_annotation.get_symb_value().code,
+																		 support, confidence)
 			graph.node(key, text)
 		for c_annotation in c_annotations:
 			for child in c_annotation.get_children():
@@ -650,7 +656,7 @@ class StateDifferenceFPMiner:
 		## 3. output the annotation tree to specified file if it is specified
 		if not (c_document is None):
 			file_name = c_document.get_program().name
-			self.__outs__(o_directory, file_name, c_document, good_patterns)
+			self.__outs__(o_directory, file_name, c_document, good_patterns, used_tests)
 		self.caches.clear()
 		return good_patterns
 
@@ -1306,4 +1312,5 @@ if __name__ == "__main__":
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
 	main(proj_directory, enco_directory, outs_directory, ".stp")
+	exit(0)
 

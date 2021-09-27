@@ -473,6 +473,7 @@ class MerAnnotationSpace:
 		"""
 		self.document = document
 		self.annotations = list()
+		self.index = dict()		## str --> int
 		self.__load__(ant_file_path)
 		return
 
@@ -494,6 +495,7 @@ class MerAnnotationSpace:
 		self.annotations.clear()
 		for aid in range(0, len(annotation_dict)):
 			self.annotations.append(annotation_dict[aid])
+			self.index[annotation_dict[aid].code] = aid
 		return
 
 	def get_document(self):
@@ -516,6 +518,10 @@ class MerAnnotationSpace:
 		annotation = self.annotations[aid]
 		annotation: MerAnnotation
 		return annotation
+
+	def find_annotation(self, code: str):
+		aid = self.index[code]
+		return self.get_annotation(aid)
 
 	def __len__(self):
 		"""
