@@ -606,10 +606,11 @@ class StateDifferenceFPMiner:
 		graph = graphviz.Digraph(comment="Frequent Pattern Tree for {}".format(file_name))
 		for c_annotation in  c_annotations:
 			key = str(c_annotation)
-			text = "C: {}\nE: {}\nU: {}\nV: {}".format(c_annotation.get_logic_type(),
-													   c_annotation.get_execution(),
-													   c_annotation.get_store_unit().code,
-													   c_annotation.get_symb_value().code)
+			text = "C: {}\nE: {}\nS: {}\nU: {}\nV: {}".format(c_annotation.get_logic_type(),
+															  c_annotation.get_execution(),
+															  c_annotation.get_execution().get_statement().code,
+															  c_annotation.get_store_unit().code,
+															  c_annotation.get_symb_value().code)
 			graph.node(key, text)
 		for c_annotation in c_annotations:
 			for child in c_annotation.get_children():
@@ -617,6 +618,8 @@ class StateDifferenceFPMiner:
 
 		## 3. output the pdf file anyway
 		graph.render(filename=file_name + ".fpm", directory=o_directory, format="pdf")
+		file_path = os.path.join(o_directory, file_name + ".fpm")
+		os.remove(file_path)
 		return
 
 	def mine(self, features, used_tests, is_reported, c_document: jctest.CDocument, o_directory: str):
@@ -767,6 +770,17 @@ class StateDifferencePatternWriter:
 	def __do_canceled__(self):
 		return self
 
+	def __open_writer__(self, writer: TextIO, beg_line: str):
+		"""
+		:param writer:
+		:param beg_line:
+		:return:
+		"""
+		self.writer = writer
+		if beg_line:
+			self.writer.write(beg_line.strip() + "\n\n")
+		return
+
 	def __output_text__(self, text: str):
 		"""
 		:param text: the string to be written on output stream
@@ -774,6 +788,14 @@ class StateDifferencePatternWriter:
 		"""
 		self.writer: TextIO
 		self.writer.write(text)
+		return
+
+	def __close_writer__(self):
+		"""
+		:return:
+		"""
+		self.__output_text__("\nEnd_Of_File")
+		self.writer = None
 		return
 
 	def __prf_measure__(self, used_tests, patterns):
@@ -919,17 +941,18 @@ class StateDifferencePatternWriter:
 
 	## writing methods
 
-	def write_pattern_objects(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+	def write_pattern_objects(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests, beg_line: str):
 		"""
 		:param middle:		the middle module used to sort the output patterns for being printed to out files
 		:param patterns: 	the set of state difference patterns to be printed on file with single visualized
 		:param file_path: 	the path of output file (xxx.x.pat) to preserve single features of input patterns
 		:param used_tests: 	the set of test used to evaluate the effectiveness of patterns outputted to files
+		:param beg_line:	the first line to be printed onto the file
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
 			## 1. initialize the output stream writer
-			self.writer = writer
+			self.__open_writer__(writer, beg_line)
 
 			## 2. sort the patterns to be printed for
 			output_patterns = middle.sort_patterns(patterns, used_tests)
@@ -962,21 +985,21 @@ class StateDifferencePatternWriter:
 				self.__output_text__("END_PATTERN\n\n")
 
 			## 4. close the output file and print EOF
-			self.__output_text__("End_Of_File")
-			self.writer = None
+			self.__close_writer__()
 		return
 
-	def write_pattern_metrics(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+	def write_pattern_metrics(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests, beg_line: str):
 		"""
 		:param middle:		the middle module used for evaluating state difference patterns being printed
 		:param patterns:	the set of patterns to be evaluated and printed their scores to the out files
 		:param file_path:	the path of the output file to preserve the metrics of the output patterns in
 		:param used_tests:	the set of test cases used for evaluating the effectiveness of output pattern
+		:param beg_line:	the first line to be printed onto the file
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
 			## 1. initialize the writer and start output
-			self.writer = writer
+			self.__open_writer__(writer, beg_line)
 
 			## 2. print the summary scores at the very beginning
 			min_patterns = self.__mini_select__(patterns)
@@ -1005,16 +1028,16 @@ class StateDifferencePatternWriter:
 			self.__output_text__("\n")
 
 			## 4. close the output file and print EOF
-			self.__output_text__("End_Of_File")
-			self.writer = None
+			self.__close_writer__()
 		return
 
-	def write_mutant_patterns(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+	def write_mutant_patterns(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests, beg_line: str):
 		"""
 		:param middle:
 		:param patterns:
 		:param file_path:
 		:param used_tests:
+		:param beg_line:	the first line to be printed onto the file
 		:return:
 		"""
 		## 1. collect the mutants predicted by the input patterns
@@ -1027,7 +1050,7 @@ class StateDifferencePatternWriter:
 
 		## 2. write the patterns matching with each mutant from
 		with open(file_path, 'w') as writer:
-			self.writer = writer
+			self.__open_writer__(writer, beg_line)
 			for mutant in mutants:
 				## 2-0. start flag of the mutation and patterns
 				self.__output_text__("BEG_MUTATION\n")
@@ -1055,10 +1078,10 @@ class StateDifferencePatternWriter:
 
 				## 2-4. end flag of the mutation and patterns
 				self.__output_text__("END_MUTATION\n\n")
-			self.writer = None
+			self.__close_writer__()
 		return
 
-	def write_failed_mutation(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests):
+	def write_failed_mutation(self, middle: StateDifferenceMineMiddle, patterns, file_path: str, used_tests, beg_line: str):
 		"""
 		:param middle:
 		:param patterns:
@@ -1081,7 +1104,7 @@ class StateDifferencePatternWriter:
 		## 2. output the uncovered mutants to file for further debugging
 		with open(file_path, 'w') as writer:
 			## 2-1. initialize the output stream writer
-			self.writer = writer
+			self.__open_writer__(writer, beg_line)
 
 			## 2-2. write the mutant and its annotation patterns for debugging
 			for mutant in uncovered_mutants:
@@ -1120,9 +1143,7 @@ class StateDifferencePatternWriter:
 				self.__output_text__("END_UNCOVERED\n\n")
 
 			## 2-3. close the output stream and set None
-			self.__output_text__("END_OF_FILE")
-			self.writer = None
-
+			self.__close_writer__()
 		return
 
 
@@ -1156,11 +1177,16 @@ def do_fpm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInput
 	## 3. write the output patterns and their scores to specified directory
 	writer = StateDifferencePatternWriter(c_document, inputs)
 	mi_patterns = writer.__mini_select__(ou_patterns)
-	writer.write_pattern_objects(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
-	writer.write_pattern_objects(fp_middle, mi_patterns, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
-	writer.write_mutant_patterns(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2p"), used_tests)
-	writer.write_failed_mutation(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2u"), used_tests)
-	writer.write_pattern_metrics(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.e2s"), used_tests)
+	writer.write_pattern_objects(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests,
+								 "Instances Table for Good Patterns and their Corresponding Mutants & Annotations")
+	writer.write_pattern_objects(fp_middle, mi_patterns, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests,
+								 "Instances Table for Mini Patterns and their Corresponding Mutants & Annotations")
+	writer.write_mutant_patterns(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2p"), used_tests,
+								 "Mutation Table for Covered Mutants and their Correspoding Matched Patterns")
+	writer.write_failed_mutation(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.m2u"), used_tests,
+								 "Mutation Table for Uncovered Mutants and Corresponding Annotations Defined")
+	writer.write_pattern_metrics(fp_middle, ou_patterns, os.path.join(o_directory, file_name + ".fpm.e2s"), used_tests,
+								 "Evaluation Metrics Table for Generated Good State Difference based Patterns")
 	return
 
 
@@ -1183,11 +1209,16 @@ def do_dtm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInput
 	## 2. write the output patterns and their scores to specified directory
 	writer = StateDifferencePatternWriter(c_document, inputs)
 	mi_patterns = writer.__mini_select__(ou_patterns)
-	writer.write_pattern_objects(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests)
-	writer.write_pattern_objects(dt_middle, mi_patterns, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests)
-	writer.write_mutant_patterns(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2p"), used_tests)
-	writer.write_failed_mutation(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2u"), used_tests)
-	writer.write_pattern_metrics(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.e2s"), used_tests)
+	writer.write_pattern_objects(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests,
+								 "Instances Table for Good Patterns and their Corresponding Mutants & Annotations")
+	writer.write_pattern_objects(dt_middle, mi_patterns, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests,
+								 "Instances Table for Mini Patterns and their Corresponding Mutants & Annotations")
+	writer.write_mutant_patterns(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2p"), used_tests,
+								 "Mutation Table for Covered Mutants and their Correspoding Matched Patterns")
+	writer.write_failed_mutation(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.m2u"), used_tests,
+								 "Mutation Table for Uncovered Mutants and Corresponding Annotations Defined")
+	writer.write_pattern_metrics(dt_middle, ou_patterns, os.path.join(o_directory, file_name + ".dtm.e2s"), used_tests,
+								 "Evaluation Metrics Table for Generated Good State Difference based Patterns")
 	return
 
 
