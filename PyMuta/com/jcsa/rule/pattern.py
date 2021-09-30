@@ -319,51 +319,6 @@ class StateDifferencePattern:
 			confidence = support / (killed + alive)
 		return length, support, confidence
 
-	def subsume(self, pattern, c_document: jctest.CDocument):
-		"""
-		:param pattern:
-		:return: whether this pattern directly subsumes the given pattern
-		"""
-		## 1. data sample validation
-		pattern: StateDifferencePattern
-		for execution in pattern.get_executions():
-			if not (execution in self.executions):
-				return False
-
-		## 2. extension validation
-		if len(self) > len(pattern):				## more concrete cannot subsume
-			return False
-		elif len(self) == len(pattern) - 1:			## one node differentiated need
-			for feature in self.features:
-				if not (feature in pattern.get_features()):
-					return False
-			return True
-		elif len(self) == len(pattern):				## differential matching analysis
-			a_features, b_features = set(), set()
-			for feature in self.features:
-				a_features.add(feature)
-			for feature in pattern.get_features():
-				b_features.add(feature)
-			a_b_difference = a_features - b_features
-			b_a_difference = b_features - a_features
-			if len(a_b_difference) == 1:
-				a_feature = -1
-				for feature in a_b_difference:
-					a_feature = feature
-					break
-				b_feature = -1
-				for feature in b_a_difference:
-					b_feature = feature
-					break
-				a_annotation = self.document.anto_space.get_annotation(a_feature).find_source(c_document)
-				b_annotation = self.document.anto_space.get_annotation(b_feature).find_source(c_document)
-				for child in a_annotation.get_children():
-					if child == b_annotation:
-						return True
-				return False
-		else:										## indirect being subsumed anyway
-			return False
-
 
 ## inputs modules
 
@@ -1093,6 +1048,7 @@ class StateDifferencePatternWriter:
 		:param patterns:
 		:param file_path:
 		:param used_tests:
+		:param beg_line:	the first line to be printed onto the file
 		:return: the set of mutants and their annotations that are not covered by the patterns
 		"""
 		## 1. collect all the undetected mutants by the used tests in current program

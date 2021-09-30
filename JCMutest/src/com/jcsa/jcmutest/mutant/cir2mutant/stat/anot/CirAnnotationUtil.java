@@ -992,12 +992,80 @@ final class CirAnnotationUtil {
 						eva_expr(execution, SymbolFactory.greater_eq(loperand, roperand))));
 				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
 						eva_expr(execution, SymbolFactory.not_equals(loperand, roperand))));
+				
+				if(loperand instanceof SymbolConstant) {
+					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+					if(lvalue < 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.greater_tn(0, roperand))));
+					}
+				}
+				if(roperand instanceof SymbolConstant) {
+					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+					if(rvalue > 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.greater_tn(loperand, 0))));
+					}
+				}
+			}
+			else if(op == COperator.greater_eq) {
+				if(loperand instanceof SymbolConstant) {
+					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+					if(lvalue < 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.greater_tn(0, roperand))));
+					}
+				}
+				if(roperand instanceof SymbolConstant) {
+					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+					if(rvalue > 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.greater_tn(loperand, 0))));
+					}
+				}
+				
+				execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
+				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
 			}
 			else if(op == COperator.smaller_tn) {
 				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
 						eva_expr(execution, SymbolFactory.smaller_eq(loperand, roperand))));
 				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
 						eva_expr(execution, SymbolFactory.not_equals(loperand, roperand))));
+				
+				if(loperand instanceof SymbolConstant) {
+					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+					if(lvalue > 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.smaller_tn(0, roperand))));
+					}
+				}
+				if(roperand instanceof SymbolConstant) {
+					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+					if(rvalue < 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.smaller_tn(loperand, 0))));
+					}
+				}
+			}
+			else if(op == COperator.smaller_eq) {
+				if(loperand instanceof SymbolConstant) {
+					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+					if(lvalue > 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.smaller_tn(0, roperand))));
+					}
+				}
+				if(roperand instanceof SymbolConstant) {
+					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+					if(rvalue < 0) {
+						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
+								eva_expr(execution, SymbolFactory.smaller_tn(loperand, 0))));
+					}
+				}
+				
+				execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
+				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
 			}
 			else if(op == COperator.equal_with) {
 				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
