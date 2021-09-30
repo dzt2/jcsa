@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.stat.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.stat;
 
 /**
  * The type of CirMutationTreeNode to denote at which step a mutant is killed.

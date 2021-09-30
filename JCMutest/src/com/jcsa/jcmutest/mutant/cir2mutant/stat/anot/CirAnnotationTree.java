@@ -14,7 +14,7 @@ public class CirAnnotationTree {
 	
 	/* attributes */
 	private Map<CirAnnotation, CirAnnotationNode> nodes;
-	private CirAnnotationTree() {
+	public CirAnnotationTree() {
 		this.nodes = new HashMap<CirAnnotation, CirAnnotationNode>();
 	}
 	
@@ -36,19 +36,19 @@ public class CirAnnotationTree {
 		}
 	}
 	/**
-	 * @param annotations
-	 * @return it constructs the tree structure for input annotations
+	 * @param annotation
+	 * @return it creates the node w.r.t. the annotation and extend from it
 	 * @throws Exception
 	 */
-	public static CirAnnotationTree new_tree(Iterable<CirAnnotation> annotations) throws Exception {
-		CirAnnotationTree tree = new CirAnnotationTree();
-		if(annotations != null) {
-			for(CirAnnotation annotation : annotations) {
-				CirAnnotationNode source = tree.new_node(annotation);
-				CirAnnotationUtils.extend_annotations(source);
-			}
+	public CirAnnotationNode extend_node(CirAnnotation annotation) throws Exception {
+		if(annotation == null) {
+			throw new IllegalArgumentException("Invalid annotation: null");
 		}
-		return tree;
+		else {
+			CirAnnotationNode node = this.new_node(annotation);
+			CirAnnotationUtil.extend_annotations(node);
+			return node;
+		}
 	}
 	
 	/* getters */

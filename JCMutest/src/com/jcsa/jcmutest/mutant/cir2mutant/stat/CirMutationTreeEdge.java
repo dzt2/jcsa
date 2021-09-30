@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.stat.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant.stat;
 
 /**
  * The edge that connects from parent to child in CirMutationTree.

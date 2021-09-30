@@ -40,29 +40,30 @@ import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It implements the generation, concretization, summarization and extension of
- * the CirAnnotation from CirAttribute, or over the CirAnnotationTree and nodes
+ * It implements the generation, concretization and summarization of CirAnnotation
+ * from CirAttribute or CirAnnotation itself.
  * 
  * @author yukimula
  *
  */
-final class CirAnnotationUtils {
+final class CirAnnotationUtil {
 	
-	/* singleton mode *//** constructor **/ private CirAnnotationUtils() { }
-	private static final CirAnnotationUtils utils = new CirAnnotationUtils();
+	
+	/* singleton */	/** private creator **/	private CirAnnotationUtil() {}
+	private static final CirAnnotationUtil util = new CirAnnotationUtil();
+	
 	
 	/* basic methods */
 	/**
-	 * It recursively collects the sub_conditions under the input into the given collection in which
-	 * the sub_conditions are those defined in a logical conjunctive structure.
-	 * @param conditions
+	 * It recursively derives the sub_conditions from input condition into the given collection.
+	 * @param condition
 	 * @param conditions
 	 * @throws Exception
 	 */
 	private void get_conditions_in(SymbolExpression condition, Collection<SymbolExpression> conditions) throws Exception {
 		if(condition instanceof SymbolConstant) {
 			if(((SymbolConstant) condition).get_bool()) {
-				/* ignore the true operands from conjunctive expression */
+				/* TRUE operands in conjunctive expression are useless! */
 			}
 			else {
 				conditions.add(SymbolFactory.sym_constant(Boolean.FALSE));
@@ -86,15 +87,16 @@ final class CirAnnotationUtils {
 	}
 	/**
 	 * @param condition
-	 * @return the set of sub_conditions captured from the logical conjunctive part of the input expression
+	 * @return the set of sub-conditions in the input expression when taking it as conjunctive logic
 	 * @throws Exception
 	 */
 	private Collection<SymbolExpression> get_conditions_in(SymbolExpression condition) throws Exception {
 		Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
-		this.get_conditions_in(condition, conditions); return conditions;
+		this.get_conditions_in(condition, conditions);
+		return conditions;
 	}
 	/**
-	 * It recursively collects the set of references defined in the symbolic node
+	 * It recursively derives the reference expressions defined in the symbolic node context.
 	 * @param node
 	 * @param references
 	 * @throws Exception
@@ -108,25 +110,26 @@ final class CirAnnotationUtils {
 		}
 	}
 	/**
-	 * @param node 
-	 * @return the set of references defined in the symbolic node
+	 * @param node
+	 * @return the set of reference expressions incorporated in the context of input symbolic node
 	 * @throws Exception
 	 */
 	private Collection<SymbolExpression> get_references_in(SymbolNode node) throws Exception {
 		Set<SymbolExpression> references = new HashSet<SymbolExpression>();
-		this.get_references_in(node, references); return references;
+		this.get_references_in(node, references);
+		return references;
 	}
 	/**
 	 * @param node
 	 * @param references
-	 * @return whether the node uses any reference in collection within its body
+	 * @return whether any nodes in the input context contain the given references collection.
 	 * @throws Exception
 	 */
 	private boolean has_references_in(SymbolNode node, Collection<SymbolExpression> references) throws Exception {
 		if(references.contains(node)) {
-			return true;
+			return true;	/* the reference is contained in node */
 		}
-		else {
+		else {				/* recursively search under the child */
 			for(SymbolNode child : node.get_children()) {
 				if(this.has_references_in(child, references)) {
 					return true;
@@ -136,38 +139,33 @@ final class CirAnnotationUtils {
 		}
 	}
 	/**
-	 * @param execution
+	 * @param statement
 	 * @param references
-	 * @return whether the statement of execution defines any reference in the input collection
+	 * @return whether any references are defined in the given statement
 	 * @throws Exception
 	 */
 	private boolean has_references_in(CirExecution execution, Collection<SymbolExpression> references) throws Exception {
-		if(execution == null) {
-			return false;
+		CirStatement statement = execution.get_statement();
+		if(references == null || references.isEmpty()) {
+			return false;	/* not included for empty set */
 		}
-		else if(references == null || references.isEmpty()) {
-			return false;
+		else if(statement instanceof CirAssignStatement) {
+			SymbolExpression lvalue = SymbolFactory.sym_expression(
+					((CirAssignStatement) statement).get_lvalue());
+			return references.contains(lvalue);	/* being assigned */
+		}
+		else if(statement instanceof CirIfStatement) {
+			SymbolExpression condition = SymbolFactory.sym_expression(
+					((CirIfStatement) statement).get_condition());
+			return this.has_references_in(condition, references);
+		}
+		else if(statement instanceof CirCaseStatement) {
+			SymbolExpression condition = SymbolFactory.sym_expression(
+					((CirCaseStatement) statement).get_condition());
+			return this.has_references_in(condition, references);
 		}
 		else {
-			CirStatement statement = execution.get_statement();
-			if(statement instanceof CirAssignStatement) {
-				SymbolExpression reference = SymbolFactory.sym_expression(
-							((CirAssignStatement) statement).get_lvalue());
-				return references.contains(reference);
-			}
-			else if(statement instanceof CirIfStatement) {
-				SymbolExpression condition = SymbolFactory.sym_expression(
-							((CirIfStatement) statement).get_condition());
-				return this.has_references_in(condition, references);
-			}
-			else if(statement instanceof CirCaseStatement) {
-				SymbolExpression condition = SymbolFactory.sym_expression(
-							((CirCaseStatement) statement).get_condition());
-			return this.has_references_in(condition, references);
-			}
-			else {
-				return false;
-			}
+			return false;
 		}
 	}
 	/**
@@ -216,13 +214,12 @@ final class CirAnnotationUtils {
 		
 	}
 	/**
-	 * true --> add_executions; false --> del_executions;
 	 * @param orig_target
 	 * @param muta_target
-	 * @return
+	 * @return true --> add_executions; false --> del_executions;
 	 * @throws Exception
 	 */
-	private Map<Boolean, Collection<CirExecution>>	get_flag_executions(CirExecution orig_target, CirExecution muta_target) throws Exception {
+	private Map<Boolean, Collection<CirExecution>> infer_flag_executions(CirExecution orig_target, CirExecution muta_target) throws Exception {
 		if(orig_target == null) {
 			throw new IllegalArgumentException("Invalid orig_target: null");
 		}
@@ -261,7 +258,7 @@ final class CirAnnotationUtils {
 	 * @param max_exec_time
 	 * @return [1, 2, 4, 8, ..., max_exec_time]
 	 */
-	private List<Integer> get_execution_times_from(int max_exec_time) {
+	private List<Integer> get_execution_times_util(int max_exec_time) {
 		List<Integer> times = new ArrayList<Integer>();
 		for(int k = 1; k < max_exec_time; k = k * 2) {
 			times.add(Integer.valueOf(k));
@@ -270,38 +267,52 @@ final class CirAnnotationUtils {
 		return times;
 	}
 	
-	/* generation of representative annotation from CirAttribute */
+	
+	/* generation from CirAttribute */
 	/**
-	 * cov_stmt{execution}([stmt:statement], [usig:cover_counter])
+	 * cov_stmt(execution.prior_checkpoint, execute_times)
 	 * @param attribute
 	 * @param annotations
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_cover_count(CirCoverCount attribute, Collection<CirAnnotation> annotations) throws Exception {
+		/* 1. derive the execution and execution times element */
 		CirExecution execution = attribute.get_execution();
 		int execute_times = attribute.get_coverage_count();
-		annotations.add(CirAnnotation.cov_stmt(execution, execute_times));
+		
+		/* 2. generate the execution times under maximal times */
+		List<Integer> times = this.get_execution_times_util(execute_times);
+		execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+		
+		/* 3. cov_stmt(check_point, times) {1, 2, 4, 8, 16, ... max_times} */
+		for(Integer time : times) {
+			annotations.add(CirAnnotation.cov_stmt(execution, time.intValue()));
+		}
 	}
 	/**
-	 * eva_expr{execution}([stmt:statement], [bool:condition])
+	 * eva_expr(execution.prior_checkpoint, condition.optimize(null))
 	 * @param attribute
 	 * @param annotations
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_constraints(CirConstraint attribute, Collection<CirAnnotation> annotations) throws Exception {
+		/* 1. derive the original execution and symbolic constraint */
 		CirExecution execution = attribute.get_execution(), check_point;
 		SymbolExpression condition = attribute.get_condition();
-		condition = CirValueScope.safe_evaluate(condition, null);
-		Collection<SymbolExpression> conditions = this.get_conditions_in(condition);
 		
-		for(SymbolExpression sub_condition : conditions) {
+		/* 2. extract the sub_conditions from the constraint for analysis */
+		Collection<SymbolExpression> sub_conditions = this.
+				get_conditions_in(CirValueScope.safe_evaluate(condition, null));
+		
+		/* 3. generate eva_expr(prior_checkpoint, optimal_condition) */
+		for(SymbolExpression sub_condition : sub_conditions) {
 			check_point = this.get_prior_checkpoint(execution, sub_condition);
 			annotations.add(CirAnnotation.eva_expr(check_point, sub_condition));
 		}
 		
-		if(conditions.isEmpty()) {
-			condition = SymbolFactory.sym_constant(Boolean.TRUE);
-			check_point = this.get_prior_checkpoint(execution, condition);
+		/* 4. in case that it is TRUE, transform as coverage requirement */
+		if(sub_conditions.isEmpty()) {
+			check_point = this.get_prior_checkpoint(execution, Boolean.TRUE);
 			annotations.add(CirAnnotation.cov_stmt(check_point, 1));
 		}
 	}
@@ -326,7 +337,7 @@ final class CirAnnotationUtils {
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_flows_error(CirFlowsError attribute, Collection<CirAnnotation> annotations) throws Exception {
-		Map<Boolean, Collection<CirExecution>> maps = this.get_flag_executions(
+		Map<Boolean, Collection<CirExecution>> maps = this.infer_flag_executions(
 				attribute.get_original_flow().get_target(), 
 				attribute.get_mutation_flow().get_target());
 		
@@ -342,7 +353,7 @@ final class CirAnnotationUtils {
 		}
 	}
 	/**
-	 * trp_stmt{execution}([stmt:statement], [bool:expt_value])
+	 * trap_stmt(exit, mut_value)
 	 * @param attribute
 	 * @param annotations
 	 * @throws Exception
@@ -351,9 +362,10 @@ final class CirAnnotationUtils {
 		annotations.add(CirAnnotation.trp_stmt(attribute.get_execution()));
 	}
 	/**
-	 * It generates the annotations for expression-related state error attribute
+	 * It generates the annotations for representing the error to replace expression with muta_value
 	 * @param expression
 	 * @param muta_value
+	 * @param annotations
 	 * @throws Exception
 	 */
 	private void generate_annotations_in_exprs_error(CirExpression expression, 
@@ -369,19 +381,12 @@ final class CirAnnotationUtils {
 			orig_annotation = CirAnnotation.mut_expr(expression, expression);
 			muta_annotation = CirAnnotation.mut_expr(expression, value);
 		}
-		/*
-		if(expression.get_ast_source() != null)
-		System.out.println(orig_annotation + "\t==>\t" + expression.get_data_type() + " in " + 
-		expression.statement_of().generate_code(true) + 
-				" as " + expression.get_ast_source().generate_code() + "\t" + CirMutations.is_boolean(expression));
-		*/
 		SymbolExpression orig_value = orig_annotation.get_symb_value();
 		SymbolExpression muta_value = muta_annotation.get_symb_value();
 		CirExecution execution = expression.execution_of();
 		
 		/* 2. generate trp-error if trapping actually occurs there */
-		if(orig_value == CirValueScope.expt_value 
-			|| muta_value == CirValueScope.expt_value) {
+		if(orig_value == CirValueScope.expt_value || muta_value == CirValueScope.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 			return;
 		}
@@ -497,8 +502,9 @@ final class CirAnnotationUtils {
 	 * @throws Exception
 	 */
 	protected static void generate_annotations(CirAttribute attribute, Collection<CirAnnotation> annotations) throws Exception {
-		utils.generate_annotations_in(attribute, annotations);
+		util.generate_annotations_in(attribute, annotations);
 	}
+	
 	
 	/* concretize of representative annotation to concrete values */
 	/**
@@ -663,8 +669,9 @@ final class CirAnnotationUtils {
 	 * @throws Exception
 	 */
 	protected static void concretize_annotations(CirAnnotation annotation, SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception {
-		utils.concretize_annotations_in(annotation, context, annotations);
+		util.concretize_annotations_in(annotation, context, annotations);
 	}
+	
 	
 	/* summarization of concrete and representative annotations to abstract values */
 	/**
@@ -918,8 +925,9 @@ final class CirAnnotationUtils {
 	protected static void summarize_annotations(CirAnnotation annotation,
 			Collection<CirAnnotation> con_annotations,
 			Collection<CirAnnotation> abs_annotations) throws Exception {
-		utils.summarize_annotations_in(annotation, con_annotations, abs_annotations);
+		util.summarize_annotations_in(annotation, con_annotations, abs_annotations);
 	}
+	
 	
 	/* extension methods */
 	/**
@@ -956,7 +964,7 @@ final class CirAnnotationUtils {
 		CirExecution execution = this.get_prior_checkpoint(
 				annotation.get_execution(), SymbolFactory.sym_constant(Boolean.TRUE));
 		int max_exec_time = ((SymbolConstant) annotation.get_symb_value()).get_int();
-		List<Integer> times = this.get_execution_times_from(max_exec_time);
+		List<Integer> times = this.get_execution_times_util(max_exec_time);
 		
 		/* 2. recursively connect from the source to less executed node */
 		for(int k = times.size() - 1; k >= 0; k--) {
@@ -1359,7 +1367,8 @@ final class CirAnnotationUtils {
 	 * @throws Exception
 	 */
 	protected static void extend_annotations(CirAnnotationNode source) throws Exception {
-		utils.extend_annotation_node(source);
+		util.extend_annotation_node(source);
 	}
+	
 	
 }

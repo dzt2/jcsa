@@ -16,8 +16,6 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationTree;
-import com.jcsa.jcmutest.mutant.cir2mutant.stat.tree.CirMutationTree;
-import com.jcsa.jcmutest.mutant.cir2mutant.stat.tree.CirMutationTreeNode;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -917,7 +915,10 @@ public class CirMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void 	write_ant() throws Exception {
-		CirAnnotationTree tree = CirAnnotationTree.new_tree(this.annotations);
+		CirAnnotationTree tree = new CirAnnotationTree();
+		for(CirAnnotation annotation : this.annotations) {
+			tree.extend_node(annotation);
+		}
 		this.open(".ant");
 		this.write_annotation_tree(tree);
 		this.close();
