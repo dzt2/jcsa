@@ -2,9 +2,12 @@
 
 
 import os
+from collections import deque
+
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.code as jccode
 import com.jcsa.libs.muta as jcmuta
+import graphviz
 
 
 class CDocument:
@@ -23,6 +26,8 @@ class CDocument:
 		self.annotation_tree = CirAnnotationTree(self, anot_file)
 		exec_file = os.path.join(directory, file_name + exec_postfix)
 		self.exec_space = SymExecutionSpace(self, exec_file)
+		graph_file = os.path.join(directory, file_name + ".cmt")
+		self.muta_graph = CirMutationTree(self, graph_file)
 		return
 
 	def get_project(self):
@@ -318,9 +323,174 @@ class SymExecutionSpace:
 		return self.muta_execs.keys()
 
 
+class CirMutationTree:
+	"""
+	It models the program impacts graph for each mutation in a document
+	"""
+
+	def __init__(self, document: CDocument, file_path: str):
+		self.document = document
+		self.nodes = dict()
+		self.__parse__(file_path)
+		return
+
+	def get_document(self):
+		return self.document
+
+	def __parse__(self, file_path: str):
+		"""
+		:param file_path:
+		:return:
+		"""
+		self.nodes.clear()
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					for item in items:
+						item = item.strip()
+						if len(item) > 0:
+							key = item
+							if not (key in self.nodes):
+								self.nodes[key] = CirMutationNode(self, key)
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					for k in range(0, len(items) - 1):
+						prev_node = self.nodes[items[k + 1].strip()]
+						post_node = self.nodes[items[k].strip()]
+						prev_node: CirMutationNode
+						post_node: CirMutationNode
+						if not (post_node in prev_node.ou_nodes):
+							prev_node.ou_nodes.append(post_node)
+		return
+
+	def write(self, o_directory: str):
+		"""
+		:param o_directory:
+		:return:
+		"""
+		file_name = self.document.get_program().name
+		graph = graphviz.Digraph(comment="Mutation Impacts Graph for {}".format(file_name))
+		for node in self.nodes.values():
+			node: CirMutationNode
+			key = node.get_text()
+			value = str(node)
+			graph.node(key, value)
+		for node in self.nodes.values():
+			node: CirMutationNode
+			parent = node.get_text()
+			for ou_node in node.get_ou_nodes():
+				ou_node: CirMutationNode
+				child = ou_node.get_text()
+				graph.edge(parent, child)
+		graph.render(filename=file_name + ".cmt", directory=o_directory, format="pdf")
+		file_path = os.path.join(o_directory, file_name + ".cmt")
+		os.remove(file_path)
+		return
+
+	def write_on(self, o_directory: str, mutant: jcmuta.Mutant):
+		"""
+		:param o_directory:
+		:param mutant:
+		:return:
+		"""
+		key = "mut@{}".format(mutant.get_muta_id())
+		if key in self.nodes:
+			node = self.nodes[key]
+			queue = deque()
+			nodes = set()
+			queue.append(node)
+			while len(queue) > 0:
+				node = queue.popleft()
+				node: CirMutationNode
+				nodes.add(node)
+				for ou_node in node.get_ou_nodes():
+					if not (ou_node in nodes):
+						queue.append(ou_node)
+			if len(nodes) > 0:
+				file_name = self.document.get_program().name
+				graph = graphviz.Digraph(comment="Mutation Impacts Graph for Mutant#{}".format(mutant.get_muta_id()))
+				for node in nodes:
+					key = node.get_text()
+					value = str(node)
+					graph.node(key, value)
+				for node in nodes:
+					node: CirMutationNode
+					parent = node.get_text()
+					for ou_node in node.get_ou_nodes():
+						ou_node: CirMutationNode
+						child = ou_node.get_text()
+						graph.edge(parent, child)
+				graph.render(filename=file_name + ".cmt." + str(mutant.get_muta_id()), directory=o_directory, format="pdf")
+				file_path = os.path.join(o_directory, file_name + ".cmt"  + str(mutant.get_muta_id()))
+				os.remove(file_path)
+		return
+
+
+class CirMutationNode:
+	"""
+	It denotes a unique node in the CirMutationTree.
+	"""
+
+	def __init__(self, tree: CirMutationTree, text: str):
+		self.tree = tree
+		self.text = text
+		self.ou_nodes = list()
+		return
+
+	def get_tree(self):
+		return self.tree
+
+	def get_text(self):
+		return self.text
+
+	def get_ou_nodes(self):
+		return self.ou_nodes
+
+	def __str__(self):
+		document = self.tree.get_document()
+		if '$' in self.text:
+			items = self.text.split('$')
+			logic_class = items[0].strip()
+			exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+			unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+			execution = document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
+			store_unit = document.get_program().cir_tree.get_cir_node(unit_token)
+			symb_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
+			if symb_token is None:
+				symb_value = None
+			else:
+				symb_value = document.get_project().sym_tree.get_sym_node(items[3].strip())
+			return "Class: {}\nExec: {}\nUnit: {}\nValue: {}".format(logic_class, execution, store_unit.code, symb_value)
+		else:
+			mutant_token = jcbase.CToken.parse(self.text.strip()).get_token_value()
+			source_mutant = document.get_project().muta_space.get_mutant(mutant_token)
+			mid = source_mutant.get_muta_id()
+			if source_mutant.get_result().is_killed_in(None):
+				result = "killed"
+			else:
+				result = "survive"
+			m_class = source_mutant.get_mutation().get_mutation_class()
+			m_operator = source_mutant.get_mutation().get_mutation_operator()
+			m_location = source_mutant.get_mutation().get_location()
+			m_function = m_location.function_definition_of()
+			func_name = m_function.get_code(True)
+			index = func_name.index('(')
+			func_name = func_name[0: index].strip()
+			line = m_location.line_of(tail=False)
+			code = m_location.get_code(True)
+			parameter = source_mutant.get_mutation().get_parameter()
+			return "ID: {}\nRes: {}\nClass: {}\nOperator: {}\nFunc: {}\nLine: {}\nCode: {}\nParam: {}".format(mid, result, m_class, m_operator, func_name, line, code, parameter)
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
-	print_condition = True
+	impa_path = "/home/dzt2/Development/Data/zexp/impacts"
+	print_condition = False
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
@@ -341,6 +511,8 @@ if __name__ == "__main__":
 														  annotation.get_execution(),
 														  annotation.get_store_unit().get_cir_code(),
 														  annotation.get_symb_value()))
+
+		c_document.muta_graph.write(impa_path)
 		print()
 	print("Testing end for all.")
 
