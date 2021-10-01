@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationTree;
@@ -110,6 +111,7 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * 	|	xxx.sym	|	Symbolic nodes generated in evaluation				|	<br>
  * 	|	xxx.stn	|	CirInfectionNode(s) from static|dynamic analysis	|	<br>
  * 	|	xxx.stp	|	CirInfectionEdge(s) by leaf-root path evaluated.	|	<br>
+ * 	|	xxx.cmt	|	CirMutationTree graph structure for all mutations.	|	<br>
  * 	+-------------------------------------------------------------------+	<br>
  * </code>
  * 
@@ -1144,7 +1146,49 @@ public class CirMutationFeatureWriter {
 		this.close();
 	}
 	/**
-	 * xxx.stn xxx.stp xxx.sym
+	 * \tnode_type$execution$location$symb_value
+	 * @param node
+	 * @throws Exception
+	 */
+	private void write_cir_mutation_tree_node(CirMutationTreeNode node) throws Exception {
+		CirAttribute attribute = node.get_attribute();
+		this.write_word(attribute.get_type().toString(), attribute.
+				get_execution(), attribute.get_location(), attribute.get_parameter());
+	}
+	/**
+	 * mutant node1 node2 ... nodeN
+	 * @param leaf
+	 * @throws Exception
+	 */
+	private void write_cir_mutation_tree_path(CirMutationTreeNode leaf) throws Exception {
+		List<CirMutationTreeNode> path = leaf.get_pred_nodes();
+		Mutant mutant = leaf.get_tree().get_mutant();
+		this.file_writer.write(this.encode_token(mutant));
+		for(int k = path.size() - 1; k >= 0; k--) {
+			this.file_writer.write("\t");
+			this.write_cir_mutation_tree_node(path.get(k));
+		}
+		this.file_writer.write("\n");
+	}
+	/**
+	 * xxx.cmt for mutation impact graph of all
+	 * @param dependence_graph
+	 * @throws Exception
+	 */
+	private void write_cmt(CDependGraph dependence_graph) throws Exception {
+		this.open(".cmt");
+		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+			CirMutationTree tree = CirMutationTree.new_tree(mutant, dependence_graph);
+			if(this.is_tree_available(tree)) {
+				for(CirMutationTreeNode leaf : tree.get_leafs()) {
+					this.write_cir_mutation_tree_path(leaf);
+				}
+			}
+		}
+		this.close();
+	}
+	/**
+	 * xxx.stn xxx.stp xxx.sym xxx.ant
 	 * @param dependence_graph
 	 * @param test_cases
 	 * @throws Exception
@@ -1152,6 +1196,7 @@ public class CirMutationFeatureWriter {
 	private void write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.symbol_nodes.clear();
 		this.annotations.clear();
+		this.write_cmt(dependence_graph);
 		this.write_stn(dependence_graph, test_cases);
 		this.write_stp(dependence_graph, test_cases);
 		this.write_ant();
