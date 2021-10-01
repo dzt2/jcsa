@@ -20,12 +20,13 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsError;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
-import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -268,7 +269,7 @@ final class CirAnnotationUtil {
 	}
 	
 	
-	/* generation from CirAttribute */
+	/* generation methods */
 	/**
 	 * cov_stmt(execution.prior_checkpoint, execute_times)
 	 * @param attribute
@@ -506,7 +507,7 @@ final class CirAnnotationUtil {
 	}
 	
 	
-	/* concretize of representative annotation to concrete values */
+	/* concretize methods */
 	/**
 	 * do nothing on operation
 	 * @param annotation
@@ -673,7 +674,7 @@ final class CirAnnotationUtil {
 	}
 	
 	
-	/* summarization of concrete and representative annotations to abstract values */
+	/* summarize methods */
 	/**
 	 * simply copy the source annotation to output
 	 * @param annotation
@@ -929,122 +930,49 @@ final class CirAnnotationUtil {
 	}
 	
 	
-	/* extension methods */
+	/* subsume methods */
 	/**
-	 * It recursively extends the nodes from source using static analysis
-	 * @param source
+	 * It extends from the input condition to the ones it directly subsumes in the logical space
+	 * @param condition
+	 * @param conditions
 	 * @throws Exception
 	 */
-	private void extend_annotation_node(CirAnnotationNode source) throws Exception {
-		if(source == null) {
-			throw new IllegalArgumentException("Invalid source: null");
-		}
-		else {
-			switch(source.get_annotation().get_logic_type()) {
-			case cov_stmt:	this.extend_annotation_node_in_cov_stmt(source); break;
-			case eva_expr:	this.extend_annotation_node_in_eva_expr(source); break;
-			case trp_stmt:	this.extend_annotation_node_in_trp_stmt(source); break;
-			case mut_stmt:	this.extend_annotation_node_in_mut_stmt(source); break;
-			case mut_expr:	this.extend_annotation_node_in_mut_expr(source); break;
-			case mut_refr:	this.extend_annotation_node_in_mut_refr(source); break;
-			case sub_diff:	this.extend_annotation_node_in_sub_diff(source); break;
-			case ext_diff:	this.extend_annotation_node_in_ext_diff(source); break;
-			case xor_diff:	this.extend_annotation_node_in_xor_diff(source); break;
-			default:	throw new IllegalArgumentException("Invalid: " + source.get_annotation());
-			}
-		}
-	}
-	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_cov_stmt(CirAnnotationNode source) throws Exception {
-		/* 1. capture the execution point and execution times */
-		CirAnnotation annotation = source.get_annotation();
-		CirExecution execution = this.get_prior_checkpoint(
-				annotation.get_execution(), SymbolFactory.sym_constant(Boolean.TRUE));
-		int max_exec_time = ((SymbolConstant) annotation.get_symb_value()).get_int();
-		List<Integer> times = this.get_execution_times_util(max_exec_time);
-		
-		/* 2. recursively connect from the source to less executed node */
-		for(int k = times.size() - 1; k >= 0; k--) {
-			source = source.subsume(CirAnnotation.cov_stmt(execution, times.get(k)));
-		}
-	}
-	/**
-	 * It extends the source to the subsumed expression and coverage-requirement.
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_on_condition(CirAnnotationNode source) throws Exception {
-		CirExecution execution = source.get_annotation().get_execution();
-		SymbolExpression condition = source.get_annotation().get_symb_value();
+	private void extend_subsumed_conditions_from(SymbolExpression condition, 
+				Collection<SymbolExpression> conditions) throws Exception {
 		if(condition instanceof SymbolConstant) {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			source.subsume(CirAnnotation.cov_stmt(execution, 1));
+			if(((SymbolConstant) condition).get_bool()) {
+				/* ignore the sub-conditions for true operand in condition */
+			}
+			else {
+				conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
+			}
 		}
 		else if(condition instanceof SymbolBinaryExpression) {
 			COperator op = ((SymbolBinaryExpression) condition).get_operator().get_operator();
 			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
 			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
-			if(op == COperator.greater_tn) {
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.greater_eq(loperand, roperand))));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.not_equals(loperand, roperand))));
-				
-				if(loperand instanceof SymbolConstant) {
-					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
-					if(lvalue < 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.greater_tn(0, roperand))));
-					}
-				}
-				if(roperand instanceof SymbolConstant) {
-					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
-					if(rvalue > 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.greater_tn(loperand, 0))));
-					}
-				}
+			
+			if(op == COperator.logic_and) {
+				this.extend_subsumed_conditions_from(loperand, conditions);
+				this.extend_subsumed_conditions_from(roperand, conditions);
 			}
-			else if(op == COperator.greater_eq) {
-				if(loperand instanceof SymbolConstant) {
-					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
-					if(lvalue < 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.greater_tn(0, roperand))));
-					}
-				}
-				if(roperand instanceof SymbolConstant) {
-					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
-					if(rvalue > 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.greater_tn(loperand, 0))));
-					}
-				}
-				
-				execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
+			else if(op == COperator.logic_or) {
+				/* disjunctive expression will be subsumed by its sub_condition */
+				conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
 			}
 			else if(op == COperator.smaller_tn) {
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.smaller_eq(loperand, roperand))));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.not_equals(loperand, roperand))));
-				
+				conditions.add(SymbolFactory.smaller_eq(loperand, roperand));
+				conditions.add(SymbolFactory.not_equals(loperand, roperand));
 				if(loperand instanceof SymbolConstant) {
 					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
 					if(lvalue > 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.smaller_tn(0, roperand))));
+						conditions.add(SymbolFactory.smaller_tn(0, roperand));
 					}
 				}
-				if(roperand instanceof SymbolConstant) {
+				else if(roperand instanceof SymbolConstant) {
 					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
 					if(rvalue < 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.smaller_tn(loperand, 0))));
+						conditions.add(SymbolFactory.smaller_tn(loperand, 0));
 					}
 				}
 			}
@@ -1052,122 +980,339 @@ final class CirAnnotationUtil {
 				if(loperand instanceof SymbolConstant) {
 					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
 					if(lvalue > 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.smaller_tn(0, roperand))));
+						conditions.add(SymbolFactory.smaller_tn(0, roperand));
 					}
 				}
-				if(roperand instanceof SymbolConstant) {
+				else if(roperand instanceof SymbolConstant) {
 					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
 					if(rvalue < 0) {
-						this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-								eva_expr(execution, SymbolFactory.smaller_tn(loperand, 0))));
+						conditions.add(SymbolFactory.smaller_tn(loperand, 0));
 					}
 				}
-				
-				execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
+				if(conditions.isEmpty()) {
+					conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
+				}
 			}
 			else if(op == COperator.equal_with) {
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.greater_eq(loperand, roperand))));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.
-						eva_expr(execution, SymbolFactory.smaller_eq(loperand, roperand))));
+				conditions.add(SymbolFactory.smaller_eq(loperand, roperand));
+				conditions.add(SymbolFactory.greater_eq(loperand, roperand));
+				if(loperand instanceof SymbolConstant) {
+					long lvalue = ((SymbolConstant) loperand).get_long().longValue();
+					if(lvalue != 0) {
+						conditions.add(SymbolFactory.not_equals(0, roperand));
+					}
+				}
+				else if(roperand instanceof SymbolConstant) {
+					long rvalue = ((SymbolConstant) roperand).get_long().longValue();
+					if(rvalue != 0) {
+						conditions.add(SymbolFactory.not_equals(loperand, 0));
+					}
+				}
 			}
 			else {
-				execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-				this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
+				conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
 			}
 		}
 		else {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			this.extend_annotation_node_on_condition(source.subsume(CirAnnotation.eva_expr(execution, Boolean.TRUE)));
+			conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
 		}
 	}
 	/**
+	 * It infers the set of expressions subsumed from the input (boolean) expression based on abstract domain analysis
+	 * @param type
+	 * @param expression
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from_bool(SymbolExpression expression, Collection<SymbolExpression> expressions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_bool()) {
+				expressions.add(CirValueScope.true_value);
+			}
+			else {
+				expressions.add(CirValueScope.fals_value);
+			}
+		}
+		else if(expression == CirValueScope.true_value) {
+			expressions.add(CirValueScope.bool_value);
+		}
+		else if(expression == CirValueScope.fals_value) {
+			expressions.add(CirValueScope.bool_value);
+		}
+		else if(expression == CirValueScope.bool_value) { }
+		else { 
+			expressions.add(CirValueScope.bool_value);
+		}
+	}
+	/**
+	 * It infers the set of expressions subsumed from the input (unsigned) expression based on abstract domain analysis
+	 * @param expression
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from_usig(SymbolExpression expression, Collection<SymbolExpression> expressions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_long() != 0) {
+				expressions.add(CirValueScope.post_value);
+			}
+			else {
+				expressions.add(CirValueScope.zero_value);
+			}
+		}
+		else if(expression == CirValueScope.post_value) {
+			expressions.add(CirValueScope.nneg_value);
+		}
+		else if(expression == CirValueScope.zero_value) {
+			expressions.add(CirValueScope.nneg_value);
+		}
+		else if(expression == CirValueScope.nneg_value) { }
+		else {
+			expressions.add(CirValueScope.nneg_value);
+		}
+	}
+	/**
+	 * It infers the set of expressions subsumed from the input (integer) expression based on abstract domain analysis.
+	 * @param expression
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from_sign(SymbolExpression expression, Collection<SymbolExpression> expressions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_long() > 0) {
+				expressions.add(CirValueScope.post_value);
+			}
+			else if(((SymbolConstant) expression).get_long() < 0) {
+				expressions.add(CirValueScope.negt_value);
+			}
+			else {
+				expressions.add(CirValueScope.zero_value);
+			}
+		}
+		else if(expression == CirValueScope.post_value) {
+			expressions.add(CirValueScope.nneg_value);
+			expressions.add(CirValueScope.nzro_value);
+		}
+		else if(expression == CirValueScope.zero_value) {
+			expressions.add(CirValueScope.nneg_value);
+			expressions.add(CirValueScope.npos_value);
+		}
+		else if(expression == CirValueScope.negt_value) {
+			expressions.add(CirValueScope.npos_value);
+			expressions.add(CirValueScope.nzro_value);
+		}
+		else if(expression == CirValueScope.npos_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.nzro_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.nneg_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.numb_value) { }
+		else {
+			expressions.add(CirValueScope.numb_value);
+		}
+	}
+	/**
+	 * It infers the set of expressions subsumed from the input (double) expression based on abstract domain analysis.
+	 * @param expression
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from_real(SymbolExpression expression, Collection<SymbolExpression> expressions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_double() > 0) {
+				expressions.add(CirValueScope.post_value);
+			}
+			else if(((SymbolConstant) expression).get_double() < 0) {
+				expressions.add(CirValueScope.negt_value);
+			}
+			else {
+				expressions.add(CirValueScope.zero_value);
+			}
+		}
+		else if(expression == CirValueScope.post_value) {
+			expressions.add(CirValueScope.nneg_value);
+			expressions.add(CirValueScope.nzro_value);
+		}
+		else if(expression == CirValueScope.zero_value) {
+			expressions.add(CirValueScope.nneg_value);
+			expressions.add(CirValueScope.npos_value);
+		}
+		else if(expression == CirValueScope.negt_value) {
+			expressions.add(CirValueScope.npos_value);
+			expressions.add(CirValueScope.nzro_value);
+		}
+		else if(expression == CirValueScope.npos_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.nzro_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.nneg_value) {
+			expressions.add(CirValueScope.numb_value);
+		}
+		else if(expression == CirValueScope.numb_value) { }
+		else {
+			expressions.add(CirValueScope.numb_value);
+		}
+	}
+	/**
+	 * It infers the set of expressions subsumed from the input address expression based on abstract domain analysis.
+	 * @param expression
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from_addr(SymbolExpression expression, Collection<SymbolExpression> expressions) throws Exception {
+		if(expression instanceof SymbolConstant) {
+			if(((SymbolConstant) expression).get_long() == 0) {
+				expressions.add(CirValueScope.null_value);
+			}
+			else {
+				expressions.add(CirValueScope.nnul_value);
+			}
+		}
+		else if(expression == CirValueScope.null_value) {
+			expressions.add(CirValueScope.addr_value);
+		}
+		else if(expression == CirValueScope.nnul_value) {
+			expressions.add(CirValueScope.addr_value);
+		}
+		else if(expression == CirValueScope.addr_value) { }
+		else {
+			expressions.add(CirValueScope.addr_value);
+		}
+	}
+	/**
+	 * @param annotation
+	 * @param expressions
+	 * @throws Exception
+	 */
+	private void extend_subsumed_scopes_from(CirAnnotation annotation, Collection<SymbolExpression> expressions) throws Exception {
+		CirValueClass vtype = annotation.get_value_type();
+		SymbolExpression symb_value = annotation.get_symb_value();
+		switch(vtype) {
+		case bool:	this.extend_subsumed_scopes_from_bool(symb_value, expressions); break;
+		case usig:	this.extend_subsumed_scopes_from_usig(symb_value, expressions); break;
+		case sign:	this.extend_subsumed_scopes_from_sign(symb_value, expressions); break;
+		case real:	this.extend_subsumed_scopes_from_real(symb_value, expressions); break;
+		case addr:	this.extend_subsumed_scopes_from_addr(symb_value, expressions); break;
+		default:	break;
+		}
+	}
+	/* extension methods */
+	/**
+	 * It recursively extends from the source of annotation to its directly subsumed ones.
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_in_eva_expr(CirAnnotationNode source) throws Exception {
-		/* 1. capture the execution point and the sub_conditions */
+	private void extend_annotations_from(CirAnnotationNode source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source as null");
+		}
+		else {
+			/* type-oriented extension */
+			switch(source.get_annotation().get_logic_type()) {
+			case cov_stmt:	this.extend_annotations_from_cov_stmt(source); break;
+			case eva_expr:	this.extend_annotations_from_eva_expr(source); break;
+			case trp_stmt:	this.extend_annotations_from_trp_stmt(source); break;
+			case mut_stmt:	this.extend_annotations_from_mut_stmt(source); break;
+			case mut_expr:	this.extend_annotations_from_mut_expr(source); break;
+			case mut_refr:	this.extend_annotations_from_mut_refr(source); break;
+			case sub_diff:	this.extend_annotations_from_sub_diff(source); break;
+			case ext_diff:	this.extend_annotations_from_ext_diff(source); break;
+			case xor_diff:	this.extend_annotations_from_xor_diff(source); break;
+			default: throw new IllegalArgumentException("Unsupport: " + source.get_annotation());
+			}
+		}
+	}
+	/**
+	 * cov_stmt(E, 1) <-- cov_stmt(E, 2) <-- ... <-- cov_stmt(E, N) <-- cov_stmt(E', N)
+	 * @param source
+	 * @throws Exception
+	 */
+	private void extend_annotations_from_cov_stmt(CirAnnotationNode source) throws Exception {
+		/* 1. attribute getters */
+		CirAnnotation annotation = source.get_annotation();
+		CirExecution execution = annotation.get_execution(), check_point;
+		int max_times = ((SymbolConstant) annotation.get_symb_value()).get_int();
+		
+		/* 2. determine the check-point for directly subsuming */
+		check_point = this.get_prior_checkpoint(execution, Boolean.TRUE);
+		if(check_point != execution) {
+			source = source.subsume(CirAnnotation.cov_stmt(check_point, max_times));
+		}
+		
+		/* 3. infer the execution times sequence and subsumed */
+		List<Integer> times = this.get_execution_times_util(max_times);
+		for(int k = times.size() - 2; k >= 0; k--) {
+			source = source.subsume(CirAnnotation.cov_stmt(check_point, times.get(k)));
+		}
+	}
+	/**
+	 * eva_expr(E, expr) --> eva_expr(E, expr')+ --> cov_stmt(E, 1)
+	 * @param source
+	 * @throws Exception
+	 */
+	private void extend_annotations_from_eva_expr(CirAnnotationNode source) throws Exception {
+		/* 1. attributes getter and initialization */
 		CirAnnotation annotation = source.get_annotation();
 		CirExecution execution = annotation.get_execution(), check_point;
 		SymbolExpression condition = annotation.get_symb_value();
-		Collection<SymbolExpression> conditions = this.get_conditions_in(condition);
 		
-		/* 2. it generates the subsumed annotations from sub_conditions */
-		for(SymbolExpression sub_condition : conditions) {
-			check_point = this.get_prior_checkpoint(execution, sub_condition);
-			source = source.subsume(CirAnnotation.eva_expr(check_point, sub_condition));
-			this.extend_annotation_node_on_condition(source);
+		/* 2. infer the next conditions directly being subsumed */
+		Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_conditions_from(condition, conditions);
+		
+		/* 3. recursively extend the eva_expr to its subsumed sub-conditions */
+		if(!conditions.isEmpty()) {
+			for(SymbolExpression sub_condition : conditions) {
+				check_point = this.get_prior_checkpoint(execution, sub_condition);
+				this.extend_annotations_from(source.subsume(CirAnnotation.eva_expr(check_point, sub_condition)));
+			}
 		}
-		
-		/* 3. it subsumes to the final coverage point if no subsumed exists */
-		if(conditions.isEmpty()) {
-			condition = SymbolFactory.sym_constant(Boolean.TRUE);
-			check_point = this.get_prior_checkpoint(execution, condition);
-			this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(check_point, 1)));
+		/* 4. for TRUE-operand, directly subsumes the coverage requirement */
+		else {
+			check_point = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			this.extend_annotations_from(source.subsume(CirAnnotation.cov_stmt(check_point, 1)));
 		}
 	}
 	/**
-	 * --> cov_stmt
+	 * trp_stmt(E) --> trp_stmt(E')
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_in_trp_stmt(CirAnnotationNode source) throws Exception {
+	private void extend_annotations_from_trp_stmt(CirAnnotationNode source) throws Exception {
 		CirExecution execution = source.get_annotation().get_execution();
-		execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-		this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
+		CirExecution check_point = this.get_prior_checkpoint(execution, Boolean.TRUE);
+		source.subsume(CirAnnotation.cov_stmt(check_point, 1));
+		
+		CirFunctionCallGraph graph = execution.get_graph().get_function().get_graph();
+		CirFunction main_function = graph.get_main_function();
+		if(main_function != execution.get_graph().get_function() && main_function != null) {
+			source.subsume(CirAnnotation.trp_stmt(main_function.get_flow_graph().get_exit()));
+		}
 	}
-	/* muta and diff class */
 	/**
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_by_bool(CirAnnotationNode source) throws Exception {
-		/* 1. declarations and data getters */
+	private void extend_annotations_from_mut_stmt(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next symbolic values for mut_stmt */
 		CirAnnotation annotation = source.get_annotation();
-		CirExecution execution = annotation.get_execution();
-		SymbolExpression value = annotation.get_symb_value();
-		CirLogicClass logic_type = annotation.get_logic_type();
-		CirNode store_unit = annotation.get_store_unit();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
 		
-		/* 2. value-class based translation */
-		SymbolExpression next_value = null;
-		if(value == CirValueScope.expt_value) {
-			this.extend_annotation_node(source.subsume(CirAnnotation.trp_stmt(execution)));
-		}
-		else if(value instanceof SymbolConstant) {
-			if(((SymbolConstant) value).get_bool()) {
-				next_value = CirValueScope.true_value;
-			}
-			else {
-				next_value = CirValueScope.fals_value;
-			}
-		}
-		else if(value == CirValueScope.true_value) {
-			next_value = CirValueScope.bool_value;
-		}
-		else if(value == CirValueScope.fals_value) {
-			next_value = CirValueScope.bool_value;
-		}
-		else if(value == CirValueScope.bool_value) {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
+		/* 2. extend from mut_stmt annotation nodes from */
+		CirExecution execution = annotation.get_execution();
+		if(expressions.isEmpty()) {
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
 		}
 		else {
-			next_value = CirValueScope.bool_value;
-		}
-		
-		/* 3. mirror-based annotation subsumption */
-		if(next_value != null) {
-			switch(logic_type) {
-			case mut_stmt:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_stmt(execution, next_value))); break;
-			case mut_expr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_expr((CirExpression) store_unit, next_value))); break;
-			case mut_refr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_refr((CirExpression) store_unit, next_value))); break;
-			case sub_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.sub_diff((CirExpression) store_unit, next_value))); break;
-			case ext_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.ext_diff((CirExpression) store_unit, next_value))); break;
-			case xor_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.xor_diff((CirExpression) store_unit, next_value))); break;
-			default: 		throw new IllegalArgumentException("Invalid logic_type: " + logic_type);
+			for(SymbolExpression expression : expressions) {
+				this.extend_annotations_from(source.subsume(CirAnnotation.mut_stmt(execution, expression)));
 			}
 		}
 	}
@@ -1175,47 +1320,22 @@ final class CirAnnotationUtil {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_by_usig(CirAnnotationNode source) throws Exception {
-		/* 1. declarations and data getters */
+	private void extend_annotations_from_mut_expr(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next abstract value scopes */
 		CirAnnotation annotation = source.get_annotation();
-		CirExecution execution = annotation.get_execution();
-		SymbolExpression value = annotation.get_symb_value();
-		CirLogicClass logic_type = annotation.get_logic_type();
-		CirNode store_unit = annotation.get_store_unit();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
 		
-		/* 2. value-class based translation */
-		SymbolExpression next_value = null;
-		if(value == CirValueScope.expt_value) {
-			this.extend_annotation_node(source.subsume(CirAnnotation.trp_stmt(execution)));
-		}
-		else if(value instanceof SymbolConstant) {
-			if(((SymbolConstant) value).get_long() != 0) {
-				next_value = CirValueScope.post_value;
-			}
-			else {
-				next_value = CirValueScope.zero_value;
-			}
-		}
-		else if(value == CirValueScope.post_value) {
-			next_value = CirValueScope.nneg_value;
-		}
-		else if(value == CirValueScope.zero_value) {
-			next_value = CirValueScope.nneg_value;
-		}
-		else if(value == CirValueScope.nneg_value) {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
+		/* 2. extend to coverage or subsumed expression scopes */
+		if(expressions.isEmpty()) {
+			CirExecution execution = annotation.get_execution();
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
 		}
 		else {
-			next_value = CirValueScope.nneg_value;
-		}
-		
-		/* 3. mirror-based annotation subsuming */
-		if(next_value != null) {
-			switch(logic_type) {
-			case mut_expr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_expr((CirExpression) store_unit, next_value))); break;
-			case mut_refr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_refr((CirExpression) store_unit, next_value))); break;
-			default: 		throw new IllegalArgumentException("Invalid logic_type: " + logic_type);
+			for(SymbolExpression expression : expressions) {
+				CirExpression orig_expression = (CirExpression) annotation.get_store_unit();
+				this.extend_annotations_from(source.subsume(CirAnnotation.mut_expr(orig_expression, expression)));
 			}
 		}
 	}
@@ -1223,48 +1343,22 @@ final class CirAnnotationUtil {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_by_addr(CirAnnotationNode source) throws Exception {
-		/* 1. declarations and data getters */
+	private void extend_annotations_from_mut_refr(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next abstract value scopes */
 		CirAnnotation annotation = source.get_annotation();
-		CirExecution execution = annotation.get_execution();
-		SymbolExpression value = annotation.get_symb_value();
-		CirLogicClass logic_type = annotation.get_logic_type();
-		CirNode store_unit = annotation.get_store_unit();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
 		
-		/* 2. value-class based translation */
-		SymbolExpression next_value = null;
-		if(value == CirValueScope.expt_value) {
-			this.extend_annotation_node(source.subsume(CirAnnotation.trp_stmt(execution)));
-		}
-		else if(value instanceof SymbolConstant) {
-			if(((SymbolConstant) value).get_long() != 0) {
-				next_value = CirValueScope.nnul_value;
-			}
-			else {
-				next_value = CirValueScope.null_value;
-			}
-		}
-		else if(value == CirValueScope.null_value) {
-			next_value = CirValueScope.addr_value;
-		}
-		else if(value == CirValueScope.nnul_value) {
-			next_value = CirValueScope.addr_value;
-		}
-		else if(value == CirValueScope.addr_value) {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
+		/* 2. extend to coverage or subsumed expression scopes */
+		if(expressions.isEmpty()) {
+			CirExecution execution = annotation.get_execution();
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
 		}
 		else {
-			next_value = CirValueScope.addr_value;
-		}
-		
-		/* 3. mirror-based annotation subsuming */
-		if(next_value != null) {
-			switch(logic_type) {
-			case mut_expr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_expr((CirExpression) store_unit, next_value))); break;
-			case mut_refr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_refr((CirExpression) store_unit, next_value))); break;
-			case sub_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.sub_diff((CirExpression) store_unit, next_value))); break;
-			default: 		throw new IllegalArgumentException("Invalid logic_type: " + logic_type);
+			for(SymbolExpression expression : expressions) {
+				CirExpression orig_expression = (CirExpression) annotation.get_store_unit();
+				this.extend_annotations_from(source.subsume(CirAnnotation.mut_refr(orig_expression, expression)));
 			}
 		}
 	}
@@ -1272,69 +1366,22 @@ final class CirAnnotationUtil {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_by_numb(CirAnnotationNode source) throws Exception {
-		/* 1. declarations and data getters */
+	private void extend_annotations_from_sub_diff(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next abstract value scopes */
 		CirAnnotation annotation = source.get_annotation();
-		CirExecution execution = annotation.get_execution();
-		SymbolExpression value = annotation.get_symb_value();
-		CirLogicClass logic_type = annotation.get_logic_type();
-		CirNode store_unit = annotation.get_store_unit();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
 		
-		/* 2. value-class based translation */
-		List<SymbolExpression> next_values = new ArrayList<SymbolExpression>();
-		if(value == CirValueScope.expt_value) {
-			this.extend_annotation_node(source.subsume(CirAnnotation.trp_stmt(execution)));
-		}
-		else if(value instanceof SymbolConstant) {
-			if(((SymbolConstant) value).get_double() > 0) {
-				next_values.add(CirValueScope.post_value);
-			}
-			else if(((SymbolConstant) value).get_double() < 0) {
-				next_values.add(CirValueScope.negt_value);
-			}
-			else {
-				next_values.add(CirValueScope.zero_value);
-			}
-		}
-		else if(value == CirValueScope.post_value) {
-			next_values.add(CirValueScope.nneg_value);
-			next_values.add(CirValueScope.nzro_value);
-		}
-		else if(value == CirValueScope.zero_value) {
-			next_values.add(CirValueScope.nneg_value);
-			next_values.add(CirValueScope.npos_value);
-		}
-		else if(value == CirValueScope.negt_value) {
-			next_values.add(CirValueScope.npos_value);
-			next_values.add(CirValueScope.nzro_value);
-		}
-		else if(value == CirValueScope.npos_value) {
-			next_values.add(CirValueScope.numb_value);
-		}
-		else if(value == CirValueScope.nneg_value) {
-			next_values.add(CirValueScope.numb_value);
-		}
-		else if(value == CirValueScope.nzro_value) {
-			next_values.add(CirValueScope.numb_value);
-		}
-		else if(value == CirValueScope.numb_value) {
-			execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-			this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
+		/* 2. extend to coverage or subsumed expression scopes */
+		if(expressions.isEmpty()) {
+			CirExecution execution = annotation.get_execution();
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
 		}
 		else {
-			next_values.add(CirValueScope.numb_value);
-		}
-		
-		/* 3. mirror-based generation and susbuming */
-		for(SymbolExpression next_value : next_values) {
-			switch(logic_type) {
-			case mut_stmt:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_stmt(execution, next_value))); break;
-			case mut_expr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_expr((CirExpression) store_unit, next_value))); break;
-			case mut_refr:	this.extend_annotation_node(source.subsume(CirAnnotation.mut_refr((CirExpression) store_unit, next_value))); break;
-			case sub_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.sub_diff((CirExpression) store_unit, next_value))); break;
-			case ext_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.ext_diff((CirExpression) store_unit, next_value))); break;
-			case xor_diff:	this.extend_annotation_node(source.subsume(CirAnnotation.xor_diff((CirExpression) store_unit, next_value))); break;
-			default: 		throw new IllegalArgumentException("Invalid logic_type: " + logic_type);
+			for(SymbolExpression expression : expressions) {
+				CirExpression orig_expression = (CirExpression) annotation.get_store_unit();
+				this.extend_annotations_from(source.subsume(CirAnnotation.sub_diff(orig_expression, expression)));
 			}
 		}
 	}
@@ -1342,101 +1389,54 @@ final class CirAnnotationUtil {
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_by_auto(CirAnnotationNode source) throws Exception {
-		CirExecution execution = source.get_annotation().get_execution();
-		execution = this.get_prior_checkpoint(execution, SymbolFactory.sym_constant(Boolean.TRUE));
-		this.extend_annotation_node(source.subsume(CirAnnotation.cov_stmt(execution, 1)));
-	}
-	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_mut_stmt(CirAnnotationNode source) throws Exception {
-		this.extend_annotation_node_by_bool(source);
-	}
-	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_mut_expr(CirAnnotationNode source) throws Exception {
-		switch(source.get_annotation().get_value_type()) {
-		case bool:	this.extend_annotation_node_by_bool(source); break;
-		case usig:	this.extend_annotation_node_by_usig(source); break;
-		case sign:	this.extend_annotation_node_by_numb(source); break;
-		case real:	this.extend_annotation_node_by_numb(source); break;
-		case addr:	this.extend_annotation_node_by_addr(source); break;
-		case auto:	this.extend_annotation_node_by_auto(source); break;
-		default: throw new IllegalArgumentException("Invalid: " + source.get_annotation());
+	private void extend_annotations_from_ext_diff(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next abstract value scopes */
+		CirAnnotation annotation = source.get_annotation();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
+		
+		/* 2. extend to coverage or subsumed expression scopes */
+		if(expressions.isEmpty()) {
+			CirExecution execution = annotation.get_execution();
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
+		}
+		else {
+			for(SymbolExpression expression : expressions) {
+				CirExpression orig_expression = (CirExpression) annotation.get_store_unit();
+				this.extend_annotations_from(source.subsume(CirAnnotation.ext_diff(orig_expression, expression)));
+			}
 		}
 	}
 	/**
 	 * @param source
 	 * @throws Exception
 	 */
-	private void extend_annotation_node_in_mut_refr(CirAnnotationNode source) throws Exception {
-		switch(source.get_annotation().get_value_type()) {
-		case bool:	this.extend_annotation_node_by_bool(source); break;
-		case usig:	this.extend_annotation_node_by_usig(source); break;
-		case sign:	this.extend_annotation_node_by_numb(source); break;
-		case real:	this.extend_annotation_node_by_numb(source); break;
-		case addr:	this.extend_annotation_node_by_addr(source); break;
-		case auto:	this.extend_annotation_node_by_auto(source); break;
-		default: throw new IllegalArgumentException("Invalid: " + source.get_annotation());
+	private void extend_annotations_from_xor_diff(CirAnnotationNode source) throws Exception {
+		/* 1. infer the next abstract value scopes */
+		CirAnnotation annotation = source.get_annotation();
+		Set<SymbolExpression> expressions = new HashSet<SymbolExpression>();
+		this.extend_subsumed_scopes_from(annotation, expressions);
+		
+		/* 2. extend to coverage or subsumed expression scopes */
+		if(expressions.isEmpty()) {
+			CirExecution execution = annotation.get_execution();
+			execution = this.get_prior_checkpoint(execution, Boolean.TRUE);
+			source.subsume(CirAnnotation.cov_stmt(execution, 1));
+		}
+		else {
+			for(SymbolExpression expression : expressions) {
+				CirExpression orig_expression = (CirExpression) annotation.get_store_unit();
+				this.extend_annotations_from(source.subsume(CirAnnotation.xor_diff(orig_expression, expression)));
+			}
 		}
 	}
 	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_sub_diff(CirAnnotationNode source) throws Exception {
-		switch(source.get_annotation().get_value_type()) {
-		case bool:	this.extend_annotation_node_by_bool(source); break;
-		case usig:	this.extend_annotation_node_by_usig(source); break;
-		case sign:	this.extend_annotation_node_by_numb(source); break;
-		case real:	this.extend_annotation_node_by_numb(source); break;
-		case addr:	this.extend_annotation_node_by_addr(source); break;
-		case auto:	this.extend_annotation_node_by_auto(source); break;
-		default: throw new IllegalArgumentException("Invalid: " + source.get_annotation());
-		}
-	}
-	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_ext_diff(CirAnnotationNode source) throws Exception {
-		switch(source.get_annotation().get_value_type()) {
-		case bool:	this.extend_annotation_node_by_bool(source); break;
-		case usig:	this.extend_annotation_node_by_usig(source); break;
-		case sign:	this.extend_annotation_node_by_numb(source); break;
-		case real:	this.extend_annotation_node_by_numb(source); break;
-		case addr:	this.extend_annotation_node_by_addr(source); break;
-		case auto:	this.extend_annotation_node_by_auto(source); break;
-		default: throw new IllegalArgumentException("Invalid: " + source.get_annotation());
-		}
-	}
-	/**
-	 * @param source
-	 * @throws Exception
-	 */
-	private void extend_annotation_node_in_xor_diff(CirAnnotationNode source) throws Exception {
-		switch(source.get_annotation().get_value_type()) {
-		case bool:	this.extend_annotation_node_by_bool(source); break;
-		case usig:	this.extend_annotation_node_by_usig(source); break;
-		case sign:	this.extend_annotation_node_by_numb(source); break;
-		case real:	this.extend_annotation_node_by_numb(source); break;
-		case addr:	this.extend_annotation_node_by_addr(source); break;
-		case auto:	this.extend_annotation_node_by_auto(source); break;
-		default: throw new IllegalArgumentException("Invalid: " + source.get_annotation());
-		}
-	}
-	/**
-	 * It extends the annotation of source node to its subsumed children
 	 * @param source
 	 * @throws Exception
 	 */
 	protected static void extend_annotations(CirAnnotationNode source) throws Exception {
-		util.extend_annotation_node(source);
+		util.extend_annotations_from(source);
 	}
-	
 	
 }
