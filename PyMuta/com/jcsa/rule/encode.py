@@ -9,6 +9,7 @@ import com.jcsa.libs.test as jctest
 
 ## model definition
 
+
 class MerDocument:
 	"""
 	It denotes the memory-reduced data model of CDocument to encode data features within.
