@@ -1233,12 +1233,11 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	return
 
 
-def main(project_directory: str, encoding_directory: str, output_directory: str, exec_postfix: str):
+def main(project_directory: str, encoding_directory: str, output_directory: str):
 	"""
 	:param project_directory:
 	:param encoding_directory:
 	:param output_directory:
-	:param exec_postfix: .stn or .stp
 	:return:
 	"""
 	## establish the pattern mining and output parameters
@@ -1249,7 +1248,7 @@ def main(project_directory: str, encoding_directory: str, output_directory: str,
 		## load document and encoded features into memory
 		c_document_directory = os.path.join(project_directory, file_name)
 		m_document_directory = os.path.join(encoding_directory, file_name)
-		c_document = jctest.CDocument(c_document_directory, file_name, exec_postfix)
+		c_document = jctest.CDocument(c_document_directory, file_name)
 		m_document = jecode.MerDocument(m_document_directory, file_name)
 
 		## perform pattern mining and evaluation proceed
@@ -1267,6 +1266,6 @@ if __name__ == "__main__":
 	proj_directory = "/home/dzt2/Development/Data/zexp/features"
 	enco_directory = "/home/dzt2/Development/Data/zexp/encoding"
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
-	main(proj_directory, enco_directory, outs_directory, ".stp")
+	main(proj_directory, enco_directory, outs_directory)
 	exit(0)
 

@@ -822,17 +822,16 @@ class MerExecution:
 ## encode-decode
 
 
-def encode_c_documents(prev_path: str, post_path: str, exec_postfix: str, is_extended: bool):
+def encode_c_documents(prev_path: str, post_path: str, is_extended: bool):
 	"""
 	:param prev_path:
 	:param post_path:
-	:param exec_postfix: .stn or .stp
 	:param is_extended:
 	:return:
 	"""
 	for file_name in os.listdir(prev_path):
 		inputs_directory = os.path.join(prev_path, file_name)
-		c_document = jctest.CDocument(inputs_directory, file_name, exec_postfix)
+		c_document = jctest.CDocument(inputs_directory, file_name)
 		MerDocument.encode_c_document(c_document, post_path, is_extended)
 		print("Encode project for", file_name)
 	print()
@@ -860,8 +859,8 @@ def decode_m_documents(post_path: str):
 	return
 
 
-def main(prev_path: str, post_path: str, exec_postfix: str, extend: bool):
-	encode_c_documents(prev_path, post_path, exec_postfix, extend)
+def main(prev_path: str, post_path: str, extend: bool):
+	encode_c_documents(prev_path, post_path, extend)
 	decode_m_documents(post_path)
 	return 0
 
@@ -872,6 +871,6 @@ def main(prev_path: str, post_path: str, exec_postfix: str, extend: bool):
 if __name__ == "__main__":
 	prev_directory = "/home/dzt2/Development/Data/zexp/features"
 	post_directory = "/home/dzt2/Development/Data/zexp/encoding"
-	exit_code = main(prev_directory, post_directory, ".stp", True)
+	exit_code = main(prev_directory, post_directory, True)
 	exit(exit_code)
 
