@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.stat;
+package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import java.io.File;
 import java.io.FileReader;
@@ -7,16 +7,26 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirCoverCount;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirDiferError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirFlowsError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsError;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirMutationTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.CirMutationTreeNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotation;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationNode;
 import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirAnnotationTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.stat.anot.CirLogicClass;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -82,10 +92,11 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It is used to generate the feature files to preserve the features from the 
- * mutation test code file and used as inputs of mining algorithm.<br>
+ * It implements the output of features from mutation test project based on the
+ * CirMutation and corresponding model for describing mutation impact features.
+ * <br>
+ * 
  * <code>
- * 	<code>
  * 	+-------------------------------------------------------------------+	<br>
  * 	|	Source Code Features											|	<br>
  * 	+-------------------------------------------------------------------+	<br>
@@ -109,16 +120,14 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * 	+-------------------------------------------------------------------+	<br>
  * 	|	xxx.ant	|	Tree structure of annotations based on subsumption.	|	<br>
  * 	|	xxx.sym	|	Symbolic nodes generated in evaluation				|	<br>
- * 	|	xxx.stn	|	CirInfectionNode(s) from static|dynamic analysis	|	<br>
  * 	|	xxx.stp	|	CirInfectionEdge(s) by leaf-root path evaluated.	|	<br>
- * 	|	xxx.cmt	|	CirMutationTree graph structure for all mutations.	|	<br>
  * 	+-------------------------------------------------------------------+	<br>
  * </code>
  * 
  * @author yukimula
  *
  */
-public class CirMutationFeatureWriter {
+public class CirMutationsFeatureWriter {
 	
 	/* definitions */
 	/** the input source code file for creating features **/
@@ -136,12 +145,12 @@ public class CirMutationFeatureWriter {
 	
 	/* singleton pattern */
 	/** private constructor for singleton design pattern **/
-	private CirMutationFeatureWriter() { 
+	private CirMutationsFeatureWriter() { 
 		this.symbol_nodes = new HashSet<SymbolNode>(); 
 		this.annotations = new HashSet<CirAnnotation>();
 	}
-	/** the single instance for generating symbolic features of input source code file **/
-	private static final CirMutationFeatureWriter writer = new CirMutationFeatureWriter();
+	/** the single instance for generating symbolic features of input source code file. **/
+	private static final CirMutationsFeatureWriter writer = new CirMutationsFeatureWriter();
 	
 	/* input-output methods */
 	/**
@@ -891,25 +900,118 @@ public class CirMutationFeatureWriter {
 		return number;
 	}
 	/**
-	 * nid {cid}+
+	 * type$execution$unit$value
+	 * @param type
+	 * @param exec
+	 * @param unit
+	 * @param value
+	 * @throws Exception
+	 */
+	private void	write_word(String type, CirExecution exec, CirNode unit, SymbolNode value) throws Exception {
+		this.file_writer.write(String.format("%s$%s$%s$%s", type, 
+				this.encode_token(exec), 
+				this.encode_token(unit), this.encode_token(value)));
+		if(value != null) { this.symbol_nodes.add(value); }
+	}
+	/**
+	 * type$exec$location$parameter
+	 * @param attribute
+	 * @throws Exception
+	 */
+	private void 	write_attribute(CirAttribute attribute) throws Exception {
+		String type; SymbolExpression value;
+		CirExecution execution; CirNode unit;
+		if(attribute instanceof CirCoverCount) {
+			type = CirLogicClass.cov_stmt.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirConstraint) {
+			type = CirLogicClass.eva_expr.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter().evaluate(null);
+		}
+		else if(attribute instanceof CirBlockError) {
+			type = CirLogicClass.mut_stmt.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirFlowsError) {
+			type = "mut_flow";
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirTrapsError) {
+			type = CirLogicClass.trp_stmt.toString();
+			execution = attribute.get_execution().get_graph().get_exit();
+			unit = execution.get_statement();
+			value = null;
+		}
+		else if(attribute instanceof CirDiferError) {
+			type = "dif_expr";
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirValueError) {
+			type = CirLogicClass.mut_expr.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirReferError) {
+			type = CirLogicClass.mut_expr.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else if(attribute instanceof CirStateError) {
+			type = CirLogicClass.mut_refr.toString();
+			execution = attribute.get_execution();
+			unit = attribute.get_location();
+			value = attribute.get_parameter();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + attribute);
+		}
+		this.write_word(type, execution, unit, value);
+	}
+	/**
+	 * logic_type$execution$store_unit$symb_value
+	 * @param annotation
+	 * @throws Exception
+	 */
+	private	void	write_annotation(CirAnnotation annotation) throws Exception {
+		this.write_word(annotation.get_logic_type().toString(), 
+				annotation.get_execution(), 
+				annotation.get_store_unit(), annotation.get_symb_value());
+		this.annotations.add(annotation);
+	}
+	/**
+	 * parent {child}*
 	 * @param node
 	 * @throws Exception
 	 */
-	private void	write_annotation_node(CirAnnotationNode node) throws Exception {
-		this.write_word(node.get_annotation());
+	private void 	write_ant_node(CirAnnotationNode node) throws Exception {
+		this.write_annotation(node.get_annotation());
 		for(CirAnnotationNode child : node.get_ou_nodes()) {
 			this.file_writer.write("\t");
-			this.write_word(child.get_annotation());
+			this.write_annotation(child.get_annotation());
 		}
 		this.file_writer.write("\n");
 	}
 	/**
+	 * [parent {child}* \n]+
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void	write_annotation_tree(CirAnnotationTree tree) throws Exception {
+	private void	write_ant_tree(CirAnnotationTree tree) throws Exception {
 		for(CirAnnotationNode node : tree.get_nodes()) {
-			this.write_annotation_node(node);
+			this.write_ant_node(node);
 		}
 	}
 	/**
@@ -922,124 +1024,85 @@ public class CirMutationFeatureWriter {
 			tree.extend_node(annotation);
 		}
 		this.open(".ant");
-		this.write_annotation_tree(tree);
+		this.write_ant_tree(tree);
 		this.close();
 	}
-	
-	/* cir_mutation based features */
 	/**
-	 * logic_type$execution$store_unit$symb_value
-	 * @param logic_type
-	 * @param execution
-	 * @param store_unit
-	 * @param symb_value
-	 * @throws Exception
-	 */
-	private void	write_word(String logic_type, CirExecution execution, 
-			CirNode store_unit, SymbolExpression symb_value) throws Exception {
-		this.file_writer.write(String.format("%s$%s$%s$%s", logic_type,
-				this.encode_token(execution), this.encode_token(store_unit),
-				this.encode_token(symb_value)));
-		if(symb_value != null) { this.symbol_nodes.add(symb_value); }
-	}
-	/**
-	 * logic_type$execution$store_unit$symb_value
-	 * @param annotation
-	 * @throws Exception
-	 */
-	private	void	write_word(CirAnnotation annotation) throws Exception {
-		this.write_word(annotation.get_logic_type().toString(), 
-				annotation.get_execution(), annotation.get_store_unit(), 
-				annotation.get_symb_value());
-	}
-	/**
-	 * {\t annotation}+ {\t ;}
+	 * (\t attribute) (\t annotation)* (\t ;)
 	 * @param node
 	 * @return the number of words written in the node
 	 * @throws Exception
 	 */
-	private int	write_cir_mutation_node(CirMutationTreeNode node) throws Exception {
+	private int		write_cir_mutation_node(CirMutationTreeNode node) throws Exception {
 		int number_of_words = 0;
+		this.file_writer.write("\t");
+		this.write_attribute(node.get_attribute());
+		
 		if(node.get_data().is_executed()) {
 			for(CirAnnotation annotation : node.get_data().get_abs_annotations()) {
 				this.file_writer.write("\t");
-				this.write_word(annotation);
-				this.annotations.add(annotation);
+				this.write_annotation(annotation);
 				number_of_words++;
 			}
-			this.file_writer.write("\t;");
 		}
+		
+		this.file_writer.write("\t;");
 		return number_of_words;
 	}
 	/**
-	 * mid tid ( (\t attribute) (\t annotation)+ (\t ;) )+	\n
-	 * @param mutant
-	 * @param test_case
-	 * @param node_list
-	 * @return number_of_words, number_of_nodes, number_of_lines
+	 * mid tid {(\t attribute) (\t annotation)* (\t ;)}+ \n
+	 * @param leaf
+	 * @param test
+	 * @return
 	 * @throws Exception
 	 */
-	private int[] write_cir_mutation_line(Mutant mutant, TestInput test_case, List<CirMutationTreeNode> node_list) throws Exception {
-		/* declarations of counter variables */
-		int number_of_words = 0, number_of_nodes = 0, number_of_lines = 0;
+	private	int[]	write_cir_mutation_path(CirMutationTreeNode leaf, TestInput test) throws Exception {
+		/* mid tid */
+		String mid = this.encode_token(leaf.get_tree().get_mutant());
+		String tid = this.encode_token(test);
+		this.file_writer.write(mid + "\t" + tid);
 		
-		/* write the line only if the nodes are non-empty */
-		if(!node_list.isEmpty()) {
-			this.file_writer.write(this.encode_token(mutant) + "\t" + this.encode_token(test_case));
-			for(CirMutationTreeNode node : node_list) {
-				int word_number = this.write_cir_mutation_node(node);
-				if(word_number > 0) {
-					number_of_words += word_number;
-					number_of_nodes += 1;
-				}
+		/* {(\t attribute) (\t annotation)* (\t ;)}+ */
+		int number_of_words = 0;
+		int number_of_nodes = 0;
+		int number_of_lines = 0;
+		for(CirMutationTreeNode node : leaf.get_pred_nodes()) {
+			int word_number = this.write_cir_mutation_node(node);
+			if(word_number > 0) {
+				number_of_words += word_number;
+				number_of_nodes += 1;
 			}
-			this.file_writer.write("\n"); 
-			number_of_lines += 1;
 		}
+		
+		/* new line */
+		this.file_writer.write("\n");
+		number_of_lines += 1;
 		
 		/* return [number_of_words, number_of_nodes, number_of_lines] */
 		return new int[] { number_of_words, number_of_nodes, number_of_lines };
 	}
 	/**
-	 * @param node_or_path	true --> xxx.stn; false --> xxx.stp
+	 * {mid tid {(\t attribute) (\t annotation)* (\t ;)}+ \n}+
 	 * @param tree
-	 * @param test_case
-	 * @return [ number_of_words, number_of_nodes, number_of_lines, number_of_trees ]
+	 * @param test
+	 * @return
 	 * @throws Exception
 	 */
-	private int[] write_cir_mutation_tree(boolean node_or_path, CirMutationTree tree, TestInput test_case) throws Exception {
+	private int[]	write_cir_mutation_tree(CirMutationTree tree, TestInput test) throws Exception {
 		/* declarations of the counting variables */
 		int number_of_words = 0, number_of_nodes = 0, number_of_lines = 0, number_of_trees = 0;
 		
 		/* write the tree information only when the tree is available for test */
 		if(this.is_tree_available(tree)) {
-			tree.sum_states();		/** summarize for generating annotations **/
-			if(node_or_path) {										// xxx.stn
-				/* generate the node_list using BFS-sequence of tree nodes */
-				List<CirMutationTreeNode> node_list = new ArrayList<CirMutationTreeNode>();
-				Iterator<CirMutationTreeNode> node_iterator = tree.get_nodes();
-				while(node_iterator.hasNext()) { node_list.add(node_iterator.next()); }
-				
+			tree.sum_states();	/* summarize for generating annotations */
+			
+			/* write for each root-leaf path a line in the xxx.stp */
+			for(CirMutationTreeNode leaf : tree.get_leafs()) {
 				/* write only one line for the node-list in the tree */
-				int[] words_nodes_lines = 
-						this.write_cir_mutation_line(tree.get_mutant(), test_case, node_list);
+				int[] words_nodes_lines = this.write_cir_mutation_path(leaf, test);
 				number_of_words += words_nodes_lines[0];
 				number_of_nodes += words_nodes_lines[1];
 				number_of_lines += words_nodes_lines[2];
-			}
-			else {													// xxx.stp
-				/* write for each root-leaf path a line in the xxx.stp */
-				for(CirMutationTreeNode leaf : tree.get_leafs()) {
-					/* generate the node_list using the sequence of tree nodes in path */
-					List<CirMutationTreeNode> node_list = leaf.get_pred_nodes();
-					
-					/* write only one line for the node-list in the tree */
-					int[] words_nodes_lines = 
-							this.write_cir_mutation_line(tree.get_mutant(), test_case, node_list);
-					number_of_words += words_nodes_lines[0];
-					number_of_nodes += words_nodes_lines[1];
-					number_of_lines += words_nodes_lines[2];
-				}
 			}
 			number_of_trees++;
 		}
@@ -1048,12 +1111,12 @@ public class CirMutationFeatureWriter {
 		return new int[] { number_of_words, number_of_nodes, number_of_lines, number_of_trees };
 	}
 	/**
-	 * @param node_or_path		true --> xxx.stn; false --> xxx.stp
-	 * @param dependence_graph	static analysis
-	 * @param test_cases		dynamic analysis
+	 * 
+	 * @param dependence_graph
+	 * @param test
 	 * @throws Exception
 	 */
-	private void write_cir_mutation_trees(boolean node_or_path, CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
+	private	void	write_cir_mutation_trees(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		/* declarations */
 		int number_of_words = 0, number_of_nodes = 0;
 		int number_of_lines = 0, number_of_trees = 0;
@@ -1065,7 +1128,7 @@ public class CirMutationFeatureWriter {
 			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
 				CirMutationTree tree = CirMutationTree.new_tree(mutant, dependence_graph);
 				tree.add_states(null, this.max_infecting_times, null);
-				words_nodes_lines_trees = this.write_cir_mutation_tree(node_or_path, tree, null);
+				words_nodes_lines_trees = this.write_cir_mutation_tree(tree, null);
 				number_of_words += words_nodes_lines_trees[0];
 				number_of_nodes += words_nodes_lines_trees[1];
 				number_of_lines += words_nodes_lines_trees[2];
@@ -1108,7 +1171,7 @@ public class CirMutationFeatureWriter {
 				
 				/* IV. print each tree's nodes onto the lines in the xxx.stn or xxx.stp */
 				for(CirMutationTree tree : trees) {
-					words_nodes_lines_trees = this.write_cir_mutation_tree(node_or_path, tree, test_case);
+					words_nodes_lines_trees = this.write_cir_mutation_tree(tree, test_case);
 					number_of_words += words_nodes_lines_trees[0];
 					number_of_nodes += words_nodes_lines_trees[1];
 					number_of_lines += words_nodes_lines_trees[2];
@@ -1119,20 +1182,9 @@ public class CirMutationFeatureWriter {
 		}
 		
 		/* reporting information to debugging */
-		System.out.println(String.format("\t\t--> %d words, %d nodes, %d lines, %d trees, %d/%d mutants with %d expressions", 
+		System.out.println(String.format("\t\t--> %d word, %d node, %d path, %d tree, %d/%d mutant, %d expr", 
 				number_of_words, number_of_nodes, number_of_lines, number_of_trees, 
 				mutants.size(), this.inputs.get_mutant_space().size(), this.symbol_nodes.size()));
-	}
-	/**
-	 * xxx.stn
-	 * @param dependence_graph
-	 * @param test_cases
-	 * @throws Exception
-	 */
-	private void write_stn(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
-		this.open(".stn");
-		this.write_cir_mutation_trees(true, dependence_graph, test_cases);
-		this.close();
 	}
 	/**
 	 * xxx.stp
@@ -1140,72 +1192,30 @@ public class CirMutationFeatureWriter {
 	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void write_stp(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
+	private void	write_stp(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.open(".stp");
-		this.write_cir_mutation_trees(false, dependence_graph, test_cases);
+		this.write_cir_mutation_trees(dependence_graph, test_cases);
 		this.close();
 	}
 	/**
-	 * \tnode_type$execution$location$symb_value
-	 * @param node
-	 * @throws Exception
-	 */
-	private void write_cir_mutation_tree_node(CirMutationTreeNode node) throws Exception {
-		CirAttribute attribute = node.get_attribute();
-		this.write_word(attribute.get_type().toString(), attribute.
-				get_execution(), attribute.get_location(), attribute.get_parameter());
-	}
-	/**
-	 * mutant node1 node2 ... nodeN
-	 * @param leaf
-	 * @throws Exception
-	 */
-	private void write_cir_mutation_tree_path(CirMutationTreeNode leaf) throws Exception {
-		List<CirMutationTreeNode> path = leaf.get_pred_nodes();
-		Mutant mutant = leaf.get_tree().get_mutant();
-		this.file_writer.write(this.encode_token(mutant));
-		for(int k = path.size() - 1; k >= 0; k--) {
-			this.file_writer.write("\t");
-			this.write_cir_mutation_tree_node(path.get(k));
-		}
-		this.file_writer.write("\n");
-	}
-	/**
-	 * xxx.cmt for mutation impact graph of all
-	 * @param dependence_graph
-	 * @throws Exception
-	 */
-	private void write_cmt(CDependGraph dependence_graph) throws Exception {
-		this.open(".cmt");
-		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
-			CirMutationTree tree = CirMutationTree.new_tree(mutant, dependence_graph);
-			if(this.is_tree_available(tree)) {
-				for(CirMutationTreeNode leaf : tree.get_leafs()) {
-					this.write_cir_mutation_tree_path(leaf);
-				}
-			}
-		}
-		this.close();
-	}
-	/**
-	 * xxx.stn xxx.stp xxx.sym xxx.ant
+	 * xxx.stp xxx.sym xxx.ant
 	 * @param dependence_graph
 	 * @param test_cases
 	 * @throws Exception
 	 */
-	private void write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
+	private void	write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.symbol_nodes.clear();
 		this.annotations.clear();
-		this.write_cmt(dependence_graph);
-		this.write_stn(dependence_graph, test_cases);
+		
 		this.write_stp(dependence_graph, test_cases);
 		this.write_ant();
 		this.write_sym();
+		
 		this.annotations.clear();
 		this.symbol_nodes.clear();
 	}
 	
-	/* public interfaces */
+	/* interface */
 	/**
 	 * @param input
 	 * @param output_directory

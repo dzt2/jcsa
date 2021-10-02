@@ -2,7 +2,6 @@
 
 
 import os
-from collections import deque
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.code as jccode
 import com.jcsa.libs.muta as jcmuta
@@ -14,19 +13,16 @@ class CDocument:
 	It denotes the document of mutation testing project features.
 	"""
 
-	def __init__(self, directory: str, file_name: str, exec_postfix: str):
+	def __init__(self, directory: str, file_name: str):
 		"""
 		:param directory:	feature directory using project data
 		:param file_name:	the name of mutation testing project
-		:param exec_postfix:	the postfix of file to preserve the symbolic execution features.
 		"""
 		self.project = jcmuta.CProject(directory, file_name)
 		anot_file = os.path.join(directory, file_name + ".ant")
 		self.annotation_tree = CirAnnotationTree(self, anot_file)
-		exec_file = os.path.join(directory, file_name + exec_postfix)
+		exec_file = os.path.join(directory, file_name + ".stp")
 		self.exec_space = SymExecutionSpace(self, exec_file)
-		graph_file = os.path.join(directory, file_name + ".cmt")
-		self.muta_graph = CirMutationTree(self, graph_file)
 		return
 
 	def get_project(self):
@@ -90,7 +86,10 @@ class CirAnnotation:
 		logic_type = self.logic_type
 		execution = "exe@" + self.execution.function.name + "@" + str(self.execution.get_exe_id())
 		store_unit = "cir@" + str(self.store_unit.get_cir_id())
-		sym_value = "sym@" + self.symb_value.class_name + "@" + str(self.symb_value.get_class_id())
+		if self.symb_value is None:
+			sym_value = "n@null"
+		else:
+			sym_value = "sym@" + self.symb_value.class_name + "@" + str(self.symb_value.get_class_id())
 		return logic_type + "$" + execution + "$" + store_unit + "$" + sym_value
 
 	def get_all_children(self):
@@ -108,6 +107,28 @@ class CirAnnotation:
 				child: CirAnnotation
 				child.__all_children__(annotations)
 		return
+
+	@staticmethod
+	def parse(document: CDocument, word: str):
+		"""
+		:param document:
+		:param word:
+		:return:
+		"""
+		program = document.get_program()
+		project = document.get_project()
+		items = word.split('$')
+		logic_type = items[0].strip()
+		exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+		execution = program.function_call_graph.get_execution(exec_token[0], exec_token[1])
+		store_unit = program.cir_tree.get_cir_node(unit_token)
+		symb_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
+		if symb_token is None:
+			symb_value = None
+		else:
+			symb_value = project.sym_tree.get_sym_node(items[3].strip())
+		return CirAnnotation(logic_type, execution, store_unit, symb_value)
 
 
 class CirAnnotationTree:
@@ -150,18 +171,9 @@ class CirAnnotationTree:
 		:param words: set of words encoding annotations uniquely
 		:return:
 		"""
-		program = self.document.get_program()
-		project = self.document.get_project()
 		for word in words:
-			word: str
-			items = word.split('$')
-			logic_type = items[0].strip()
-			exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-			unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			execution = program.function_call_graph.get_execution(exec_token[0], exec_token[1])
-			store_unit = program.cir_tree.get_cir_node(unit_token)
-			symb_value = project.sym_tree.get_sym_node(items[3].strip())
-			self.annotations[word] = CirAnnotation(logic_type, execution, store_unit, symb_value)
+			annotation = CirAnnotation.parse(self.document, word)
+			self.annotations[word] = annotation
 		return
 
 	def __link_nodes__(self, file_path: str):
@@ -210,17 +222,64 @@ class CirAnnotationTree:
 		return len(self.annotations)
 
 
+class SymExecutionNode:
+	"""
+	It denotes a node in symbolic execution for killing mutation.
+	"""
+
+	def __init__(self, attribute: CirAnnotation, annotations):
+		"""
+		:param execution: 	the symbolic execution where the node is defined
+		:param attribute: 	the header attribute representing execution node
+		:param annotations:	the set of annotations, defined within this node
+		"""
+		self.attribute = attribute
+		self.annotations = list()
+		for annotation in annotations:
+			annotation: CirAnnotation
+			self.annotations.append(annotation)
+		return
+
+	def get_attribute(self):
+		"""
+		:return: the header attribute representing execution node
+		"""
+		return self.attribute
+
+	def get_annotations(self):
+		"""
+		:return: the set of annotations, defined within this node
+		"""
+		return self.annotations
+
+
 class SymExecution:
-	def __init__(self, space, eid: int, mutant: jcmuta.Mutant, test: jcmuta.TestCase, annotations):
+	"""
+	It denotes an symbolic execution path for killing a mutation.
+	"""
+
+	def __init__(self, space, eid: int, mutant: jcmuta.Mutant, test: jcmuta.TestCase, nodes):
+		"""
+		:param space: 	the space where the symbolic execution is defined
+		:param eid: 	the unique integer ID of execution path for space
+		:param mutant: 	the mutant to be killed by the execution procedure
+		:param test: 	the test case used or None if the execution path is static
+		:param nodes: 	the set of SymExecutionNode created from the line
+		"""
 		space: SymExecutionSpace
 		self.space = space
 		self.eid = eid
 		self.mutant = mutant
 		self.test = test
 		self.annotations = set()
-		for annotation in annotations:
-			annotation: CirAnnotation
-			self.annotations.add(annotation)
+		self.nodes = list()
+		for index in range(0, len(nodes)):
+			node = nodes[index]
+			node: SymExecutionNode
+			node.index = index
+			self.nodes.append(node)
+			for annotation in node.get_annotations():
+				self.annotations.add(annotation)
 		return
 
 	def get_space(self):
@@ -238,65 +297,99 @@ class SymExecution:
 	def get_test(self):
 		return self.test
 
+	def get_nodes(self):
+		"""
+		:return: the sequence of nodes for cir-mutation path
+		"""
+		return self.nodes
+
 	def get_annotations(self):
 		return self.annotations
 
 
 class SymExecutionSpace:
 	"""
-	The set of symbolic execution lines
+	The set of mutants to their corresponding symbolic execution.
 	"""
+
 	def __init__(self, document: CDocument, file_path: str):
 		"""
 		:param document:
-		:param file_path:
+		:param file_path: xxx.stp
 		"""
 		self.document = document
 		self.executions = list()
 		self.muta_execs = dict()
 		self.__load__(file_path)
-		self.__link__()
+		return
+
+	def __read__(self, line: str):
+		"""
+		:param line: mid tid {attribute {annotation}+ ;}+
+		:return: SymExecution parsed from line or None
+		"""
+		line = line.strip()
+		if len(line) > 0:
+			## 1. get the library data-base from document
+			program = self.document.get_program()
+			project = self.document.get_project()
+			anot_tree = self.document.annotation_tree
+			items = line.split('\t')
+
+			## 2. parse the mutant and test case
+			muta_token = jcbase.CToken.parse(items[0].strip()).get_token_value()
+			test_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+			mutant = project.muta_space.get_mutant(muta_token)
+			if test_token is None:
+				test = None
+			else:
+				test = project.test_space.get_test_case(test_token)
+			words = items[2: ]
+
+			## 3. create the nodes list for further analysis
+			buffer, nodes = list(), list()
+			for word in words:
+				word = word.strip()
+				if len(word) == 0:
+					continue
+				elif word != ';':
+					buffer.append(word)
+				else:
+					attribute = CirAnnotation.parse(self.document, buffer[0])
+					annotations = set()
+					for k in range(1, len(buffer)):
+						annotations.add(anot_tree.get_annotation(buffer[k]))
+					node = SymExecutionNode(attribute, annotations)
+					nodes.append(node)
+					buffer.clear()
+
+			## 4. generate the symbolic execution finally
+			return SymExecution(self, len(self.executions), mutant, test, nodes)
+		return None
+
+	def __save__(self, execution: SymExecution):
+		"""
+		:param execution:
+		:return: it saves the execution into the library space
+		"""
+		if not (execution is None):
+			self.executions.append(execution)
+			mutant = execution.get_mutant()
+			if not (mutant in self.muta_execs):
+				self.muta_execs[mutant] = list()
+			self.muta_execs[mutant].append(execution)
 		return
 
 	def __load__(self, file_path: str):
 		"""
 		:param file_path:
-		:return: it loads the execution lines from given file
+		:return:
 		"""
-		document = self.get_document()
-		self.executions.clear()
 		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
-					items = line.split('\t')
-					muta_token = jcbase.CToken.parse(items[0].strip()).get_token_value()
-					test_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-					mutant = document.get_project().muta_space.get_mutant(muta_token)
-					if test_token is None:
-						test = None
-					else:
-						test = document.get_project().test_space.get_test_case(test_token)
-					annotations = set()
-					for k in range(2, len(items)):
-						word = items[k].strip()
-						if word != ';':
-							annotation = document.get_annotation_tree().get_annotation(word)
-							annotations.add(annotation)
-					sym_execution = SymExecution(self, len(self.executions), mutant, test, annotations)
-					self.executions.append(sym_execution)
-		return
-
-	def __link__(self):
-		"""
-		:return: builds the links between executions and mutations
-		"""
-		self.muta_execs.clear()
-		for sym_execution in self.executions:
-			mutant = sym_execution.get_mutant()
-			if not (mutant in self.muta_execs):
-				self.muta_execs[mutant] = set()
-			self.muta_execs[mutant].add(sym_execution)
+					self.__save__(self.__read__(line))
 		return
 
 	def get_document(self):
@@ -321,179 +414,71 @@ class SymExecutionSpace:
 	def get_mutants(self):
 		return self.muta_execs.keys()
 
-
-class CirMutationTree:
-	"""
-	It models the program impacts graph for each mutation in a document
-	"""
-
-	def __init__(self, document: CDocument, file_path: str):
-		self.document = document
-		self.nodes = dict()
-		self.__parse__(file_path)
-		return
-
-	def get_document(self):
-		return self.document
-
-	def __parse__(self, file_path: str):
+	def write_impacts_graph(self, o_directory: str, file_name: str, mutants):
 		"""
-		:param file_path:
+		:param o_directory: the directory where the xxx.pdf file will be generated
+		:param mutants: the set of mutants of which cir-mutation nodes will be printed or None for all
 		:return:
 		"""
-		self.nodes.clear()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					for item in items:
-						item = item.strip()
-						if len(item) > 0:
-							key = item
-							if not (key in self.nodes):
-								self.nodes[key] = CirMutationNode(self, key)
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					for k in range(0, len(items) - 1):
-						prev_node = self.nodes[items[k + 1].strip()]
-						post_node = self.nodes[items[k].strip()]
-						prev_node: CirMutationNode
-						post_node: CirMutationNode
-						if not (post_node in prev_node.ou_nodes):
-							prev_node.ou_nodes.append(post_node)
-		return
+		## 1. capture the set of symbolic executions for printing
+		executions = set()
+		if mutants is None:
+			for execution in self.executions:
+				execution: SymExecution
+				executions.add(execution)
+		else:
+			for mutant in mutants:
+				mutant_executions = self.get_executions_of(mutant)
+				for execution in mutant_executions:
+					execution: SymExecution
+					executions.add(execution)
 
-	def write(self, o_directory: str):
-		"""
-		:param o_directory:
-		:return:
-		"""
-		file_name = self.document.get_program().name
-		graph = graphviz.Digraph(comment="Mutation Impacts Graph for {}".format(file_name))
-		for node in self.nodes.values():
-			node: CirMutationNode
-			key = node.get_text()
-			value = str(node)
-			graph.node(key, value)
-		for node in self.nodes.values():
-			node: CirMutationNode
-			parent = node.get_text()
-			for ou_node in node.get_ou_nodes():
-				ou_node: CirMutationNode
-				child = ou_node.get_text()
-				graph.edge(parent, child)
-		graph.render(filename=file_name + ".cmt", directory=o_directory, format="pdf")
-		file_path = os.path.join(o_directory, file_name + ".cmt")
+		## 2. create the key and the corresponding label in nodes
+		name_labels, name_edges = dict(), dict()
+		for execution in executions:
+			for node in execution.get_nodes():
+				attribute = node.get_attribute()
+				name = str(attribute)
+				label = "C: {}\nE: {}\nU: {}\nT: {}\nV: {}".format(attribute.get_logic_type(), attribute.get_execution(),
+																   attribute.get_store_unit(), attribute.store_unit.code,
+																   attribute.get_symb_value())
+				name_labels[name] = label
+			node_list = execution.get_nodes()
+			for k in range(0, len(node_list) - 1):
+				parent = node_list[k].get_attribute()
+				child = node_list[k + 1].get_attribute()
+				pred_name = str(parent)
+				post_name = str(child)
+				if not (pred_name in name_edges):
+					name_edges[pred_name] = set()
+				if pred_name != post_name:
+					name_edges[pred_name].add(post_name)
+
+		## 3. create nodes and initialize the graph at first
+		graph = graphviz.Digraph(name="Mutation Impacts Graph.")
+		for name, label in name_labels.items():
+			graph.node(name, label)
+
+		## 4. link the nodes using execution sequence at all
+		for pred_name, post_names in name_edges.items():
+			for post_name in post_names:
+				graph.edge(pred_name, post_name)
+
+		## 5. visualize the directed graph for program impacts
+		graph.render(filename=file_name, directory=o_directory, format="pdf")
+		file_path = os.path.join(o_directory, file_name)
 		os.remove(file_path)
 		return
-
-	def write_on(self, o_directory: str, mutant: jcmuta.Mutant):
-		"""
-		:param o_directory:
-		:param mutant:
-		:return:
-		"""
-		key = "mut@{}".format(mutant.get_muta_id())
-		if key in self.nodes:
-			node = self.nodes[key]
-			queue = deque()
-			nodes = set()
-			queue.append(node)
-			while len(queue) > 0:
-				node = queue.popleft()
-				node: CirMutationNode
-				nodes.add(node)
-				for ou_node in node.get_ou_nodes():
-					if not (ou_node in nodes):
-						queue.append(ou_node)
-			if len(nodes) > 0:
-				file_name = self.document.get_program().name
-				graph = graphviz.Digraph(comment="Mutation Impacts Graph for Mutant#{}".format(mutant.get_muta_id()))
-				for node in nodes:
-					key = node.get_text()
-					value = str(node)
-					graph.node(key, value)
-				for node in nodes:
-					node: CirMutationNode
-					parent = node.get_text()
-					for ou_node in node.get_ou_nodes():
-						ou_node: CirMutationNode
-						child = ou_node.get_text()
-						graph.edge(parent, child)
-				graph.render(filename=file_name + ".cmt." + str(mutant.get_muta_id()), directory=o_directory, format="pdf")
-				file_path = os.path.join(o_directory, file_name + ".cmt"  + str(mutant.get_muta_id()))
-				os.remove(file_path)
-		return
-
-
-class CirMutationNode:
-	"""
-	It denotes a unique node in the CirMutationTree.
-	"""
-
-	def __init__(self, tree: CirMutationTree, text: str):
-		self.tree = tree
-		self.text = text
-		self.ou_nodes = list()
-		return
-
-	def get_tree(self):
-		return self.tree
-
-	def get_text(self):
-		return self.text
-
-	def get_ou_nodes(self):
-		return self.ou_nodes
-
-	def __str__(self):
-		document = self.tree.get_document()
-		if '$' in self.text:
-			items = self.text.split('$')
-			logic_class = items[0].strip()
-			exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-			unit_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-			execution = document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
-			store_unit = document.get_program().cir_tree.get_cir_node(unit_token)
-			symb_token = jcbase.CToken.parse(items[3].strip()).get_token_value()
-			if symb_token is None:
-				symb_value = None
-			else:
-				symb_value = document.get_project().sym_tree.get_sym_node(items[3].strip())
-			return "Class: {}\nExec: {}\nUnit: {}\nValue: {}".format(logic_class, execution, store_unit.code, symb_value)
-		else:
-			mutant_token = jcbase.CToken.parse(self.text.strip()).get_token_value()
-			source_mutant = document.get_project().muta_space.get_mutant(mutant_token)
-			mid = source_mutant.get_muta_id()
-			if source_mutant.get_result().is_killed_in(None):
-				result = "killed"
-			else:
-				result = "survive"
-			m_class = source_mutant.get_mutation().get_mutation_class()
-			m_operator = source_mutant.get_mutation().get_mutation_operator()
-			m_location = source_mutant.get_mutation().get_location()
-			m_function = m_location.function_definition_of()
-			func_name = m_function.get_code(True)
-			index = func_name.index('(')
-			func_name = func_name[0: index].strip()
-			line = m_location.line_of(tail=False)
-			code = m_location.get_code(True)
-			parameter = source_mutant.get_mutation().get_parameter()
-			return "ID: {}\nRes: {}\nClass: {}\nOperator: {}\nFunc: {}\nLine: {}\nCode: {}\nParam: {}".format(mid, result, m_class, m_operator, func_name, line, code, parameter)
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
 	impa_path = "/home/dzt2/Development/Data/zexp/impacts"
-	print_condition = False
+	print_condition, print_number = True, 4
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
-		c_document = CDocument(c_directory, file_name, ".stn")
+		c_document = CDocument(c_directory, file_name)
 		exec_space = c_document.get_execution_space()
 		print(file_name, "loads", len(exec_space.get_mutants()), "mutants used and",
 			  len(exec_space.get_executions()), "symbolic instance paths annotated with",
@@ -511,7 +496,14 @@ if __name__ == "__main__":
 														  annotation.get_store_unit().get_cir_code(),
 														  annotation.get_symb_value()))
 
-		c_document.muta_graph.write(impa_path)
+		rand_mutants = set()
+		while len(rand_mutants) < print_number:
+			rand_mutant = jcbase.rand_select(c_document.get_project().muta_space.get_mutants())
+			rand_mutant: jcmuta.Mutant
+			rand_mutants.add(rand_mutant)
+		for rand_mutant in rand_mutants:
+			c_document.exec_space.write_impacts_graph(impa_path, file_name + "." + str(rand_mutant.get_muta_id()), [rand_mutant])
+		c_document.exec_space.write_impacts_graph(impa_path, file_name, rand_mutants)
 		print()
 	print("Testing end for all.")
 
