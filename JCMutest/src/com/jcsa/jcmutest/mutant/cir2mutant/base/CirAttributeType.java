@@ -4,6 +4,7 @@ public enum CirAttributeType {
 	/* constraint category */
 	/** {condition, execution, statement, expression} **/	condition,
 	/** {cov_count, execution, statement, integer} **/		cov_count,
+	/** {kill_muta, execution, statement, mutant_id} **/	kill_muta,
 	/* expression error type */
 	/** {dif_error, execution, orig_expr, muta_expr} **/	dif_error,
 	/** {val_error, execution, orig_expr, muta_expr} **/	val_error,

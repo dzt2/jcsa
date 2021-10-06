@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -317,6 +318,14 @@ public abstract class CirAttribute {
 		else {
 			return new CirTrapsError(execution, SymbolFactory.sym_constant(Boolean.TRUE));
 		}
+	}
+	/**
+	 * @param mutation
+	 * @return kill_muta:execution:statement:literal
+	 * @throws Exception 
+	 */
+	public static CirKillTarget new_kill_target(CirMutation mutation) throws Exception {
+		return new CirKillTarget(mutation, SymbolFactory.literal(mutation.toString()));
 	}
 	
 }

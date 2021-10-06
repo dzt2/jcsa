@@ -1,9 +1,16 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirCoverCount;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OAXACirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OAXNCirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oxxo.OBXACirMutationParser;
@@ -34,6 +41,12 @@ import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.VINCCirMutationParser;
 import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CirMutationParsers {
 
@@ -96,7 +109,7 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 		parsers.put(MutaClass.RTRP, new RTRPCirMutationParser());
 	}
 
-	public static Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+	private static Iterable<CirMutation> parse_from(CirTree cir_tree, AstMutation mutation) throws Exception {
 		if(cir_tree == null)
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		else if(mutation == null)
@@ -104,5 +117,85 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 		else
 			return parsers.get(mutation.get_class()).parse(cir_tree, mutation);
 	}
-
+	
+	private static void divide_conditions_in(SymbolExpression condition, Collection<SymbolExpression> conditions) throws Exception {
+		if(condition instanceof SymbolConstant) {
+			if(((SymbolConstant) condition).get_bool()) {
+				conditions.add(SymbolFactory.sym_constant(Boolean.TRUE));
+			}
+			else {
+				/* ignore false operand in disjunctives */
+			}
+		}
+		else if(condition instanceof SymbolBinaryExpression) {
+			COperator op = ((SymbolBinaryExpression) condition).get_operator().get_operator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) condition).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) condition).get_roperand();
+			if(op == COperator.logic_or) {
+				divide_conditions_in(loperand, conditions);
+				divide_conditions_in(roperand, conditions);
+			}
+			else {
+				conditions.add(SymbolFactory.sym_condition(condition, true));
+			}
+		}
+		else {
+			conditions.add(SymbolFactory.sym_condition(condition, true));
+		}
+	}
+	
+	private static Iterable<CirAttribute> divide_constraints(CirAttribute constraint) throws Exception {
+		Set<CirAttribute> constraints = new HashSet<CirAttribute>();
+		if(constraint instanceof CirCoverCount) {
+			constraints.add(constraint);
+		}
+		else if(constraint instanceof CirConstraint) {
+			CirExecution execution = constraint.get_execution();
+			SymbolExpression condition = constraint.get_parameter();
+			Set<SymbolExpression> conditions = new HashSet<SymbolExpression>();
+			divide_conditions_in(condition.evaluate(null), conditions);
+			
+			if(!conditions.isEmpty()) {
+				for(SymbolExpression sub_condition : conditions) {
+					sub_condition = sub_condition.evaluate(null);
+					constraints.add(CirAttribute.new_constraint(execution, sub_condition, true));
+				}
+			}
+			else {
+				constraints.add(CirAttribute.new_constraint(execution, Boolean.FALSE, true));
+			}
+		}
+		else {
+			throw new IllegalArgumentException(constraint.toString());
+		}
+		return constraints;
+	}
+	
+	private static Iterable<CirMutation> normalize(Iterable<CirMutation> mutations) throws Exception {
+		Set<CirMutation> normal_mutations = new HashSet<CirMutation>();
+		if(mutations != null) {
+			for(CirMutation mutation : mutations) {
+				CirAttribute constraint = mutation.get_constraint().optimize();
+				CirAttribute init_error = mutation.get_init_error().optimize();
+				for(CirAttribute sub_constraint : divide_constraints(constraint)) {
+					normal_mutations.add(CirMutations.new_mutation(sub_constraint, init_error));
+				}
+			}
+		}
+		return normal_mutations;
+	}
+	
+	public static Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+		// return parse_from(cir_tree, mutation);
+		// return normalize(parse_from(cir_tree, mutation));
+		Iterable<CirMutation> mutations = parse_from(cir_tree, mutation);
+		try {
+			return normalize(mutations);
+		}
+		catch(Exception ex) {
+			System.err.println(ex.getMessage());
+		}
+		return null;
+	}
+	
 }

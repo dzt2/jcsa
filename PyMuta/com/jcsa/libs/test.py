@@ -443,6 +443,20 @@ class SymExecutionSpace:
 																   attribute.get_store_unit(), attribute.store_unit.code,
 																   attribute.get_symb_value())
 				name_labels[name] = label
+			mutant = execution.get_mutant()
+			mutant_name = str(execution.get_mutant())
+			mutant_result = mutant.get_result().is_killed_in(None)
+			mutant_code = mutant.mutation.get_location().get_code(True)
+			if len(mutant_code) > 32:
+				mutant_code = mutant_code[0: 32].strip()
+			mutant_line = mutant.mutation.get_location().line_of(False)
+			mutant_label = "MID: {}[{}]\nC: {}\nO: {}\nL: [{}]#{}\nV: {}".format(mutant.get_muta_id(), mutant_result,
+																				 mutant.mutation.get_mutation_class(),
+																				 mutant.mutation.get_mutation_operator(),
+																				 mutant_code, mutant_line,
+																				 mutant.mutation.get_parameter())
+			name_labels[mutant_name] = mutant_label
+
 			node_list = execution.get_nodes()
 			for k in range(0, len(node_list) - 1):
 				parent = node_list[k].get_attribute()
@@ -453,6 +467,10 @@ class SymExecutionSpace:
 					name_edges[pred_name] = set()
 				if pred_name != post_name:
 					name_edges[pred_name].add(post_name)
+			last_name = str(node_list[-1].get_attribute())
+			if not (last_name in name_edges):
+				name_edges[last_name] = set()
+			name_edges[last_name].add(mutant_name)
 
 		## 3. create nodes and initialize the graph at first
 		graph = graphviz.Digraph(name="Mutation Impacts Graph.")
