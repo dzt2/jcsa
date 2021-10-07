@@ -34,20 +34,8 @@ public class CirMutations {
 	 * @return create the set of cir-based mutations from mutant or null if generation failed.
 	 * @throws Exception
 	 */
-	public static Iterable<CirMutation> parse(Mutant mutant) {
-		if(mutant == null) {
-			return null;
-		}
-		else {
-			try {
-				return CirMutationParsers.parse(mutant.get_space().
-						get_cir_tree(), mutant.get_mutation());
-			}
-			catch(Exception ex) {
-				ex.printStackTrace(System.err);
-				return null;
-			}
-		}
+	public static Iterable<CirMutation> parse(Mutant mutant) throws Exception {
+		return CirMutationParsers.parse(mutant);
 	}
 	
 	/* type classifier */

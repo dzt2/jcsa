@@ -1,11 +1,13 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
@@ -185,17 +187,28 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 		return normal_mutations;
 	}
 	
-	public static Iterable<CirMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
-		// return parse_from(cir_tree, mutation);
-		// return normalize(parse_from(cir_tree, mutation));
-		Iterable<CirMutation> mutations = parse_from(cir_tree, mutation);
-		try {
-			return normalize(mutations);
+	public static Iterable<CirMutation> parse(Mutant mutant) throws Exception {
+		if(mutant == null) {
+			throw new IllegalArgumentException("Invalid mutant: null");
 		}
-		catch(Exception ex) {
-			System.err.println(ex.getMessage());
+		else {
+			/* 1. syntax-directed translation */
+			Iterable<CirMutation> init_solutions;
+			try {
+				init_solutions = parse_from(mutant.get_space().get_cir_tree(), mutant.get_mutation());
+			}
+			catch(Exception ex) {
+				init_solutions = null;
+			}
+			
+			/* 2. normalization procedure */
+			if(init_solutions == null) {
+				return new ArrayList<CirMutation>();
+			}
+			else {
+				return normalize(init_solutions);
+			}
 		}
-		return null;
 	}
 	
 }

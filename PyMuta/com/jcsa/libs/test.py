@@ -483,6 +483,8 @@ class SymExecutionSpace:
 				graph.edge(pred_name, post_name)
 
 		## 5. visualize the directed graph for program impacts
+		if not os.path.exists(o_directory):
+			os.mkdir(o_directory)
 		graph.render(filename=file_name, directory=o_directory, format="pdf")
 		file_path = os.path.join(o_directory, file_name)
 		os.remove(file_path)
@@ -492,7 +494,7 @@ class SymExecutionSpace:
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
 	impa_path = "/home/dzt2/Development/Data/zexp/impacts"
-	print_condition, print_number = True, 4
+	print_condition, print_number = True, 6
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
@@ -519,9 +521,10 @@ if __name__ == "__main__":
 			rand_mutant = jcbase.rand_select(c_document.get_project().muta_space.get_mutants())
 			rand_mutant: jcmuta.Mutant
 			rand_mutants.add(rand_mutant)
+		o_directory = impa_path + "/" + file_name
 		for rand_mutant in rand_mutants:
-			c_document.exec_space.write_impacts_graph(impa_path, file_name + "." + str(rand_mutant.get_muta_id()), [rand_mutant])
-		c_document.exec_space.write_impacts_graph(impa_path, file_name, rand_mutants)
+			c_document.exec_space.write_impacts_graph(o_directory, file_name + "." + str(rand_mutant.get_muta_id()), [rand_mutant])
+		c_document.exec_space.write_impacts_graph(o_directory, file_name, rand_mutants)
 		print()
 	print("Testing end for all.")
 
