@@ -271,7 +271,7 @@ final class CirAnnotationUtils {
 	 * @return the maximal executing times greater than the input parameter
 	 */
 	private int find_max_execution_time(int max_exec_time) {
-		int counter = 0;
+		int counter = 1;
 		while(counter < max_exec_time) {
 			counter = counter * 2;
 		}

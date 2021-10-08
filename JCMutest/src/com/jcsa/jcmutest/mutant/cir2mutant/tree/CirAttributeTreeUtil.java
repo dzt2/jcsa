@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
@@ -255,36 +256,6 @@ final class CirAttributeTreeUtil {
 		/* 3. cir_mutation --> initial_error */
 		node.new_child(CirAttributeTreeType.infection, cir_mutation.get_init_error());
 	}
-	/**
-	 * it constructs the previous and middle nodes of the mutant of the tree
-	 * @param tree
-	 * @param context
-	 * @throws Exception
-	 */
-	private void construct_previous_tree(CirAttributeTree tree, Object context) throws Exception {
-		if(tree == null) {
-			throw new IllegalArgumentException("Invalid tree as null");
-		}
-		else {
-			Map<CirExecution, Collection<CirMutation>> maps = 
-					new HashMap<CirExecution, Collection<CirMutation>>();
-			for(CirMutation cir_mutation : tree.get_cir_mutations()) {
-				CirExecution execution = cir_mutation.get_execution();
-				if(!maps.containsKey(execution)) {
-					maps.put(execution, new ArrayList<CirMutation>());
-				}
-			}
-			
-			for(CirExecution target : maps.keySet()) {
-				CirAttributeTreeNode reach_node = this.
-						construct_pre_attribute_nodes(tree, target, context);
-				for(CirMutation cir_mutation : maps.get(target)) {
-					this.construct_mid_attribute_nodes(reach_node, cir_mutation);
-				}
-			}
-			tree.update_reach_nodes();
-		}
-	}
 	
 	/* static error propagation analysis */
 	/**
@@ -293,7 +264,7 @@ final class CirAttributeTreeUtil {
 	 * @param errors	next generation of state errors
 	 * @throws Exception
 	 */
-	private void local_propagate_from(CirAttribute error, Collection<CirAttribute> errors) throws Exception {
+	private void propagate_from(CirAttribute error, Collection<CirAttribute> errors) throws Exception {
 		if(error == null) {
 			throw new IllegalArgumentException("Invalid error: null");
 		}
@@ -774,21 +745,70 @@ final class CirAttributeTreeUtil {
 			throw new IllegalArgumentException("Invalid parent: " + parent);
 		}
 	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private void construct_pos_attribute_nodes(CirAttributeTreeNode source) throws Exception {
+		/* 1. capture the error-propagation nodes list */
+		Set<CirAttribute> errors = new HashSet<CirAttribute>();
+		this.propagate_from(source.get_attribute(), errors);
+		
+		/* 2. recursively construct the post-nodes from */
+		for(CirAttribute next_error : errors) {
+			CirAttributeTreeNode child = source.new_child(
+					CirAttributeTreeType.propagate, next_error);
+			this.construct_pos_attribute_nodes(child);
+		}
+	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	/* construction methods */
+	/**
+	 * it constructs the previous and middle nodes of the mutant of the tree
+	 * @param tree
+	 * @param context
+	 * @throws Exception
+	 */
+	private void construct_tree(CirAttributeTree tree, Object context) throws Exception {
+		if(tree == null) {
+			throw new IllegalArgumentException("Invalid tree as null");
+		}
+		else {
+			Map<CirExecution, Collection<CirMutation>> maps = 
+					new HashMap<CirExecution, Collection<CirMutation>>();
+			for(CirMutation cir_mutation : tree.get_cir_mutations()) {
+				CirExecution execution = cir_mutation.get_execution();
+				if(!maps.containsKey(execution)) {
+					maps.put(execution, new ArrayList<CirMutation>());
+				}
+				maps.get(execution).add(cir_mutation);
+			}
+			
+			for(CirExecution target : maps.keySet()) {
+				CirAttributeTreeNode reach_node = this.
+						construct_pre_attribute_nodes(tree, target, context);
+				for(CirMutation cir_mutation : maps.get(target)) {
+					this.construct_mid_attribute_nodes(reach_node, cir_mutation);
+				}
+			}
+			tree.update_muta_nodes();
+			
+			for(CirAttributeTreeNode muta_node : tree.get_muta_nodes()) {
+				for(CirAttributeTreeEdge edge : muta_node.get_ou_edges()) {
+					CirAttributeTreeNode error_node = edge.get_target();
+					this.construct_pos_attribute_nodes(error_node);
+				}
+			}
+		}
+	}
+	/**
+	 * @param tree
+	 * @param context
+	 * @throws Exception
+	 */
+	protected static void construct(CirAttributeTree tree, Object context) throws Exception {
+		util.construct_tree(tree, context);
+	}
 	
 }

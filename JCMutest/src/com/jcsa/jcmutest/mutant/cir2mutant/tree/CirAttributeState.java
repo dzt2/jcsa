@@ -170,7 +170,7 @@ public class CirAttributeState {
 	/**
 	 * It clears the set of annotations and evaluation results in state
 	 */
-	public void clc() {
+	protected void clc() {
 		this.abs_annotations.clear();
 		for(CirAnnotation sym_annotation : this.con_annotations.keySet()) {
 			this.con_annotations.get(sym_annotation).clear();
@@ -182,7 +182,7 @@ public class CirAttributeState {
 	 * @return It concretizes the annotations and evaluate attribute.
 	 * @throws Exception
 	 */
-	public Boolean add(SymbolProcess context) throws Exception {
+	protected Boolean add(SymbolProcess context) throws Exception {
 		for(CirAnnotation sym_annotation : this.con_annotations.keySet()) {
 			CirAnnotationUtils.concretize_annotations(sym_annotation, 
 					context, this.con_annotations.get(sym_annotation));
@@ -195,7 +195,7 @@ public class CirAttributeState {
 	 * It summarizes the concrete annotations in the concrete annotation
 	 * @throws Exception
 	 */
-	public void sum() throws Exception {
+	protected void sum() throws Exception {
 		this.abs_annotations.clear();
 		for(CirAnnotation sym_annotation : this.con_annotations.keySet()) {
 			CirAnnotationUtils.summarize_annotations(sym_annotation, 
