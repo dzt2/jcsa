@@ -324,8 +324,8 @@ public abstract class CirAttribute {
 	 * @return kill_muta:execution:statement:literal
 	 * @throws Exception 
 	 */
-	public static CirKillTarget new_kill_target(CirMutation mutation) throws Exception {
-		return new CirKillTarget(mutation, SymbolFactory.literal(mutation.toString()));
+	public static CirKillMutant new_kill_mutant(CirMutation mutation) throws Exception {
+		return new CirKillMutant(mutation);
 	}
 	
 }

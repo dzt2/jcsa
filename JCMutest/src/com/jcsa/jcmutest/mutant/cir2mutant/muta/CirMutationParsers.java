@@ -179,7 +179,8 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 			for(CirMutation mutation : mutations) {
 				CirAttribute constraint = mutation.get_constraint().optimize();
 				CirAttribute init_error = mutation.get_init_error().optimize();
-				for(CirAttribute sub_constraint : divide_constraints(constraint)) {
+				Iterable<CirAttribute> sub_constraints = divide_constraints(constraint);
+				for(CirAttribute sub_constraint : sub_constraints) {
 					normal_mutations.add(CirMutations.new_mutation(sub_constraint, init_error));
 				}
 			}
@@ -187,6 +188,12 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 		return normal_mutations;
 	}
 	
+	/**
+	 * @param mutant
+	 * @return 	it parses the syntactic mutation to mutation(s) in C-intermediate 
+	 * 			representative code (CirMutation).
+	 * @throws Exception
+	 */
 	public static Iterable<CirMutation> parse(Mutant mutant) throws Exception {
 		if(mutant == null) {
 			throw new IllegalArgumentException("Invalid mutant: null");
@@ -197,17 +204,12 @@ private static final Map<MutaClass, CirMutationParser> parsers = new HashMap<>()
 			try {
 				init_solutions = parse_from(mutant.get_space().get_cir_tree(), mutant.get_mutation());
 			}
+			/* 2. protection returning output */
 			catch(Exception ex) {
-				init_solutions = null;
+				return new ArrayList<CirMutation>();	
 			}
-			
-			/* 2. normalization procedure */
-			if(init_solutions == null) {
-				return new ArrayList<CirMutation>();
-			}
-			else {
-				return normalize(init_solutions);
-			}
+			/* 3. normalization procedure */
+			return normalize(init_solutions);
 		}
 	}
 	
