@@ -650,7 +650,10 @@ class StateDifferenceDTMiner:
 		execution = c_annotation.get_execution()
 		logic_type = c_annotation.logic_type
 		code = c_annotation.store_unit.get_cir_code()
-		parameter = c_annotation.symb_value.get_code()
+		if c_annotation.symb_value is None:
+			parameter = None
+		else:
+			parameter = c_annotation.symb_value.get_code()
 		text = "{}::{}({}::{})".format(logic_type, execution, code, parameter)
 		text = text.replace('\"', '\'\'')
 		return text
