@@ -1127,7 +1127,7 @@ class StateDifferencePatternWriter:
 			self.__close_writer__()
 		return
 
-	def __mine_best_pattern__(self, document: jecode.MerDocument, mutant: jecode.MerMutant, miner: StateDifferenceFPMiner):
+	def __mine_best_pattern__(self, document: jecode.MerDocument, mutant: jecode.MerMutant, miner: StateDifferenceFPMiner, max_tests_number: int):
 		"""
 		:param document:
 		:param mutant:
@@ -1151,11 +1151,13 @@ class StateDifferencePatternWriter:
 			else:
 				test_list.add(tid)
 		used_tests = set()
-		while len(test_list) > 0 and len(used_tests) < 128:
+		while len(test_list) > 0:
 			rand_test = jcbase.rand_select(test_list)
 			rand_test: int
 			used_tests.add(rand_test)
 			test_list.remove(rand_test)
+			if max_tests_number > 0 and len(used_tests) >= max_tests_number:
+				break
 
 		## 3. it generates the good patterns for best matching
 		patterns = miner.mine(features, used_tests, False, None, None)
@@ -1166,7 +1168,7 @@ class StateDifferencePatternWriter:
 			best_pattern = None
 		return best_pattern, used_tests
 
-	def write_mutant_clusters(self, inputs: StateDifferenceMineInputs, file_path: str, beg_line: str, is_reported: bool):
+	def write_mutant_clusters(self, inputs: StateDifferenceMineInputs, file_path: str, beg_line: str, is_reported: bool, max_tests_number: int):
 		"""
 		:param inputs:
 		:param file_path:
@@ -1180,10 +1182,12 @@ class StateDifferencePatternWriter:
 		for mutant in inputs.get_document().exec_space.get_mutants():
 			mutant: jecode.MerMutant
 			all_mutants.add(mutant)
-			best_pattern, used_tests = self.__mine_best_pattern__(inputs.get_document(), mutant, miner)
+			best_pattern, used_tests = self.__mine_best_pattern__(inputs.get_document(), mutant, miner, max_tests_number)
 			counter += 1
 			if is_reported and counter % 20 == 0:
-				print("\t\tProceed[{}/{}] ==> {} pattern and {} tests".format(counter, total_number, (best_pattern is not None), len(used_tests)))
+				file_name = self.c_document.get_program().name
+				print("\t\t{}[{}/{}] ==> {} pattern and {} tests".format(file_name, counter, total_number,
+																		 (best_pattern is not None), len(used_tests)))
 			if best_pattern is None:
 				uncovered_mutants.add(mutant)
 			else:
@@ -1204,7 +1208,7 @@ class StateDifferencePatternWriter:
 			self.__output_text__("BEG-COVERAGE\n")
 			self.__output_text__("\tOrig_Mutants = {}\tPred_Mutants = {}\tMatch_Mutants = {}\n".format(orig_number, pred_number, match_number))
 			self.__output_text__("\tPrecision = {}%\tRecall = {}%\tF1_Score = {}\n".format(precision, recall, f1_score))
-			optimized_ratio = len(pattern_mutants) / (len(covered_mutants) + 0.0000000001)
+			optimized_ratio = len(pattern_mutants) / (len(all_mutants) + 0.0000000001)
 			optimized_ratio = int(optimized_ratio * 1000000) / 10000.0
 			self.__output_text__("\tClusters = {}\tOptimized_Ratio = {}%\n".format(len(pattern_mutants), optimized_ratio))
 			self.__output_text__("END_COVERAGE\n\n")
@@ -1309,17 +1313,19 @@ def do_dtm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInput
 
 
 def do_fp_cluster(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
-				  o_directory: str, file_name: str, is_reported: bool):
+				  o_directory: str, file_name: str, is_reported: bool, max_tests_number: int):
 	"""
 	:param c_document:
 	:param inputs:
 	:param o_directory:
 	:param file_name:
+	:param is_reported:
+	:param max_tests_number:
 	:return:
 	"""
 	writer = StateDifferencePatternWriter(c_document, inputs)
 	writer.write_mutant_clusters(inputs, os.path.join(o_directory, file_name + ".fpc"),
-								 "Frequent Pattern based Clustering", is_reported)
+								 "Frequent Pattern based Clustering", is_reported, max_tests_number)
 	return
 
 
@@ -1370,7 +1376,7 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	## V. perform frequent pattern based clustering and output
 	print("\tV. Perform Frequent Pattern based Clustering and Output them.")
 	inputs.min_support = 1
-	do_fp_cluster(c_document, inputs, o_directory, file_name, True)
+	do_fp_cluster(c_document, inputs, o_directory, file_name, True, 96)
 	inputs.min_support = min_support
 
 	## VI. end of all of the mutation testing project
