@@ -30,7 +30,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  */
 public abstract class CirAttribute {
 
-	/* attributes */ 
+	/* attributes */
 	/** the type of the attribute to define software testing requirement **/
 	private CirAttributeType	type;
 	/** the execution point where the attribute is evaluated or injected **/
