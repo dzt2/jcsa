@@ -47,10 +47,12 @@ public class CirMutation {
 	 * @return where the mutation is introduced and evaluated
 	 */
 	public CirExecution get_execution() { return this.init_error.get_execution(); }
-
+	
 	/* universal */
 	@Override
-	public String toString() { return this.constraint + " :: " + this.init_error; }
+	public String toString() { 
+		return this.constraint + " ==> " + this.init_error;
+	}
 	@Override
 	public int hashCode() { return this.toString().hashCode(); }
 	@Override

@@ -47,16 +47,15 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It implements the construction of CirAttributeTree from given path and 
- * static rules of a mutation.
+ * It implements the construction of CirAttributeNode and CirAttributeTree.
  * 
  * @author yukimula
  *
  */
-final class CirAttributeTreeUtil {
+final class CirAttributeTreeUtils {
 	
-	/* singleton mode */ /** constructor **/ private CirAttributeTreeUtil() { }
-	private static final CirAttributeTreeUtil util = new CirAttributeTreeUtil();
+	/* singleton mode */ /** constructor **/ 	private CirAttributeTreeUtils() {}
+	private static final CirAttributeTreeUtils util = new CirAttributeTreeUtils();
 	
 	/* prev_nodes methods */
 	/**
@@ -204,7 +203,7 @@ final class CirAttributeTreeUtil {
 	 * @param context
 	 * @throws Exception
 	 */
-	private CirAttributeTreeNode construct_pre_attribute_nodes(CirAttributeTree tree, CirExecution target, Object context) throws Exception {
+	private CirAttributeNode construct_pre_attribute_nodes(CirAttributeTree tree, CirExecution target, Object context) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree as null");
 		}
@@ -225,16 +224,14 @@ final class CirAttributeTreeUtil {
 			}
 			
 			/* 2. it creates the previous path for reaching the target node */
-			CirAttributeTreeNode node = tree.get_root();
+			CirAttributeNode node = tree.get_root();
 			for(CirExecutionFlow flow : flows) {
-				CirAttribute attribute = this.new_flow_attribute(flow);
-				node = node.new_child(CirAttributeTreeType.execution, attribute);
+				node = node.new_child(this.new_flow_attribute(flow));
 			}
 			
 			/* 3. it finally links the tail of the previous_node to the reach node */
 			if(node.get_attribute().get_execution() != target) {
-				CirAttribute attribute = CirAttribute.new_cover_count(target, 1);
-				node = node.new_child(CirAttributeTreeType.execution, attribute);
+				node = node.new_child(CirAttribute.new_cover_count(target, 1));
 			}
 			
 			/* 4. it returns the execution of the target node in */	return node;
@@ -243,18 +240,14 @@ final class CirAttributeTreeUtil {
 	/**
 	 * @param reach_node
 	 * @param cir_mutation
-	 * @return reach_node --> infect_condition --> kill_mutant --> initial_error
+	 * @return reach_node --> cond_node --> kill_node --> init_node
 	 * @throws Exception
 	 */
-	private void construct_mid_attribute_nodes(CirAttributeTreeNode reach_node, CirMutation cir_mutation) throws Exception {
-		/* 1. reach_node --> infect_condition */
-		CirAttributeTreeNode node = reach_node.new_child(CirAttributeTreeType.execution, cir_mutation.get_constraint());
-		
-		/* 2. infect_condition --> cir_mutation */
-		node = node.new_child(CirAttributeTreeType.infection, CirAttribute.new_kill_mutant(cir_mutation));
-		
-		/* 3. cir_mutation --> initial_error */
-		node.new_child(CirAttributeTreeType.infection, cir_mutation.get_init_error());
+	private CirAttributeNode construct_mid_attribute_nodes(CirAttributeNode reach_node, CirMutation cir_mutation) throws Exception {
+		CirAttributeNode cond_node = reach_node.new_child(cir_mutation.get_constraint());
+		CirAttributeNode muta_node = cond_node.new_child(CirAttribute.new_kill_mutant(cir_mutation));
+		CirAttributeNode init_node = muta_node.new_child(cir_mutation.get_init_error());
+		return init_node;
 	}
 	
 	/* static error propagation analysis */
@@ -750,31 +743,31 @@ final class CirAttributeTreeUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	private void construct_pos_attribute_nodes(CirAttributeTreeNode source) throws Exception {
+	private void construct_pos_attribute_nodes(CirAttributeNode source) throws Exception {
 		/* 1. capture the error-propagation nodes list */
 		Set<CirAttribute> errors = new HashSet<CirAttribute>();
 		this.propagate_from(source.get_attribute(), errors);
 		
 		/* 2. recursively construct the post-nodes from */
 		for(CirAttribute next_error : errors) {
-			CirAttributeTreeNode child = source.new_child(
-					CirAttributeTreeType.propagate, next_error);
+			CirAttributeNode child = source.new_child(next_error);
 			this.construct_pos_attribute_nodes(child);
 		}
 	}
 	
-	/* construction methods */
+	/* construction interface */
 	/**
-	 * it constructs the previous and middle nodes of the mutant of the tree
+	 * It constructs the structure of attribute tree for representing reaching-infection-propagation process.
 	 * @param tree
 	 * @param context
 	 * @throws Exception
 	 */
-	private void construct_tree(CirAttributeTree tree, Object context) throws Exception {
+	private void construct_attribute_tree(CirAttributeTree tree, Object context) throws Exception {
 		if(tree == null) {
-			throw new IllegalArgumentException("Invalid tree as null");
+			throw new IllegalArgumentException("Invalid tree: null");
 		}
 		else {
+			/* 1. collects the map from execution to corresponding mutations */
 			Map<CirExecution, Collection<CirMutation>> maps = 
 					new HashMap<CirExecution, Collection<CirMutation>>();
 			for(CirMutation cir_mutation : tree.get_cir_mutations()) {
@@ -785,30 +778,30 @@ final class CirAttributeTreeUtil {
 				maps.get(execution).add(cir_mutation);
 			}
 			
+			/* 2. it performs previous construction over the tree and path context */
+			Set<CirAttributeNode> error_nodes = new HashSet<CirAttributeNode>();
 			for(CirExecution target : maps.keySet()) {
-				CirAttributeTreeNode reach_node = this.
-						construct_pre_attribute_nodes(tree, target, context);
+				CirAttributeNode reach_node = this.construct_pre_attribute_nodes(tree, target, context);
 				for(CirMutation cir_mutation : maps.get(target)) {
-					this.construct_mid_attribute_nodes(reach_node, cir_mutation);
+					error_nodes.add(this.construct_mid_attribute_nodes(reach_node, cir_mutation));
 				}
 			}
-			tree.update_muta_nodes();
 			
-			for(CirAttributeTreeNode muta_node : tree.get_muta_nodes()) {
-				for(CirAttributeTreeEdge edge : muta_node.get_ou_edges()) {
-					CirAttributeTreeNode error_node = edge.get_target();
-					this.construct_pos_attribute_nodes(error_node);
-				}
+			/* 3. it constructs the postfix subtrees from initial error nodes */
+			tree.update_muta_nodes();
+			for(CirAttributeNode error_node : error_nodes) { 
+				this.construct_pos_attribute_nodes(error_node);
 			}
 		}
 	}
 	/**
+	 * It constructs the structure of attribute tree for representing reaching-infection-propagation process.
 	 * @param tree
-	 * @param context
+	 * @param context		null or CDependGraph or CStatePath
 	 * @throws Exception
 	 */
 	protected static void construct(CirAttributeTree tree, Object context) throws Exception {
-		util.construct_tree(tree, context);
+		util.construct_attribute_tree(tree, context);
 	}
 	
 }

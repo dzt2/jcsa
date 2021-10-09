@@ -12,10 +12,10 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  */
 public class CirKillMutant extends CirAttribute {
 
-	protected CirKillMutant(CirMutation cir_mutation) throws Exception {
+	protected CirKillMutant(CirMutation cir_mutation, String literal) throws Exception {
 		super(CirAttributeType.kill_muta, cir_mutation.get_execution(), 
 				cir_mutation.get_init_error().get_location(), 
-				SymbolFactory.literal(cir_mutation.toString()));
+				SymbolFactory.literal(literal));
 	}
 
 	@Override

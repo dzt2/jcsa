@@ -24,7 +24,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  *
  */
 public class SymbolEvaluator {
-
+	
 	/* definitions */
 	/** the context in which the evaluation was performed **/
 	private SymbolProcess symbol_process;

@@ -325,7 +325,27 @@ public abstract class CirAttribute {
 	 * @throws Exception 
 	 */
 	public static CirKillMutant new_kill_mutant(CirMutation mutation) throws Exception {
-		return new CirKillMutant(mutation);
+		if(mutation == null) {
+			throw new IllegalArgumentException("Invalid mutation: null");
+		}
+		else {
+			String execution = mutation.get_execution().toString();
+			String condition = mutation.get_constraint().get_parameter().evaluate(null).generate_code(true);
+			String location  = mutation.get_init_error().get_location().generate_code(true);
+			String logic_type = mutation.get_init_error().get_type().toString(), parameter = "null";
+			if(mutation.get_init_error().get_parameter() != null) {
+				try {
+					parameter = mutation.get_init_error().get_parameter().evaluate(null).generate_code(true);
+				}
+				catch(ArithmeticException ex) {
+					logic_type = CirAttributeType.trp_error.toString();
+					parameter = "null";
+				}
+			}
+			String literal = String.format("%s ON {%s}\n%s: {%s} TO {%s}", 
+					execution, condition, logic_type, location, parameter);
+			return new CirKillMutant(mutation, literal);
+		}
 	}
 	
 }

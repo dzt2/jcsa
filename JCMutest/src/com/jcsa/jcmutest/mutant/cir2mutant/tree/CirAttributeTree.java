@@ -26,8 +26,8 @@ public class CirAttributeTree {
 	/* definitions */
 	private Mutant mutant;
 	private Collection<CirMutation> cir_mutations;
-	private CirAttributeTreeNode root;
-	private Collection<CirAttributeTreeNode> muta_nodes;
+	private CirAttributeNode root;
+	private Collection<CirAttributeNode> muta_nodes;
 	
 	/* constructor */
 	/**
@@ -45,8 +45,8 @@ public class CirAttributeTree {
 			for(CirMutation cir_mutation : CirMutations.parse(mutant)) {
 				this.cir_mutations.add(cir_mutation);
 			}
-			this.root = CirAttributeTreeNode.new_root(this, mutant);
-			this.muta_nodes = new ArrayList<CirAttributeTreeNode>();
+			this.root = CirAttributeNode.new_root(this);
+			this.muta_nodes = new ArrayList<CirAttributeNode>();
 		}
 	}
 	/**
@@ -54,7 +54,7 @@ public class CirAttributeTree {
 	 */
 	protected void update_muta_nodes() {
 		this.muta_nodes.clear();
-		for(CirAttributeTreeNode node : this.root.get_post_nodes()) {
+		for(CirAttributeNode node : this.root.get_post_nodes()) {
 			if(node.get_attribute() instanceof CirKillMutant) {
 				this.muta_nodes.add(node);
 			}
@@ -81,21 +81,21 @@ public class CirAttributeTree {
 	/**
 	 * @return the root node of the tree
 	 */
-	public CirAttributeTreeNode get_root() { return this.root; }
+	public CirAttributeNode get_root() { return this.root; }
 	/**
 	 * @return the set of nodes created in the tree
 	 */
-	public Iterable<CirAttributeTreeNode> get_nodes() { return this.root.get_post_nodes(); }
+	public Iterable<CirAttributeNode> get_nodes() { return this.root.get_post_nodes(); }
 	/**
 	 * @return the set of nodes representing the killing of cir-mutations
 	 */
-	public Iterable<CirAttributeTreeNode> get_muta_nodes() { return this.muta_nodes; }
+	public Iterable<CirAttributeNode> get_muta_nodes() { return this.muta_nodes; }
 	/**
 	 * @return the set of leafs under the tree
 	 */
-	public Iterable<CirAttributeTreeNode> get_leafs() {
-		Set<CirAttributeTreeNode> leafs = new HashSet<CirAttributeTreeNode>();
-		for(CirAttributeTreeNode node : this.get_nodes()) {
+	public Iterable<CirAttributeNode> get_leafs() {
+		Set<CirAttributeNode> leafs = new HashSet<CirAttributeNode>();
+		for(CirAttributeNode node : this.get_nodes()) {
 			if(node.is_leaf()) {
 				leafs.add(node);
 			}
@@ -106,17 +106,17 @@ public class CirAttributeTree {
 	/* factory */
 	public static CirAttributeTree new_tree(Mutant mutant) throws Exception {
 		CirAttributeTree tree = new CirAttributeTree(mutant);
-		CirAttributeTreeUtil.construct(tree, null);
+		CirAttributeTreeUtils.construct(tree, null);
 		return tree;
 	}
 	public static CirAttributeTree new_tree(Mutant mutant, CDependGraph dependence_graph) throws Exception {
 		CirAttributeTree tree = new CirAttributeTree(mutant);
-		CirAttributeTreeUtil.construct(tree, dependence_graph);
+		CirAttributeTreeUtils.construct(tree, dependence_graph);
 		return tree;
 	}
 	public static CirAttributeTree new_tree(Mutant mutant, CStatePath state_path) throws Exception {
 		CirAttributeTree tree = new CirAttributeTree(mutant);
-		CirAttributeTreeUtil.construct(tree, state_path);
+		CirAttributeTreeUtils.construct(tree, state_path);
 		return tree;
 	}
 	
@@ -125,9 +125,9 @@ public class CirAttributeTree {
 	 * clear the status recording each node in the tree
 	 */
 	public void clc_states() {
-		Iterable<CirAttributeTreeNode> nodes = this.get_nodes();
-		for(CirAttributeTreeNode node : nodes) {
-			node.get_state().clc();
+		Iterable<CirAttributeNode> nodes = this.get_nodes();
+		for(CirAttributeNode node : nodes) {
+			node.get_data().clc();
 		}
 	}
 	/**
@@ -136,11 +136,11 @@ public class CirAttributeTree {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void down_state(CirAttributeTreeNode node, SymbolProcess context) throws Exception {
-		Boolean result = node.get_state().add(context);
+	private void down_state(CirAttributeNode node, SymbolProcess context) throws Exception {
+		Boolean result = node.get_data().add(context);
 		if(result == null || result.booleanValue()) {
-			for(CirAttributeTreeEdge edge : node.get_ou_edges()) {
-				this.down_state(edge.get_target(), context);
+			for(CirAttributeNode child : node.get_children()) {
+				this.down_state(child, context);
 			}
 		}
 	}
@@ -151,44 +151,38 @@ public class CirAttributeTree {
 	 * @throws Exception
 	 */
 	public void add_states(CirExecution execution, int max_infecting_times, SymbolProcess context) throws Exception {
-		/* 1. it collects the attribute nodes w.r.t. execution and within limit */
-		Set<CirAttributeTreeNode> infect_nodes = new HashSet<CirAttributeTreeNode>();
-		for(CirAttributeTreeNode mutant_node : this.muta_nodes) {
-			if(mutant_node.get_attribute().get_execution() == execution || execution == null) {
-				CirAttributeTreeNode infect_node = mutant_node.get_parent();
-				if(infect_node.get_state().number_of_acceptions() < max_infecting_times) {
-					infect_nodes.add(infect_node);
+		/* 1. it statically evaluates the previous nodes for reaching mutation */
+		Set<CirAttributeNode> pred_nodes = new HashSet<CirAttributeNode>();
+		for(CirAttributeNode muta_node : this.muta_nodes) {
+			CirAttributeNode reach_node = muta_node.get_parent().get_parent();
+			for(CirAttributeNode pred_node : reach_node.get_pred_nodes()) {
+				pred_nodes.add(pred_node);
+			}
+		}
+		for(CirAttributeNode pred_node : pred_nodes) { pred_node.get_data().add(null); }
+		
+		/* 2. it captures the infection-condition nodes w.r.t. execution and limit */
+		Set<CirAttributeNode> cond_nodes = new HashSet<CirAttributeNode>();
+		for(CirAttributeNode muta_node : this.muta_nodes) {
+			if(execution == null || muta_node.get_attribute().get_execution() == execution) {
+				CirAttributeNode cond_node = muta_node.get_parent();
+				if(cond_node.get_data().number_of_acceptions() < max_infecting_times) {
+					cond_nodes.add(cond_node);
 				}
 			}
 		}
-		if(infect_nodes.isEmpty()) { return; /* none of nodes for evaluation */ }
 		
-		/* 2. it captures the previous nodes and evaluate them via static way */
-		Set<CirAttributeTreeNode> previous_nodes = new HashSet<CirAttributeTreeNode>();
-		for(CirAttributeTreeNode infect_node : infect_nodes) {
-			CirAttributeTreeNode pred_node = infect_node.get_parent();
-			while(pred_node != null) {
-				previous_nodes.add(pred_node);
-				pred_node = pred_node.get_parent();
-			}
-		}
-		for(CirAttributeTreeNode pred_node : previous_nodes) {
-			pred_node.get_state().add(null);
-		}
-		
-		/* 3. recursively evaluate the nodes from  */
-		for(CirAttributeTreeNode infect_node : infect_nodes) {
-			this.down_state(infect_node, context);
-		}
+		/* 3. it recursively evaluates the children under the infection conditions */
+		for(CirAttributeNode cond_node : cond_nodes) { this.down_state(cond_node, context); }
 	}
 	/**
 	 * update and summarize the annotations in each node
 	 * @throws Exception
 	 */
 	public void sum_states() throws Exception {
-		Iterable<CirAttributeTreeNode> nodes = this.get_nodes();
-		for(CirAttributeTreeNode node : nodes) {
-			node.get_state().sum();
+		Iterable<CirAttributeNode> nodes = this.get_nodes();
+		for(CirAttributeNode node : nodes) {
+			node.get_data().sum();
 		}
 	}
 	

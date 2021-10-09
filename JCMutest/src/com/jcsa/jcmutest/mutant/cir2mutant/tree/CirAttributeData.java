@@ -11,13 +11,13 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * It maintains the generation, concretize, evaluation and summarization of the
- * CirAttribute and its corresponding annotations.
+ * It maintains the evaluation data results on CirAttribute and its correspond
+ * annotations (i.e. CirAnnotation).
  * 
  * @author yukimula
  *
  */
-public class CirAttributeState {
+public class CirAttributeData {
 	
 	/* definitions */
 	private CirAttribute									attribute;
@@ -32,7 +32,7 @@ public class CirAttributeState {
 	 * @param attribute
 	 * @throws Exception
 	 */
-	protected CirAttributeState(CirAttribute attribute) throws Exception {
+	protected CirAttributeData(CirAttribute attribute) throws Exception {
 		if(attribute == null) {
 			throw new IllegalArgumentException("Invalid attribute: null");
 		}

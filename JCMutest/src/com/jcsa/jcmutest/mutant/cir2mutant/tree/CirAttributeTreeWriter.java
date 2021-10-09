@@ -1031,13 +1031,13 @@ public class CirAttributeTreeWriter {
 	 * @return the number of words written in the node
 	 * @throws Exception
 	 */
-	private int		write_cir_attribute_node(CirAttributeTreeNode node) throws Exception {
+	private int		write_cir_attribute_node(CirAttributeNode node) throws Exception {
 		int number_of_words = 0;
 		this.file_writer.write("\t");
 		this.write_attribute(node.get_attribute());
 		
-		if(node.get_state().is_executed()) {
-			for(CirAnnotation annotation : node.get_state().get_abs_annotations()) {
+		if(node.get_data().is_executed()) {
+			for(CirAnnotation annotation : node.get_data().get_abs_annotations()) {
 				this.file_writer.write("\t");
 				this.write_annotation(annotation);
 				number_of_words++;
@@ -1054,7 +1054,7 @@ public class CirAttributeTreeWriter {
 	 * @return
 	 * @throws Exception
 	 */
-	private	int[]	write_cir_attribute_path(CirAttributeTreeNode leaf, TestInput test) throws Exception {
+	private	int[]	write_cir_attribute_path(CirAttributeNode leaf, TestInput test) throws Exception {
 		/* mid tid */
 		String mid = this.encode_token(leaf.get_tree().get_mutant());
 		String tid = this.encode_token(test);
@@ -1064,7 +1064,7 @@ public class CirAttributeTreeWriter {
 		int number_of_words = 0;
 		int number_of_nodes = 0;
 		int number_of_lines = 0;
-		for(CirAttributeTreeNode node : leaf.get_pred_nodes()) {
+		for(CirAttributeNode node : leaf.get_pred_nodes()) {
 			int word_number = this.write_cir_attribute_node(node);
 			if(word_number > 0) {
 				number_of_words += word_number;
@@ -1095,7 +1095,7 @@ public class CirAttributeTreeWriter {
 			tree.sum_states();	/* summarize for generating annotations */
 			
 			/* write for each root-leaf path a line in the xxx.stp */
-			for(CirAttributeTreeNode leaf : tree.get_leafs()) {
+			for(CirAttributeNode leaf : tree.get_leafs()) {
 				/* write only one line for the node-list in the tree */
 				int[] words_nodes_lines = this.write_cir_attribute_path(leaf, test);
 				number_of_words += words_nodes_lines[0];
