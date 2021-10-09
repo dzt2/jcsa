@@ -788,9 +788,25 @@ class StateDifferencePatternWriter:
 		matched_mutants = undetected_mutants & predicted_mutants
 
 		## 2. mutation sample counting and metrics evaluation
-		undetected_number = len(undetected_mutants)
-		predicted_number = len(predicted_mutants)
-		matched_number = len(matched_mutants)
+		return self.__prf_evaluate__(undetected_mutants, predicted_mutants)
+
+	def __prf_evaluate__(self, orig_samples, pred_samples):
+		"""
+		:param orig_samples:
+		:param pred_samples:
+		:return: undetected_number, predicted_number, matched_number, precision, recall, f1_score
+					1. undetected_number: the number of undetected mutants by the used_tests
+					2. predicted_number: the number of mutants predicted by input patterns
+					3. matched_number: the number of undetected mutants matched by input patterns
+					4. precision = matched_number / predicted_number
+					5. recall = matched_number / undetected_number
+					6. f1_score = 2 * precision * recall / (precision + recall)
+		"""
+		self.__do_canceled__()
+		undetected_number = len(orig_samples)
+		predicted_number = len(pred_samples)
+		matched_samples = orig_samples & pred_samples
+		matched_number = len(matched_samples)
 		precision, recall, f1_score = 0.0, 0.0, 0.0
 		if matched_number > 0:
 			precision = matched_number / predicted_number
@@ -1111,6 +1127,111 @@ class StateDifferencePatternWriter:
 			self.__close_writer__()
 		return
 
+	def __mine_best_pattern__(self, document: jecode.MerDocument, mutant: jecode.MerMutant, miner: StateDifferenceFPMiner):
+		"""
+		:param document:
+		:param mutant:
+		:param miner:
+		:return: the best pattern to represent the mutation or None if the mutant cannot be matched
+		"""
+		self.__do_canceled__()
+
+		## 1. capture the features incorporated in the mutation
+		features = set()
+		for execution in document.exec_space.get_executions_of(mutant):
+			execution: jecode.MerExecution
+			for feature in execution.get_features():
+				features.add(feature)
+
+		## 2. it collects the tests that cannot kill the mutant
+		test_list = set()
+		for tid in range(0, len(mutant.get_result())):
+			if mutant.is_killed_by(tid):
+				continue
+			else:
+				test_list.add(tid)
+		used_tests = set()
+		while len(test_list) > 0 and len(used_tests) < 128:
+			rand_test = jcbase.rand_select(test_list)
+			rand_test: int
+			used_tests.add(rand_test)
+			test_list.remove(rand_test)
+
+		## 3. it generates the good patterns for best matching
+		patterns = miner.mine(features, used_tests, False, None, None)
+		pattern_list = miner.middle.sort_patterns(patterns, used_tests)
+		if len(pattern_list) > 0:
+			best_pattern = pattern_list[0]
+		else:
+			best_pattern = None
+		return best_pattern, used_tests
+
+	def write_mutant_clusters(self, inputs: StateDifferenceMineInputs, file_path: str, beg_line: str, is_reported: bool):
+		"""
+		:param inputs:
+		:param file_path:
+		:param beg_line:
+		:return:
+		"""
+		## 1. perform frequent pattern mining on every mutant to fetch representative pattern
+		pattern_mutants, pattern_tests, miner = dict(), dict(), StateDifferenceFPMiner(inputs)
+		all_mutants, uncovered_mutants, covered_mutants = set(), set(), set()
+		counter, total_number = 0, len(inputs.get_document().exec_space.get_mutants())
+		for mutant in inputs.get_document().exec_space.get_mutants():
+			mutant: jecode.MerMutant
+			all_mutants.add(mutant)
+			best_pattern, used_tests = self.__mine_best_pattern__(inputs.get_document(), mutant, miner)
+			counter += 1
+			if is_reported:
+				print("\t\tProceed[{}/{}] ==> {} pattern and {} tests".format(counter, total_number, (best_pattern is not None), len(used_tests)))
+			if best_pattern is None:
+				uncovered_mutants.add(mutant)
+			else:
+				best_pattern: StateDifferencePattern
+				if not (best_pattern in pattern_mutants):
+					pattern_mutants[best_pattern] = set()
+					pattern_tests[best_pattern] = used_tests
+				pattern_mutants[best_pattern].add(mutant)
+				covered_mutants.add(mutant)
+
+		## 2. it writes the mutation-clustering patterns for each mutants being covered
+		with open(file_path, 'w') as writer:
+			## 2-1. initialize the output stream writer
+			self.__open_writer__(writer, beg_line)
+
+			## 2-2. write the coverage metrics from the mutants
+			orig_number, pred_number, match_number, precision, recall, f1_score = self.__prf_evaluate__(all_mutants, covered_mutants)
+			self.__output_text__("BEG-COVERAGE\n")
+			self.__output_text__("\tOrig_Mutants = {}\tPred_Mutants = {}\tMatch_Mutants = {}\n".format(orig_number, pred_number, match_number))
+			self.__output_text__("\tPrecision = {}%\tRecall = {}%\tF1_Score = {}\n".format(precision, recall, f1_score))
+			optimized_ratio = len(pattern_mutants) / (len(covered_mutants) + 0.0000000001)
+			optimized_ratio = int(optimized_ratio * 1000000) / 10000.0
+			self.__output_text__("\tClusters = {}\tOptimized_Ratio = {}%\n".format(len(pattern_mutants), optimized_ratio))
+			self.__output_text__("END_COVERAGE\n\n")
+
+			## 2-3. covered mutation and the corresponding patterns
+			self.__output_text__("BEG_CLUSTERS\n")
+			for pattern, mutants in pattern_mutants.items():
+				pattern: StateDifferencePattern
+				used_tests = pattern_tests[pattern]
+				self.__output_text__("\tP.{}\n".format(self.__pat2str__(pattern, used_tests)))
+				for annotation in pattern.get_annotations():
+					self.__output_text__("\tC.{}\n".format(self.__ant2str__(annotation)))
+				for mutant in mutants:
+					self.__output_text__("\t\t{}\n".format(self.__mut2str__(mutant)))
+				self.__output_text__("\n")
+			self.__output_text__("END_CLUSTERS\n\n")
+
+			## 2-4. uncovered mutation being printed
+			self.__output_text__("BEG_UNCOVERED\n")
+			for uncovered_mutant in uncovered_mutants:
+				self.__output_text__("\t{}\n".format(uncovered_mutant))
+			self.__output_text__("END_UNCOVERED\n\n")
+
+			## 2-5. close the writer and end of the file
+			self.__close_writer__()
+		return
+
 
 ## testing method
 
@@ -1187,6 +1308,21 @@ def do_dtm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInput
 	return
 
 
+def do_fpt_clustering(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
+					  o_directory: str, file_name: str, is_reported: bool):
+	"""
+	:param c_document:
+	:param inputs:
+	:param o_directory:
+	:param file_name:
+	:return:
+	"""
+	writer = StateDifferencePatternWriter(c_document, inputs)
+	writer.write_mutant_clusters(inputs, os.path.join(o_directory, file_name + ".fpc"),
+								 "Frequent Pattern based Clustering", is_reported)
+	return
+
+
 def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 			  output_directory: str, file_name: str, used_tests, is_reported: bool,
 			  max_length: int, min_support: int, min_confidence: float, max_confidence: float):
@@ -1232,6 +1368,7 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	inputs.max_length = old_max_length
 
 	## V. end of the project
+	do_fpt_clustering(c_document, inputs, o_directory, file_name, True)
 	print("END-Project #{}".format(file_name))
 	return
 
