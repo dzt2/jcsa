@@ -1376,7 +1376,7 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	## V. perform frequent pattern based clustering and output
 	print("\tV. Perform Frequent Pattern based Clustering and Output them.")
 	inputs.min_support = 1
-	do_fp_cluster(c_document, inputs, o_directory, file_name, True, 96)
+	# do_fp_cluster(c_document, inputs, o_directory, file_name, True, 96)
 	inputs.min_support = min_support
 
 	## VI. end of all of the mutation testing project

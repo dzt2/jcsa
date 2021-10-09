@@ -469,7 +469,7 @@ class SymExecutionSpace:
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
 	impa_path = "/home/dzt2/Development/Data/zexp/impacts"
-	print_condition, print_number = True, 6
+	print_condition, print_number = True, 12
 	for file_name in os.listdir(root_path):
 		print("Testing on", file_name)
 		c_directory = os.path.join(root_path, file_name)
