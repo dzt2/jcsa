@@ -583,7 +583,7 @@ class StateDifferenceFPMiner:
 		os.remove(file_path)
 		return
 
-	def mine(self, features, used_tests, is_reported, c_document: jctest.CDocument, o_directory: str):
+	def mine(self, features, used_tests, is_reported, c_document, o_directory):
 		"""
 		:param features:		the set of features from which the patterns will be generated.
 		:param used_tests:		the set of test cases used to evaluate the metrics of each pattern
@@ -1182,7 +1182,7 @@ class StateDifferencePatternWriter:
 			all_mutants.add(mutant)
 			best_pattern, used_tests = self.__mine_best_pattern__(inputs.get_document(), mutant, miner)
 			counter += 1
-			if is_reported:
+			if is_reported and counter % 20 == 0:
 				print("\t\tProceed[{}/{}] ==> {} pattern and {} tests".format(counter, total_number, (best_pattern is not None), len(used_tests)))
 			if best_pattern is None:
 				uncovered_mutants.add(mutant)
@@ -1225,7 +1225,7 @@ class StateDifferencePatternWriter:
 			## 2-4. uncovered mutation being printed
 			self.__output_text__("BEG_UNCOVERED\n")
 			for uncovered_mutant in uncovered_mutants:
-				self.__output_text__("\t{}\n".format(uncovered_mutant))
+				self.__output_text__("\t{}\n".format(self.__mut2str__(uncovered_mutant)))
 			self.__output_text__("END_UNCOVERED\n\n")
 
 			## 2-5. close the writer and end of the file
@@ -1308,8 +1308,8 @@ def do_dtm_mining(c_document: jctest.CDocument, inputs: StateDifferenceMineInput
 	return
 
 
-def do_fpt_clustering(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
-					  o_directory: str, file_name: str, is_reported: bool):
+def do_fp_cluster(c_document: jctest.CDocument, inputs: StateDifferenceMineInputs,
+				  o_directory: str, file_name: str, is_reported: bool):
 	"""
 	:param c_document:
 	:param inputs:
@@ -1352,9 +1352,9 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	# II. construct the input module for driving pattern mining procedures
 	inputs = StateDifferenceMineInputs(m_document, max_length, min_support, min_confidence, max_confidence)
 	print("\tII. Inputs: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
-																							   inputs.get_min_support(),
-																							   inputs.get_min_confidence(),
-																							   inputs.get_max_confidence()))
+																							inputs.get_min_support(),
+																							inputs.get_min_confidence(),
+																							inputs.get_max_confidence()))
 
 	## III. perform frequent pattern mining and evaluate it
 	print("\tIII. Perform Frequent Pattern Mining and Evaluate for Output.")
@@ -1367,8 +1367,13 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	do_dtm_mining(c_document, inputs, o_directory, file_name, used_tests, is_reported)
 	inputs.max_length = old_max_length
 
-	## V. end of the project
-	do_fpt_clustering(c_document, inputs, o_directory, file_name, True)
+	## V. perform frequent pattern based clustering and output
+	print("\tV. Perform Frequent Pattern based Clustering and Output them.")
+	inputs.min_support = 1
+	do_fp_cluster(c_document, inputs, o_directory, file_name, True)
+	inputs.min_support = min_support
+
+	## VI. end of all of the mutation testing project
 	print("END-Project #{}".format(file_name))
 	return
 
