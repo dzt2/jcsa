@@ -143,54 +143,24 @@ class CirAnnotationTree:
 		"""
 		self.document = document
 		self.annotations = dict()
-		words = self.__load_words__(file_path)
-		self.__build_from__(words)
-		self.__link_nodes__(file_path)
+		self.__parse__(file_path)
 		return
 
-	def __load_words__(self, file_path: str):
+	def __parse__(self, file_path: str):
 		"""
 		:param file_path:
-		:return: the set of words encoding the annotations uniquely
-		"""
-		words = set()
-		self.annotations.clear()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.strip().split('\t')
-					for item in items:
-						word = item.strip()
-						if len(word) > 0:
-							words.add(word)
-		return words
-
-	def __build_from__(self, words: set):
-		"""
-		:param words: set of words encoding annotations uniquely
 		:return:
 		"""
-		for word in words:
-			annotation = CirAnnotation.parse(self.document, word)
-			self.annotations[word] = annotation
-		return
-
-	def __link_nodes__(self, file_path: str):
-		"""
-		:param file_path:
-		:return: connects each annotation to their directly subsumed ones
-		"""
 		with open(file_path, 'r') as reader:
 			for line in reader:
 				line = line.strip()
 				if len(line) > 0:
-					items = line.strip().split('\t')
-					parent = self.annotations[items[0].strip()]
-					parent.children.clear()
-					for k in range(1, len(items)):
-						child = self.annotations[items[k].strip()]
-						parent.children.append(child)
+					words = line.split('\t')
+					parent = self.get_annotation(words[0].strip())
+					for k in range(1, len(words)):
+						child = self.get_annotation(words[k].strip())
+						if child != parent:
+							parent.children.append(child)
 		return
 
 	def get_document(self):
@@ -213,7 +183,12 @@ class CirAnnotationTree:
 		:param word:
 		:return: the annotation w.r.t. the word encoding it in the tree
 		"""
-		return self.annotations[word]
+		if not (word in self.annotations):
+			annotation = CirAnnotation.parse(self.document, word)
+			self.annotations[word] = annotation
+		annotation = self.annotations[word]
+		annotation: CirAnnotation
+		return annotation
 
 	def __len__(self):
 		"""
@@ -355,7 +330,7 @@ class SymExecutionSpace:
 				elif word != ';':
 					buffer.append(word)
 				else:
-					attribute = CirAnnotation.parse(self.document, buffer[0])
+					attribute = anot_tree.get_annotation(buffer[0])
 					annotations = set()
 					for k in range(1, len(buffer)):
 						annotations.add(anot_tree.get_annotation(buffer[k]))
