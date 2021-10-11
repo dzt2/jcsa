@@ -132,8 +132,6 @@ public class CirMutationsFeatureWriter {
 	private Set<SymbolNode> 		symbol_vexs;
 	/** the set of annotations produced for feature file **/
 	private Set<CirAnnotation>		annotations;
-	/** the mapping from attribute to its symbolic annotations **/
-	private Map<CirAttribute, Set<CirAnnotation>> attributes;
 	/** the maximal times of evaluation on state infection **/
 	private int						meval_times;
 	
@@ -147,7 +145,6 @@ public class CirMutationsFeatureWriter {
 		this.file_writer = null;
 		this.symbol_vexs = new HashSet<SymbolNode>();
 		this.annotations = new HashSet<CirAnnotation>();
-		this.attributes = new HashMap<CirAttribute, Set<CirAnnotation>>();
 		this.meval_times = 0;
 	}
 	private static CirMutationsFeatureWriter writer = new CirMutationsFeatureWriter();
@@ -967,25 +964,11 @@ public class CirMutationsFeatureWriter {
 		}
 	}
 	/**
-	 * [attribute annotation+]
-	 * @throws Exception
-	 */
-	private void	write_ant_maps() throws Exception {
-		for(CirAttribute attribute : this.attributes.keySet()) {
-			this.file_writer.write(this.encode_token(attribute));
-			for(CirAnnotation annotation : this.attributes.get(attribute)) {
-				this.file_writer.write("\t" + this.encode_token(annotation));
-			}
-			this.file_writer.write("\n");
-		}
-	}
-	/**
 	 * xxx.ant
 	 * @throws Exception
 	 */
 	private void 	write_ant() throws Exception {
 		this.open(".ant");
-		this.write_ant_maps();
 		CirAnnotationTree tree = new CirAnnotationTree();
 		for(CirAnnotation annotation : this.annotations) {
 			tree.extend_from(annotation);
@@ -1009,13 +992,6 @@ public class CirMutationsFeatureWriter {
 				this.file_writer.write("\t");
 				this.file_writer.write(this.encode_token(annotation));
 				number_of_words++;
-			}
-			
-			for(CirAnnotation annotation : node.get_data().get_sym_annotations()) {
-				if(!this.attributes.containsKey(node.get_attribute())) {
-					this.attributes.put(node.get_attribute(), new HashSet<CirAnnotation>());
-				}
-				this.attributes.get(node.get_data().get_attribute()).add(annotation);
 			}
 		}
 		
@@ -1178,13 +1154,11 @@ public class CirMutationsFeatureWriter {
 	private void	write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
 		this.symbol_vexs.clear();
 		this.annotations.clear();
-		this.attributes.clear();
 		
 		this.write_stp(dependence_graph, test_cases);
 		this.write_ant();
 		this.write_sym();
 		
-		this.attributes.clear();
 		this.annotations.clear();
 		this.symbol_vexs.clear();
 	}

@@ -9,7 +9,7 @@ import graphviz
 from sklearn import metrics
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
-import com.jcsa.rule.encode as jecode
+import com.jcsa.rule.merd as jecode
 import sklearn.tree as sktree
 
 
@@ -56,7 +56,7 @@ class StateDifferenceTree:
 		:param features: the set of integer features to encode the node of pattern being generated
 		:return: the unique tree node of which pattern is specified by the input features sequence.
 		"""
-		feature_list = self.document.anto_space.normal(features)
+		feature_list = self.document.anot_space.normal(features)
 		node = self.root
 		for feature in feature_list:
 			node = node.new_child(feature)
@@ -198,7 +198,7 @@ class StateDifferencePattern:
 		while not node.is_root():
 			features.add(node.get_feature())
 			node = node.get_parent()
-		return self.document.anto_space.normal(features)
+		return self.document.anot_space.normal(features)
 
 	def __matched_with__(self, execution: jecode.MerExecution):
 		"""
@@ -244,7 +244,7 @@ class StateDifferencePattern:
 		"""
 		:return: the set of annotations encoded by this pattern's feature vector.
 		"""
-		return self.document.anto_space.decode(self.features)
+		return self.document.anot_space.decode(self.features)
 
 	def get_executions(self):
 		"""
@@ -562,7 +562,7 @@ class StateDifferenceFPMiner:
 		graph = graphviz.Digraph(comment="Frequent Pattern Tree for {}".format(file_name))
 		for c_annotation in  c_annotations:
 			key = str(c_annotation)
-			m_annotation = self.middle.get_document().anto_space.find_annotation(str(c_annotation))
+			m_annotation = self.middle.get_document().anot_space.get_annotation_of(str(c_annotation))
 			m_pattern = self.middle.get_node([m_annotation.aid]).get_pattern()
 			length, support, confidence = m_pattern.evaluate(used_tests)
 			confidence = int(confidence * 10000) / 100.0
@@ -593,7 +593,7 @@ class StateDifferenceFPMiner:
 		:return:
 		"""
 		## 1. initialize the feature vector and used test number for reporting
-		feature_list = self.middle.get_document().anto_space.normal(features)
+		feature_list = self.middle.get_document().anot_space.normal(features)
 		if used_tests is None:
 			number_of_tests = len(self.middle.get_document().test_space.get_test_cases())
 		else:
@@ -666,7 +666,7 @@ class StateDifferenceDTMiner:
 		"""
 		m_document = self.middle.get_document()
 		names = list()
-		for annotation in m_document.anto_space.get_annotations():
+		for annotation in m_document.anot_space.get_annotations():
 			annotation: jecode.MerAnnotation
 			names.append(StateDifferenceDTMiner.__normalize_annotation__(annotation, c_document))
 		dot_data = sktree.export_graphviz(dc_tree, out_file=None,
@@ -785,7 +785,6 @@ class StateDifferencePatternWriter:
 			pattern: StateDifferencePattern
 			for execution in pattern.get_executions():
 				predicted_mutants.add(execution.get_mutant())
-		matched_mutants = undetected_mutants & predicted_mutants
 
 		## 2. mutation sample counting and metrics evaluation
 		return self.__prf_evaluate__(undetected_mutants, predicted_mutants)
@@ -1156,7 +1155,7 @@ class StateDifferencePatternWriter:
 			rand_test: int
 			used_tests.add(rand_test)
 			test_list.remove(rand_test)
-			if max_tests_number > 0 and len(used_tests) >= max_tests_number:
+			if (max_tests_number > 0) and (len(used_tests) >= max_tests_number):
 				break
 
 		## 3. it generates the good patterns for best matching
