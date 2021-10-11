@@ -5,11 +5,15 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * It provides the static interfaces for creating and analyzing cir-based mutation.
@@ -237,6 +241,30 @@ public class CirMutations {
 		}
 		else {
 			return false;
+		}
+	}
+	
+	/* safety symbolic evaluation */
+	/** the abstract value to denote the case in which an arithmetic exception is thrown during symbolic computation **/
+	public static final SymbolExpression expt_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");
+	/**
+	 * @param expression
+	 * @param context
+	 * @return 	It evaluates the expression under the context and return its results (if arithmetic exception is thrown
+	 * 			during analysis, the method simply returns CirAnnotationValue.expt_value to denote an exception occurs).
+	 * @throws Exception
+	 */
+	public static SymbolExpression safe_evaluate(SymbolExpression expression, SymbolProcess context) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			try {
+				return expression.evaluate(context);
+			}
+			catch(ArithmeticException ex) {
+				return expt_value;
+			}
 		}
 	}
 	

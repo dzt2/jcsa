@@ -14,7 +14,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
+
 
 /**
  * It specifies the abstract symbolic value for value in CirAnnotation.
@@ -51,30 +51,6 @@ final class CirAnnotationValue {
 	protected static final SymbolExpression null_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NullValue");
 	/** {p | p != null} **/
 	protected static final SymbolExpression nnul_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NnulValue");
-	
-	/* safety symbolic evaluation */
-	/** the abstract value to denote the case in which an arithmetic exception is thrown during symbolic computation **/
-	protected static final SymbolExpression expt_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");
-	/**
-	 * @param expression
-	 * @param context
-	 * @return 	It evaluates the expression under the context and return its results (if arithmetic exception is thrown
-	 * 			during analysis, the method simply returns CirAnnotationValue.expt_value to denote an exception occurs).
-	 * @throws Exception
-	 */
-	protected static SymbolExpression safe_evaluate(SymbolExpression expression, SymbolProcess context) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else {
-			try {
-				return expression.evaluate(context);
-			}
-			catch(ArithmeticException ex) {
-				return expt_value;
-			}
-		}
-	}
 	
 	/* differential generations */
 	/**

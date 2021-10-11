@@ -55,7 +55,7 @@ import com.jcsa.jcparse.test.state.CStatePath;
 final class CirAttributeTreeUtils {
 	
 	/* singleton mode */ /** constructor **/ 	private CirAttributeTreeUtils() {}
-	private static final CirAttributeTreeUtils util = new CirAttributeTreeUtils();
+	private static final CirAttributeTreeUtils utils = new CirAttributeTreeUtils();
 	
 	/* prev_nodes methods */
 	/**
@@ -801,7 +801,7 @@ final class CirAttributeTreeUtils {
 	 * @throws Exception
 	 */
 	protected static void construct(CirAttributeTree tree, Object context) throws Exception {
-		util.construct_attribute_tree(tree, context);
+		utils.construct_attribute_tree(tree, context);
 	}
 	
 }

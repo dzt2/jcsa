@@ -54,7 +54,7 @@ public class CirAnnotation {
 			this.execution  = execution;
 			this.logic_type = logic_type;
 			this.store_unit = store_unit;
-			this.symb_value = CirAnnotationValue.safe_evaluate(symb_value, null);
+			this.symb_value = CirMutations.safe_evaluate(symb_value, null);
 		}
 	}
 	
@@ -152,7 +152,7 @@ public class CirAnnotation {
 		else {
 			execution = execution.get_graph().get_exit();
 			return new CirAnnotation(execution, CirAnnotationClass.trp_stmt,
-					execution.get_statement(), CirAnnotationValue.expt_value);
+					execution.get_statement(), CirMutations.expt_value);
 		}
 	}
 	/**

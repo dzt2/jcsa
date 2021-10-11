@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -316,7 +317,7 @@ public abstract class CirAttribute {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
-			return new CirTrapsError(execution, SymbolFactory.sym_constant(Boolean.TRUE));
+			return new CirTrapsError(execution, CirMutations.expt_value);
 		}
 	}
 	/**

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cir2mutant.tree;
+package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import java.io.File;
 import java.io.FileReader;
@@ -12,16 +12,12 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraint;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirCoverCount;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirDiferError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirFlowsError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirKillMutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirReferError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirStateError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsError;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueError;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotation;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotationClass;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotationNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAnnotationTree;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAttributeNode;
+import com.jcsa.jcmutest.mutant.cir2mutant.tree.CirAttributeTree;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -87,8 +83,8 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It implements the output of features from mutation test project based on the
- * CirMutation and corresponding model for describing mutation impact features.
+ * It implements the generation of features to output files in directory
+ * for information preserved in mutation testing project.
  * <br>
  * 
  * <code>
@@ -119,34 +115,46 @@ import com.jcsa.jcparse.test.state.CStatePath;
  * 	+-------------------------------------------------------------------+	<br>
  * </code>
  * 
+ * <br>
  * @author yukimula
  *
  */
-public class CirAttributeTreeWriter {
+public class CirMutationsFeatureWriter {
 	
 	/* definitions */
 	/** the input source code file for creating features **/
-	private MuTestProjectCodeFile 	inputs;
+	private MuTestProjectCodeFile 	inputs_file;
 	/** the directory where feature files were generated **/
-	private File 					output_directory;
+	private File 					o_directory;
 	/** it is used to output string text to current file **/
 	private FileWriter 				file_writer;
 	/** set to preserve symbolic nodes used for features **/
-	private Set<SymbolNode> 		symbol_nodes;
+	private Set<SymbolNode> 		symbol_vexs;
 	/** the set of annotations produced for feature file **/
 	private Set<CirAnnotation>		annotations;
+	/** the mapping from attribute to its symbolic annotations **/
+	private Map<CirAttribute, Set<CirAnnotation>> attributes;
 	/** the maximal times of evaluation on state infection **/
-	private int						max_infecting_times;
+	private int						meval_times;
 	
-	/* singleton mode */ /** constructor **/ private CirAttributeTreeWriter() {
-		this.annotations = new HashSet<CirAnnotation>();
-		this.symbol_nodes = new HashSet<SymbolNode>();
-	}
-	private static CirAttributeTreeWriter writer = new CirAttributeTreeWriter();
-	
-	/* input-output methods */
+	/* singleton mode */ 
 	/**
-	 * close writer
+	 * Private constructor of singleton mode
+	 */
+	private CirMutationsFeatureWriter() {
+		this.inputs_file = null;
+		this.o_directory = null;
+		this.file_writer = null;
+		this.symbol_vexs = new HashSet<SymbolNode>();
+		this.annotations = new HashSet<CirAnnotation>();
+		this.attributes = new HashMap<CirAttribute, Set<CirAnnotation>>();
+		this.meval_times = 0;
+	}
+	private static CirMutationsFeatureWriter writer = new CirMutationsFeatureWriter();
+	
+	/* inputs-output methods */
+	/**
+	 * It closes the file output stream to files
 	 * @throws Exception
 	 */
 	private void close() throws Exception {
@@ -156,30 +164,34 @@ public class CirAttributeTreeWriter {
 		}
 	}
 	/**
-	 * open to new writer
+	 * It opens the output stream to a specified file
 	 * @param postfix
 	 * @throws Exception
 	 */
 	private void open(String postfix) throws Exception {
-		/* get the output file for writing */
-		String file_name; int index; File output_file;
-		file_name = inputs.get_name(); index = file_name.indexOf('.');
+		/* 1. extract the source code file name */
+		String file_name; int index; 
+		file_name = this.inputs_file.get_name(); 
+		index = file_name.indexOf('.');
 		file_name = file_name.substring(0, index).trim();
-		output_file = new File(this.output_directory.getAbsolutePath() + "/" + file_name + postfix);
-		System.out.println("\t==> Start to Write \"" + output_file.getAbsolutePath() + "\"...");
-
-		/* open a new writer */
-		this.close(); 
-		this.file_writer = new FileWriter(output_file);
+		
+		/* 2. get the output file with specified postfix */
+		File output_file;
+		output_file = new File(this.o_directory.getAbsolutePath() + "/" + file_name + postfix);
+		System.out.println("\t==> Start to Write on " + output_file.getAbsolutePath() + "...");
+		
+		/* 3. close the output stream and re-open it */
+		this.close(); this.file_writer = new FileWriter(output_file);
 	}
 	/**
-	 * set the inputs and output directory for generating feature files
+	 * It resets the inputs and output location in the given evaluation times
 	 * @param inputs
 	 * @param output_directory
+	 * @param max_evaluation_times
 	 * @throws Exception
 	 */
-	private void set_IO(MuTestProjectCodeFile inputs, File 
-			output_directory, int max_infecting_times) throws Exception {
+	private void reset(MuTestProjectCodeFile inputs, File 
+			output_directory, int max_evaluation_times) throws Exception {
 		if(inputs == null) {
 			throw new IllegalArgumentException("Invalid input: null");
 		}
@@ -189,19 +201,21 @@ public class CirAttributeTreeWriter {
 		else if(output_directory.exists() && !output_directory.isDirectory()) {
 			throw new IllegalArgumentException("Invalid: " + output_directory.getAbsolutePath());
 		}
-		else if(max_infecting_times <= 0) {
-			throw new IllegalArgumentException("Invalid: " + max_infecting_times);
+		else if(max_evaluation_times <= 0) {
+			throw new IllegalArgumentException("Invalid: " + max_evaluation_times);
 		}
 		else {
-			if(!output_directory.exists()) { FileOperations.mkdir(output_directory); }
-			this.inputs = inputs;
-			this.output_directory = output_directory;
+			if(!output_directory.exists()) {
+				FileOperations.mkdir(output_directory);
+			}
+			this.inputs_file = inputs;
+			this.o_directory = output_directory;
 			this.close();
-			this.max_infecting_times = max_infecting_times;
+			this.meval_times = max_evaluation_times;
 		}
 	}
 	
-	/* basic supporting methods */
+	/* basic methods */
 	/**
 	 * translate special characters to specified format
 	 * @param text
@@ -229,6 +243,7 @@ public class CirAttributeTreeWriter {
 	 * 			ENUMS:	key@keyword, opr@operator, pun@punctuator, typ@type;
 	 * 			OBJEC:	ast@int, cir@int, exe@txt@int, ins@txt@int@int;
 	 * 			FEATU:	sym@txt@int, mut@int, tst@int;
+	 * 			WORDS:	logic_type$execution$store_unit$symb_value;
 	 * @throws Exception
 	 */
 	private String encode_token(Object token) throws Exception {
@@ -299,6 +314,43 @@ public class CirAttributeTreeWriter {
 		else if(token instanceof TestInput) {
 			return "tst@" + ((TestInput) token).get_id();
 		}
+		else if(token instanceof CirAnnotation) {
+			CirAnnotation annotation = (CirAnnotation) token;
+			
+			String logic_type = annotation.get_logic_type().toString();
+			String execution = this.encode_token(annotation.get_execution());
+			String store_unit = this.encode_token(annotation.get_store_unit());
+			String symb_value = this.encode_token(annotation.get_symb_value());
+			
+			this.symbol_vexs.add(annotation.get_symb_value());
+			this.annotations.add(annotation); 
+			return String.format("%s$%s$%s$%s", 
+					logic_type, execution, store_unit, symb_value);
+		}
+		else if(token instanceof CirAttribute) {
+			CirAttribute attribute = (CirAttribute) token;
+			
+			String logic_type;
+			switch(attribute.get_type()) {
+			case condition:	logic_type = CirAnnotationClass.eva_expr.toString(); 	break;
+			case cov_count:	logic_type = CirAnnotationClass.cov_stmt.toString(); 	break;
+			case dif_error:	logic_type = CirAnnotationClass.mut_expr.toString(); 	break;
+			case val_error:	logic_type = CirAnnotationClass.mut_expr.toString(); 	break;
+			case ref_error:	logic_type = CirAnnotationClass.mut_expr.toString(); 	break;
+			case sta_error:	logic_type = CirAnnotationClass.mut_stat.toString(); 	break;
+			case blk_error:	logic_type = CirAnnotationClass.mut_stmt.toString(); 	break;
+			case flw_error:	logic_type = CirAnnotationClass.mut_flow.toString(); 	break;
+			case trp_error:	logic_type = CirAnnotationClass.trp_stmt.toString(); 	break;
+			default:		logic_type = attribute.get_type().toString(); 			break;
+			}
+			String execution = this.encode_token(attribute.get_execution());
+			String store_unit = this.encode_token(attribute.get_location());
+			String symb_value = this.encode_token(attribute.get_parameter());
+			
+			this.symbol_vexs.add(attribute.get_parameter());
+			return String.format("%s$%s$%s$%s", 
+					logic_type, execution, store_unit, symb_value);
+		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + token.getClass().getSimpleName());
 		}
@@ -309,7 +361,7 @@ public class CirAttributeTreeWriter {
 	 * @throws Exception
 	 */
 	private boolean is_tree_available(CirAttributeTree tree) throws Exception {
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
+		MuTestProjectTestSpace tspace = this.inputs_file.get_code_space().get_project().get_test_space();
 		if(tree == null) {
 			return false;
 		}
@@ -327,16 +379,16 @@ public class CirAttributeTreeWriter {
 	 */
 	private Map<TestInput, Collection<Mutant>> initial_tests_mutants(Collection<TestInput> test_cases) throws Exception {
 		/* perform executions on instrumental version */
-		MuTestProjectTestSpace tspace = inputs.get_code_space().get_project().get_test_space();
+		MuTestProjectTestSpace tspace = this.inputs_file.get_code_space().get_project().get_test_space();
 		Map<TestInput, Collection<Mutant>> maps = new HashMap<TestInput, Collection<Mutant>>();
-		this.inputs.get_code_space().get_project().execute_instrumental(test_cases);
+		this.inputs_file.get_code_space().get_project().execute_instrumental(test_cases);
 		
 		/* mapping each test to corresponding mutants */
 		for(TestInput test_case : test_cases) {
 			/* create the mutation buffer to preserve available ones */
 			Collection<Mutant> mutants = new ArrayList<Mutant>();
 			
-			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+			for(Mutant mutant : this.inputs_file.get_mutant_space().get_mutants()) {
 				/* 1. capture the strong, weak and coverage execution results */
 				MuTestProjectTestResult s_result = tspace.get_test_result(mutant);
 				MuTestProjectTestResult w_result = tspace.get_test_result(mutant.get_weak_mutant());
@@ -369,7 +421,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_cpp() throws Exception {
 		this.open(".c");
-		FileReader reader = new FileReader(this.inputs.get_ifile());
+		FileReader reader = new FileReader(this.inputs_file.get_ifile());
 		char[] buffer = new char[1024 * 1024 * 8]; int length;
 		while((length = reader.read(buffer)) >= 0)
 			this.file_writer.write(buffer, 0, length);
@@ -437,7 +489,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_ast() throws Exception {
 		this.open(".ast");
-		AstTree ast_tree = this.inputs.get_ast_tree();
+		AstTree ast_tree = this.inputs_file.get_ast_tree();
 		for(int k = 0; k < ast_tree.number_of_nodes(); k++) {
 			this.write_ast(ast_tree.get_node(k));
 		}
@@ -523,7 +575,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_cir() throws Exception {
 		this.open(".cir");
-		for(CirNode node : this.inputs.get_cir_tree().get_nodes()) {
+		for(CirNode node : this.inputs_file.get_cir_tree().get_nodes()) {
 			this.write_cir(node);
 		}
 		this.close();
@@ -592,7 +644,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_flw() throws Exception {
 		this.open(".flw");
-		for(CirFunction function : this.inputs.get_cir_tree().get_function_call_graph().get_functions()) {
+		for(CirFunction function : this.inputs_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			this.write_cir_function(function);
 			this.file_writer.write("\n");
 		}
@@ -731,7 +783,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_tst() throws Exception {
 		this.open(".tst");
-		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
+		MuTestProjectTestSpace tspace = this.inputs_file.get_code_space().get_project().get_test_space();
 		for(TestInput test : tspace.get_test_space().get_inputs()) {
 			this.write_tst(test);
 		}
@@ -761,7 +813,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_mut() throws Exception {
 		this.open(".mut");
-		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+		for(Mutant mutant : this.inputs_file.get_mutant_space().get_mutants()) {
 			this.write_mut(mutant);
 		}
 		this.close();
@@ -780,8 +832,8 @@ public class CirAttributeTreeWriter {
 	 */
 	private void write_res() throws Exception {
 		this.open(".res");
-		MuTestProjectTestSpace tspace = this.inputs.get_code_space().get_project().get_test_space();
-		for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+		MuTestProjectTestSpace tspace = this.inputs_file.get_code_space().get_project().get_test_space();
+		for(Mutant mutant : this.inputs_file.get_mutant_space().get_mutants()) {
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
 			if(result != null)
 				this.write_res(result);
@@ -796,7 +848,7 @@ public class CirAttributeTreeWriter {
 		this.write_tst(); this.write_mut(); this.write_res();
 	}
 	
-	/* symbolic expression features */
+	/* symbolic annotation features */
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
@@ -875,7 +927,7 @@ public class CirAttributeTreeWriter {
 	 */
 	private int 	write_sym_nodes() throws Exception {
 		Set<String> records = new HashSet<>();
-		for(SymbolNode node : this.symbol_nodes) {
+		for(SymbolNode node : this.symbol_vexs) {
 			this.write_sym_node(node, records);
 		}
 		return records.size();
@@ -892,113 +944,15 @@ public class CirAttributeTreeWriter {
 		return number;
 	}
 	/**
-	 * type$execution$unit$value
-	 * @param type
-	 * @param exec
-	 * @param unit
-	 * @param value
-	 * @throws Exception
-	 */
-	private void	write_word(String type, CirExecution exec, CirNode unit, SymbolNode value) throws Exception {
-		this.file_writer.write(String.format("%s$%s$%s$%s", type, 
-				this.encode_token(exec), 
-				this.encode_token(unit), this.encode_token(value)));
-		if(value != null) { this.symbol_nodes.add(value); }
-	}
-	/**
-	 * type$exec$location$parameter
-	 * @param attribute
-	 * @throws Exception
-	 */
-	private void 	write_attribute(CirAttribute attribute) throws Exception {
-		String type; SymbolExpression value;
-		CirExecution execution; CirNode unit;
-		if(attribute instanceof CirCoverCount) {
-			type = CirAnnotationClass.cov_stmt.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirConstraint) {
-			type = CirAnnotationClass.eva_expr.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter().evaluate(null);
-		}
-		else if(attribute instanceof CirBlockError) {
-			type = CirAnnotationClass.mut_stmt.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirFlowsError) {
-			type = CirAnnotationClass.mut_flow.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirTrapsError) {
-			type = CirAnnotationClass.trp_stmt.toString();
-			execution = attribute.get_execution().get_graph().get_exit();
-			unit = execution.get_statement();
-			value = null;
-		}
-		else if(attribute instanceof CirDiferError) {
-			type = "dif_expr";
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirValueError) {
-			type = CirAnnotationClass.mut_expr.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirReferError) {
-			type = CirAnnotationClass.mut_expr.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirStateError) {
-			type = CirAnnotationClass.mut_stat.toString();
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else if(attribute instanceof CirKillMutant) {
-			type = "kill_muta";
-			execution = attribute.get_execution();
-			unit = attribute.get_location();
-			value = attribute.get_parameter();
-		}
-		else {
-			throw new IllegalArgumentException("Invalid: " + attribute);
-		}
-		this.write_word(type, execution, unit, value);
-	}
-	/**
-	 * logic_type$execution$store_unit$symb_value
-	 * @param annotation
-	 * @throws Exception
-	 */
-	private	void	write_annotation(CirAnnotation annotation) throws Exception {
-		this.write_word(annotation.get_logic_type().toString(), 
-				annotation.get_execution(), 
-				annotation.get_store_unit(), annotation.get_symb_value());
-		this.annotations.add(annotation);
-	}
-	/**
 	 * parent {child}*
 	 * @param node
 	 * @throws Exception
 	 */
 	private void 	write_ant_node(CirAnnotationNode node) throws Exception {
-		this.write_annotation(node.get_annotation());
+		this.file_writer.write(this.encode_token(node.get_annotation()));
 		for(CirAnnotationNode child : node.get_children()) {
 			this.file_writer.write("\t");
-			this.write_annotation(child.get_annotation());
+			this.file_writer.write(this.encode_token(child.get_annotation()));
 		}
 		this.file_writer.write("\n");
 	}
@@ -1013,6 +967,19 @@ public class CirAttributeTreeWriter {
 		}
 	}
 	/**
+	 * [attribute annotation+]
+	 * @throws Exception
+	 */
+	private void	write_ant_maps() throws Exception {
+		for(CirAttribute attribute : this.attributes.keySet()) {
+			this.file_writer.write(this.encode_token(attribute));
+			for(CirAnnotation annotation : this.attributes.get(attribute)) {
+				this.file_writer.write("\t" + this.encode_token(annotation));
+			}
+			this.file_writer.write("\n");
+		}
+	}
+	/**
 	 * xxx.ant
 	 * @throws Exception
 	 */
@@ -1023,6 +990,7 @@ public class CirAttributeTreeWriter {
 		}
 		this.open(".ant");
 		this.write_ant_tree(tree);
+		this.write_ant_maps();
 		this.close();
 	}
 	/**
@@ -1031,16 +999,24 @@ public class CirAttributeTreeWriter {
 	 * @return the number of words written in the node
 	 * @throws Exception
 	 */
-	private int		write_cir_attribute_node(CirAttributeNode node) throws Exception {
+	private int		write_attribute_node(CirAttributeNode node) throws Exception {
 		int number_of_words = 0;
 		this.file_writer.write("\t");
-		this.write_attribute(node.get_attribute());
+		this.file_writer.write(this.encode_token(node.get_attribute()));
 		
 		if(node.get_data().is_executed()) {
 			for(CirAnnotation annotation : node.get_data().get_abs_annotations()) {
 				this.file_writer.write("\t");
-				this.write_annotation(annotation);
+				this.file_writer.write(this.encode_token(annotation));
 				number_of_words++;
+			}
+			
+			for(CirAnnotation annotation : node.get_data().get_sym_annotations()) {
+				if(!this.attributes.containsKey(node.get_attribute())) {
+					this.attributes.put(node.get_data().get_attribute(), new HashSet<CirAnnotation>());
+				}
+				this.attributes.get(node.get_data().get_attribute()).add(annotation);
+				break;
 			}
 		}
 		
@@ -1051,10 +1027,10 @@ public class CirAttributeTreeWriter {
 	 * mid tid {(\t attribute) (\t annotation)* (\t ;)}+ \n
 	 * @param leaf
 	 * @param test
-	 * @return
+	 * @return	[number_of_words, number_of_nodes, number_of_lines]
 	 * @throws Exception
 	 */
-	private	int[]	write_cir_attribute_path(CirAttributeNode leaf, TestInput test) throws Exception {
+	private int[]	write_attribute_path(CirAttributeNode leaf, TestInput test) throws Exception {
 		/* mid tid */
 		String mid = this.encode_token(leaf.get_tree().get_mutant());
 		String tid = this.encode_token(test);
@@ -1065,7 +1041,7 @@ public class CirAttributeTreeWriter {
 		int number_of_nodes = 0;
 		int number_of_lines = 0;
 		for(CirAttributeNode node : leaf.get_pred_nodes()) {
-			int word_number = this.write_cir_attribute_node(node);
+			int word_number = this.write_attribute_node(node);
 			if(word_number > 0) {
 				number_of_words += word_number;
 				number_of_nodes += 1;
@@ -1083,10 +1059,10 @@ public class CirAttributeTreeWriter {
 	 * {mid tid {(\t attribute) (\t annotation)* (\t ;)}+ \n}+
 	 * @param tree
 	 * @param test
-	 * @return
+	 * @return [number_of_words, number_of_nodes, number_of_lines, number_of_trees]
 	 * @throws Exception
 	 */
-	private int[]	write_cir_attribute_tree(CirAttributeTree tree, TestInput test) throws Exception {
+	private int[]	write_attribute_tree(CirAttributeTree tree, TestInput test) throws Exception {
 		/* declarations of the counting variables */
 		int number_of_words = 0, number_of_nodes = 0, number_of_lines = 0, number_of_trees = 0;
 		
@@ -1097,7 +1073,7 @@ public class CirAttributeTreeWriter {
 			/* write for each root-leaf path a line in the xxx.stp */
 			for(CirAttributeNode leaf : tree.get_leafs()) {
 				/* write only one line for the node-list in the tree */
-				int[] words_nodes_lines = this.write_cir_attribute_path(leaf, test);
+				int[] words_nodes_lines = this.write_attribute_path(leaf, test);
 				number_of_words += words_nodes_lines[0];
 				number_of_nodes += words_nodes_lines[1];
 				number_of_lines += words_nodes_lines[2];
@@ -1123,10 +1099,10 @@ public class CirAttributeTreeWriter {
 		
 		/* static analysis */
 		if(test_cases == null || test_cases.isEmpty()) {
-			for(Mutant mutant : this.inputs.get_mutant_space().get_mutants()) {
+			for(Mutant mutant : this.inputs_file.get_mutant_space().get_mutants()) {
 				CirAttributeTree tree = CirAttributeTree.new_tree(mutant, dependence_graph);
-				tree.add_states(null, this.max_infecting_times, null);
-				words_nodes_lines_trees = this.write_cir_attribute_tree(tree, null);
+				tree.add_states(null, this.meval_times, null);
+				words_nodes_lines_trees = this.write_attribute_tree(tree, null);
 				number_of_words += words_nodes_lines_trees[0];
 				number_of_nodes += words_nodes_lines_trees[1];
 				number_of_lines += words_nodes_lines_trees[2];
@@ -1141,35 +1117,34 @@ public class CirAttributeTreeWriter {
 			int proceed_counter = 0, number_of_tests = maps.size();
 			
 			/* Dynamically analyze the mutations for each test input in given collections */
-			for(TestInput test_case : maps.keySet()) {
+			for(TestInput test : maps.keySet()) {
 				/* I. Obtain the execution path with state from */
-				CStatePath state_path = this.inputs.get_code_space().get_project().get_test_space().
-						load_instrumental_path(this.inputs.get_sizeof_template(), 
-								this.inputs.get_ast_tree(), this.inputs.get_cir_tree(), test_case);
-				proceed_counter++;
+				MuTestProjectTestSpace tspace = this.inputs_file.get_code_space().get_project().get_test_space();
+				CStatePath state_path = tspace.load_instrumental_path(this.inputs_file.get_sizeof_template(), 
+						this.inputs_file.get_ast_tree(), this.inputs_file.get_cir_tree(), test); proceed_counter++;
 				if(state_path == null) { continue; }	/** ignore the test if it cannot be instrumented analysis **/
 				System.out.println(String.format("\t\t==> Proceeding [%d/%d]", proceed_counter, number_of_tests));
 				
 				/* II. construct the state infection tree for each available mutation */
 				Collection<CirAttributeTree> trees = new ArrayList<CirAttributeTree>();
-				for(Mutant mutant : maps.get(test_case)) {
+				for(Mutant mutant : maps.get(test)) {
 					CirAttributeTree tree = CirAttributeTree.new_tree(mutant, state_path);
 					if(this.is_tree_available(tree)) { trees.add(tree); }
 				}
 				
 				/* III. perform dynamic analysis for evaluating the state infection tree */
 				SymbolProcess context = new SymbolProcess(
-								this.inputs.get_ast_tree(), this.inputs.get_cir_tree());
+								this.inputs_file.get_ast_tree(), this.inputs_file.get_cir_tree());
 				for(CStateNode state_node : state_path.get_nodes()) {
 					context.accumulate(state_node);
 					for(CirAttributeTree tree : trees) {
-						tree.add_states(state_node.get_execution(), this.max_infecting_times, context);
+						tree.add_states(state_node.get_execution(), this.meval_times, context);
 					}
 				}
 				
 				/* IV. print each tree's nodes onto the lines in the xxx.stn or xxx.stp */
 				for(CirAttributeTree tree : trees) {
-					words_nodes_lines_trees = this.write_cir_attribute_tree(tree, test_case);
+					words_nodes_lines_trees = this.write_attribute_tree(tree, test);
 					number_of_words += words_nodes_lines_trees[0];
 					number_of_nodes += words_nodes_lines_trees[1];
 					number_of_lines += words_nodes_lines_trees[2];
@@ -1182,7 +1157,7 @@ public class CirAttributeTreeWriter {
 		/* reporting information to debugging */
 		System.out.println(String.format("\t\t--> %d word, %d node, %d path, %d tree, %d/%d mutant, %d expr", 
 				number_of_words, number_of_nodes, number_of_lines, number_of_trees, 
-				mutants.size(), this.inputs.get_mutant_space().size(), this.symbol_nodes.size()));
+				mutants.size(), this.inputs_file.get_mutant_space().size(), this.symbol_vexs.size()));
 	}
 	/**
 	 * xxx.stp
@@ -1202,29 +1177,31 @@ public class CirAttributeTreeWriter {
 	 * @throws Exception
 	 */
 	private void	write_symb_features(CDependGraph dependence_graph, Collection<TestInput> test_cases) throws Exception {
-		this.symbol_nodes.clear();
+		this.symbol_vexs.clear();
 		this.annotations.clear();
+		this.attributes.clear();
 		
 		this.write_stp(dependence_graph, test_cases);
 		this.write_ant();
 		this.write_sym();
 		
+		this.attributes.clear();
 		this.annotations.clear();
-		this.symbol_nodes.clear();
+		this.symbol_vexs.clear();
 	}
 	
-	/* interface */
+	/* public writer interfaces */
 	/**
 	 * @param input
 	 * @param output_directory
-	 * @param max_infecting_times
+	 * @param max_evaluation_times
 	 * @param test_cases
 	 * @throws Exception
 	 */
 	public static void write_features(MuTestProjectCodeFile input, File output_directory, 
-			int max_infecting_times, Collection<TestInput> test_cases) throws Exception {
+			int max_evaluation_times, Collection<TestInput> test_cases) throws Exception {
 		/* 1. initialize the writer and generate dependence graph for printing  */	
-		writer.set_IO(input, output_directory, max_infecting_times);
+		writer.reset(input, output_directory, max_evaluation_times);
 		CirFunction root_function =
 					input.get_cir_tree().get_function_call_graph().get_main_function();
 		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.

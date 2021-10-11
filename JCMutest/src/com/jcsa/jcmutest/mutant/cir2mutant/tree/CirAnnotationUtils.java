@@ -177,7 +177,7 @@ final class CirAnnotationUtils {
 	private CirExecution get_prior_checkpoint(CirExecution execution, Object condition) throws Exception {
 		/* generate the symbolic expression for analysis */
 		SymbolExpression expression = SymbolFactory.sym_expression(condition);
-		expression = CirAnnotationValue.safe_evaluate(expression, null);
+		expression = CirMutations.safe_evaluate(expression, null);
 		
 		/* A. in constant case, return the prior decidable point */
 		if(expression instanceof SymbolConstant) {
@@ -361,8 +361,8 @@ final class CirAnnotationUtils {
 		CirExecution execution = expression.execution_of(), check_point;
 		
 		/* 2. initialize the annotation generation mode from output values */
-		if(orig_annotation.get_symb_value() == CirAnnotationValue.expt_value
-			|| muta_annotation.get_symb_value() == CirAnnotationValue.expt_value) {
+		if(orig_annotation.get_symb_value() == CirMutations.expt_value
+			|| muta_annotation.get_symb_value() == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution)); 
 			return;
 		}
@@ -531,7 +531,7 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExecution execution = annotation.get_execution();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		annotations.add(CirAnnotation.mut_stmt(execution, value));
 	}
 	/**
@@ -544,9 +544,9 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_execution();
-		if(value == CirAnnotationValue.expt_value) {
+		if(value == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 		}
 		else {
@@ -563,9 +563,9 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_execution();
-		if(value == CirAnnotationValue.expt_value) {
+		if(value == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 		}
 		else {
@@ -582,9 +582,9 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_execution();
-		if(value == CirAnnotationValue.expt_value) {
+		if(value == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 		}
 		else {
@@ -601,9 +601,9 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_execution();
-		if(value == CirAnnotationValue.expt_value) {
+		if(value == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 		}
 		else {
@@ -620,9 +620,9 @@ final class CirAnnotationUtils {
 			SymbolProcess context, Collection<CirAnnotation> annotations) throws Exception { 
 		CirExpression expression = (CirExpression) annotation.get_store_unit();
 		SymbolExpression value = annotation.get_symb_value();
-		value = CirAnnotationValue.safe_evaluate(value, context);
+		value = CirMutations.safe_evaluate(value, context);
 		CirExecution execution = annotation.get_execution();
-		if(value == CirAnnotationValue.expt_value) {
+		if(value == CirMutations.expt_value) {
 			annotations.add(CirAnnotation.trp_stmt(execution));
 		}
 		else {
