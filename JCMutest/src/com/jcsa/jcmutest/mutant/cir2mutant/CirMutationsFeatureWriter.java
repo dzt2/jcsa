@@ -984,13 +984,13 @@ public class CirMutationsFeatureWriter {
 	 * @throws Exception
 	 */
 	private void 	write_ant() throws Exception {
+		this.open(".ant");
+		this.write_ant_maps();
 		CirAnnotationTree tree = new CirAnnotationTree();
 		for(CirAnnotation annotation : this.annotations) {
 			tree.extend_from(annotation);
 		}
-		this.open(".ant");
 		this.write_ant_tree(tree);
-		this.write_ant_maps();
 		this.close();
 	}
 	/**
@@ -1013,10 +1013,9 @@ public class CirMutationsFeatureWriter {
 			
 			for(CirAnnotation annotation : node.get_data().get_sym_annotations()) {
 				if(!this.attributes.containsKey(node.get_attribute())) {
-					this.attributes.put(node.get_data().get_attribute(), new HashSet<CirAnnotation>());
+					this.attributes.put(node.get_attribute(), new HashSet<CirAnnotation>());
 				}
 				this.attributes.get(node.get_data().get_attribute()).add(annotation);
-				break;
 			}
 		}
 		

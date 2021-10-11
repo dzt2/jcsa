@@ -306,7 +306,6 @@ class SymExecutionSpace:
 		line = line.strip()
 		if len(line) > 0:
 			## 1. get the library data-base from document
-			program = self.document.get_program()
 			project = self.document.get_project()
 			anot_tree = self.document.annotation_tree
 			items = line.split('\t')
@@ -389,13 +388,52 @@ class SymExecutionSpace:
 	def get_mutants(self):
 		return self.muta_execs.keys()
 
-	def write_impacts_graph(self, o_directory: str, file_name: str, mutants):
+	@staticmethod
+	def get_node_label(node):
 		"""
-		:param o_directory: the directory where the xxx.pdf file will be generated
-		:param mutants: the set of mutants of which cir-mutation nodes will be printed or None for all
+		:param node: SymExecutionNode or Mutant
+		:return: "C: logic_type; E: execution; U: store_unit; V: symb_value;"
+		"""
+		if isinstance(node, CirAnnotation):
+			attribute = node
+			logic_type = attribute.get_logic_type()
+			execution = str(attribute.get_execution())
+			store_unit = attribute.get_store_unit()
+			store_type = store_unit.get_class_name()
+			store_code = store_unit.get_cir_code()
+			if len(store_code) > 64:
+				store_code = store_code[0: 64].strip() + "..."
+			symb_value = attribute.get_symb_value().get_code()
+			if len(symb_value) > 64:
+				symb_value = symb_value[0: 64].strip() + "..."
+			label = "C: {}\nE: {}\nU: {}\nL: {}\nV: [{}]".format(logic_type, execution, store_type, store_code, symb_value)
+		else:
+			node: jcmuta.Mutant
+			mutation = node.get_mutation()
+			mid = node.get_muta_id()
+			result = node.get_result().is_killed_in(None)
+			m_class = mutation.get_mutation_class()
+			m_operator = mutation.get_mutation_operator()
+			location = mutation.get_location()
+			line = location.line_of(False)
+			code_type = location.get_class_name()
+			code = location.get_code(True)
+			if len(code) > 64:
+				code = code[0: 64] + "..."
+			label = "MID: {}\nRES: {}\nCLAS: {}\nOPRT: {}\nLINE: {}#{}\nCODE: {}\nPARM: [{}]".format(mid, result, m_class,
+																									 m_operator, code_type, line,
+																									 code, mutation.get_parameter())
+		label = label.replace('\"', '\'\'')
+		return label
+
+	def visualize_graphs(self, mutants, o_directory: str, file_name: str):
+		"""
+		:param mutants: 		the set of mutations of which symbolic execution trees will be visualized
+		:param o_directory: 	the directory where the pdf file will be generated
+		:param file_name: 		the file name of the pdf file to be generated in the method
 		:return:
 		"""
-		## 1. capture the set of symbolic executions for printing
+		## 1. capture the symbolic executions to the pdf file
 		executions = set()
 		if mutants is None:
 			for execution in self.executions:
@@ -403,61 +441,53 @@ class SymExecutionSpace:
 				executions.add(execution)
 		else:
 			for mutant in mutants:
-				mutant_executions = self.get_executions_of(mutant)
-				for execution in mutant_executions:
+				for execution in self.get_executions_of(mutant):
 					execution: SymExecution
 					executions.add(execution)
 
-		## 2. create the key and the corresponding label in nodes
-		name_labels, name_edges = dict(), dict()
+		## 2. generate the node_labels and node_edges dictionary
+		name_nodes, name_edges = dict(), dict()
 		for execution in executions:
-			for node in execution.get_nodes():
-				attribute = node.get_attribute()
-				name = str(attribute)
-				label = "C: {}\nE: {}\nU: {}\nT: {}\nV: {}".format(attribute.get_logic_type(), attribute.get_execution(),
-																   attribute.get_store_unit(), attribute.store_unit.code,
-																   attribute.get_symb_value())
-				name_labels[name] = label
+			## 2-1. initialize the mutation node at first
 			mutant = execution.get_mutant()
-			mutant_name = str(execution.get_mutant())
-			mutant_result = mutant.get_result().is_killed_in(None)
-			mutant_code = mutant.mutation.get_location().get_code(True)
-			if len(mutant_code) > 32:
-				mutant_code = mutant_code[0: 32].strip()
-			mutant_line = mutant.mutation.get_location().line_of(False)
-			mutant_label = "MID: {}[{}]\nC: {}\nO: {}\nL: [{}]#{}\nV: {}".format(mutant.get_muta_id(), mutant_result,
-																				 mutant.mutation.get_mutation_class(),
-																				 mutant.mutation.get_mutation_operator(),
-																				 mutant_code, mutant_line,
-																				 mutant.mutation.get_parameter())
-			name_labels[mutant_name] = mutant_label
+			mutant_name = str(mutant)
+			mutant_label = SymExecutionSpace.get_node_label(mutant)
+			name_nodes[mutant_name] = mutant_label
 
-			node_list = execution.get_nodes()
-			for k in range(0, len(node_list) - 1):
-				parent = node_list[k].get_attribute()
-				child = node_list[k + 1].get_attribute()
-				pred_name = str(parent)
-				post_name = str(child)
-				if not (pred_name in name_edges):
-					name_edges[pred_name] = set()
-				if pred_name != post_name:
-					name_edges[pred_name].add(post_name)
-			last_name = str(node_list[-1].get_attribute())
-			if not (last_name in name_edges):
-				name_edges[last_name] = set()
-			name_edges[last_name].add(mutant_name)
+			## 2-2. create the nodes and their labels in map
+			for node in execution.get_nodes():
+				node: SymExecutionNode
+				node_name = str(node.get_attribute())
+				node_label = SymExecutionSpace.get_node_label(node.get_attribute())
+				name_nodes[node_name] = node_label
 
-		## 3. create nodes and initialize the graph at first
+			## 2-3. create the edges and their links in maps
+			pred_node = None
+			for next_node in execution.get_nodes():
+				next_node: SymExecutionNode
+				if not (pred_node is None):
+					pred_name = str(pred_node.get_attribute())
+					next_name = str(next_node.get_attribute())
+					if not (pred_name in name_edges):
+						name_edges[pred_name] = set()
+					if pred_name != next_name:
+						name_edges[pred_name].add(next_name)
+				pred_node = next_node
+
+				if next_node.get_attribute().get_logic_type() == "kill_muta":
+					if not(mutant_name in name_edges):
+						name_edges[mutant_name] = set()
+					name_edges[mutant_name].add(str(next_node.get_attribute()))
+
+		## 3. construct the directed graph for being visualized
 		graph = graphviz.Digraph(name="Mutation Impacts Graph.")
-		for name, label in name_labels.items():
+		for name, label in name_nodes.items():
 			graph.node(name, label)
-
-		## 4. link the nodes using execution sequence at all
 		for pred_name, post_names in name_edges.items():
 			for post_name in post_names:
 				graph.edge(pred_name, post_name)
 
-		## 5. visualize the directed graph for program impacts
+		## 4. visualize the directed graph into specified file
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		graph.render(filename=file_name, directory=o_directory, format="pdf")
@@ -497,9 +527,14 @@ if __name__ == "__main__":
 			rand_mutant: jcmuta.Mutant
 			rand_mutants.add(rand_mutant)
 		o_directory = impa_path + "/" + file_name
+		if not os.path.exists(o_directory):
+			os.mkdir(o_directory)
+		for o_file in os.listdir(o_directory):
+			o_file_path = os.path.join(o_directory, o_file)
+			os.remove(o_file_path)
 		for rand_mutant in rand_mutants:
-			c_document.exec_space.write_impacts_graph(o_directory, file_name + "." + str(rand_mutant.get_muta_id()), [rand_mutant])
-		c_document.exec_space.write_impacts_graph(o_directory, file_name, rand_mutants)
+			c_document.exec_space.visualize_graphs([rand_mutant], o_directory, file_name + "." + str(rand_mutant.muta_id))
+		c_document.exec_space.visualize_graphs(rand_mutants, o_directory, file_name)
 		print()
 	print("Testing end for all.")
 
