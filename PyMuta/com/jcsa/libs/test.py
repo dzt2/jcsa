@@ -291,6 +291,17 @@ class CirAnnotation:
 			symb_value = project.sym_tree.get_sym_node(items[3].strip())
 		return CirAnnotation(logic_type, execution, store_unit, symb_value)
 
+	def is_required_by(self, execution):
+		"""
+		:param execution:
+		:return: whether the execution requires the annotation.
+		"""
+		execution: SymExecution
+		for annotation in execution.get_annotations():
+			if self in annotation.get_all_children():
+				return True
+		return False
+
 	def evaluate(self, document: CDocument, used_tests):
 		"""
 		:param document:
@@ -300,7 +311,7 @@ class CirAnnotation:
 		killed, alives = 0, 0
 		for execution in document.exec_space.get_executions():
 			execution: SymExecution
-			if self in execution.get_annotations():
+			if self.is_required_by(execution):
 				mutant = execution.get_mutant()
 				if mutant.get_result().is_killed_in(used_tests):
 					killed += 1
