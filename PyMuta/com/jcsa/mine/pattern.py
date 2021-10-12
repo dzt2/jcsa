@@ -1,5 +1,4 @@
-"""This file defines the killable prediction rule and the mining algorithms to implement."""
-
+"""This file defines the killable prediction rules and the algorithms for mining them from execution states."""
 
 
 from collections import deque
@@ -7,11 +6,11 @@ from typing import TextIO
 from sklearn import metrics
 import sklearn.tree as sktree
 import os
+import graphviz
+import pydotplus
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
-import com.jcsa.rule.merd as jecode
-import pydotplus
-import graphviz
+import com.jcsa.mine.encode as jecode
 
 
 class KillPredictionTree:
@@ -600,8 +599,7 @@ class KillPredictionDTMine:
 		:param used_tests:
 		:return: it generates the decision tree for best classifying samples
 		"""
-		xmatrix = self.middle.get_document().exec_space.new_feature_matrix()
-		ylabels = self.middle.get_document().exec_space.new_label_list(used_tests)
+		xmatrix, ylabels = self.middle.get_document().exec_space.new_features_labels(used_tests)
 		dc_tree = sktree.DecisionTreeClassifier()
 		dc_tree.fit(xmatrix, ylabels)
 		if is_reported:
@@ -648,7 +646,7 @@ class KillPredictionDTMine:
 		return
 
 	def __min_decision_path__(self, dc_tree: sktree.DecisionTreeClassifier):
-		xmatrix = self.middle.get_document().exec_space.new_feature_matrix()
+		xmatrix, ylabels = self.middle.get_document().exec_space.new_features_labels(None)
 		node_indicator = dc_tree.decision_path(xmatrix)
 		leaf_id = dc_tree.apply(xmatrix)
 		dc_feature = dc_tree.tree_.feature
@@ -1385,3 +1383,4 @@ if __name__ == "__main__":
 	outs_directory = "/home/dzt2/Development/Data/zexp/patterns"
 	main(proj_directory, enco_directory, outs_directory)
 	exit(0)
+
