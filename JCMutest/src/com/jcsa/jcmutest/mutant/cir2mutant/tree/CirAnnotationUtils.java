@@ -995,7 +995,7 @@ final class CirAnnotationUtils {
 			else {
 				condition = SymbolFactory.sym_constant(Boolean.TRUE);
 				check_point = this.get_prior_checkpoint(execution, condition);
-				this.extend_annotations_from(source.new_child(CirAnnotation.eva_expr(check_point, condition)));
+				this.extend_annotations_from(source.new_child(CirAnnotation.cov_stmt(check_point, 1)));
 			}
 		}
 		else if(condition instanceof SymbolBinaryExpression) {
@@ -1032,13 +1032,13 @@ final class CirAnnotationUtils {
 			else {
 				condition = SymbolFactory.sym_constant(Boolean.TRUE);
 				check_point = this.get_prior_checkpoint(execution, condition);
-				this.extend_annotations_from(source.new_child(CirAnnotation.eva_expr(check_point, condition)));
+				this.extend_annotations_from(source.new_child(CirAnnotation.cov_stmt(check_point, 1)));
 			}
 		}
 		else {
 			condition = SymbolFactory.sym_constant(Boolean.TRUE);
 			check_point = this.get_prior_checkpoint(execution, condition);
-			this.extend_annotations_from(source.new_child(CirAnnotation.eva_expr(check_point, condition)));
+			this.extend_annotations_from(source.new_child(CirAnnotation.cov_stmt(check_point, 1)));
 		}
 	}
 	/**

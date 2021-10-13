@@ -161,7 +161,7 @@ final class CirAttributeTreeUtils {
 		else {
 			CirExecutionPath path = CirExecutionPathFinder.
 					finder.dependence_path(dependence_graph, target);
-			this.collect_execution_flows_in(path, flows);
+			this.collect_execution_flows_in(path, flows); return;
 		}
 	}
 	/**
@@ -193,7 +193,7 @@ final class CirAttributeTreeUtils {
 				}
 			}
 			CirExecutionPathFinder.finder.vf_extend(path, target);
-			this.collect_execution_flows_in(path, flows);
+			this.collect_execution_flows_in(path, flows); return;
 		}
 	}
 	/**

@@ -570,7 +570,9 @@ class SymExecutionSpace:
 		return self.executions
 
 	def get_execution(self, eid: int):
-		return self.executions[eid]
+		s_execution = self.executions[eid]
+		s_execution: SymExecution
+		return s_execution
 
 	def get_executions_of(self, mutant: jcmuta.Mutant):
 		"""
