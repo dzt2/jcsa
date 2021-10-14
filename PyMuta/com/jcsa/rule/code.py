@@ -642,6 +642,9 @@ class MerExecutionSpace:
 		"""
 		return len(self.elist)
 
+	def get_mutants(self):
+		return self.index.keys()
+
 	def get_executions(self):
 		"""
 		:return: the list of memory-reduced instances for encoding SymExecution in the space

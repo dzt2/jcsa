@@ -1,26 +1,29 @@
-"""This file defines the killable prediction rules and the algorithms for mining them from execution states."""
+"""This file implements the data model of killable prediction rule and the algorithms for mining them from program."""
 
 
+import os
 from collections import deque
 from typing import TextIO
 from sklearn import metrics
 import sklearn.tree as sktree
-import os
 import graphviz
 import pydotplus
 import com.jcsa.libs.base as jcbase
 import com.jcsa.libs.test as jctest
-import com.jcsa.mine.encode as jecode
+import com.jcsa.rule.code as jecode
+
+
+## pattern model
 
 
 class KillPredictionTree:
 	"""
-	The hierarchical model to uniquely define the killable prediction rule.
+	It denotes the hierarchical structure to create unique killable prediction rules based on feature vector.
 	"""
 
 	def __init__(self, document: jecode.MerDocument):
 		"""
-		:param document: the encoding document where the prediction rule is defined on
+		:param document: the document of encoding features for mining
 		"""
 		self.document = document
 		self.root = KillPredictionNode(self, None, -1)
@@ -28,7 +31,7 @@ class KillPredictionTree:
 
 	def get_document(self):
 		"""
-		:return: the document of dataset to encode mutation test project dataset.
+		:return: the document of encoding features for mining
 		"""
 		return self.document
 
@@ -36,83 +39,82 @@ class KillPredictionTree:
 		return self.root
 
 	def get_node(self, features):
-		feature_list = self.document.anot_space.normal(features)
+		"""
+		:param features:
+		:return:
+		"""
+		features = self.document.anot_space.normal(features)
 		node = self.root
-		for feature in feature_list:
+		for feature in features:
 			node = node.new_child(feature)
 		return node
 
-	def get_child(self, parent, feature: int):
+	def get_nodes(self):
 		"""
-		:param parent:
-		:param feature:
-		:return:
+		:return: the set of all the nodes created under the tree
 		"""
-		if parent is None:
-			parent = self.root
-		features = set()
-		while not parent.is_root():
-			features.add(parent.get_feature())
-			parent = parent.get_parent()
-		features.add(feature)
-		return self.get_node(self.document.anot_space.normal(features))
+		queue, nodes = deque(), set()
+		queue.append(self.root)
+		while len(queue) > 0:
+			node = queue.popleft()
+			node: KillPredictionNode
+			nodes.add(node)
+			for child in node.get_children():
+				queue.append(child)
+		return nodes
 
 
 class KillPredictionNode:
 	"""
-	It denotes a node in KillPredictionTree with respect to a unique KillPredictionRule.
+	It presents a node in KillPredictionTree w.r.t. a unique rule in definition.
 	"""
 
 	def __init__(self, tree: KillPredictionTree, parent, feature: int):
 		"""
-		:param tree: 	the tree where the node is created
-		:param parent: 	the parent of this node or None for root
-		:param feature: the feature annotated on the edge from parent to its child
+		:param tree: 	the tree where this node is created
+		:param parent: 	the parent of this node or None when it is a root
+		:param feature: the integer feature annotated on edge from parent
 		"""
 		self.tree = tree
 		if parent is None:
 			self.parent = None
 			self.feature = -1
 		else:
-			parent: KillPredictionNode
 			self.parent = parent
 			self.feature = feature
 		self.children = list()
-		self.rule = KillPredictionRule(self)
+		self.rule = self.__rule__()
 		return
+
+	def __rule__(self):
+		"""
+		:return: it constructs a new prediction rule specified by this node uniquely
+		"""
+		features = set()
+		node = self
+		while not node.is_root():
+			features.add(node.get_feature())
+			node = node.get_parent()
+		if node.is_root():
+			executions = self.get_tree().get_document().exec_space.get_executions()
+		else:
+			executions = node.get_parent().get_rule().get_executions()
+		return KillPredictionRule(self.get_tree().get_document(), features, executions)
 
 	def get_tree(self):
 		"""
-		:return: the tree where the node is created
+		:return: the tree where this node is created
 		"""
 		return self.tree
 
-	def is_root(self):
-		"""
-		:return: whether this node is a root
-		"""
-		return self.parent is None
-
 	def get_parent(self):
 		"""
-		:return: the parent node of this one or None when it is a root
+		:return: the parent of this node or None when it is a root
 		"""
 		if self.parent is None:
 			return None
 		self.parent: KillPredictionNode
 		return self.parent
-
-	def get_feature(self):
-		"""
-		:return: the feature annotated on the edge from parent to its child
-		"""
-		return self.feature
-
-	def is_leaf(self):
-		"""
-		:return: whether the node is a leaf without any child
-		"""
-		return len(self.children) == 0
 
 	def get_children(self):
 		"""
@@ -120,33 +122,38 @@ class KillPredictionNode:
 		"""
 		return self.children
 
-	def number_of_children(self):
+	def is_root(self):
 		"""
-		:return: the number of children created under this node
+		:return: whether the node is a root without parent
 		"""
-		return len(self.children)
+		if self.parent is None:
+			return True
+		return False
 
-	def get_child(self, k: int):
+	def is_leaf(self):
 		"""
-		:param k:
-		:return: the kth child created under this node
+		:return: whether the node is a leaf without children
 		"""
-		child = self.children[k]
-		child: KillPredictionNode
-		return child
+		return len(self.children) == 0
+
+	def get_feature(self):
+		"""
+		:return: the integer feature annotated on edge from parent
+		"""
+		return self.feature
 
 	def get_rule(self):
 		"""
-		:return: the killable prediction rule that the node specifies
+		:return: the prediction rule that this node represents
 		"""
 		return self.rule
 
 	def new_child(self, feature: int):
 		"""
 		:param feature:
-		:return: It creates a new child under this node using the edge feature specified.
-					(1) if feature <= self.feature: return the node itself;
-					(2) otherwise, create the existing child under this node.
+		:return: it creates a new child w.r.t the input feature on edge from this node to its child:
+					(1) if feature <= self.feature: return this node itself;
+					(2) otherwise, return the child w.r.t the input feature.
 		"""
 		if feature <= self.feature:
 			return self
@@ -162,86 +169,71 @@ class KillPredictionNode:
 
 class KillPredictionRule:
 	"""
-	The killable prediction rule
+	It models a killable prediction rule for being mined.
 	"""
 
-	def __init__(self, node: KillPredictionNode):
+	def __init__(self, document: jecode.MerDocument, features, executions):
 		"""
-		:param node: the tree node uniquely defining this rule
+		:param document: 	the document to preserve encoded features of CProject.
+		:param features: 	the set of integer features to encode this prediction.
+		:param executions: 	the set of executions in which matched set is fetched.
 		"""
-		self.document = node.get_tree().get_document()
-		self.__new_features__(node)
-		self.__new_executions__(node)
-		return
-
-	def __new_features__(self, node: KillPredictionNode):
-		"""
-		:param node:
-		:return: list of integer features encoding the rule
-		"""
-		features = set()
-		while not node.is_root():
-			features.add(node.get_feature())
-			node = node.get_parent()
-		self.features = self.document.anot_space.normal(features)
+		self.document = document
+		self.features = document.anot_space.normal(features)
+		self.executions = set()
+		for execution in executions:
+			execution: jecode.MerExecution
+			if self.__matched_with__(execution):
+				self.executions.add(execution)
 		return
 
 	def __matched_with__(self, execution: jecode.MerExecution):
 		"""
 		:param execution:
-		:return: whether the execution matches with this rule
+		:return: whether the execution matches with this pattern
 		"""
 		for feature in self.features:
 			if not (feature in execution.get_features()):
 				return False
 		return True
 
-	def __new_executions__(self, node: KillPredictionNode):
+	def get_document(self):
 		"""
-		:param node:
-		:return:
+		:return: the document to preserve encoded features of CProject.
 		"""
-		if node.is_root():
-			parent_executions = self.document.exec_space.get_executions()
-		else:
-			parent_executions = node.get_parent().get_rule().executions
-		executions = set()
-		for execution in parent_executions:
-			execution: jecode.MerExecution
-			if self.__matched_with__(execution):
-				executions.add(execution)
-		self.executions = executions
-		return
-
-	## features
+		return self.document
 
 	def get_features(self):
 		"""
-		:return: the list of integer features encoding the rule
+		:return: the set of integer features to encode this prediction.
 		"""
 		return self.features
 
 	def get_annotations(self):
 		"""
-		:return: the set of annotations encoded by this rule
+		:return: the set of annotations for encoding this prediction rule.
 		"""
 		return self.document.anot_space.decode(self.features)
 
 	def __len__(self):
 		"""
-		:return: the number of features in the node
+		:return: the length of the rule is the number of features incorporated
 		"""
 		return len(self.features)
 
 	def __str__(self):
 		return str(self.features)
 
-	## sampling
-
 	def get_executions(self):
+		"""
+		:return: the set of executions matched with this rule
+		"""
 		return self.executions
 
 	def get_mutants(self):
+		"""
+		:return: the set of mutants of which executions matched with this rule
+		"""
 		mutants = set()
 		for execution in self.executions:
 			mutants.add(execution.get_mutant())
@@ -295,25 +287,28 @@ class KillPredictionRule:
 		return length, support, confidence
 
 
+## mining modules
+
+
 class KillPredictionInputs:
 	"""
-	The inputs module for mining killable prediction rules.
+	The inputs module of mining algorithm specifies the parameters for starting and terminating mining procedure.
 	"""
 
 	def __init__(self, document: jecode.MerDocument, max_length: int,
-				 min_support: int, min_confidence: float, max_confidence: float):
+				 min_support: int, min_conf: float, max_conf: float):
 		"""
-		:param document: 		the document to encode the data source
-		:param max_length: 		the maximal length of patterns allowed
-		:param min_support: 	the minimal support for patterns used
-		:param min_confidence: 	the minimal confidence of rule allowed
-		:param max_confidence: 	the maximal confidence to stop generation
+		:param document: 	the document to preserve encoded features for being mined
+		:param max_length: 	the maximal length of generated killable prediction rules
+		:param min_support: the minimal support allowed of good rules to be extracted
+		:param min_conf: 	the minimal confidence allowed for patterns being mined
+		:param max_conf: 	the maximal confidence used to stop the mining procedures
 		"""
 		self.document = document
 		self.max_length = max_length
 		self.min_support = min_support
-		self.min_confidence = min_confidence
-		self.max_confidence = max_confidence
+		self.min_conf = min_conf
+		self.max_conf = max_conf
 		return
 
 	def get_document(self):
@@ -325,22 +320,19 @@ class KillPredictionInputs:
 	def get_min_support(self):
 		return self.min_support
 
-	def get_min_confidence(self):
-		return self.min_confidence
+	def get_min_conf(self):
+		return self.min_conf
 
-	def get_max_confidence(self):
-		return self.max_confidence
+	def get_max_conf(self):
+		return self.max_conf
 
 	def get_middle_module(self):
-		"""
-		:return: it creates a middle module used for mining directly
-		"""
 		return KillPredictionMiddle(self)
 
 
 class KillPredictionMiddle:
 	"""
-	The middle module of mining algorithm.
+	The middle module is used to manage the creation, evaluation and selection of generated prediction rules.
 	"""
 
 	def __init__(self, inputs: KillPredictionInputs):
@@ -348,7 +340,7 @@ class KillPredictionMiddle:
 		self.p_tree = KillPredictionTree(self.inputs.get_document())
 		return
 
-	## tree getters
+	## getters
 
 	def get_inputs(self):
 		return self.inputs
@@ -356,49 +348,48 @@ class KillPredictionMiddle:
 	def get_document(self):
 		return self.inputs.get_document()
 
-	def get_pattern_tree(self):
-		return self.p_tree
+	## creation
 
 	def get_root(self):
 		return self.p_tree.get_root()
 
-	def get_child(self, parent: KillPredictionNode, feature: int):
-		return self.p_tree.get_child(parent, feature)
-
 	def get_node(self, features):
 		return self.p_tree.get_node(features)
 
-	## filter
+	def get_child(self, parent: KillPredictionNode, feature: int):
+		features = set()
+		features.add(feature)
+		for feature in parent.get_rule().get_features():
+			features.add(feature)
+		return self.p_tree.get_node(features)
 
-	def __inputs__(self, rules):
+	## evaluation
+
+	def __input_rules__(self, rules):
 		"""
-		:param rules: the set of patterns from which are selected or None to select within the current tree
+		:param rules: the set of KillPredictionNode or KillPredictionRule or None for all the rules in tree
 		:return:
 		"""
 		input_rules = set()
 		if rules is None:
-			queue = deque()
-			queue.append(self.p_tree.get_root())
-			while len(queue) > 0:
-				tree_node = queue.popleft()
-				tree_node: KillPredictionNode
-				for child in tree_node.get_children():
-					queue.append(child)
-				input_rules.add(tree_node.get_rule())
+			for node in self.p_tree.get_nodes():
+				input_rules.add(node.get_rule())
 		else:
 			for rule in rules:
-				rule: KillPredictionRule
-				input_rules.add(rule)
+				if isinstance(rule, KillPredictionNode):
+					input_rules.add(rule.get_rule())
+				elif isinstance(rule, KillPredictionRule):
+					input_rules.add(rule)
 		return input_rules
 
 	def select_rules(self, rules, key):
 		"""
-		:param rules: the set of patterns from which are selected or None to select within the current tree
-		:param key: either MerMutant, MerExecution or None to select all of the patterns from the input source
-		:return: the set of patterns selected from input collection using the key as the selector.
+		:param rules: 	the set of KillPredictionRule or KillPredictionNode or None for all rules being evaluated
+		:param key: 	the MerMutant or MerExecution or None to select all of existing rules created in the tree
+		:return:
 		"""
-		input_rules = self.__inputs__(rules)
 		output_rules = set()
+		input_rules = self.__input_rules__(rules)
 		for rule in input_rules:
 			if key is None:
 				output_rules.add(rule)
@@ -408,74 +399,74 @@ class KillPredictionMiddle:
 
 	def evaluate_rules(self, rules, used_tests):
 		"""
-		:param rules: the set of patterns to be evaluated or None to evaluate all the patterns in the tree
-		:param used_tests: the set of test cases used for evaluating the input patterns from first parameters
-		:return: the mapping from input pattern to [length, support, confidence] as evaluation metrics output
+		:param rules: 		the set of KillPredictionRule or KillPredictionNode or None for all rules being evaluated
+		:param used_tests: 	the set of MerTestCase or integer tid or None for selecting all of the defined test cases
+		:return: 			the mapping from KillPredictionRule in input rules to their [length, support, confidence]
 		"""
-		input_rules = self.__inputs__(rules)
-		evaluation_map = dict()
-		for rule in input_rules:
-			length, support, confidence = rule.evaluate(used_tests)
-			evaluation_map[rule] = (length, support, confidence)
-		return evaluation_map
+		input_rules = self.__input_rules__(rules)
+		evaluations = dict()
+		for input_rule in input_rules:
+			length, support, confidence = input_rule.evaluate(used_tests)
+			evaluations[input_rule] = (length, support, confidence)
+		return evaluations
 
-	def sort_rules(self, rules, used_tests):
+	def filter_rules(self, rules, used_tests):
 		"""
-		:param rules: the set of patterns to be sorted by support and confidence metrics
-		:param used_tests: the set of test cases used to evaluate and sort the patterns via utility
-		:return: the sorted list of patterns
+		:param rules: 		the set of KillPredictionRule or KillPredictionNode or None for all rules being evaluated
+		:param used_tests: 	the set of MerTestCase or integer tid or None for selecting all of the defined test cases
+		:return: 			the set of KillPredictionRule extracted from the input rules reaching the good parameters
 		"""
-		evaluation_map = self.evaluate_rules(rules, used_tests)
+		evaluation_dict = self.evaluate_rules(rules, used_tests)
+		good_rules = set()
+		for rule, evaluation in evaluation_dict.items():
+			length = evaluation[0]
+			support = evaluation[1]
+			confidence = evaluation[2]
+			if (length <= self.inputs.get_max_length()) and (support >= self.inputs.get_min_support()) and (confidence >= self.inputs.get_min_conf()):
+				good_rules.add(rule)
+		return good_rules
 
-		## 1. sort by confidence at first
+	def sorting_rules(self, rules, used_tests):
+		"""
+		:param rules: 		the set of KillPredictionRule or KillPredictionNode or None for all rules being evaluated
+		:param used_tests: 	the set of MerTestCase or integer tid or None for selecting all of the defined test cases
+		:return: 			the list of sorted KillPredictionRule based on their evaluation scores over the used test
+		"""
+		## 1. initialize the input rules as well as their evaluation scores
+		evaluation_dict = self.evaluate_rules(rules, used_tests)
+
+		## 2. sort by confidence at first
 		confidence_dict, confidence_list = dict(), list()
-		for pattern, evaluation in evaluation_map.items():
+		for rule, evaluation in evaluation_dict.items():
 			confidence = evaluation[2]
 			key = int(confidence * 10000)
 			if not (key in confidence_dict):
 				confidence_list.append(key)
 				confidence_dict[key] = set()
-			confidence_dict[key].add(pattern)
+			confidence_dict[key].add(rule)
 		confidence_list.sort(reverse=True)
 
-		## 2. sort by support at thereby
-		sorted_patterns = list()
+		## 3. sort by support at thereby
+		sorted_rules = list()
 		for confidence in confidence_list:
 			support_dict, support_list = dict(), list()
-			for pattern in confidence_dict[confidence]:
-				evaluation = evaluation_map[pattern]
+			for rule in confidence_dict[confidence]:
+				rule: KillPredictionRule
+				evaluation = evaluation_dict[rule]
 				support = evaluation[1]
 				if not (support in support_dict):
 					support_list.append(support)
 					support_dict[support] = set()
-				support_dict[support].add(pattern)
+				support_dict[support].add(rule)
 			support_list.sort(reverse=True)
 
 			for support in support_list:
-				for pattern in support_dict[support]:
-					pattern: KillPredictionRule
-					sorted_patterns.append(pattern)
+				for rule in support_dict[support]:
+					rule: KillPredictionRule
+					sorted_rules.append(rule)
 
-		## 3. return the sorted sequence of patterns
-		return sorted_patterns
-
-	def filter_rules(self, rules, used_tests):
-		"""
-		:param rules: the set of patterns from which are filtered or none to filter all those in tree
-		:param used_tests: the set of test cases used to evaluate and filter good patterns in the context
-		:return: the set of available patterns that match the input parameters for mining
-		"""
-		evaluation_map = self.evaluate_rules(rules, used_tests)
-		good_rules = set()
-		for rule, evaluation in evaluation_map.items():
-			length = evaluation[0]
-			support = evaluation[1]
-			confidence = evaluation[2]
-			if (length <= self.inputs.get_max_length()) and \
-					(support >= self.inputs.get_min_support()) and \
-					(confidence >= self.inputs.get_min_confidence()):
-				good_rules.add(rule)
-		return good_rules
+		## 4. return the sorted sequence of patterns
+		return sorted_rules
 
 
 class KillPredictionFPMine:
@@ -501,7 +492,7 @@ class KillPredictionFPMine:
 		inputs = self.middle.get_inputs()
 
 		## 2. validate whether the recursive children needs be traversed
-		if (length < inputs.get_max_length()) and (support >= inputs.get_min_support()) and (confidence < inputs.get_max_confidence()):
+		if (length < inputs.get_max_length()) and (support >= inputs.get_min_support()) and (confidence < inputs.get_max_conf()):
 			for k in range(0, len(features)):
 				child = self.middle.get_child(parent, features[k])
 				if child != parent:
@@ -599,7 +590,8 @@ class KillPredictionDTMine:
 		:param used_tests:
 		:return: it generates the decision tree for best classifying samples
 		"""
-		xmatrix, ylabels = self.middle.get_document().exec_space.new_features_labels(used_tests)
+		xmatrix = self.middle.get_document().exec_space.new_feature_matrix()
+		ylabels = self.middle.get_document().exec_space.new_label_sequence(used_tests)
 		dc_tree = sktree.DecisionTreeClassifier()
 		dc_tree.fit(xmatrix, ylabels)
 		if is_reported:
@@ -646,7 +638,8 @@ class KillPredictionDTMine:
 		return
 
 	def __min_decision_path__(self, dc_tree: sktree.DecisionTreeClassifier):
-		xmatrix, ylabels = self.middle.get_document().exec_space.new_features_labels(None)
+		xmatrix = self.middle.get_document().exec_space.new_feature_matrix()
+		ylabels = self.middle.get_document().exec_space.new_label_sequence(None)
 		node_indicator = dc_tree.decision_path(xmatrix)
 		leaf_id = dc_tree.apply(xmatrix)
 		dc_feature = dc_tree.tree_.feature
@@ -900,7 +893,7 @@ class KillPredictionWriter:
 			self.__open_writer__(writer, beg_line)
 
 			## 2. sort the patterns to be printed for
-			output_patterns = middle.sort_rules(patterns, used_tests)
+			output_patterns = middle.sorting_rules(patterns, used_tests)
 
 			## 3. single pattern line being printed
 			for pattern in output_patterns:
@@ -958,7 +951,7 @@ class KillPredictionWriter:
 			self.__output_text__("\n")
 
 			## 3. evaluation metrics for every input patterns by sort
-			output_patterns = middle.sort_rules(patterns, used_tests)
+			output_patterns = middle.sorting_rules(patterns, used_tests)
 			self.__output_text__("Summary Table of Each Pattern\n")
 			self.__output_text__("Pid\tLength\tExecutions\tMutants\tResult\tKilled\tAlive\tConfidence(%)\n")
 			for pattern in output_patterns:
@@ -1010,7 +1003,7 @@ class KillPredictionWriter:
 				for pattern in output_patterns:
 					if pattern.has_samples(mutant):
 						mutant_patterns.add(pattern)
-				pattern_list = middle.sort_rules(mutant_patterns, used_tests)
+				pattern_list = middle.sorting_rules(mutant_patterns, used_tests)
 
 				## 2-3. write each pattern w.r.t. the mutant on to file
 				for pattern in pattern_list:
@@ -1072,7 +1065,7 @@ class KillPredictionWriter:
 				for feature in features:
 					pattern = middle.get_node([feature]).get_rule()
 					mutant_patterns.add(pattern)
-				pattern_list = middle.sort_rules(mutant_patterns, used_tests)
+				pattern_list = middle.sorting_rules(mutant_patterns, used_tests)
 				if len(pattern_list) > 12:
 					pattern_list = pattern_list[0: 12]
 
@@ -1126,7 +1119,7 @@ class KillPredictionWriter:
 
 		## 3. it generates the good patterns for best matching
 		patterns = miner.mine(features, used_tests, False, None, None)
-		pattern_list = miner.middle.sort_rules(patterns, used_tests)
+		pattern_list = miner.middle.sorting_rules(patterns, used_tests)
 		if len(pattern_list) > 0:
 			best_pattern = pattern_list[0]
 		else:
@@ -1323,8 +1316,8 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	inputs = KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence)
 	print("\tII. Inputs: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
 																							inputs.get_min_support(),
-																							inputs.get_min_confidence(),
-																							inputs.get_max_confidence()))
+																							inputs.get_min_conf(),
+																							inputs.get_max_conf()))
 
 	## III. perform frequent pattern mining and evaluate it
 	print("\tIII. Perform Frequent Pattern Mining and Evaluate for Output.")
