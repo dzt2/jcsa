@@ -379,7 +379,7 @@ class KillPredictionWriter:
 
 				self.__write__("\t\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
 				for mutant in rule.get_mutants():
-					self.__write__("\t\t{}\n".format(mutant, used_tests))
+					self.__write__("\t\t{}\n".format(self.__format_mutant__(mutant, used_tests)))
 				self.__write__("[END_RULE]\n")
 
 			self.__close__("\nEnd_Of_File")
