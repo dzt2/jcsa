@@ -377,9 +377,9 @@ class KillPredictionWriter:
 					self.__write__("\t{}\n".format(self.__format_annotation__(annotation, used_tests)))
 				self.__write__("\n")
 
-				self.__write__("\t\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
+				self.__write__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
 				for mutant in rule.get_mutants():
-					self.__write__("\t\t{}\n".format(self.__format_mutant__(mutant, used_tests)))
+					self.__write__("\t{}\n".format(self.__format_mutant__(mutant, used_tests)))
 				self.__write__("[END_RULE]\n")
 
 			self.__close__("\nEnd_Of_File")
@@ -471,11 +471,13 @@ def do_fpm_mining(c_document: jctest.CDocument, inputs: jerule.KillPredictionInp
 	fp_miner = KillPredictionFPMiner(inputs)
 	fp_middle = fp_miner.middle
 	ou_rules = fp_miner.mine(features, used_tests, is_reported, o_directory, c_document)
+	mi_rules, __ = fp_middle.minimal_rules(ou_rules, None)
 
 	## 3. write the output patterns and their scores to specified directory
 	writer = KillPredictionWriter(c_document)
 	writer.write_rules_objects(fp_middle, ou_rules, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
 	writer.write_rules_metrics(fp_middle, ou_rules, os.path.join(o_directory, file_name + ".fpm.p2e"), used_tests)
+	writer.write_rules_objects(fp_middle, mi_rules, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
 	return
 
 
@@ -494,11 +496,13 @@ def do_dtm_mining(c_document: jctest.CDocument, inputs: jerule.KillPredictionInp
 	dt_miner = KillPredictionDTMiner(inputs)
 	dt_middle = dt_miner.middle
 	ou_rules = dt_miner.mine(None, used_tests, is_reported, o_directory, c_document)
+	mi_rules, __ = dt_middle.minimal_rules(ou_rules, None)
 
 	## 2. write the output patterns and their scores to specified directory
 	writer = KillPredictionWriter(c_document)
 	writer.write_rules_objects(dt_middle, ou_rules, os.path.join(o_directory, file_name + ".dtm.p2o"), used_tests)
 	writer.write_rules_metrics(dt_middle, ou_rules, os.path.join(o_directory, file_name + ".dtm.p2e"), used_tests)
+	writer.write_rules_objects(dt_middle, mi_rules, os.path.join(o_directory, file_name + ".dtm.p2m"), used_tests)
 	return
 
 
