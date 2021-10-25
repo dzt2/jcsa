@@ -340,6 +340,47 @@ class KillPredictionWriter:
 		return "{}\t{}\t#{}\t\"{}\"\t\"{}\"\t[{}]".format(logic_type, execution, line, statement_code,
 														  store_unit_code, symb_value.get_code())
 
+	def __consistent__(self, mutants, test_case):
+		"""
+		:param mutants:
+		:param test_case:
+		:return:
+		"""
+		self.c_document = self.c_document
+		killed, alive = 0, 0
+		for mutant in mutants:
+			mutant: jecode.MerMutant
+			if mutant.is_killed_by(test_case):
+				killed += 1
+			else:
+				alive += 1
+			if (killed != 0) and (alive != 0):
+				return False
+		return True
+
+	def __format_cluster__(self, rule: jerule.KillPredictionRule, mutants, used_tests):
+		"""
+		:param rule:
+		:param mutants:
+		:param used_tests:
+		:return: cid length exe mut consistent inconsistent ratio(%)
+		"""
+		cid = str(rule)
+		length = len(rule)
+		exe_number = len(rule.get_executions())
+		mut_number = len(rule.get_mutants())
+		if used_tests is None:
+			used_tests = rule.document.test_space.get_test_cases()
+		consistent, inconsistent, ratio = 0, 0, 0.0
+		for test_case in used_tests:
+			if self.__consistent__(mutants, test_case):
+				consistent += 1
+			else:
+				inconsistent += 1
+		if consistent > 0:
+			ratio = consistent / (consistent + inconsistent)
+		return "{}\t{}\t{}\t{}\t{}\t{}\t{}%".format(cid, length, exe_number, mut_number, consistent, inconsistent, ratio)
+
 	## write methods
 
 	def write_rules_objects(self, middle: jerule.KillPredictionMiddle, rules, file_path: str, used_tests):
@@ -373,8 +414,10 @@ class KillPredictionWriter:
 				self.__write__("\n")
 
 				self.__write__("\t[AID]\tlogic_type\texecution\tline\tstatement\tstore_unit\tsymbol_value\n")
+				index = 0
 				for annotation in rule.get_annotations():
-					self.__write__("\t{}\n".format(self.__format_annotation__(annotation, used_tests)))
+					self.__write__("\t[{}]\t{}\n".format(index, self.__format_annotation__(annotation, used_tests)))
+					index += 1
 				self.__write__("\n")
 
 				self.__write__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
@@ -447,6 +490,83 @@ class KillPredictionWriter:
 			self.__close__("\nEnd_Of_File")
 		return
 
+	def write_rules_cluster(self, mutant_clusters: dict, uncovered_mutants: set, file_path: str):
+		"""
+		:param mutant_clusters: 	mapping from MerMutant to KillPredictionRule
+		:param uncovered_mutants: 	the set of MerMutant that is not covered by the clustering
+		:param file_path:
+		:return:		==>	Table of Killable Prediction Clusters and Corresponding Mutations in {file_name}
+						==> [BEG_SUMMARY]
+							covered xxx uncovered xxx clusters xxx
+							avg_size xxx coverage xxx% ratio xxx%
+						==>	[END_SUMMARY]
+						==>	[BEG_CLUSTER]
+							[PID] MUT CONSISTENT INCONSISTENT RATIO(%)
+							[AID] LOGIC_TYPE EXECUTION LINE STATEMENT STORE_UNIT SYMBOL_VALUE
+								[MID] RESULT CLASS OPERATOR FUNCTION LINE LOCATION PARAMETER
+								......
+						==> [END_CLUSTER]
+						==> [BEG_UNCOVERED]
+							[MID] RESULT CLASS OPERATOR FUNCTION LINE LOCATION PARAMETER
+						==> [END_UNCOVERED]
+						==>	End_Of_File
+		"""
+		## computation
+		covered_mutants, cluster_mutants = set(), dict()
+		for mutant, cluster in mutant_clusters.items():
+			mutant: jecode.MerMutant
+			cluster: jerule.KillPredictionRule
+			covered_mutants.add(mutant)
+			if not (cluster in cluster_mutants):
+				cluster_mutants[cluster] = set()
+			cluster_mutants[cluster].add(mutant)
+
+		with open(file_path, 'w') as writer:
+			file_name = self.c_document.get_program().name
+			self.__opens__(writer, "Table of Killable Prediction Clusters and Mutations in {}".format(file_name))
+
+			## 1. summarization
+			self.__write__("\n[BEG_SUMMARY]\n")
+			covered_number, uncovered_number, cluster_number = len(covered_mutants), len(uncovered_mutants), len(cluster_mutants)
+			self.__write__("\tcovered\t{}\tuncovered\t{}\tclusters\t{}\n".format(covered_number,uncovered_number, cluster_number))
+			avg_size = covered_number / (cluster_number + 0.00000000001)
+			recall = covered_number / (covered_number + uncovered_number + 0.00000000001)
+			optimal_ratio = cluster_number / (covered_number + 0.00000000001)
+			recall = self.__ratio__(recall)
+			optimal_ratio = self.__ratio__(optimal_ratio)
+			self.__write__("\tavg_size\t{}\tcoverage\t{}%\tratio\t{}%\n".format(avg_size, recall, optimal_ratio))
+			self.__write__("[END_SUMMARY]\n")
+
+			## 2. mutants covered
+			self.__write__("\n[BEG_CLUSTER]\n")
+			for cluster, mutants in cluster_mutants.items():
+				self.__write__("\t[CID]\tLENGTH\tEXE\tMUT\tCONSISTENT\tINCONSISTENT\tRATIO(%)\n")
+				self.__write__("\t{}\n".format(self.__format_cluster__(cluster, mutants, None)))
+
+				self.__write__("\t[AID]\tlogic_type\texecution\tline\tstatement\tstore_unit\tsymbol_value\n")
+				index = 0
+				for annotation in cluster.get_annotations():
+					self.__write__("\t[{}]\t{}\n".format(index, self.__format_annotation__(annotation, None)))
+				index += 1
+				self.__write__("\n")
+
+				self.__write__("\t\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
+				for mutant in mutants:
+					self.__write__("\t\t{}\n".format(self.__format_mutant__(mutant, None)))
+
+				self.__write__("\n")
+			self.__write__("[END_CLUSTER]\n")
+
+			## 3. uncovered mutants
+			self.__write__("\n[BEG_UNCOVERED]\n")
+			self.__write__("\t[MID]\tresult\tclass\toperator\tfunction\tline\tlocation\tparameter\n")
+			for mutant in uncovered_mutants:
+				self.__write__("\t{}\n".format(self.__format_mutant__(mutant, None)))
+			self.__write__("[END_UNCOVERED]\n")
+
+			self.__close__("\nEnd_Of_File")
+		return
+
 
 def do_fpm_mining(c_document: jctest.CDocument, inputs: jerule.KillPredictionInputs,
 				  o_directory: str, file_name: str, used_tests, is_reported: bool):
@@ -478,6 +598,8 @@ def do_fpm_mining(c_document: jctest.CDocument, inputs: jerule.KillPredictionInp
 	writer.write_rules_objects(fp_middle, ou_rules, os.path.join(o_directory, file_name + ".fpm.p2o"), used_tests)
 	writer.write_rules_metrics(fp_middle, ou_rules, os.path.join(o_directory, file_name + ".fpm.p2e"), used_tests)
 	writer.write_rules_objects(fp_middle, mi_rules, os.path.join(o_directory, file_name + ".fpm.p2m"), used_tests)
+
+	## 4. fpm-based clustering
 	return
 
 
@@ -550,7 +672,78 @@ def do_mining(c_document: jctest.CDocument, m_document: jecode.MerDocument,
 	do_dtm_mining(c_document, inputs, o_directory, file_name, used_tests, is_reported)
 	inputs.max_length = old_max_length
 
+	print("END-Project #{}".format(file_name))
+	return
+
+
+def do_fpm_clustering(inputs: jerule.KillPredictionInputs, is_reported: bool):
+	"""
+	:param inputs:
+	:param is_reported:
+	:return: mutant_clusters, uncovered_mutants
+	"""
+	## 1. initialization
+	fpm_miner = KillPredictionFPMiner(inputs)
+	mutant_clusters, uncovered_mutants = dict(), set()
+	counter, size = 0, len(inputs.get_document().exec_space.get_mutants())
+
+	## 2. generate the best patterns
+	for mutant in inputs.get_document().exec_space.get_mutants():
+		features, used_tests = set(), mutant.get_live_tests(None)
+		for execution in inputs.get_document().exec_space.get_executions_of(mutant):
+			execution: jecode.MerExecution
+			for feature in execution.get_features():
+				features.add(feature)
+		ou_rules = fpm_miner.mine(features, used_tests, False)
+		counter += 1
+		if is_reported:
+			print("\t\tCluster[{}/{}] ==> [{}; {} features; {} tests; {} rules]".
+				  format(counter, size, mutant, len(features), len(used_tests), len(ou_rules)))
+		if len(ou_rules) == 0:
+			uncovered_mutants.add(mutant)
+		else:
+			mutant_clusters[mutant] = ou_rules[0]
+	return mutant_clusters, uncovered_mutants
+
+
+def do_clustering(c_document: jctest.CDocument, m_document: jecode.MerDocument,
+			  output_directory: str, file_name: str, used_tests, is_reported: bool,
+			  max_length: int, min_support: int, min_confidence: float, max_confidence: float):
+	"""
+	:param c_document:
+	:param m_document:
+	:param output_directory:
+	:param file_name:
+	:param used_tests:
+	:param is_reported:
+	:param max_length:
+	:param min_support:
+	:param min_confidence:
+	:param max_confidence:
+	:return:
+	"""
+	# I. create output directory for pattern generation
+	print("BEG-Project #{}".format(file_name))
+	o_directory = os.path.join(output_directory, file_name)
+	if not os.path.exists(o_directory):
+		os.mkdir(o_directory)
+	print("\tI. Load {} executions between {} mutants and {} tests.".format(
+		len(m_document.exec_space.get_executions()),
+		len(m_document.exec_space.get_mutants()),
+		len(m_document.test_space.get_test_cases())))
+
+	# II. construct the input module for driving pattern mining procedures
+	inputs = jerule.KillPredictionInputs(m_document, max_length, min_support, min_confidence, max_confidence)
+	print("\tII. Inputs: max_len = {}; min_supp = {}; min_conf = {}; max_conf = {}.".format(inputs.get_max_length(),
+																							inputs.get_min_support(),
+																							inputs.get_min_confidence(),
+																							inputs.get_max_confidence()))
+
 	## VI. end of all of the mutation testing project
+	print("\tIII. FPM-based Mutation Clustering thereby")
+	mutant_clusters, uncovered_mutants = do_fpm_clustering(inputs, is_reported)
+	writer = KillPredictionWriter(c_document)
+	writer.write_rules_cluster(mutant_clusters, uncovered_mutants, os.path.join(o_directory, file_name + ".r2c"))
 	print("END-Project #{}".format(file_name))
 	return
 
@@ -577,6 +770,9 @@ def main(project_directory: str, encoding_directory: str, output_directory: str)
 		do_mining(c_document, m_document,
 				  output_directory, file_name, used_tests, is_reported,
 				  max_length, min_support, min_confidence, max_confidence)
+		do_clustering(c_document, m_document,
+					  output_directory, file_name, used_tests, is_reported,
+					  max_length, min_support, min_confidence, max_confidence)
 		print()
 	return
 
