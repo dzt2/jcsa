@@ -75,7 +75,12 @@ public class Mutant {
 	}
 	@Override
 	public String toString() {
-		return this.mutation.get_location().get_tree().get_source_file().getName() + "[" + id + "]: " + mutation;
+		String file_name = this.mutation.get_location().get_tree().get_source_file().getName();
+		int index = file_name.lastIndexOf('.');
+		if(index > 0) {
+			file_name = file_name.substring(0, index).strip();
+		}
+		return file_name + "[" + id + "]";
 	}
 	
 }

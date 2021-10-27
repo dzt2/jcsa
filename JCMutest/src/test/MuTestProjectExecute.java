@@ -29,7 +29,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 
 	public static void main(String[] args) throws Exception {
-		testing("schedule.c", 0, 0, true, false);
+		testing("schedule.c", 776, 0, true, false);
 	}
 
 	private static String get_name(File cfile) {
@@ -95,22 +95,16 @@ public class MuTestProjectExecute {
 		for(int k = mid; k < mspace.size(); k++) {
 			mutants.add(mspace.get_mutant(k));
 		}
-		System.out.println("\t1. Execute on " + mutants.size() + " mutants from program.");
 
 		Collection<TestInput> tests = project.get_test_space().get_test_inputs(
 				tid, project.get_test_space().number_of_test_inputs());
-		System.out.println("\t2. Select on " + tests.size() + " test cases from program.");
 
 		if(test_mutation) {
-			System.out.println("\t3. Execute Mutants on Test Cases in the program.");
 			project.execute(mutants, tests);
 		}
 		if(test_instrumentation) {
-			System.out.println("\t4. Execute Instrumental Analysis on the program.");
 			project.execute_instrumental(tests);
 		}
-		
-		System.out.println("\t5. End of All Testing.");
 	}
 	protected static void testing(String name, int mid, int tid,
 			boolean test_mutation, boolean test_instrumentation) throws Exception {

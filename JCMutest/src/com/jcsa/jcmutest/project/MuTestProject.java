@@ -199,8 +199,11 @@ public class MuTestProject {
 		System.out.println("\t2. Start mutation testing over " + mutants.size() + " mutations within.");
 		long beg = System.currentTimeMillis();
 		for(Mutant mutant : mutants) {
+			long local_begtime = System.currentTimeMillis();
 			this.exec_space.execute_mutation_program(mutant);
-			System.out.println("\t\t==> Complete executing on " + mutant.toString());
+			long local_endtime = System.currentTimeMillis();
+			long local_secs = (local_endtime - local_begtime) / 1000;
+			System.out.println("\t\t==> Complete " + mutant + " \tin " + local_secs + " seconds.");
 		}
 		long end = System.currentTimeMillis();
 		long time = (end - beg) / 1000;
