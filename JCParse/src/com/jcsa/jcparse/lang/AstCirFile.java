@@ -77,6 +77,7 @@ public class AstCirFile {
 	public CText get_source_code() {
 		return this.ast_tree.get_source_code();
 	}
+	
 	/**
 	 * @return abstract syntax tree
 	 */
@@ -124,6 +125,7 @@ public class AstCirFile {
 	public AstFunctionDefinition get_main_ast_function() throws Exception {
 		return this.ast_tree.get_main_function();
 	}
+	
 	/**
 	 * @return C-intermediate representation
 	 */
@@ -180,6 +182,7 @@ public class AstCirFile {
 		}
 		return null;
 	}
+	
 	/**
 	 * @return the function calling graph
 	 */

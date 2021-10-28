@@ -193,17 +193,21 @@ public class MuTestProject {
 	 * @return the seconds taken for executing the mutation testing process
 	 */
 	public long execute(Collection<Mutant> mutants, Collection<TestInput> tests) throws Exception {
+		long orig_begtime = System.currentTimeMillis();
 		this.exec_space.generate_exec_scripts(tests);
 		this.exec_space.execute_normal_program();
-		System.out.println("\t1. Complete original program testing with " + tests.size() + " tests.");
-		System.out.println("\t2. Start mutation testing over " + mutants.size() + " mutations within.");
+		long orig_endtime = System.currentTimeMillis();
+		long orig_seconds = (orig_endtime - orig_begtime) / 1000;
+		System.out.println("\t1. Complete original program on " + tests.size() + " tests: [" + orig_seconds + " seconds]");
+		
+		System.out.println("\t2. Start mutation testing over " + mutants.size() + " mutants.");
 		long beg = System.currentTimeMillis();
 		for(Mutant mutant : mutants) {
 			long local_begtime = System.currentTimeMillis();
 			this.exec_space.execute_mutation_program(mutant);
 			long local_endtime = System.currentTimeMillis();
 			long local_secs = (local_endtime - local_begtime) / 1000;
-			System.out.println("\t\t==> Complete " + mutant + " \tin " + local_secs + " seconds.");
+			System.out.println("\t\t==> Complete executions on " + mutant + ": [" + local_secs + " seconds]");
 		}
 		long end = System.currentTimeMillis();
 		long time = (end - beg) / 1000;
