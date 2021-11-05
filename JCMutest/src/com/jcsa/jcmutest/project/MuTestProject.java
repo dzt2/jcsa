@@ -201,16 +201,16 @@ public class MuTestProject {
 		System.out.println("\t1. Complete original program on " + tests.size() + " tests: [" + orig_seconds + " seconds]");
 		
 		System.out.println("\t2. Start mutation testing over " + mutants.size() + " mutants.");
-		long beg = System.currentTimeMillis(), counter = 0;
+		long beg = System.currentTimeMillis(), counter = 0, total_size = mutants.size();
 		for(Mutant mutant : mutants) {
-			System.out.print("\t\t==> (" + (counter++) + ")\t Execute " + mutant);
+			System.out.print("\t\t(" + (counter++) + "/" + total_size + ")\t" + mutant);
 			
 			long local_begtime = System.currentTimeMillis();
 			this.exec_space.execute_mutation_program(mutant);
 			long local_endtime = System.currentTimeMillis();
 			long local_secs = (local_endtime - local_begtime) / 1000;
 			
-			System.out.print("\t--> Complete in " + local_secs + " seconds.\n");
+			System.out.print("\t==> [" + local_secs + " seconds]\n");
 		}
 		long end = System.currentTimeMillis();
 		long time = (end - beg) / 1000;

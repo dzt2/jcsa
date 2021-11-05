@@ -29,7 +29,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 
 	public static void main(String[] args) throws Exception {
-		testing("schedule.c", 1694, 0, true, false);
+		testing("schedule.c", 2210, 0, true, false);
 	}
 
 	private static String get_name(File cfile) {
@@ -90,7 +90,7 @@ public class MuTestProjectExecute {
 			int tid, boolean test_mutation, boolean test_instrumentation) throws Exception {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_file(cfile);
 
-		List<Mutant> mutants = new ArrayList<>();
+		List<Mutant> mutants = new ArrayList<Mutant>();
 		MutantSpace mspace = code_file.get_mutant_space();
 		for(int k = mid; k < mspace.size(); k++) {
 			mutants.add(mspace.get_mutant(k));
