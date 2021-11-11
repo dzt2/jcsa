@@ -204,7 +204,7 @@ public class MuTestProject {
 		long beg = System.currentTimeMillis(), counter = 0, total_size = mutants.size();
 		for(Mutant mutant : mutants) {
 			counter++;
-			System.out.print("\t\t(" + counter + "/" + total_size + ")\t" + mutant);
+			System.out.print("\t\t(" + counter + "/" + total_size + ") \t" + mutant);
 			
 			long local_begtime = System.currentTimeMillis();
 			this.exec_space.execute_mutation_program(mutant);
