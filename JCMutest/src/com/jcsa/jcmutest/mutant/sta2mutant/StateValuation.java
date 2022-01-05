@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.base;
+package com.jcsa.jcmutest.mutant.sta2mutant;
 
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -6,13 +6,13 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
- * The abstract or concrete values used to describe abstract states defined in
- * mutation testing execution.
- * <br>
+ * It defines the abstract domain and values used to describe abstract state
+ * in subsumption analysis.
+ * 
  * @author yukimula
  *
  */
-public final class CirStateValuation {
+public class StateValuation {
 	
 	/* definitions */
 	/** {true, false} **/
@@ -43,6 +43,8 @@ public final class CirStateValuation {
 	public static final SymbolExpression nnul_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NnulValue");
 	/** it specifies the exception that incurs in case that arithmetic or pointer exception  **/
 	public static final SymbolExpression trap_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");
+	
+	/* safety evaluation */
 	/**
 	 * @param expression
 	 * @param context
@@ -68,6 +70,5 @@ public final class CirStateValuation {
 	 * @throws Exception
 	 */
 	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception { return evaluate(expression, null); }
-	
 	
 }
