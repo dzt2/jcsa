@@ -87,24 +87,19 @@ public final class StateValuations {
 	 * @throws Exception
 	 */
 	private static SymbolExpression compute(SymbolExpression expression, SymbolProcess context) throws Exception {
-		/* input-validate */
-		if(expression == null) {
+		if(expression == null) {												/* input-validate */
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
-		
-		/* normalization */
-		try {
-			expression = expression.evaluate(context);
-		}
-		catch(ArithmeticException ex) {
-			expression = trap_value;
-		}
-		
-		/* reconstruction */
-		if(has_trap_value(expression)) {
+		else if(has_trap_value(expression)) {									/* trap at this point */
 			return trap_value;
 		}
-		else {
+		else {																	/* otherwise, compute */
+			try {
+				expression = expression.evaluate(context);
+			}
+			catch(ArithmeticException ex) {
+				expression = trap_value;
+			}
 			return expression;
 		}
 	}
@@ -327,6 +322,5 @@ public final class StateValuations {
 			return false;
 		}
 	}
-	
 	
 }
