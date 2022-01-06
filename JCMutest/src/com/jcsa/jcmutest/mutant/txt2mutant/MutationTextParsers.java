@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.txt2mutant;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaClass;
 
 class MutationTextParsers {
 

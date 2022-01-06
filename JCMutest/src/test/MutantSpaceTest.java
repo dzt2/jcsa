@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
 import com.jcsa.jcmutest.mutant.txt2mutant.MutationTestType;
 import com.jcsa.jcparse.lang.AstCirFile;

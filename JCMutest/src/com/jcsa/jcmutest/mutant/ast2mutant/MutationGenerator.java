@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.ast2mutant;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;

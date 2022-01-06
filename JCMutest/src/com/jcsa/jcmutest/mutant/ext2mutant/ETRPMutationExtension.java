@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.ext2mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.AstMutation;
 
 public class ETRPMutationExtension extends MutationExtension {
 

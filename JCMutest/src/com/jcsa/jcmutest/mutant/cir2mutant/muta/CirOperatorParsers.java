@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithAddParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetArithDivParser;
@@ -23,7 +24,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetLogicIorParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetNotEqualsParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetSmallerEqParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.oprt.CirSetSmallerTnParser;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;

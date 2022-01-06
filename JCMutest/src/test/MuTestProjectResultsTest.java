@@ -3,8 +3,8 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;

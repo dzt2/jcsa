@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.txt2mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;

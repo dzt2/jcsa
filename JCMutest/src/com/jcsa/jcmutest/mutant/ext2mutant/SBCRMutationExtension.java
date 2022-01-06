@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.ext2mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.AstMutations;
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.AstMutations;
 import com.jcsa.jcparse.lang.astree.stmt.AstBreakStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstContinueStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;

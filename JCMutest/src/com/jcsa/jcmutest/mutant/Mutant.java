@@ -1,7 +1,5 @@
 package com.jcsa.jcmutest.mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-
 /**
  * It provides the interface to manage the access to the mutation data
  * in the space.

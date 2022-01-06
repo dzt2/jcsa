@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.ext2mutant;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaClass;
 
 /**
  * It provide interfaces to extend syntactic mutations in C.

@@ -2,9 +2,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta.refs;
 
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParser;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;

@@ -3,9 +3,9 @@ package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 import java.util.Collection;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAttribute;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;

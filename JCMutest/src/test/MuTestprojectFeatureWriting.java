@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutationsFeaturesWriter;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;

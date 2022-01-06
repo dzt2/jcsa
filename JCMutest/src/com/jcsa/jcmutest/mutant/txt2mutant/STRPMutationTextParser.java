@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.txt2mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.stmt.AstBreakStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;

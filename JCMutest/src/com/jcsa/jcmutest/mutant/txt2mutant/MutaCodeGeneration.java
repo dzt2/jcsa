@@ -3,8 +3,8 @@ package com.jcsa.jcmutest.mutant.txt2mutant;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.text.CText;
 import com.jcsa.jcparse.parse.code.CodeGeneration;

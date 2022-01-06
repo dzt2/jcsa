@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
@@ -40,8 +42,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UIORCirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UNODCirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.UNOICirMutationParser;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.unry.VINCCirMutationParser;
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.lexical.COperator;

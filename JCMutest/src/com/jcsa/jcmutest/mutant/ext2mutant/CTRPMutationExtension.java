@@ -1,10 +1,10 @@
 package com.jcsa.jcmutest.mutant.ext2mutant;
 
-import com.jcsa.jcmutest.mutant.mutation.AstMutation;
-import com.jcsa.jcmutest.mutant.mutation.AstMutations;
-import com.jcsa.jcmutest.mutant.mutation.MutaClass;
-import com.jcsa.jcmutest.mutant.mutation.MutaGroup;
-import com.jcsa.jcmutest.mutant.mutation.MutaOperator;
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.AstMutations;
+import com.jcsa.jcmutest.mutant.MutaClass;
+import com.jcsa.jcmutest.mutant.MutaGroup;
+import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 

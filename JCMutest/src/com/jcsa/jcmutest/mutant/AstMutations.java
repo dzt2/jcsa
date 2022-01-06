@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.mutation;
+package com.jcsa.jcmutest.mutant;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
