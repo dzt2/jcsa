@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+
 
 /**
  * <code>
@@ -14,20 +14,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
  * @author yukimula
  *
  */
-public abstract class CirPathErrorState extends CirAbstractState {
+public abstract class CirPathErrorState extends CirAbstErrorState {
 
 	protected CirPathErrorState(CirExecution execution, CirStateValue value) throws Exception {
 		super(execution, CirStateStore.new_unit(execution.get_statement()), value);
 	}
-	
-	/* universal getters */
-	/**
-	 * @return the original symbolic value to represent the path error state
-	 */
-	public SymbolExpression get_ovalue() { return this.get_value().get_lvalue(); }
-	/**
-	 * @return the mutation symbolic value to represent the path error state
-	 */
-	public SymbolExpression get_mvalue() { return this.get_value().get_rvalue(); }
 	
 }

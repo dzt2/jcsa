@@ -11,6 +11,7 @@ public enum CirValueClass {
 	
 	/**	cov_stmt(INT_TIMES)		==>	[stmt]				**/	cov_stmt,
 	/**	eva_cond(CONDITION)		==>	[stmt]				**/	eva_cond,
+	/**	non_stmt(STATEMENT)		==>	[stmt]				**/	non_stmt,
 	
 	/**	set_stmt(BOOL, BOOL)	==>	[stmt]				**/	set_stmt,
 	/**	set_trap(EXEC, EXPT)	==>	[stmt]				**/	set_trap,

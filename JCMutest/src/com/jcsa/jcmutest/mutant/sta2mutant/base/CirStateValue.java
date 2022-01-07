@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
-import com.jcsa.jcmutest.mutant.sta2mutant.StateValuations;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -27,7 +27,7 @@ public class CirStateValue {
 		else {
 			this.vtype = vtype; 
 			this.vlist = new SymbolExpression[] {
-					StateValuations.evaluate(value)
+					StateMutations.evaluate(value)
 			};
 		}
 	}
@@ -44,8 +44,8 @@ public class CirStateValue {
 		else {
 			this.vtype = vtype; 
 			this.vlist = new SymbolExpression[] {
-					StateValuations.evaluate(lvalue),
-					StateValuations.evaluate(rvalue)
+					StateMutations.evaluate(lvalue),
+					StateMutations.evaluate(rvalue)
 			};
 		}
 	}
@@ -132,7 +132,7 @@ public class CirStateValue {
 	 * @return	cov_time(int_times)
 	 * @throws Exception
 	 */
-	public static CirStateValue cov_time(int int_times) throws Exception {
+	protected static CirStateValue cov_time(int int_times) throws Exception {
 		if(int_times <= 0) {
 			throw new IllegalArgumentException("Invalid: " + int_times);
 		}
@@ -147,7 +147,7 @@ public class CirStateValue {
 	 * @return eva_cond(condition as value)
 	 * @throws Exception
 	 */
-	public static CirStateValue eva_cond(Object condition, boolean value) throws Exception {
+	protected static CirStateValue eva_cond(Object condition, boolean value) throws Exception {
 		if(condition == null) {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
@@ -157,11 +157,25 @@ public class CirStateValue {
 		}
 	}
 	/**
+	 * @param execution
+	 * @return non_stmt(execution)
+	 * @throws Exception
+	 */
+	protected static CirStateValue non_stmt(CirExecution execution) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			return new CirStateValue(CirValueClass.non_stmt,
+					SymbolFactory.sym_expression(execution));
+		}
+	}
+	/**
 	 * @param execute whether the statement should be executed or not
 	 * @return	set_stmt(!execute, execute)
 	 * @throws Exception
 	 */
-	public static CirStateValue set_stmt(boolean execute) throws Exception {
+	protected static CirStateValue set_stmt(boolean execute) throws Exception {
 		return new CirStateValue(CirValueClass.set_stmt, 
 				SymbolFactory.sym_constant(Boolean.valueOf(!execute)),
 				SymbolFactory.sym_constant(Boolean.valueOf(execute)));
@@ -172,7 +186,7 @@ public class CirStateValue {
 	 * @return	set_flow(orig_exec, muta_exec)
 	 * @throws Exception
 	 */
-	public static CirStateValue set_flow(CirExecution orig_target, CirExecution muta_target) throws Exception {
+	protected static CirStateValue set_flow(CirExecution orig_target, CirExecution muta_target) throws Exception {
 		if(orig_target == null) {
 			throw new IllegalArgumentException("Invalid orig_target: null");
 		}
@@ -190,14 +204,14 @@ public class CirStateValue {
 	 * @return	set_trap(execution, exception)
 	 * @throws Exception
 	 */
-	public static CirStateValue set_trap(CirExecution execution) throws Exception {
+	protected static CirStateValue set_trap(CirExecution execution) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
 			return new CirStateValue(CirValueClass.set_trap,
 					SymbolFactory.sym_expression(execution),
-					StateValuations.trap_value);
+					StateMutations.trap_value);
 		}
 	}
 	/**
@@ -206,7 +220,7 @@ public class CirStateValue {
 	 * @return set_expr(ovalue, mvalue)
 	 * @throws Exception
 	 */
-	public static CirStateValue set_expr(SymbolExpression ovalue, SymbolExpression mvalue) throws Exception {
+	protected static CirStateValue set_expr(SymbolExpression ovalue, SymbolExpression mvalue) throws Exception {
 		return new CirStateValue(CirValueClass.set_expr, ovalue, mvalue);
 	}
 	/**
@@ -215,7 +229,7 @@ public class CirStateValue {
 	 * @return		inc_expr(base, diff)
 	 * @throws Exception	
 	 */
-	public static CirStateValue inc_expr(SymbolExpression base, SymbolExpression diff) throws Exception {
+	protected static CirStateValue inc_expr(SymbolExpression base, SymbolExpression diff) throws Exception {
 		if(base == null) {
 			throw new IllegalArgumentException("Invalid base: null");
 		}
@@ -232,7 +246,7 @@ public class CirStateValue {
 	 * @return		xor_expr(base, diff)
 	 * @throws Exception	
 	 */
-	public static CirStateValue xor_expr(SymbolExpression base, SymbolExpression diff) throws Exception {
+	protected static CirStateValue xor_expr(SymbolExpression base, SymbolExpression diff) throws Exception {
 		if(base == null) {
 			throw new IllegalArgumentException("Invalid base: null");
 		}

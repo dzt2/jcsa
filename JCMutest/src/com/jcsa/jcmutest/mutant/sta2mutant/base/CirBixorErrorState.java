@@ -11,8 +11,12 @@ public class CirBixorErrorState extends CirDataErrorState {
 	}
 	
 	/**
+	 * @return the basic value from which the difference is introduced
+	 */
+	public SymbolExpression get_base_value() { return this.get_ovalue(); }
+	/**
 	 * @return the mutation value (or difference) introduced to the target expression
 	 */
-	public SymbolExpression get_difference() { return this.get_value().get_rvalue(); }
+	public SymbolExpression get_difference() { return this.get_mvalue(); }
 
 }

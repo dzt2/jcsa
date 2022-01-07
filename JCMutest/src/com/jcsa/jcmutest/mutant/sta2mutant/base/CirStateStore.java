@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
-import com.jcsa.jcmutest.mutant.sta2mutant.StateValuations;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -34,7 +34,7 @@ public class CirStateStore {
 		}
 		else { 
 			this.type = type; this.unit = unit; 
-			this.skey = StateValuations.evaluate(skey);
+			this.skey = StateMutations.evaluate(skey);
 		}
 	}
 	
@@ -91,7 +91,7 @@ public class CirStateStore {
 	 * 			CirExpression	{on-left}	-->	defp:unit:sym_reference		<br>
 	 * @throws Exception
 	 */
-	public static CirStateStore new_unit(CirNode unit) throws Exception {
+	protected static CirStateStore new_unit(CirNode unit) throws Exception {
 		if(unit == null) {
 			throw new IllegalArgumentException("Invalid unit: null");
 		}
@@ -101,11 +101,11 @@ public class CirStateStore {
 		}
 		else if(unit instanceof CirExpression) {
 			CirExpression expression = (CirExpression) unit;
-			if(StateValuations.is_assigned(expression)) {
+			if(StateMutations.is_assigned(expression)) {
 				return new CirStateStore(CirStoreClass.defp, expression,
 						SymbolFactory.sym_expression(expression));
 			}
-			else if(StateValuations.is_boolean(expression)) {
+			else if(StateMutations.is_boolean(expression)) {
 				return new CirStateStore(CirStoreClass.usep, expression,
 						SymbolFactory.sym_condition(expression, true));
 			}
@@ -125,7 +125,7 @@ public class CirStateStore {
 	 * @return	vdef:unit:reference
 	 * @throws Exception
 	 */
-	public static CirStateStore new_vdef(CirExpression unit, SymbolExpression reference) throws Exception {
+	protected static CirStateStore new_vdef(CirExpression unit, SymbolExpression reference) throws Exception {
 		if(unit == null) {
 			throw new IllegalArgumentException("Invalid unit: null");
 		}
