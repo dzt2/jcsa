@@ -144,8 +144,7 @@ public abstract class StateMutationParser {
 			if(expression != null) { statement = expression.statement_of(); }
 			if(statement != null) { return statement; }
 			
-			/* recursively find on parent */
-			return this.get_beg_statement(location.get_parent());				
+			/* cannot find any position */	return null;
 		}
 	}
 	/**
@@ -175,8 +174,7 @@ public abstract class StateMutationParser {
 			if(expression != null) { statement = expression.statement_of(); }
 			if(statement != null) { return statement; }
 			
-			/* recursively find on parent */
-			return this.get_end_statement(location.get_parent());
+			/* cannot find any position */	return null;
 		}
 	}
 	
