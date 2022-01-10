@@ -3,25 +3,30 @@ package com.jcsa.jcmutest.mutant.sta2mutant.base;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 
+/**
+ * [stmt:statement] <== set_flow(orig_target, muta_target)
+ * @author yukimula
+ *
+ */
 public class CirFlowsErrorState extends CirPathErrorState {
 
 	protected CirFlowsErrorState(CirExecutionFlow orig_flow, 
-				CirExecutionFlow muta_flow) throws Exception {
+			CirExecutionFlow muta_flow) throws Exception {
 		super(orig_flow.get_source(), CirStateValue.set_flow(
 				orig_flow.get_target(), muta_flow.get_target()));
 	}
 	
 	/**
-	 * @return the original source statement from which the flow is mutated
+	 * @return the next statement being executed in original version
 	 */
-	public CirExecution get_orig_source() { return this.get_execution(); }
+	public CirExecution get_orig_target() { 
+		return (CirExecution) this.get_loperand().get_source(); 
+	}
 	/**
-	 * @return the next statement to be executed in the original executions
+	 * @return the next statement being executed in mutation version
 	 */
-	public CirExecution get_orig_target() { return (CirExecution) this.get_ovalue().get_source(); }
-	/**
-	 * @return the next statement to be executed in the mutation executions
-	 */
-	public CirExecution get_muta_target() { return (CirExecution) this.get_mvalue().get_source(); }
+	public CirExecution get_muta_target() { 
+		return (CirExecution) this.get_roperand().get_source(); 
+	}
 	
 }

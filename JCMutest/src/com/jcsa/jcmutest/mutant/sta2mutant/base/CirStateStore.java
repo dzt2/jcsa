@@ -9,20 +9,19 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * The store unit instance to be connected with values (interpretation) of the 
- * abstract execution states established at some point in the mutation testing.
+ * It models the store unit in the abstract execution state of mutation testing.
  * 
  * @author yukimula
  *
  */
-public class CirStateStore {
+class CirStateStore {
 	
 	/* definitions */
-	private CirStoreClass 		type;
-	private CirNode				unit;
-	private SymbolExpression	skey;
-	private CirStateStore(CirStoreClass type, CirNode unit,
-				SymbolExpression skey) throws Exception {
+	/**	category 	**/	private CirStoreClass 		type;
+	/**	location	**/	private CirNode				unit;
+	/**	identifier	**/	private SymbolExpression	skey;
+	private CirStateStore(CirStoreClass type, CirNode 
+			unit, SymbolExpression skey) throws Exception {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
@@ -32,7 +31,7 @@ public class CirStateStore {
 		else if(skey == null) {
 			throw new IllegalArgumentException("Invalid skey: null");
 		}
-		else { 
+		else {
 			this.type = type; this.unit = unit; 
 			this.skey = StateMutations.evaluate(skey);
 		}
@@ -84,56 +83,57 @@ public class CirStateStore {
 	
 	/* factory */
 	/**
-	 * It creates a non-virtual store unit to preserve value for the input unit
-	 * @param unit	
-	 * @return	CirStatement 	{execute}	-->	stmt:unit:sym_statement		<br>
-	 * 			CirExpression	{no-left}	-->	usep:unit:sym_expression	<br>
-	 * 			CirExpression	{on-left}	-->	defp:unit:sym_reference		<br>
+	 * It creates a non-virtual store unit from C-intermediate code entity
+	 * @param unit	{CirStatement|CirExpression}
+	 * @return		CirStatement	(execute)	-->	[stmt]
+	 * 				CirExpression	(boolean)	-->	[cond]
+	 * 				CirExpression	(no-left)	-->	[expr]
+	 * 				CirExpression	(on-left)	-->	[dvar]
 	 * @throws Exception
 	 */
 	protected static CirStateStore new_unit(CirNode unit) throws Exception {
 		if(unit == null) {
-			throw new IllegalArgumentException("Invalid unit: null");
+			throw new IllegalArgumentException("Invalid unit as null");
 		}
 		else if(unit instanceof CirStatement) {
-			return new CirStateStore(CirStoreClass.stmt, unit,
-							SymbolFactory.sym_expression(unit));
+			return new CirStateStore(CirStoreClass.stmt, unit, SymbolFactory.sym_expression(unit));
 		}
 		else if(unit instanceof CirExpression) {
 			CirExpression expression = (CirExpression) unit;
-			if(StateMutations.is_assigned(expression)) {
-				return new CirStateStore(CirStoreClass.defp, expression,
-						SymbolFactory.sym_expression(expression));
+			SymbolExpression skey = SymbolFactory.sym_expression(expression);
+			if(StateMutations.is_boolean(expression)) {
+				return new CirStateStore(CirStoreClass.cond, unit, skey);
 			}
-			else if(StateMutations.is_boolean(expression)) {
-				return new CirStateStore(CirStoreClass.usep, expression,
-						SymbolFactory.sym_condition(expression, true));
+			else if(StateMutations.is_assigned(expression)) {
+				return new CirStateStore(CirStoreClass.dvar, unit, skey);
 			}
 			else {
-				return new CirStateStore(CirStoreClass.usep, expression,
-						SymbolFactory.sym_expression(expression));
+				return new CirStateStore(CirStoreClass.expr, unit, skey);
 			}
 		}
 		else {
-			throw new IllegalArgumentException(unit.getClass().getName());
+			throw new IllegalArgumentException("Unsupport: " + unit.getClass().getSimpleName());
 		}
 	}
 	/**
-	 * It creates a virtual store unit to represent the definition point introduced
-	 * @param unit
-	 * @param reference
-	 * @return	vdef:unit:reference
+	 * It creates a virtual reference unit to preserve value that is never defined in original program entities.
+	 * @param unit	the location where the virtual reference node is created
+	 * @param refer	the symbolic identifier to specify the unique virtual definition point
+	 * @return		vdef(unit, refer)
 	 * @throws Exception
 	 */
-	protected static CirStateStore new_vdef(CirExpression unit, SymbolExpression reference) throws Exception {
+	protected static CirStateStore new_vdef(CirNode unit, SymbolExpression refer) throws Exception {
 		if(unit == null) {
 			throw new IllegalArgumentException("Invalid unit: null");
 		}
-		else if(reference == null || !reference.is_reference()) {
-			throw new IllegalArgumentException("Invalid reference: " + reference);
+		else if(refer == null) {
+			throw new IllegalArgumentException("Invalid refer: null");
+		}
+		else if(refer.is_reference()) {
+			return new CirStateStore(CirStoreClass.vdef, unit, refer);
 		}
 		else {
-			return new CirStateStore(CirStoreClass.vdef, unit, reference);
+			throw new IllegalArgumentException(refer.generate_code(true));
 		}
 	}
 	

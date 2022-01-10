@@ -1,24 +1,26 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 /**
- * The category of values (interpretation) of the state annotated with some
- * store unit in C program point in the mutation testing.
+ * The category of value used to define the abstract execution state.
  * 
  * @author yukimula
  *
  */
 public enum CirValueClass {
 	
-	/**	cov_stmt(INT_TIMES)		==>	[stmt]				**/	cov_stmt,
-	/**	eva_cond(CONDITION)		==>	[stmt]				**/	eva_cond,
-	/**	non_stmt(STATEMENT)		==>	[stmt]				**/	non_stmt,
+	/*	conditioned state	*/
+	/**	cov_cond(should_or_not, condition);	**/	cov_cond,
+	/**	cov_time(most_or_least, int_times);	**/	cov_time,
 	
-	/**	set_stmt(BOOL, BOOL)	==>	[stmt]				**/	set_stmt,
-	/**	set_trap(EXEC, EXPT)	==>	[stmt]				**/	set_trap,
-	/**	set_flow(EXEC, EXEC)	==>	[stmt]				**/	set_flow,
+	/*	path-errors state	*/
+	/**	set_stmt(orig_exec, muta_exec);		**/	set_stmt,
+	/**	set_flow(orig_target, muta_target);	**/	set_flow,
+	/**	set_trap(execution, exception);		**/	set_trap,
 	
-	/**	set_expr(ORIG, MUTA)	==>	[usep|defp|vdef]	**/	set_expr,
-	/**	inc_expr(ORIG, DIFF)	==>	[usep|defp|vdef]	**/ inc_expr,
-	/**	xor_expr(ORIG, DIFF)	==>	[usep|defp|vdef]	**/	xor_expr,
+	/* 	data-errors state 	*/
+	/**	dif_expr(orig_value, muta_value);	**/	dif_expr,
+	/**	set_expr(orig_value, muta_value);	**/	set_expr,
+	/**	inc_expr(base_value, difference);	**/	inc_expr,
+	/**	xor_expr(base_value, difference);	**/	xor_expr,
 	
 }

@@ -5,23 +5,24 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
  * <code>
- * 	|--	CirDataErrorState		execution[expr]		:=	{set|inc|xor_expr}		<br>
- * 	|--	|--	CirValueErrorState	[usep|defp|vdef]	:=	{set_expr:orig:muta}	<br>
- * 	|--	|--	CirIncreErrorState	[usep|defp|vdef]	:=	{inc_expr:base:diff}	<br>
- * 	|--	|--	CirBixorErrorState	[usep|defp|vdef]	:=	{xor_expr:base:diff}	<br>
+ * 	|--	CirDataErrorState		(execution, [expr|cond|dvar|vdef], (val1, val2))<br>
+ * 	|--	|--	CirValueErrorState	(execution, [expr|cond|dvar|vdef], (val1, val2))<br>
+ * 	|--	|--	CirIncreErrorState	(execution, [expr|dvar|vdef],	(base, differ))	<br>
+ * 	|--	|--	CirBixorErrorState	(execution, [expr|dvar|vdef],	(base, differ))	<br>
  * </code>
  * 
  * @author yukimula
  *
  */
 public abstract class CirDataErrorState extends CirAbstErrorState {
-	
-	protected CirDataErrorState(CirExecution execution, CirStateStore store, CirStateValue value) throws Exception {
-		super(execution, store, value);
+
+	protected CirDataErrorState(CirExecution point, CirStateStore store, CirStateValue value) throws Exception {
+		super(point, store, value);
 	}
 	
 	/**
-	 * @return the expression where this data state error is introduced
+	 * @return the expression where the data state error is injected
 	 */
-	public CirExpression get_expression() { return (CirExpression) this.get_store().get_unit(); }
+	public CirExpression get_expression() { return (CirExpression) this.get_clocation(); }
+	
 }

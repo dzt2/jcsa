@@ -2,13 +2,12 @@ package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
-
 /**
  * <code>
- * 	|--	CirPathErrorState		execution[stmt]		:=	{set_stmt|flow|trap}	<br>
- * 	|--	|--	CirBlockErrorState	[stmt:statement]	:=	{set_stmt:bool:bool}	<br>
- * 	|--	|--	CirFlowsErrorState	[stmt:statement]	:=	{set_flow:exec:exec}	<br>
- * 	|--	|--	CirTrapsErrorState	[stmt:statement]	:=	{set_trap:exec:expt}	<br>
+ * 	|--	CirPathErrorState		(execution, [stmt], (loperand, roperand))		<br>
+ * 	|--	|--	CirBlockErrorState	(execution, [stmt], (orig_exec, muta_exec))		<br>
+ * 	|--	|--	CirFlowsErrorState	(execution, [stmt], (orig_stmt, muta_stmt))		<br>
+ * 	|--	|--	CirTrapsErrorState	(execution, [stmt], (execution, exception))		<br>
  * </code>
  * 
  * @author yukimula
@@ -16,8 +15,13 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
  */
 public abstract class CirPathErrorState extends CirAbstErrorState {
 
-	protected CirPathErrorState(CirExecution execution, CirStateValue value) throws Exception {
-		super(execution, CirStateStore.new_unit(execution.get_statement()), value);
+	protected CirPathErrorState(CirExecution point, CirStateValue value) throws Exception {
+		super(point, CirStateStore.new_unit(point.get_statement()), value);
 	}
+	
+	/**
+	 * @return the source execution point where the path error occurs
+	 */
+	public CirExecution get_source_execution() { return this.get_clocation().execution_of(); }
 	
 }

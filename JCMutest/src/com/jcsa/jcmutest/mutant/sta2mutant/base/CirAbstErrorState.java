@@ -1,10 +1,18 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 /**
  * <code>
+ * 	|--	CirPathErrorState		(execution, [stmt], (loperand, roperand))		<br>
+ * 	|--	|--	CirBlockErrorState	(execution, [stmt], (orig_exec, muta_exec))		<br>
+ * 	|--	|--	CirFlowsErrorState	(execution, [stmt], (orig_stmt, muta_stmt))		<br>
+ * 	|--	|--	CirTrapsErrorState	(execution, [stmt], (execution, exception))		<br>
+ * 	<br>
+ * 	|--	CirDataErrorState		(execution, [expr|cond|dvar|vdef], (val1, val2))<br>
+ * 	|--	|--	CirValueErrorState	(execution, [expr|cond|dvar|vdef], (val1, val2))<br>
+ * 	|--	|--	CirIncreErrorState	(execution, [expr|dvar|vdef],	(base, differ))	<br>
+ * 	|--	|--	CirBixorErrorState	(execution, [expr|dvar|vdef],	(base, differ))	<br>
  * </code>
  * 
  * @author yukimula
@@ -12,18 +20,8 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
  */
 public abstract class CirAbstErrorState extends CirAbstractState {
 
-	protected CirAbstErrorState(CirExecution execution, CirStateStore store, CirStateValue value) throws Exception {
-		super(execution, store, value);
+	protected CirAbstErrorState(CirExecution point, CirStateStore store, CirStateValue value) throws Exception {
+		super(point, store, value);
 	}
-	
-	/* unary operands */
-	/**
-	 * @return the original value of the error state
-	 */
-	public SymbolExpression get_ovalue() { return this.get_value().get_lvalue(); }
-	/**
-	 * @return
-	 */
-	public SymbolExpression get_mvalue() { return this.get_value().get_rvalue(); }
-	
+
 }

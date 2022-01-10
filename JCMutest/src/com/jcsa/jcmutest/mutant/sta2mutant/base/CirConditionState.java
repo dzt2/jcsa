@@ -1,27 +1,34 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 
 /**
  * <code>
- * 	|--	CirConditionState		execution[stmt]		:=	{cov_time|eva_expr}		<br>
- * 	|--	|--	CirCoverTimesState	[stmt:statement]	:=	{cov_time:int_times}	<br>
- * 	|--	|--	CirConstraintState	[stmt:statement]	:=	{eva_cond:condition}	<br>
+ * 	|--	CirConditionState		(execution, [stmt], (bool, condition))			<br>
+ * 	|--	|--	CirLimitTimesState	(execution, [stmt], (true, int_times))			<br>
+ * 	|--	|--	CirReachTimesState	(execution, [stmt], (false, int_times))			<br>
+ * 	|--	|--	CirTConstrainState	(execution, [stmt], (true, condition))			<br>
+ * 	|--	|--	CirFConstrainState	(execution, [stmt], (false, condition))			<br>
  * </code>
  * 
  * @author yukimula
  *
  */
 public abstract class CirConditionState extends CirAbstractState {
-	
-	protected CirConditionState(CirExecution execution, CirStateValue value) throws Exception {
-		super(execution, CirStateStore.new_unit(execution.get_statement()), value);
+
+	protected CirConditionState(CirExecution point, CirStateValue value) throws Exception {
+		super(point, CirStateStore.new_unit(point.get_statement()), value);
 	}
 	
+	/* common getters */
 	/**
-	 * @return the unary value preserved in the state connected with statement unit
+	 * @return the execution point where the condition should be evaluated
 	 */
-	public SymbolExpression get_uvalue() { return this.get_value().get_uvalue(); }
+	public CirExecution get_evaluated_point() { return this.get_clocation().execution_of(); }
+	/**
+	 * @return the first operand as the boolean of the conditioned states
+	 */
+	public boolean		get_option() { return ((SymbolConstant) this.get_loperand()).get_bool(); }
 	
 }

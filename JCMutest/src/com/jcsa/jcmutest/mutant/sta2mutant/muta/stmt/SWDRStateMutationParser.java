@@ -34,7 +34,7 @@ public class SWDRStateMutationParser extends StateMutationParser {
 				break;
 			}
 		}
-		CirConditionState constraint = CirAbstractState.non_stmt(tbranch);
+		CirConditionState constraint = CirAbstractState.lim_time(tbranch, 0);
 		
 		/* state error is to execute while body */
 		CirExpression condition = if_statement.get_condition();

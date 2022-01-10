@@ -37,7 +37,6 @@ public class BTRPStateMutationParser extends StateMutationParser {
 		default: throw new IllegalArgumentException("Invalid operator: " + mutation.get_operator());
 		}
 		
-		
 		/* 2. generate state infection pairs */
 		if(expression != null) {
 			CirConditionState constraint = CirAbstractState.eva_cond(execution, expression, value);
