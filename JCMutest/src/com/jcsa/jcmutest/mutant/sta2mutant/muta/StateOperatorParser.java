@@ -427,6 +427,41 @@ public abstract class StateOperatorParser {
 		}
 	}
 	
+	/**
+	 * @param operator
+	 * @return {orig_value != loperand op roperand}
+	 * @throws Exception
+	 */
+	protected SymbolExpression dif_condition(COperator operator) throws Exception {
+		if(operator == null) {
+			throw new IllegalArgumentException("Invalid operator: " + operator);
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Not established");
+		}
+		else {
+			SymbolExpression muvalue = this.sym_expression(
+					operator, this.loperand, this.roperand);
+			return this.dif_condition(muvalue);
+		}
+	}
+	/**
+	 * @param operator
+	 * @return {orig_value != muvalue}
+	 * @throws Exception
+	 */
+	protected SymbolExpression dif_condition(Object muvalue) throws Exception {
+		if(muvalue == null) {
+			throw new IllegalArgumentException("Invalid muvalue: " + muvalue);
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Not established");
+		}
+		else {
+			return this.sym_expression(COperator.not_equals, this.expression, muvalue);
+		}
+	}
+	
 	/* parsing simplification */
 	/**
 	 * @param condition
@@ -465,8 +500,7 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
 		else {
-			SymbolExpression condition = this.sym_expression(
-						COperator.not_equals, this.expression, muvalue);
+			SymbolExpression condition = this.dif_condition(muvalue);
 			return this.parse_by_condition_and_muvalue(condition, muvalue);
 		}
 	}
