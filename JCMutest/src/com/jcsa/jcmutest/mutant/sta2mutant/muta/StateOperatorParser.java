@@ -9,7 +9,6 @@ import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -49,24 +48,100 @@ public abstract class StateOperatorParser {
 	protected boolean weak_or_strong;
 	
 	/* implementation methods */
+	/**
+	 * @return	(#=, =)
+	 * @throws Exception
+	 */
 	protected abstract boolean to_assign() throws Exception;
+	/**
+	 * @return (#, +)
+	 * @throws Exception
+	 */
 	protected abstract boolean arith_add() throws Exception;
+	/**
+	 * @return (#, -)
+	 * @throws Exception
+	 */
 	protected abstract boolean arith_sub() throws Exception;
+	/**
+	 * @return (#, *)
+	 * @throws Exception
+	 */
 	protected abstract boolean arith_mul() throws Exception;
+	/**
+	 * @return (#, /)
+	 * @throws Exception
+	 */
 	protected abstract boolean arith_div() throws Exception;
+	/**
+	 * @return (#, %)
+	 * @throws Exception
+	 */
 	protected abstract boolean arith_mod() throws Exception;
+	/**
+	 * @return (#, &)
+	 * @throws Exception
+	 */
 	protected abstract boolean bitws_and() throws Exception;
+	/**
+	 * @return (#, |)
+	 * @throws Exception
+	 */
 	protected abstract boolean bitws_ior() throws Exception;
+	/**
+	 * @return (#, ^)
+	 * @throws Exception
+	 */
 	protected abstract boolean bitws_xor() throws Exception;
+	/**
+	 * @return (#, <<)
+	 * @throws Exception
+	 */
 	protected abstract boolean bitws_lsh() throws Exception;
+	/**
+	 * @return (#, >>)
+	 * @throws Exception
+	 */
 	protected abstract boolean bitws_rsh() throws Exception;
+	/**
+	 * @return (#, &&)
+	 * @throws Exception
+	 */
 	protected abstract boolean logic_and() throws Exception;
+	/**
+	 * @return (#, ||)
+	 * @throws Exception
+	 */
 	protected abstract boolean logic_ior() throws Exception;
+	/**
+	 * @return (#, >)
+	 * @throws Exception
+	 */
 	protected abstract boolean greater_tn()throws Exception;
+	/**
+	 * @return (#, >=)
+	 * @throws Exception
+	 */
 	protected abstract boolean greater_eq()throws Exception;
+	/**
+	 * @return (#, <)
+	 * @throws Exception
+	 */
 	protected abstract boolean smaller_tn()throws Exception;
+	/**
+	 * @return (#, <=)
+	 * @throws Exception
+	 */
 	protected abstract boolean smaller_eq()throws Exception;
+	/**
+	 * @return (#, ==)
+	 * @throws Exception
+	 */
 	protected abstract boolean equal_with()throws Exception;
+	/**
+	 * @return (#, !=)
+	 * @throws Exception
+	 */
 	protected abstract boolean not_equals()throws Exception;
 	/**
 	 * It parses the operator-mutation to the specified operator in weak or 
@@ -138,6 +213,55 @@ public abstract class StateOperatorParser {
 		}
 	}
 	
+	/* data state constructs */
+	/**
+	 * @param condition
+	 * @return	[stmt:execution.statement] <== eva_cond(true, condition)
+	 * @throws Exception
+	 */
+	private CirConditionState get_constraint(Object condition) throws Exception {
+		if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else if(this.execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			return CirAbstractState.eva_cond(this.execution, condition, true);
+		}
+	}
+	/**
+	 * @param muta_value
+	 * @return weak to trap or strong to set_expr
+	 * @throws Exception
+	 */
+	private CirAbstErrorState mut_expression(Object muta_value) throws Exception {
+		if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else if(this.weak_or_strong) {
+			return this.trap_statement();	/* trapped for weak mutation */
+		}
+		else {
+			return CirAbstractState.set_expr(this.expression, muta_value);
+		}
+	}
+	/**
+	 * @return
+	 * @throws Exception
+	 */
+	private CirAbstErrorState trap_statement() throws Exception {
+		if(this.execution == null) {
+			throw new IllegalArgumentException("Not established at");
+		}
+		else {
+			return CirAbstractState.set_trap(this.execution);
+		}
+	}
+	
 	/* basic data operations */
 	/**
 	 * @param constraint
@@ -145,7 +269,7 @@ public abstract class StateOperatorParser {
 	 * @return it updates the infection maps from error to condition
 	 * @throws Exception
 	 */
-	protected boolean add_infection(CirConditionState constraint,
+	protected boolean put_state_infection(CirConditionState constraint,
 				CirAbstErrorState init_error) throws Exception {
 		if(constraint == null) {
 			throw new IllegalArgumentException("Invalid constraint");
@@ -162,95 +286,50 @@ public abstract class StateOperatorParser {
 	 * @throws Exception
 	 */
 	protected boolean unsupport_exception() throws Exception {
-		throw new UnsupportedOperationException("Unsupport: " + this.expression.generate_code(true));
+		throw new UnsupportedOperationException("Unsupport: " + this.mutation);
 	}
 	/**
 	 * @return report the mutation as equivalence due to the analysis process
 	 * @throws Exception
 	 */
-	protected boolean report_equivalence_mutation() throws Exception {
-		throw new UnsupportedOperationException("Equivalent mutation: " + this.mutation);
+	protected boolean report_equivalences() throws Exception {
+		CirConditionState constraint = this.get_constraint(Boolean.FALSE);
+		CirAbstErrorState init_error = this.mut_expression(this.expression);
+		return this.put_state_infection(constraint, init_error);
 	}
 	
-	/* data state generation */
+	/* symbolic construction */
 	/**
-	 * @param condition
-	 * @return [stmt:statement] <== cov_cond(true, condition)
+	 * @param operand
+	 * @return it transforms the operand to symbolic expression
 	 * @throws Exception
 	 */
-	protected CirConditionState get_constraint(Object condition) throws Exception {
-		if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition");
-		}
-		else {
-			return CirAbstractState.eva_cond(this.execution, condition, true);
-		}
+	protected SymbolExpression sym_expression(Object operand) throws Exception {
+		return SymbolFactory.sym_expression(operand);
 	}
 	/**
-	 * @param muta_value
-	 * @return [expr:expression] <== set_expr(orig_value, muta_value)
+	 * @param operator	{+, -, ~, !}
+	 * @param operand
+	 * @return the symbolic unary expression w.r.t. the operand
 	 * @throws Exception
 	 */
-	protected CirAbstErrorState mut_expression(Object muta_value) throws Exception {
-		if(muta_value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
+	protected SymbolExpression sym_expression(COperator operator, Object operand) throws Exception {
+		if(operator == null) {
+			throw new IllegalArgumentException("Invalid operator");
 		}
-		else if(this.weak_or_strong) {
-			return CirAbstractState.dif_expr(this.expression, muta_value);
+		else if(operand == null) {
+			throw new IllegalArgumentException("Invalid operand");
 		}
 		else {
-			return CirAbstractState.set_expr(this.expression, muta_value);
-		}
-	}
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	protected CirAbstErrorState trp_statement() throws Exception {
-		return CirAbstractState.set_trap(this.execution);
-	}
-	/**
-	 * @param conditions
-	 * @return
-	 * @throws Exception
-	 */
-	protected CirConditionState	conjuncts(Collection<SymbolExpression> conditions) throws Exception {
-		if(conditions.isEmpty()) {
-			return CirAbstractState.cov_time(this.execution, 1);
-		}
-		else {
-			SymbolExpression condition = null;
-			for(SymbolExpression expression : conditions) {
-				if(condition == null)
-					condition = expression;
-				else
-					condition = SymbolFactory.logic_and(condition, expression);
+			switch(operator) {
+			case positive:	return SymbolFactory.sym_expression(operand);
+			case negative:	return SymbolFactory.arith_neg(operand);
+			case bit_not:	return SymbolFactory.bitws_rsv(operand);
+			case logic_not:	return SymbolFactory.logic_not(operand);
+			default:		throw new IllegalArgumentException(operator.toString());
 			}
-			return CirAbstractState.eva_cond(this.execution, condition, true);
 		}
 	}
-	/**
-	 * @param conditions
-	 * @return
-	 * @throws Exception
-	 */
-	protected CirConditionState	disjuncts(Collection<SymbolExpression> conditions) throws Exception {
-		if(conditions.isEmpty()) {
-			return CirAbstractState.cov_time(this.execution, 1);
-		}
-		else {
-			SymbolExpression condition = null;
-			for(SymbolExpression expression : conditions) {
-				if(condition == null)
-					condition = expression;
-				else
-					condition = SymbolFactory.logic_ior(condition, expression);
-			}
-			return CirAbstractState.eva_cond(this.execution, condition, true);
-		}
-	}
-	
-	/* symbolic expressions */
 	/**
 	 * @param operator {+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=}
 	 * @param loperand
@@ -283,41 +362,154 @@ public abstract class StateOperatorParser {
 		}
 	}
 	/**
-	 * @param operator	{+, -, ~, !}
-	 * @param operand
-	 * @return the symbolic unary expression w.r.t. the operand
+	 * @param condition
+	 * @param value
+	 * @return the symbolic condition of input as value
 	 * @throws Exception
 	 */
-	protected SymbolExpression sym_expression(COperator operator, Object operand) throws Exception {
-		switch(operator) {
-		case positive:	return SymbolFactory.sym_expression(operand);
-		case negative:	return SymbolFactory.arith_neg(operand);
-		case bit_not:	return SymbolFactory.bitws_rsv(operand);
-		case logic_not:	return SymbolFactory.logic_not(operand);
-		default: throw new IllegalArgumentException("Invalid operator: " + operator);
+	protected SymbolExpression sym_condition(Object condition, boolean value) throws Exception {
+		return SymbolFactory.sym_condition(condition, value);
+	}
+	/**
+	 * @param condition
+	 * @return the symbolic condition of input as true
+	 * @throws Exception
+	 */
+	protected SymbolExpression sym_condition(Object condition) throws Exception {
+		return SymbolFactory.sym_condition(condition, true);
+	}
+	/**
+	 * @param expressions
+	 * @return the conjunctions of multiple input expressions
+	 * @throws Exception
+	 */
+	protected SymbolExpression sym_conjunction(Collection<Object> expressions) throws Exception {
+		if(expressions == null || expressions.isEmpty()) {
+			return SymbolFactory.sym_constant(Boolean.TRUE);
+		}
+		else {
+			SymbolExpression conjunctions = null, condition;
+			for(Object expression : expressions) {
+				condition = this.sym_condition(expression);
+				if(conjunctions == null) {
+					conjunctions = condition;
+				}
+				else {
+					conjunctions = SymbolFactory.
+							logic_and(conjunctions, condition);
+				}
+			}
+			return conjunctions;
 		}
 	}
 	/**
-	 * @param operand
-	 * @return operand > 1 or operand < 0
+	 * @param expressions
+	 * @return the disjunctions of multiple input expressions
 	 * @throws Exception
 	 */
-	protected SymbolExpression non_bool_condition(Object operand) throws Exception {
-		SymbolExpression expression = SymbolFactory.sym_expression(operand);
-		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-		if(CTypeAnalyzer.is_boolean(type)) {
-			return SymbolFactory.sym_constant(Boolean.FALSE);
-		}
-		else if(CTypeAnalyzer.is_number(type)) {
-			return SymbolFactory.logic_ior(
-					SymbolFactory.smaller_tn(expression, 0), 
-					SymbolFactory.greater_tn(expression, 1));
-		}
-		else if(CTypeAnalyzer.is_pointer(type)) {
-			return SymbolFactory.not_equals(expression, 0);
+	protected SymbolExpression sym_disjunction(Collection<Object> expressions) throws Exception {
+		if(expressions == null || expressions.isEmpty()) {
+			return SymbolFactory.sym_constant(Boolean.TRUE);
 		}
 		else {
-			throw new IllegalArgumentException("Invalid type: " + type);
+			SymbolExpression disjunctions = null, condition;
+			for(Object expression : expressions) {
+				condition = this.sym_condition(expression);
+				if(disjunctions == null) {
+					disjunctions = condition;
+				}
+				else {
+					disjunctions = SymbolFactory.
+							logic_ior(disjunctions, condition);
+				}
+			}
+			return disjunctions;
+		}
+	}
+	
+	/* parsing simplification */
+	/**
+	 * @param condition
+	 * @param muvalue
+	 * @return	[C]	{condition as true}
+	 * 			[E]	{ovalue --> mvalue}
+	 * @throws Exception
+	 */
+	protected boolean parse_by_condition_and_muvalue(Object condition, Object muvalue) throws Exception {
+		if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else if(muvalue == null) {
+			throw new IllegalArgumentException("Invalid muvalue: null");
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			CirConditionState constraint = this.get_constraint(condition);
+			CirAbstErrorState init_error = this.mut_expression(muvalue);
+			return this.put_state_infection(constraint, init_error);
+		}
+	}
+	/**
+	 * @param muvalue
+	 * @return	[C]	{ovalue != muvalue}
+	 * 			[E]	{ovalue -> muvalue}
+	 * @throws Exception
+	 */
+	protected boolean parse_by_muvalue(Object muvalue) throws Exception {
+		if(muvalue == null) {
+			throw new IllegalArgumentException("Invalid muvalue: null");
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			SymbolExpression condition = this.sym_expression(
+						COperator.not_equals, this.expression, muvalue);
+			return this.parse_by_condition_and_muvalue(condition, muvalue);
+		}
+	}
+	/**
+	 * @param condition
+	 * @param operator
+	 * @return	[C]	{x op y != x op' y}
+	 * 			[E]	{x op y -> x op' y}
+	 * @throws Exception
+	 */
+	protected boolean parse_by_condition_and_operator(Object condition, COperator operator) throws Exception {
+		if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else if(operator == null) {
+			throw new IllegalArgumentException("Invalid operator: null");
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			SymbolExpression muvalue = this.sym_expression(
+					operator, this.loperand, this.roperand);
+			return this.parse_by_condition_and_muvalue(condition, muvalue);
+		}
+	}
+	/**
+	 * @param operator
+	 * @return	[C]	{x op y != x op' y}
+	 * 			[E]	{x op y -> x op' y}
+	 * @throws Exception
+	 */
+	protected boolean parse_by_operator(COperator operator) throws Exception {
+		if(operator == null) {
+			throw new IllegalArgumentException("Invalid operator: null");
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			SymbolExpression muvalue = this.sym_expression(
+					operator, this.loperand, this.roperand);
+			return this.parse_by_muvalue(muvalue);
 		}
 	}
 	

@@ -235,42 +235,6 @@ public abstract class CirAbstractState {
 	/**
 	 * @param expression
 	 * @param muta_value
-	 * @return [cond|expr|cvar] <== dif_expr(orig_value, muta_value)
-	 * @throws Exception
-	 */
-	public static CirDiferErrorState dif_expr(CirExpression expression, Object muta_value) throws Exception {
-		if(expression == null || expression.statement_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(muta_value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
-		}
-		else if(StateMutations.is_boolean(expression)) {	/* cond */
-			SymbolExpression ovalue, mvalue;
-			ovalue = SymbolFactory.sym_condition(expression, true);
-			mvalue = SymbolFactory.sym_condition(muta_value, true);
-			return new CirDiferErrorState(expression.execution_of(), 
-					CirStateStore.new_unit(expression), ovalue, mvalue);
-		}
-		else if(StateMutations.is_assigned(expression)) {	/* cvar */
-			SymbolExpression ovalue, mvalue;
-			CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-			ovalue = SymbolFactory.sym_expression(statement.get_rvalue());
-			mvalue = SymbolFactory.sym_expression(muta_value);
-			return new CirDiferErrorState(expression.execution_of(),
-					CirStateStore.new_unit(expression), ovalue, mvalue);
-		}
-		else {												/* expr */
-			SymbolExpression ovalue, mvalue;
-			ovalue = SymbolFactory.sym_expression(expression);
-			mvalue = SymbolFactory.sym_expression(muta_value);
-			return new CirDiferErrorState(expression.execution_of(),
-					CirStateStore.new_unit(expression), ovalue, mvalue);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param muta_value
 	 * @return [cond|expr|cvar] <== set_expr(orig_value, muta_value)
 	 * @throws Exception
 	 */
