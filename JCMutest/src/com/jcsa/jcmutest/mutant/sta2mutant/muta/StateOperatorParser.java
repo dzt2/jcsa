@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.MutaOperator;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
@@ -458,6 +459,9 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Not established");
 		}
 		else {
+			if(StateMutations.is_boolean(expression)) {
+				muvalue = this.sym_condition(muvalue);
+			}
 			return this.sym_expression(COperator.not_equals, this.expression, muvalue);
 		}
 	}
