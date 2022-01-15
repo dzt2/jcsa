@@ -550,5 +550,23 @@ public abstract class StateOperatorParser {
 			return this.parse_by_muvalue(muvalue);
 		}
 	}
+	/**
+	 * @param condition
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean parse_by_condition_and_trapping(Object condition) throws Exception {
+		if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else if(this.expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			CirConditionState constraint = this.get_constraint(condition);
+			CirAbstErrorState init_error = this.trap_statement();
+			return this.put_state_infection(constraint, init_error);
+		}
+	}
 	
 }
