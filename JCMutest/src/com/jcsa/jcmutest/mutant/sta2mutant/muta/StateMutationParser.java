@@ -31,7 +31,7 @@ public abstract class StateMutationParser {
 	/* constructor */
 	private	CirTree cir_tree;
 	private CirExecution execution;
-	private Map<CirAbstErrorState, CirConditionState> infection_map;
+	protected Map<CirAbstErrorState, CirConditionState> infection_map;
 	public StateMutationParser() { 
 		this.cir_tree = null;
 		this.execution = null;

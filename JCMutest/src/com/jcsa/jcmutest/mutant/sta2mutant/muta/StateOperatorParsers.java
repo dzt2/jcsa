@@ -3,6 +3,9 @@ package com.jcsa.jcmutest.mutant.sta2mutant.muta;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateArithAddParser;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateArithDivParser;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateArithModParser;
@@ -22,6 +25,9 @@ import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateLogicIorParser;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateNotEqualsParser;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateSmallerEqParser;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.oprt.StateSmallerTnParser;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
@@ -76,7 +82,23 @@ public final class StateOperatorParsers {
 		
 	}
 	
-	
-	
+	/**
+	 * @param mutation		syntactic mutation to be parsed (operator-mutation)
+	 * @param execution		the execution point where the state is mutated
+	 * @param expression	the original expression to be injected with error
+	 * @param loperand		the left-operand of the binary expression
+	 * @param roperand		the right-operand of the binary expression
+	 * @param infections	mapping from abstract state error to constraints
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean parse(AstMutation mutation, 
+			CirExecution execution, CirExpression expression, 
+			CirExpression loperand, CirExpression roperand,
+			Map<CirAbstErrorState, CirConditionState> infections) throws Exception {
+		AstBinaryExpression location = (AstBinaryExpression) mutation.get_location();
+		return parsers.get(location.get_operator().get_operator()).parse(
+					mutation, execution, expression, loperand, roperand, infections);
+	}
 	
 }
