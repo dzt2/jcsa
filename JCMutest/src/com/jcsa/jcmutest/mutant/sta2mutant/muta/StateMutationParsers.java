@@ -135,7 +135,8 @@ public class StateMutationParsers {
 				CirExecution execution = state_mutation.get_r_execution();
 				CirConditionState constraint = state_mutation.get_istate();
 				CirAbstErrorState init_error = state_mutation.get_pstate();
-				/* TODO may do normalization to init_error and constraint */
+				constraint = constraint.normalize();
+				init_error = init_error.normalize();
 				
 				if(constraint instanceof CirNConstrainState) {
 					SymbolExpression condition = ((CirNConstrainState) constraint).get_condition();

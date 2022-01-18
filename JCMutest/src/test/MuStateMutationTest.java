@@ -63,7 +63,7 @@ public class MuStateMutationTest {
 		
 		writer.close();
 		
-		double rate = ((double) succeed) / (total + 0.0001);
+		double rate = ((double) succeed) / (total + 0.00);
 		rate = ((int) (rate * 1000000)) / 10000.0;
 		System.out.println(project.get_name() + ":\t" + succeed + "/" + total + "\t" + rate + "%");
 	}

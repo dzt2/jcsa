@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * [stmt:statement] <== set_flow(orig_target, muta_target)
@@ -27,6 +28,16 @@ public class CirFlowsErrorState extends CirPathErrorState {
 	 */
 	public CirExecution get_muta_target() { 
 		return (CirExecution) this.get_roperand().get_source(); 
+	}
+
+	@Override
+	public CirAbstErrorState normalize(SymbolProcess context) throws Exception {
+		return this;
+	}
+
+	@Override
+	public Boolean validate(SymbolProcess context) throws Exception {
+		return Boolean.TRUE;
 	}
 	
 }

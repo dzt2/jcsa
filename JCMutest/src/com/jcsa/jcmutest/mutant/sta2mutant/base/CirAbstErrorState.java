@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * <code>
@@ -23,5 +24,19 @@ public abstract class CirAbstErrorState extends CirAbstractState {
 	protected CirAbstErrorState(CirExecution point, CirStateStore store, CirStateValue value) throws Exception {
 		super(point, store, value);
 	}
-
+	
+	/**
+	 * It translates the abstract error state to a normalized form
+	 * @param context
+	 * @return the normalized form of the abstract error state
+	 * @throws Exception
+	 */
+	public abstract CirAbstErrorState normalize(SymbolProcess context) throws Exception;
+	
+	/**
+	 * @return the normalized form of the abstract error state
+	 * @throws Exception
+	 */
+	public CirAbstErrorState normalize() throws Exception { return this.normalize(null); }
+	
 }

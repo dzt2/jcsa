@@ -127,6 +127,12 @@ public class StateMutations {
 	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
 		return compute(expression, null);
 	}
+	/**
+	 * @param expression
+	 * @return whether the symbolic expression contains trapping exception results
+	 * @throws Exception
+	 */
+	public static boolean is_trap_value(SymbolExpression expression) throws Exception { return has_trap_value(expression); }
 	
 	/* type classifier */
 	/**
