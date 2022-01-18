@@ -3,14 +3,18 @@ package test;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutation;
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 public class MuStateMutationTest {
 	
@@ -27,38 +31,68 @@ public class MuStateMutationTest {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
 	
+	private static String normalize_code(String code, int max_length) {
+		StringBuilder buffer = new StringBuilder();
+		for(int k = 0; k < code.length(); k++) {
+			char ch = code.charAt(k);
+			if(ch == Character.LINE_SEPARATOR
+				|| ch == '\n') {
+				ch = ' ';
+			}
+			buffer.append(ch);
+			if(buffer.length() > max_length) {
+				buffer.append("...");
+				break;
+			}
+		}
+		return buffer.toString();
+	}
+	
 	private static void testing(File root, File output) throws Exception {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
 		
 		MuTestProject project = get_project(root);
-		int succeed = 0, total = 0; boolean passed;
+		int succeed = 0, total = 0; Boolean passed;
 		MuTestProjectCodeFile file = project.get_code_space().get_code_files().iterator().next();
 		
 		for(Mutant mutant : file.get_mutant_space().get_mutants()) {
-			Iterable<StateMutation> mutations = StateMutations.parse(mutant);
-			passed = mutations.iterator().hasNext();
+			/* mutation --> state-mutations parsing */
+			Collection<StateMutation> mutations = StateMutations.parse(mutant);
+			passed = !mutations.isEmpty();
 			if(passed) { succeed++; }	total++;
 			
+			/* syntactic mutation head */
 			AstMutation mutation = mutant.get_mutation();
 			int mid = mutant.get_id();
 			String muclass = mutation.get_class().toString();
 			String operator = mutation.get_operator().toString();
+			String parameter = "" + mutation.get_parameter();
 			int line = mutation.get_location().get_location().line_of();
 			String code = mutation.get_location().get_code();
-			if(code.length() > 64) { code = code.substring(0, 64) + "..."; }
-			code = "\"" + code + "\"";
-			writer.write("#" + mid + "\t" + muclass + "\t" + operator + "\t#" + line + "\t" + code + "\t" + mutation.get_parameter());
+			writer.write("");
+			writer.write(String.format("MUT[%d]\t%s\t%s\t%s\n", mid, muclass, operator, parameter));
+			writer.write(String.format("LIN[%d]\t\"%s\"\n", line, normalize_code(code, 96)));
+			writer.write(String.format("PARSE\t(%s)\t%d mutations\n", passed.toString(), mutations.size()));
+			
+			/* state mutation information */
+			int index = 0;
+			for(StateMutation state_mutation : mutations) {
+				CirExecution execution = state_mutation.get_r_execution();
+				CirConditionState constraint = state_mutation.get_istate();
+				CirAbstErrorState init_error = state_mutation.get_pstate();
+				
+				writer.write(String.format("\t%d[R]\t%s\t%s\t\"%s\"\n", index, execution.toString(),
+						execution.get_statement().getClass().getSimpleName(),
+						normalize_code(execution.get_statement().generate_code(true), 96)));
+				writer.write(String.format("\t%d[I]\t%s\t%s\t[%s]\n", index, constraint.get_execution().toString(),
+						constraint.getClass().getSimpleName(), constraint.get_roperand().generate_code(true)));
+				writer.write(String.format("\t%d[P]\t%s\t%s\t\"%s\"\t[%s]\n", index, init_error.get_execution().toString(),
+						init_error.getClass().getSimpleName(),
+						normalize_code(init_error.get_clocation().generate_code(true), 96),
+						init_error.get_roperand().generate_code(true)));
+				index++;
+			}
 			writer.write("\n");
-			if(passed) {
-				for(StateMutation state_mutation : mutations) {
-					writer.write("\t@\t" + state_mutation.get_r_execution() + 
-							"\t" + state_mutation.get_istate() +
-							"\t" + state_mutation.get_pstate() + "\n");
-				}
-			}
-			else {
-				writer.write("\tPARSED ERROR!!\n");
-			}
 		}
 		
 		writer.close();
