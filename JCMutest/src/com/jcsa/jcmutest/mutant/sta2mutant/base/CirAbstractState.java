@@ -11,6 +11,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
+
 /**
  * It specifies the abstract execution state specified in the mutation testing.
  * <br>
@@ -20,8 +21,8 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  * 	|--	CirConditionState		(execution, [stmt], (bool, condition))			<br>
  * 	|--	|--	CirLimitTimesState	(execution, [stmt], (true, int_times))			<br>
  * 	|--	|--	CirReachTimesState	(execution, [stmt], (false, int_times))			<br>
- * 	|--	|--	CirTConstrainState	(execution, [stmt], (true, condition))			<br>
- * 	|--	|--	CirFConstrainState	(execution, [stmt], (false, condition))			<br>
+ * 	|--	|--	CirNConstrainState	(execution, [stmt], (true, condition))			<br>
+ * 	|--	|--	CirMConstrainState	(execution, [stmt], (false, condition))			<br>
  * 	<br>
  * 	|--	CirPathErrorState		(execution, [stmt], (loperand, roperand))		<br>
  * 	|--	|--	CirBlockErrorState	(execution, [stmt], (orig_exec, muta_exec))		<br>
@@ -148,12 +149,12 @@ public abstract class CirAbstractState {
 		}
 	}
 	/**
-	 * @param execution
-	 * @param condition
-	 * @return	[stmt:statement] <== cov_cond(true, condition)
+	 * @param execution		the execution point in which the symbolic condition is evaluated
+	 * @param condition		the condition needs be satisfied at least once at the given node
+	 * @return				[stmt:statement] <== cov_cond(true, condition)
 	 * @throws Exception
 	 */
-	public static CirTConstrainState eva_cond(CirExecution execution, Object condition, boolean value) throws Exception {
+	public static CirNConstrainState eva_cond(CirExecution execution, Object condition, boolean value) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -161,16 +162,16 @@ public abstract class CirAbstractState {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
 		else {
-			return new CirTConstrainState(execution, SymbolFactory.sym_condition(condition, value));
+			return new CirNConstrainState(execution, SymbolFactory.sym_condition(condition, value));
 		}
 	}
 	/**
-	 * @param execution
-	 * @param condition
-	 * @return	[stmt:statement] <== cov_cond(true, condition)
+	 * @param execution		the execution point in which the symbolic condition is evaluated
+	 * @param condition		the condition should always be satisfied every time at the point
+	 * @return				[stmt:statement] <== cov_cond(false, condition)
 	 * @throws Exception
 	 */
-	public static CirFConstrainState neg_cond(CirExecution execution, Object condition, boolean value) throws Exception {
+	public static CirMConstrainState mus_cond(CirExecution execution, Object condition, boolean value) throws Exception {
 		if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
@@ -178,7 +179,7 @@ public abstract class CirAbstractState {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
 		else {
-			return new CirFConstrainState(execution, SymbolFactory.sym_condition(condition, value));
+			return new CirMConstrainState(execution, SymbolFactory.sym_condition(condition, value));
 		}
 	}
 	

@@ -1,11 +1,15 @@
 package com.jcsa.jcmutest.mutant.sta2mutant;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
+import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -337,6 +341,29 @@ public class StateMutations {
 	public static StateMutation new_mutation(CirExecution point, 
 			CirConditionState istate, CirAbstErrorState pstate) throws Exception {
 		return new StateMutation(point, istate, pstate);
+	}
+	/**
+	 * It parses the syntactic mutation to a set of state mutations in terms of
+	 * C-intermediate representative of the program under analysis and testing.
+	 * 
+	 * @param mutant		syntactic mutation
+	 * @return				the set of state mutations or empty for failure
+	 * @throws Exception
+	 */
+	public static Collection<StateMutation> parse(Mutant mutant) throws Exception {
+		if(mutant == null) {
+			throw new IllegalArgumentException("Invalid mutant: null");
+		}
+		else {
+			try {
+				return StateMutationParsers.parse(mutant.
+						get_space().get_cir_tree(), mutant.get_mutation());
+			}
+			catch(Exception ex) {
+				// ex.printStackTrace();
+				return new ArrayList<StateMutation>();
+			}
+		}
 	}
 	
 }

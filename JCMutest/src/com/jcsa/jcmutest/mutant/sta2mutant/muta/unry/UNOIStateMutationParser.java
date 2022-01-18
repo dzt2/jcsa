@@ -34,14 +34,11 @@ public class UNOIStateMutationParser extends StateMutationParser {
 				constraint = CirAbstractState.eva_cond(execution, Boolean.FALSE, true);
 				init_error = CirAbstractState.set_expr(expression, expression);
 			}
-			else if(StateMutations.is_numeric(expression)) {
+			else {
 				condition = SymbolFactory.not_equals(expression, Integer.valueOf(0));
 				constraint = CirAbstractState.eva_cond(execution, condition, true);
 				muta_value = SymbolFactory.arith_neg(expression);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
-			}
-			else {
-				throw new IllegalArgumentException(expression.generate_code(true));
 			}
 		}
 		/* (expr --> ~expr) */
@@ -50,13 +47,10 @@ public class UNOIStateMutationParser extends StateMutationParser {
 				constraint = CirAbstractState.cov_time(execution, 1);
 				init_error = CirAbstractState.set_expr(expression, Boolean.TRUE);
 			}
-			else if(StateMutations.is_integer(expression)) {
+			else {
 				constraint = CirAbstractState.cov_time(execution, 1);
 				muta_value = SymbolFactory.bitws_rsv(expression);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
-			}
-			else {
-				throw new IllegalArgumentException(expression.generate_code(true));
 			}
 		}
 		/* (expr --> !expr) */
@@ -66,13 +60,10 @@ public class UNOIStateMutationParser extends StateMutationParser {
 				muta_value = SymbolFactory.sym_condition(expression, false);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
 			}
-			else if(StateMutations.is_numeric(expression)) {
+			else {
 				constraint = CirAbstractState.cov_time(execution, 1);
 				muta_value = SymbolFactory.sym_condition(expression, false);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
-			}
-			else {
-				throw new IllegalArgumentException(expression.generate_code(true));
 			}
 		}
 		/* (expr --> abs(expr)) */
@@ -81,14 +72,11 @@ public class UNOIStateMutationParser extends StateMutationParser {
 				constraint = CirAbstractState.eva_cond(execution, Boolean.FALSE, true);
 				init_error = CirAbstractState.set_expr(expression, expression);
 			}
-			else if(StateMutations.is_numeric(expression)) {
+			else {
 				condition = SymbolFactory.smaller_tn(expression, Integer.valueOf(0));
 				constraint = CirAbstractState.eva_cond(execution, condition, true);
 				muta_value = SymbolFactory.arith_neg(expression);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
-			}
-			else {
-				throw new IllegalArgumentException(expression.generate_code(true));
 			}
 		}
 		/* (expr --> -abs(expr)) */
@@ -97,14 +85,11 @@ public class UNOIStateMutationParser extends StateMutationParser {
 				constraint = CirAbstractState.eva_cond(execution, Boolean.FALSE, true);
 				init_error = CirAbstractState.set_expr(expression, expression);
 			}
-			else if(StateMutations.is_numeric(expression)) {
+			else {
 				condition = SymbolFactory.greater_tn(expression, Integer.valueOf(0));
 				constraint = CirAbstractState.eva_cond(execution, condition, true);
 				muta_value = SymbolFactory.arith_neg(expression);
 				init_error = CirAbstractState.set_expr(expression, muta_value);
-			}
-			else {
-				throw new IllegalArgumentException(expression.generate_code(true));
 			}
 		}
 		else {

@@ -18,7 +18,7 @@ public class CirReachTimesState extends CirConditionState {
 	/**
 	 * @return the minimal times that the statement should be executed
 	 */
-	public int get_maximal_times() {
+	public int get_minimal_times() {
 		return ((SymbolConstant) this.get_roperand()).get_int();
 	}
 	

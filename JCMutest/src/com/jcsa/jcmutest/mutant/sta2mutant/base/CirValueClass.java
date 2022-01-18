@@ -18,7 +18,6 @@ public enum CirValueClass {
 	/**	set_trap(execution, exception);		**/	set_trap,
 	
 	/* 	data-errors state 	*/
-	/**	dif_expr(orig_value, muta_value);	**/	dif_expr,
 	/**	set_expr(orig_value, muta_value);	**/	set_expr,
 	/**	inc_expr(base_value, difference);	**/	inc_expr,
 	/**	xor_expr(base_value, difference);	**/	xor_expr,

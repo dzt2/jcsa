@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutation;
-import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
@@ -35,7 +35,7 @@ public class MuStateMutationTest {
 		MuTestProjectCodeFile file = project.get_code_space().get_code_files().iterator().next();
 		
 		for(Mutant mutant : file.get_mutant_space().get_mutants()) {
-			Iterable<StateMutation> mutations = StateMutationParsers.parse(mutant);
+			Iterable<StateMutation> mutations = StateMutations.parse(mutant);
 			passed = mutations.iterator().hasNext();
 			if(passed) { succeed++; }	total++;
 			

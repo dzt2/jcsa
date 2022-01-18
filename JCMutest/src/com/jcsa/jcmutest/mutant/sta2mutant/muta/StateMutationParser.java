@@ -110,12 +110,20 @@ public abstract class StateMutationParser {
 	 */
 	protected CirExpression	get_cir_expression(AstNode location) throws Exception {
 		AstCirPair cir_range = this.get_cir_range(location);
-		if(cir_range != null && cir_range.computational()) {
-			return cir_range.get_result();										/* as final usage */
+		CirExpression expression = cir_range.get_result();
+		if(expression != null && expression.statement_of() != null) {
+			return expression;
 		}
-		else {
-			return (CirExpression) this.get_cir_node(location, CirExpression.class);
+		
+		List<CirNode> cir_locations = this.get_cir_nodes(location, CirExpression.class);
+		for(int k = cir_locations.size() - 1; k >= 0; k--) {
+			expression = (CirExpression) cir_locations.get(k);
+			if(expression.statement_of() != null) {
+				return expression;
+			}
 		}
+		
+		return null;
 	}
 	/**
 	 * @param location

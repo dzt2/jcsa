@@ -97,8 +97,13 @@ public final class StateOperatorParsers {
 			CirExpression loperand, CirExpression roperand,
 			Map<CirAbstErrorState, CirConditionState> infections) throws Exception {
 		AstBinaryExpression location = (AstBinaryExpression) mutation.get_location();
-		return parsers.get(location.get_operator().get_operator()).parse(
-					mutation, execution, expression, loperand, roperand, infections);
+		StateOperatorParser parser = parsers.get(location.get_operator().get_operator());
+		if(parser == null) {
+			throw new IllegalArgumentException("Unsupport: " + location.generate_code());
+		}
+		else {
+			return parser.parse(mutation, execution, expression, loperand, roperand, infections);
+		}
 	}
 	
 }

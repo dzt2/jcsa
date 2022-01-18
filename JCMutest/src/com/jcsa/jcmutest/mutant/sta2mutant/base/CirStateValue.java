@@ -86,19 +86,20 @@ class CirStateValue {
 	
 	/* factory */
 	/**
-	 * @param must_or_never	True {condition needs be met at least once} False {condition should never be satisfied}
+	 * @param need_or_must	True {condition need be satisfied at least once} 
+	 * 						False {condition should be satisfied every time}
 	 * @param condition		symbolic expression as the condition being evaluated
 	 * @return				cov_cond(must_or_never, condition)
 	 * @throws Exception
 	 */
-	protected static CirStateValue cov_cond(boolean must_or_never, 
+	protected static CirStateValue cov_cond(boolean need_or_must, 
 					SymbolExpression condition) throws Exception {
 		if(condition == null) {
 			throw new IllegalArgumentException("Invalid condition; null");
 		}
 		else {
 			return new CirStateValue(CirValueClass.cov_cond,
-					SymbolFactory.sym_constant(must_or_never), condition);
+					SymbolFactory.sym_constant(need_or_must), condition);
 		}
 	}
 	/**
@@ -177,23 +178,6 @@ class CirStateValue {
 		}
 		else {
 			return new CirStateValue(CirValueClass.set_expr, orig_value, muta_value);
-		}
-	}
-	/**
-	 * @param orig_value	the original value to be replaced
-	 * @param muta_value	the mutated value to replace with
-	 * @return				dif_expr(orig_value, muta_value)
-	 * @throws Exception
-	 */
-	protected static CirStateValue dif_expr(SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(orig_value == null) {
-			throw new IllegalArgumentException("Invalid orig_value: null");
-		}
-		else if(muta_value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
-		}
-		else {
-			return new CirStateValue(CirValueClass.dif_expr, orig_value, muta_value);
 		}
 	}
 	/**
