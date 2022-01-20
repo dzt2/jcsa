@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
+import com.jcsa.jcmutest.mutant.sta2mutant.util.CirStateNormalizer;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
@@ -33,17 +34,21 @@ public abstract class CirConditionState extends CirAbstractState {
 	public boolean		get_option() { return ((SymbolConstant) this.get_loperand()).get_bool(); }
 	
 	/**
-	 * It translates the abstract error state to a normalized form
+	 * It normalizes this condition-state under a given symbolic context
 	 * @param context
-	 * @return the normalized form of the conditioned state
+	 * @return the normalized form of the condition state under the context
 	 * @throws Exception
 	 */
-	public abstract CirConditionState normalize(SymbolProcess context) throws Exception;
-	
+	public CirConditionState normalize(SymbolProcess context) throws Exception {
+		return (CirConditionState) CirStateNormalizer.normalize(this, context);
+	}
 	/**
-	 * @return the normalized form of the conditioned state
-	 * @throws Exception
+	 * It normalizes this condition-state to a formal way
+	 * @return the normalized form of the condition state under the context
+	 * @throws Exception 
 	 */
-	public CirConditionState normalize() throws Exception { return this.normalize(null); }
+	public CirConditionState normalize() throws Exception {
+		return (CirConditionState) CirStateNormalizer.normalize(this, null);
+	}
 	
 }

@@ -1,28 +1,16 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
-
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
+import com.jcsa.jcmutest.mutant.sta2mutant.util.CirStateNormalizer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 
@@ -434,204 +422,21 @@ public abstract class CirAbstractState {
 	}
 	
 	/**
-	 * It validates whether the logical state occurs (satisfied) at the given running context
-	 * @param context	null if validate is performed in purely static analysis.
-	 * @return			True {satisfied}; False {not-satisfied}; Null {unknown};
+	 * It validates whether the state condition is satisfied or not in the context
+	 * @param context
+	 * @return True {satisfied}; False {non-satisfied}; Null {unknown}
 	 * @throws Exception
 	 */
-	public abstract Boolean validate(SymbolProcess context) throws Exception;
+	public Boolean validate(SymbolProcess context) throws Exception {
+		return CirStateNormalizer.evaluate(this, context);
+	}
 	/**
-	 * It validates whether the logical state occurs in any possible static context
-	 * @return	True {satisfied}; False {not-satisfied}; Null {unknown};
+	 * It validates whether the state condition is satisfiable or not
+	 * @return True {satisfied}; False {non-satisfied}; Null {unknown}
 	 * @throws Exception
 	 */
-	public Boolean validate() throws Exception { return this.validate(null); }
-	
-	/* supporting utilities */
-	/**
-	 * @param target
-	 * @return collect the list of execution flows from source to this target in decidable form
-	 * @throws Exception
-	 */
-	protected CirExecutionPath get_previous_path(CirExecution target) throws Exception {
-		if(target == null) {
-			throw new IllegalArgumentException("Invalid target: null");
-		}
-		else {
-			CirExecutionPath path = new CirExecutionPath(target);
-			CirExecutionFlow flow; CirExecution source;
-			while(true) {
-				source = path.get_source();
-				if(source.get_in_degree() == 1) {
-					flow = source.get_in_flow(0);
-					if(flow.get_type() == CirExecutionFlowType.next_flow
-						|| flow.get_type() == CirExecutionFlowType.skip_flow
-						|| flow.get_type() == CirExecutionFlowType.virt_flow) {
-						path.insert(flow);
-					}
-					else if(flow.get_type() == CirExecutionFlowType.retr_flow) {
-						target = source;
-						source = source.get_graph().get_execution(source.get_id() - 1);
-						flow = CirExecutionFlow.virtual_flow(source, target);
-						path.insert(flow);
-					}
-					else {
-						break;
-					}
-				}
-				else {
-					break;
-				}
-			}
-			return path;
-		}
-	}
-	/**
-	 * @return collect the list of execution flows from source to this target in decidable form
-	 * @throws Exception
-	 */
-	protected CirExecutionPath get_previous_path() throws Exception {
-		return this.get_previous_path(this.get_execution());
-	}
-	/**
-	 * @param parent
-	 * @param child
-	 * @return whether the parent contains the child under its sub-tree
-	 */
-	private boolean has_symbol_node(SymbolNode parent, SymbolNode child) {
-		if(parent == null) {
-			return false;
-		}
-		else if(child == null) {
-			return false;
-		}
-		else {
-			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(parent); 
-			while(!queue.isEmpty()) {
-				SymbolNode node = queue.poll();
-				if(node.equals(child)) {
-					return true;
-				}
-				else {
-					for(SymbolNode pchild : node.get_children()) {
-						queue.add(pchild);
-					}
-				}
-			}
-			return false;
-		}
-	}
-	/**
-	 * @param root
-	 * @return it collects all the references used in the root node
-	 */
-	private Collection<SymbolExpression> get_references_in(SymbolNode root) {
-		Set<SymbolExpression> references = new HashSet<SymbolExpression>();
-		if(root != null) {
-			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(root); 
-			while(!queue.isEmpty()) {
-				SymbolNode node = queue.poll();
-				for(SymbolNode child : node.get_children()) {
-					queue.add(child);
-				}
-				
-				if(node instanceof SymbolExpression) {
-					SymbolExpression expression = (SymbolExpression) node;
-					if(expression.is_reference()) {
-						references.add(expression);
-					}
-				}
-			}
-		}
-		return references;
-	}
-	/**
-	 * @param parent
-	 * @param references
-	 * @return whether any references is defined in the parent node
-	 */
-	private boolean is_defined_at(SymbolNode parent, Collection<SymbolExpression> references) {
-		if(parent == null) {
-			return false;
-		}
-		else if(references == null || references.isEmpty()) {
-			return false;
-		}
-		else {
-			for(SymbolExpression reference : references) {
-				if(this.has_symbol_node(parent, reference)) {
-					return true;
-				}
-			}
-			return false;
-		}
-	}
-	/**
-	 * @param execution
-	 * @param references
-	 * @return whether any references are defined in the given execution
-	 */
-	private boolean is_defined_at(CirExecution execution, Collection<SymbolExpression> references) throws Exception {
-		if(execution == null) {
-			return false;
-		}
-		else if(references == null || references.isEmpty()) {
-			return false;
-		}
-		else {
-			CirStatement statement = execution.get_statement();
-			if(statement instanceof CirAssignStatement) {
-				SymbolExpression parent = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
-				return this.is_defined_at(parent, references);
-			}
-			else if(statement instanceof CirIfStatement) {
-				SymbolExpression parent = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
-				return this.is_defined_at(parent, references);
-			}
-			else if(statement instanceof CirCaseStatement) {
-				SymbolExpression parent = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
-				return this.is_defined_at(parent, references);
-			}
-			else {
-				return false;
-			}
-		}
-	}
-	/**
-	 * @param execution
-	 * @param condition
-	 * @return find the previous checkpoint (decidable path) to evaluate the condition
-	 * @throws Exception
-	 */
-	protected CirExecution find_previous_checkpoint(CirExecution execution, SymbolExpression condition) throws Exception {
-		if(execution == null) {
-			throw new IllegalArgumentException("Invalid execution: null");
-		}
-		else if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition: null");
-		}
-		else {
-			Collection<SymbolExpression> references = get_references_in(condition);
-			CirExecutionPath path = this.get_previous_path(execution);
-			Iterator<CirExecutionEdge> iterator = path.get_iterator(true);
-			while(iterator.hasNext()) {
-				CirExecutionEdge edge = iterator.next();
-				if(this.is_defined_at(edge.get_source(), references)) {
-					return edge.get_target();
-				}
-			}
-			return path.get_source();
-		}
-	}
-	/**
-	 * @param condition
-	 * @return
-	 * @throws Exception
-	 */
-	protected CirExecution find_previous_checkpoint(SymbolExpression condition) throws Exception {
-		return this.find_previous_checkpoint(this.get_execution(), condition);
+	public Boolean validate() throws Exception {
+		return CirStateNormalizer.evaluate(this, null);
 	}
 	
 }

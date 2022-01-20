@@ -2,7 +2,6 @@ package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
-import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * [stmt:statement] <== set_stmt(boolean, boolean)
@@ -30,14 +29,4 @@ public class CirBlockErrorState extends CirPathErrorState {
 		return ((SymbolConstant) this.get_roperand()).get_bool();
 	}
 
-	@Override
-	public CirAbstErrorState normalize(SymbolProcess context) throws Exception {
-		return this;
-	}
-
-	@Override
-	public Boolean validate(SymbolProcess context) throws Exception {
-		return Boolean.TRUE;
-	}
-	
 }
