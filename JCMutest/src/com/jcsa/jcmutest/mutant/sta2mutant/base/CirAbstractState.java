@@ -422,6 +422,22 @@ public abstract class CirAbstractState {
 	}
 	
 	/**
+	 * @param context
+	 * @return the normalized form of this state under the given context
+	 * @throws Exception
+	 */
+	public CirAbstractState normalize(SymbolProcess context) throws Exception {
+		return CirStateNormalizer.normalize(this, context);
+	}
+	/**
+	 * @param context
+	 * @return the normalized form of this state under any given context
+	 * @throws Exception
+	 */
+	public CirAbstractState normalize() throws Exception {
+		return CirStateNormalizer.normalize(this, null);
+	}
+	/**
 	 * It validates whether the state condition is satisfied or not in the context
 	 * @param context
 	 * @return True {satisfied}; False {non-satisfied}; Null {unknown}

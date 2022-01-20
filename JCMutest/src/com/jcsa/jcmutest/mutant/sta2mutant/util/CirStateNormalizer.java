@@ -39,14 +39,6 @@ public final class CirStateNormalizer {
 	/* normalization */
 	/**
 	 * @param state
-	 * @return the normalized form of input state evaluated in context-independent way
-	 * @throws Exception
-	 */
-	public static CirAbstractState normalize(CirAbstractState state) throws Exception {
-		return normalizer.norm(state, null);
-	}
-	/**
-	 * @param state
 	 * @param context
 	 * @return the normalized form of input state evaluated in the given context
 	 * @throws Exception
@@ -250,14 +242,6 @@ public final class CirStateNormalizer {
 	}
 	
 	/* validation */
-	/**
-	 * @param state	the abstract state to be evaluated as condition
-	 * @return		True {satisfied}; False {non-satisfied}; null {Unknown}
-	 * @throws Exception
-	 */
-	public static Boolean evaluate(CirAbstractState state) throws Exception {
-		return normalizer.eval(state, null);
-	}
 	/**
 	 * @param state		the abstract state to be evaluated as condition
 	 * @param context	symbolic context in which the state is evaluated
