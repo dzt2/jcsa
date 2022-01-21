@@ -1,8 +1,11 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
+
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
@@ -17,17 +20,31 @@ import com.jcsa.jcmutest.mutant.sta2mutant.base.CirReachTimesState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirStoreClass;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirTrapsErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirValueErrorState;
+import com.jcsa.jcparse.flwa.depend.CDependEdge;
+import com.jcsa.jcparse.flwa.depend.CDependGraph;
+import com.jcsa.jcparse.flwa.depend.CDependNode;
+import com.jcsa.jcparse.flwa.depend.CDependPredicate;
+import com.jcsa.jcparse.flwa.depend.CDependType;
+import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
+import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 
 /**
@@ -128,6 +145,198 @@ public class CirStateDependence {
 		}
 		else {
 			return false;
+		}
+	}
+	/* control dependence paths */
+	/**
+	 * @param execution		the CFG-node as target to be reached from prior flow
+	 * @return				a control flow that directly controls this execution
+	 * @throws Exception
+	 */
+	private CirExecutionFlow find_control_flow_in_nul(CirExecution execution) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else {
+			CirExecutionPath path = CirExecutionPathFinder.finder.db_extend(execution);
+			Iterator<CirExecutionEdge> iterator = path.get_iterator(true);
+			while(iterator.hasNext()) {
+				CirExecutionFlow flow = iterator.next().get_flow();
+				if(flow.get_type() == CirExecutionFlowType.true_flow) {
+					return flow;
+				}
+				else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+					return flow;
+				}
+				else if(flow.get_type() == CirExecutionFlowType.skip_flow) {
+					return flow;
+				}
+				else if(flow.get_type() == CirExecutionFlowType.call_flow) {
+					return flow;
+				}
+				else if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+					CirExecution wait = flow.get_target();
+					CirExecution call = wait.get_graph().get_execution(wait.get_id() - 1);
+					return call.get_ou_flow(0);
+				}
+				else { /* not a valid flow to be preserved in the model */ }
+			}
+			return null;	/* failed to find a flow to control the execution */
+		}
+	}
+	/**
+	 * @param context		the dependence graph to find control dependence flow
+	 * @param execution		the CFG-node as target to be reached from prior flow
+	 * @return				a control flow that directly controls this execution
+	 * @throws Exception
+	 */
+	private CirExecutionFlow find_control_flow_in_dpg(CDependGraph context, CirExecution execution) throws Exception {
+		CirInstanceGraph instance_graph = context.get_program_graph();
+		if(instance_graph.has_instances_of(execution)) {
+			for(CirInstanceNode instance_node : instance_graph.get_instances_of(execution)) {
+				if(context.has_node(instance_node)) {
+					CDependNode dependence_node = context.get_node(instance_node);
+					for(CDependEdge dependence_edge : dependence_node.get_ou_edges()) {
+						CDependType dependence_type = dependence_edge.get_type();
+						if(dependence_type == CDependType.predicate_depend) {
+							CDependPredicate elem = (CDependPredicate) dependence_edge.get_element();
+							CirExecution if_execution = dependence_edge.get_target().get_execution();
+							for(CirExecutionFlow ou_flow : if_execution.get_ou_flows()) {
+								if(elem.get_predicate_value() && ou_flow.get_type() == CirExecutionFlowType.true_flow) {
+									return ou_flow;
+								}
+								else if(!elem.get_predicate_value() && ou_flow.get_type() == CirExecutionFlowType.fals_flow) {
+									return ou_flow;
+								}
+							}
+							throw new IllegalArgumentException("Not found branch at " + if_execution.get_statement());
+						}
+						else if(dependence_type == CDependType.stmt_call_depend) {
+							CirExecution call_node = dependence_edge.get_target().get_execution();
+							return call_node.get_ou_flow(0);
+						}
+						else if(dependence_type == CDependType.stmt_exit_depend) {
+							CirExecution wait_node = dependence_edge.get_target().get_execution();
+							CirExecution call_node = wait_node.get_graph().get_execution(wait_node.get_id() - 1);
+							return call_node.get_ou_flow(0);
+						}
+						else { /* not a control flow edge in this execution */ }
+					}
+				}
+			}
+		}
+		return this.find_control_flow_in_nul(execution);
+	}
+	/**
+	 * @param context		the execution path to find a control dependence flow
+	 * @param execution		the CFG-node as target to be reached from prior flow
+	 * @return				a control flow that directly controls this execution
+	 * @throws Exception
+	 */
+	private CirExecutionFlow find_control_flow_in_exp(CirExecutionPath context, CirExecution execution) throws Exception {
+		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		boolean found = false;
+		
+		for(CirExecutionEdge edge : context.get_edges()) {
+			CirExecutionFlow flow = edge.get_flow();
+			switch(flow.get_type()) {
+			case true_flow:
+			case fals_flow:
+			case call_flow:
+			case skip_flow:
+			case retr_flow:	stack.push(flow);
+			default:		break;
+			}
+			if(flow.get_target() == execution) { 
+				found = true;
+				break;
+			}
+		}
+		
+		if(found) {
+			if(!stack.isEmpty()) {
+				CirExecutionFlow flow = stack.pop();
+				if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+					CirExecution wait = flow.get_target();
+					CirExecution call = wait.get_graph().get_execution(wait.get_id() - 1);
+					return call.get_ou_flow(0);
+				}
+				else {
+					return flow;
+				}
+			}
+			return this.find_control_flow_in_nul(execution);
+		}
+		else {
+			return this.find_control_flow_in_nul(execution);
+		}
+	}
+	/**
+	 * @param context		the execution path to find a control dependence flow
+	 * @param execution		the CFG-node as target to be reached from prior flow
+	 * @return				a control flow that directly controls this execution
+	 * @throws Exception
+	 */
+	private CirExecutionFlow find_control_flow_in_stp(CStatePath context, CirExecution execution) throws Exception {
+		Stack<CirExecutionFlow> stack = new Stack<CirExecutionFlow>();
+		boolean found = false;
+		
+		for(CStateNode node : context.get_nodes()) {
+			CirExecution point = node.get_execution();
+			if(point.get_in_degree() == 1) {
+				stack.push(point.get_in_flow(0));
+			}
+			if(point == execution) {
+				found = true; break;
+			}
+			if(point.get_ou_degree() == 1) {
+				stack.push(point.get_ou_flow(0));
+			}
+		}
+		
+		if(found) {
+			while(!stack.isEmpty()) {
+				CirExecutionFlow flow = stack.pop();
+				if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+					CirExecution wait = flow.get_target();
+					CirExecution call = wait.get_graph().get_execution(wait.get_id() - 1);
+					return call.get_ou_flow(0);
+				}
+				else if(flow.get_type() == CirExecutionFlowType.true_flow
+						|| flow.get_type() == CirExecutionFlowType.fals_flow
+						|| flow.get_type() == CirExecutionFlowType.skip_flow
+						|| flow.get_type() == CirExecutionFlowType.call_flow) {
+					return flow;
+				}
+				else { /* ignore the invalid flows that do not control */ }
+			}
+			return this.find_control_flow_in_nul(execution);
+		}
+		else {
+			return this.find_control_flow_in_nul(execution);
+		}
+	}
+	/**
+	 * @param context		CDependGraph | CirExecutionPath | CStatePath | null
+	 * @param execution		the CFG-node as target to be reached from prior flow
+	 * @return				a control flow that directly controls this execution
+	 * @throws Exception
+	 */
+	private CirExecutionFlow find_control_flow(Object context, CirExecution execution) throws Exception {
+		if(context == null) {
+			return this.find_control_flow_in_nul(execution);
+		}
+		else if(context instanceof CDependGraph) {
+			return this.find_control_flow_in_dpg((CDependGraph) context, execution);
+		}
+		else if(context instanceof CirExecutionPath) {
+			return this.find_control_flow_in_exp((CirExecutionPath) context, execution);
+		}
+		else if(context instanceof CStatePath) {
+			return this.find_control_flow_in_stp((CStatePath) context, execution);
+		}
+		else {
+			return this.find_control_flow_in_nul(execution);
 		}
 	}
 	// TODO append more basic methods here...
@@ -1051,7 +1260,31 @@ public class CirStateDependence {
 	 * @throws Exception
 	 */
 	private void gdep_reach_times(CirReachTimesState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
+		CirExecution execution = state.get_execution();
+		int minimal_times = state.get_minimal_times();
+		CirExecutionFlow flow = this.find_control_flow(context, execution);
+		if(minimal_times == 1 && flow != null) {
+			CirExecution if_execution = flow.get_source(); 
+			CirStatement statement = if_execution.get_statement();
+			CirExpression expression; execution = if_execution;
+			if(statement instanceof CirIfStatement) {
+				expression = ((CirIfStatement) statement).get_condition();
+			}
+			else if(statement instanceof CirCaseStatement) {
+				expression = ((CirCaseStatement) statement).get_condition();
+			}
+			else {
+				expression = null;
+			}
+			
+			if(flow.get_type() == CirExecutionFlowType.true_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, true));
+			}
+			else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, false));
+			}
+			else { outputs.add(CirAbstractState.cov_time(execution, 1)); }
+		}
 	}
 	/**
 	 * @param state
@@ -1060,7 +1293,32 @@ public class CirStateDependence {
 	 * @throws Exception
 	 */
 	private void gdep_limit_times(CirLimitTimesState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
+		CirExecution execution = state.get_execution();
+		int maximal_times = state.get_maximal_times();
+		CirExecutionFlow flow = this.find_control_flow(context, execution);
+		
+		if(maximal_times <= 0 && flow != null) {
+			CirExecution if_execution = flow.get_source(); 
+			CirStatement statement = if_execution.get_statement();
+			CirExpression expression; execution = if_execution;
+			if(statement instanceof CirIfStatement) {
+				expression = ((CirIfStatement) statement).get_condition();
+			}
+			else if(statement instanceof CirCaseStatement) {
+				expression = ((CirCaseStatement) statement).get_condition();
+			}
+			else {
+				expression = null;
+			}
+			
+			if(flow.get_type() == CirExecutionFlowType.true_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, false));
+			}
+			else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, true));
+			}
+			else { outputs.add(CirAbstractState.cov_time(execution, 1)); }
+		}
 	}
 	/**
 	 * @param state
@@ -1068,9 +1326,7 @@ public class CirStateDependence {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void gdep_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
+	private void gdep_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
 	/**
 	 * @param state
 	 * @param outputs
@@ -1078,7 +1334,32 @@ public class CirStateDependence {
 	 * @throws Exception
 	 */
 	private void gdep_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
+		CirExecution execution = state.get_execution();
+		SymbolExpression condition = state.get_condition();
+		CirExecutionFlow flow = this.find_control_flow(context, execution);
+		
+		if(flow != null && condition instanceof SymbolConstant) {
+			CirExecution if_execution = flow.get_source(); 
+			CirStatement statement = if_execution.get_statement();
+			CirExpression expression; execution = if_execution;
+			if(statement instanceof CirIfStatement) {
+				expression = ((CirIfStatement) statement).get_condition();
+			}
+			else if(statement instanceof CirCaseStatement) {
+				expression = ((CirCaseStatement) statement).get_condition();
+			}
+			else {
+				expression = null;
+			}
+			
+			if(flow.get_type() == CirExecutionFlowType.true_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, true));
+			}
+			else if(flow.get_type() == CirExecutionFlowType.fals_flow) {
+				outputs.add(CirAbstractState.eva_cond(if_execution, expression, false));
+			}
+			else { outputs.add(CirAbstractState.cov_time(execution, 1)); }
+		}
 	}
 	/**
 	 * @param state
@@ -1086,27 +1367,21 @@ public class CirStateDependence {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void gdep_block_error(CirBlockErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
+	private void gdep_block_error(CirBlockErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
 	/**
 	 * @param state
 	 * @param outputs
 	 * @param context
 	 * @throws Exception
 	 */
-	private void gdep_flows_error(CirFlowsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
+	private void gdep_flows_error(CirFlowsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
 	/**
 	 * @param state
 	 * @param outputs
 	 * @param context
 	 * @throws Exception
 	 */
-	private void gdep_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
+	private void gdep_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
 	/**
 	 * @param state
 	 * @param outputs
@@ -1134,6 +1409,5 @@ public class CirStateDependence {
 	private void gdep_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		// TODO implement this method...
 	}
-	
 	
 }
