@@ -11,6 +11,7 @@ import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBixorErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBlockErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirDataErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirFlowsErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirIncreErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirLimitTimesState;
@@ -339,7 +340,6 @@ public class CirStateDependence {
 			return this.find_control_flow_in_nul(execution);
 		}
 	}
-	// TODO append more basic methods here...
 	
 	/* dependence inference in local C-intermediate representative point */
 	/**
@@ -1241,13 +1241,13 @@ public class CirStateDependence {
 			this.gdep_traps_error((CirTrapsErrorState) state, outputs, context);
 		}
 		else if(state instanceof CirValueErrorState) {
-			this.gdep_value_error((CirValueErrorState) state, outputs, context);
+			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else if(state instanceof CirIncreErrorState) {
-			this.gdep_incre_error((CirIncreErrorState) state, outputs, context);
+			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else if(state instanceof CirBixorErrorState) {
-			this.gdep_bixor_error((CirBixorErrorState) state, outputs, context);
+			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported: " + state);
@@ -1382,32 +1382,5 @@ public class CirStateDependence {
 	 * @throws Exception
 	 */
 	private void gdep_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
-	/**
-	 * @param state
-	 * @param outputs
-	 * @param context
-	 * @throws Exception
-	 */
-	private void gdep_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
-	/**
-	 * @param state
-	 * @param outputs
-	 * @param context
-	 * @throws Exception
-	 */
-	private void gdep_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
-	/**
-	 * @param state
-	 * @param outputs
-	 * @param context
-	 * @throws Exception
-	 */
-	private void gdep_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
-		// TODO implement this method...
-	}
 	
 }
