@@ -621,7 +621,21 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed information here...
+		if(expression != pcontext.get_operand()) {
+			throw new IllegalArgumentException("Not matched: " + expression);
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression muta_value = SymbolFactory.address_of(muta_param);
+				CirExpression orig_expression = pcontext;
+				outputs.add(CirAbstractState.set_expr(orig_expression, muta_value));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) { }
+		else if(value_class == CirValueClass.xor_expr) { } 
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	/**
 	 * @param execution
@@ -642,7 +656,22 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed information here...
+		if(pcontext.get_operand() != expression) {
+			throw new IllegalArgumentException("Not matched: " + expression);
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				CirExpression orig_expression = pcontext;
+				SymbolExpression muta_value = SymbolFactory.cast_expression(
+									orig_expression.get_data_type(), muta_param);
+				outputs.add(CirAbstractState.set_expr(orig_expression, muta_value));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) { }
+		else if(value_class == CirValueClass.xor_expr) { } 
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	/**
 	 * @param execution
@@ -663,7 +692,27 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed information here...
+		if(pcontext.get_function() != expression) {
+			throw new IllegalArgumentException("Not matched: " + expression);
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				CirExpression orig_expression = pcontext;
+				CirExecution wait = orig_expression.execution_of();
+				CirExecution call = wait.get_graph().get_execution(wait.get_id() - 1);
+				CirCallStatement call_stmt = (CirCallStatement) call.get_statement();
+				CirArgumentList alist = call_stmt.get_arguments();
+				List<Object> arguments = new ArrayList<Object>();
+				for(int k = 0; k < alist.number_of_arguments(); k++) {
+					arguments.add(alist.get_argument(k));
+				}
+				SymbolExpression muta_value = SymbolFactory.call_expression(muta_param, arguments);
+				outputs.add(CirAbstractState.set_expr(orig_expression, muta_value));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	/**
 	 * @param execution
@@ -685,7 +734,42 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context, COperator operator,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed function over here...
+		if(expression != pcontext.get_operand(0)) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else {
+			switch(operator) {
+			case positive:	
+			{
+				this.propagate_on_arith_pos(execution, expression, 
+						pcontext, store_type, store_key, value_class, 
+						context, orig_value, muta_param, outputs);
+				break;
+			}
+			case negative:	
+			{
+				this.propagate_on_arith_neg(execution, expression, 
+						pcontext, store_type, store_key, value_class, 
+						context, orig_value, muta_param, outputs);
+				break;
+			}
+			case bit_not:	
+			{
+				this.propagate_on_bitws_rsv(execution, expression, 
+						pcontext, store_type, store_key, value_class, 
+						context, orig_value, muta_param, outputs);
+				break;
+			}
+			case logic_not:	
+			{
+				this.propagate_on_logic_not(execution, expression, 
+						pcontext, store_type, store_key, value_class, 
+						context, orig_value, muta_param, outputs);
+				break;
+			}
+			default:	throw new IllegalArgumentException("unsupport: " + operator);
+			}
+		}
 	}
 	/**
 	 * @param execution
@@ -731,5 +815,44 @@ final class CirStatePropagate {
 			Collection<CirAbstractState> outputs) throws Exception {
 		// TODO implement more detailed function over here...
 	}
+	
+	/* unary expression */
+	private void propagate_on_arith_pos(CirExecution execution, 
+			CirExpression expression, CirComputeExpression pcontext,
+			CirStoreClass store_type, SymbolExpression store_key, 
+			CirValueClass value_class, Object context,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		/* TODO implement this method */
+	}
+	private void propagate_on_arith_neg(CirExecution execution, 
+			CirExpression expression, CirComputeExpression pcontext,
+			CirStoreClass store_type, SymbolExpression store_key, 
+			CirValueClass value_class, Object context,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		/* TODO implement this method */
+	}
+	private void propagate_on_bitws_rsv(CirExecution execution, 
+			CirExpression expression, CirComputeExpression pcontext,
+			CirStoreClass store_type, SymbolExpression store_key, 
+			CirValueClass value_class, Object context,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		/* TODO implement this method */
+	}
+	private void propagate_on_logic_not(CirExecution execution, 
+			CirExpression expression, CirComputeExpression pcontext,
+			CirStoreClass store_type, SymbolExpression store_key, 
+			CirValueClass value_class, Object context,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		/* TODO implement this method */
+	}
+	
+	
+	
+	
+	
 	
 }
