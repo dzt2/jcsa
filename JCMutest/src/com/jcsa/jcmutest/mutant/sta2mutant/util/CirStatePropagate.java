@@ -586,7 +586,21 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed information here...
+		if(expression != pcontext.get_body()) {
+			throw new IllegalArgumentException("Not matched: " + expression);
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				String field = pcontext.get_field().get_name();
+				SymbolExpression muta_value = 
+						SymbolFactory.field_expression(muta_param, field);
+				CirExpression orig_expression = pcontext;
+				outputs.add(CirAbstractState.set_expr(orig_expression, muta_value));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	/**
 	 * @param execution
