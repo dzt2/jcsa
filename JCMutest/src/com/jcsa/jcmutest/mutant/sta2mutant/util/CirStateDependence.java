@@ -1241,13 +1241,13 @@ public class CirStateDependence {
 			this.gdep_traps_error((CirTrapsErrorState) state, outputs, context);
 		}
 		else if(state instanceof CirValueErrorState) {
-			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
+			CirLDataStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else if(state instanceof CirIncreErrorState) {
-			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
+			CirLDataStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else if(state instanceof CirBixorErrorState) {
-			CirStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
+			CirLDataStatePropagate.propagate(context, (CirDataErrorState) state, outputs);
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported: " + state);

@@ -38,10 +38,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  * @author yukimula
  *
  */
-final class CirStatePropagate {
+public final class CirLDataStatePropagate {
 	
-	/* singleton mode */  /** constructors **/  private CirStatePropagate() { } 
-	private static final CirStatePropagate propagate = new CirStatePropagate();
+	/* singleton mode */  /** constructors **/  private CirLDataStatePropagate() { } 
+	private static final CirLDataStatePropagate propagate = new CirLDataStatePropagate();
 	
 	/* public interfaces */
 	/**
@@ -791,7 +791,125 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context, COperator operator,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed function over here...
+		if(expression != pcontext.get_operand(0)) {
+			throw new IllegalArgumentException("Unmatched: " + pcontext);
+		}
+		else {
+			CirComputeExpression pexpression = pcontext;
+			CirExpression loperand = pexpression.get_operand(0);
+			CirExpression roperand = pexpression.get_operand(1);
+			switch(operator) {
+			case arith_add:		
+			{
+				this.propagate_on_arith_ladd(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_sub:
+			{
+				this.propagate_on_arith_lsub(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_mul:
+			{
+				this.propagate_on_arith_lmul(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_div:
+			{
+				this.propagate_on_arith_ldiv(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_mod:
+			{
+				this.propagate_on_arith_lmod(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_and:
+			{
+				this.propagate_on_bitws_land(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_or:
+			{
+				this.propagate_on_bitws_lior(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_xor:
+			{
+				this.propagate_on_bitws_lxor(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case left_shift:
+			{
+				this.propagate_on_bitws_llsh(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case righ_shift:
+			{
+				this.propagate_on_bitws_lrsh(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case logic_and:
+			{
+				this.propagate_on_logic_land(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case logic_or:
+			{
+				this.propagate_on_logic_lior(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case greater_tn:
+			{
+				this.propagate_on_lgreater_tn(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case greater_eq:
+			{
+				this.propagate_on_lgreater_eq(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case smaller_tn:
+			{
+				this.propagate_on_lsmaller_tn(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case smaller_eq:
+			{
+				this.propagate_on_lsmaller_eq(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case equal_with:
+			{
+				this.propagate_on_lequal_with(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case not_equals:
+			{
+				this.propagate_on_lnot_equals(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			default:	throw new IllegalArgumentException("Unsupport: " + operator);
+			}
+		}
 	}
 	/**
 	 * @param execution
@@ -813,7 +931,125 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context, COperator operator,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement more detailed function over here...
+		if(expression != pcontext.get_operand(1)) {
+			throw new IllegalArgumentException("Unmatched: " + pcontext);
+		}
+		else {
+			CirComputeExpression pexpression = pcontext;
+			CirExpression loperand = pexpression.get_operand(0);
+			CirExpression roperand = pexpression.get_operand(1);
+			switch(operator) {
+			case arith_add:		
+			{
+				this.propagate_on_arith_radd(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_sub:
+			{
+				this.propagate_on_arith_rsub(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_mul:
+			{
+				this.propagate_on_arith_rmul(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_div:
+			{
+				this.propagate_on_arith_rdiv(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case arith_mod:
+			{
+				this.propagate_on_arith_rmod(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_and:
+			{
+				this.propagate_on_bitws_rand(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_or:
+			{
+				this.propagate_on_bitws_rior(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case bit_xor:
+			{
+				this.propagate_on_bitws_rxor(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case left_shift:
+			{
+				this.propagate_on_bitws_rlsh(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case righ_shift:
+			{
+				this.propagate_on_bitws_rrsh(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case logic_and:
+			{
+				this.propagate_on_logic_rand(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case logic_or:
+			{
+				this.propagate_on_logic_rior(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case greater_tn:
+			{
+				this.propagate_on_rgreater_tn(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case greater_eq:
+			{
+				this.propagate_on_rgreater_eq(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case smaller_tn:
+			{
+				this.propagate_on_rsmaller_tn(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case smaller_eq:
+			{
+				this.propagate_on_rsmaller_eq(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case equal_with:
+			{
+				this.propagate_on_requal_with(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			case not_equals:
+			{
+				this.propagate_on_rnot_equals(execution, pexpression, loperand, roperand, 
+						value_class, store_type, store_key, orig_value, muta_param, outputs); 
+				break;
+			}
+			default:	throw new IllegalArgumentException("Unsupport: " + operator);
+			}
+		}
 	}
 	
 	/* unary expression */
@@ -823,7 +1059,27 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		/* TODO implement this method */
+		if(value_class == null) {
+			throw new IllegalArgumentException("Invalid class as null");
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				outputs.add(CirAbstractState.set_expr(pcontext, muta_param));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				outputs.add(CirAbstractState.inc_expr(pcontext, muta_param));
+			}
+		}
+		else if(value_class == CirValueClass.xor_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				outputs.add(CirAbstractState.xor_expr(pcontext, muta_param));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	private void propagate_on_arith_neg(CirExecution execution, 
 			CirExpression expression, CirComputeExpression pcontext,
@@ -831,7 +1087,25 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		/* TODO implement this method */
+		if(value_class == null) {
+			throw new IllegalArgumentException("Invalid class as null");
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression muta_value = SymbolFactory.arith_neg(muta_param);
+				outputs.add(CirAbstractState.set_expr(pcontext, muta_value));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression difference = SymbolFactory.arith_neg(muta_param);
+				outputs.add(CirAbstractState.inc_expr(pcontext, difference));
+			}
+		}
+		else if(value_class == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	private void propagate_on_bitws_rsv(CirExecution execution, 
 			CirExpression expression, CirComputeExpression pcontext,
@@ -839,7 +1113,25 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		/* TODO implement this method */
+		if(value_class == null) {
+			throw new IllegalArgumentException("Invalid class as null");
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression muta_value = SymbolFactory.bitws_rsv(muta_param);
+				outputs.add(CirAbstractState.set_expr(pcontext, muta_value));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) { }
+		else if(value_class == CirValueClass.xor_expr) { 
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression difference = SymbolFactory.bitws_rsv(muta_param);
+				outputs.add(CirAbstractState.xor_expr(pcontext, difference));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	private void propagate_on_logic_not(CirExecution execution, 
 			CirExpression expression, CirComputeExpression pcontext,
@@ -847,12 +1139,312 @@ final class CirStatePropagate {
 			CirValueClass value_class, Object context,
 			SymbolExpression orig_value, SymbolExpression muta_param,
 			Collection<CirAbstractState> outputs) throws Exception {
-		/* TODO implement this method */
+		if(value_class == null) {
+			throw new IllegalArgumentException("Invalid class as null");
+		}
+		else if(value_class == CirValueClass.set_expr) {
+			if(store_type != CirStoreClass.vdef) {
+				SymbolExpression muta_value = SymbolFactory.sym_condition(muta_param, false);
+				outputs.add(CirAbstractState.set_expr(pcontext, muta_value));
+			}
+		}
+		else if(value_class == CirValueClass.inc_expr) { }
+		else if(value_class == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupport: " + value_class);
+		}
 	}
 	
+	/* binary loperand */
+	private void propagate_on_arith_ladd(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_lsub(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_lmul(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_ldiv(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_lmod(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_land(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_lior(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_lxor(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_llsh(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_lrsh(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_logic_land(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_logic_lior(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lgreater_tn(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lgreater_eq(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lsmaller_tn(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lsmaller_eq(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lequal_with(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_lnot_equals(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
 	
-	
-	
-	
+	/* binary loperand */
+	private void propagate_on_arith_radd(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_rsub(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_rmul(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_rdiv(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_arith_rmod(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_rand(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_rior(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_rxor(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_rlsh(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_bitws_rrsh(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_logic_rand(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_logic_rior(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_rgreater_tn(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_rgreater_eq(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_rsmaller_tn(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_rsmaller_eq(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_requal_with(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
+	private void propagate_on_rnot_equals(CirExecution execution,
+			CirExpression pexpression, CirExpression loperand,
+			CirExpression roperand, CirValueClass value_class,
+			CirStoreClass store_type, SymbolExpression store_key,
+			SymbolExpression orig_value, SymbolExpression muta_param,
+			Collection<CirAbstractState> outputs) throws Exception {
+		// TODO implement this method...
+	}
 	
 }
