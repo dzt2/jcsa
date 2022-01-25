@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
@@ -218,6 +219,49 @@ public final class StateMutationUtils {
 		return utils.find_prior_checkpoint(prev_path, condition);
 	}
 	
-	// TODO ...
+	/* state subsumption inference */
+	/**
+	 * It statically infers the subsumption relationships from the source state and preserve the subsumed ones into outputs
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	public static void subsume_infer(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else {
+			/* initialization and declarations */	outputs.clear();
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			
+			/* I. try to extend in local context */
+			CirStateLocalInference.local_infer(state, buffer);
+			outputs.addAll(buffer);
+			
+			/* II. try to extend in global context */
+			CirStateCrossInference.cross_infer(state, buffer, context);
+			outputs.addAll(buffer);
+		}
+	}
+	/**
+	 * It statically infers the subsumption relationships from the source state and preserve the subsumed ones into outputs
+	 * @param state
+	 * @param context
+	 * @return
+	 * @throws Exception
+	 */
+	public static Collection<CirAbstractState> subsume_infer(CirAbstractState state, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else {
+			Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+			subsume_infer(state, outputs, context); return outputs;
+		}
+	}
 	
 }

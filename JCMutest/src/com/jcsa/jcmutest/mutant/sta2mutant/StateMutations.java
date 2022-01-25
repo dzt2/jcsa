@@ -133,6 +133,51 @@ public class StateMutations {
 	 * @throws Exception
 	 */
 	public static boolean is_trap_value(SymbolExpression expression) throws Exception { return has_trap_value(expression); }
+	/**
+	 * @param expression
+	 * @return whether the expression uses any abstract value within
+	 * @throws Exception
+	 */
+	private static boolean is_abst_value(SymbolExpression expression) throws Exception {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return expression.equals(bool_value) || expression.equals(true_value) || expression.equals(fals_value)
+					|| expression.equals(post_value) || expression.equals(negt_value) || expression.equals(zero_value)
+					|| expression.equals(npos_value) || expression.equals(nneg_value) || expression.equals(nzro_value)
+					|| expression.equals(numb_value) || expression.equals(null_value) || expression.equals(nnul_value)
+					|| expression.equals(addr_value);
+		}
+	}
+	/**
+	 * @param root
+	 * @return whether it contains the abstract values defined
+	 * @throws Exception
+	 */
+	public static boolean has_abst_value(SymbolNode root) throws Exception {
+		if(root == null) {
+			return false;
+		}
+		else {
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(root); SymbolNode parent;
+			while(!queue.isEmpty()) {
+				parent = queue.poll();
+				if(parent.is_leaf()) {
+					if(parent instanceof SymbolIdentifier
+						&& is_abst_value((SymbolExpression) parent))
+					return true;
+				}
+				else {
+					for(SymbolNode child : parent.get_children()) {
+						queue.add(child);
+					}
+				}
+			}
+			return false;
+		}
+	}
 	
 	/* type classifier */
 	/**

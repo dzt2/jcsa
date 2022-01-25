@@ -2,7 +2,9 @@ package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
@@ -27,7 +29,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
@@ -45,19 +46,42 @@ final class CirStateValueInference {
 	
 	/* syntax-directed algorithms */
 	/**
+	 * It parse through the expression-level
 	 * @param state
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void vinf(CirDataErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+	protected static void value_infer(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
 		else if(outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
-		else if(state.is_defined_point()) { /* TODO definition node across */ }
+		else {
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			val_inf.vinf(state, buffer);
+			outputs.clear();
+			for(CirAbstractState output : buffer) {
+				outputs.add(output.normalize());
+			}
+		}
+	}
+	/**
+	 * @param state
+	 * @param outputs
+	 * @throws Exception
+	 */
+	private void vinf(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else if(state.is_defined_point()) { /* definition node will be across */ }
 		else if(StateMutations.is_trap_value(state.get_roperand())) {/* TRAP */}
+		else if(StateMutations.has_abst_value(state.get_roperand())) {/* ABS */}
 		else {
 			CirExecution execution = state.get_execution();
 			CirExpression expression = state.get_expression();
@@ -798,7 +822,7 @@ final class CirStateValueInference {
 			throw new IllegalArgumentException("Unsupported: " + value_type);
 		}
 		
-		SymbolExpression condition = SymbolFactory.sym_condition(roperand, false);
+		SymbolExpression condition = SymbolFactory.sym_condition(roperand, true);
 		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_arith_div_loperand(CirExecution execution,
@@ -822,85 +846,262 @@ final class CirStateValueInference {
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_mod(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { 
+			SymbolExpression condition = SymbolFactory.sym_condition(SymbolFactory.
+					arith_mod(expression.get_data_type(), muta_param, roperand), true);
+			outputs.add(CirAbstractState.eva_cond(execution, condition, true));
+		}
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_bitws_and_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_and(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(roperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_ior_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_ior(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.not_equals(roperand, Integer.valueOf(~0));
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_xor_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_ior(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { 
+			SymbolExpression difference = muta_param;
+			outputs.add(CirAbstractState.xor_expr(expression, difference));
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_bitws_lsh_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_lsh(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { 
+			SymbolExpression difference = SymbolFactory.bitws_lsh(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.inc_expr(expression, difference));
+		}
+		else if(value_type == CirValueClass.xor_expr) { 
+			SymbolExpression difference = SymbolFactory.bitws_lsh(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.xor_expr(expression, difference));
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_bitws_rsh_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_rsh(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { 
+			SymbolExpression difference = SymbolFactory.bitws_rsh(
+					expression.get_data_type(), muta_param, roperand);
+			outputs.add(CirAbstractState.xor_expr(expression, difference));
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_logic_and_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.logic_and(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(roperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_logic_ior_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.logic_ior(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(roperand, false);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_greater_tn_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.greater_tn(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_greater_eq_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.greater_eq(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_smaller_tn_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.smaller_tn(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_smaller_eq_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.smaller_eq(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_equal_with_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.equal_with(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_not_equals_loperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression roperand = context.get_operand(1);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.not_equals(muta_param, roperand);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	
 	/* computational operation guided translation (roperand) */
@@ -908,109 +1109,339 @@ final class CirStateValueInference {
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_add(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) {
+			SymbolExpression difference = muta_param;
+			outputs.add(CirAbstractState.inc_expr(expression, difference));
+		}
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_arith_sub_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_sub(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) {
+			SymbolExpression difference = SymbolFactory.arith_neg(muta_param);
+			outputs.add(CirAbstractState.inc_expr(expression, difference));
+		}
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_arith_mul_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_mul(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) {
+			SymbolExpression difference = SymbolFactory.arith_mul(
+					expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.inc_expr(expression, difference));
+		}
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_arith_div_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_div(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_arith_mod_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.arith_mod(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_and_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_and(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_ior_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_ior(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.not_equals(loperand, Integer.valueOf(~0));
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_xor_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_xor(
+						expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { 
+			SymbolExpression difference = muta_param;
+			outputs.add(CirAbstractState.xor_expr(expression, difference));
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_bitws_lsh_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_lsh(
+					expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_bitws_rsh_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.bitws_rsh(
+					expression.get_data_type(), loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_logic_and_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.logic_and(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, true);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_logic_ior_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.logic_ior(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
+		
+		SymbolExpression condition = SymbolFactory.sym_condition(loperand, false);
+		outputs.add(CirAbstractState.eva_cond(execution, condition, true));
 	}
 	private void vinf_by_greater_tn_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.greater_tn(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_greater_eq_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.greater_eq(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_smaller_tn_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.smaller_tn(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_smaller_eq_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.smaller_eq(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_equal_with_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.equal_with(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	private void vinf_by_not_equals_roperand(CirExecution execution,
 			CirComputeExpression context, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
-		// TODO implement this method by syntactic alteration...
+		CirExpression expression = context;
+		CirExpression loperand = context.get_operand(0);
+		if(value_type == CirValueClass.set_expr) {
+			SymbolExpression muta_value = SymbolFactory.not_equals(loperand, muta_param);
+			outputs.add(CirAbstractState.set_expr(expression, muta_value));
+		}
+		else if(value_type == CirValueClass.inc_expr) { }
+		else if(value_type == CirValueClass.xor_expr) { }
+		else {
+			throw new IllegalArgumentException("Unsupported: " + value_type);
+		}
 	}
 	
 }

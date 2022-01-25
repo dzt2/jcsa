@@ -1,11 +1,13 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirLimitTimesState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirDataErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirReachTimesState;
 import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
@@ -244,8 +246,6 @@ public final class CirStateCrossInference {
 			return this.find_control_flow_in_nul(target);
 		}
 	}
-	
-	/* cross-dependence subsumption on coverage state */
 	/**
 	 * @param state
 	 * @param outputs
@@ -280,14 +280,49 @@ public final class CirStateCrossInference {
 		}
 	}
 	/**
+	 * Cross-level state subsumption inference
 	 * @param state
 	 * @param outputs
 	 * @param context
 	 * @throws Exception
 	 */
-	private void cinf_limit_times(CirLimitTimesState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
-	
-	
-	
+	private void cinf(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else if(state instanceof CirReachTimesState) {
+			this.cinf_reach_times((CirReachTimesState) state, outputs, context);
+		}
+		else if(state instanceof CirDataErrorState) {
+			CirStateValueInference.value_infer((CirDataErrorState) state, outputs);
+		}
+		else { /* other support is not available here */ }
+	}
+	/**
+	 * It infers the state subsumption across expression and control dependence level
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	protected static void cross_infer(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else {
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			crs_inf.cinf(state, buffer, context);
+			outputs.clear();
+			for(CirAbstractState output : buffer) {
+				outputs.add(output.normalize());
+			}
+		}
+	}
 	
 }
