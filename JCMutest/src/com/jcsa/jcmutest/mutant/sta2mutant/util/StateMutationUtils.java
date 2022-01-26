@@ -219,15 +219,15 @@ public final class StateMutationUtils {
 		return utils.find_prior_checkpoint(prev_path, condition);
 	}
 	
-	/* state subsumption inference */
+	/* subsumption-based inference */
 	/**
-	 * It statically infers the subsumption relationships from the source state and preserve the subsumed ones into outputs
+	 * 
 	 * @param state
 	 * @param outputs
 	 * @param context
 	 * @throws Exception
 	 */
-	public static void subsume_infer(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+	public static void subsume(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -235,32 +235,25 @@ public final class StateMutationUtils {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
 		else {
-			/* initialization and declarations */	outputs.clear();
-			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			
-			/* I. try to extend in local context */
-			CirStateLocalInference.local_infer(state, buffer);
-			outputs.addAll(buffer);
-			
-			/* II. try to extend in global context */
-			CirStateCrossInference.cross_infer(state, buffer, context);
-			outputs.addAll(buffer);
+			CirLocalStateInference.local_subsume(state, outputs);
+			CirCrossStateInference.cross_infer(state, outputs, context);
+			return;
 		}
 	}
 	/**
-	 * It statically infers the subsumption relationships from the source state and preserve the subsumed ones into outputs
+	 * It computes the set of states directly subsumed by the input in the given context
 	 * @param state
 	 * @param context
 	 * @return
 	 * @throws Exception
 	 */
-	public static Collection<CirAbstractState> subsume_infer(CirAbstractState state, Object context) throws Exception {
+	public static Collection<CirAbstractState> subsume(CirAbstractState state, Object context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
 		else {
 			Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
-			subsume_infer(state, outputs, context); return outputs;
+			subsume(state, outputs, context); return outputs;
 		}
 	}
 	

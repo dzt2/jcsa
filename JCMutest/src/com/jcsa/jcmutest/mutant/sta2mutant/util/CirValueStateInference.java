@@ -39,10 +39,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  * @author yukimula
  *
  */
-final class CirStateValueInference {
+public final class CirValueStateInference {
 	
-	/* singleton mode */ /** construct **/ private CirStateValueInference() { }
-	static final CirStateValueInference val_inf = new CirStateValueInference();
+	/* singleton mode */ /** construct **/ private CirValueStateInference() { }
+	static final CirValueStateInference val_inf = new CirValueStateInference();
 	
 	/* syntax-directed algorithms */
 	/**

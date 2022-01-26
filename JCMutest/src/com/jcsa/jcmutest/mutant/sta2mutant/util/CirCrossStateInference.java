@@ -7,8 +7,16 @@ import java.util.Set;
 import java.util.Stack;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirDataErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBixorErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBlockErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirFlowsErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirIncreErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirLimitTimesState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirMConstrainState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirNConstrainState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirReachTimesState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirTrapsErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirValueErrorState;
 import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.flwa.depend.CDependNode;
@@ -29,15 +37,17 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It implements the path dependence based subsumption inference over the state
+ * It implements the state subsumption inference across expression, branch and
+ * statement levels.
  * 
- * @author yukimula
+ * @author yukimulas
  *
  */
-public final class CirStateCrossInference {
+public class CirCrossStateInference {
 	
-	/* singleton mode */ /** constructor **/ private CirStateCrossInference() { }
-	private static final CirStateCrossInference crs_inf = new CirStateCrossInference();
+	/* singleton mode */ /** constructor **/ private CirCrossStateInference() {}
+	static final CirCrossStateInference cross_infer = new CirCrossStateInference();
+	
 	
 	/* path control dependence flow finder */
 	/**
@@ -246,6 +256,8 @@ public final class CirStateCrossInference {
 			return this.find_control_flow_in_nul(target);
 		}
 	}
+	
+	/* cross-statement */
 	/**
 	 * @param state
 	 * @param outputs
@@ -280,7 +292,80 @@ public final class CirStateCrossInference {
 		}
 	}
 	/**
-	 * Cross-level state subsumption inference
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_limit_times(CirLimitTimesState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_block_error(CirBlockErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_flows_error(CirFlowsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state.is_defined_point()) { /* TODO add definition point here */ }
+		else { CirValueStateInference.value_infer(state, outputs); }
+	}
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state.is_defined_point()) { /* TODO add definition point here */ }
+		else { CirValueStateInference.value_infer(state, outputs); }
+	}
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void cinf_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state.is_defined_point()) { /* TODO add definition point here */ }
+		else { CirValueStateInference.value_infer(state, outputs); }
+	}
+	
+	/* interfaces */
+	/**
 	 * @param state
 	 * @param outputs
 	 * @param context
@@ -293,16 +378,41 @@ public final class CirStateCrossInference {
 		else if(outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
+		else if(state instanceof CirLimitTimesState) {
+			this.cinf_limit_times((CirLimitTimesState) state, outputs, context);
+		}
 		else if(state instanceof CirReachTimesState) {
 			this.cinf_reach_times((CirReachTimesState) state, outputs, context);
 		}
-		else if(state instanceof CirDataErrorState) {
-			CirStateValueInference.value_infer((CirDataErrorState) state, outputs);
+		else if(state instanceof CirNConstrainState) {
+			this.cinf_n_constrain((CirNConstrainState) state, outputs, context);
 		}
-		else { /* other support is not available here */ }
+		else if(state instanceof CirMConstrainState) {
+			this.cinf_m_constrain((CirMConstrainState) state, outputs, context);
+		}
+		else if(state instanceof CirBlockErrorState) {
+			this.cinf_block_error((CirBlockErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirFlowsErrorState) {
+			this.cinf_flows_error((CirFlowsErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirTrapsErrorState) {
+			this.cinf_traps_error((CirTrapsErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirValueErrorState) {
+			this.cinf_value_error((CirValueErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirIncreErrorState) {
+			this.cinf_incre_error((CirIncreErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirBixorErrorState) {
+			this.cinf_bixor_error((CirBixorErrorState) state, outputs, context);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + state.toString());
+		}
 	}
 	/**
-	 * It infers the state subsumption across expression and control dependence level
 	 * @param state
 	 * @param outputs
 	 * @param context
@@ -317,8 +427,7 @@ public final class CirStateCrossInference {
 		}
 		else {
 			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			crs_inf.cinf(state, buffer, context);
-			outputs.clear();
+			cross_infer.cinf(state, buffer, context);
 			for(CirAbstractState output : buffer) {
 				outputs.add(output.normalize());
 			}

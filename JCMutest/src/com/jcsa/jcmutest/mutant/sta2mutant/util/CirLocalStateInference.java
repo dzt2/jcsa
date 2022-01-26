@@ -31,16 +31,16 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the local inference of subsumption of abstract execution state
- * in the context of the identical C-intermediate representative code location.
+ * It implements the state extension over the local C-intermediate representative
+ * program location.
  * 
  * @author yukimula
  *
  */
-final class CirStateLocalInference {
+public final class CirLocalStateInference {
 	
-	/* singleton */ /** constructor **/ private CirStateLocalInference() { }
-	private static final CirStateLocalInference loc_inf = new CirStateLocalInference();
+	/* singleton mode */ /** constructor **/ private CirLocalStateInference() {}
+	static final CirLocalStateInference loc_infer = new CirLocalStateInference();
 	
 	/* basic method for supporting of local inference */
 	/**
@@ -949,45 +949,38 @@ final class CirStateLocalInference {
 		else if(outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
+		else if(state instanceof CirLimitTimesState) {
+			this.linf_limit_times((CirLimitTimesState) state, outputs);
+		}
+		else if(state instanceof CirReachTimesState) {
+			this.linf_reach_times((CirReachTimesState) state, outputs);
+		}
+		else if(state instanceof CirNConstrainState) {
+			this.linf_n_constrain((CirNConstrainState) state, outputs);
+		}
+		else if(state instanceof CirMConstrainState) {
+			this.linf_m_constrain((CirMConstrainState) state, outputs);
+		}
+		else if(state instanceof CirBlockErrorState) {
+			this.linf_block_error((CirBlockErrorState) state, outputs);
+		}
+		else if(state instanceof CirFlowsErrorState) {
+			this.linf_flows_error((CirFlowsErrorState) state, outputs);
+		}
+		else if(state instanceof CirTrapsErrorState) {
+			this.linf_traps_error((CirTrapsErrorState) state, outputs);
+		}
+		else if(state instanceof CirValueErrorState) {
+			this.linf_value_error((CirValueErrorState) state, outputs);
+		}
+		else if(state instanceof CirIncreErrorState) {
+			this.linf_incre_error((CirIncreErrorState) state, outputs);
+		}
+		else if(state instanceof CirBixorErrorState) {
+			this.linf_bixor_error((CirBixorErrorState) state, outputs);
+		}
 		else {
-			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			if(state instanceof CirLimitTimesState) {
-				this.linf_limit_times((CirLimitTimesState) state, buffer);
-			}
-			else if(state instanceof CirReachTimesState) {
-				this.linf_reach_times((CirReachTimesState) state, buffer);
-			}
-			else if(state instanceof CirNConstrainState) {
-				this.linf_n_constrain((CirNConstrainState) state, buffer);
-			}
-			else if(state instanceof CirMConstrainState) {
-				this.linf_m_constrain((CirMConstrainState) state, buffer);
-			}
-			else if(state instanceof CirBlockErrorState) {
-				this.linf_block_error((CirBlockErrorState) state, buffer);
-			}
-			else if(state instanceof CirFlowsErrorState) {
-				this.linf_flows_error((CirFlowsErrorState) state, buffer);
-			}
-			else if(state instanceof CirTrapsErrorState) {
-				this.linf_traps_error((CirTrapsErrorState) state, buffer);
-			}
-			else if(state instanceof CirValueErrorState) {
-				this.linf_value_error((CirValueErrorState) state, buffer);
-			}
-			else if(state instanceof CirIncreErrorState) {
-				this.linf_incre_error((CirIncreErrorState) state, buffer);
-			}
-			else if(state instanceof CirBixorErrorState) {
-				this.linf_bixor_error((CirBixorErrorState) state, buffer);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + state.toString());
-			}
-			outputs.clear();
-			for(CirAbstractState output : buffer) {
-				outputs.add(output.normalize());
-			}
+			throw new IllegalArgumentException("Invalid: " + state.toString());
 		}
 	}
 	/**
@@ -996,8 +989,20 @@ final class CirStateLocalInference {
 	 * @param outputs	to preserve the set of states being subsumed by input
 	 * @throws Exception
 	 */
-	protected static void local_infer(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
-		loc_inf.linf(state, outputs);
+	protected static void local_subsume(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else {
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			loc_infer.linf(state, buffer);
+			for(CirAbstractState output : buffer) {
+				outputs.add(output.normalize());
+			}
+		}
 	}
 	
 }
