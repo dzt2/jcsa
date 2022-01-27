@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.util;
+package com.jcsa.jcmutest.mutant.sta2mutant.tree;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Stack;
 
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBixorErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBlockErrorState;
@@ -39,17 +40,16 @@ import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
- * It implements the state subsumption inference across expression, branch and
- * statement levels.
+ * It implements the subsumption inference between CirAbstractState(s) across
+ * the level of C-intermediate representative locations.
  * 
- * @author yukimulas
+ * @author yukimula
  *
  */
-public class CirCrossStateInference {
+public final class StateCrossInference {
 	
-	/* singleton mode */ /** constructor **/ private CirCrossStateInference() {}
-	static final CirCrossStateInference cross_infer = new CirCrossStateInference();
-	
+	/* singleton mode */ /** constructor **/ private StateCrossInference() { }
+	private static final StateCrossInference cinfer = new StateCrossInference();
 	
 	/* path control dependence flow finder */
 	/**
@@ -63,7 +63,7 @@ public class CirCrossStateInference {
 		}
 		else {
 			/* I. find the closest selective flow in decidable previous path */
-			CirExecutionPath prev_path = StateMutationUtils.oublock_previous_path(target);
+			CirExecutionPath prev_path = StateMutations.oublock_previous_path(target);
 			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
 			while(iterator.hasNext()) {
 				CirExecutionFlow flow = iterator.next().get_flow();
@@ -350,7 +350,7 @@ public class CirCrossStateInference {
 	 */
 	private void cinf_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		if(state.is_defined_point()) { /* TODO add definition point here */ }
-		else { CirValueStateInference.value_infer(state, outputs); }
+		else { StateValueInference.value_infer(state, outputs); }
 	}
 	/**
 	 * @param state
@@ -360,7 +360,7 @@ public class CirCrossStateInference {
 	 */
 	private void cinf_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		if(state.is_defined_point()) { /* TODO add definition point here */ }
-		else { CirValueStateInference.value_infer(state, outputs); }
+		else { StateValueInference.value_infer(state, outputs); }
 	}
 	/**
 	 * @param state
@@ -370,7 +370,7 @@ public class CirCrossStateInference {
 	 */
 	private void cinf_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		if(state.is_defined_point()) { /* TODO add definition point here */ }
-		else { CirValueStateInference.value_infer(state, outputs); }
+		else { StateValueInference.value_infer(state, outputs); }
 	}
 	
 	/* interfaces */
@@ -422,24 +422,25 @@ public class CirCrossStateInference {
 		}
 	}
 	/**
-	 * @param state
-	 * @param outputs
-	 * @param context
+	 * It generates the states directly subsumed by the input state under the given context
+	 * @param state		the source state from which the subsumed states are inferred
+	 * @param context	CDependGraph | CStatePath | CirExecutionPath | null
+	 * @return			the set of states directly subsumed by the input state
 	 * @throws Exception
 	 */
-	protected static void cross_infer(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+	public static Collection<CirAbstractState> cross_subsume(CirAbstractState state, Object context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
-		else if(outputs == null) {
-			throw new IllegalArgumentException("Invalid outputs: null");
-		}
 		else {
-			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			cross_infer.cinf(state, buffer, context);
-			for(CirAbstractState output : buffer) {
-				outputs.add(output.normalize());
+			state = state.normalize();
+			Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+			cinfer.cinf(state, outputs, context);
+			Set<CirAbstractState> noutput = new HashSet<CirAbstractState>();
+			for(CirAbstractState output : outputs) {
+				noutput.add(output.normalize());
 			}
+			return noutput;
 		}
 	}
 	

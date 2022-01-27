@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.util;
+package com.jcsa.jcmutest.mutant.sta2mutant.tree;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,16 +31,16 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the state extension over the local C-intermediate representative
- * program location.
+ * It implements the subsumption relationships within the local C-intermediate
+ * representative code location.
  * 
  * @author yukimula
  *
  */
-public final class CirLocalStateInference {
+public final class StateLocalInference {
 	
-	/* singleton mode */ /** constructor **/ private CirLocalStateInference() {}
-	static final CirLocalStateInference loc_infer = new CirLocalStateInference();
+	/* singleton mode */ /** constructor **/ private StateLocalInference() { }
+	private static final StateLocalInference linfer = new StateLocalInference();
 	
 	/* basic method for supporting of local inference */
 	/**
@@ -984,24 +984,23 @@ public final class CirLocalStateInference {
 		}
 	}
 	/**
-	 * It generates the directly subsumed abstract states by the input one
-	 * @param state		the source abstract execution state to subsume others
-	 * @param outputs	to preserve the set of states being subsumed by input
+	 * @param state	the source state from which the subsumed states are inferred
+	 * @return		the set of states being directly subsumed by the given state
 	 * @throws Exception
 	 */
-	protected static void local_subsume(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
+	public static Collection<CirAbstractState> local_subsume(CirAbstractState state) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
-		else if(outputs == null) {
-			throw new IllegalArgumentException("Invalid outputs: null");
-		}
 		else {
-			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			loc_infer.linf(state, buffer);
-			for(CirAbstractState output : buffer) {
-				outputs.add(output.normalize());
+			state = state.normalize();
+			Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+			linfer.linf(state, outputs);
+			Set<CirAbstractState> noutput = new HashSet<CirAbstractState>();
+			for(CirAbstractState output : outputs) {
+				noutput.add(output.normalize());
 			}
+			return noutput;
 		}
 	}
 	

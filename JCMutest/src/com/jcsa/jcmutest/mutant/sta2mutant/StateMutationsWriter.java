@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.util;
+package com.jcsa.jcmutest.mutant.sta2mutant;
 
 import java.io.File;
 import java.io.FileReader;
@@ -12,8 +12,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutation;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
@@ -83,7 +81,7 @@ import com.jcsa.jcparse.test.file.TestInput;
  * @author yukimula
  *
  */
-public class StateMutationsFeatureWriter {
+public class StateMutationsWriter {
 	
 	/* attributes */
 	/**	the source file defined in mutation testing project	**/
@@ -103,7 +101,7 @@ public class StateMutationsFeatureWriter {
 	/**
 	 * private constructor for creating singleton mode
 	 */
-	private StateMutationsFeatureWriter() {
+	private StateMutationsWriter() {
 		this.source_cfile = null;
 		this.ou_directory = null;
 		this.cfile_writer = null;
@@ -112,7 +110,7 @@ public class StateMutationsFeatureWriter {
 		this.max_distance = 0;
 	}
 	/** the singleton instance of the feature writer for writing features **/
-	private static final StateMutationsFeatureWriter fwriter = new StateMutationsFeatureWriter();
+	private static final StateMutationsWriter fwriter = new StateMutationsWriter();
 	
 	/* input-output based operation */
 	/**
@@ -884,7 +882,7 @@ public class StateMutationsFeatureWriter {
 				this.subsume_maps.put(source, new HashSet<CirAbstractState>());
 				try {
 					Collection<CirAbstractState> targets = 
-							StateMutationUtils.subsume(source, context);
+							StateMutations.subsume(source, context);
 					this.subsume_maps.get(source).addAll(targets);
 				}
 				catch(Exception ex) {

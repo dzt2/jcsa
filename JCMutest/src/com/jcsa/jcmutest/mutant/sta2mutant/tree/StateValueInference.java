@@ -1,10 +1,8 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.util;
+package com.jcsa.jcmutest.mutant.sta2mutant.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
@@ -33,211 +31,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the value error propagation (by subsumption) over the across
- * expression level.
- * 
+ * It implements the inference of state subsumption relations across expression
+ * level.
  * @author yukimula
  *
  */
-public final class CirValueStateInference {
+final class StateValueInference {
 	
-	/* singleton mode */ /** construct **/ private CirValueStateInference() { }
-	static final CirValueStateInference val_inf = new CirValueStateInference();
-	
-	/* syntax-directed algorithms */
-	/**
-	 * It parse through the expression-level
-	 * @param state
-	 * @param outputs
-	 * @throws Exception
-	 */
-	protected static void value_infer(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
-		if(state == null) {
-			throw new IllegalArgumentException("Invalid state: null");
-		}
-		else if(outputs == null) {
-			throw new IllegalArgumentException("Invalid outputs: null");
-		}
-		else {
-			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			val_inf.vinf(state, buffer);
-			outputs.clear();
-			for(CirAbstractState output : buffer) {
-				outputs.add(output.normalize());
-			}
-		}
-	}
-	/**
-	 * @param state
-	 * @param outputs
-	 * @throws Exception
-	 */
-	private void vinf(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
-		if(state == null) {
-			throw new IllegalArgumentException("Invalid state: null");
-		}
-		else if(outputs == null) {
-			throw new IllegalArgumentException("Invalid outputs: null");
-		}
-		else if(state.is_defined_point()) { /* definition node will be across */ }
-		else if(StateMutations.is_trap_value(state.get_roperand())) {/* TRAP */}
-		else if(StateMutations.has_abst_value(state.get_roperand())) {/* ABS */}
-		else {
-			CirExecution execution = state.get_execution();
-			CirExpression expression = state.get_expression();
-			SymbolExpression orig_value = state.get_loperand();
-			SymbolExpression muta_param = state.get_roperand();
-			CirValueClass value_type = state.get_operator();
-			this.vinf_by_syntax(execution, expression, value_type, orig_value, muta_param, outputs);
-		}
-	}
-	/**
-	 * It infers the value error across expression-level
-	 * @param execution			the execution point where the error arises
-	 * @param store_type		the class of store unit of the child error
-	 * @param store_key			the symbolic identify to decide store unit
-	 * @param parent			the parent node of the expression node
-	 * @param expression		the expression where the child error arise
-	 * @param value_type		set_expr | inc_expr | xor_expr
-	 * @param orig_value		the original value of the child data error
-	 * @param muta_param		the parameter to define the mutation error
-	 * @param outputs			to preserve the abstract state subsumed by
-	 * @throws Exception
-	 */
-	private void vinf_by_syntax(CirExecution execution,
-			CirExpression expression, CirValueClass value_type, 
-			SymbolExpression orig_value, SymbolExpression muta_param, 
-			Collection<CirAbstractState> outputs) throws Exception {
-		CirNode parent = expression.get_parent();
-		if(parent == null) { /* no more inference from error */ }
-		else if(parent instanceof CirIfStatement) {
-			CirIfStatement context = (CirIfStatement) parent;
-			if(context.get_condition() == expression) {
-				this.vinf_by_if_condition(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirCaseStatement) {
-			CirCaseStatement context = (CirCaseStatement) parent;
-			if(context.get_condition() == expression) {
-				this.vinf_by_case_condition(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirAssignStatement) {
-			CirAssignStatement context = (CirAssignStatement) parent;
-			if(context.get_lvalue() == expression) {
-				this.vinf_by_assign_lvalue(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				this.vinf_by_assign_rvalue(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-		}
-		else if(parent instanceof CirCallStatement) {
-			CirCallStatement context = (CirCallStatement) parent;
-			if(context.get_function() == expression) {
-				this.vinf_by_call_fucntion(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirDeferExpression) {
-			CirDeferExpression context = (CirDeferExpression) parent;
-			if(context.get_address() == expression) {
-				this.vinf_by_defer_expression(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirFieldExpression) {
-			CirFieldExpression context = (CirFieldExpression) parent;
-			if(context.get_body() == expression) {
-				this.vinf_by_field_expression(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirAddressExpression) {
-			CirAddressExpression context = (CirAddressExpression) parent;
-			if(context.get_operand() == expression) {
-				this.vinf_by_address_expression(execution,
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirCastExpression) {
-			CirCastExpression context = (CirCastExpression) parent;
-			if(context.get_operand() == expression) {
-				this.vinf_by_cast_expression(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirWaitExpression) {
-			CirWaitExpression context = (CirWaitExpression) parent;
-			if(context.get_function() == expression) {
-				this.vinf_by_wait_expression(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				throw new IllegalArgumentException("Unmatched: " + context);
-			}
-		}
-		else if(parent instanceof CirInitializerBody) {
-			CirInitializerBody context = (CirInitializerBody) parent;
-			for(int k = 0; k < context.number_of_elements(); k++) {
-				if(context.get_element(k) == expression) {
-					this.vinf_by_initializer_body(execution, 
-							context, k, value_type, orig_value, muta_param, outputs);
-					break;
-				}
-			}
-		}
-		else if(parent instanceof CirArgumentList) {
-			CirArgumentList context = (CirArgumentList) parent;
-			for(int k = 0; k < context.number_of_arguments(); k++) {
-				if(context.get_argument(k) == expression) {
-					this.vinf_by_argument_list(execution, 
-							context, k, value_type, orig_value, muta_param, outputs);
-					break;
-				}
-			}
-		}
-		else if(parent instanceof CirComputeExpression) {
-			CirComputeExpression context = (CirComputeExpression) parent;
-			if(context.number_of_operand() == 1) {
-				this.vinf_by_compute_uoperand(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else if(context.get_operand(0) == expression) {
-				this.vinf_by_compute_loperand(execution,
-						context, value_type, orig_value, muta_param, outputs);
-			}
-			else {
-				this.vinf_by_compute_roperand(execution, 
-						context, value_type, orig_value, muta_param, outputs);
-			}
-		}
-		else { /* no more inference from error */ }
-	}
+	/* singleton mode */ /** constructor **/ private StateValueInference() { }
+	private static final StateValueInference vinfer = new StateValueInference();
 	
 	/* implementation functions */
 	/**
@@ -1442,6 +1244,178 @@ public final class CirValueStateInference {
 		else {
 			throw new IllegalArgumentException("Unsupported: " + value_type);
 		}
+	}
+	
+	/**
+	 * @param state
+	 * @param outputs
+	 * @throws Exception
+	 */
+	protected static void value_infer(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else if(state.is_defined_point()) { /* definition node will be across */ }
+		else if(StateMutations.is_trap_value(state.get_roperand())) {/* TRAP */}
+		else if(StateMutations.has_abst_value(state.get_roperand())) {/* ABS */}
+		else {
+			CirExecution execution = state.get_execution();
+			CirExpression expression = state.get_expression();
+			SymbolExpression orig_value = state.get_loperand();
+			SymbolExpression muta_param = state.get_roperand();
+			CirValueClass value_type = state.get_operator();
+			vinfer.vinf_by_syntax(execution, expression, value_type, orig_value, muta_param, outputs);
+		}
+	}
+	/**
+	 * It infers the value error across expression-level
+	 * @param execution			the execution point where the error arises
+	 * @param store_type		the class of store unit of the child error
+	 * @param store_key			the symbolic identify to decide store unit
+	 * @param parent			the parent node of the expression node
+	 * @param expression		the expression where the child error arise
+	 * @param value_type		set_expr | inc_expr | xor_expr
+	 * @param orig_value		the original value of the child data error
+	 * @param muta_param		the parameter to define the mutation error
+	 * @param outputs			to preserve the abstract state subsumed by
+	 * @throws Exception
+	 */
+	private void vinf_by_syntax(CirExecution execution,
+			CirExpression expression, CirValueClass value_type, 
+			SymbolExpression orig_value, SymbolExpression muta_param, 
+			Collection<CirAbstractState> outputs) throws Exception {
+		CirNode parent = expression.get_parent();
+		if(parent == null) { /* no more inference from error */ }
+		else if(parent instanceof CirIfStatement) {
+			CirIfStatement context = (CirIfStatement) parent;
+			if(context.get_condition() == expression) {
+				this.vinf_by_if_condition(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirCaseStatement) {
+			CirCaseStatement context = (CirCaseStatement) parent;
+			if(context.get_condition() == expression) {
+				this.vinf_by_case_condition(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirAssignStatement) {
+			CirAssignStatement context = (CirAssignStatement) parent;
+			if(context.get_lvalue() == expression) {
+				this.vinf_by_assign_lvalue(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				this.vinf_by_assign_rvalue(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+		}
+		else if(parent instanceof CirCallStatement) {
+			CirCallStatement context = (CirCallStatement) parent;
+			if(context.get_function() == expression) {
+				this.vinf_by_call_fucntion(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirDeferExpression) {
+			CirDeferExpression context = (CirDeferExpression) parent;
+			if(context.get_address() == expression) {
+				this.vinf_by_defer_expression(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirFieldExpression) {
+			CirFieldExpression context = (CirFieldExpression) parent;
+			if(context.get_body() == expression) {
+				this.vinf_by_field_expression(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirAddressExpression) {
+			CirAddressExpression context = (CirAddressExpression) parent;
+			if(context.get_operand() == expression) {
+				this.vinf_by_address_expression(execution,
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirCastExpression) {
+			CirCastExpression context = (CirCastExpression) parent;
+			if(context.get_operand() == expression) {
+				this.vinf_by_cast_expression(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirWaitExpression) {
+			CirWaitExpression context = (CirWaitExpression) parent;
+			if(context.get_function() == expression) {
+				this.vinf_by_wait_expression(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				throw new IllegalArgumentException("Unmatched: " + context);
+			}
+		}
+		else if(parent instanceof CirInitializerBody) {
+			CirInitializerBody context = (CirInitializerBody) parent;
+			for(int k = 0; k < context.number_of_elements(); k++) {
+				if(context.get_element(k) == expression) {
+					this.vinf_by_initializer_body(execution, 
+							context, k, value_type, orig_value, muta_param, outputs);
+					break;
+				}
+			}
+		}
+		else if(parent instanceof CirArgumentList) {
+			CirArgumentList context = (CirArgumentList) parent;
+			for(int k = 0; k < context.number_of_arguments(); k++) {
+				if(context.get_argument(k) == expression) {
+					this.vinf_by_argument_list(execution, 
+							context, k, value_type, orig_value, muta_param, outputs);
+					break;
+				}
+			}
+		}
+		else if(parent instanceof CirComputeExpression) {
+			CirComputeExpression context = (CirComputeExpression) parent;
+			if(context.number_of_operand() == 1) {
+				this.vinf_by_compute_uoperand(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else if(context.get_operand(0) == expression) {
+				this.vinf_by_compute_loperand(execution,
+						context, value_type, orig_value, muta_param, outputs);
+			}
+			else {
+				this.vinf_by_compute_roperand(execution, 
+						context, value_type, orig_value, muta_param, outputs);
+			}
+		}
+		else { /* no more inference from error */ }
 	}
 	
 }

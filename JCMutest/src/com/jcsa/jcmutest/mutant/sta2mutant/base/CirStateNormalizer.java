@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.util.StateMutationUtils;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
@@ -87,7 +86,7 @@ public final class CirStateNormalizer {
 	 */
 	private CirAbstractState norm_limit_times(CirLimitTimesState state, SymbolProcess context) throws Exception {
 		CirExecution target = state.get_execution();
-		CirExecutionPath prev_path = StateMutationUtils.inblock_previous_path(target);
+		CirExecutionPath prev_path = StateMutations.inblock_previous_path(target);
 		int times = state.get_maximal_times();
 		return CirAbstractState.lim_time(prev_path.get_source(), times);
 	}
@@ -99,7 +98,7 @@ public final class CirStateNormalizer {
 	 */
 	private CirAbstractState norm_reach_times(CirReachTimesState state, SymbolProcess context) throws Exception {
 		CirExecution target = state.get_execution();
-		CirExecutionPath prev_path = StateMutationUtils.inblock_previous_path(target);
+		CirExecutionPath prev_path = StateMutations.inblock_previous_path(target);
 		int times = state.get_minimal_times();
 		return CirAbstractState.cov_time(prev_path.get_source(), times);
 	}
@@ -116,8 +115,8 @@ public final class CirStateNormalizer {
 			condition = SymbolFactory.sym_constant(Boolean.TRUE);
 		}
 		
-		CirExecutionPath prev_path = StateMutationUtils.inblock_previous_path(state.get_execution());
-		CirExecution check_point = StateMutationUtils.find_checkpoint(prev_path, condition);
+		CirExecutionPath prev_path = StateMutations.inblock_previous_path(state.get_execution());
+		CirExecution check_point = StateMutations.find_checkpoint(prev_path, condition);
 		return CirAbstractState.mus_cond(check_point, condition, true);
 	}
 	/**
@@ -133,8 +132,8 @@ public final class CirStateNormalizer {
 			condition = SymbolFactory.sym_constant(Boolean.TRUE);
 		}
 		
-		CirExecutionPath prev_path = StateMutationUtils.inblock_previous_path(state.get_execution());
-		CirExecution check_point = StateMutationUtils.find_checkpoint(prev_path, condition);
+		CirExecutionPath prev_path = StateMutations.inblock_previous_path(state.get_execution());
+		CirExecution check_point = StateMutations.find_checkpoint(prev_path, condition);
 		return CirAbstractState.eva_cond(check_point, condition, true);
 	}
 	/**
@@ -296,8 +295,8 @@ public final class CirStateNormalizer {
 		}
 		else {
 			/* 1. collect the set of execution points in decidable block */
-			CirExecutionPath path = StateMutationUtils.
-							inblock_previous_path(state.get_execution());
+			CirExecutionPath path = StateMutations.
+						inblock_previous_path(state.get_execution());
 			Set<CirExecution> executions = new HashSet<CirExecution>();
 			for(CirExecutionEdge edge : path.get_edges()) {
 				executions.add(edge.get_source());
@@ -330,7 +329,7 @@ public final class CirStateNormalizer {
 		}
 		else {
 			/* 1. collect the set of execution points in decidable block */
-			CirExecutionPath path = StateMutationUtils.
+			CirExecutionPath path = StateMutations.
 							inblock_previous_path(state.get_execution());
 			Set<CirExecution> executions = new HashSet<CirExecution>();
 			for(CirExecutionEdge edge : path.get_edges()) {

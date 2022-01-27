@@ -2,12 +2,11 @@ package test;
 
 import java.io.File;
 
-import com.jcsa.jcmutest.mutant.sta2mutant.util.StateMutationsFeatureWriter;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutationsWriter;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
-
 
 public class MuTestProjectFeatureWriter {
 	
@@ -34,9 +33,8 @@ public class MuTestProjectFeatureWriter {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		
 		/* TODO only implement the static features writing here... */
-		StateMutationsFeatureWriter.write_static_features(code_file, output_directory, max_subsumption_distance);
+		StateMutationsWriter.write_static_features(code_file, output_directory, max_subsumption_distance);
 		System.out.println();
 	}
-	
 	
 }

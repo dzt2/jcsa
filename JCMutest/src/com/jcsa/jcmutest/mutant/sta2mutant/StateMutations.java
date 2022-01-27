@@ -11,8 +11,11 @@ import java.util.Set;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
+import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateCrossInference;
+import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateLocalInference;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -601,6 +604,26 @@ public class StateMutations {
 	 */
 	public static CirExecution find_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
 		return find_prior_checkpoint(prev_path, condition);
+	}
+	
+	/* state subsumed inference */
+	/**
+	 * It generates the set of abstract states directly subsumed by the input state under the given context
+	 * @param state		the source state from which the subsumed states are inferred
+	 * @param context	CDependGraph | CStatePath | CirExecutionPath | null
+	 * @return			the set of abstract states being subsumed by the state in the given context
+	 * @throws Exception
+	 */
+	public static Collection<CirAbstractState> subsume(CirAbstractState state, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else {
+			Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+			outputs.addAll(StateLocalInference.local_subsume(state));
+			outputs.addAll(StateCrossInference.cross_subsume(state, context));
+			return outputs;
+		}
 	}
 	
 	// TODO implement more methods...
