@@ -299,7 +299,7 @@ public abstract class CirAbstractState {
 					CirStateStore.new_unit(expression), ovalue, mvalue);
 		}
 		else {
-			throw new IllegalArgumentException(expression.generate_code(true));
+			throw new IllegalArgumentException(expression.get_data_type().generate_code());
 		}
 	}
 	/**

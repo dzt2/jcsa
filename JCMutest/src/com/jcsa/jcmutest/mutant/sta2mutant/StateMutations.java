@@ -189,7 +189,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_void(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -202,7 +201,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_boolean(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -220,7 +218,6 @@ public class StateMutations {
 			}
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -233,7 +230,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_integer(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -246,7 +242,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_real(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -259,7 +254,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
@@ -272,7 +266,6 @@ public class StateMutations {
 			return CTypeAnalyzer.is_pointer(data_type);
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			return false;
 		}
 	}
