@@ -1,6 +1,5 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
-import com.jcsa.jcmutest.mutant.sta2mutant.util.CirStateNormalizer;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;

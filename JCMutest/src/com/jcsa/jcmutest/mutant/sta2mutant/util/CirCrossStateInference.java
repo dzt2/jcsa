@@ -33,6 +33,8 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -304,7 +306,14 @@ public class CirCrossStateInference {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void cinf_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	private void cinf_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { 
+		CirExecution execution = state.get_execution();
+		SymbolExpression condition = state.get_condition();
+		if(condition instanceof SymbolConstant) {
+			execution = execution.get_graph().get_entry();
+			outputs.add(CirAbstractState.eva_cond(execution, condition, true));
+		}
+	}
 	/**
 	 * @param state
 	 * @param outputs

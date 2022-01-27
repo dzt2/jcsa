@@ -1,7 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.util.CirStateNormalizer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;

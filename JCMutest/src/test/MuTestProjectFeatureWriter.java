@@ -2,7 +2,7 @@ package test;
 
 import java.io.File;
 
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutationsFeatureWriter;
+import com.jcsa.jcmutest.mutant.sta2mutant.util.StateMutationsFeatureWriter;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;

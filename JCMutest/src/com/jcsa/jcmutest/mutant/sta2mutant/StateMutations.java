@@ -2,8 +2,11 @@ package com.jcsa.jcmutest.mutant.sta2mutant;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
@@ -15,6 +18,10 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -409,5 +416,193 @@ public class StateMutations {
 			}
 		}
 	}
+	
+	/* utility methods */
+	/**
+	 * @param target		the final execution point that the path reaches to
+	 * @param across_branch	True if the decidable path should get across
+	 * @return				the decidable previous path to the target within the
+	 * 						internal procedure part.
+	 * @throws Exception
+	 */
+	private static CirExecutionPath inner_previous_path(CirExecution 
+					target, boolean across_branch) throws Exception {
+		if(target == null) {
+			throw new IllegalArgumentException("Invalid target: null");
+		}
+		else {
+			/* 1. initialization */
+			CirExecutionPath path = new CirExecutionPath(target);
+			CirExecution execution, source; CirExecutionFlow flow;
+			
+			/* 2. decidable traversal */
+			while(true) {
+				execution = path.get_source();
+				if(execution.get_in_degree() == 1) {
+					flow = execution.get_in_flow(0);
+					if(flow.get_type() == CirExecutionFlowType.retr_flow) {
+						source = execution.get_graph().get_execution(execution.get_id() - 1);
+						flow = CirExecutionFlow.virtual_flow(source, execution);
+						path.insert(flow);	/* across the function calling */
+					}
+					else if(flow.get_type() == CirExecutionFlowType.true_flow
+							|| flow.get_type() == CirExecutionFlowType.fals_flow) {
+						if(across_branch) {
+							path.insert(flow);
+						}
+						else {
+							break;			/* not across the branch flows */
+						}
+					}
+					else {
+						path.insert(flow);	/* decidable normal flow is in */
+					}
+				}
+				else {					
+					/* reach the undecidable conjunction */	break;			
+				}
+			}
+			
+			/* 3. return previous decidable path */	return path;
+		}
+	}
+	/**
+	 * @param target
+	 * @return decidable previous path until the target without across any branch
+	 * @throws Exception
+	 */
+	public static CirExecutionPath inblock_previous_path(CirExecution target) throws Exception {
+		return inner_previous_path(target, false);
+	}
+	/**
+	 * @param target
+	 * @return decidable previous path until the target that may across branches
+	 * @throws Exception
+	 */
+	public static CirExecutionPath oublock_previous_path(CirExecution target) throws Exception {
+		return inner_previous_path(target, true);
+	}
+	
+	/* symbolic condition check */
+	/**
+	 * @param root
+	 * @return	the set of reference expressions specified under the root node
+	 * @throws Exception
+	 */
+	private static Collection<SymbolExpression> get_references(SymbolNode root) throws Exception {
+		if(root == null) {
+			throw new IllegalArgumentException("Invalid root: null");
+		}
+		else {
+			Set<SymbolExpression> references = new HashSet<SymbolExpression>();
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(root);
+			while(!queue.isEmpty()) {
+				SymbolNode parent = queue.poll();
+				for(SymbolNode child : parent.get_children()) {
+					queue.add(child);
+				}
+				if(parent.is_reference()) {
+					references.add((SymbolExpression) parent);
+				}
+			}
+			return references;
+		}
+	}
+	/**
+	 * @param root
+	 * @param references
+	 * @return	whether any reference is used in the root tree
+	 * @throws Exception
+	 */
+	private static boolean use_references(SymbolNode root, Collection<SymbolExpression> references) throws Exception {
+		if(root == null) {
+			return false;
+		}
+		else if(references == null || references.isEmpty()) {
+			return false;
+		}
+		else {
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(root);
+			while(!queue.isEmpty()) {
+				SymbolNode parent = queue.poll();
+				for(SymbolNode child : parent.get_children()) {
+					queue.add(child);
+				}
+				if(references.contains(parent)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	/**
+	 * @param execution
+	 * @param references
+	 * @return whether any reference in collection is re-defined in the given point of execution node
+	 * @throws Exception
+	 */
+	private static boolean def_references(CirExecution execution, Collection<SymbolExpression> references) throws Exception {
+		if(execution == null) {
+			return false;
+		}
+		else if(references == null || references.isEmpty()) {
+			return false;
+		}
+		else {
+			CirStatement statement = execution.get_statement();
+			if(statement instanceof CirIfStatement) {
+				CirExpression condition = ((CirIfStatement) statement).get_condition();
+				return use_references(SymbolFactory.sym_expression(condition), references);
+			}
+			else if(statement instanceof CirCaseStatement) {
+				CirExpression condition = ((CirCaseStatement) statement).get_condition();
+				return use_references(SymbolFactory.sym_expression(condition), references);
+			}
+			else if(statement instanceof CirAssignStatement) {
+				return references.contains(SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue()));
+			}
+			else {
+				return false;
+			}
+		}
+	}
+	/**
+	 * @param prev_path
+	 * @param condition
+	 * @return the best previous point to check the satisfaction of the condition using internal state
+	 * @throws Exception
+	 */
+	private static CirExecution find_prior_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
+		if(prev_path == null) {
+			throw new IllegalArgumentException("Invalid prev_path: null");
+		}
+		else if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else {
+			Collection<SymbolExpression> references = get_references(condition);
+			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
+			while(iterator.hasNext()) {
+				CirExecutionEdge edge = iterator.next();
+				if(def_references(edge.get_source(), references)) {
+					return edge.get_target();
+				}
+			}
+			return prev_path.get_source();
+		}
+	}
+	/**
+	 * @param prev_path
+	 * @param condition
+	 * @return the best previous point to check the satisfaction of the condition using internal state
+	 * @throws Exception
+	 */
+	public static CirExecution find_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
+		return find_prior_checkpoint(prev_path, condition);
+	}
+	
+	// TODO implement more methods...
 	
 }

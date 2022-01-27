@@ -1,21 +1,10 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.util;
+package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBixorErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBlockErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirFlowsErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirIncreErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirLimitTimesState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirMConstrainState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirNConstrainState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirReachTimesState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirStoreClass;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirTrapsErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirValueErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.util.StateMutationUtils;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;

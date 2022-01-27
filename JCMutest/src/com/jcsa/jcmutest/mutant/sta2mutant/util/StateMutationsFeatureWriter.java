@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant;
+package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.io.File;
 import java.io.FileReader;
@@ -12,8 +12,9 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutation;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.sta2mutant.util.StateMutationUtils;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
