@@ -16,6 +16,10 @@ import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
 import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateCrossInference;
 import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateLocalInference;
+import com.jcsa.jcparse.lang.ctype.CArrayType;
+import com.jcsa.jcparse.lang.ctype.CBasicType;
+import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
@@ -189,69 +193,118 @@ public class StateMutations {
 		}
 	}
 	
-	/* type classifier */
+	/* data type classification */
 	/**
 	 * @param data_type
-	 * @return
+	 * @return null if the original data type is invalid
+	 */ 
+	private static CType get_normalized_type(CType data_type) {
+		if(data_type == null) {
+			return CBasicTypeImpl.void_type;	
+		}
+		else {
+			try {
+				return CTypeAnalyzer.get_value_type(data_type);
+			}
+			catch(Exception ex) {
+				return CBasicTypeImpl.void_type;
+			}
+		}
+	}
+	/**
+	 * @param data_type
+	 * @return whether the data type is void
 	 */
 	public static boolean is_void(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_void(data_type);
+		data_type = get_normalized_type(data_type);
+		if(data_type instanceof CBasicType) {
+			switch(((CBasicType) data_type).get_tag()) {
+			case c_void:	return true;
+			default:		return false;
+			}
 		}
-		catch(Exception ex) {
+		else {
 			return false;
 		}
 	}
 	/**
 	 * @param data_type
-	 * @return whether the data type is a boolean
+	 * @return whether the data type is boolean
 	 */
 	public static boolean is_boolean(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_boolean(data_type);
+		data_type = get_normalized_type(data_type);
+		if(data_type instanceof CBasicType) {
+			switch(((CBasicType) data_type).get_tag()) {
+			case c_bool:	return true;
+			default:		return false;
+			}
 		}
-		catch(Exception ex) {
+		else {
 			return false;
 		}
 	}
 	/**
 	 * @param data_type
-	 * @return whether the data type is a unsigned
+	 * @return true iff. {uchar|ushort|uint|ulong}
 	 */
 	public static boolean is_usigned(CType data_type) {
-		try {
-			if(CTypeAnalyzer.is_integer(data_type)) {
-				return CTypeAnalyzer.is_unsigned(data_type);
-			}
-			else {
-				return false;
+		data_type = get_normalized_type(data_type);
+		if(data_type instanceof CBasicType) {
+			switch(((CBasicType) data_type).get_tag()) {
+			case c_uchar:
+			case c_ushort:
+			case c_uint:
+			case c_ulong:	return true;
+			default:		return false;
 			}
 		}
-		catch(Exception ex) {
+		else {
 			return false;
 		}
 	}
 	/**
 	 * @param data_type
-	 * @return whether the data type is a integer
+	 * @return {char|uchar|short|ushort|int|uint|long|ulong|llong|ullong|enum}
 	 */
 	public static boolean is_integer(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_integer(data_type);
+		data_type = get_normalized_type(data_type);
+		if(data_type instanceof CBasicType) {
+			switch(((CBasicType) data_type).get_tag()) {
+			case c_char:
+			case c_uchar:
+			case c_short:
+			case c_ushort:
+			case c_int:
+			case c_uint:
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:	return true;
+			default:		return false;
+			}
 		}
-		catch(Exception ex) {
+		else if(data_type instanceof CEnumType) {
+			return true;
+		}
+		else {
 			return false;
 		}
 	}
 	/**
 	 * @param data_type
-	 * @return whether the data type is real
+	 * @return {char|uchar|short|ushort|int|uint|long|ulong|llong|ullong|enum}
 	 */
 	public static boolean is_doubles(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_real(data_type);
+		data_type = get_normalized_type(data_type);
+		if(data_type instanceof CBasicType) {
+			switch(((CBasicType) data_type).get_tag()) {
+			case c_float:
+			case c_double:
+			case c_ldouble: return true;
+			default:		return false;
+			}
 		}
-		catch(Exception ex) {
+		else {
 			return false;
 		}
 	}
@@ -260,24 +313,16 @@ public class StateMutations {
 	 * @return whether the data type is integer or real
 	 */
 	public static boolean is_numeric(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_integer(data_type) || CTypeAnalyzer.is_real(data_type);
-		}
-		catch(Exception ex) {
-			return false;
-		}
+		return is_integer(data_type) || is_doubles(data_type);
 	}
 	/**
 	 * @param data_type
 	 * @return whether the data type is a address pointer
 	 */
 	public static boolean is_address(CType data_type) {
-		try {
-			return CTypeAnalyzer.is_pointer(data_type);
-		}
-		catch(Exception ex) {
-			return false;
-		}
+		data_type = get_normalized_type(data_type);
+		return data_type instanceof CArrayType || 
+				data_type instanceof CPointerType;
 	}
 	
 	/* location classifier */
@@ -420,7 +465,7 @@ public class StateMutations {
 		}
 	}
 	
-	/* utility methods */
+	/* path-related traversal for state validation */
 	/**
 	 * @param target		the final execution point that the path reaches to
 	 * @param across_branch	True if the decidable path should get across
@@ -485,8 +530,6 @@ public class StateMutations {
 	public static CirExecutionPath oublock_previous_path(CirExecution target) throws Exception {
 		return inner_previous_path(target, true);
 	}
-	
-	/* symbolic condition check */
 	/**
 	 * @param root
 	 * @return	the set of reference expressions specified under the root node

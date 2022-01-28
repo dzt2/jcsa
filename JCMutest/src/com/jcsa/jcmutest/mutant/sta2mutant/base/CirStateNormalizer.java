@@ -19,7 +19,7 @@ import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
  * @author yukimula
  *
  */
-public final class CirStateNormalizer {
+final class CirStateNormalizer {
 	
 	/* singleton mode */  /** constructor **/  	private CirStateNormalizer() { }
 	private static final CirStateNormalizer normalizer = new CirStateNormalizer();
@@ -31,7 +31,7 @@ public final class CirStateNormalizer {
 	 * @return the normalized form of input state evaluated in the given context
 	 * @throws Exception
 	 */
-	public static CirAbstractState normalize(CirAbstractState state, SymbolProcess context) throws Exception {
+	protected static CirAbstractState normalize(CirAbstractState state, SymbolProcess context) throws Exception {
 		return normalizer.norm(state, context);
 	}
 	/**
@@ -236,7 +236,7 @@ public final class CirStateNormalizer {
 	 * @return			True {satisfied}; False {non-satisfied}; null {Unknown}
 	 * @throws Exception
 	 */
-	public static Boolean evaluate(CirAbstractState state, SymbolProcess context) throws Exception {
+	protected static Boolean evaluate(CirAbstractState state, SymbolProcess context) throws Exception {
 		return normalizer.eval(state, context);
 	}
 	/**
