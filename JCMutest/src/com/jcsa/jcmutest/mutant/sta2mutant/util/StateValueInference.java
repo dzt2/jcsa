@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.tree;
+package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1246,6 +1246,7 @@ final class StateValueInference {
 		}
 	}
 	
+	/* inference interface */
 	/**
 	 * @param state
 	 * @param outputs
@@ -1258,7 +1259,7 @@ final class StateValueInference {
 		else if(outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
-		else if(state.is_defined_point()) { /* definition node will be across */ }
+		else if(state.is_defined_point()) {/* definition node will be across */}
 		else if(StateMutations.is_trap_value(state.get_roperand())) {/* TRAP */}
 		else if(StateMutations.has_abst_value(state.get_roperand())) {/* ABS */}
 		else {
@@ -1267,7 +1268,8 @@ final class StateValueInference {
 			SymbolExpression orig_value = state.get_loperand();
 			SymbolExpression muta_param = state.get_roperand();
 			CirValueClass value_type = state.get_operator();
-			vinfer.vinf_by_syntax(execution, expression, value_type, orig_value, muta_param, outputs);
+			vinfer.vinf_by_syntax(execution, expression, 
+					value_type, orig_value, muta_param, outputs);
 		}
 	}
 	/**

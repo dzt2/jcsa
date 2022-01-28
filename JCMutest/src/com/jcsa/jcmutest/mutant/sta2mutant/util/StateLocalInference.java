@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.tree;
+package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.util.Collection;
 import java.util.HashSet;

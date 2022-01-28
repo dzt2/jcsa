@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.tree;
+package com.jcsa.jcmutest.mutant.sta2mutant.util;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -310,8 +310,11 @@ public final class StateCrossInference {
 		CirExecution execution = state.get_execution();
 		SymbolExpression condition = state.get_condition();
 		if(condition instanceof SymbolConstant) {
-			execution = execution.get_graph().get_entry();
-			outputs.add(CirAbstractState.eva_cond(execution, condition, true));
+			boolean value = ((SymbolConstant) condition).get_bool();
+			if(!value) {
+				execution = execution.get_graph().get_entry();
+				outputs.add(CirAbstractState.eva_cond(execution, Boolean.FALSE, true));
+			}
 		}
 	}
 	/**
@@ -320,7 +323,17 @@ public final class StateCrossInference {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void cinf_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception { }
+	private void cinf_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		CirExecution execution = state.get_execution();
+		SymbolExpression condition = state.get_condition();
+		if(condition instanceof SymbolConstant) {
+			boolean value = ((SymbolConstant) condition).get_bool();
+			if(!value) {
+				execution = execution.get_graph().get_entry();
+				outputs.add(CirAbstractState.eva_cond(execution, Boolean.FALSE, true));
+			}
+		}
+	}
 	/**
 	 * @param state
 	 * @param outputs

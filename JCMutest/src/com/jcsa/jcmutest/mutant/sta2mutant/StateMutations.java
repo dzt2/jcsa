@@ -14,8 +14,8 @@ import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
-import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateCrossInference;
-import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateLocalInference;
+import com.jcsa.jcmutest.mutant.sta2mutant.util.StateCrossInference;
+import com.jcsa.jcmutest.mutant.sta2mutant.util.StateLocalInference;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -23,6 +23,7 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
@@ -30,6 +31,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -429,7 +431,7 @@ public class StateMutations {
 		}
 	}
 	
-	/* state mutation generator */
+	/* state mutation creator */
 	/**
 	 * It creates a RIP-model of state mutation into some given point.
 	 * @param point
@@ -465,7 +467,7 @@ public class StateMutations {
 		}
 	}
 	
-	/* subsumption-related inference methods */
+	/* decidable path finders */
 	/**
 	 * @param target		the final execution point that the path reaches to
 	 * @param across_branch	True if the decidable path should get across
@@ -531,6 +533,46 @@ public class StateMutations {
 		return inner_previous_path(target, true);
 	}
 	/**
+	 * @param source
+	 * @return the path from source to following using decidable path in the internal procedure
+	 * @throws Exception
+	 */
+	public static CirExecutionPath oublock_postfix_path(CirExecution source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else {
+			/* 1. declaration and initialization */
+			CirExecutionPath path = new CirExecutionPath(source);
+			CirExecution execution,target; CirExecutionFlow flow; 
+			
+			/* 2. decidable path traversal */
+			while(true) {
+				execution = path.get_target();
+				if(execution.get_ou_degree() == 1) {							/* decidable branch */
+					flow = execution.get_ou_flow(0);
+					if(flow.get_type() == CirExecutionFlowType.call_flow) {		/* skip the call-block */
+						target = execution.get_graph().get_execution(execution.get_id() + 1);
+						path.append(target.get_in_flow(0));
+					}
+					else if(flow.get_type() == CirExecutionFlowType.retr_flow) {/* only reach the return */
+						path.append(flow); break;
+					}
+					else {														/* skip the decidable flow */
+						path.append(flow);
+					}
+				}
+				else {															/* true|false branch flows */
+					break;
+				}
+			}
+			
+			/* 3. return next-postfix decidable path */	return path;
+		}
+	}
+	
+	/* static data-flow finder */
+	/**
 	 * @param root
 	 * @return	the set of reference expressions specified under the root node
 	 * @throws Exception
@@ -558,10 +600,10 @@ public class StateMutations {
 	/**
 	 * @param root
 	 * @param references
-	 * @return	whether any reference is used in the root tree
+	 * @return whether any reference in {references} set is contained in the root
 	 * @throws Exception
 	 */
-	private static boolean use_references(SymbolNode root, Collection<SymbolExpression> references) throws Exception {
+	private static boolean has_references(SymbolNode root, Collection<SymbolExpression> references) throws Exception {
 		if(root == null) {
 			return false;
 		}
@@ -586,10 +628,10 @@ public class StateMutations {
 	/**
 	 * @param execution
 	 * @param references
-	 * @return whether any reference in collection is re-defined in the given point of execution node
+	 * @return whether any reference in the set is defined in the given execution
 	 * @throws Exception
 	 */
-	private static boolean def_references(CirExecution execution, Collection<SymbolExpression> references) throws Exception {
+	public static boolean is_defined_at(CirExecution execution, Collection<SymbolExpression> references) throws Exception {
 		if(execution == null) {
 			return false;
 		}
@@ -600,14 +642,16 @@ public class StateMutations {
 			CirStatement statement = execution.get_statement();
 			if(statement instanceof CirIfStatement) {
 				CirExpression condition = ((CirIfStatement) statement).get_condition();
-				return use_references(SymbolFactory.sym_expression(condition), references);
+				return has_references(SymbolFactory.sym_expression(condition), references);
 			}
 			else if(statement instanceof CirCaseStatement) {
-				CirExpression condition = ((CirCaseStatement) statement).get_condition();
-				return use_references(SymbolFactory.sym_expression(condition), references);
+				CirExpression condition = ((CirIfStatement) statement).get_condition();
+				return has_references(SymbolFactory.sym_expression(condition), references);
 			}
 			else if(statement instanceof CirAssignStatement) {
-				return references.contains(SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue()));
+				SymbolExpression root = SymbolFactory.sym_expression(
+						((CirAssignStatement) statement).get_lvalue());
+				return references.contains(root);
 			}
 			else {
 				return false;
@@ -615,12 +659,12 @@ public class StateMutations {
 		}
 	}
 	/**
-	 * @param prev_path
-	 * @param condition
-	 * @return the best previous point to check the satisfaction of the condition using internal state
+	 * @param prev_path	the path to the current execution where the condition is directly evaluated
+	 * @param condition	the symbolic condition to be evaluated at the improved path
+	 * @return			the execution point where the condition is improved until
 	 * @throws Exception
 	 */
-	private static CirExecution find_prior_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
+	public static CirExecution find_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
 		if(prev_path == null) {
 			throw new IllegalArgumentException("Invalid prev_path: null");
 		}
@@ -632,7 +676,7 @@ public class StateMutations {
 			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
 			while(iterator.hasNext()) {
 				CirExecutionEdge edge = iterator.next();
-				if(def_references(edge.get_source(), references)) {
+				if(is_defined_at(edge.get_source(), references)) {
 					return edge.get_target();
 				}
 			}
@@ -640,14 +684,115 @@ public class StateMutations {
 		}
 	}
 	/**
-	 * @param prev_path
-	 * @param condition
-	 * @return the best previous point to check the satisfaction of the condition using internal state
+	 * It derives the set of expressions that use the value of reference under the root node
+	 * @param root				the root node under which use expressions are derived
+	 * @param reference			the reference of which value is expected to be used in
+	 * @param use_expressions	to preserve the set of used expressions under the root
 	 * @throws Exception
 	 */
-	public static CirExecution find_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
-		return find_prior_checkpoint(prev_path, condition);
+	private static void derive_use_expressions(CirNode root, SymbolExpression 
+			reference, Collection<CirExpression> use_expressions) throws Exception {
+		if(root == null) {
+			throw new IllegalArgumentException("Invalid root: null");
+		}
+		else if(reference == null || !reference.is_reference()) {
+			throw new IllegalArgumentException("Invalid reference.");
+		}
+		else if(use_expressions == null) {
+			throw new IllegalArgumentException("No output is preserved");
+		}
+		else {
+			/* 1. initialization and declarations */
+			Queue<CirNode> queue = new LinkedList<CirNode>(); 
+			queue.add(root);
+			
+			/* 2. BFS-traversal to derive use-set */
+			while(!queue.isEmpty()) {
+				CirNode parent = queue.poll();
+				for(CirNode child : parent.get_children()) {
+					queue.add(child);
+				}
+				
+				if(parent instanceof CirExpression) {
+					SymbolExpression use = SymbolFactory.sym_expression(parent);
+					if(use.equals(reference)) { 
+						use_expressions.add((CirExpression) parent); 
+					}
+				}
+			}
+		}
 	}
+	/**
+	 * @param execution			the statement under which the used expressions are derived
+	 * @param reference			the reference of which value is expected to be used in the point
+	 * @param use_expressions	to preserve the set of expressions used under the statement
+	 * @throws Exception
+	 */
+	public static void derive_use_expressions(CirExecution execution, SymbolExpression 
+				reference, Collection<CirExpression> use_expressions) throws Exception {
+		if(execution == null) {
+			throw new IllegalArgumentException("Invalid execution: null");
+		}
+		else if(reference == null || !reference.is_reference()) {
+			throw new IllegalArgumentException("Invalid reference: null");
+		}
+		else if(use_expressions == null) {
+			throw new IllegalArgumentException("No output is preserved");
+		}
+		else {
+			CirStatement statement = execution.get_statement();
+			if(statement instanceof CirIfStatement) {
+				derive_use_expressions(((CirIfStatement) statement).
+						get_condition(), reference, use_expressions);
+			}
+			else if(statement instanceof CirCaseStatement) {
+				derive_use_expressions(((CirCaseStatement) statement).
+						get_condition(), reference, use_expressions);
+			}
+			else if(statement instanceof CirAssignStatement) {
+				derive_use_expressions(((CirAssignStatement) statement).
+						get_lvalue(), reference, use_expressions);
+				derive_use_expressions(((CirAssignStatement) statement).
+						get_rvalue(), reference, use_expressions);
+				use_expressions.remove(((CirAssignStatement) statement).get_lvalue());
+			}
+			else if(statement instanceof CirCallStatement) {
+				derive_use_expressions(((CirCallStatement) statement).
+						get_arguments(), reference, use_expressions);
+			}
+			else { /* empty for none-value-statement */	}
+		}
+	}
+	/**
+	 * @param source	the execution point where the reference is defined
+	 * @param reference	the reference to be used in the following of source
+	 * @return			the set of expressions used after source is executed
+	 * @throws Exception
+	 */
+	public static Collection<CirExpression> find_use_expressions(CirExecution source, SymbolExpression reference) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(reference == null || reference.is_reference()) {
+			throw new IllegalArgumentException("Invalid reference: null");
+		}
+		else {
+			CirExecutionPath path = oublock_postfix_path(source);
+			Iterator<CirExecutionEdge> iterator = path.get_iterator();
+			Set<SymbolExpression> references = new HashSet<SymbolExpression>();
+			references.add(reference);
+			Set<CirExpression> use_expressions = new HashSet<CirExpression>();
+			
+			while(iterator.hasNext()) {
+				CirExecution target = iterator.next().get_target();
+				derive_use_expressions(target, reference, use_expressions);
+				if(is_defined_at(target, references)) { break; }
+			}
+			return use_expressions;
+		}
+	}
+	
+	/* subsumption-inferencing */
 	/**
 	 * It generates the set of abstract states directly subsumed by the input state under the given context
 	 * @param state		the source state from which the subsumed states are inferred
