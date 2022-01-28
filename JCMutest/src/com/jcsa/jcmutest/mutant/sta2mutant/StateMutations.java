@@ -429,7 +429,7 @@ public class StateMutations {
 		}
 	}
 	
-	/* mutation create */
+	/* state mutation generator */
 	/**
 	 * It creates a RIP-model of state mutation into some given point.
 	 * @param point
@@ -465,7 +465,7 @@ public class StateMutations {
 		}
 	}
 	
-	/* path-related traversal for state validation */
+	/* subsumption-related inference methods */
 	/**
 	 * @param target		the final execution point that the path reaches to
 	 * @param across_branch	True if the decidable path should get across
@@ -648,8 +648,6 @@ public class StateMutations {
 	public static CirExecution find_checkpoint(CirExecutionPath prev_path, SymbolExpression condition) throws Exception {
 		return find_prior_checkpoint(prev_path, condition);
 	}
-	
-	/* state subsumed inference */
 	/**
 	 * It generates the set of abstract states directly subsumed by the input state under the given context
 	 * @param state		the source state from which the subsumed states are inferred
