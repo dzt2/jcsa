@@ -13,6 +13,8 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
+import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateCrossSubsumption;
+import com.jcsa.jcmutest.mutant.sta2mutant.tree.StateLocalSubsumption;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -881,12 +883,12 @@ public class StateMutationsWriter {
 			if(!this.subsume_maps.containsKey(source)) {
 				this.subsume_maps.put(source, new HashSet<CirAbstractState>());
 				try {
-					Collection<CirAbstractState> targets = 
-							StateMutations.subsume(source, context);
+					Set<CirAbstractState> targets = new HashSet<CirAbstractState>();
+					StateLocalSubsumption.subsume(source, targets);
+					StateCrossSubsumption.subsume(source, targets, context);
 					this.subsume_maps.get(source).addAll(targets);
 				}
 				catch(Exception ex) {
-					// ex.printStackTrace();
 					this.subsume_maps.get(source).clear();
 				}
 			}
