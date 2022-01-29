@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
+import com.jcsa.jcmutest.mutant.sta2mutant.utils.StateNormalization;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
@@ -39,7 +40,7 @@ public abstract class CirConditionState extends CirAbstractState {
 	 * @throws Exception
 	 */
 	public CirConditionState normalize(SymbolProcess context) throws Exception {
-		return (CirConditionState) CirStateNormalizer.normalize(this, context);
+		return (CirConditionState) StateNormalization.normalize(this, context);
 	}
 	/**
 	 * It normalizes this condition-state to a formal way
@@ -47,7 +48,7 @@ public abstract class CirConditionState extends CirAbstractState {
 	 * @throws Exception 
 	 */
 	public CirConditionState normalize() throws Exception {
-		return (CirConditionState) CirStateNormalizer.normalize(this, null);
+		return (CirConditionState) StateNormalization.normalize(this, null);
 	}
 	
 }

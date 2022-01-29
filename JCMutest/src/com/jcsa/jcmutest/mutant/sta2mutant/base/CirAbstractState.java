@@ -1,6 +1,11 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
+import com.jcsa.jcmutest.mutant.sta2mutant.utils.StateNormalization;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -420,13 +425,14 @@ public abstract class CirAbstractState {
 		}
 	}
 	
+	/* evaluation, normalization, subsumption & extension */
 	/**
 	 * @param context
 	 * @return the normalized form of this state under the given context
 	 * @throws Exception
 	 */
 	public CirAbstractState normalize(SymbolProcess context) throws Exception {
-		return CirStateNormalizer.normalize(this, context);
+		return StateNormalization.normalize(this, context);
 	}
 	/**
 	 * @param context
@@ -434,7 +440,7 @@ public abstract class CirAbstractState {
 	 * @throws Exception
 	 */
 	public CirAbstractState normalize() throws Exception {
-		return CirStateNormalizer.normalize(this, null);
+		return StateNormalization.normalize(this, null);
 	}
 	/**
 	 * It validates whether the state condition is satisfied or not in the context
@@ -442,16 +448,42 @@ public abstract class CirAbstractState {
 	 * @return True {satisfied}; False {non-satisfied}; Null {unknown}
 	 * @throws Exception
 	 */
-	public Boolean validate(SymbolProcess context) throws Exception {
-		return CirStateNormalizer.evaluate(this, context);
+	public Boolean evaluate(SymbolProcess context) throws Exception {
+		return StateNormalization.evaluate(this, context);
 	}
 	/**
 	 * It validates whether the state condition is satisfiable or not
 	 * @return True {satisfied}; False {non-satisfied}; Null {unknown}
 	 * @throws Exception
 	 */
-	public Boolean validate() throws Exception {
-		return CirStateNormalizer.evaluate(this, null);
+	public Boolean evaluate() throws Exception {
+		return StateNormalization.evaluate(this, null);
+	}
+	/**
+	 * @param context	CDependGraph | CirExecutionPath | CStatePath | otherwise
+	 * @return 			the set of CirAbstractState(s) directly subsumed b state
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> subsumption(Object context) throws Exception {
+		Set<CirAbstractState> subsumed_states = new HashSet<CirAbstractState>();
+		StateNormalization.subsume(this, subsumed_states, context); 
+		return subsumed_states;
+	}
+	/**
+	 * @return the set of abstract states extended from this state directly
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> extend_one() throws Exception {
+		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+		StateNormalization.extend(this, outputs, true); return outputs;
+	}
+	/**
+	 * @return the set of abstract states extended from this state directly
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> extend_all() throws Exception {
+		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+		StateNormalization.extend(this, outputs, false); return outputs;
 	}
 	
 }

@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.tree;
+package com.jcsa.jcmutest.mutant.sta2mutant.utils;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,19 +31,17 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the inference on the subsumption relationships between abstract
- * execution states (CirAbstractState) with the local context of C-intermediates
- * representative code location.
+ * It implements the local abstract extension from state to other states.
  * 
  * @author yukimula
  *
  */
-public final class StateLocalSubsumption {
+final class StateAbstExtension {
 	
-	/* singleton mode */ /** constructor **/ private StateLocalSubsumption() { }
-	static final StateLocalSubsumption loc_subsume = new StateLocalSubsumption();
+	/* singleton mode */ /** constructor **/ private StateAbstExtension() {}
+	private static final StateAbstExtension ext = new StateAbstExtension();
 	
-	/* basic methods to support subsumption inference operations */
+	/* basic method to support extension algorithms */
 	/**
 	 * It determines the next execution times smaller than the given limit
 	 * @param max_times maximal/minimal times for statement being executed
@@ -183,14 +181,14 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_limit_times(CirLimitTimesState state, Collection<CirAbstractState> outputs) throws Exception { }
+	private void ext_limit_times(CirLimitTimesState state, Collection<CirAbstractState> outputs) throws Exception { }
 	/**
 	 * cov_time(exec, times) --> eva_expr(exec, True) | cov_time(exec, times/2)
 	 * @param state
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_reach_times(CirReachTimesState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_reach_times(CirReachTimesState state, Collection<CirAbstractState> outputs) throws Exception {
 		CirExecution execution = state.get_execution();
 		int times = this.get_smaller_maximal_times(state.get_minimal_times());
 		if(times <= 1) {
@@ -208,7 +206,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_n_constrain(CirNConstrainState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* 1. declarations and subsumed conditions getter */
 		CirExecution execution = state.get_execution();
 		Collection<SymbolExpression> subsumed_conditions = this.
@@ -231,7 +229,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_m_constrain(CirMConstrainState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* 1. declarations and subsumed conditions getter */
 		CirExecution execution = state.get_execution();
 		Collection<SymbolExpression> subsumed_conditions = this.
@@ -253,7 +251,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_block_error(CirBlockErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_block_error(CirBlockErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		CirExecution execution = state.get_execution();
 		if(execution.get_statement() instanceof CirTagStatement) {
 			/* no impacts being subsumed by this execution (none) */
@@ -269,7 +267,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_flows_error(CirFlowsErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_flows_error(CirFlowsErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* 1. declarations and initializations */
 		CirExecutionPath orig_path = StateMutations.oublock_post_path(state.get_orig_target());
 		CirExecutionPath muta_path = StateMutations.oublock_post_path(state.get_muta_target());
@@ -313,7 +311,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_traps_error(CirTrapsErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		CirExecution execution = state.get_execution();
 		if(!(execution.get_statement() instanceof CirEndStatement)) {
 			outputs.add(CirAbstractState.set_trap(execution.get_graph().get_exit()));
@@ -333,7 +331,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vbool_error(CirExecution execution, 
+	private void ext_vbool_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -386,7 +384,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vusig_error(CirExecution execution, 
+	private void ext_vusig_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -440,7 +438,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vnumb_error(CirExecution execution, 
+	private void ext_vnumb_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -512,7 +510,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vreal_error(CirExecution execution, 
+	private void ext_vreal_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -584,7 +582,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vaddr_error(CirExecution execution, 
+	private void ext_vaddr_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -638,7 +636,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the states subsumed by the value errors
 	 * @throws Exception
 	 */
-	private void lsub_vauto_error(CirExecution execution, 
+	private void ext_vauto_error(CirExecution execution, 
 			CirExpression expression,
 			CirStoreClass store_type, SymbolExpression store_key, 
 			SymbolExpression orig_value, SymbolExpression muta_value,
@@ -651,7 +649,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* 1. declarations and the data elements in the input state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
@@ -670,27 +668,27 @@ public final class StateLocalSubsumption {
 		}
 		/* 4. boolean category expression for analysis */
 		else if(StateMutations.is_boolean(expression)) {
-			this.lsub_vbool_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vbool_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 		/* 5. unsigned integer expression for analysis */
 		else if(StateMutations.is_usigned(expression)) {
-			this.lsub_vusig_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vusig_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 		/* 6. signed integer expression for subsumption */
 		else if(StateMutations.is_integer(expression)) {
-			this.lsub_vnumb_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vnumb_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 		/* 7. double real types expression of analysis */
 		else if(StateMutations.is_doubles(expression)) {
-			this.lsub_vreal_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vreal_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 		/* 8. address pointer expression for analysis */
 		else if(StateMutations.is_address(expression)) {
-			this.lsub_vaddr_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vaddr_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 		/* 9. otherwise, coverage the statement only */
 		else {
-			this.lsub_vauto_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
+			this.ext_vauto_error(execution, expression, store_type, store_key, orig_value, muta_value, outputs);
 		}
 	}
 	/**
@@ -699,7 +697,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the abstract state being subsumed by input
 	 * @throws Exception
 	 */
-	private void lsub_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* declarations and data element getters from state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
@@ -718,11 +716,11 @@ public final class StateLocalSubsumption {
 		}
 		/* 4. as integer incremental expression location */
 		else if(StateMutations.is_integer(expression)) {
-			this.lsub_inumb_error(execution, expression, store_type, store_key, base_value, difference, outputs);
+			this.ext_inumb_error(execution, expression, store_type, store_key, base_value, difference, outputs);
 		}
 		/* 5. real incremental on expression location */
 		else {
-			this.lsub_ireal_error(execution, expression, store_type, store_key, base_value, difference, outputs);
+			this.ext_ireal_error(execution, expression, store_type, store_key, base_value, difference, outputs);
 		}
 	}
 	/**
@@ -735,7 +733,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_inumb_error(CirExecution execution, 
+	private void ext_inumb_error(CirExecution execution, 
 			CirExpression expression, CirStoreClass store_type, 
 			SymbolExpression store_key, SymbolExpression base_value,
 			SymbolExpression difference, Collection<CirAbstractState> outputs) throws Exception {
@@ -793,16 +791,6 @@ public final class StateLocalSubsumption {
 				}
 			}
 		}
-		
-		/* 3. translate to the set_expr error state */
-		SymbolExpression muta_value = SymbolFactory.arith_add(
-				expression.get_data_type(), base_value, difference);
-		if(store_type == CirStoreClass.vdef) {
-			outputs.add(CirAbstractState.set_vdef(expression, store_key, muta_value));
-		}
-		else {
-			outputs.add(CirAbstractState.set_expr(expression, muta_value));
-		}
 	}
 	/**
 	 * @param execution
@@ -814,7 +802,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_ireal_error(CirExecution execution, 
+	private void ext_ireal_error(CirExecution execution, 
 			CirExpression expression, CirStoreClass store_type, 
 			SymbolExpression store_key, SymbolExpression base_value,
 			SymbolExpression difference, Collection<CirAbstractState> outputs) throws Exception {
@@ -872,16 +860,6 @@ public final class StateLocalSubsumption {
 				}
 			}
 		}
-		
-		/* 3. translate to the set_expr error state */
-		SymbolExpression muta_value = SymbolFactory.arith_add(
-				expression.get_data_type(), base_value, difference);
-		if(store_type == CirStoreClass.vdef) {
-			outputs.add(CirAbstractState.set_vdef(expression, store_key, muta_value));
-		}
-		else {
-			outputs.add(CirAbstractState.set_expr(expression, muta_value));
-		}
 	}
 	/**
 	 * It infers the local subsumed abstract states by the input execution state
@@ -889,7 +867,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the abstract state being subsumed by input
 	 * @throws Exception
 	 */
-	private void lsub_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs) throws Exception {
 		/* declarations and data element getters from state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
@@ -908,7 +886,7 @@ public final class StateLocalSubsumption {
 		}
 		/* 4. integer bitwise-difference over the location */
 		else {
-			this.lsub_xnumb_error(execution, expression, store_type, store_key, base_value, difference, outputs);
+			this.ext_xnumb_error(execution, expression, store_type, store_key, base_value, difference, outputs);
 		}
 	}
 	/**
@@ -921,7 +899,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs
 	 * @throws Exception
 	 */
-	private void lsub_xnumb_error(CirExecution execution, 
+	private void ext_xnumb_error(CirExecution execution, 
 			CirExpression expression, CirStoreClass store_type, 
 			SymbolExpression store_key, SymbolExpression base_value,
 			SymbolExpression difference, Collection<CirAbstractState> outputs) throws Exception {
@@ -979,16 +957,6 @@ public final class StateLocalSubsumption {
 				}
 			}
 		}
-		
-		/* 3. translate to the set_expr error state */
-		SymbolExpression muta_value = SymbolFactory.bitws_xor(
-				expression.get_data_type(), base_value, difference);
-		if(store_type == CirStoreClass.vdef) {
-			outputs.add(CirAbstractState.set_vdef(expression, store_key, muta_value));
-		}
-		else {
-			outputs.add(CirAbstractState.set_expr(expression, muta_value));
-		}
 	}
 	
 	/* syntax-direct algorithm for local subsumption */
@@ -998,7 +966,7 @@ public final class StateLocalSubsumption {
 	 * @param outputs		to preserve the set of states being subsumed by input
 	 * @throws Exception
 	 */
-	private void lsub(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext1(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -1006,46 +974,46 @@ public final class StateLocalSubsumption {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
 		else if(state instanceof CirLimitTimesState) {
-			this.lsub_limit_times((CirLimitTimesState) state, outputs);
+			this.ext_limit_times((CirLimitTimesState) state, outputs);
 		}
 		else if(state instanceof CirReachTimesState) {
-			this.lsub_reach_times((CirReachTimesState) state, outputs);
+			this.ext_reach_times((CirReachTimesState) state, outputs);
 		}
 		else if(state instanceof CirNConstrainState) {
-			this.lsub_n_constrain((CirNConstrainState) state, outputs);
+			this.ext_n_constrain((CirNConstrainState) state, outputs);
 		}
 		else if(state instanceof CirMConstrainState) {
-			this.lsub_m_constrain((CirMConstrainState) state, outputs);
+			this.ext_m_constrain((CirMConstrainState) state, outputs);
 		}
 		else if(state instanceof CirBlockErrorState) {
-			this.lsub_block_error((CirBlockErrorState) state, outputs);
+			this.ext_block_error((CirBlockErrorState) state, outputs);
 		}
 		else if(state instanceof CirFlowsErrorState) {
-			this.lsub_flows_error((CirFlowsErrorState) state, outputs);
+			this.ext_flows_error((CirFlowsErrorState) state, outputs);
 		}
 		else if(state instanceof CirTrapsErrorState) {
-			this.lsub_traps_error((CirTrapsErrorState) state, outputs);
+			this.ext_traps_error((CirTrapsErrorState) state, outputs);
 		}
 		else if(state instanceof CirValueErrorState) {
-			this.lsub_value_error((CirValueErrorState) state, outputs);
+			this.ext_value_error((CirValueErrorState) state, outputs);
 		}
 		else if(state instanceof CirIncreErrorState) {
-			this.lsub_incre_error((CirIncreErrorState) state, outputs);
+			this.ext_incre_error((CirIncreErrorState) state, outputs);
 		}
 		else if(state instanceof CirBixorErrorState) {
-			this.lsub_bixor_error((CirBixorErrorState) state, outputs);
+			this.ext_bixor_error((CirBixorErrorState) state, outputs);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid: " + state.toString());
 		}
 	}
 	/**
-	 * It appends the set of states subsumed by the input into the set 
-	 * @param state		the state from which the local subsumed states are derived
-	 * @param outputs	to preserve the new subsumed states inferred from the state
+	 * It performs one iteration of extending the state to the outputs
+	 * @param state		the state from which the extended states are created
+	 * @param outputs	to preserve the states being extended from the input
 	 * @throws Exception
 	 */
-	public static void subsume(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
+	protected static void extend(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -1054,11 +1022,12 @@ public final class StateLocalSubsumption {
 		}
 		else {
 			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			loc_subsume.lsub(state.normalize(), buffer);
+			ext.ext1(state.normalize(), buffer);
 			for(CirAbstractState output : buffer) {
 				outputs.add(output.normalize());
 			}
 		}
 	}
+	
 	
 }

@@ -1,13 +1,20 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.tree;
+package com.jcsa.jcmutest.mutant.sta2mutant.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirBixorErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirDataErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirIncreErrorState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirStoreClass;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirValueClass;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirValueErrorState;
+import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
@@ -27,13 +34,20 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-final class StateValueSubsumption {
+/**
+ * It implements the inference of subsumption analysis over CirDataErrorState.
+ * 
+ * @author yukimula
+ *
+ */
+final class StateDataInference {
 	
-	/* singleton mode */ /** constructor **/ private StateValueSubsumption() { }
-	private static final StateValueSubsumption inf = new StateValueSubsumption();
+	/* singleton mode */ /** constructor **/ private StateDataInference() { }
+	private static final StateDataInference inf = new StateDataInference();
 	
 	/* implementation functions */
 	/**
@@ -1240,7 +1254,7 @@ final class StateValueSubsumption {
 		}
 	}
 	
-	/* syntax-direct interface for analyzing subsumption across statement */
+	/* interface for analyzing subsumption between data error */
 	/**
 	 * It infers the value error across expression-level
 	 * @param execution			the execution point where the error arises
@@ -1254,7 +1268,7 @@ final class StateValueSubsumption {
 	 * @param outputs			to preserve the abstract state subsumed by
 	 * @throws Exception
 	 */
-	private void vinf_by_syntax(CirExecution execution,
+	private void vinf(CirExecution execution,
 			CirExpression expression, CirValueClass value_type, 
 			SymbolExpression orig_value, SymbolExpression muta_param, 
 			Collection<CirAbstractState> outputs) throws Exception {
@@ -1388,29 +1402,198 @@ final class StateValueSubsumption {
 		}
 		else { /* no more inference from error */ }
 	}
+	
+	/* type-directed algorithms to derive subsumption relations */
+	/**
+	 * @param expression
+	 * @return whether the symbolic expression is a zero-constant
+	 */
+	private boolean is_zero_constant(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else if(expression instanceof SymbolConstant) {
+			SymbolConstant constant = (SymbolConstant) expression;
+			CType data_type = constant.get_data_type();
+			if(StateMutations.is_doubles(data_type)) {
+				return constant.get_double().doubleValue() == 0.0;
+			}
+			else {
+				return constant.get_long().longValue() == 0L;
+			}
+		}
+		else {
+			return false;
+		}
+	}
 	/**
 	 * @param state
 	 * @param outputs
 	 * @throws Exception
 	 */
-	protected static void value_infer(CirDataErrorState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void inf_value_error(CirValueErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		/* 1. derive the expression and corresponding values */
+		CirExecution execution = state.get_execution();
+		CirExpression expression = state.get_expression();
+		SymbolExpression orig_value = state.get_orig_value();
+		SymbolExpression muta_param = state.get_muta_value();
+		CirStoreClass store_type = state.get_store_type();
+		SymbolExpression store_key = state.get_store_key();
+		CirValueClass value_type = state.get_operator();
+		
+		/* 2. general expression-across subsumption inference */
+		if(StateMutations.is_trap_value(muta_param)) {					/** exception arises **/
+			outputs.add(CirAbstractState.set_trap(execution));
+		}
+		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
+		else if(orig_value.equals(muta_param)) { return; }				/** equivalence ignored **/
+		else if(state.is_defined_point()) {								/** general value infer **/
+			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
+			if(StateMutations.is_numeric(expression)) {
+				SymbolExpression difference = SymbolFactory.arith_sub(
+						expression.get_data_type(), muta_param, orig_value);
+				difference = StateMutations.evaluate(difference);
+				if(difference instanceof SymbolConstant) {
+					if(store_type == CirStoreClass.vdef) {
+						outputs.add(CirAbstractState.inc_vdef(expression, store_key, difference));
+					}
+					else {
+						outputs.add(CirAbstractState.inc_expr(expression, difference));
+					}
+				}
+			}
+			if(StateMutations.is_integer(expression)) {
+				SymbolExpression difference = SymbolFactory.bitws_xor(
+						expression.get_data_type(), muta_param, orig_value);
+				difference = StateMutations.evaluate(difference);
+				if(difference instanceof SymbolConstant) {
+					if(store_type == CirStoreClass.vdef) {
+						outputs.add(CirAbstractState.xor_vdef(expression, store_key, difference));
+					}
+					else {
+						outputs.add(CirAbstractState.xor_expr(expression, difference));
+					}
+				}
+			}
+		}
+		else { /* TODO definition point propagation on data-flow */ }
+	}
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void inf_incre_error(CirIncreErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		/* 1. derive the expression and corresponding values */
+		CirExecution execution = state.get_execution();
+		CirExpression expression = state.get_expression();
+		SymbolExpression orig_value = state.get_base_value();
+		SymbolExpression muta_param = state.get_difference();
+		CirStoreClass store_type = state.get_store_type();
+		SymbolExpression store_key = state.get_store_key();
+		CirValueClass value_type = state.get_operator();
+		
+		/* 2. general expression-across subsumption inference */
+		if(StateMutations.is_trap_value(muta_param)) {					/** exception arises **/
+			outputs.add(CirAbstractState.set_trap(execution));
+		}
+		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
+		else if(this.is_zero_constant(muta_param)) { return; }			/** equivalence ignored **/
+		else if(state.is_defined_point()) {								/** general value infer **/
+			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
+			SymbolExpression muta_value = SymbolFactory.arith_add(
+					expression.get_data_type(), orig_value, muta_param);
+			if(store_type == CirStoreClass.vdef) {
+				outputs.add(CirAbstractState.set_vdef(expression, store_key, muta_value));
+			}
+			else {
+				outputs.add(CirAbstractState.set_expr(expression, muta_value));
+			}
+		}
+		else { /* TODO definition point propagation on data-flow */ }
+	}
+	/**
+	 * @param state
+	 * @param outputs
+	 * @param context
+	 * @throws Exception
+	 */
+	private void inf_bixor_error(CirBixorErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		/* 1. derive the expression and corresponding values */
+		CirExecution execution = state.get_execution();
+		CirExpression expression = state.get_expression();
+		SymbolExpression orig_value = state.get_base_value();
+		SymbolExpression muta_param = state.get_difference();
+		CirStoreClass store_type = state.get_store_type();
+		SymbolExpression store_key = state.get_store_key();
+		CirValueClass value_type = state.get_operator();
+		
+		/* 2. general expression-across subsumption inference */
+		if(StateMutations.is_trap_value(muta_param)) {					/** exception arises **/
+			outputs.add(CirAbstractState.set_trap(execution));
+		}
+		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
+		else if(this.is_zero_constant(muta_param)) { return; }			/** equivalence ignored **/
+		else if(state.is_defined_point()) {								/** general value infer **/
+			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
+			SymbolExpression muta_value = SymbolFactory.bitws_xor(
+					expression.get_data_type(), orig_value, muta_param);
+			if(store_type == CirStoreClass.vdef) {
+				outputs.add(CirAbstractState.set_vdef(expression, store_key, muta_value));
+			}
+			else {
+				outputs.add(CirAbstractState.set_expr(expression, muta_value));
+			}
+		}
+		else { /* TODO definition point propagation on data-flow */ }
+	}
+	/**
+	 * It infers the subsumption between data error states
+	 * @param state		the state from which the subsumption relations are inferred
+	 * @param outputs	to preserve the set of states being subsumed by input state
+	 * @param context	CDependGraph | CirExecutionPath | CStatePath | otherwise
+	 * @throws Exception
+	 */
+	private void inf(CirDataErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
 		else if(outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
-		else if(state.is_defined_point()) {/* definition node will be across */}
-		else if(StateMutations.is_trap_value(state.get_roperand())) {/* TRAP */}
-		else if(StateMutations.has_abst_value(state.get_roperand())) {/* ABS */}
+		else if(state instanceof CirValueErrorState) {
+			this.inf_value_error((CirValueErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirIncreErrorState) {
+			this.inf_incre_error((CirIncreErrorState) state, outputs, context);
+		}
+		else if(state instanceof CirBixorErrorState) {
+			this.inf_bixor_error((CirBixorErrorState) state, outputs, context);
+		}
 		else {
-			CirExecution execution = state.get_execution();
-			CirExpression expression = state.get_expression();
-			SymbolExpression orig_value = state.get_loperand();
-			SymbolExpression muta_param = state.get_roperand();
-			CirValueClass value_type = state.get_operator();
-			inf.vinf_by_syntax(execution, expression, 
-					value_type, orig_value, muta_param, outputs);
+			throw new IllegalArgumentException("Unsupport: " + state);
+		}
+	}
+	/**
+	 * 	@param state	the source state from which the subsumption relation is computed
+	 * 	@param outputs	to preserve the states being subsumed by the input state
+	 * 	@param context	CDependGraph | CStatePath | CirExecutionPath | otherwise
+	 * 	@throws Exception
+	 */
+	protected static void infer(CirDataErrorState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else {
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			inf.inf(state, buffer, context);
+			for(CirAbstractState output : buffer) {
+				outputs.add(output.normalize());
+			}
 		}
 	}
 	
