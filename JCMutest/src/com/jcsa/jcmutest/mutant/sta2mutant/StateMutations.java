@@ -521,7 +521,7 @@ public class StateMutations {
 	 * @return decidable previous path until the target without across any branch
 	 * @throws Exception
 	 */
-	public static CirExecutionPath inblock_previous_path(CirExecution target) throws Exception {
+	public static CirExecutionPath inblock_prev_path(CirExecution target) throws Exception {
 		return inner_previous_path(target, false);
 	}
 	/**
@@ -529,7 +529,7 @@ public class StateMutations {
 	 * @return decidable previous path until the target that may across branches
 	 * @throws Exception
 	 */
-	public static CirExecutionPath oublock_previous_path(CirExecution target) throws Exception {
+	public static CirExecutionPath oublock_prev_path(CirExecution target) throws Exception {
 		return inner_previous_path(target, true);
 	}
 	/**
@@ -537,7 +537,7 @@ public class StateMutations {
 	 * @return the path from source to following using decidable path in the internal procedure
 	 * @throws Exception
 	 */
-	public static CirExecutionPath oublock_postfix_path(CirExecution source) throws Exception {
+	public static CirExecutionPath oublock_post_path(CirExecution source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
@@ -777,7 +777,7 @@ public class StateMutations {
 			throw new IllegalArgumentException("Invalid reference: null");
 		}
 		else {
-			CirExecutionPath path = oublock_postfix_path(source);
+			CirExecutionPath path = oublock_post_path(source);
 			Iterator<CirExecutionEdge> iterator = path.get_iterator();
 			Set<SymbolExpression> references = new HashSet<SymbolExpression>();
 			references.add(reference);

@@ -86,7 +86,7 @@ final class CirStateNormalizer {
 	 */
 	private CirAbstractState norm_limit_times(CirLimitTimesState state, SymbolProcess context) throws Exception {
 		CirExecution target = state.get_execution();
-		CirExecutionPath prev_path = StateMutations.inblock_previous_path(target);
+		CirExecutionPath prev_path = StateMutations.inblock_prev_path(target);
 		int times = state.get_maximal_times();
 		return CirAbstractState.lim_time(prev_path.get_source(), times);
 	}
@@ -98,7 +98,7 @@ final class CirStateNormalizer {
 	 */
 	private CirAbstractState norm_reach_times(CirReachTimesState state, SymbolProcess context) throws Exception {
 		CirExecution target = state.get_execution();
-		CirExecutionPath prev_path = StateMutations.inblock_previous_path(target);
+		CirExecutionPath prev_path = StateMutations.inblock_prev_path(target);
 		int times = state.get_minimal_times();
 		return CirAbstractState.cov_time(prev_path.get_source(), times);
 	}
@@ -115,7 +115,7 @@ final class CirStateNormalizer {
 			condition = SymbolFactory.sym_constant(Boolean.TRUE);
 		}
 		
-		CirExecutionPath prev_path = StateMutations.inblock_previous_path(state.get_execution());
+		CirExecutionPath prev_path = StateMutations.inblock_prev_path(state.get_execution());
 		CirExecution check_point = StateMutations.find_checkpoint(prev_path, condition);
 		return CirAbstractState.mus_cond(check_point, condition, true);
 	}
@@ -132,7 +132,7 @@ final class CirStateNormalizer {
 			condition = SymbolFactory.sym_constant(Boolean.TRUE);
 		}
 		
-		CirExecutionPath prev_path = StateMutations.inblock_previous_path(state.get_execution());
+		CirExecutionPath prev_path = StateMutations.inblock_prev_path(state.get_execution());
 		CirExecution check_point = StateMutations.find_checkpoint(prev_path, condition);
 		return CirAbstractState.eva_cond(check_point, condition, true);
 	}
@@ -296,7 +296,7 @@ final class CirStateNormalizer {
 		else {
 			/* 1. collect the set of execution points in decidable block */
 			CirExecutionPath path = StateMutations.
-						inblock_previous_path(state.get_execution());
+							inblock_prev_path(state.get_execution());
 			Set<CirExecution> executions = new HashSet<CirExecution>();
 			for(CirExecutionEdge edge : path.get_edges()) {
 				executions.add(edge.get_source());
@@ -330,7 +330,7 @@ final class CirStateNormalizer {
 		else {
 			/* 1. collect the set of execution points in decidable block */
 			CirExecutionPath path = StateMutations.
-							inblock_previous_path(state.get_execution());
+							inblock_prev_path(state.get_execution());
 			Set<CirExecution> executions = new HashSet<CirExecution>();
 			for(CirExecutionEdge edge : path.get_edges()) {
 				executions.add(edge.get_source());

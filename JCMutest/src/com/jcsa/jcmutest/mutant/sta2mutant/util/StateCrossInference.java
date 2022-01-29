@@ -63,7 +63,7 @@ public final class StateCrossInference {
 		}
 		else {
 			/* I. find the closest selective flow in decidable previous path */
-			CirExecutionPath prev_path = StateMutations.oublock_previous_path(target);
+			CirExecutionPath prev_path = StateMutations.oublock_prev_path(target);
 			Iterator<CirExecutionEdge> iterator = prev_path.get_iterator(true);
 			while(iterator.hasNext()) {
 				CirExecutionFlow flow = iterator.next().get_flow();
