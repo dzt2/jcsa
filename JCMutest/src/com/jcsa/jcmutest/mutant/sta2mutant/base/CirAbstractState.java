@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.utils.StateNormalization;
+import com.jcsa.jcmutest.mutant.sta2mutant.utils.StateMutationUtils;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -432,7 +432,7 @@ public abstract class CirAbstractState {
 	 * @throws Exception
 	 */
 	public CirAbstractState normalize(SymbolProcess context) throws Exception {
-		return StateNormalization.normalize(this, context);
+		return StateMutationUtils.normalize(this, context);
 	}
 	/**
 	 * @param context
@@ -440,7 +440,7 @@ public abstract class CirAbstractState {
 	 * @throws Exception
 	 */
 	public CirAbstractState normalize() throws Exception {
-		return StateNormalization.normalize(this, null);
+		return StateMutationUtils.normalize(this, null);
 	}
 	/**
 	 * It validates whether the state condition is satisfied or not in the context
@@ -449,7 +449,7 @@ public abstract class CirAbstractState {
 	 * @throws Exception
 	 */
 	public Boolean evaluate(SymbolProcess context) throws Exception {
-		return StateNormalization.evaluate(this, context);
+		return StateMutationUtils.evaluate(this, context);
 	}
 	/**
 	 * It validates whether the state condition is satisfiable or not
@@ -457,7 +457,7 @@ public abstract class CirAbstractState {
 	 * @throws Exception
 	 */
 	public Boolean evaluate() throws Exception {
-		return StateNormalization.evaluate(this, null);
+		return StateMutationUtils.evaluate(this, null);
 	}
 	/**
 	 * @param context	CDependGraph | CirExecutionPath | CStatePath | otherwise
@@ -466,7 +466,7 @@ public abstract class CirAbstractState {
 	 */
 	public Collection<CirAbstractState> subsumption(Object context) throws Exception {
 		Set<CirAbstractState> subsumed_states = new HashSet<CirAbstractState>();
-		StateNormalization.subsume(this, subsumed_states, context); 
+		StateMutationUtils.subsume(this, subsumed_states, context); 
 		return subsumed_states;
 	}
 	/**
@@ -475,7 +475,7 @@ public abstract class CirAbstractState {
 	 */
 	public Collection<CirAbstractState> extend_one() throws Exception {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
-		StateNormalization.extend(this, outputs, true); return outputs;
+		StateMutationUtils.extend(this, outputs, true); return outputs;
 	}
 	/**
 	 * @return the set of abstract states extended from this state directly
@@ -483,7 +483,7 @@ public abstract class CirAbstractState {
 	 */
 	public Collection<CirAbstractState> extend_all() throws Exception {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
-		StateNormalization.extend(this, outputs, false); return outputs;
+		StateMutationUtils.extend(this, outputs, false); return outputs;
 	}
 	
 }
