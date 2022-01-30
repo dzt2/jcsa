@@ -953,23 +953,48 @@ public class StateMutationsWriter {
 		this.close();
 	}
 	/**
+	 * state extended_states \n
+	 * @throws Exception
+	 */
+	private int write_exs() throws Exception {
+		/* 1. declarations and collect all the generated states */
+		Set<CirAbstractState> states = new HashSet<CirAbstractState>();
+		for(Object source : this.subsume_maps.keySet()) {
+			for(CirAbstractState target : this.subsume_maps.get(source)) {
+				states.add(target);
+			}
+		}
+		
+		/* 2. write the state and its extension set to xxx.exs */
+		this.open(".exs");
+		for(CirAbstractState state : states) {
+			Collection<CirAbstractState> extended_states = state.extend_all();
+			this.cfile_writer.write(this.encode_token(state));
+			for(CirAbstractState estate : extended_states) {
+				this.cfile_writer.write("\t");
+				this.cfile_writer.write(this.encode_token(estate));
+			}
+			this.cfile_writer.write("\n");
+		}
+		this.close();
+		return states.size();
+	}
+	/**
 	 * xxx.msh xxx.sym
 	 * @param context
 	 * @throws Exception
 	 */
 	private void write_symb_features(Object context) throws Exception {
 		this.write_msh(context);
+		int states = this.write_exs();
 		this.write_sym();
 		
 		/* inform the users feature counters */
-		int mutants = 0, states = 0, symbols = this.symbol_nodes.size();
+		int mutants = 0, symbols = this.symbol_nodes.size();
 		for(Object source : this.subsume_maps.keySet()) {
 			if(this.subsume_maps.get(source).size() > 0) {
 				if(source instanceof Mutant) {
 					mutants++;
-				}
-				else {
-					states++;
 				}
 			}
 		}

@@ -550,7 +550,7 @@ public class StateMutations {
 					flow = execution.get_ou_flow(0);
 					if(flow.get_type() == CirExecutionFlowType.call_flow) {		/* skip the call-block */
 						target = execution.get_graph().get_execution(execution.get_id() + 1);
-						path.append(target.get_in_flow(0));
+						path.append(CirExecutionFlow.virtual_flow(execution, target));
 					}
 					else if(flow.get_type() == CirExecutionFlowType.retr_flow) {/* only reach the return */
 						path.append(flow); break;
