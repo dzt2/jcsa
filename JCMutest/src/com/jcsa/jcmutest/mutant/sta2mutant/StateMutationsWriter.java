@@ -219,7 +219,7 @@ public class StateMutationsWriter {
 			return "f@" + token.toString();
 		}
 		else if(token instanceof Complex) {
-			return "x@" + ((Complex) token).real() + "@" + ((Complex) token).imag();
+			return "x@" + ((Complex) token).get_x() + "@" + ((Complex) token).get_y();
 		}
 		else if(token instanceof String) {
 			return "s@" + this.normalize_cstring(token.toString());
