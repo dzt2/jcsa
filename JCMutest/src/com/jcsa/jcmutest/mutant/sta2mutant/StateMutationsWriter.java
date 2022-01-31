@@ -791,7 +791,7 @@ public class StateMutationsWriter {
 			}
 		}
 		
-		/* 3. appending all the remaining nodes to this.sym_nodes */
+		/* 4. appending all the remaining nodes to this.sym_nodes */
 		this.symbol_nodes.clear(); this.symbol_nodes.addAll(records);
 	}
 	/**
@@ -854,6 +854,10 @@ public class StateMutationsWriter {
 		this.cfile_writer.write(" ]");
 
 		this.cfile_writer.write("\n");
+		
+		for(SymbolNode child : node.get_children()) {
+			this.write_sym_node(child);
+		}
 	}
 	/**
 	 * It writes all the symbolic nodes into the account
@@ -881,7 +885,7 @@ public class StateMutationsWriter {
 			if(!this.subsume_maps.containsKey(source)) {
 				this.subsume_maps.put(source, new HashSet<CirAbstractState>());
 				try {
-					Collection<CirAbstractState> targets = source.subsumption(null);
+					Collection<CirAbstractState> targets = source.subsumption(context);
 					this.subsume_maps.get(source).addAll(targets);
 				}
 				catch(Exception ex) {
@@ -990,7 +994,6 @@ public class StateMutationsWriter {
 	private void write_symb_features(Object context) throws Exception {
 		this.write_msg(context);
 		int states = this.write_exs();
-		this.write_sym();
 		
 		/* inform the users feature counters */
 		int mutants = 0, symbols = this.symbol_nodes.size();
@@ -1003,6 +1006,8 @@ public class StateMutationsWriter {
 		}
 		System.out.println(String.format("\t\t==> %d/%d mutants; %d states; %d symbol-nodes", 
 					mutants, this.source_cfile.get_mutant_space().size(), states, symbols));
+		
+		this.write_sym();
 	}
 	
 	/* writer's interfaces */
