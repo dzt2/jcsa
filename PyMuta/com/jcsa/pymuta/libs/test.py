@@ -205,12 +205,16 @@ class CirAbstractGraph:
 		for mutant in mutants:
 			source_name, label = CirAbstractGraph.__decode__(mutant)
 			nodes[source_name] = label
-			state_nodes = self.derive_subsumed_set(mutant)
 			edges[source_name] = set()
+			for state_node in self.edges[mutant]:
+				state_node: CirAbstractState
+				target_name = str(state_node)
+				edges[source_name].add(target_name)
+
+			state_nodes = self.derive_subsumed_set(mutant)
 			for state_node in state_nodes:
 				target_name, label = CirAbstractGraph.__decode__(state_node)
 				nodes[target_name] = label
-				edges[source_name].add(target_name)
 				edges[target_name] = set()
 				for child in state_node.get_ou_states():
 					edges[target_name].add(str(child))
@@ -318,12 +322,12 @@ class CirAbstractState:
 		return self.ou_states
 
 	def __str__(self):
-		execution = "exe@%s@%d".format(self.execution.get_function().get_name(), self.execution.get_exe_id())
+		execution = "exe@{}@{}".format(self.execution.get_function().get_name(), self.execution.get_exe_id())
 		store_type = self.store_type
-		c_location = "cir@%d".format(self.c_location.get_cir_id())
+		c_location = "cir@{}".format(self.c_location.get_cir_id())
 		value_type = self.value_type
-		l_operand = "sym@%s@%d".format(self.l_operand.get_class_name(), self.l_operand.get_class_id())
-		r_operand = "sym@%s@%d".format(self.r_operand.get_class_name(), self.r_operand.get_class_id())
+		l_operand = "sym@{}@{}".format(self.l_operand.get_class_name(), self.l_operand.get_class_id())
+		r_operand = "sym@{}@{}".format(self.r_operand.get_class_name(), self.r_operand.get_class_id())
 		return "{}${}${}${}${}${}".format(execution, store_type, c_location, value_type, l_operand, r_operand)
 
 
@@ -332,11 +336,11 @@ if __name__ == "__main__":
 	o_directory = "/home/dzt2/Development/Data/zext/impacts"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
-		c_document = CDocument(directory, file_name)
 		print("Testing on document of", file_name)
+		c_document = CDocument(directory, file_name)
 		msg = c_document.get_state_graph()
 		select_mutants = set()
-		while len(select_mutants) < 6:
+		while len(select_mutants) < 1:
 			select_mutant = jcbase.rand_select(msg.get_mutants())
 			select_mutant: jcmuta.Mutant
 			if not select_mutant.get_result().is_killed_in():
