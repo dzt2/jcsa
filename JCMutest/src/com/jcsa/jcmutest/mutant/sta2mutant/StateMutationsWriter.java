@@ -885,7 +885,6 @@ public class StateMutationsWriter {
 					this.subsume_maps.get(source).addAll(targets);
 				}
 				catch(Exception ex) {
-					ex.printStackTrace();
 					this.subsume_maps.get(source).clear();
 				}
 			}

@@ -187,7 +187,14 @@ final class StateCondInference {
 				else { /* ignore the non-selective flow in decidable path */ }
 			}
 			
-			/* II. otherwise, return null to inform */ return null;
+			/* II. otherwise, return the calling-flows */ 
+			CirExecution entry = target.get_graph().get_entry();
+			if(entry.get_in_degree() == 1) {
+				return entry.get_in_flow(0);
+			}
+			else {
+				return null;
+			}
 		}
 	}
 	/**

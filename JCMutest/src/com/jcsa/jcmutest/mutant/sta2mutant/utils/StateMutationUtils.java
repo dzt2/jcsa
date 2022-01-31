@@ -55,7 +55,7 @@ public class StateMutationUtils {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
 		else {
-			state = state.normalize();
+			// state = state.normalize();
 			if(state instanceof CirConditionState) {
 				StateCondInference.infer((CirConditionState) state, outputs, context);
 			}

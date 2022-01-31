@@ -1447,7 +1447,7 @@ final class StateDataInference {
 		}
 		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
 		else if(orig_value.equals(muta_param)) { return; }				/** equivalence ignored **/
-		else if(state.is_defined_point()) {								/** general value infer **/
+		else if(!state.is_defined_point()) {							/** general value infer **/
 			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
 			if(StateMutations.is_numeric(expression)) {
 				SymbolExpression difference = SymbolFactory.arith_sub(
@@ -1500,7 +1500,7 @@ final class StateDataInference {
 		}
 		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
 		else if(this.is_zero_constant(muta_param)) { return; }			/** equivalence ignored **/
-		else if(state.is_defined_point()) {								/** general value infer **/
+		else if(!state.is_defined_point()) {							/** general value infer **/
 			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
 			SymbolExpression muta_value = SymbolFactory.arith_add(
 					expression.get_data_type(), orig_value, muta_param);
@@ -1535,7 +1535,7 @@ final class StateDataInference {
 		}
 		else if(StateMutations.has_abst_value(muta_param)) { return; }	/** ignore abstract error **/
 		else if(this.is_zero_constant(muta_param)) { return; }			/** equivalence ignored **/
-		else if(state.is_defined_point()) {								/** general value infer **/
+		else if(!state.is_defined_point()) {							/** general value infer **/
 			this.vinf(execution, expression, value_type, orig_value, muta_param, outputs);
 			SymbolExpression muta_value = SymbolFactory.bitws_xor(
 					expression.get_data_type(), orig_value, muta_param);
