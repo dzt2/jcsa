@@ -885,6 +885,7 @@ public class StateMutationsWriter {
 					this.subsume_maps.get(source).addAll(targets);
 				}
 				catch(Exception ex) {
+					ex.printStackTrace();
 					this.subsume_maps.get(source).clear();
 				}
 			}
@@ -938,8 +939,8 @@ public class StateMutationsWriter {
 	 * @param context
 	 * @throws Exception
 	 */
-	private void write_msh(Object context) throws Exception {
-		this.open(".msh");
+	private void write_msg(Object context) throws Exception {
+		this.open(".msg");
 		this.extend_subsume(context);
 		for(Object source : this.subsume_maps.keySet()) {
 			Set<CirAbstractState> targets = this.subsume_maps.get(source);
@@ -967,8 +968,11 @@ public class StateMutationsWriter {
 		
 		/* 2. write the state and its extension set to xxx.exs */
 		this.open(".exs");
+		Set<CirAbstractState> all_states = new HashSet<CirAbstractState>();
 		for(CirAbstractState state : states) {
 			Collection<CirAbstractState> extended_states = state.extend_all();
+			all_states.add(state); 	all_states.addAll(extended_states);
+			
 			this.cfile_writer.write(this.encode_token(state));
 			for(CirAbstractState estate : extended_states) {
 				this.cfile_writer.write("\t");
@@ -977,7 +981,7 @@ public class StateMutationsWriter {
 			this.cfile_writer.write("\n");
 		}
 		this.close();
-		return states.size();
+		return all_states.size();
 	}
 	/**
 	 * xxx.msh xxx.sym
@@ -985,7 +989,7 @@ public class StateMutationsWriter {
 	 * @throws Exception
 	 */
 	private void write_symb_features(Object context) throws Exception {
-		this.write_msh(context);
+		this.write_msg(context);
 		int states = this.write_exs();
 		this.write_sym();
 		
