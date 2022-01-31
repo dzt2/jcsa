@@ -241,6 +241,9 @@ class Mutant:
 		self.s_mutant: Mutant
 		return self.s_mutant
 
+	def __str__(self):
+		return "mut@{}".format(self.muta_id)
+
 
 class MutationResult:
 	"""

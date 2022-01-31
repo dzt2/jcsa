@@ -145,6 +145,89 @@ class CirAbstractGraph:
 			source_state = self.states[source]
 			return source_state.ou_states
 
+	def derive_subsumed_set(self, mutant: jcmuta.Mutant):
+		roots = self.edges[mutant]
+		queue = deque()
+		nodes = set()
+		for root in roots:
+			queue.append(root)
+		while len(queue) > 0:
+			root = queue.popleft()
+			root: CirAbstractState
+			nodes.add(root)
+			for target in root.get_ou_states():
+				if target in nodes:
+					continue
+				else:
+					queue.append(target)
+		return nodes
+
+	@staticmethod
+	def __decode__(source):
+		"""
+		:param source: Mutant or CirAbstractState
+		:return: key, label
+		"""
+		if isinstance(source, jcmuta.Mutant):
+			mutant = source
+			cls = mutant.get_mutation().get_mutation_class()
+			opr = mutant.get_mutation().get_mutation_operator()
+			loc = mutant.get_mutation().get_location()
+			lin = loc.line_of(False)
+			cod = loc.get_code(True)
+			if len(cod) > 128:
+				cod = cod[0: 128].strip()
+			prm = mutant.get_mutation().get_parameter()
+			name = str(mutant)
+			label = "Class: {}:{}\n#{}: \"{}\"\nParam: {}".format(cls, opr, lin, cod, prm)
+			return name, label
+		else:
+			source: CirAbstractState
+			state = source
+			execution = state.get_execution()
+			statement = execution.get_statement().get_cir_code().strip()
+			store_type = state.get_store_type()
+			c_location = state.get_c_location().get_cir_code()
+			value_type = state.get_value_type()
+			parameter = state.get_r_operand()
+			name = str(state)
+			label = "{}: {}\n{}: {}\n{}: {}".format(execution, statement, store_type, c_location, value_type, parameter)
+			return name, label
+
+	def visualize(self, directory: str, file_name: str, mutants):
+		"""
+		:param directory:
+		:param file_name:
+		:param mutants:
+		:return:
+		"""
+		nodes, edges = dict(), dict()
+		for mutant in mutants:
+			source_name, label = CirAbstractGraph.__decode__(mutant)
+			nodes[source_name] = label
+			state_nodes = self.derive_subsumed_set(mutant)
+			edges[source_name] = set()
+			for state_node in state_nodes:
+				target_name, label = CirAbstractGraph.__decode__(state_node)
+				nodes[target_name] = label
+				edges[source_name].add(target_name)
+				edges[target_name] = set()
+				for child in state_node.get_ou_states():
+					edges[target_name].add(str(child))
+
+		print("\tGenerate", len(nodes), "nodes in MSG")
+		graph = graphviz.Digraph()
+		for name, label in nodes.items():
+			graph.node(name, label)
+		for parent, children in edges.items():
+			for child in children:
+				graph.edge(parent, child)
+		if not os.path.exists(directory):
+			os.mkdir(directory)
+		graph.render(filename=file_name, directory=directory, format="pdf")
+		file_path = os.path.join(directory, file_name)
+		os.remove(file_path)
+
 
 class CirAbstractState:
 	"""
@@ -246,13 +329,20 @@ class CirAbstractState:
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext/features"
+	o_directory = "/home/dzt2/Development/Data/zext/impacts"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
 		c_document = CDocument(directory, file_name)
 		print("Testing on document of", file_name)
 		msg = c_document.get_state_graph()
+		select_mutants = set()
+		while len(select_mutants) < 6:
+			select_mutant = jcbase.rand_select(msg.get_mutants())
+			select_mutant: jcmuta.Mutant
+			if not select_mutant.get_result().is_killed_in():
+				select_mutants.add(select_mutant)
+		msg.visualize(o_directory, c_document.get_name(), select_mutants)
 		for mutant in msg.get_mutants():
-			## mutation information
 			mid = mutant.get_muta_id()
 			mclass = mutant.get_mutation().get_mutation_class()
 			moperator = mutant.get_mutation().get_mutation_operator()
@@ -274,6 +364,16 @@ if __name__ == "__main__":
 				location = state.get_c_location().get_cir_code()
 				parameter = state.get_r_operand().get_code()
 				print("\t==> {}\t{}\t\'{}\'\t{}\t[{}]".format(execution, store_type, location, value_type, parameter))
+
+				for ou_state in state.get_ou_states():
+					ou_state: CirAbstractState
+					execution = str(ou_state.get_execution())
+					store_type = ou_state.get_store_type()
+					value_type = ou_state.get_value_type()
+					location = ou_state.get_c_location().get_cir_code()
+					parameter = ou_state.get_r_operand().get_code()
+					print(
+						"\t\t--> {}\t{}\t\'{}\'\t{}\t[{}]".format(execution, store_type, location, value_type, parameter))
 			print()
 		print()
 	print("End of all...")
