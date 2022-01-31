@@ -290,7 +290,8 @@ public class StateMutationsWriter {
 		}
 		else if(token instanceof SymbolNode) {
 			if(!this.symbol_nodes.contains((SymbolNode) token)) this.symbol_nodes.add((SymbolNode) token); 
-			return "sym@" + token.getClass().getSimpleName().substring(6).trim() + "@" + token.hashCode();
+			String key = "sym@" + token.getClass().getSimpleName().substring(6).trim() + "@" + token.hashCode();
+			return key;
 		}
 		else if(token instanceof CirAbstractState) {
 			CirAbstractState state = (CirAbstractState) token;
@@ -854,10 +855,6 @@ public class StateMutationsWriter {
 		this.cfile_writer.write(" ]");
 
 		this.cfile_writer.write("\n");
-		
-		for(SymbolNode child : node.get_children()) {
-			this.write_sym_node(child);
-		}
 	}
 	/**
 	 * It writes all the symbolic nodes into the account

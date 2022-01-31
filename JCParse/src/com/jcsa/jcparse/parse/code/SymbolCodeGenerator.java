@@ -7,6 +7,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.lexical.CConstant;
+import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
@@ -276,10 +277,18 @@ public class SymbolCodeGenerator {
 		this.buffer.append(")");
 	}
 	private void gen_unary_expression(SymbolUnaryExpression node) throws Exception {
-		this.gen_node(node.get_operator());
-		this.buffer.append("(");
-		this.gen_node(node.get_operand());
-		this.buffer.append(")");
+		if(node.get_operator().get_operator() == COperator.assign) {
+			this.buffer.append("(");
+			this.buffer.append("(").append(node.get_data_type().generate_code()).append(") ");
+			this.gen_node(node.get_operand());
+			this.buffer.append(")");
+		}
+		else {
+			this.gen_node(node.get_operator());
+			this.buffer.append("(");
+			this.gen_node(node.get_operand());
+			this.buffer.append(")");
+		}
 	}
 	private void gen_field_expression(SymbolFieldExpression node) throws Exception {
 		this.buffer.append("(");
