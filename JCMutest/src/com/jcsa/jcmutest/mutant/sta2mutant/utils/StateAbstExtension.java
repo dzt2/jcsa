@@ -31,15 +31,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the local abstract extension from state to other states.
+ * It implements the summarization of abstract execution states.
  * 
  * @author yukimula
  *
  */
-final class StateAbstExtension {
+public final class StateAbstExtension {
 	
-	/* singleton mode */ /** constructor **/ private StateAbstExtension() {}
-	private static final StateAbstExtension ext = new StateAbstExtension();
+	/* singleton mode */ /** constructor **/ private StateAbstExtension() { }
+	private static final StateAbstExtension extender = new StateAbstExtension();
 	
 	/* basic method to support extension algorithms */
 	/**
@@ -959,14 +959,14 @@ final class StateAbstExtension {
 		}
 	}
 	
-	/* syntax-direct algorithm for local subsumption */
+	/* syntax-directed extension methods */
 	/**
 	 * It performs the local subsumption inference over the state
 	 * @param state			the state from which the subsumed states are inferred
 	 * @param outputs		to preserve the set of states being subsumed by input
 	 * @throws Exception
 	 */
-	private void ext1(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
+	private void ext(CirAbstractState state, Collection<CirAbstractState> outputs) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -1022,12 +1022,11 @@ final class StateAbstExtension {
 		}
 		else {
 			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
-			ext.ext1(state.normalize(), buffer);
+			extender.ext(state.normalize(), buffer);
 			for(CirAbstractState output : buffer) {
 				outputs.add(output.normalize());
 			}
 		}
 	}
-	
 	
 }

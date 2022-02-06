@@ -485,5 +485,13 @@ public abstract class CirAbstractState {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
 		StateMutationUtils.extend(this, outputs, false); return outputs;
 	}
+	/**
+	 * @param context
+	 * @return the set of abstract states summarized from the fixed_context
+	 * @throws Exception
+	 */
+	public Set<CirAbstractState> summarize(SymbolProcess context) throws Exception {
+		return this.normalize(context).extend_all();
+	}
 	
 }

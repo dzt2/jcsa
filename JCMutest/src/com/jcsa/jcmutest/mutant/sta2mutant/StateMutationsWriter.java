@@ -75,6 +75,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolOperator;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
@@ -90,17 +91,19 @@ public class StateMutationsWriter {
 	
 	/* attributes */
 	/**	the source file defined in mutation testing project	**/
-	private	MuTestProjectCodeFile				source_cfile;
+	private	MuTestProjectCodeFile							source_cfile;
 	/**	the directory in which the output files are created	**/
-	private	File								ou_directory;
+	private	File											ou_directory;
 	/**	the file writer to generate feature information for **/
-	private FileWriter 							cfile_writer;	
+	private FileWriter 										cfile_writer;	
 	/**	the set of symbolic nodes to be printed to the file	**/
-	private Set<SymbolNode>						symbol_nodes;
+	private Set<SymbolNode>									symbol_nodes;
 	/** the mapping from mutant or state to states subsumed **/
-	private Map<Object, Set<CirAbstractState>>	subsume_maps;
+	private Map<Object, Set<CirAbstractState>>				subsume_maps;
+	/** the mapping from state node in MSG hierarchy to extended states **/
+	private Map<CirAbstractState, Set<CirAbstractState>>	extended_map;
 	/**	the maximal distance from mutations to other states	**/
-	private int									max_distance;
+	private int												max_distance;
 	
 	/* constructor & singleton mode */
 	/**
@@ -112,6 +115,7 @@ public class StateMutationsWriter {
 		this.cfile_writer = null;
 		this.symbol_nodes = new HashSet<SymbolNode>();
 		this.subsume_maps = new HashMap<Object, Set<CirAbstractState>>();
+		this.extended_map = new HashMap<CirAbstractState, Set<CirAbstractState>>();
 		this.max_distance = 0;
 	}
 	/** the singleton instance of the feature writer for writing features **/
@@ -174,6 +178,7 @@ public class StateMutationsWriter {
 			this.max_distance = max_distance;
 			this.symbol_nodes.clear();
 			this.subsume_maps.clear();
+			this.extended_map.clear();
 			this.close();
 		}
 	}
@@ -998,6 +1003,61 @@ public class StateMutationsWriter {
 		}
 	}
 	/**
+	 * It generates the summarized states from each state node in hierarchy
+	 * @param context
+	 * @throws Exception
+	 */
+	private void extend_summarization(Object context) throws Exception {
+		/* collect all the nodes generated in subsumption hierarchies */
+		Set<CirAbstractState> nodes = new HashSet<CirAbstractState>();
+		for(Object source : this.subsume_maps.keySet()) {
+			if(source instanceof CirAbstractState) {
+				nodes.add((CirAbstractState) source);
+			}
+			nodes.addAll(this.subsume_maps.get(source));
+		}
+		
+		/* initialization and generate the empty summarization states */
+		this.extended_map.clear();
+		for(CirAbstractState node : nodes) {
+			this.extended_map.put(node, new HashSet<CirAbstractState>());
+		}
+		
+		/* dynamic analysis */
+		if(context instanceof CStatePath) {
+			/* derive the mapping from execution to corresponding states */
+			Map<CirExecution, Set<CirAbstractState>> exec_states = 
+					new HashMap<CirExecution, Set<CirAbstractState>>();
+			for(CirAbstractState node : nodes) {
+				CirExecution execution = node.get_execution();
+				if(!exec_states.containsKey(execution)) {
+					exec_states.put(execution, new HashSet<CirAbstractState>());
+				}
+				exec_states.get(execution).add(node);
+			}
+			
+			/* dynamic analysis using symbolic context and state paths */
+			SymbolProcess process = new SymbolProcess(
+					this.source_cfile.get_ast_tree(), 
+					this.source_cfile.get_cir_tree());
+			for(CStateNode state_node : ((CStatePath) context).get_nodes()) {
+				process.accumulate(state_node);
+				CirExecution execution = state_node.get_execution();
+				if(exec_states.containsKey(execution)) {
+					for(CirAbstractState state : exec_states.get(execution)) {
+						this.extended_map.get(state).addAll(state.summarize(process));
+					}
+				}
+			}
+		}
+		/* static analysis */
+		else {
+			for(CirAbstractState node : nodes) {
+				this.extended_map.get(node).addAll(node.extend_all());
+			}
+		}
+	}
+	/**
 	 * 	It writes xxx.ctxt.msh of specified subsumption context a hierarchy.<br>
 	 * 	[M]	MID	INFEATION_STATE INFECTED_STATE								<br>
 	 * 	[L] CONDITION_STATE		{CONDITION_STATE}+							<br>
@@ -1040,15 +1100,10 @@ public class StateMutationsWriter {
 		}
 		
 		/* 4. write the extension set for each created state */
-		Set<CirAbstractState> msg_states = new HashSet<CirAbstractState>();
-		for(Object source : this.subsume_maps.keySet()) {
-			if(source instanceof CirAbstractState) 
-				msg_states.add((CirAbstractState) source);
-			msg_states.addAll(this.subsume_maps.get(source));
-		}
+		this.extend_summarization(context);
 		Set<CirAbstractState> all_states = new HashSet<CirAbstractState>();
-		for(CirAbstractState state : msg_states) {
-			Set<CirAbstractState> extended_states = state.extend_all();
+		for(CirAbstractState state : this.extended_map.keySet()) {
+			Set<CirAbstractState> extended_states = this.extended_map.get(state);
 			all_states.add(state); all_states.addAll(extended_states);
 			
 			this.cfile_writer.write("[X]\t" + this.encode_token(state));
@@ -1062,7 +1117,7 @@ public class StateMutationsWriter {
 		/* 5. close writing */	this.close();
 		
 		/* 6. return [node_number, word_number] */
-		return new int[] { msg_states.size(), all_states.size() };
+		return new int[] { this.extended_map.size(), all_states.size() };
 	}
 	/**
 	 * xxx.msh xxx.sym
