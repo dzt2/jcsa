@@ -295,6 +295,9 @@ class CirAbstractGraph:
 		return self.nodes.keys()
 
 	def get_mutants(self):
+		"""
+		:return: the set of mutants defined in this graph
+		"""
 		mutants = set()
 		for state in self.states.values():
 			state: CirAbstractState
