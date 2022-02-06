@@ -18,7 +18,7 @@ class CDocument:
 		:param file_name: the name of the program under test.
 		"""
 		self.project = jcmuta.CProject(directory, file_name)
-		self.ast_msg = CirAbstractGraph(self, os.path.join(directory, file_name + ".msg"))
+		self.ast_msg = CirAbstractGraph(self, os.path.join(directory, file_name + ".msg"), os.path.join(directory, file_name + ".exs"))
 		return
 
 	def get_name(self):
@@ -48,7 +48,7 @@ class CirAbstractGraph:
 	It defines the subsumption graph between abstract execution states.
 	"""
 
-	def __init__(self, document: CDocument, msg_path: str):
+	def __init__(self, document: CDocument, msg_path: str, exs_path: str):
 		"""
 		:param document: the document in which the subsumption graph of abstract execution states.
 		:param msg_path: xxx.msg	{source [target]+}
@@ -79,8 +79,6 @@ class CirAbstractGraph:
 						mid = jcbase.CToken.parse(item).get_token_value()
 						mutant = self.document.get_project().muta_space.get_mutant(mid)
 						self.edges[mutant] = set()
-					else:
-						self.states[item] = self.__new_state__(item)
 		with open(msg_path, 'r') as reader:
 			for line in reader:
 				items = line.strip().split('\t')
@@ -90,14 +88,25 @@ class CirAbstractGraph:
 					mutant = self.document.get_project().muta_space.get_mutant(mid)
 					targets = self.edges[mutant]
 					for k in range(1, len(items)):
-						target_state = self.states[items[k].strip()]
+						target_state = self.get_state(items[k].strip())
 						targets.add(target_state)
 				else:
-					source_state = self.states[head]
+					source_state = self.get_state(head)
 					for k in range(1, len(items)):
-						target_state = self.states[items[k].strip()]
+						target_state = self.get_state(items[k].strip())
 						source_state.ou_states.add(target_state)
 						target_state.in_states.add(source_state)
+		return
+
+	def __extends__(self, exs_path: str):
+		with open(exs_path, 'r') as reader:
+			for line in reader:
+				items = line.strip().split('\t')
+				if len(items) > 1:
+					source = self.get_state(items[0].strip())
+					for k in range(1, len(items)):
+						target = self.get_state(items[k].strip())
+						source.ex_states.add(target)
 		return
 
 	def __new_state__(self, key: str):
@@ -129,7 +138,13 @@ class CirAbstractGraph:
 		return self.states.values()
 
 	def get_state(self, key: str):
-		return self.states[key]
+		if key in self.states:
+			state = self.states[key]
+		else:
+			self.states[key] = self.__new_state__(key)
+			state = self.states[key]
+		state: CirAbstractState
+		return state
 
 	def get_subsumed_states(self, source):
 		"""
@@ -265,6 +280,7 @@ class CirAbstractState:
 		self.r_operand = r_operand
 		self.in_states = set()
 		self.ou_states = set()
+		self.ex_states = set()
 		return
 
 	def get_graph(self):
@@ -320,6 +336,9 @@ class CirAbstractState:
 		:return: the states that this one subsumes directly
 		"""
 		return self.ou_states
+
+	def get_ex_states(self):
+		return self.ex_states
 
 	def __str__(self):
 		execution = "exe@{}@{}".format(self.execution.get_function().get_name(), self.execution.get_exe_id())

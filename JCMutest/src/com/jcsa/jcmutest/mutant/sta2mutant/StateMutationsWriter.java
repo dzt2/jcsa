@@ -13,6 +13,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
+import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -51,7 +52,9 @@ import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCall;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
@@ -73,6 +76,8 @@ import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolOperator;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStatePath;
 
 /**
  * It generates the feature information from mutation and its state versions to
@@ -860,8 +865,8 @@ public class StateMutationsWriter {
 	 * It writes all the symbolic nodes into the account
 	 * @throws Exception
 	 */
-	private void write_sym() throws Exception {
-		this.open(".sym");
+	private void write_sym(String middle_name) throws Exception {
+		this.open(middle_name + ".sym");
 		this.extend_sym_nodes();
 		for(SymbolNode node : this.symbol_nodes) {
 			this.write_sym_node(node);
@@ -924,75 +929,151 @@ public class StateMutationsWriter {
 		}
 	}
 	/**
+	 * @param context
+	 * @return the set of mutants available at given context
+	 * @throws Exception
+	 */
+	private Iterable<Mutant> select_mutants_in(Object context) throws Exception {
+		if(context instanceof CStatePath) {
+			/* mapping from execution to corresponding mutants */
+			Map<CirExecution, Set<Mutant>> exec_mutants = new HashMap<CirExecution, Set<Mutant>>();
+			for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
+				for(StateMutation mutation : StateMutations.parse(mutant)) {
+					CirExecution execution = mutation.get_r_execution();
+					if(!exec_mutants.containsKey(execution)) {
+						exec_mutants.put(execution, new HashSet<Mutant>());
+					}
+					exec_mutants.get(execution).add(mutant);
+				}
+			}
+			
+			/* collect the covered execution sets */
+			Set<Mutant> mutants = new HashSet<Mutant>();
+			for(CStateNode state_node : ((CStatePath) context).get_nodes()) {
+				CirExecution execution = state_node.get_execution();
+				if(exec_mutants.containsKey(execution)) {
+					mutants.addAll(exec_mutants.get(execution));
+				}
+			}
+			return mutants;
+		}
+		else if(context instanceof CirExecutionPath) {
+			/* mapping from execution to corresponding mutants */
+			Map<CirExecution, Set<Mutant>> exec_mutants = new HashMap<CirExecution, Set<Mutant>>();
+			for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
+				for(StateMutation mutation : StateMutations.parse(mutant)) {
+					CirExecution execution = mutation.get_r_execution();
+					if(!exec_mutants.containsKey(execution)) {
+						exec_mutants.put(execution, new HashSet<Mutant>());
+					}
+					exec_mutants.get(execution).add(mutant);
+				}
+			}
+			
+			/* collect the covered execution sets */
+			Set<Mutant> mutants = new HashSet<Mutant>();
+			for(CirExecutionEdge edge : ((CirExecutionPath) context).get_edges()) {
+				if(exec_mutants.containsKey(edge.get_source())) {
+					mutants.addAll(exec_mutants.get(edge.get_source()));
+				}
+			}
+			if(exec_mutants.containsKey(((CirExecutionPath) context).get_target())) {
+				mutants.addAll(exec_mutants.get(((CirExecutionPath) context).get_target()));
+			}
+			return mutants;
+		}
+		else {
+			return this.source_cfile.get_mutant_space().get_mutants();
+		}
+	}
+	/**
 	 * It resets and generates the subsumption hierarchies for each mutant under the given context
 	 * @param context	CDependGraph | CirExecutionPath | CStatePath | null in which extension is performed
 	 * @throws Exception
 	 */
 	private void extend_subsume(Object context) throws Exception {
 		this.subsume_maps.clear();
-		for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
+		for(Mutant mutant : this.select_mutants_in(context)) {
 			this.extend_subsume_at_mutant(mutant, context, this.max_distance);
 		}
 	}
 	/**
-	 * It writes xxx.msg with specified subsumption context a subsumption hierarchy
-	 * @param context
-	 * @throws Exception
+	 * 	It writes xxx.ctxt.msh of specified subsumption context a hierarchy.<br>
+	 * 	[M]	MID	INFEATION_STATE INFECTED_STATE								<br>
+	 * 	[L] CONDITION_STATE		{CONDITION_STATE}+							<br>
+	 * 	[P]	ERROR_STATE			{ERROR|CONDITION_STATE}+					<br>
+	 * 	[X]	ABSTRACT_STATE		{EXTENDED_STATE}+							<br>
+	 * 	<br>
+	 * 	@param context		CDependGraph | CStatePath | null
+	 * 	@param middile_name	".pdg" | ".tid" | ".nul"
+	 * 	@param	[node_number, word_number]
+	 * 	@throws Exception
 	 */
-	private void write_msg(Object context) throws Exception {
-		this.open(".msg");
+	private int[] write_msg(Object context, String middile_name) throws Exception {
+		/* 1. open the symbolic file names */
+		this.open(middile_name + ".msg");
+		
+		/* 2. create subsumption hierarchy */
 		this.extend_subsume(context);
+		
+		/* 3. write the state informations */
 		for(Object source : this.subsume_maps.keySet()) {
+			/* [M] for Mutant; [L] for Condition; [P] for Error. */
+			if(source instanceof Mutant) {
+				this.cfile_writer.write("[M]");
+			}
+			else if(source instanceof CirConditionState) {
+				this.cfile_writer.write("[C]");
+			}
+			else {
+				this.cfile_writer.write("[P]");
+			}
+			this.cfile_writer.write("\t" + this.encode_token(source));
+			
+			/* write the set of directly subsumed states */
 			Set<CirAbstractState> targets = this.subsume_maps.get(source);
-			this.cfile_writer.write(this.encode_token(source));
 			for(CirAbstractState target : targets) {
 				this.cfile_writer.write("\t");
 				this.cfile_writer.write(this.encode_token(target));
 			}
 			this.cfile_writer.write("\n");
 		}
-		this.close();
-	}
-	/**
-	 * state extended_states \n
-	 * @throws Exception
-	 */
-	private int write_exs() throws Exception {
-		/* 1. declarations and collect all the generated states */
-		Set<CirAbstractState> states = new HashSet<CirAbstractState>();
-		for(Object source : this.subsume_maps.keySet()) {
-			for(CirAbstractState target : this.subsume_maps.get(source)) {
-				states.add(target);
-			}
-		}
 		
-		/* 2. write the state and its extension set to xxx.exs */
-		this.open(".exs");
+		/* 4. write the extension set for each created state */
+		Set<CirAbstractState> msg_states = new HashSet<CirAbstractState>();
+		for(Object source : this.subsume_maps.keySet()) {
+			if(source instanceof CirAbstractState) 
+				msg_states.add((CirAbstractState) source);
+			msg_states.addAll(this.subsume_maps.get(source));
+		}
 		Set<CirAbstractState> all_states = new HashSet<CirAbstractState>();
-		for(CirAbstractState state : states) {
-			Collection<CirAbstractState> extended_states = state.extend_all();
-			all_states.add(state); 	all_states.addAll(extended_states);
+		for(CirAbstractState state : msg_states) {
+			Set<CirAbstractState> extended_states = state.extend_all();
+			all_states.add(state); all_states.addAll(extended_states);
 			
-			this.cfile_writer.write(this.encode_token(state));
-			for(CirAbstractState estate : extended_states) {
+			this.cfile_writer.write("[X]\t" + this.encode_token(state));
+			for(CirAbstractState extended_state : extended_states) {
 				this.cfile_writer.write("\t");
-				this.cfile_writer.write(this.encode_token(estate));
+				this.cfile_writer.write(this.encode_token(extended_state));
 			}
 			this.cfile_writer.write("\n");
 		}
-		this.close();
-		return all_states.size();
+		
+		/* 5. close writing */	this.close();
+		
+		/* 6. return [node_number, word_number] */
+		return new int[] { msg_states.size(), all_states.size() };
 	}
 	/**
 	 * xxx.msh xxx.sym
 	 * @param context
 	 * @throws Exception
 	 */
-	private void write_symb_features(Object context) throws Exception {
-		this.write_msg(context);
-		int states = this.write_exs();
+	private void write_symb_features(Object context, String middle_name) throws Exception {
+		int[] numbers = this.write_msg(context, middle_name);
+		this.write_sym(middle_name);
 		
-		/* inform the users feature counters */
+		/* TODO inform the users feature counters */
 		int mutants = 0, symbols = this.symbol_nodes.size();
 		for(Object source : this.subsume_maps.keySet()) {
 			if(this.subsume_maps.get(source).size() > 0) {
@@ -1001,46 +1082,85 @@ public class StateMutationsWriter {
 				}
 			}
 		}
-		System.out.println(String.format("\t\t==> %d/%d mutants; %d states; %d symbol-nodes", 
-					mutants, this.source_cfile.get_mutant_space().size(), states, symbols));
-		
-		this.write_sym();
+		System.out.println(String.format("\t\t==> %d/%d mutants; %d (%d) states; %d symbol-nodes", 
+					mutants, source_cfile.get_mutant_space().size(), numbers[0], numbers[1], symbols));
 	}
 	
-	/* writer's interfaces */
-	/**
-	 * It writes code, test, dependence and state information under the CDG context
-	 * @param source_cfile	the mutation source code file for writing features
-	 * @param ou_directory	the directory in which the ouput files are written
-	 * @param max_distance	the maximal distance of subsumption from mutations
-	 * @throws Exception
-	 */
-	private void write_static(MuTestProjectCodeFile source_cfile, 
-			File ou_directory, int max_distance) throws Exception {
-		this.reset(source_cfile, ou_directory, max_distance);
-		
-		/* source program features */
-		this.write_code_features();
-		this.write_test_features();
-		
-		/* dependence informations */
+	/* write features for all */
+	private CDependGraph new_dependence_graph() throws Exception {
 		CirFunction root_function = this.source_cfile.
 				get_cir_tree().get_function_call_graph().get_main_function();
-		CDependGraph dependence_graph = CDependGraph.graph(CirCallContextInstanceGraph.
-					graph(root_function, CirFunctionCallPathType.unique_path, -1));
-		this.write_flow_features(dependence_graph);
-		this.write_symb_features(dependence_graph);
+		return CDependGraph.graph(CirCallContextInstanceGraph.graph(
+				root_function, CirFunctionCallPathType.unique_path, -1));
 	}
 	/**
-	 * It writes code, test, dependence and state information under the CDG context
-	 * @param source_cfile	the mutation source code file for writing features
-	 * @param ou_directory	the directory in which the ouput files are written
-	 * @param max_distance	the maximal distance of subsumption from mutations
+	 * It writes both static and dynamic subsumption hierarchies and features.
+	 * @param source_cfile	the mutation testing project source file to print
+	 * @param ou_directory	the directory where the output files are generated
+	 * @param max_distance	the maximal distance to create subsumption of mutant
+	 * @param test_cases	the set of test cases to generate dynamic MSG
 	 * @throws Exception
 	 */
-	public static void write_static_features(MuTestProjectCodeFile 
-			source_cfile, File ou_directory, int max_distance) throws Exception {
-		fwriter.write_static(source_cfile, ou_directory, max_distance);
+	private void write(MuTestProjectCodeFile source_cfile, File ou_directory,
+			int max_distance, Collection<TestInput> test_cases) throws Exception {
+		if(source_cfile == null) {
+			throw new IllegalArgumentException("Invalid source_cfile: null");
+		}
+		else if(ou_directory == null) {
+			throw new IllegalArgumentException("Invalid ou_directory: null");
+		}
+		else if(max_distance < 0) {
+			throw new IllegalArgumentException("Invalid max_distance: null");
+		}
+		else {
+			/* static information generation */
+			this.reset(source_cfile, ou_directory, max_distance);
+			CDependGraph dependence_graph = this.new_dependence_graph();
+			this.write_code_features();
+			this.write_test_features();
+			this.write_flow_features(dependence_graph);
+			this.write_symb_features(dependence_graph, ".dpg");
+			
+			/* dynamic information generation */
+			MuTestProjectTestSpace tspace = this.source_cfile.
+					get_code_space().get_project().get_test_space();
+			if(test_cases != null && !test_cases.isEmpty()) {
+				for(TestInput test_case : test_cases) {
+					CStatePath context = tspace.load_instrumental_path(
+							this.source_cfile.get_sizeof_template(), 
+							this.source_cfile.get_ast_tree(), 
+							this.source_cfile.get_cir_tree(), test_case);
+					if(context != null) {
+						this.write_symb_features(context, "." + test_case.get_id());
+					}
+				}
+			}
+		}
 	}
+	/**
+	 * It write code, test, dependence and state information under given context
+	 * @param source_cfile
+	 * @param ou_directory
+	 * @param max_distance
+	 * @param context		CDependGraph | CStatePath | CirExecutionPath | null
+	 * @throws Exception
+	 */
+	public static void write_features(MuTestProjectCodeFile source_cfile,
+			File ou_directory, int max_distance, 
+			Collection<TestInput> test_cases) throws Exception {
+		if(source_cfile == null) {
+			throw new IllegalArgumentException("Invalid source_cfile: null");
+		}
+		else if(ou_directory == null) {
+			throw new IllegalArgumentException("Invalid ou_directory: null");
+		}
+		else if(max_distance < 0) {
+			throw new IllegalArgumentException("Invalid max_distance: null");
+		}
+		else {
+			fwriter.write(source_cfile, ou_directory, max_distance, test_cases);
+		}
+	}
+	
 	
 }

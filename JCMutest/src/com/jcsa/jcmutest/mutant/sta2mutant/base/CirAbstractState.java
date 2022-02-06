@@ -473,7 +473,7 @@ public abstract class CirAbstractState {
 	 * @return the set of abstract states extended from this state directly
 	 * @throws Exception
 	 */
-	public Collection<CirAbstractState> extend_one() throws Exception {
+	public Set<CirAbstractState> extend_one() throws Exception {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
 		StateMutationUtils.extend(this, outputs, true); return outputs;
 	}
@@ -481,7 +481,7 @@ public abstract class CirAbstractState {
 	 * @return the set of abstract states extended from this state directly
 	 * @throws Exception
 	 */
-	public Collection<CirAbstractState> extend_all() throws Exception {
+	public Set<CirAbstractState> extend_all() throws Exception {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
 		StateMutationUtils.extend(this, outputs, false); return outputs;
 	}
