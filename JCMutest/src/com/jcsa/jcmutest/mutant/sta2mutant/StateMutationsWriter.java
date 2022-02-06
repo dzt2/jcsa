@@ -1174,7 +1174,7 @@ public class StateMutationsWriter {
 			this.write_code_features();
 			this.write_test_features();
 			this.write_flow_features(dependence_graph);
-			this.write_symb_features(dependence_graph, ".dpg");
+			this.write_symb_features(dependence_graph, ".pdg");
 			
 			/* dynamic information generation */
 			MuTestProjectTestSpace tspace = this.source_cfile.
