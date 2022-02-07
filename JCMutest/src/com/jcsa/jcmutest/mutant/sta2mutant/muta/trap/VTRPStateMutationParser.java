@@ -2,7 +2,6 @@ package com.jcsa.jcmutest.mutant.sta2mutant.muta.trap;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.MutaOperator;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
@@ -92,7 +91,7 @@ public class VTRPStateMutationParser extends StateMutationParser {
 			SymbolExpression parameter = this.get_parameter(
 					mutation.get_location(), mutation.get_parameter());
 			SymbolExpression loperand, roperand;
-			if(CirMutations.is_boolean(expression)) {
+			if(StateMutations.is_boolean(expression)) {
 				loperand = SymbolFactory.sym_condition(expression, true);
 				roperand = SymbolFactory.sym_condition(parameter, true);
 			}

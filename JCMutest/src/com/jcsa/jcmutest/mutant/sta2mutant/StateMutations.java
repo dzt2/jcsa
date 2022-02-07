@@ -9,7 +9,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.sta2mutant.muta.StateMutationParsers;
@@ -330,7 +329,7 @@ public class StateMutations {
 	 * @return
 	 */
 	public static boolean is_void(CirExpression expression) {
-		return CirMutations.is_void(expression.get_data_type());
+		return is_void(expression.get_data_type());
 	}
 	/**
 	 * @param location
