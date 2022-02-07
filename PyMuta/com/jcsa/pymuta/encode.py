@@ -20,8 +20,10 @@ class MerDocument:
 		"""
 		tst_file = os.path.join(directory, file_name + ".tst")
 		mut_file = os.path.join(directory, file_name + ".mut")
+		stt_file = os.path.join(directory, file_name + ".stt")
 		self.test_space = MerTestCaseSpace(self, tst_file)
 		self.mutant_space = MerMutantSpace(self, mut_file)
+		self.state_space = MerAbstractStateSpace(self, stt_file)
 		return
 
 
@@ -284,10 +286,159 @@ class MerMutantSpace:
 		return "MUT[{}:{}]".format(0, len(self.mutants))
 
 
+class MerAbstractState:
+	"""
+	It defines a memory-reduced instance that encodes the CirAbstractState in CDocument.
+	"""
+
+	def __init__(self, space, aid: int, key: str):
+		"""
+		:param space:	the space where the memory-reduced instance is defined
+		:param aid: 	the unique ID to encode the abstract state it describe
+		:param key: 	the unique string as the string of state it represents
+		"""
+		space: MerAbstractStateSpace
+		self.space = space
+		self.aid = aid
+		self.key = key
+		return
+
+	def get_space(self):
+		"""
+		:return: the space where the memory-reduced instance is defined
+		"""
+		return self.space
+
+	def get_aid(self):
+		"""
+		:return: the unique ID to encode the abstract state it describe
+		"""
+		return self.aid
+
+	def get_key(self):
+		"""
+		:return: the unique string as the string of state it represents
+		"""
+		return self.key
+
+	def __str__(self):
+		return self.key
+
+	def find_source(self, c_document: jcsymb.CDocument):
+		"""
+		:param c_document: the CDocument where the original data object (CirAbstractState) is preserved
+		:return: the CirAbstractState object that this instance encodes in the specified document
+		"""
+		return c_document.get_state_graph().get_state(self.key)
 
 
+class MerAbstractStateSpace:
+	"""
+	It defines the space of memory-reduced instances that encode the CirAbstractState in CDocument.
+	"""
+
+	def __init__(self, document: MerDocument, stt_file: str):
+		"""
+		:param document: the document where this instance space is defined
+		:param stt_file: xxx.stt {key\n}+
+		"""
+		self.document = document
+		self.__load__(stt_file)
+		return
+
+	def __load__(self, stt_file: str):
+		"""
+		:param stt_file: xxx.stt {key\n}+
+		:return: it loads the states being encoded with specified aid and key
+		"""
+		self.states = list()
+		with open(stt_file, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					aid = len(self.states)
+					key = line
+					state = MerAbstractState(self, aid, key)
+					self.states.append(state)
+		self._index = dict()
+		for state in self.states:
+			key = state.get_key()
+			self._index[key] = state
+		return
+
+	def __len__(self):
+		return len(self.states)
+
+	def __str__(self):
+		return "STT[{}...{}]".format(0, len(self.states))
+
+	def get_state(self, aid: int):
+		"""
+		:param aid: the unique ID to encode the abstract state instance in space
+		:return: 	the instance of abstract state in the space specified by aid
+		"""
+		return self.states[aid]
+
+	def get_state_of(self, key: str):
+		"""
+		:param key: the unique string of CirAbstractState that this instance encodes
+		:return: 	the instance of abstract state that the string key specifies for
+		"""
+		return self._index[key]
+
+	def get_states(self):
+		"""
+		:return: the set of instances encoding abstract states in the CDocument
+		"""
+		return self.states
+
+	def get_keys(self):
+		"""
+		:return: the set of string keys to represent the CirAbstractState in the space
+		"""
+		return self._index.keys()
 
 
+class MerExecution:
+	"""
+	It combines both mutant and its corresponding state instances subsumed by it.
+	"""
+
+	def __init__(self, space, mutant: MerMutant, features):
+		"""
+		:param space: 		the space where the execution instance is specified
+		:param mutant: 		the mutant bounded within the execution instance
+		:param features: 	the set of integer IDs to encode CirAbstractState(s)
+		"""
+		self.space = space
+		self.mutant = mutant
+		self.features = list()
+		for feature in features:
+			feature: int
+			if feature in self.features:
+				continue
+			else:
+				self.features.append(feature)
+		self.features.sort()
+		return
+
+	def get_space(self):
+		return self.space
+
+	def get_mutant(self):
+		return self.mutant
+
+	def get_features(self):
+		return self.features
+
+	def get_states(self):
+		states = set()
+		document = self.space.get_document()
+		document: MerDocument
+		for feature in self.features:
+			state = document.state_space.get_state(feature)
+			states.add(state)
+		return states
 
 
 

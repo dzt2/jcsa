@@ -294,6 +294,13 @@ class CirAbstractGraph:
 		"""
 		return self.nodes.keys()
 
+	def get_state(self, key: str):
+		"""
+		:param key: execution$store_type$c_location$value_type$l_operand$r_operand
+		:return: 	the abstract execution state that the string key encodes
+		"""
+		return self.__new_state__(key)
+
 	def get_mutants(self):
 		"""
 		:return: the set of mutants defined in this graph
