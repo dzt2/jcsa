@@ -1518,6 +1518,8 @@ final class CirDataStateInference {
 		else {
 			throw new IllegalArgumentException("Unsupport: " + state);
 		}
+		
+		if(state.is_def()) { /* TODO implement the definition propagation */ }
 	}
 	/**
 	 * 	@param state	the source state from which the subsumption relation is computed
