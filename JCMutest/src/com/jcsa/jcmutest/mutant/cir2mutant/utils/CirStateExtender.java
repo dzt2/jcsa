@@ -609,6 +609,9 @@ public final class CirStateExtender {
 		/* 1. declarations and the data elements in the input state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
+		if(expression == null) {
+			expression = (CirExpression) state.get_identifier().get_source();
+		}
 		SymbolExpression orig_value = state.get_orig_value();
 		SymbolExpression muta_value = state.get_muta_value();
 		boolean is_virtual = !state.has_expression();
@@ -793,6 +796,9 @@ public final class CirStateExtender {
 		/* declarations and data element getters from state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
+		if(expression == null) {
+			expression = (CirExpression) state.get_identifier().get_source();
+		}
 		SymbolExpression base_value = state.get_orig_value();
 		SymbolExpression difference = state.get_difference();
 		boolean is_virtual = !state.has_expression();
@@ -890,6 +896,9 @@ public final class CirStateExtender {
 		/* declarations and data element getters from state */
 		CirExecution execution = state.get_execution();
 		CirExpression expression = state.get_expression();
+		if(expression == null) {
+			expression = (CirExpression) state.get_identifier().get_source();
+		}
 		SymbolExpression base_value = state.get_orig_value();
 		SymbolExpression difference = state.get_difference();
 		boolean is_virtual = !state.has_expression();

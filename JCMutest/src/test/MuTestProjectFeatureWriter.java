@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutationsWriter;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
@@ -21,7 +21,7 @@ public class MuTestProjectFeatureWriter {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
 	private static String result_dir = "/home/dzt2/Development/Data/zext/features/";
-	private static final int max_subsumption_distance = 24;
+	private static final int max_subsumption_distance = 12;
 	private static final double random_test_ratio = 0.01;
 	private static final int min_test_number = 24;
 	private static final Random random = new Random(System.currentTimeMillis());
@@ -58,7 +58,7 @@ public class MuTestProjectFeatureWriter {
 
 		
 		/* only implement the static features writing here... */
-		StateMutationsWriter.write_features(code_file, output_directory, max_subsumption_distance, test_cases);
+		CirMutations.write_features(code_file, output_directory, max_subsumption_distance, test_cases);
 		System.out.println();
 	}
 	

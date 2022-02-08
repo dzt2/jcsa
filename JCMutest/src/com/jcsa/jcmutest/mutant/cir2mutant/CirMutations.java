@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -14,7 +15,9 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
 import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateExtender;
+import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateFeatureWriter;
 import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateNormalizer;
+import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -39,6 +42,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
+import com.jcsa.jcparse.test.file.TestInput;
 
 /**
  * It provides interfaces to support analysis and parsing on the CirMutation.
@@ -851,6 +855,18 @@ public final class CirMutations {
 	public static Collection<CirAbstractState> subsume(CirAbstractState state, Object context) throws Exception {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
 		CirStateExtender.subsume(state, outputs, context); return outputs;
+	}
+	/**
+	 * It write code, test, dependence and state information under given context
+	 * @param source_cfile
+	 * @param ou_directory
+	 * @param max_distance
+	 * @param context		CDependGraph | CStatePath | CirExecutionPath | null
+	 * @throws Exception
+	 */
+	public static void write_features(MuTestProjectCodeFile source_cfile, File ou_directory, 
+			int max_distance, Collection<TestInput> test_cases) throws Exception {
+		CirStateFeatureWriter.write_features(source_cfile, ou_directory, max_distance, test_cases);
 	}
 	
 }
