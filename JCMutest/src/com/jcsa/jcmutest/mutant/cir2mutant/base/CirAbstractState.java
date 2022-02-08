@@ -1,5 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
+import java.util.Collection;
+
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -512,5 +514,20 @@ public abstract class CirAbstractState {
 	public Boolean evaluate() throws Exception {
 		return CirMutations.evaluate(this);
 	}
+	/**
+	 * @return the set of states directly subsumed by this one locally
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> extend_one() throws Exception {
+		return CirMutations.extend_one(this);
+	}
+	/**
+	 * @return the set of all states subsumed by this one locally 
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> extend_all() throws Exception {
+		return CirMutations.extend_all(this);
+	}
+	
 	
 }

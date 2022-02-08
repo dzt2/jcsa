@@ -13,6 +13,7 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
+import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateExtender;
 import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateNormalizer;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
@@ -821,6 +822,27 @@ public final class CirMutations {
 	public static Boolean evaluate(CirAbstractState state) throws Exception {
 		return CirStateNormalizer.evaluate(state, null);
 	}
+	/**
+	 * It extends the input state to extended states directly subsumed by input
+	 * @param state
+	 * @return the set of directly subsumed states that are extended by input
+	 * @throws Exception
+	 */
+	public static Collection<CirAbstractState> extend_one(CirAbstractState state) throws Exception {
+		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+		CirStateExtender.extend(state, outputs, false); return outputs;
+	}
+	/**
+	 * It extends the input state to extended states locally subsumed by input
+	 * @param state
+	 * @return the set of directly all subsumed states that are extended by input
+	 * @throws Exception
+	 */
+	public static Collection<CirAbstractState> extend_all(CirAbstractState state) throws Exception {
+		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+		CirStateExtender.extend(state, outputs, true); return outputs;
+	}
+	
 	// TODO implement more interface methods following...
 	
 }
