@@ -78,8 +78,6 @@ public final class StateOperatorParsers {
 		parsers.put(COperator.bit_xor_assign, 		new StateBitwsXorParser());
 		parsers.put(COperator.left_shift_assign,	new StateBitwsLshParser());
 		parsers.put(COperator.righ_shift_assign, 	new StateBitwsRshParser());
-		
-		
 	}
 	
 	/**

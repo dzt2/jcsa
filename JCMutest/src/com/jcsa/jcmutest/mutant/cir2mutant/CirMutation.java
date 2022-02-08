@@ -1,6 +1,7 @@
 package com.jcsa.jcmutest.mutant.cir2mutant;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirSyMutationState;
@@ -24,9 +25,9 @@ public class CirMutation {
 	
 	private CirSyMutationState 	r_state;
 	private CirConditionState	i_state;
-	private CirAbstractState	p_state;
+	private CirAbstErrorState	p_state;
 	protected CirMutation(Mutant mutant, CirExecution execution,
-			CirConditionState i_state, CirAbstractState p_state) throws Exception {
+			CirConditionState i_state, CirAbstErrorState p_state) throws Exception {
 		if(mutant == null) {
 			throw new IllegalArgumentException("Invalid mutant: null");
 		}
@@ -40,15 +41,29 @@ public class CirMutation {
 			throw new IllegalArgumentException("Invalid p_state: null");
 		}
 		else {
-			this.r_state = CirAbstractState.ast_muta(mutant, execution);
+			this.r_state = CirAbstractState.ast_muta(execution, mutant.get_id(),
+					mutant.get_mutation().get_operator().toString());
 			this.i_state = i_state;
 			this.p_state = p_state;
 		}
 	}
 	
 	/* getters */
+	/**
+	 * @return the execution point where the state is preserved
+	 */
+	public CirExecution			get_execution() { return this.r_state.get_execution(); }
+	/**
+	 * @return the reachability state
+	 */
 	public CirSyMutationState	get_r_state() { return this.r_state; }
+	/**
+	 * @return the infection state
+	 */
 	public CirConditionState	get_i_state() { return this.i_state; }
-	public CirAbstractState		get_p_state() { return this.p_state; }
+	/**
+	 * @return the propagation state
+	 */
+	public CirAbstErrorState	get_p_state() { return this.p_state; }
 	
 }

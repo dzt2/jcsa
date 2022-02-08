@@ -15,7 +15,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  * @author yukimula
  *
  */
-public abstract class CirPathErrorState extends CirAbstractState {
+public abstract class CirPathErrorState extends CirAbstErrorState {
 
 	protected CirPathErrorState(CirAbstractClass category, CirExecution execution, 
 			SymbolExpression loperand, SymbolExpression roperand) throws Exception {

@@ -1,14 +1,14 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.muta;
+package com.jcsa.jcmutest.mutant.cir2mutant.muta;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.MutaOperator;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstErrorState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -17,28 +17,22 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It implements the transformation from operator-mutation to state-mutation.
+ * It performs parse from syntactic mutation to CirAbstractState in RIP forms.
  * 
  * @author yukimula
  *
  */
-public abstract class StateOperatorParser {
+public abstract class CirOperatorParser {
 	
 	/* attributes */
-	/** any boolean value **/
-	protected static final String AnyBoolean = "default#boolean";
 	/** source mutation to cause state infections **/
 	private AstMutation mutation;
 	/** the execution where the mutation is reached **/
 	private CirExecution execution;
-	/** mapping from initial error to state infection condition **/
-	private Map<CirAbstErrorState, CirConditionState> infections;
-	/**
-	 * Abstract Constructor
-	 */
-	public StateOperatorParser() { }
-	
-	/* operation */
+	/** list of condition and initial error states **/
+	private List<CirConditionState> i_states;
+	/** list of condition and initial error states **/
+	private List<CirAbstErrorState> p_states;
 	/** the expression being mutated with state error **/
 	protected CirExpression expression;
 	/** the left-operand in the binary expression set **/
@@ -47,6 +41,8 @@ public abstract class StateOperatorParser {
 	protected CirExpression roperand;
 	/** true to weak mutation false to strong mutation **/
 	protected boolean weak_or_strong;
+	/** constructor **/
+	public CirOperatorParser() { }
 	
 	/* implementation methods */
 	/**
@@ -153,30 +149,32 @@ public abstract class StateOperatorParser {
 	 * @param expression	the original expression to be mutated from
 	 * @param loperand		the left operand in original expression
 	 * @param roperand		the right operand in original expression
-	 * @param infections	mapping from error to infection condition
+	 * @param i_states		to preserve the infection states
+	 * @param p_states		to preserve the propagation states
 	 * @return 				whether the parsing succeeds finally.
 	 * @throws Exception
 	 */
 	protected boolean parse(AstMutation mutation, 
 			CirExecution execution, CirExpression expression, 
 			CirExpression loperand, CirExpression roperand,
-			Map<CirAbstErrorState, CirConditionState> infections) throws Exception {
+			List<CirConditionState> i_states,
+			List<CirAbstErrorState> p_states) throws Exception {
 		/* establishment */
 		this.mutation = mutation; 
 		this.execution = execution;
 		this.expression = expression;
 		this.loperand = loperand;
 		this.roperand = roperand;
-		
-		/* initialization */
+		this.i_states = i_states;
+		this.p_states = p_states;
 		if(mutation.get_operator() == MutaOperator.cmp_operator) {
 			this.weak_or_strong = true;
 		}
 		else {
 			this.weak_or_strong = false;
 		}
-		this.infections = infections;
-		this.infections.clear();
+		this.i_states.clear(); 
+		this.p_states.clear();
 		
 		/* operator */
 		COperator operator = (COperator) mutation.get_parameter();
@@ -228,7 +226,7 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
-			return CirAbstractState.eva_cond(this.execution, condition, true);
+			return CirAbstractState.eva_need(this.execution, condition);
 		}
 	}
 	/**
@@ -259,7 +257,7 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Not established at");
 		}
 		else {
-			return CirAbstractState.set_trap(this.execution);
+			return CirAbstractState.trp_stmt(this.execution);
 		}
 	}
 	
@@ -279,7 +277,9 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Invalid init_error");
 		}
 		else {
-			this.infections.put(init_error, constraint); return true;
+			this.i_states.add(constraint);
+			this.p_states.add(init_error);
+			return true;
 		}
 	}
 	/**
@@ -458,7 +458,7 @@ public abstract class StateOperatorParser {
 			throw new IllegalArgumentException("Not established");
 		}
 		else {
-			if(StateMutations.is_boolean(expression)) {
+			if(CirMutations.is_boolean(expression)) {
 				muvalue = this.sym_condition(muvalue);
 			}
 			return this.sym_expression(COperator.not_equals, this.expression, muvalue);

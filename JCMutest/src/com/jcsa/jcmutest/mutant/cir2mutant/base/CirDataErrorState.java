@@ -18,7 +18,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
  * @author yukimula
  *
  */
-public abstract class CirDataErrorState extends CirAbstractState {
+public abstract class CirDataErrorState extends CirAbstErrorState {
 
 	protected CirDataErrorState(CirAbstractClass category, CirExecution execution, CirNode location,
 			SymbolExpression identifier, SymbolExpression loperand, SymbolExpression roperand) throws Exception {

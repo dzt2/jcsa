@@ -1,9 +1,9 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
-import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 
 /**
  * ast_muta([statement, stmt_key]; [muta_id, operator]);
@@ -13,10 +13,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolFactory;
  */
 public class CirSyMutationState extends CirConditionState {
 
-	protected CirSyMutationState(CirExecution execution, Mutant mutant) throws Exception {
+	protected CirSyMutationState(CirExecution execution, int mid, String operator) throws Exception {
 		super(CirAbstractClass.ast_muta, execution, 
-				SymbolFactory.sym_constant(Integer.valueOf(mutant.get_id())), 
-				SymbolFactory.sym_expression(mutant.get_mutation().get_operator()));
+				SymbolFactory.sym_constant(Integer.valueOf(mid)), 
+				SymbolFactory.sym_expression(operator));
 	}
 	
 	/* special getter */
@@ -26,6 +26,13 @@ public class CirSyMutationState extends CirConditionState {
 	public int get_mutant_id() {
 		SymbolConstant loperand = (SymbolConstant) this.get_loperand();
 		return loperand.get_int();
+	}
+	/**
+	 * @return the mutation operator to generate the mutant object
+	 */
+	public String get_operator() {
+		SymbolLiteral roperand = (SymbolLiteral) this.get_roperand();
+		return roperand.get_literal();
 	}
 	
 }

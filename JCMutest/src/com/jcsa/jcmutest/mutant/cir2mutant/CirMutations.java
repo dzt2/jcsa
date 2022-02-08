@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.cir2mutant;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -8,8 +9,11 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
+import com.jcsa.jcmutest.mutant.cir2mutant.muta.CirMutationParsers;
+import com.jcsa.jcmutest.mutant.cir2mutant.utils.CirStateNormalizer;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -759,10 +763,64 @@ public final class CirMutations {
 	 * @throws Exception
 	 */
 	public static CirMutation new_mutation(Mutant mutant, CirExecution execution, 
-			CirConditionState i_state, CirAbstractState p_state) throws Exception {
+			CirConditionState i_state, CirAbstErrorState p_state) throws Exception {
 		return new CirMutation(mutant, execution, i_state, p_state);
 	}
+	/**
+	 * @param mutant	the syntactic mutation to be translated into mutations in C-intermediate representative form
+	 * @return 			the set of C-intermediate representative mutations of the mutant or empty if it fails to parse
+	 * @throws Exception
+	 */
+	public static Collection<CirMutation> parse(Mutant mutant) throws Exception {
+		try {
+			return CirMutationParsers.parse(mutant);
+		}
+		catch(Exception ex) {
+			return new ArrayList<CirMutation>();
+		}
+	}
 	
-	
+	/* normalization-evaluation and subsume-extension */
+	/**
+	 * It normalizes the input state to corresponding standard structural form.
+	 * @param state		the state to be normalized
+	 * @param context	the context in which the state is normalized
+	 * @return			the normalized structural form of input state
+	 * @throws Exception
+	 */
+	public static CirAbstractState normalize(CirAbstractState state, SymbolProcess context) throws Exception {
+		return CirStateNormalizer.normalize(state, context);
+	}
+	/**
+	 * It normalizes the input state to corresponding standard structural form.
+	 * @param state		the state to be normalized
+	 * @return			the normalized structural form of input state
+	 * @throws Exception
+	 */
+	public static CirAbstractState normalize(CirAbstractState state) throws Exception {
+		return CirStateNormalizer.normalize(state, null);
+	}
+	/**
+	 * It evaluates the state to a boolean value according to its category and the 
+	 * given symbolic computational context.
+	 * @param state		the state to be evaluated by this method
+	 * @param context	the context in which the state is evaluated
+	 * @return			True {passed}; False {fail}; null {Unknown}
+	 * @throws Exception
+	 */
+	public static Boolean evaluate(CirAbstractState state, SymbolProcess context) throws Exception {
+		return CirStateNormalizer.evaluate(state, context);
+	}
+	/**
+	 * It evaluates the state to a boolean value according to its category and the 
+	 * given symbolic computational context.
+	 * @param state		the state to be evaluated by this method
+	 * @return			True {passed}; False {fail}; null {Unknown}
+	 * @throws Exception
+	 */
+	public static Boolean evaluate(CirAbstractState state) throws Exception {
+		return CirStateNormalizer.evaluate(state, null);
+	}
+	// TODO implement more interface methods following...
 	
 }

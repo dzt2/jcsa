@@ -1,6 +1,5 @@
 package com.jcsa.jcmutest.mutant.cir2mutant.base;
 
-import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -9,6 +8,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 
 /**
  * 	It represents an abstract execution state specified at some program location.
@@ -177,15 +177,15 @@ public abstract class CirAbstractState {
 	 * @return ast_muta([statement, stmt_key]; [muta_id, operator])
 	 * @throws Exception
 	 */
-	public static CirSyMutationState ast_muta(Mutant mutant, CirExecution execution) throws Exception {
-		if(mutant == null) {
-			throw new IllegalArgumentException("Invalid mutant: null");
+	public static CirSyMutationState ast_muta(CirExecution execution, int mid, String operator) throws Exception {
+		if(operator == null) {
+			throw new IllegalArgumentException("Invalid operator: null");
 		}
 		else if(execution == null) {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
-			return new CirSyMutationState(execution, mutant);
+			return new CirSyMutationState(execution, mid, operator);
 		}
 	}
 	/**
@@ -442,7 +442,7 @@ public abstract class CirAbstractState {
 	 */
 	public static CirIncreErrorState inc_vdef(CirExpression expression, Object difference) throws Exception {
 		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+			throw new IllegalArgumentException("Invalid expression: " + expression);
 		}
 		else if(difference == null) {
 			throw new IllegalArgumentException("Invalid difference: null");
@@ -481,6 +481,36 @@ public abstract class CirAbstractState {
 		}
 	}
 	
-	/* TODO normalization, evaluation, subsume, summarization */
+	/* normalization, evaluation, subsume, summarization */
+	/**
+	 * @param context
+	 * @return the normalized version of the state under the context
+	 * @throws Exception
+	 */
+	public CirAbstractState normalize(SymbolProcess context) throws Exception {
+		return CirMutations.normalize(this, context);
+	}
+	/**
+	 * @return the normalized version of the state under any context
+	 * @throws Exception
+	 */
+	public CirAbstractState normalize() throws Exception {
+		return CirMutations.normalize(this);
+	}
+	/**
+	 * @param context
+	 * @return True {passed}; False {failed}; null {unknown}
+	 * @throws Exception
+	 */
+	public Boolean evaluate(SymbolProcess context) throws Exception {
+		return CirMutations.evaluate(this, context);
+	}
+	/**
+	 * @return True {passed}; False {failed}; null {unknown}
+	 * @throws Exception
+	 */
+	public Boolean evaluate() throws Exception {
+		return CirMutations.evaluate(this);
+	}
 	
 }

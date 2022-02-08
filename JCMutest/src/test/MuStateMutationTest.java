@@ -7,10 +7,10 @@ import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutation;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirAbstErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.base.CirConditionState;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
+import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstErrorState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
@@ -48,7 +48,7 @@ public class MuStateMutationTest {
 		return buffer.toString();
 	}
 	
-	private static void testing(File root, File output) throws Exception {
+	protected static void testing(File root, File output) throws Exception {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(output));
 		
 		MuTestProject project = get_project(root);
@@ -57,7 +57,7 @@ public class MuStateMutationTest {
 		
 		for(Mutant mutant : file.get_mutant_space().get_mutants()) {
 			/* mutation --> state-mutations parsing */
-			Collection<StateMutation> mutations = StateMutations.parse(mutant);
+			Collection<CirMutation> mutations = CirMutations.parse(mutant);
 			passed = !mutations.isEmpty();
 			if(passed) { succeed++; }	total++;
 			
@@ -76,10 +76,10 @@ public class MuStateMutationTest {
 			
 			/* state mutation information */
 			int index = 0;
-			for(StateMutation state_mutation : mutations) {
-				CirExecution execution = state_mutation.get_r_execution();
-				CirConditionState constraint = state_mutation.get_istate();
-				CirAbstErrorState init_error = state_mutation.get_pstate();
+			for(CirMutation cir_mutation : mutations) {
+				CirExecution execution = cir_mutation.get_execution();
+				CirConditionState constraint = cir_mutation.get_i_state();
+				CirAbstErrorState init_error = cir_mutation.get_p_state();
 				
 				writer.write(String.format("\t%d[R]\t%s\t%s\t\"%s\"\n", index, execution.toString(),
 						execution.get_statement().getClass().getSimpleName(),
@@ -88,7 +88,7 @@ public class MuStateMutationTest {
 						constraint.getClass().getSimpleName(), constraint.get_roperand().generate_code(true)));
 				writer.write(String.format("\t%d[P]\t%s\t%s\t\"%s\"\t[%s]\n", index, init_error.get_execution().toString(),
 						init_error.getClass().getSimpleName(),
-						normalize_code(init_error.get_clocation().generate_code(true), 96),
+						normalize_code(init_error.get_location().generate_code(true), 96),
 						init_error.get_roperand().generate_code(true)));
 				index++;
 			}
