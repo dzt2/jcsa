@@ -842,7 +842,15 @@ public final class CirMutations {
 		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
 		CirStateExtender.extend(state, outputs, true); return outputs;
 	}
-	
-	// TODO implement more interface methods following...
+	/**
+	 * @param state
+	 * @param context	CDependGraph | CirExecutionPath | CStatePath | null
+	 * @return the set of states directly subsumed by the input under the given context
+	 * @throws Exception 
+	 */
+	public static Collection<CirAbstractState> subsume(CirAbstractState state, Object context) throws Exception {
+		Set<CirAbstractState> outputs = new HashSet<CirAbstractState>();
+		CirStateExtender.subsume(state, outputs, context); return outputs;
+	}
 	
 }

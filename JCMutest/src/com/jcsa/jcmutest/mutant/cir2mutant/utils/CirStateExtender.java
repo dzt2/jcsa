@@ -10,10 +10,13 @@ import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBixorErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirBlockErrorState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConstraintState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirCoverTimesState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirDataErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirFlowsErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirIncreErrorState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirPathErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirSyMutationState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueErrorState;
@@ -990,6 +993,38 @@ public final class CirStateExtender {
 			for(CirAbstractState output : buffer) {
 				outputs.add(output.normalize());
 			}
+		}
+	}
+	/**
+	 * It infers the direclty subsumed states from the input state under context
+	 * @param state		the input state from which the subsumed states are created
+	 * @param outputs	to preserve the directly subsumed states from the input
+	 * @param context	CDependGraph | CirExecutionPath | CStatePath | null
+	 * @throws Exception
+	 */
+	public static void subsume(CirAbstractState state, Collection<CirAbstractState> outputs, Object context) throws Exception {
+		if(state == null) {
+			throw new IllegalArgumentException("Invalid state: null");
+		}
+		else if(outputs == null) {
+			throw new IllegalArgumentException("Invalid outputs: null");
+		}
+		else {
+			Set<CirAbstractState> buffer = new HashSet<CirAbstractState>();
+			// state = state.normalize();
+			if(state instanceof CirConditionState) {
+				CirCondStateInference.infer((CirConditionState) state, buffer, context);
+			}
+			else if(state instanceof CirPathErrorState) {
+				CirPathStateInference.infer((CirPathErrorState) state, buffer, context);
+			}
+			else if(state instanceof CirDataErrorState) {
+				CirDataStateInference.infer((CirDataErrorState) state, buffer, context);
+			}
+			else {
+				throw new IllegalArgumentException("Unsupported: " + state);
+			}
+			for(CirAbstractState output : buffer) { outputs.add(output.normalize()); }
 		}
 	}
 	

@@ -528,6 +528,13 @@ public abstract class CirAbstractState {
 	public Collection<CirAbstractState> extend_all() throws Exception {
 		return CirMutations.extend_all(this);
 	}
-	
+	/**
+	 * @param context
+	 * @return the set of states directly subsumed by this state under the context
+	 * @throws Exception
+	 */
+	public Collection<CirAbstractState> subsume(Object context) throws Exception {
+		return CirMutations.subsume(this, context);
+	}
 	
 }
