@@ -42,6 +42,12 @@ class CDocument:
 		"""
 		return self.project
 
+	def get_symbol_tree(self):
+		"""
+		:return: the symbolic tree of expressions used
+		"""
+		return self.sym_tree
+
 
 class SymbolNode:
 	"""
@@ -229,183 +235,99 @@ class CirAbstractState:
 		roperand = "sym@{}@{}".format(self.roperand.get_class_name(), self.roperand.get_class_id())
 		return "{}${}${}${}${}".format(category, execution, location, loperand, roperand)
 
+	@staticmethod
+	def decode(document: CDocument, word: str):
+		"""
+		:param document: 	the document in which the word is decoded to an abstract execution state.
+		:param word: 		{category}${execution}${location}${loperand}${roperand}
+		:return: 			CirAbstractState or None if the transformation failed
+		"""
+		items = word.strip().split('$')
+		category = items[0].strip()
+		exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		cloc_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
+		execution = document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
+		location = document.get_program().cir_tree.get_cir_node(cloc_token)
+		loperand = document.get_symbol_tree().get_sym_node(items[3].strip())
+		roperand = document.get_symbol_tree().get_sym_node(items[4].strip())
+		return CirAbstractState(category, execution, location, loperand, roperand)
+
 
 class CirAbstractNode:
 	"""
-	It denotes a node in abstract execution state graph with subsumption edges.
+	It specifies a node in state subsumption hierarchical graph.
 	"""
 
-	def __init__(self, graph, state: CirAbstractState, extended_states):
+	def __init__(self, graph, state: CirAbstractState, annotations):
 		"""
-		:param graph: the graph where this node is created
-		:param state: the state that this node represents
-		:param extended_states: the set of states extended from this node
+		:param graph: 		the graph where this node of abstract state is defined
+		:param state: 		the abstract execution state that this node represents
+		:param annotations: the set of abstract states to local-describe this node
 		"""
+		graph: CirAbstractGraph
 		self.graph = graph
 		self.state = state
-		self.e_set = set()
-		for extended_state in extended_states:
-			extended_state: CirAbstractState
-			self.e_set.add(extended_state)
+		self.annotations = set()
+		for annotation in annotations:
+			annotation: CirAbstractState
+			self.annotations.add(annotation)
 		self.in_nodes = set()
 		self.ou_nodes = set()
 		return
 
 	def get_graph(self):
 		"""
-		:return: the graph where this node is constructed
+		:return: the graph where this node is defined
 		"""
 		return self.graph
 
 	def get_state(self):
 		"""
-		:return: the state that this node specifies
+		:return: the state that this node represents
 		"""
 		return self.state
 
-	def get_extended_states(self):
+	def get_annotations(self):
 		"""
-		:return: the set of states extended from this node
+		:return: the set of states to extend-describe this node's state
 		"""
-		return self.e_set
+		return self.annotations
 
 	def get_in_nodes(self):
 		"""
-		:return: the set of nodes directly subsume this node
+		:return: the set of nodes of which states directly subsume the state of this one
 		"""
 		return self.in_nodes
 
+	def get_in_degree(self):
+		"""
+		:return: the number of nodes of which states directly subsume the state of this one
+		"""
+		return len(self.in_nodes)
+
 	def get_ou_nodes(self):
 		"""
-		:return: the set of nodes directly subsumed by this node
+		:return: the set of nodes of which states are directly subsumed by the state of this node
 		"""
 		return self.ou_nodes
 
-	def get_in_degree(self):
-		return len(self.in_nodes)
-
 	def get_ou_degree(self):
+		"""
+		:return: the number of nodes of which states are directly subsumed by the state of this node
+		"""
 		return len(self.ou_nodes)
 
 
 class CirAbstractGraph:
 	"""
-	The state subsumption graph for feature analysis.
+	The state subsumption hierarchical graph.
 	"""
 
 	def __init__(self, document: CDocument, msg_file: str):
-		self.document = document
-		self.__load__(msg_file)
-		self.__link__(msg_file)
-		self.__edge__(msg_file)
-		return
-
-	def __new_state__(self, word: str):
 		"""
-		:param word:
-		:return:
+		:param document:
+		:param msg_file: xxx.msg {[N]|[E] s+}
 		"""
-		items = word.strip().split('$')
-		category = items[0].strip()
-		exec_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-		execution = self.document.get_program().function_call_graph.get_execution(exec_token[0], exec_token[1])
-		cir_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
-		location = self.document.get_program().cir_tree.get_cir_node(cir_token)
-		loperand = self.document.sym_tree.get_sym_node(items[3].strip())
-		roperand = self.document.sym_tree.get_sym_node(items[4].strip())
-		return CirAbstractState(category, execution, location, loperand, roperand)
-
-	def get_state(self, word: str):
-		"""
-		:param word: category$execution$location$loperand$roperand
-		:return:
-		"""
-		if word in self.states:
-			pass
-		else:
-			self.states[word] = self.__new_state__(word)
-		state = self.states[word]
-		state: CirAbstractState
-		return state
-
-	def __load__(self, msg_file: str):
-		"""
-		:param msg_file:
-		:return: it loads the states constructed in the graph
-		"""
-		self.states = dict()
-		with open(msg_file, 'r') as reader:
-			for line in reader:
-				items = line.strip().split('\t')
-				for k in range(1, len(items)):
-					item = items[k].strip()
-					word = item.strip()
-					if len(word) == 0:
-						continue
-					elif word in self.states:
-						continue
-					else:
-						state = self.__new_state__(word)
-						self.states[word] = state
-		return
-
-	def __link__(self, msg_file: str):
-		"""
-		:param msg_file:
-		:return:
-		"""
-		self.nodes = dict()
-		with open(msg_file, 'r') as reader:
-			for line in reader:
-				items = line.strip().split('\t')
-				head = items[0].strip()
-				if head == "[X]":
-					source = self.get_state(items[1].strip())
-					extended_states = set()
-					for k in range(2, len(items)):
-						target = self.get_state(items[k].strip())
-						extended_states.add(target)
-					self.nodes[source] = CirAbstractNode(self, source, extended_states)
-		return
-
-	def __edge__(self, msg_file: str):
-		"""
-		:param msg_file:
-		:return:
-		"""
-		with open(msg_file, 'r') as reader:
-			for line in reader:
-				items = line.strip().split('\t')
-				head = items[0].strip()
-				if head != "[X]":
-					source = self.get_state(items[1].strip())
-					targets = set()
-					for k in range(2, len(items)):
-						targets.add(self.get_state(items[k].strip()))
-					source_node = self.nodes[source]
-					for target in targets:
-						target_node = self.nodes[target]
-						source_node.ou_nodes.add(target_node)
-						target_node.in_nodes.add(source_node)
-		return
-
-	def get_document(self):
-		"""
-		:return: the document where the graph is defined
-		"""
-		return self.document
-
-	def get_states(self):
-		return self.states.values()
-
-	def get_nodes(self):
-		return self.nodes.values()
-
-	def get_node(self, state: CirAbstractState):
-		return self.nodes[state]
-
-
-
 
 
 
