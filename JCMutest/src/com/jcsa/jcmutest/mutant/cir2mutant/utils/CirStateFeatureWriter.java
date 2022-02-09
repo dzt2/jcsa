@@ -15,6 +15,7 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
+import com.jcsa.jcmutest.mutant.cir2mutant.base.CirSyMutationState;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -1075,7 +1076,7 @@ public class CirStateFeatureWriter {
 		
 		/* 3. write the state informations */
 		Set<Integer> mid_set = new HashSet<Integer>();
-		for(Object source : this.subsume_maps.keySet()) {
+		for(CirAbstractState source : this.subsume_maps.keySet()) {
 			/* [E] Source [Target+] \n */
 			this.cfile_writer.write("[E]\t" + this.encode_token(source));
 			
@@ -1086,6 +1087,11 @@ public class CirStateFeatureWriter {
 				this.cfile_writer.write(this.encode_token(target));
 			}
 			this.cfile_writer.write("\n");
+			
+			/* count the mutation numbers */
+			if(source instanceof CirSyMutationState) {
+				mid_set.add(((CirSyMutationState) source).get_mutant_id());
+			}
 		}
 		
 		/* 4. write the extension set for each created state */
