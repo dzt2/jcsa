@@ -371,6 +371,12 @@ class CirStatePatternWriter:
 		self.c_document = c_document
 		self.m_document = m_document
 		self.__writer__ = None
+		self.max_code_length = 96
+		return
+
+	def __open__(self, writer: TextIO, title: str):
+		self.__writer__ = writer
+		self.__writer__.write(title)
 		return
 
 	def __output__(self, text: str):
@@ -378,26 +384,169 @@ class CirStatePatternWriter:
 		self.__writer__.write(text)
 		return
 
+	def __close__(self, end_file: str):
+		self.__writer__.write(end_file)
+		self.__writer__ = None
+		return
+
+	@staticmethod
+	def __percent__(value: float):
+		return int(value * 1000000) / 10000.0
+
+	def write_patterns_to_mutations(self, patterns, tests, file_path: str):
+		"""
+		:param patterns: the set of CirStatePattern or CirStatePatternNode
+		:param tests:
+		:param file_path:
+		:return:
+		"""
+		with open(file_path, 'w') as writer:
+			self.__open__(writer, "Information for Each Pattern and its Mutations & States\n")
+
+			for pattern in patterns:
+				pattern: CirStatePattern
+				self.__output__("\n#BEG\n")
+
+				self.__output__("\tPattern Identifier\t{}\n".format(str(pattern)))
+				killed, alive, prediction = pattern.kac_measure(tests)
+				length, support, confidence = pattern.lsc_measure(tests)
+				prediction = CirStatePatternWriter.__percent__(prediction)
+				confidence = CirStatePatternWriter.__percent__(confidence)
+				self.__output__("\tKilled = {}\tAlived = {}\tCorrectness = {}%\n".format(killed, alive, prediction))
+				self.__output__("\tLength = {}\tSupport = {}\tConfidence = {}%\n".format(length, support, confidence))
+				self.__output__("\n")
+
+				self.__output__("\tMID\tRESULT\tCLASS\tOPRT\tLINE\tCODE\tPARAMETER\n")
+				for mutant in pattern.get_mutants():
+					c_mutant = mutant.find_source(self.c_document)
+					mid = c_mutant.get_muta_id()
+					res = c_mutant.get_result().is_killed_in(tests)
+					m_class = c_mutant.get_mutation().get_mutation_class()
+					operator = c_mutant.get_mutation().get_mutation_operator()
+					parameter = c_mutant.get_mutation().get_parameter()
+					location = c_mutant.get_mutation().get_location()
+					c_line = location.line_of(False)
+					c_code = location.get_code(True)
+					if len(c_code) > self.max_code_length:
+						c_code = c_code[0: self.max_code_length].strip() + "..."
+					self.__output__("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".
+									format(mid, res, m_class, operator, c_line, c_code, parameter))
+				self.__output__("\n")
+
+				self.__output__("\tSTID\tCLASS\tEXEC\tSTATEMENT\tLOCATION\tLOPERAND\tROPERAND\n")
+				for state in pattern.get_states():
+					stid = state.get_stid()
+					c_state = state.find_source(self.c_document)
+					category = c_state.get_category()
+					execution = c_state.get_execution()
+					statement = execution.get_statement().get_cir_code()
+					location = c_state.get_location().get_cir_code()
+					loperand = c_state.get_loperand().get_code()
+					roperand = c_state.get_roperand().get_code()
+					self.__output__("\t{}\t{}\t{}\t\"{}\"\t{}\t[{}]\t[{}]\n".
+									format(stid, category, execution, statement, location, loperand, roperand))
+				self.__output__("#END\n")
+
+			self.__close__("\nEnd-of-File: {}\n".format(file_path))
+		return
+
+	def write_patterns_of_summarize(self, patterns, tests, file_path: str):
+		"""
+		:param patterns:
+		:param tests:
+		:param file_path:
+		:return:
+		"""
+		with open(file_path, 'w') as writer:
+			self.__open__(writer, "Information for Summarizing State Patterns\n\n")
+
+			## 1. generate the optimization metrics
+			all_executions, cov_executions, mat_executions, unc_executions = set(), set(), set(), set()
+			for execution in self.m_document.get_execution_space().get_executions():
+				if execution.get_mutant().is_killed_in(tests):
+					continue
+				else:
+					all_executions.add(execution)
+			for pattern in patterns:
+				pattern: CirStatePattern
+				for execution in pattern.get_executions():
+					cov_executions.add(execution)
+			mat_executions = cov_executions & all_executions
+			unc_executions = all_executions - mat_executions
+			self.__output__("Efficiency Metrics for {} Patterns.\n".format(len(patterns)))
+			self.__output__("\tUNK_EXECS = {}\tCOV_EXECS = {}\n".format(len(all_executions), len(cov_executions)))
+			self.__output__("\tMAT_EXECS = {}\tUNC_EXECS = {}\n".format(len(mat_executions), len(unc_executions)))
+			precision, recall, f1_score = 0.0, 0.0, 0.0
+			if len(mat_executions) > 0:
+				precision = len(mat_executions) / len(cov_executions)
+				recall = len(mat_executions) / len(all_executions)
+				f1_score = 2 * precision * recall / (precision + recall)
+			precision = CirStatePatternWriter.__percent__(precision)
+			recall = CirStatePatternWriter.__percent__(recall)
+			f1_score = CirStatePatternWriter.__percent__(f1_score) / 100
+			self.__output__("\tPREC = {}%\tRECL = {}%\tF1SC = {}\n".format(precision, recall, f1_score))
+			optimize_rate = len(patterns) / len(cov_executions)
+			missed_rate = len(unc_executions) / len(all_executions)
+			optimize_rate = CirStatePatternWriter.__percent__(optimize_rate)
+			missed_rate = CirStatePatternWriter.__percent__(missed_rate)
+			self.__output__("\tNUMB = {}\tOPMR = {}%\tMISR = {}%\n".format(len(patterns), optimize_rate, missed_rate))
+			self.__output__("\n")
+
+			## 2. print the patterns and their measurements
+			self.__output__("Metrics of the Summary of Selected Patterns\n")
+			self.__output__("\tPID\tLENGTH\tMUTANTS\tKILLED\tALIVED\tCONFIDENCE(%)\n")
+			for pattern in patterns:
+				pid = str(pattern)
+				length, support, confidence = pattern.lsc_measure(tests)
+				killed, alive, _ = pattern.kac_measure(tests)
+				mutants = len(pattern.get_mutants())
+				confidence = CirStatePatternWriter.__percent__(confidence)
+				self.__output__("\t{}\t{}\t{}\t{}\t{}\t{}\n".format(pid, length, mutants, killed, alive, confidence))
+			self.__output__("\n")
+
+			## 3. print the uncovered mutation information
+			self.__output__("Summary of the Undetected Mutations from.\n")
+			self.__output__("\tMID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
+			for execution in unc_executions:
+				mutant = execution.get_mutant()
+				c_mutant = mutant.find_source(self.c_document)
+				mid = c_mutant.get_muta_id()
+				res = c_mutant.get_result().is_killed_in(tests)
+				m_class = c_mutant.get_mutation().get_mutation_class()
+				operator = c_mutant.get_mutation().get_mutation_operator()
+				parameter = c_mutant.get_mutation().get_parameter()
+				location = c_mutant.get_mutation().get_location()
+				c_line = location.line_of(False)
+				c_code = location.get_code(True)
+				if len(c_code) > self.max_code_length:
+					c_code = c_code[0: self.max_code_length].strip() + "..."
+				self.__output__("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".
+								format(mid, res, m_class, operator, c_line, c_code, parameter))
+			self.__output__("\n")
+
+			self.__close__("\nEnd-of-File: {}\n".format(file_path))
+		return
 
 
-def test_patterns_in(c_document: jctest.CDocument, m_document: jcencode.MerDocument, file_path: str):
+def do_mine_patterns(m_document: jcencode.MerDocument, tests, max_length: int, min_support: int, min_confidence: float):
 	"""
-	:param c_document:
 	:param m_document:
-	:param file_path:
+	:param tests:
+	:param max_length:
+	:param min_support:
+	:param min_confidence:
 	:return:
 	"""
-	## 1. collect the integer features of undetected mutant executions
+	## 1. select the initial features from undetected executions
 	init_features = set()
 	for execution in m_document.get_execution_space().get_executions():
-		if execution.get_mutant().is_killable():
+		if execution.get_mutant().is_killed_in(tests):
 			continue
 		else:
 			for feature in execution.get_features():
 				init_features.add(feature)
-	print("\t1. Select {} initial features from program;".format(len(init_features)))
 
-	## 2. generate the pattern-tree and select the right patterns
+	## 2. perform exhaustive generation of structural state patterns
 	p_tree = CirStatePatternTree(m_document)
 	counter, total = 0, len(init_features)
 	for feature in init_features:
@@ -405,55 +554,31 @@ def test_patterns_in(c_document: jctest.CDocument, m_document: jcencode.MerDocum
 		counter += 1
 		if counter % 1000 == 0:
 			length, support, confidence = node.get_pattern().lsc_measure(None)
-			print("\t\t[{}/{}]\tSupport = {}; Confidence = {}".format(counter, total, support, confidence))
+			print("\t\tMine[{}/{}]\tSupport = {}; Confidence = {}".format(counter, total, support, confidence))
 
-	## 3. select the good patterns from the tree model
-	max_length, min_support, min_confidence, tests = 1, 2, 0.65, None
+	## 3. select the good patterns from the p_tree
 	patterns = p_tree.filter_patterns(None, max_length, min_support, min_confidence, tests)
-	# patterns = p_tree.minimal_patterns(patterns)
-	print("\t2. Select {} patterns from {} tree-nodes.".format(len(patterns), len(p_tree.get_nodes())))
+	return patterns, p_tree.minimal_patterns(patterns)
 
-	## 3. write the patterns information to the specified file
+
+def test_patterns_in(c_document: jctest.CDocument, m_document: jcencode.MerDocument, directory: str):
+	"""
+	:param c_document:
+	:param m_document:
+	:param directory:
+	:return:
+	"""
+	max_length, min_support, min_confidence, tests = 1, 2, 0.65, None
+	print("\t1. Perform Mining over {}, {}, {}".format(max_length, min_support, min_confidence))
+
+	patterns, min_patterns = do_mine_patterns(m_document, None, max_length, min_support, min_confidence)
+	print("\t2. Select {} patterns and {} minimal.".format(len(patterns), len(min_patterns)))
+
+	writer = CirStatePatternWriter(c_document, m_document)
+	file_name = m_document.get_name()
+	writer.write_patterns_to_mutations(patterns, tests, os.path.join(directory, file_name + ".mpt"))
+	writer.write_patterns_of_summarize(min_patterns, tests, os.path.join(directory, file_name + ".smt"))
 	print("\t3. Write {} selected patterns to specified file".format(len(patterns)))
-	max_code_length = 96
-	with open(file_path, 'w') as writer:
-		for pattern in patterns:
-			pid = str(pattern)
-			length, support, confidence = pattern.lsc_measure(None)
-			writer.write("#BEG\n")
-			confidence = int(confidence * 10000) / 100.0
-			writer.write("\tID = {}\tLEN = {}\tSUPP = {}\tCONF = {}%\n".format(pid, length, support, confidence))
-			writer.write("\n")
-
-			writer.write("\tMID\tRESULT\tCLASS\tOPRT\tLINE\tCODE\tPARAMETER\n")
-			for mutant in pattern.get_mutants():
-				c_mutant = mutant.find_source(c_document)
-				mid = c_mutant.get_muta_id()
-				res = c_mutant.get_result().is_killed_in(None)
-				m_class = c_mutant.get_mutation().get_mutation_class()
-				operator = c_mutant.get_mutation().get_mutation_operator()
-				parameter = c_mutant.get_mutation().get_parameter()
-				location = c_mutant.get_mutation().get_location()
-				c_line = location.line_of(False)
-				c_code = location.get_code(True)
-				if len(c_code) > max_code_length:
-					c_code = c_code[0: max_code_length].strip() + "..."
-				writer.write("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\n".format(mid, res, m_class, operator, c_line, c_code, parameter))
-			writer.write("\n")
-
-			writer.write("\tSTID\tCLASS\tEXEC\tSTATEMENT\tLOCATION\tLOPERAND\tROPERAND\n")
-			for state in pattern.get_states():
-				stid = state.get_stid()
-				c_state = state.find_source(c_document)
-				category = c_state.get_category()
-				execution = c_state.get_execution()
-				statement = execution.get_statement().get_cir_code()
-				location = c_state.get_location().get_cir_code()
-				loperand = c_state.get_loperand().get_code()
-				roperand = c_state.get_roperand().get_code()
-				writer.write("\t{}\t{}\t{}\t\"{}\"\t{}\t[{}]\t[{}]\n".format(stid, category, execution, statement, location, loperand, roperand))
-			writer.write("#END\n")
-			writer.write("\n")
 	return
 
 
@@ -467,8 +592,7 @@ def main(in_directory: str, ou_directory: str, pt_directory: str):
 		directory = os.path.join(pt_directory, file_name)
 		if not os.path.exists(directory):
 			os.mkdir(directory)
-		pt_file = os.path.join(directory, file_name + ".mpt")
-		test_patterns_in(c_document, m_document, pt_file)
+		test_patterns_in(c_document, m_document, directory)
 		print()
 	return
 

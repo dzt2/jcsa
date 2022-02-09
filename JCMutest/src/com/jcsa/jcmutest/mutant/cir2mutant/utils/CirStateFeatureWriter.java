@@ -922,7 +922,9 @@ public class CirStateFeatureWriter {
 				}
 				this.subsume_maps.get(cir_mutation.get_r_state()).add(cir_mutation.get_i_state());
 				this.subsume_maps.get(cir_mutation.get_r_state()).add(cir_mutation.get_p_state());
-				targets.add(cir_mutation.get_i_state()); targets.add(cir_mutation.get_p_state());
+				targets.add(cir_mutation.get_r_state());
+				targets.add(cir_mutation.get_i_state()); 
+				targets.add(cir_mutation.get_p_state());
 			}
 			
 			/* recursively extend each initial state with max_distance */
