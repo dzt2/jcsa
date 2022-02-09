@@ -15,8 +15,6 @@ import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutation;
 import com.jcsa.jcmutest.mutant.cir2mutant.CirMutations;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirAbstractState;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirConditionState;
-import com.jcsa.jcmutest.mutant.cir2mutant.base.CirSyMutationState;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
 import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
@@ -1078,18 +1076,8 @@ public class CirStateFeatureWriter {
 		/* 3. write the state informations */
 		Set<Integer> mid_set = new HashSet<Integer>();
 		for(Object source : this.subsume_maps.keySet()) {
-			/* [M] for Mutant; [L] for Condition; [P] for Error. */
-			if(source instanceof CirSyMutationState) {
-				this.cfile_writer.write("[M]");
-				mid_set.add(((CirSyMutationState) source).get_mutant_id());
-			}
-			else if(source instanceof CirConditionState) {
-				this.cfile_writer.write("[C]");
-			}
-			else {
-				this.cfile_writer.write("[P]");
-			}
-			this.cfile_writer.write("\t" + this.encode_token(source));
+			/* [E] Source [Target+] \n */
+			this.cfile_writer.write("[E]\t" + this.encode_token(source));
 			
 			/* write the set of directly subsumed states */
 			Set<CirAbstractState> targets = this.subsume_maps.get(source);
@@ -1107,7 +1095,7 @@ public class CirStateFeatureWriter {
 			Set<CirAbstractState> extended_states = this.extended_map.get(state);
 			all_states.add(state); all_states.addAll(extended_states);
 			
-			this.cfile_writer.write("[X]\t" + this.encode_token(state));
+			this.cfile_writer.write("[N]\t" + this.encode_token(state));
 			for(CirAbstractState extended_state : extended_states) {
 				this.cfile_writer.write("\t");
 				this.cfile_writer.write(this.encode_token(extended_state));
