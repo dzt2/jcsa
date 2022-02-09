@@ -603,22 +603,22 @@ class CirAbstractGraph:
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext/features"
 	o_directory = "/home/dzt2/Development/Data/zext/impacts"
-	selected_number = 1
+	selected_number = 2
 	for fname in os.listdir(root_path):
 		i_directory = os.path.join(root_path, fname)
 		print("Testing on document of", fname)
 		c_document = CDocument(i_directory, fname, "pdg")
 		graph = c_document.get_state_graph()
-		print("\t{} states and {} nodes in subsumption graph".format(len(graph.get_states()), len(graph.get_nodes())))
+		print("\t{} mutants and {} states and {} nodes".format(len(graph.get_mutants()), len(graph.get_states()), len(graph.get_nodes())))
 		select_mutants = set()
-		for mutant in c_document.get_project().muta_space.get_mutants():
-			mutant: jcmuta.Mutant
-			if mutant.get_result().is_killed_in():
-				continue
-			else:
-				select_mutants.add(mutant)
-				if len(select_mutants) > selected_number:
-					break
+		while len(select_mutants) < selected_number:
+			mutant = jcbase.rand_select(graph.get_mutants())
+			if not (mutant is None):
+				mutant: jcmuta.Mutant
+				if mutant.get_result().is_killed_in():
+					continue
+				else:
+					select_mutants.add(mutant)
 		graph.visualize(o_directory, fname, select_mutants)
 		print("\tVisualize the subsumption graph for abstract states")
 		print()

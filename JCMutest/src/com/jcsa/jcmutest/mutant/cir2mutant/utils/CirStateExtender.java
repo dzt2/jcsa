@@ -222,6 +222,14 @@ public final class CirStateExtender {
 				}
 			}
 		}
+		
+		/* 4. constant condition can be improved to function entry */
+		SymbolExpression condition = state.get_condition();
+		if(condition instanceof SymbolConstant) {
+			Boolean value = ((SymbolConstant) condition).get_bool();
+			execution = execution.get_graph().get_entry();
+			outputs.add(CirAbstractState.eva_need(execution, value));
+		}
 	}
 	/**
 	 * ast_muta(exec, mutation) --> cov_stmt(exec, 1)

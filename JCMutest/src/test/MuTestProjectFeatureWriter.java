@@ -27,8 +27,14 @@ public class MuTestProjectFeatureWriter {
 	private static final Random random = new Random(System.currentTimeMillis());
 	
 	public static void main(String[] args) throws Exception {
+		String filter_project = "print_tokens";
 		for(File root : new File(root_path).listFiles()) {
-			testing(root, false);
+			if(root.getName().equals(filter_project)) {
+				continue;
+			}
+			else {
+				testing(root, false);
+			}
 		}
 	}
 	

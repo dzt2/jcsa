@@ -23,6 +23,4 @@ public enum CirAbstractClass {
 	/** inc_expr(expr|stmt, expr_key; bas_value, different) **/	inc_expr,
 	/** xor_expr(expr|stmt, expr_key; bas_value, different) **/	xor_expr,
 	
-	
-	
 }
