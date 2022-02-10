@@ -656,8 +656,6 @@ public final class CirStateExtender {
 		else {
 			this.ext_vauto_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
-		
-		
 	}
 	
 	/* extension for differential error states */

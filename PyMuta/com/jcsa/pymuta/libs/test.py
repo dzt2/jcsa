@@ -530,32 +530,36 @@ class CirAbstractGraph:
 		"""
 		return self.index[mutant]
 
-	@staticmethod
-	def __string__(node: CirAbstractNode, max_code_length = 96):
+	def __string__(self, node: CirAbstractNode, max_code_length = 96):
 		"""
 		:param node: Mutant or State-Description
 		:return:
 		"""
-		if node.is_mutant_node():
-			mutant = node.derive_mutant()
-			mid = mutant.get_muta_id()
-			m_class = mutant.get_mutation().get_mutation_class()
-			m_operator = mutant.get_mutation().get_mutation_operator()
-			c_location = mutant.get_mutation().get_location()
-			c_line = c_location.line_of(False)
-			c_code = c_location.get_code(True)
-			if len(c_code) > max_code_length:
-				c_code = c_code[0: max_code_length] + "..."
-			parameter = mutant.get_mutation().get_parameter()
-			return "MID:\t{}\nCLS:\t{}:{}\nLIN#{}:\t\"{}\"\nPRM:\t{}".format(mid, m_class, m_operator, c_line, c_code, parameter)
+		if node in self.get_nodes():
+			if node.is_mutant_node():
+				mutant = node.derive_mutant()
+				mid = mutant.get_muta_id()
+				m_class = mutant.get_mutation().get_mutation_class()
+				m_operator = mutant.get_mutation().get_mutation_operator()
+				c_location = mutant.get_mutation().get_location()
+				c_line = c_location.line_of(False)
+				c_code = c_location.get_code(True)
+				if len(c_code) > max_code_length:
+					c_code = c_code[0: max_code_length] + "..."
+				parameter = mutant.get_mutation().get_parameter()
+				return "MID:\t{}\nCLS:\t{}:{}\nLIN#{}:\t\"{}\"\nPRM:\t{}".\
+					format(mid, m_class, m_operator, c_line,c_code, parameter)
+			else:
+				category = node.get_state().get_category()
+				execution = node.get_state().get_execution()
+				statement = execution.get_statement().get_cir_code()
+				location = node.get_state().get_location().get_cir_code()
+				loperand = node.get_state().get_loperand().get_code()
+				roperand = node.get_state().get_roperand().get_code()
+				return "CTG:\t{}\n{}:\t{}\nLOC:\t{}\nLOP:\t{}\nROP:\t{}". \
+					format(category, execution, statement, location, loperand, roperand)
 		else:
-			category = node.get_state().get_category()
-			execution = node.get_state().get_execution()
-			statement = execution.get_statement().get_cir_code()
-			location = node.get_state().get_location().get_cir_code()
-			loperand = node.get_state().get_loperand().get_code()
-			roperand = node.get_state().get_roperand().get_code()
-			return "CTG:\t{}\n{}:\t{}\nLOC:\t{}\nLOP:\t{}\nROP:\t{}".format(category, execution, statement, location, loperand, roperand)
+			return "Undefined!!!"
 
 	def visualize(self, directory: str, file_name: str, mutants):
 		"""
@@ -578,7 +582,7 @@ class CirAbstractGraph:
 		## 2. build the name-labels and name-name-edges to visualize in pdf file
 		nodes, edges = dict(), dict()
 		for state_node in state_nodes:
-			nodes[str(state_node.get_state())] = CirAbstractGraph.__string__(state_node)
+			nodes[str(state_node.get_state())] = self.__string__(state_node)
 			edges[str(state_node.get_state())] = set()
 			for child in state_node.get_ou_nodes():
 				child: CirAbstractNode
@@ -600,27 +604,114 @@ class CirAbstractGraph:
 		return
 
 
+def test_load_c_document(f_directory: str, file_name: str, middle_name: str):
+	"""
+	:param f_directory: the directory of xxx/features/
+	:param file_name: 	the name of the program under test
+	:param middle_name: the middle-name to extract xxx.msg
+	:return: CDocument created from the specified directory
+	"""
+	directory = os.path.join(f_directory, file_name)
+	document = CDocument(directory, file_name, middle_name)
+	st_graph = document.get_state_graph()
+	mutants = len(document.get_project().muta_space.get_mutants())
+	tests = len(document.get_project().test_space.get_test_cases())
+	states = len(st_graph.get_states())
+	nodes = len(st_graph.get_nodes())
+	symbols = len(document.get_symbol_tree().get_sym_nodes())
+	print("\t1. {} mutants, {} tests, {} states, {} nodes, {} symbols.".format(mutants, tests, states, nodes, symbols))
+	return document
+
+
+def test_graph_visualize(document: CDocument, random_number: int, specify_name: str, specify_mids, im_directory: str):
+	"""
+	:param document: 		the document in which the mutants will be selected
+	:param random_number: 	the number of randomly selected mutants from document
+	:param specify_name: 	the name of the project to be manually selected
+	:param specify_mids: 	the ID of mutants to be manually selected by the user
+	:param im_directory:	the directory of xxx/impacts for preserving xxx.pdf
+	:return: 				the set of mutants being selected for visualization
+	"""
+	selected_mutants = set()
+	file_name = document.get_name()
+	if file_name == specify_name:
+		for mid in specify_mids:
+			mutant = document.get_project().muta_space.get_mutant(mid)
+			selected_mutants.add(mutant)
+	else:
+		while len(selected_mutants) < random_number:
+			mutant = jcbase.rand_select(document.get_project().muta_space.get_mutants())
+			mutant: jcmuta.Mutant
+			if mutant.get_result().is_killed_in(None):
+				continue
+			else:
+				selected_mutants.add(mutant)
+	document.get_state_graph().visualize(im_directory, file_name, selected_mutants)
+	print("\t2. visualize state subsumption graph for {} mutants.".format(len(selected_mutants)))
+	return
+
+
+def test_writing_states(document: CDocument, im_directory: str, max_code_length: int):
+	"""
+	:param document: 		the document in which the mutations and states are printed
+	:param im_directory: 	the directory of xxx/impacts/ to preserve xxx.sta
+	:param max_code_length:	the maximal length of code being printed to xxx.sta
+	:return:
+	"""
+	file_path = os.path.join(im_directory, document.get_name() + ".sta")
+	with open(file_path, 'w') as writer:
+		writer.write("MID\tRES\tCLS\tORT\tLIN\tTYP\tCOD\tPAM\n")
+		for mutant in document.get_project().muta_space.get_mutants():
+			mutant: jcmuta.Mutant
+			mid = mutant.get_muta_id()
+			res = mutant.get_result().is_killed_in(None)
+			cls = mutant.get_mutation().get_mutation_class()
+			ort = mutant.get_mutation().get_mutation_operator()
+			loc = mutant.get_mutation().get_location()
+			lin = loc.line_of(False)
+			typ = loc.get_class_name()
+			cod = loc.get_code(True)
+			if len(cod) > max_code_length:
+				cod = cod[0: max_code_length] + "..."
+			cod = "\"" + cod + "\""
+			pam = mutant.get_mutation().get_parameter()
+			writer.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(mid, res, cls, ort, lin, typ, cod, pam))
+
+			if document.get_state_graph().has_nodes_of(mutant):
+				nodes = document.get_state_graph().get_nodes_of(mutant)
+				for node in nodes:
+					node: CirAbstractNode
+					node_state = node.get_state()
+					category = node_state.get_category()
+					execution = node_state.get_execution()
+					statement = execution.get_statement().get_cir_code()
+					location = node_state.get_location().get_cir_code()
+					parameter = node_state.get_roperand().get_code()
+					writer.write("\t[N]\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]\n".
+								 format(category, execution, statement, location, parameter))
+					for annotation in node.get_annotations():
+						category = annotation.get_category()
+						execution = annotation.get_execution()
+						statement = execution.get_statement().get_cir_code()
+						location = annotation.get_location().get_cir_code()
+						parameter = annotation.get_roperand().get_code()
+						writer.write("\t\t[A]\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]\n".
+									 format(category, execution, statement, location, parameter))
+			writer.write("\n")
+		writer.write("\nEND-OF-FILE\n")
+	print("\t3. Write the states of each mutant to {}".format(file_path))
+	return
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext/features"
 	o_directory = "/home/dzt2/Development/Data/zext/impacts"
-	selected_number = 2
+	selected_number, select_name, select_ids = 4, "is_prime", [714, 715, 716, 717, 718, 564, 687]
 	for fname in os.listdir(root_path):
-		i_directory = os.path.join(root_path, fname)
 		print("Testing on document of", fname)
-		c_document = CDocument(i_directory, fname, "pdg")
-		graph = c_document.get_state_graph()
-		print("\t{} mutants and {} states and {} nodes".format(len(graph.get_mutants()), len(graph.get_states()), len(graph.get_nodes())))
-		select_mutants = set()
-		while len(select_mutants) < selected_number:
-			mutant = jcbase.rand_select(graph.get_mutants())
-			if not (mutant is None):
-				mutant: jcmuta.Mutant
-				if mutant.get_result().is_killed_in():
-					continue
-				else:
-					select_mutants.add(mutant)
-		graph.visualize(o_directory, fname, select_mutants)
-		print("\tVisualize the subsumption graph for abstract states")
+		c_document = test_load_c_document(root_path, fname, "pdg")
+		test_graph_visualize(c_document, selected_number, select_name, select_ids, o_directory)
+		test_writing_states(c_document, o_directory, 64)
 		print()
 	print("End Testing...")
 
