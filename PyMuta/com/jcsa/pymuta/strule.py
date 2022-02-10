@@ -2,7 +2,6 @@
 
 
 import os
-from collections import deque
 from typing import TextIO
 import com.jcsa.pymuta.libs.base as jcbase
 import com.jcsa.pymuta.libs.test as jctest
@@ -456,6 +455,7 @@ class CirStatePatternInputs:
 				if not (support in supp_dict):
 					supp_list.append(support)
 					supp_dict[support] = set()
+				supp_dict[support].add(rule)
 			supp_list.sort(reverse=True)
 			for support in supp_list:
 				supp_rules = supp_dict[support]
@@ -506,11 +506,13 @@ class CirStatePatternOutput:
 	It implements the output methods for printing states and patterns
 	"""
 
-	def __init__(self, c_document: jctest.CDocument, m_document: jcencode.MerDocument, max_code_length: int):
+	def __init__(self, c_document: jctest.CDocument, m_document: jcencode.MerDocument,
+				 max_code_length: int, max_rules_print: int):
 		"""
 		:param c_document: the original document
 		:param m_document: the memory-reduced document
 		:param max_code_length: maximal length of printed code
+		:param max_rules_print: maximal number of rules for each mutant
 		"""
 		self.c_document = c_document
 		self.m_document = m_document
@@ -518,6 +520,7 @@ class CirStatePatternOutput:
 		self.__writer__ = None
 		self.max_code_length = max_code_length
 		self.__precision__ = 10000
+		self.max_rules_print = max_rules_print
 		return
 
 	def __opens__(self, writer: TextIO, title: str):
@@ -567,7 +570,7 @@ class CirStatePatternOutput:
 		if len(code) > self.max_code_length:
 			code = code[0: self.max_code_length] + "..."
 		cod = "\"{}\"".format(code)
-		return "{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})".format(mid, res, cls, ort, lin, cod, pam)
+		return "{}\t{}\t{}\t{}\t{}\t{}\t({})".format(mid, res, cls, ort, lin, cod, pam)
 
 	def __sta2str__(self, state: jcencode.MerAbstractState, used_tests, evaluate: bool):
 		"""
@@ -745,18 +748,59 @@ class CirStatePatternOutput:
 			self.__close__("End-of-File: {}".format(file_path))
 		return
 
+	def write_mutation_to_summarize(self, file_path: str, rules, used_tests):
+		"""
+		:param file_path:
+		:param rules: 		the set of rules for matching each mutant
+		:param used_tests:
+		:return:
+		"""
+		with open(file_path, 'w') as writer:
+			self.__opens__(writer, "Table of Mutation-State Information.")
+			self.__write__("MID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAM\tCATEGORY\tEXECUTION\tLOCATION\tOPERAND\n")
+			for mutant in self.m_document.get_mutant_space().get_mutants():
+				if mutant.is_killed_in(used_tests):
+					continue
+				else:
+					mutant_rules = list()
+					for rule in rules:
+						rule: CirStatePatternRule
+						if rule.has_sample(mutant):
+							mutant_rules.append(rule)
+					if len(mutant_rules) > self.max_rules_print:
+						mutant_rules = mutant_rules[0: self.max_rules_print]
+					if len(mutant_rules) == 0:
+						self.__write__("{}\tNull\n".format(self.__mut2str__(mutant, used_tests)))
+					else:
+						for mutant_rule in mutant_rules:
+							if len(mutant_rule.get_features()) == 1:
+								self.__write__("{}".format(self.__mut2str__(mutant, used_tests)))
+								for state in mutant_rule.get_states():
+									c_state = state.find_source(self.c_document)
+									category = c_state.get_category()
+									execution = c_state.get_execution().get_statement().get_cir_code()
+									location = c_state.get_location().get_cir_code()
+									operand = c_state.get_roperand().get_code()
+									self.__write__("\t{}\t\"{}\"\t\"{}\"\t[{}]".
+												   format(category, execution, location, operand))
+									break
+								self.__write__("\n")
+			self.__close__("End-of-File: {}".format(file_path))
+		return
+
 
 ## testing methods
 
-def do_mine_rules_from(document: jcencode.MerDocument, used_tests,
-					   max_length: int, min_support: int, min_confidence: float):
+
+def do_minings(document: jcencode.MerDocument, used_tests, max_length: int,
+			   min_support: int, min_confidence: float):
 	"""
 	:param document:
 	:param used_tests:
 	:param max_length:
 	:param min_support:
 	:param min_confidence:
-	:return:	good_rules, min_rules
+	:return:	good_rules, min_rules, mutant_rule_dict
 	"""
 	## 1. collect the features in undetected mutations
 	inputs = CirStatePatternInputs(document, max_length, min_support, min_confidence, 1.0)
@@ -778,7 +822,14 @@ def do_mine_rules_from(document: jcencode.MerDocument, used_tests,
 	## 2. select good and minimal set of rules
 	selected_rules = inputs.filter_rules(None, used_tests)
 	minimized_rules = inputs.minimal_rules(selected_rules)
-	return selected_rules, minimized_rules
+	sorted_rules = inputs.sort_rules(selected_rules, used_tests)
+	mutant_rule_dict = dict()
+	for rule in sorted_rules:
+		for mutant in rule.get_mutants():
+			if not (mutant in mutant_rule_dict):
+				mutant_rule_dict[mutant] = list()
+			mutant_rule_dict[mutant].append(rule)
+	return selected_rules, minimized_rules, sorted_rules, mutant_rule_dict
 
 
 def do_testing(c_document: jctest.CDocument, m_document: jcencode.MerDocument, used_tests,
@@ -804,13 +855,16 @@ def do_testing(c_document: jctest.CDocument, m_document: jcencode.MerDocument, u
 
 	## 2. perform mining using naive algorithm
 	print("\t2. Start do mining algorithm...")
-	good_rules, min_rules = do_mine_rules_from(m_document, used_tests, max_length, min_support, min_confidence)
+	good_rules, min_rules, sort_rules, mr_dict = do_minings(
+		m_document, used_tests, max_length, min_support, min_confidence)
 
 	## 3. start to write information to files
-	writer = CirStatePatternOutput(c_document, m_document, 64)
-	print("\t3. Write {} rules and {} for minimal.".format(len(good_rules), len(min_rules)))
+	writer = CirStatePatternOutput(c_document, m_document, 64, 1)
+	print("\t3. Write {} rules, {} minimal, {} sorted.".format(len(good_rules), len(min_rules), len(sort_rules)))
 	writer.write_patterns_to_mutations(os.path.join(directory, file_name + ".ptm"), good_rules, used_tests)
 	writer.write_patterns_to_summarize(os.path.join(directory, file_name + ".sum"), min_rules, used_tests)
+	writer.write_mutations_to_patterns(os.path.join(directory, file_name + ".mtp"), mr_dict, used_tests)
+	writer.write_mutation_to_summarize(os.path.join(directory, file_name + ".mum"), sort_rules, used_tests)
 	return
 
 
@@ -819,13 +873,13 @@ if __name__ == "__main__":
 	encoding_directory = "/home/dzt2/Development/Data/zext/encoding"
 	patterns_directory = "/home/dzt2/Development/Data/zext/patterns"
 	for fname in os.listdir(features_directory):
-		c_document = jctest.CDocument(os.path.join(features_directory, fname), fname, "pdg")
-		m_document = jcencode.MerDocument(os.path.join(encoding_directory, fname), fname)
+		cdocument = jctest.CDocument(os.path.join(features_directory, fname), fname, "pdg")
+		mdocument = jcencode.MerDocument(os.path.join(encoding_directory, fname), fname)
 		o_directory = os.path.join(patterns_directory, fname)
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		print("Testing on {}.".format(fname))
-		do_testing(c_document, m_document, None, 1, 2, 0.65, o_directory)
+		do_testing(cdocument, mdocument, None, 1, 2, 0.60, o_directory)
 		print()
 	print("End-All-Testing.")
 
