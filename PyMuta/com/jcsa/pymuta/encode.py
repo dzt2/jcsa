@@ -750,9 +750,9 @@ def decode_all(ou_directory: str):
 
 
 if __name__ == "__main__":
-	in_directory = "/home/dzt2/Development/Data/zext/features"
-	ou_directory = "/home/dzt2/Development/Data/zext/encoding"
-	encode_all(in_directory, "pdg", ou_directory)
-	decode_all(ou_directory)
+	f_directory = "/home/dzt2/Development/Data/zext/features"
+	e_directory = "/home/dzt2/Development/Data/zext/encoding"
+	encode_all(f_directory, "pdg", e_directory)
+	decode_all(e_directory)
 	print("Testing End for All...")
 
