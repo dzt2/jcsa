@@ -336,6 +336,8 @@ class CirStatePatternInputs:
 		self.max_confidence = max_confidence
 		return
 
+	## rule-getter
+
 	def get_document(self):
 		return self.p_tree.get_document()
 
@@ -348,6 +350,30 @@ class CirStatePatternInputs:
 		:return: the unique pattern-rule referring to the specified features
 		"""
 		return self.p_tree.get_node(features).get_rule()
+
+	def get_rules(self, inputs=None):
+		"""
+		:param inputs: None for all, or the set of CirStatePatternRule|CirStatePatternNode|features
+		:return:
+		"""
+		rules = set()
+		if inputs is None:
+			for rule in self.p_tree.get_rules():
+				rules.add(rule)
+		else:
+			for input_element in inputs:
+				if isinstance(input_element, CirStatePatternNode):
+					rules.add(input_element.get_rule())
+				elif isinstance(input_element, CirStatePatternRule):
+					input_element: CirStatePatternRule
+					rules.add(input_element)
+				elif isinstance(input_element, set) or isinstance(input_element, list):
+					rules.add(self.get_rule(input_element))
+				else:
+					continue
+		return rules
+
+	## parameters
 
 	def get_max_length(self):
 		"""
@@ -373,33 +399,13 @@ class CirStatePatternInputs:
 		"""
 		return self.max_confidence
 
-	def get_rules(self, inputs=None):
-		"""
-		:param inputs: None for all, or the set of CirStatePatternRule|CirStatePatternNode|features
-		:return:
-		"""
-		rules = set()
-		if inputs is None:
-			for rule in self.p_tree.get_rules():
-				rules.add(rule)
-		else:
-			for input_element in inputs:
-				if isinstance(input_element, CirStatePatternNode):
-					rules.add(input_element.get_rule())
-				elif isinstance(input_element, CirStatePatternRule):
-					input_element: CirStatePatternRule
-					rules.add(input_element)
-				elif isinstance(input_element, set) or isinstance(input_element, list):
-					rules.add(self.get_rule(input_element))
-				else:
-					continue
-		return rules
+	## selections
 
 	def filter_rules(self, inputs, used_tests):
 		"""
-		:param inputs: None for all, or the set of CirStatePatternRule|CirStatePatternNode|features
-		:param used_tests: the set of MerTestCase or int to evaluate the CirStatePatternRule(s)
-		:return:
+		:param inputs: 	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:param used_tests:	the set of MerTestCase(s) or integers to evaluate the length-support-confidence of the rules
+		:return: 		the set of (inputs)-CirStatePatternRule(s) that match with the minimal parameters required among
 		"""
 		rules = self.get_rules(inputs)
 		good_rules = set()
@@ -411,99 +417,133 @@ class CirStatePatternInputs:
 
 	def select_rules(self, inputs, key):
 		"""
-		:param inputs: 	None for all, or the set of CirStatePatternRule|CirStatePatternNode|features
-		:param key: 	either MerMutant or MerExecution or None for selecting all
-		:return: 		the set of CirStatePatternRule(s) that contain the key
+		:param inputs:	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:param key:		the MerMutant or MerExecution to which CirStatePatternRule(s) correspond; or None to select none
+		:return:		the set of CirStatePatternRule(s) that correspond to the given set of MerMutant and MerExecution
 		"""
-		rules = self.get_rules(inputs)
 		selected_rules = set()
-		for rule in rules:
-			if key is None:
-				selected_rules.add(rule)
-			elif rule.has_sample(key):
-				selected_rules.add(rule)
-			else:
-				continue
+		if not (key is None):
+			rules = self.get_rules(inputs)
+			for rule in rules:
+				if rule.has_sample(key):
+					selected_rules.add(rule)
 		return selected_rules
 
-	def sort_rules(self, inputs, used_tests):
+	def re_map_rules(self, inputs):
 		"""
-		:param inputs:
-		:param used_tests:
-		:return: the sorted list of CirStatePatternRule(s) based on their support and confidence
+		:param inputs:	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:return:		the mapping from MerMutant to the CirStatePatternRule(s) that match with the specified mutations
 		"""
-		## 1. sort the rules based on their confidence
+		re_dict = dict()
 		rules = self.get_rules(inputs)
-		conf_list, conf_dict = list(), dict()
+		for rule in rules:
+			for mutant in rule.get_mutants():
+				if not (mutant in re_dict):
+					re_dict[mutant] = set()
+				re_dict[mutant].add(rule)
+		return re_dict
+
+	def s_eval_rules(self, inputs, used_tests):
+		"""
+		:param inputs: 	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:param used_tests:	the set of MerTestCase(s) or integers to evaluate the length-support-confidence of the rules
+		:return: 		the mapping from CirStatePatternRule(s) to the metrics of [length, support, confidence]
+		"""
+		rules = self.get_rules(inputs)
+		edict = dict()
 		for rule in rules:
 			length, support, confidence = rule.s_measure(used_tests)
-			confidence = int(confidence * 100000000)
-			if not (confidence in conf_dict):
-				conf_list.append(confidence)
-				conf_dict[confidence] = set()
-			conf_dict[confidence].add(rule)
-		conf_list.sort(reverse=True)
+			edict[rule] = (length, support, confidence)
+		return edict
 
-		##	2. sort the rules based on their supports
-		sorted_rules = list()
-		for confidence in conf_list:
-			conf_rules = conf_dict[confidence]
-			supp_list, supp_dict = list(), dict()
-			for rule in conf_rules:
+	def sorted_rules(self, inputs, used_tests):
+		"""
+		:param inputs: 	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:param used_tests:	the set of MerTestCase(s) or integers to evaluate the length-support-confidence of the rules
+		:return:		the list of CirStatePatternRule(s) that are sorted according to their supports (then confidence)
+		"""
+		## 1. evaluate each input and connect with metrics
+		eval_dict = self.s_eval_rules(inputs, used_tests)
+
+		## 2. sorting the rules according to their support
+		supp_list, supp_dict = list(), dict()
+		for rule, metrics in eval_dict.items():
+			support = metrics[1]
+			if not (support in supp_dict):
+				supp_list.append(support)
+				supp_dict[support] = set()
+			supp_dict[support].add(rule)
+		supp_list.sort(reverse=True)
+
+		## 3. sort the rules according to their confidence
+		sorted_rule_list = list()
+		for support in supp_list:
+			## 3-1. capture the support-rules
+			supp_rules = supp_dict[support]
+			conf_list, conf_dict = list(), dict()
+
+			## 3-2. sort the local confidence
+			for rule in supp_rules:
 				rule: CirStatePatternRule
-				length, support, confidence = rule.s_measure(used_tests)
-				if not (support in supp_dict):
-					supp_list.append(support)
-					supp_dict[support] = set()
-				supp_dict[support].add(rule)
-			supp_list.sort(reverse=True)
-			for support in supp_list:
-				supp_rules = supp_dict[support]
-				for rule in supp_rules:
-					rule: CirStatePatternRule
-					sorted_rules.append(rule)
-		return sorted_rules
+				metrics = eval_dict[rule]
+				confidence = metrics[2]
+				confidence = int(confidence * 10000)
+				if not (confidence in conf_dict):
+					conf_list.append(confidence)
+					conf_dict[confidence] = set()
+				conf_dict[confidence].add(rule)
+			conf_list.sort(reverse=True)
 
-	def minimal_rules(self, inputs):
+			## 3-3. update the final sorted list
+			for confidence in conf_list:
+				conf_rules = conf_dict[confidence]
+				for rule in conf_rules:
+					rule: CirStatePatternRule
+					sorted_rule_list.append(rule)
+
+		## 4. return the final output sorted rules
+		return sorted_rule_list
+
+	def reduce_rules(self, inputs):
 		"""
-		:param inputs:
-		:return: the minimal set of CirStatePatternRule(s) to cover all the executions required
+		:param inputs: 	the set of CirStatePatternRule or CirStatePatternNode or integer feature vector; or None for all
+		:return:		the set of minimal CirStatePatternRule(s) that could cover all the executions matched with input
 		"""
-		## 1. collect all the executions matched
-		rules = self.get_rules(inputs)
-		all_executions = set()
-		for rule in rules:
+		## 1. collect all the executions matched in the rules
+		all_rules = self.get_rules(inputs)
+		all_executions, min_rules = set(), set()
+		for rule in all_rules:
 			for execution in rule.get_executions():
 				all_executions.add(execution)
 
-		## 2. select the minimal set of patterns
-		min_rules = set()
-		while (len(all_executions) > 0) and (len(rules) > 0):
-			## 1. select a random rule from existing ones
-			rand_rule = jcbase.rand_select(rules)
+		## 2. randomly minimal reduction algorithms for rules
+		while (len(all_executions) > 0) and (len(all_rules) > 0):
+			## 2-1. randomly select a CirStatePatternRule from
+			rand_rule = jcbase.rand_select(all_rules)
 			rand_rule: CirStatePatternRule
-			rule_executions = rand_rule.get_executions()
-			rules.remove(rand_rule)
+			all_rules.remove(rand_rule)
 
-			## 2. update the execution set and minimal set
-			com_executions = all_executions & rule_executions
+			## 2-2. update the local rule and minimal subset
+			com_executions = all_executions & rand_rule.get_executions()
 			if len(com_executions) > 0:
-				all_executions = all_executions - com_executions
 				min_rules.add(rand_rule)
+				all_executions = all_executions - com_executions
 
-			## 3. remove the set of rules that are subsumed
+			## 2-3. update the rule-set and remove the useless ones
 			rem_rules = set()
-			for rule in rules:
+			for rule in all_rules:
 				com_executions = rule.get_executions() & all_executions
 				if len(com_executions) == 0:
 					rem_rules.add(rule)
-			rules = rules - rem_rules
+			all_rules = all_rules - rem_rules
+
+		## 3. return minimal reduced set of CirStatePatternRule
 		return min_rules
 
 
 class CirStatePatternOutput:
 	"""
-	It implements the output methods for printing states and patterns
+	It implements the output methods to write information of generated CirStatePatternRule(s).
 	"""
 
 	def __init__(self, c_document: jctest.CDocument, m_document: jcencode.MerDocument,
@@ -523,6 +563,8 @@ class CirStatePatternOutput:
 		self.max_rules_print = max_rules_print
 		return
 
+	## 1. basic methods
+
 	def __opens__(self, writer: TextIO, title: str):
 		"""
 		:param writer:
@@ -539,6 +581,7 @@ class CirStatePatternOutput:
 		return
 
 	def __close__(self, end_of_file: str):
+		self.__writer__.write("EOF:\t")
 		self.__writer__.write(end_of_file)
 		self.__writer__.write("\n")
 		self.__writer__ = None
@@ -547,59 +590,35 @@ class CirStatePatternOutput:
 	def __percent__(self, ratio: float):
 		return int(ratio * self.__precision__) / (self.__precision__ / 100)
 
-	def __mut2str__(self, mutant, used_tests):
-		"""
-		:param mutant: MerMutant or MerExecution
-		:param used_tests:
-		:return: [mid, res, class, operator, line, code, parameter]
-		"""
-		if isinstance(mutant, jcencode.MerExecution):
-			key = mutant.get_mutant()
-		else:
-			mutant: jcencode.MerMutant
-			key = mutant
-		c_mutant = key.find_source(self.c_document)
-		mid = key.get_mid()
-		res = key.is_killed_in(used_tests)
-		cls = c_mutant.get_mutation().get_mutation_class()
-		ort = c_mutant.get_mutation().get_mutation_operator()
-		pam = c_mutant.get_mutation().get_parameter()
-		location = c_mutant.get_mutation().get_location()
-		lin = location.line_of(False)
-		code = location.get_code(True)
+	## 2. string methods
+
+	def __str2str__(self, code: str):
 		if len(code) > self.max_code_length:
 			code = code[0: self.max_code_length] + "..."
-		cod = "\"{}\"".format(code)
-		return "{}\t{}\t{}\t{}\t{}\t{}\t({})".format(mid, res, cls, ort, lin, cod, pam)
+		return "\"{}\"".format(code)
 
-	def __sta2str__(self, state: jcencode.MerAbstractState, used_tests, evaluate: bool):
+	def __mut2str__(self, mutant: jcencode.MerMutant, used_tests):
 		"""
-		:param state:
-		:param used_tests:
-		:param evaluate: whether to evaluate the state
-		:return:	[stid, [support, confidence(%),] category, stmt_class, statement, location, parameter]
+		:param mutant: 		the mutant of which information is written in the given used tests
+		:param used_tests: 	the set of MerTestCase or int to decide whether mutant is revealed
+		:return:			mid \t result \t class \t operator \t line \t location \t parameter
 		"""
-		stid = state.get_stid()
-		c_state = state.find_source(self.c_document)
-		category = c_state.get_category()
-		execution = c_state.get_execution()
-		stmt_class = execution.get_statement().get_class_name()
-		statement = execution.get_statement().get_cir_code()
-		location = c_state.get_location().get_cir_code()
-		parameter = c_state.get_roperand().get_code()
-		if evaluate:
-			rule = self.__p_tree__.get_node([state.get_stid()]).get_rule()
-			length, support, confidence = rule.s_measure(used_tests)
-			confidence = self.__percent__(confidence)
-			return "{}\t{}\t{}\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]".\
-				format(stid, support, confidence, category, stmt_class, statement, location, parameter)
-		return "{}\t{}\t{}\t\"{}\"\t\"{}\"\t[{}]".format(stid, category, stmt_class, statement, location, parameter)
+		mid = mutant.get_mid()
+		res = mutant.is_killed_in(used_tests)
+		c_mutant = mutant.find_source(self.c_document)
+		cls = c_mutant.get_mutation().get_mutation_class()
+		ort = c_mutant.get_mutation().get_mutation_operator()
+		loc = c_mutant.get_mutation().get_location()
+		lin = loc.line_of(False)
+		cod = self.__str2str__(loc.get_code(True))
+		pam = c_mutant.get_mutation().get_parameter()
+		return mid, res, cls, ort, lin, cod, pam
 
 	def __rul2str__(self, rule: CirStatePatternRule, used_tests):
 		"""
-		:param rule:
-		:param used_tests:
-		:return: [rid, length, executions, killed, kill_ratio(%), support, confidence(%)]
+		:param rule: 		the state pattern rule to be written to the files string
+		:param used_tests: 	the set of MerTestCase or int to evaluate the input rule
+		:return:			rid \t length \t executions \t killed \t kill_ratio(%) \t support \t confidence(%)
 		"""
 		rid = str(rule)
 		killed, alive, kill_ratio = rule.k_measure(used_tests)
@@ -607,89 +626,106 @@ class CirStatePatternOutput:
 		executions = len(rule.get_executions())
 		kill_ratio = self.__percent__(kill_ratio)
 		confidence = self.__percent__(confidence)
-		return "{}\t{}\t{}\t{}\t{}\t{}\t{}".format(rid, length, executions, killed, kill_ratio, support, confidence)
+		return rid, length, executions, killed, kill_ratio, support, confidence
+
+	def __sta2str__(self, state: jcencode.MerAbstractState):
+		"""
+		:param state:	the CirAbstractState of which information is written to the file
+		:return:		stid \t category \t execution \t statement \t location \t loperand \t roperand
+		"""
+		stid = state.get_stid()
+		c_state = state.find_source(self.c_document)
+		category = c_state.get_category()
+		execution = c_state.get_execution()
+		statement = execution.get_statement().get_cir_code()
+		statement = self.__str2str__(statement)
+		location = c_state.get_location().get_cir_code()
+		location = self.__str2str__(location)
+		loperand = c_state.get_loperand().get_code()
+		roperand = c_state.get_roperand().get_code()
+		return stid, category, execution, statement, location, loperand, roperand
+
+	def __ant2str__(self, state: jcencode.MerAbstractState, used_tests):
+		"""
+		:param state: 		the CirAbstractState as the annotation to be evaluated
+		:param used_tests:	the set of MerTestCase(s) or int to evaluate the state
+		:return:			stid, category, statement, location, parameter, support, confidence(%)
+		"""
+		stid = state.get_stid()
+		c_state = state.find_source(self.c_document)
+		category = c_state.get_category()
+		execution = c_state.get_execution()
+		statement = execution.get_statement().get_cir_code()
+		statement = self.__str2str__(statement)
+		location = c_state.get_location().get_cir_code()
+		location = self.__str2str__(location)
+		parameter = c_state.get_roperand().get_code()
+		rule = self.__p_tree__.get_node([state.get_stid()]).get_rule()
+		length, support, confidence = rule.s_measure(used_tests)
+		confidence = self.__percent__(confidence)
+		return stid, category, statement, location, parameter, support, confidence
+
+	## 3. writing methods
 
 	def write_patterns_to_mutations(self, file_path: str, rules, used_tests):
 		"""
-		:param file_path: 	the file to preserve pattern-mutations information
-		:param rules: 		the set of CirStatePatternRule(s) to be visualized
-		:param used_tests: 	the set of MerTestCase or int to evaluate patterns
+		:param file_path: 	the xxx.ptm in which the pattern-mutation table is written
+		:param rules:		the set of CirStatePatternRule(s) that are written to file
+		:param used_tests:	the set of MerTestCase(s) or int to measure the input rule
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
-			self.__opens__(writer, "Patterns-to-Mutations Table\n")
+			self.__opens__(writer, "Table of Pattern-to-Mutation")
 
 			for rule in rules:
-				## 0. file title
 				rule: CirStatePatternRule
-				self.__write__("\n#BEG_RULE")
+				self.__write__("\n#BEG\n")
 
-				## 1. summary of CirStatePatternRule metrics
+				## 1. evaluate the rule and get the metrics
 				killed, alive, kill_ratio = rule.k_measure(used_tests)
 				length, support, confidence = rule.s_measure(used_tests)
+				exec_number, muta_number = len(rule.get_executions()), len(rule.get_mutants())
 				kill_ratio = self.__percent__(kill_ratio)
 				confidence = self.__percent__(confidence)
-				self.__write__("\n\t[Summary]\n")
-				self.__write__("\tDefinition\tSize\t{}\tFeatures\t{}\n".format(len(rule), str(rule)))
-				self.__write__("\tKilled\t{}\tAlive\t{}\t({}%)\n".format(killed, alive, kill_ratio))
-				self.__write__("\tLength\t{}\tSupport\t{}\t({}%)\n".format(length, support, confidence))
+
+				## 2. write the summary of metrics
+				self.__write__("\t[EVALUATION]\n")
+				self.__write__("\tRID\t{}\tEXE\t{}\tMUT\t{}\n".format(str(rule), exec_number, muta_number))
+				self.__write__("\tKIL\t{}\tALV\t{}\tKRT\t{}%\n".format(killed, alive, kill_ratio))
+				self.__write__("\tLEN\t{}\tSUP\t{}\tCOF\t{}%\n".format(length, support, confidence))
 				self.__write__("\n")
 
-				## 2. mutations being matched with the rule
-				self.__write__("\n\t[Mutations]\n")
-				self.__write__("\tMID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
-				for mutant in rule.get_mutants():
-					line = self.__mut2str__(mutant, used_tests)
-					self.__write__("\t{}\n".format(line))
-
-				## 3. state information defined in the rule
-				self.__write__("\n\t[Features]\n")
-				self.__write__("\tSTID\tCATEGORY\tEXECUTION\tSTATEMENT\tLOCATION\tPARAMETER\n")
+				## 3. write the definition of the rule
+				self.__write__("\t[DEFINITION]\n")
+				self.__write__("\tSTID\tCategory\tStatement\tLocation\tParameter\n")
 				for state in rule.get_states():
-					self.__write__("\t{}\n".format(self.__sta2str__(state, used_tests, False)))
-
-				## 4. end of file
-				self.__write__("#END_RULE\n")
-
-			self.__close__("End-of-File: " + file_path)
-		return
-
-	def write_mutations_to_patterns(self, file_path: str, mutant_rules: dict, used_tests):
-		"""
-		:param file_path: 		the file to preserve the mutation-pattern information
-		:param mutant_rules: 	map from mutant to the selected good rules
-		:param used_tests:		used to evaluate the states being connected
-		:return:
-		"""
-		with open(file_path, 'w') as writer:
-			self.__opens__(writer, "Mutations-to-Patterns Table\n")
-
-			self.__write__("\nMID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
-			for mutant, rules in mutant_rules.items():
-				mutant: jcencode.MerMutant
-				self.__write__("{}\n".format(self.__mut2str__(mutant, used_tests)))
-				mid, index = mutant.get_mid(), 0
-				for rule in rules:
-					rule: CirStatePatternRule
-					self.__write__("[{}.{}]\t{}\n".format(mid, index, self.__rul2str__(rule, used_tests)))
-					index += 1
-					for state in rule.get_states():
-						self.__write__("\t{}\n".format(self.__sta2str__(state, used_tests, False)))
+					stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
+					self.__write__("\t{}\t{}\t{}\t{}\t[{}]\n".format(stid, category, statement, location, roperand))
 				self.__write__("\n")
 
-			self.__close__("End-of-File: {}".format(file_path))
+				## 4. write the matched mutations set
+				self.__write__("\t[MUTATIONS]\n")
+				self.__write__("\tMID\tRESULT\tCLASS\tOPERATOR\tLINE\tLOCATION\tPARAMETER\n")
+				for mutant in rule.get_mutants():
+					mid, result, cls, operator, line, location, parameter = self.__mut2str__(mutant, used_tests)
+					self.__write__("\t{}\t{}\t{}\t{}\t{}\t{}\t({})\n".
+								   format(mid, result, cls, operator, line, location, parameter))
+				self.__write__("\n")
+
+				self.__write__("#END\n")
+
+			self.__close__(file_path)
 		return
 
-	def write_patterns_to_summarize(self, file_path: str, rules, used_tests):
+	def write_patterns_of_summarize(self, file_path: str, rules, used_tests):
 		"""
-		:param file_path:
-		:param rules:
-		:param used_tests:
+		:param file_path: 	the xxx.pts in which the patterns-summary table is written
+		:param rules:		the set of CirStatePatternRule(s) that are written to file
+		:param used_tests:	the set of MerTestCase(s) or int to measure the input rule
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
-			## 0. open the stream and write the title
-			self.__opens__(writer, "Summary of Generated Patterns")
+			self.__opens__(writer, "Table of Pattern-Summarizes")
 
 			## 1. evaluate the rule-set for precision and recall...
 			all_executions, cov_executions = set(), set()
@@ -729,63 +765,118 @@ class CirStatePatternOutput:
 			self.__write__("\n")
 
 			## 3. write the rule and evaluation metrics to the summary
-			self.__write__("\n[USED_RULES]\n")
+			self.__write__("[USED_RULES]\n")
 			self.__write__("RID\tLENGTH\tEXECUTIONS\tKILLED\tKILL_RATIO(%)\tSUPPORT\tCONFIDENCE(%)\n")
 			for rule in rules:
 				rule: CirStatePatternRule
-				self.__write__("{}\n".format(self.__rul2str__(rule, used_tests)))
+				rid, length, executions, killed, kill_ratio, support, confidence = self.__rul2str__(rule, used_tests)
+				self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".
+							   format(rid, length, executions, killed, kill_ratio, support, confidence))
+			self.__write__("\n")
 
-			## 4. write the uncovered executions and the information
-			self.__write__("\n[MUTATIONS]\n")
+			## 4. write the uncovered mutations and the information
+			self.__write__("[MUTATIONS]\n")
 			self.__write__("MID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAMETER\n")
 			for execution in los_executions:
-				self.__write__("{}\n".format(self.__mut2str__(execution.get_mutant(), used_tests)))
-				mid, index = execution.get_mutant().get_mid(), 0
-				for state in execution.get_states():
-					self.__write__("[{}.{}]\t{}\n".format(mid, index, self.__sta2str__(state, used_tests, True)))
-					index += 1
-			## 5. end of file
-			self.__close__("End-of-File: {}".format(file_path))
+				mid, result, cls, operator, line, location, param = self.__mut2str__(execution.get_mutant(), used_tests)
+				self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t({})\n".format(mid, result, cls, operator, line, location, param))
+			self.__write__("\n")
+
+			self.__close__(file_path)
+		return
+
+	def write_mutations_to_patterns(self, file_path: str, rules, used_tests):
+		"""
+		:param file_path:	the xxx.mtp in which the information of mutation-pattern table
+		:param rules:		the set of CirStatePatternRule(s) to be selected among mutants
+		:param used_tests:	the set of MerTestCase(s) or int to evaluate corresponding rule
+		:return:
+		"""
+		with open(file_path, 'w') as writer:
+			self.__opens__(writer, "Table of Mutation-Patterns")
+
+			## 1. collect the mutant and the corresponding pattern rules
+			mutant_patterns = dict()	# MerMutant --> CirStatePatternRule
+			for rule in rules:
+				rule: CirStatePatternRule
+				for mutant in rule.get_mutants():
+					if not (mutant in mutant_patterns):
+						mutant_patterns[mutant] = list()
+					mutant_patterns[mutant].append(rule)
+
+			## 2. write each mutation and their corresponding patterns
+			for mutant, patterns in mutant_patterns.items():
+				if mutant.is_killed_in(used_tests):
+					continue
+				else:
+					self.__write__("\n#BEG\n")
+
+					mid, res, cls, operator, line, location, parameter = self.__mut2str__(mutant, used_tests)
+					self.__write__("\t[MUTATION]\n")
+					self.__write__("\tMID: {}\tCLS: {}; {}; ({})\n".format(mid, cls, operator, parameter))
+					self.__write__("\tLIN#{}:\t{}\n".format(line, location))
+					self.__write__("\n")
+
+					self.__write__("\t[PATTERNS]\n")
+					self.__write__("\tRID\tSUPPORT\tCONFIDENCE(%)\tSTID\tCATEGORY\tEXECUTION\tLOCATION\tPARAMETER\n")
+					for rule in patterns:
+						rule: CirStatePatternRule
+						rid = str(rule)
+						length, support, confidence = rule.s_measure(used_tests)
+						confidence = self.__percent__(confidence)
+						for state in rule.get_states():
+							stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
+							self.__write__("\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t[{}]\n".format(
+								rid, support, confidence, stid, category, statement, location, roperand))
+					self.__write__("\n")
+
+					self.__write__("#END\n")
+			self.__close__(file_path)
 		return
 
 	def write_mutation_to_summarize(self, file_path: str, rules, used_tests):
 		"""
-		:param file_path:
-		:param rules: 		the set of rules for matching each mutant
-		:param used_tests:
+		:param file_path:	the xxx.mts in which the information of mutation-summary table
+		:param rules:		the set of CirStatePatternRule(s) to be selected among mutants
+		:param used_tests:	the set of MerTestCase(s) or int to evaluate corresponding rule
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
-			self.__opens__(writer, "Table of Mutation-State Information.")
-			self.__write__("MID\tRESULT\tCLASS\tOPERATOR\tLINE\tCODE\tPARAM\tCATEGORY\tEXECUTION\tLOCATION\tOPERAND\n")
+			self.__opens__(writer, "Table of Mutation-Summary")
+
+			self.__write__("FILE\tMID\tCLS\tORT\tLINE\tCODE\tPARAM\tSTID\tCATEGORY\tEXEC\tLOCT\tOPERAND\tSUPP\tCONF(%)\n")
 			for mutant in self.m_document.get_mutant_space().get_mutants():
-				if mutant.is_killed_in(used_tests):
-					continue
-				else:
+				if not mutant.is_killed_in(used_tests):
+					## collect mutation and rule information
+					mid, res, cls, operator, line, code, parameter = self.__mut2str__(mutant, used_tests)
 					mutant_rules = list()
 					for rule in rules:
 						rule: CirStatePatternRule
-						if rule.has_sample(mutant):
+						if rule.has_sample(mutant) and len(rule.get_features()) > 0:
 							mutant_rules.append(rule)
 					if len(mutant_rules) > self.max_rules_print:
 						mutant_rules = mutant_rules[0: self.max_rules_print]
-					if len(mutant_rules) == 0:
-						self.__write__("{}\tNull\n".format(self.__mut2str__(mutant, used_tests)))
+					pattern_number = len(mutant_rules)
+
+					## in case that no rule correspond to the mutant
+					file_name = self.m_document.get_name()
+					if pattern_number == 0:
+						self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t({})\t{}\n".
+									   format(file_name, mid, cls, operator, line, code, parameter, None))
 					else:
-						for mutant_rule in mutant_rules:
-							if len(mutant_rule.get_features()) == 1:
-								self.__write__("{}".format(self.__mut2str__(mutant, used_tests)))
-								for state in mutant_rule.get_states():
-									c_state = state.find_source(self.c_document)
-									category = c_state.get_category()
-									execution = c_state.get_execution().get_statement().get_cir_code()
-									location = c_state.get_location().get_cir_code()
-									operand = c_state.get_roperand().get_code()
-									self.__write__("\t{}\t\"{}\"\t\"{}\"\t[{}]".
-												   format(category, execution, location, operand))
-									break
-								self.__write__("\n")
-			self.__close__("End-of-File: {}".format(file_path))
+						index = 0
+						for rule in mutant_rules:
+							state = rule.get_states()[0]
+							length, support, confidence = rule.s_measure(used_tests)
+							confidence = self.__percent__(confidence)
+							stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
+							self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t({})".format(
+								file_name, mid, cls, operator, line, code, parameter))
+							self.__write__("\t{}\t{}\t{}\t{}\t[{}]\t{}\t{}\n".
+										   format(stid, category, statement, location, roperand, support, confidence))
+							index = index + 1
+
+			self.__close__(file_path)
 		return
 
 
@@ -821,8 +912,8 @@ def do_minings(document: jcencode.MerDocument, used_tests, max_length: int,
 		index += 1
 	## 2. select good and minimal set of rules
 	selected_rules = inputs.filter_rules(None, used_tests)
-	minimized_rules = inputs.minimal_rules(selected_rules)
-	sorted_rules = inputs.sort_rules(selected_rules, used_tests)
+	minimized_rules = inputs.reduce_rules(selected_rules)
+	sorted_rules = inputs.sorted_rules(selected_rules, used_tests)
 	mutant_rule_dict = dict()
 	for rule in sorted_rules:
 		for mutant in rule.get_mutants():
@@ -862,8 +953,8 @@ def do_testing(c_document: jctest.CDocument, m_document: jcencode.MerDocument, u
 	writer = CirStatePatternOutput(c_document, m_document, 64, 1)
 	print("\t3. Write {} rules, {} minimal, {} sorted.".format(len(good_rules), len(min_rules), len(sort_rules)))
 	writer.write_patterns_to_mutations(os.path.join(directory, file_name + ".ptm"), good_rules, used_tests)
-	writer.write_patterns_to_summarize(os.path.join(directory, file_name + ".sum"), min_rules, used_tests)
-	writer.write_mutations_to_patterns(os.path.join(directory, file_name + ".mtp"), mr_dict, used_tests)
+	writer.write_patterns_of_summarize(os.path.join(directory, file_name + ".sum"), min_rules, used_tests)
+	writer.write_mutations_to_patterns(os.path.join(directory, file_name + ".mtp"), good_rules, used_tests)
 	writer.write_mutation_to_summarize(os.path.join(directory, file_name + ".mum"), sort_rules, used_tests)
 	return
 
@@ -879,7 +970,7 @@ if __name__ == "__main__":
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		print("Testing on {}.".format(fname))
-		do_testing(cdocument, mdocument, None, 1, 2, 0.60, o_directory)
+		do_testing(cdocument, mdocument, None, 1, 2, 0.70, o_directory)
 		print()
 	print("End-All-Testing.")
 

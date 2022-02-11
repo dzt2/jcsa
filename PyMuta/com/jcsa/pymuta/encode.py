@@ -417,9 +417,9 @@ class MerAbstractStateSpace:
 		:return:
 		"""
 		features = self.normal(features)
-		states = set()
+		states = list()
 		for feature in features:
-			states.add(self.states[feature])
+			states.append(self.states[feature])
 		return states
 
 
@@ -597,10 +597,10 @@ class MerExecution:
 		"""
 		:return: the set of instances of CirAbstractState(s) connected with mutant in the execution
 		"""
-		states = set()
+		states = list()
 		for feature in self.features:
 			state = self.space.document.sta_space.get_state(feature)
-			states.add(state)
+			states.append(state)
 		return states
 
 
@@ -667,21 +667,28 @@ class MerDataEncoder:
 		"""
 		with open(zex_file, 'w') as writer:
 			for mutant in space.get_mutants():
-				mid = mutant.get_muta_id()
+				## 1. collect the ast_mutant nodes
 				roots = space.get_nodes_of(mutant)
+				## 2. collect the children states
 				states = set()
 				for root in roots:
 					root: jctest.CirAbstractNode
 					nodes = root.derive_subtree()
 					for node in nodes:
-						states.add(node.get_state())
-						for annotation in node.get_annotations():
-							states.add(annotation)
+						if node.is_mutant_node():
+							continue
+						else:
+							states.add(node.get_state())
+							for annotation in node.get_annotations():
+								states.add(annotation)
+				## 3. generate the feature vector and mid
+				mid = mutant.get_muta_id()
 				features = set()
 				for state in states:
 					feature = results[state]
 					feature: int
 					features.add(feature)
+				## 4. write {mid {\t feature}+ \n}
 				writer.write("{}".format(mid))
 				for feature in features:
 					writer.write("\t{}".format(feature))
