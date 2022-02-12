@@ -844,11 +844,10 @@ class CirStatePatternOutput:
 		with open(file_path, 'w') as writer:
 			self.__opens__(writer, "Table of Mutation-Summary")
 
-			self.__write__("FILE\tMID\tCLS\tORT\tLINE\tCODE\tPARAM\tSTID\tCATEGORY\tEXEC\tLOCT\tOPERAND\tSUPP\tCONF(%)\n")
+			## 1. collect the mapping from undetected mutant to corresponding rules
+			mutants_rules = dict()
 			for mutant in self.m_document.get_mutant_space().get_mutants():
 				if not mutant.is_killed_in(used_tests):
-					## collect mutation and rule information
-					mid, res, cls, operator, line, code, parameter = self.__mut2str__(mutant, used_tests)
 					mutant_rules = list()
 					for rule in rules:
 						rule: CirStatePatternRule
@@ -856,25 +855,29 @@ class CirStatePatternOutput:
 							mutant_rules.append(rule)
 					if len(mutant_rules) > self.max_rules_print:
 						mutant_rules = mutant_rules[0: self.max_rules_print]
-					pattern_number = len(mutant_rules)
+					mutants_rules[mutant] = mutant_rules
+			self.__write__("Summary.\tMutants\t{}\tUndetected\t{}\n\n".
+						   format(len(self.m_document.get_mutant_space().get_mutants()), len(mutants_rules)))
 
-					## in case that no rule correspond to the mutant
-					file_name = self.m_document.get_name()
-					if pattern_number == 0:
-						self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t({})\t{}\n".
-									   format(file_name, mid, cls, operator, line, code, parameter, None))
-					else:
-						index = 0
-						for rule in mutant_rules:
-							state = rule.get_states()[0]
-							length, support, confidence = rule.s_measure(used_tests)
-							confidence = self.__percent__(confidence)
-							stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
-							self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t({})".format(
-								file_name, mid, cls, operator, line, code, parameter))
-							self.__write__("\t{}\t{}\t{}\t{}\t[{}]\t{}\t{}\n".
-										   format(stid, category, statement, location, roperand, support, confidence))
-							index = index + 1
+			## 2. write the mutation and corresponding patterns to each file line
+			self.__write__("MID\tCLS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tSTID\tCATE\tEXEC\tSTMT\tLOCT\tOPRD\tCONF(%)\n")
+			for mutant, mutant_rules in mutants_rules.items():
+				mid, res, cls, operator, line, code, parameter = self.__mut2str__(mutant, used_tests)
+				if len(mutant_rules) == 0:
+					self.__write__("{}\t{}\t{}\t{}\t{}\t({})\t{}\t{}".
+								   format(mid, cls, operator, line, code, parameter, "???", None))
+					self.__write__("\n")
+				else:
+					for rule in mutant_rules:
+						state = rule.get_states()[0]
+						length, support, confidence = rule.s_measure(used_tests)
+						confidence = self.__percent__(confidence)
+						stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
+						self.__write__("{}\t{}\t{}\t{}\t{}\t({})\t{}\t{}".
+									   format(mid, cls, operator, line, code, parameter, "???", stid))
+						self.__write__("\t{}\t{}\t{}\t{}\t[{}]\t{}".
+									   format(category, execution, statement, location, roperand, confidence))
+						self.__write__("\n")
 
 			self.__close__(file_path)
 		return

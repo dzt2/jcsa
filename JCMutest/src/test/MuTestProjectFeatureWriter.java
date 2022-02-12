@@ -21,7 +21,7 @@ public class MuTestProjectFeatureWriter {
 	
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
 	private static String result_dir = "/home/dzt2/Development/Data/zext/features/";
-	private static final int max_subsumption_distance = 12;
+	private static final int max_subsumption_distance = 14;
 	private static final double random_test_ratio = 0.01;
 	private static final int min_test_number = 24;
 	private static final Random random = new Random(System.currentTimeMillis());
