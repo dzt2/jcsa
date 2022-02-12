@@ -842,7 +842,8 @@ class CirStatePatternOutput:
 		:return:
 		"""
 		with open(file_path, 'w') as writer:
-			self.__opens__(writer, "Table of Mutation-Summary")
+			## 0. open the file and write information
+			self.__opens__(writer, "Table of Mutation-Summary\n")
 
 			## 1. collect the mapping from undetected mutant to corresponding rules
 			mutants_rules = dict()
@@ -860,12 +861,11 @@ class CirStatePatternOutput:
 						   format(len(self.m_document.get_mutant_space().get_mutants()), len(mutants_rules)))
 
 			## 2. write the mutation and corresponding patterns to each file line
-			self.__write__("MID\tCLS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tSTID\tCATE\tEXEC\tSTMT\tLOCT\tOPRD\tCONF(%)\n")
+			self.__write__("ID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tCATE\tEXEC\tLOCT\tOPRD\tCONF(%)\n")
 			for mutant, mutant_rules in mutants_rules.items():
 				mid, res, cls, operator, line, code, parameter = self.__mut2str__(mutant, used_tests)
 				if len(mutant_rules) == 0:
-					self.__write__("{}\t{}\t{}\t{}\t{}\t({})\t{}\t{}".
-								   format(mid, cls, operator, line, code, parameter, "???", None))
+					self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(mid, cls, operator, line, code, parameter, None))
 					self.__write__("\n")
 				else:
 					for rule in mutant_rules:
@@ -873,12 +873,17 @@ class CirStatePatternOutput:
 						length, support, confidence = rule.s_measure(used_tests)
 						confidence = self.__percent__(confidence)
 						stid, category, execution, statement, location, loperand, roperand = self.__sta2str__(state)
-						self.__write__("{}\t{}\t{}\t{}\t{}\t({})\t{}\t{}".
-									   format(mid, cls, operator, line, code, parameter, "???", stid))
-						self.__write__("\t{}\t{}\t{}\t{}\t[{}]\t{}".
+						if (category == "eva_expr") and ("false" == roperand):
+							mutant_type = "CEQ"
+						else:
+							mutant_type = str(rule)
+						self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".
+									   format(mid, cls, operator, line, code, parameter, mutant_type))
+						self.__write__("\t{}\t{}: {}\t{}\t[{}]\t{}".
 									   format(category, execution, statement, location, roperand, confidence))
 						self.__write__("\n")
 
+			## 3. close the file and write end-of-file tag...
 			self.__close__(file_path)
 		return
 
