@@ -20,7 +20,6 @@ import com.jcsa.jcmutest.mutant.cir2mutant.base.CirPathErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirSyMutationState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirTrapsErrorState;
 import com.jcsa.jcmutest.mutant.cir2mutant.base.CirValueErrorState;
-import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -625,7 +624,7 @@ public final class CirStateExtender {
 		boolean is_virtual = !state.has_expression();
 		
 		/* 2. trap_value |--> TRAP(execution) */
-		if(StateMutations.is_trap_value(muta_value)) {
+		if(CirMutations.is_trap_value(muta_value)) {
 			outputs.add(CirAbstractState.trp_stmt(execution));
 		}
 		/* 3. equivalent value |--> FALSE at execution */
@@ -633,23 +632,23 @@ public final class CirStateExtender {
 			outputs.add(CirAbstractState.eva_need(execution, Boolean.FALSE));
 		}
 		/* 4. boolean category expression for analysis */
-		else if(StateMutations.is_boolean(expression)) {
+		else if(CirMutations.is_boolean(expression)) {
 			this.ext_vbool_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
 		/* 5. unsigned integer expression for analysis */
-		else if(StateMutations.is_usigned(expression)) {
+		else if(CirMutations.is_usigned(expression)) {
 			this.ext_vusig_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
 		/* 6. signed integer expression for subsumption */
-		else if(StateMutations.is_integer(expression)) {
+		else if(CirMutations.is_integer(expression)) {
 			this.ext_vnumb_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
 		/* 7. double real types expression of analysis */
-		else if(StateMutations.is_doubles(expression)) {
+		else if(CirMutations.is_doubles(expression)) {
 			this.ext_vreal_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
 		/* 8. address pointer expression for analysis */
-		else if(StateMutations.is_address(expression)) {
+		else if(CirMutations.is_address(expression)) {
 			this.ext_vaddr_error(execution, expression, is_virtual, orig_value, muta_value, outputs);
 		}
 		/* 9. otherwise, coverage the statement only */
@@ -676,39 +675,39 @@ public final class CirStateExtender {
 		if(difference instanceof SymbolConstant) {
 			long constant = ((SymbolConstant) difference).get_long();
 			if(constant > 0) {
-				errors.add(StateMutations.post_value);
+				errors.add(CirMutations.post_value);
 			}
 			else if(constant < 0) {
-				errors.add(StateMutations.negt_value);
+				errors.add(CirMutations.negt_value);
 			}
 			else {
-				errors.add(StateMutations.zero_value);
+				errors.add(CirMutations.zero_value);
 			}
 		}
-		else if(difference == StateMutations.post_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.post_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.zero_value) {
-			errors.add(StateMutations.npos_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.zero_value) {
+			errors.add(CirMutations.npos_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.negt_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.npos_value);
+		else if(difference == CirMutations.negt_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.npos_value);
 		}
-		else if(difference == StateMutations.npos_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.npos_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nneg_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nneg_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nzro_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nzro_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.numb_value) { }
+		else if(difference == CirMutations.numb_value) { }
 		else {
-			errors.add(StateMutations.numb_value);
+			errors.add(CirMutations.numb_value);
 		}
 		
 		/* 2. generate the subsumed error state from mutation */
@@ -743,39 +742,39 @@ public final class CirStateExtender {
 		if(difference instanceof SymbolConstant) {
 			double constant = ((SymbolConstant) difference).get_double();
 			if(constant > 0) {
-				errors.add(StateMutations.post_value);
+				errors.add(CirMutations.post_value);
 			}
 			else if(constant < 0) {
-				errors.add(StateMutations.negt_value);
+				errors.add(CirMutations.negt_value);
 			}
 			else {
-				errors.add(StateMutations.zero_value);
+				errors.add(CirMutations.zero_value);
 			}
 		}
-		else if(difference == StateMutations.post_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.post_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.zero_value) {
-			errors.add(StateMutations.npos_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.zero_value) {
+			errors.add(CirMutations.npos_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.negt_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.npos_value);
+		else if(difference == CirMutations.negt_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.npos_value);
 		}
-		else if(difference == StateMutations.npos_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.npos_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nneg_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nneg_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nzro_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nzro_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.numb_value) { }
+		else if(difference == CirMutations.numb_value) { }
 		else {
-			errors.add(StateMutations.numb_value);
+			errors.add(CirMutations.numb_value);
 		}
 		
 		/* 2. generate the subsumed error state from mutation */
@@ -810,7 +809,7 @@ public final class CirStateExtender {
 		boolean is_virtual = !state.has_expression();
 		
 		/* 2. trap_value |--> TRAP(execution) */
-		if(StateMutations.is_trap_value(difference)) {
+		if(CirMutations.is_trap_value(difference)) {
 			outputs.add(CirAbstractState.trp_stmt(execution));
 		}
 		/* 3. equivalent value |--> FALSE at execution */
@@ -818,7 +817,7 @@ public final class CirStateExtender {
 			outputs.add(CirAbstractState.eva_need(execution, Boolean.FALSE));
 		}
 		/* 4. as integer incremental expression location */
-		else if(StateMutations.is_integer(expression)) {
+		else if(CirMutations.is_integer(expression)) {
 			this.ext_inumb_error(execution, expression, is_virtual, base_value, difference, outputs);
 		}
 		/* 5. real incremental on expression location */
@@ -843,39 +842,39 @@ public final class CirStateExtender {
 		if(difference instanceof SymbolConstant) {
 			long constant = ((SymbolConstant) difference).get_long();
 			if(constant > 0) {
-				errors.add(StateMutations.post_value);
+				errors.add(CirMutations.post_value);
 			}
 			else if(constant < 0) {
-				errors.add(StateMutations.negt_value);
+				errors.add(CirMutations.negt_value);
 			}
 			else {
-				errors.add(StateMutations.zero_value);
+				errors.add(CirMutations.zero_value);
 			}
 		}
-		else if(difference == StateMutations.post_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.post_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.zero_value) {
-			errors.add(StateMutations.npos_value);
-			errors.add(StateMutations.nneg_value);
+		else if(difference == CirMutations.zero_value) {
+			errors.add(CirMutations.npos_value);
+			errors.add(CirMutations.nneg_value);
 		}
-		else if(difference == StateMutations.negt_value) {
-			errors.add(StateMutations.nzro_value);
-			errors.add(StateMutations.npos_value);
+		else if(difference == CirMutations.negt_value) {
+			errors.add(CirMutations.nzro_value);
+			errors.add(CirMutations.npos_value);
 		}
-		else if(difference == StateMutations.npos_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.npos_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nneg_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nneg_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.nzro_value) {
-			errors.add(StateMutations.numb_value);
+		else if(difference == CirMutations.nzro_value) {
+			errors.add(CirMutations.numb_value);
 		}
-		else if(difference == StateMutations.numb_value) { }
+		else if(difference == CirMutations.numb_value) { }
 		else {
-			errors.add(StateMutations.numb_value);
+			errors.add(CirMutations.numb_value);
 		}
 		
 		/* 2. generate the subsumed error state from mutation */
@@ -910,7 +909,7 @@ public final class CirStateExtender {
 		boolean is_virtual = !state.has_expression();
 		
 		/* 2. trap_value |--> TRAP(execution) */
-		if(StateMutations.is_trap_value(difference)) {
+		if(CirMutations.is_trap_value(difference)) {
 			outputs.add(CirAbstractState.trp_stmt(execution));
 		}
 		/* 3. equivalent value |--> FALSE at execution */
