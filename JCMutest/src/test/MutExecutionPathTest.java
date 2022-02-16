@@ -18,8 +18,6 @@ import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.TestInput;
@@ -102,22 +100,6 @@ public class MutExecutionPathTest {
 			buffer.append(ch);
 		}
 		return buffer.toString();
-	}
-	@SuppressWarnings({ "unused" })
-	private static void write_execution_path(FileWriter writer, CirExecutionPath path) throws Exception {
-		for(CirExecutionEdge edge : path.get_edges()) {
-			writer.write(edge.toString() + "\n");
-			writer.write("\t" + edge.get_target().toString() + ": ");
-			writer.write(strip_code(edge.get_target().get_statement().generate_code(true)) + "\n");
-			if(edge.get_annotation() instanceof List) {
-				@SuppressWarnings("unchecked")
-				List<CStateUnit> units = (List<CStateUnit>) edge.get_annotation();
-				for(CStateUnit unit : units) {
-					writer.write("\t" + strip_code(unit.get_expression().generate_code(true)));
-					writer.write(": " + strip_code(SymbolFactory.sym_expression(unit.get_value()).generate_code(false)) + "\n");
-				}
-			}
-		}
 	}
 	private static void write_state_path(FileWriter writer, CStatePath path) throws Exception {
 		int index = 0;
