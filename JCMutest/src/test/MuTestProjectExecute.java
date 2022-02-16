@@ -29,7 +29,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 
 	public static void main(String[] args) throws Exception {
-		testing("print_tokens.c", 271, 0, true, false); 
+		testing("print_tokens.c", 284, 0, true, false); 
 	}
 
 	private static String get_name(File cfile) {
