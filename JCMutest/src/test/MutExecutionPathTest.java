@@ -3,7 +3,6 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -118,36 +117,63 @@ public class MutExecutionPathTest {
 			writer.write("\n");
 		}
 	}
-	public static void testing(File cfile) throws Exception {
-		MuTestProject project = get_project(cfile);
-		MuTestProjectTestSpace tspace = project.get_test_space();
-		System.out.println("Perform testing on " + project.get_name());
+	public static void testing(File cfile, int tid) throws Exception {
+		System.out.println("Testing on " + cfile.getName());
 		
-		for(int k = 0; k < 4; k++) {
-			int test_number = tspace.number_of_test_inputs();
-			int test_id = Math.abs(random.nextInt()) % test_number;
-			Collection<TestInput> test_cases = tspace.get_test_inputs(test_id, test_id + 1);
-			project.execute_instrumental(test_cases);
-			MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-			
+		/* load the mutation test project and print the basic information */
+		MuTestProject project = get_project(cfile);
+		MuTestProjectCodeFile code_file = project.get_code_space().get_code_file(cfile);
+		MuTestProjectTestSpace tspace = project.get_test_space();
+		System.out.println("\t1. Load " + code_file.get_mutant_space().size() + 
+				" mutations and " + tspace.number_of_test_inputs() + " tests.");
+		
+		/* update the test integer ID to obtain the state path for coverage */
+		if(tid < 0) {
+			tid = Math.abs(random.nextInt()) % tspace.number_of_test_inputs();
+		}
+		TestInput test_case = tspace.get_test_space().get_input(tid);
+		System.out.println("\t2. Select TEST#" + tid + " for coverage analysis");
+		
+		/* load the coverage path and execution state from specified test case */
+		CStatePath state_path = null;
+		while(true) {
 			try {
-				CStatePath path = tspace.load_instrumental_path(code_file.get_sizeof_template(),
-						code_file.get_ast_tree(), code_file.get_cir_tree(), tspace.get_test_space().get_input(test_id));
-				System.out.println("\t--> Succeed to load instrumental file in " + test_cases);
-				FileWriter writer = new FileWriter(new File(result_dir + code_file.get_name() + ".txt"));
-				writer.write("Test: " + tspace.get_test_space().get_input(test_id).get_parameter() + "\n");
-				write_state_path(writer, path);
-				writer.close();
-				break;
+				state_path = tspace.load_instrumental_path(code_file.get_sizeof_template(), 
+							code_file.get_ast_tree(), code_file.get_cir_tree(), test_case);
+				if(state_path == null) {
+					project.execute_instrumental(tspace.get_test_inputs(tid, tid + 1));
+				}
+				else {
+					System.out.println("\t3. Succeed to load coverage state path...");
+					break;
+				}
 			}
 			catch(Exception ex) {
-				System.out.println("\t --> Unable to load instrumental file from " + test_cases);
+				ex.printStackTrace();
+				System.out.println("\t3. Unable to load coverage path and states...");
+				state_path = null;
+				break;
 			}
 		}
+	
+		/* write the state path if possible */
+		if(state_path != null) {
+			FileWriter writer = new FileWriter(new File(result_dir + code_file.get_name() + ".txt"));
+			writer.write("Test: " + tspace.get_test_space().get_input(tid).get_parameter() + "\n");
+			write_state_path(writer, state_path);
+			writer.close();
+			System.out.println("\t4. Write the state coverage path to output.");
+		}
+		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
 		for(File cfile : new File(code_path).listFiles()) {
-			testing(cfile);
+			if(cfile.getName().contains("days")) {
+				testing(cfile, 32);
+			}
+			else {
+				// testing(cfile, -1);
+			}
 		}
 	}
 
