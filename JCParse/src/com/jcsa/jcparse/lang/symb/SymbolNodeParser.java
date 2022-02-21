@@ -80,18 +80,17 @@ import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 
-
 /**
- * It implements the parsing from Java-Object to SymbolExpression.
+ * It implements the parse of SymbolNode from other Java-Objects.
  * 
  * @author yukimula
  *
  */
-final class SymbolParser {
+final class SymbolNodeParser {
 	
-	/* parameters for parsing */
+	/* definitions */
 	/** the factory to create data type **/
-	private static final CTypeFactory type_factory = new CTypeFactory();
+	protected static final CTypeFactory type_factory = new CTypeFactory();
 	/** used to support sizeof operation **/
 	private CRunTemplate ast_run_template;
 	/** the CIR is optimized for default-value **/
@@ -99,15 +98,57 @@ final class SymbolParser {
 	/**
 	 * private construction for singleton mode
 	 */
-	private SymbolParser() {}
+	private SymbolNodeParser() { 
+		this.ast_run_template = null; 
+		this.cir_optimize_switch = false; 
+	}
 	/** the singleton instance of symbolic parser algorithm **/
-	protected static final SymbolParser parser = new SymbolParser();
+	protected static final SymbolNodeParser parser = new SymbolNodeParser();
 	
-	/* BASE parse */
+	/* BAS PARSE */
+	/**
+	 * @param value	{Boolean|Character|Short|Integer|Long|Float|Double|CConstant}
+	 * @return
+	 * @throws Exception
+	 */
+	protected SymbolConstant parse_cons(Object value) throws Exception {
+		CConstant constant = new CConstant();
+		if(value == null) {
+			throw new IllegalArgumentException("Invalid value: null");
+		}
+		else if(value instanceof Boolean) {
+			constant.set_bool(((Boolean) value).booleanValue());
+		}
+		else if(value instanceof Character) {
+			constant.set_char(((Character) value).charValue());
+		}
+		else if(value instanceof Short) {
+			constant.set_int(((Short) value).shortValue());
+		}
+		else if(value instanceof Integer) {
+			constant.set_int(((Integer) value).intValue());
+		}
+		else if(value instanceof Long) {
+			constant.set_long(((Long) value).longValue());
+		}
+		else if(value instanceof Float) {
+			constant.set_float(((Float) value).floatValue());
+		}
+		else if(value instanceof Double) {
+			constant.set_double(((Double) value).doubleValue());
+		}
+		else if(value instanceof CConstant) {
+			constant = (CConstant) value;
+		}
+		else {
+			throw new IllegalArgumentException(value.getClass().getSimpleName());
+		}
+		return SymbolConstant.create(constant);
+	}
 	/**
 	 * @param expression
 	 * @param value
-	 * @return transform the expression to the boolean value
+	 * @return	the boolean version of the expression
 	 * @throws Exception
 	 */
 	protected SymbolExpression parse_cond(SymbolExpression expression, boolean value) throws Exception {
@@ -121,33 +162,36 @@ final class SymbolParser {
 					return expression;
 				}
 				else {
-					expression = SymbolUnaryExpression.create(CBasicTypeImpl.
-								bool_type, COperator.logic_not, expression);
-					return expression;
+					return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type, COperator.logic_not, expression);
+				}
+			}
+			else if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+				SymbolExpression loperand = expression;
+				SymbolExpression roperand = this.parse_cons(Integer.valueOf(0));
+				if(value) {
+					return SymbolBinaryExpression.create(CBasicTypeImpl.
+							bool_type, COperator.not_equals, loperand, roperand);
+				}
+				else {
+					return SymbolBinaryExpression.create(CBasicTypeImpl.
+							bool_type, COperator.equal_with, loperand, roperand);
 				}
 			}
 			else {
-				SymbolExpression loperand = expression;
-				SymbolExpression roperand = SymbolConstant.create(Integer.valueOf(0));
-				if(value) {
-					return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, COperator.not_equals, loperand, roperand);
-				}
-				else {
-					return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, COperator.equal_with, loperand, roperand);
-				}
+				throw new IllegalArgumentException("Invalid: " + type.generate_code());
 			}
 		}
 	}
 	/**
-	 * @param constant
-	 * @return {Boolean|Character|Short|Integer|Long|Float|Double|CConstant}
+	 * @param execution
+	 * @return (do#execution: int)
 	 * @throws Exception
 	 */
-	protected SymbolConstant parse_cons(Object constant) throws Exception {
-		return SymbolConstant.create(constant);
+	protected SymbolIdentifier parse_exec(CirExecution execution) throws Exception {
+		return SymbolIdentifier.create(execution);
 	}
 	
-	/* AST parsing */
+	/* AST PARSE */
 	/**
 	 * @param source
 	 * @return it recursively parses the abstract syntax node to symbolic node
@@ -789,13 +833,13 @@ final class SymbolParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected SymbolNode parse_astn(AstNode source, CRunTemplate ast_run_template) throws Exception {
+	protected SymbolExpression parse_astn(AstNode source, CRunTemplate ast_run_template) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else {
 			this.ast_run_template = ast_run_template;
-			return this.parse_ast(source);
+			return (SymbolExpression) this.parse_ast(source);
 		}
 	}
 	
@@ -1116,19 +1160,9 @@ final class SymbolParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected SymbolNode parse_cirn(CirNode source, boolean cir_optimize_switch) throws Exception {
+	protected SymbolExpression parse_cirn(CirNode source, boolean cir_optimize_switch) throws Exception {
 		this.cir_optimize_switch = cir_optimize_switch;
-		return this.parse_cir(source);
-	}
-	
-	/* EXEC parsing */
-	/**
-	 * @param execution
-	 * @return
-	 * @throws Exception
-	 */
-	protected SymbolIdentifier parse_exec(CirExecution execution) throws Exception {
-		return SymbolIdentifier.create(execution);
+		return (SymbolExpression) this.parse_cir(source);
 	}
 	
 }
