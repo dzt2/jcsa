@@ -220,40 +220,12 @@ public class SymbolConstant extends SymbolBasicExpression {
 	 * @return
 	 * @throws Exception
 	 */
-	protected static SymbolConstant create(Object constant) throws Exception {
+	protected static SymbolConstant create(CConstant constant) throws Exception {
 		if(constant == null) {
 			throw new IllegalArgumentException("Invalid constant: null");
 		}
 		else {
-			CConstant parameter = new CConstant();
-			if(constant instanceof Boolean) {
-				parameter.set_bool(((Boolean) constant).booleanValue());
-			}
-			else if(constant instanceof Character) {
-				parameter.set_char(((Character) constant).charValue());
-			}
-			else if(constant instanceof Short) {
-				parameter.set_int(((Short) constant).shortValue());
-			}
-			else if(constant instanceof Integer) {
-				parameter.set_int(((Integer) constant).intValue());
-			}
-			else if(constant instanceof Long) {
-				parameter.set_long(((Long) constant).longValue());
-			}
-			else if(constant instanceof Float) {
-				parameter.set_float(((Float) constant).floatValue());
-			}
-			else if(constant instanceof Double) {
-				parameter.set_double(((Double) constant).doubleValue());
-			}
-			else if(constant instanceof CConstant) {
-				parameter = (CConstant) constant;
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + constant.getClass().getSimpleName());
-			}
-			return new SymbolConstant(parameter);
+			return new SymbolConstant(constant);
 		}
 	}
 	
