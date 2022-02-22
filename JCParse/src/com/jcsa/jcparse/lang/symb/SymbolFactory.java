@@ -1,5 +1,8 @@
 package com.jcsa.jcparse.lang.symb;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
@@ -9,9 +12,12 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
+import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
+import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
@@ -632,6 +638,274 @@ public class SymbolFactory {
 		rexpression = sym_expression(roperand);
 		return SymbolBinaryExpression.create(CBasicTypeImpl.
 				bool_type, COperator.not_equals, lexpression, rexpression);
+	}
+	/**
+	 * @param function
+	 * @param arguments
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpression	call_expression(Object function, Iterable<Object> arguments) throws Exception {
+		SymbolExpression func = sym_expression(function);
+		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
+		for(Object argument : arguments) {
+			list.add(sym_expression(argument));
+		}
+		CType data_type = CTypeAnalyzer.get_value_type(func.get_data_type());
+		if(data_type instanceof CPointerType) {
+			data_type = CTypeAnalyzer.get_value_type(((CPointerType) data_type).get_pointed_type());
+		}
+		if(data_type instanceof CFunctionType) {
+			data_type = ((CFunctionType) data_type).get_return_type();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid data_type");
+		}
+		return SymbolCallExpression.create(data_type, func, SymbolArgumentList.create(list));
+	}
+	/**
+	 * @param body
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpression	field_expression(Object body, String name) throws Exception {
+		SymbolExpression sbody = sym_expression(body);
+		SymbolField field = SymbolField.create(name);
+		
+		CType data_type = CTypeAnalyzer.get_value_type(sbody.get_data_type());
+		if(data_type instanceof CStructType) {
+			data_type = ((CStructType) data_type).get_fields().get_field(name).get_type();
+		}
+		else if(data_type instanceof CUnionType) {
+			data_type = ((CUnionType) data_type).get_fields().get_field(name).get_type();
+		}
+		else {
+			throw new IllegalArgumentException("Invalid data_type");
+		}
+		
+		return SymbolFieldExpression.create(data_type, sbody, field);
+	}
+	/**
+	 * @param condition
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpression 	condition_expression(Object condition, Object loperand, Object roperand) throws Exception {
+		SymbolExpression cond = sym_condition(condition, true);
+		SymbolExpression tval = sym_expression(loperand);
+		SymbolExpression fval = sym_expression(roperand);
+		return SymbolConditionExpression.create(tval.get_data_type(), cond, tval, fval);
+	}
+	/**
+	 * @param lvalue
+	 * @param rvalue
+	 * @return lvalue := rvalue
+	 * @throws Exception
+	 */
+	public static SymbolExpression 	assign_to(Object lvalue, Object rvalue) throws Exception {
+		SymbolExpression loperand = sym_expression(lvalue);
+		SymbolExpression roperand = sym_expression(rvalue);
+		if(loperand.is_reference()) {
+			return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + loperand);
+		}
+	}
+	/**
+	 * @param elements
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpression	init_list(Iterable<Object> elements) throws Exception {
+		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
+		for(Object element : elements) {
+			list.add(sym_expression(element));
+		}
+		return SymbolInitializerList.create(CBasicTypeImpl.void_type, list);
+	}
+	/**
+	 * @param operand
+	 * @return ++operand
+	 * @throws Exception
+	 */
+	public static SymbolExpression	prev_inc(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(type instanceof CBasicType) {
+				switch(((CBasicType) type).get_tag()) {
+				case c_bool:
+				case c_char:
+				case c_uchar:
+				case c_short:
+				case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+				case c_int:
+				case c_uint:
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:
+				case c_float:
+				case c_double:
+				case c_ldouble:	break;
+				default:	throw new IllegalArgumentException(type.generate_code());
+				}
+			}
+			else if(type instanceof CEnumType) {
+				type = CBasicTypeImpl.int_type;
+			}
+			else if(type instanceof CPointerType) { }
+			else if(type instanceof CArrayType) {
+				type = SymbolParser.type_factory.get_pointer_type(
+							((CArrayType) type).get_element_type());
+			}
+			else {
+				throw new IllegalArgumentException(type.generate_code());
+			}
+			return SymbolUnaryExpression.create(type, COperator.increment, expression);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return --operand
+	 * @throws Exception
+	 */
+	public static SymbolExpression	prev_dec(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(type instanceof CBasicType) {
+				switch(((CBasicType) type).get_tag()) {
+				case c_bool:
+				case c_char:
+				case c_uchar:
+				case c_short:
+				case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+				case c_int:
+				case c_uint:
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:
+				case c_float:
+				case c_double:
+				case c_ldouble:	break;
+				default:	throw new IllegalArgumentException(type.generate_code());
+				}
+			}
+			else if(type instanceof CEnumType) {
+				type = CBasicTypeImpl.int_type;
+			}
+			else if(type instanceof CPointerType) { }
+			else if(type instanceof CArrayType) {
+				type = SymbolParser.type_factory.get_pointer_type(
+							((CArrayType) type).get_element_type());
+			}
+			else {
+				throw new IllegalArgumentException(type.generate_code());
+			}
+			return SymbolUnaryExpression.create(type, COperator.decrement, expression);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return operand++
+	 * @throws Exception
+	 */
+	public static SymbolExpression	post_inc(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(type instanceof CBasicType) {
+				switch(((CBasicType) type).get_tag()) {
+				case c_bool:
+				case c_char:
+				case c_uchar:
+				case c_short:
+				case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+				case c_int:
+				case c_uint:
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:
+				case c_float:
+				case c_double:
+				case c_ldouble:	break;
+				default:	throw new IllegalArgumentException(type.generate_code());
+				}
+			}
+			else if(type instanceof CEnumType) {
+				type = CBasicTypeImpl.int_type;
+			}
+			else if(type instanceof CPointerType) { }
+			else if(type instanceof CArrayType) {
+				type = SymbolParser.type_factory.get_pointer_type(
+							((CArrayType) type).get_element_type());
+			}
+			else {
+				throw new IllegalArgumentException(type.generate_code());
+			}
+			return SymbolUnaryExpression.create(type, COperator.arith_add_assign, expression);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return operand--
+	 * @throws Exception
+	 */
+	public static SymbolExpression	post_dec(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(type instanceof CBasicType) {
+				switch(((CBasicType) type).get_tag()) {
+				case c_bool:
+				case c_char:
+				case c_uchar:
+				case c_short:
+				case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+				case c_int:
+				case c_uint:
+				case c_long:
+				case c_ulong:
+				case c_llong:
+				case c_ullong:
+				case c_float:
+				case c_double:
+				case c_ldouble:	break;
+				default:	throw new IllegalArgumentException(type.generate_code());
+				}
+			}
+			else if(type instanceof CEnumType) {
+				type = CBasicTypeImpl.int_type;
+			}
+			else if(type instanceof CPointerType) { }
+			else if(type instanceof CArrayType) {
+				type = SymbolParser.type_factory.get_pointer_type(
+							((CArrayType) type).get_element_type());
+			}
+			else {
+				throw new IllegalArgumentException(type.generate_code());
+			}
+			return SymbolUnaryExpression.create(type, COperator.arith_sub_assign, expression);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
 	}
 	
 }
