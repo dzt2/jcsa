@@ -5,8 +5,6 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
-import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
@@ -125,13 +123,11 @@ public class SymbolFactory {
 		}
 		else if(cname instanceof CInstanceName) {
 			CInstance instance = ((CInstanceName) cname).get_instance();
-			return SymbolIdentifier.create(instance.get_type(), 
-					cname.get_name() + "#" + cname.get_scope().hashCode());
+			return SymbolIdentifier.create_name(instance.get_type(), cname);
 		}
 		else if(cname instanceof CParameterName) {
 			CInstance instance = ((CParameterName) cname).get_parameter();
-			return SymbolIdentifier.create(instance.get_type(), 
-					cname.get_name() + "#" + cname.get_scope().hashCode());
+			return SymbolIdentifier.create_name(instance.get_type(), cname);
 		}
 		else if(cname instanceof CEnumeratorName) {
 			int value = ((CEnumeratorName) cname).get_enumerator().get_value();
@@ -151,7 +147,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else {
-			return SymbolIdentifier.create(source.get_value_type(), "ast#" + source.get_key());
+			return SymbolIdentifier.create_astn(source.get_value_type(), source);
 		}
 	}
 	/**
@@ -164,7 +160,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else {
-			return SymbolIdentifier.create(source.get_data_type(), "cir#" + source.get_node_id());
+			return SymbolIdentifier.create_cirn(source.get_data_type(), source);
 		}
 	}
 	/**
@@ -180,12 +176,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else {
-			AstDeclarator declarator = source.get_declarator();
-			while(declarator.get_production() != DeclaratorProduction.identifier) {
-				declarator = declarator.get_declarator();
-			}
-			String name = "return#" + declarator.get_identifier().get_name();
-			return SymbolIdentifier.create(type, name);
+			return SymbolIdentifier.create_astn(type, source);
 		}
 	}
 	/**
@@ -202,8 +193,7 @@ public class SymbolFactory {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else {
-			String name = "return#" + source.get_declarator().get_name();
-			return SymbolIdentifier.create(type, name);
+			return SymbolIdentifier.create_cirn(type, source);
 		}
 	}
 	/**
@@ -212,8 +202,8 @@ public class SymbolFactory {
 	 * @return (name: type)
 	 * @throws Exception
 	 */
-	public static SymbolExpression	identifier(CType type, String name) throws Exception {
-		return SymbolIdentifier.create(type, name);
+	public static SymbolExpression	identifier(CType type, String name, Object scope) throws Exception {
+		return SymbolIdentifier.create(type, name, scope);
 	}
 	/**
 	 * @param execution

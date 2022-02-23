@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.AstScopeNode;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
@@ -41,7 +42,6 @@ import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
-import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -79,7 +79,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
-import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
@@ -196,7 +195,7 @@ public class SymbolParser {
 	}
 	/**
 	 * @param execution	{CirStatement|CirExecution}
-	 * @return			do#execution_ID
+	 * @return			do#execution_ID: int
 	 * @throws Exception
 	 */
 	protected SymbolIdentifier parse_exec(CirExecution execution) throws Exception {
@@ -204,8 +203,7 @@ public class SymbolParser {
 			throw new IllegalArgumentException("Invalid execution: null");
 		}
 		else {
-			return SymbolIdentifier.create(
-					CBasicTypeImpl.int_type, "do#" + execution.toString());
+			return SymbolIdentifier.create_exec(execution);
 		}
 	}
 	
@@ -403,15 +401,31 @@ public class SymbolParser {
 	private SymbolNode parse_ast_name(AstName source) throws Exception {
 		CName cname = source.get_cname();
 		if(cname == null) {
-			return SymbolIdentifier.create(CBasicTypeImpl.void_type, source.get_name());
+			/* find the lexical scope */
+			AstNode node = source; 
+			AstScopeNode scope = null;
+			while(node != null) {
+				if(node instanceof AstScopeNode) {
+					scope = (AstScopeNode) node;
+					break;
+				}
+				else {
+					node = node.get_parent();
+				}
+			}
+			
+			if(scope == null)
+				return SymbolIdentifier.create(CBasicTypeImpl.void_type, source.get_name(), "null");
+			else 
+				return SymbolIdentifier.create(CBasicTypeImpl.void_type, source.get_name(), scope.hashCode());
 		}
 		else if(cname instanceof CInstanceName) {
 			CType type = ((CInstanceName) cname).get_instance().get_type();
-			return SymbolIdentifier.create(type, cname.get_name());
+			return SymbolIdentifier.create_name(type, cname);
 		}
 		else if(cname instanceof CParameterName) {
 			CType type = ((CParameterName) cname).get_parameter().get_type();
-			return SymbolIdentifier.create(type, cname.get_name());
+			return SymbolIdentifier.create_name(type, cname);
 		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + cname.getClass().getSimpleName());
@@ -504,14 +518,15 @@ public class SymbolParser {
 	}
 	/* statements */
 	/**
-	 * switch_statement |-- switch := condition
+	 * switch_statement |-- if#switch_id := condition
 	 * @param source
 	 * @return
 	 * @throws Exception
 	 */
 	private SymbolNode parse_ast_switch_statement(AstSwitchStatement source) throws Exception {
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast(source.get_condition());
-		SymbolExpression loperand = SymbolIdentifier.create(roperand.get_data_type(), "ast#" + source.get_key());
+		SymbolExpression loperand = SymbolIdentifier.create(roperand.get_data_type(), "if", source.get_key());
+		loperand.set_source(source);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
@@ -549,7 +564,7 @@ public class SymbolParser {
 	 * @throws Exception
 	 */
 	private SymbolNode parse_ast_do_while_statement(AstDoWhileStatement source) throws Exception {
-		SymbolExpression loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "ast#" + source.get_key());
+		SymbolExpression loperand = SymbolIdentifier.create_astn(CBasicTypeImpl.bool_type, source);
 		SymbolExpression roperand = this.parse_bool((SymbolExpression) this.parse_ast(source.get_condition()), true);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
@@ -563,14 +578,13 @@ public class SymbolParser {
 		SymbolExpression loperand, roperand;
 		if(source.has_expression()) {
 			roperand = (SymbolExpression) this.parse_ast(source.get_expression());
-			loperand = SymbolIdentifier.create(roperand.get_data_type(), "#");
+			loperand = SymbolIdentifier.create_astn(roperand.get_data_type(), source);
 		}
 		else {
 			roperand = this.parse_cons(Boolean.TRUE);
-			loperand = SymbolIdentifier.create(roperand.get_data_type(), "#");
+			loperand = SymbolIdentifier.create_astn(roperand.get_data_type(), source);
 		}
-		return SymbolBinaryExpression.create(
-				loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * for_statement |-- for := condition
@@ -581,7 +595,7 @@ public class SymbolParser {
 	private SymbolNode parse_ast_for_statement(AstForStatement source) throws Exception {
 		SymbolBinaryExpression condition = (SymbolBinaryExpression) this.parse_ast(source.get_condition());
 		SymbolExpression roperand = this.parse_bool(condition.get_roperand(), true);
-		SymbolExpression loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "ast#" + source.get_key());
+		SymbolExpression loperand = SymbolIdentifier.create_astn(CBasicTypeImpl.bool_type, source);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
@@ -592,7 +606,7 @@ public class SymbolParser {
 	 */
 	private SymbolNode parse_ast_while_statement(AstWhileStatement source) throws Exception {
 		SymbolExpression roperand = this.parse_bool((SymbolExpression) this.parse_ast(source.get_condition()), true);
-		SymbolExpression loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "ast#" + source.get_key());
+		SymbolExpression loperand = SymbolIdentifier.create_astn(CBasicTypeImpl.bool_type, source);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
@@ -603,7 +617,7 @@ public class SymbolParser {
 	 */
 	private SymbolNode parse_ast_if_statement(AstIfStatement source) throws Exception {
 		SymbolExpression roperand = this.parse_bool((SymbolExpression) this.parse_ast(source.get_condition()), true);
-		SymbolExpression loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "ast#" + source.get_key());
+		SymbolExpression loperand = SymbolIdentifier.create_astn(CBasicTypeImpl.bool_type, source);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
@@ -613,42 +627,15 @@ public class SymbolParser {
 	 * @throws Exception
 	 */
 	private SymbolNode parse_ast_return_statement(AstReturnStatement source) throws Exception {
-		/* 1. find the function declarator */
-		AstNode node = source;
-		AstFunctionDefinition def = null;
-		while(node != null) {
-			if(node instanceof AstFunctionDefinition) {
-				def = (AstFunctionDefinition) node;
-				break;
-			}
-			else {
-				node = node.get_parent();
-			}
-		}
-		AstDeclarator declarator;
-		if(def == null) {
-			throw new IllegalArgumentException("Invalid syntax: no definition");
-		}
-		else {
-			declarator = def.get_declarator();
-		}
-		
-		/* 2. find the function declaration name */
-		AstName name = null;
-		while(declarator.get_production() != DeclaratorProduction.identifier) {
-			declarator = declarator.get_declarator();
-		}
-		name = declarator.get_identifier();
-		
-		/* 3. generate loperand and roperand */
+		/* generate loperand and roperand */
 		SymbolExpression loperand, roperand;
 		if(source.has_expression()) {
 			roperand = (SymbolExpression) this.parse_ast(source.get_expression());
-			loperand = SymbolIdentifier.create(roperand.get_data_type(), "return#" + name.get_name());
+			loperand = SymbolIdentifier.create_astn(roperand.get_data_type(), source);
 		}
 		else {
 			roperand = this.parse_cons(Integer.valueOf(0));
-			loperand = SymbolIdentifier.create(CBasicTypeImpl.void_type, "return#" + name.get_name());
+			loperand = SymbolIdentifier.create_astn(CBasicTypeImpl.void_type, source);
 		}
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
@@ -679,15 +666,29 @@ public class SymbolParser {
 	private SymbolNode parse_ast_id_expression(AstIdExpression source) throws Exception {
 		CName cname = source.get_cname();
 		if(cname == null) {
-			return SymbolIdentifier.create(source.get_value_type(), source.get_name());
+			AstNode node = source; AstScopeNode scope = null;
+			while(node != null) {
+				if(node instanceof AstScopeNode) {
+					scope = (AstScopeNode) node;
+					break;
+				}
+				else {
+					node = node.get_parent();
+				}
+			}
+			
+			if(scope != null) {
+				return SymbolIdentifier.create(source.get_value_type(), source.get_name(), scope.hashCode());
+			}
+			else {
+				return SymbolIdentifier.create(source.get_value_type(), source.get_name(), "null");
+			}
 		}
 		else if(cname instanceof CInstanceName) {
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return SymbolIdentifier.create(((CInstanceName) cname).get_instance().get_type(), name);
+			return SymbolIdentifier.create_name(source.get_value_type(), cname);
 		}
 		else if(cname instanceof CParameterName) {
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return SymbolIdentifier.create(((CParameterName) cname).get_parameter().get_type(), name);
+			return SymbolIdentifier.create_name(source.get_value_type(), cname);
 		}
 		else if(cname instanceof CEnumeratorName) {
 			CEnumerator enumerator = ((CEnumeratorName) cname).get_enumerator();
@@ -915,7 +916,7 @@ public class SymbolParser {
 		}
 		/* call_expression in case of no-template */
 		else {
-			return SymbolIdentifier.create(CBasicTypeImpl.int_type, "ast#" + source.get_key());
+			return SymbolIdentifier.create_astn(CBasicTypeImpl.int_type, source);
 		}
 	}
 	/**
@@ -1109,22 +1110,18 @@ public class SymbolParser {
 	private SymbolNode parse_cir_name_expression(CirNameExpression source) throws Exception {
 		if(source instanceof CirDeclarator) {
 			CName cname = ((CirDeclarator) source).get_cname();
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return SymbolIdentifier.create(source.get_data_type(), name);
+			return SymbolIdentifier.create_name(source.get_data_type(), cname);
 		}
 		else if(source instanceof CirIdentifier) {
 			CName cname = ((CirIdentifier) source).get_cname();
-			String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-			return SymbolIdentifier.create(source.get_data_type(), name);
+			return SymbolIdentifier.create_name(source.get_data_type(), cname);
 		}
 		else if(source instanceof CirImplicator) {
-			String name = "ast#" + source.get_ast_source().get_key();
-			return SymbolIdentifier.create(source.get_data_type(), name);
+			AstNode ast_source = source.get_ast_source();
+			return SymbolIdentifier.create_astn(source.get_data_type(), ast_source);
 		}
 		else if(source instanceof CirReturnPoint) {
-			CirFunctionDefinition def = source.function_of();
-			String name = "return#" + def.get_declarator().get_name();
-			return SymbolIdentifier.create(source.get_data_type(), name);
+			return SymbolIdentifier.create_cirn(source.get_data_type(), source);
 		}
 		else {
 			throw new IllegalArgumentException(source.generate_code(true));
@@ -1189,7 +1186,8 @@ public class SymbolParser {
 				case c_float:	return this.parse_cons(Float.valueOf(0.0f));
 				case c_double:
 				case c_ldouble:	return this.parse_cons(Double.valueOf(0.0));
-				default:		return SymbolIdentifier.create(source.get_data_type(), "cir#" + source.get_node_id());
+				default:		
+					return SymbolIdentifier.create_cirn(source.get_data_type(), source);
 				}
 			}
 			else if(type instanceof CPointerType) {
@@ -1199,11 +1197,11 @@ public class SymbolParser {
 				return this.parse_cons(Integer.valueOf(0));
 			}
 			else {
-				return SymbolIdentifier.create(source.get_data_type(), "cir#" + source.get_node_id());
+				return SymbolIdentifier.create_cirn(source.get_data_type(), source);
 			}
 		}
 		else {
-			return SymbolIdentifier.create(source.get_data_type(), "cir#" + source.get_node_id());
+			return SymbolIdentifier.create_cirn(source.get_data_type(), source);
 		}
 	}
 	/**

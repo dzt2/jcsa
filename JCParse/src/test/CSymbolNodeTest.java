@@ -72,5 +72,4 @@ public class CSymbolNodeTest {
 		writer.close();
 	}
 	
-	
 }
