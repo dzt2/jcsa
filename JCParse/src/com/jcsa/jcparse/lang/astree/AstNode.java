@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.astree;
 
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.text.CLocalable;
 
 /**
@@ -64,5 +66,15 @@ public interface AstNode extends CLocalable {
 	 * structure of this syntactic node
 	 */
 	public String generate_code() throws Exception;
-
+	
+	/**
+	 * @return the definition node where the node is defined
+	 */
+	public AstFunctionDefinition get_function_of();
+	
+	/**
+	 * @return the statement where the node is used
+	 */
+	public AstStatement get_statement_of();
+	
 }

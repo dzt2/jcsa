@@ -2,10 +2,24 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.LinkedList;
+import java.util.Queue;
 
-import com.jcsa.jcparse.lang.CRunTemplate;
+import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
@@ -17,7 +31,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symb.SymbolExpression;
 import com.jcsa.jcparse.lang.symb.SymbolFactory;
-import com.jcsa.jcparse.parse.CTranslate;
 
 public class CSymbolNodeTest {
 	
@@ -28,16 +41,74 @@ public class CSymbolNodeTest {
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
 			System.out.println("Testing on " + root.getName());
-			CirTree tree = parse(root);
-			write(tree, new File(output_directory + root.getName() + ".txt"));
+			AstCirFile cfile = parse(root);
+			write(cfile.get_ast_tree(), new File(output_directory + root.getName() + ".ast"));
+			write(cfile.get_cir_tree(), new File(output_directory + root.getName() + ".cir"));
 		}
 	}
 	
-	private static CirTree parse(File root) throws Exception { 
+	private static AstCirFile parse(File root) throws Exception { 
 		File cfile = new File(root.getAbsolutePath() + "/code/ifiles/" + root.getName() + ".c");
-		CRunTemplate template = new CRunTemplate(sizeof_template_file);
-		AstTree ast_tree = CTranslate.parse(cfile, ClangStandard.gnu_c89, template);
-		return CTranslate.parse(ast_tree, template);
+		return AstCirFile.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
+	}
+	
+	private static String strip_code(String code, int max_length) {
+		StringBuilder buffer = new StringBuilder();
+		for(int k = 0; k < code.length() && buffer.length() < max_length; k++) {
+			char ch = code.charAt(k);
+			if(Character.isWhitespace(ch)) {
+				ch = ' ';
+			}
+			buffer.append(ch);
+		}
+		if(buffer.length() >= max_length) buffer.append("...");
+		return buffer.toString();
+	}
+	
+	private static void write(AstTree tree, File output) throws Exception {
+		Queue<AstNode> queue = new LinkedList<AstNode>();
+		queue.add(tree.get_ast_root());
+		
+		FileWriter writer = new FileWriter(output);
+		while(!queue.isEmpty()) {
+			AstNode node = queue.poll();
+			for(int k = 0; k < node.number_of_children(); k++) {
+				queue.add(node.get_child(k));
+			}
+			
+			if(node instanceof AstIfStatement
+				|| node instanceof AstSwitchStatement
+				|| node instanceof AstWhileStatement
+				|| node instanceof AstDoWhileStatement
+				|| node instanceof AstForStatement
+				|| node instanceof AstExpressionStatement
+				|| node instanceof AstExpression
+				|| node instanceof AstReturnStatement) {
+				/* AST[KEY] CLASS FUNC LINE CODE */
+				int key = node.get_key();
+				String class_name = node.getClass().getSimpleName();
+				class_name = class_name.substring(3, class_name.length() - 4).strip();
+				AstFunctionDefinition def = node.get_function_of();
+				String function = "null";
+				if(def != null) {
+					AstDeclarator declarator = def.get_declarator();
+					while(declarator.get_production() != DeclaratorProduction.identifier) {
+						declarator = declarator.get_declarator();
+					}
+					function = declarator.get_identifier().get_name();
+				}
+				int line = node.get_location().line_of();
+				String code = node.generate_code();
+				code = "\"" + strip_code(code, 96) + "\"";
+				
+				writer.write("AST\t" + key + "\t" + class_name + "\t" + function + "\t" + line + "\n");
+				writer.write("COD:\t" + code + "\n");
+				SymbolExpression expression = SymbolFactory.sym_expression(node);
+				writer.write("SYM:\t" + expression.generate_code(true) + "\n");
+				writer.write("\n");
+			}
+		}
+		writer.close();
 	}
 	
 	private static void write(CirTree tree, File output) throws Exception {

@@ -765,6 +765,7 @@ public class SymbolParser {
 		case smaller_eq:
 		case equal_with:
 		case not_equals:	return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, operator, loperand, roperand);
+		case assign:		return SymbolBinaryExpression.create(type, COperator.assign, loperand, roperand);
 		case arith_add_assign:
 		case arith_sub_assign:
 		case arith_mul_assign:

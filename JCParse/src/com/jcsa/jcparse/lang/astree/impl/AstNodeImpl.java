@@ -3,6 +3,8 @@ package com.jcsa.jcparse.lang.astree.impl;
 import com.jcsa.jcparse.lang.CSyntaxElmImpl;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
+import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.text.CText;
 import com.jcsa.jcparse.parse.code.CodeGeneration;
 
@@ -70,4 +72,33 @@ public abstract class AstNodeImpl extends CSyntaxElmImpl implements AstNode {
 		if(tree != null) this.tree = tree;
 		else throw new IllegalArgumentException("invalid tree as null");
 	}
+	
+	@Override
+	public AstFunctionDefinition get_function_of() {
+		AstNode node = this;
+		while(node != null) {
+			if(node instanceof AstFunctionDefinition) {
+				return (AstFunctionDefinition) node;
+			}
+			else {
+				node = node.get_parent();
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public AstStatement get_statement_of() {
+		AstNode node = this;
+		while(node != null) {
+			if(node instanceof AstStatement) {
+				return (AstStatement) node;
+			}
+			else {
+				node = node.get_parent();
+			}
+		}
+		return null;
+	}
+	
 }
