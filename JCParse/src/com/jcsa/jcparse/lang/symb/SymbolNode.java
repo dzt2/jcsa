@@ -3,6 +3,8 @@ package com.jcsa.jcparse.lang.symb;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
+
 /**
  * 	It describes the syntactic definition of node used in symbolic analysis, including as following:	<br>
  * 	<code>
@@ -30,6 +32,9 @@ import java.util.List;
  *
  */
 public abstract class SymbolNode {
+	
+	/* static parameter for type generation */
+	protected static final CTypeFactory type_factory = new CTypeFactory();
 	
 	/* attributes and constructor */
 	/** the category of this symbolic node that it is defined **/
@@ -149,6 +154,7 @@ public abstract class SymbolNode {
 		for(SymbolNode child : this.children) {
 			parent.add_child(child);
 		}
+		parent.set_source(this.source);
 		return parent;
 	}
 	/**

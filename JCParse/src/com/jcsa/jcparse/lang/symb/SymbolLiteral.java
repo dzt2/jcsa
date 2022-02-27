@@ -56,7 +56,7 @@ public class SymbolLiteral extends SymbolBasicExpression {
 		}
 		else {
 			CType type;
-			CTypeFactory t_factory = SymbolParser.type_factory;
+			CTypeFactory t_factory = SymbolNode.type_factory;
 			if(literal.length() == 0) {
 				type = t_factory.get_pointer_type(CBasicTypeImpl.char_type);
 			}

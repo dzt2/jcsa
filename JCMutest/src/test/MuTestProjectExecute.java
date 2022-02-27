@@ -9,10 +9,11 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
+import com.jcsa.jcmutest.project.MuTestProjectTestResult;
+import com.jcsa.jcmutest.project.MuTestProjectTestSpace;
 import com.jcsa.jcmutest.project.util.FileOperations;
 import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.ClangStandard;
@@ -29,9 +30,10 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 
 	public static void main(String[] args) throws Exception {
-		testing("print_tokens.c", 291, 0, true, false); 
+		testing("print_tokens.c", 0, 128);
 	}
-
+	
+	/* initialize */
 	private static String get_name(File cfile) {
 		int index = cfile.getName().lastIndexOf('.');
 		return cfile.getName().substring(0, index).trim();
@@ -46,12 +48,12 @@ public class MuTestProjectExecute {
 		classes.addAll(MutationGenerators.reference_classes());
 		return classes;
 	}
-	private static MuTestProject get_project(File cfile) throws Exception {
-		String name = get_name(cfile);
+	private static MuTestProjectCodeFile get_project(File cfile) throws Exception {
+		String name = get_name(cfile); MuTestProject project;
 		File root = new File(root_path + "projects/" + name);
 
 		if(!root.exists()) {
-			MuTestProject project = new MuTestProject(root, MuCommandUtil.linux_util);
+			project = new MuTestProject(root, MuCommandUtil.linux_util);
 
 			/* set configuration data */
 			List<String> parameters = new ArrayList<>();
@@ -78,40 +80,95 @@ public class MuTestProjectExecute {
 
 			/* generate mutations */
 			project.generate_mutants(get_classes());
-
-			return project;
 		}
 		else {
-			return new MuTestProject(root, MuCommandUtil.linux_util);
+			project = new MuTestProject(root, MuCommandUtil.linux_util);
 		}
-
+		
+		return project.get_code_space().get_code_file(cfile);
 	}
-	private static void execute_project(MuTestProject project, File cfile, int mid,
-			int tid, boolean test_mutation, boolean test_instrumentation) throws Exception {
-		MuTestProjectCodeFile code_file = project.get_code_space().get_code_file(cfile);
-
-		List<Mutant> mutants = new ArrayList<Mutant>();
-		MutantSpace mspace = code_file.get_mutant_space();
-		for(int k = mid; k < mspace.size(); k++) {
-			mutants.add(mspace.get_mutant(k));
+	
+	/* executions */
+	/**
+	 * @param code_file		to derive mutation test result of each mutant
+	 * @param prev_mutants	the set of mutants from which alive are found
+	 * @return				the set of mutants selected from prev_mutants
+	 * @throws Exception
+	 */
+	private static Collection<Mutant> filter_undetected_mutants(
+			MuTestProjectCodeFile code_file, Iterable<Mutant> prev_mutants) throws Exception {
+		if(code_file == null) {
+			throw new IllegalArgumentException("Invalid code_file: null");
 		}
-
-		Collection<TestInput> tests = project.get_test_space().get_test_inputs(
-				tid, project.get_test_space().number_of_test_inputs());
-
-		if(test_mutation) {
-			project.execute(mutants, tests);
-		}
-		if(test_instrumentation) {
-			project.execute_instrumental(tests);
+		else {
+			/* 1. initialize the previous mutation list  */
+			if(prev_mutants == null) {
+				prev_mutants = code_file.get_mutant_space().get_mutants();
+			}
+			List<Mutant> post_mutants = new ArrayList<Mutant>();
+			
+			/* 2. filter the alive mutations from prev */
+			MuTestProjectTestSpace tspace = 
+					code_file.get_code_space().get_project().get_test_space();
+			for(Mutant mutant : prev_mutants) {
+				MuTestProjectTestResult result = tspace.get_test_result(mutant);
+				if(result == null || result.get_kill_set().degree() <= 0) {
+					post_mutants.add(mutant);
+				}
+			}
+			return post_mutants;
 		}
 	}
-	protected static void testing(String name, int mid, int tid,
-			boolean test_mutation, boolean test_instrumentation) throws Exception {
+	/**
+	 * @param mutants		the set of mutants to be executed for this iteration
+	 * @param test_cases	the set of test cases used to kill the input mutants
+	 * @return				the set of mutants that have not been killed through
+	 * @throws Exception
+	 */
+	private static Collection<Mutant> execute_mutants_tests(MuTestProjectCodeFile cfile, 
+			Collection<Mutant> mutants, Collection<TestInput> test_cases) throws Exception {
+		if(mutants == null) {
+			throw new IllegalArgumentException("Invalid mutants: null");
+		}
+		else if(test_cases == null) {
+			throw new IllegalArgumentException("Invalid test_cases: null");
+		}
+		else {
+			/* running the mutations over the input test cases */
+			System.out.println("\tIteration: " + mutants.size() + 
+					" mutants on " + test_cases.size() + " tests.");
+			cfile.get_code_space().get_project().execute(mutants, test_cases);
+			return filter_undetected_mutants(cfile, mutants);
+		}
+	}
+	/**
+	 * @param name		the name of mutation test project
+	 * @param tid		the ID of TestInput from which it is used to execute
+	 * @param tnumber	the number of tests selected each iteration of run
+	 * @throws Exception
+	 */
+	private static void testing(String name, int tid, int tnumber) throws Exception {
+		System.out.println("Testing on " + name);
+		
+		/* 1. read the project file and collect undetected mutations */
 		File cfile = new File(root_path + "cfiles/" + name);
-		MuTestProject project = get_project(cfile);
-		System.out.println("Generate project for " + name);
-		execute_project(project, cfile, mid, tid, test_mutation, test_instrumentation);
+		MuTestProjectCodeFile code_file = get_project(cfile);
+		Collection<Mutant> mutants = filter_undetected_mutants(code_file, null);
+		int end = code_file.get_code_space().
+				get_project().get_test_space().number_of_test_inputs();
+		
+		/* 2. execute iteration based on input test parameters */
+		MuTestProjectTestSpace tspace = 
+				code_file.get_code_space().get_project().get_test_space();
+		while(tid < end) {
+			int next_tid = Math.min(end, tid + tnumber);
+			Collection<TestInput> test_cases = tspace.get_test_inputs(tid, next_tid);
+			mutants = execute_mutants_tests(code_file, mutants, test_cases);
+			tid = next_tid;
+		}
+		
+		/* 3. end of the execution of the entire program testing */
+		System.out.println();
 	}
-
+	
 }

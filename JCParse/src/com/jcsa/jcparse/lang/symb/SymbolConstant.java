@@ -197,7 +197,6 @@ public class SymbolConstant extends SymbolBasicExpression {
 		default: 			return null;
 		}
 	}
-
 	
 	@Override
 	protected SymbolNode construct_copy() throws Exception {

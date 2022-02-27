@@ -53,14 +53,12 @@ public class SymbolConditionExpression extends SymbolExpression {
 			return expression;
 		}
 	}
-
 	
 	@Override
 	protected SymbolNode construct_copy() throws Exception {
 		return new SymbolConditionExpression(this.get_data_type());
 	}
 	
-
 	@Override
 	protected String get_code(boolean simplified) throws Exception {
 		String condition = this.get_condition().get_code(simplified);
@@ -69,11 +67,9 @@ public class SymbolConditionExpression extends SymbolExpression {
 		return condition + " ? " + t_operand + " : " + f_operand;
 	}
 	
-
 	@Override
 	protected boolean is_refer_type() { return false; }
 	
-
 	@Override
 	protected boolean is_side_affected() { return false; }
 	

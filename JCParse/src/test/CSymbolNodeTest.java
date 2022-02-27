@@ -42,6 +42,7 @@ public class CSymbolNodeTest {
 		for(File root : new File(root_path).listFiles()) {
 			System.out.println("Testing on " + root.getName());
 			AstCirFile cfile = parse(root);
+			SymbolFactory.set_config(cfile.get_run_template(), true);	// configure
 			write(cfile.get_ast_tree(), new File(output_directory + root.getName() + ".ast"));
 			write(cfile.get_cir_tree(), new File(output_directory + root.getName() + ".cir"));
 		}

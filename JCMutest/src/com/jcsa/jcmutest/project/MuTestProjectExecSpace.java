@@ -192,7 +192,8 @@ public class MuTestProjectExecSpace {
 		writer.write(String.format(remove_files_template, this.project.
 				get_test_space().get_mutation_output_directory().getAbsolutePath()));
 
-		for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
+		//for(TestInput input : this.project.get_test_space().get_test_space().get_inputs()) {
+		for(TestInput input : tests) {
 			String command = input.command(this.get_mutation_executional_file(),
 					this.project.get_test_space().get_mutation_output_directory(), timeout);
 			writer.write(command);
