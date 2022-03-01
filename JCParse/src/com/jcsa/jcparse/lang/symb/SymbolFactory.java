@@ -63,6 +63,7 @@ import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
+import com.jcsa.jcparse.lang.ctype.CQualifierType;
 import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
@@ -2162,6 +2163,348 @@ public class SymbolFactory {
 	public static	SymbolBinaryExpression	not_equals(Object loperand, Object roperand) throws Exception {
 		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
 				COperator.not_equals, sym_expression(loperand), sym_expression(roperand));
+	}
+	
+	/* type classifiers */
+	/**
+	 * @param type
+	 * @return the value type without qualifiers
+	 */
+	public static CType   get_type(CType type) {
+		if(type == null) {
+			return CBasicTypeImpl.void_type;
+		}
+		else {
+			while(type instanceof CQualifierType) {
+				type = ((CQualifierType) type).get_reference();
+			}
+			return type;
+		}
+	}
+	/**
+	 * @param type
+	 * @return void | null
+	 */
+	public static boolean is_void(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return true;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_void:	return true;
+			default:		return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return bool
+	 */
+	public static boolean is_bool(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_bool:	return true;
+			default:		return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return char | uchar
+	 */
+	public static boolean is_char(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_char:
+			case c_uchar:	return true;
+			default:		return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return char|short|int|long|llong|enum
+	 */
+	public static boolean is_sign(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_char:
+			case c_short:
+			case c_int:
+			case c_long:
+			case c_llong:	return true;
+			default:		return false;
+			}
+		}
+		else if(type instanceof CEnumType) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return uchar|ushort|uint|ulong|ullong
+	 */
+	public static boolean is_usig(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_uchar:
+			case c_ushort:
+			case c_uint:
+			case c_ulong:
+			case c_ullong:	return true;
+			default:		return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return char|uchar|short|ushort|int|uint|long|ulong|llong|ullong
+	 */
+	public static boolean is_numb(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_char:
+			case c_uchar:
+			case c_short:
+			case c_ushort:
+			case c_int:
+			case c_uint:
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:	return true;
+			default:		return false;
+			}
+		}
+		else if(type instanceof CEnumType) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return float | double | ldouble
+	 */
+	public static boolean is_real(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_float:
+			case c_double:
+			case c_ldouble:	return true;
+			default:		return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return array | pointer
+	 */
+	public static boolean is_addr(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CArrayType || type instanceof CPointerType) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param type
+	 * @return struct | union | function
+	 */
+	public static boolean is_auto(CType type) {
+		type = get_type(type);
+		if(type == null) {
+			return false;
+		}
+		else if(type instanceof CStructType || 
+				type instanceof CUnionType ||
+				type instanceof CFunctionType) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return void
+	 */
+	public static boolean is_void(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_void(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return void | logic | relational
+	 */
+	public static boolean is_bool(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else if(is_bool(expression.get_data_type())) {
+			return true;
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_operator().get_operator();
+			switch(operator) {
+			case logic_not:	return true;
+			default:		return false;
+			}
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			switch(operator) {
+			case logic_and:
+			case logic_or:
+			case greater_tn:
+			case greater_eq:
+			case smaller_tn:
+			case smaller_eq:
+			case not_equals:
+			case equal_with:	return true;
+			default:			return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return char | uchar
+	 */
+	public static boolean is_char(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_char(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return char|short|int|long|llong
+	 */
+	public static boolean is_sign(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_sign(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return uchar|ushort|uint|ulong|ullong
+	 */
+	public static boolean is_usig(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_usig(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return char|uchar|short|ushort|int|uint|long|ulong|llong|ullong
+	 */
+	public static boolean is_numb(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_numb(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return float | double | ldouble
+	 */
+	public static boolean is_real(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_real(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return array | pointer
+	 */
+	public static boolean is_addr(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_addr(expression.get_data_type());
+		}
+	}
+	/**
+	 * @param expression
+	 * @return function | struct | union
+	 */
+	public static boolean is_auto(SymbolExpression expression) {
+		if(expression == null) {
+			return false;
+		}
+		else {
+			return is_auto(expression.get_data_type());
+		}
 	}
 	
 }

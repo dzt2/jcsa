@@ -34,7 +34,7 @@ import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
 public abstract class SymbolNode {
 	
 	/* static parameter for type generation */
-	protected static final CTypeFactory type_factory = new CTypeFactory();
+	public static final CTypeFactory type_factory = new CTypeFactory();
 	
 	/* attributes and constructor */
 	/** the category of this symbolic node that it is defined **/

@@ -37,7 +37,7 @@ public abstract class SymbolExpression extends SymbolNode {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
 		else {
-			this.type = type;
+			this.type = SymbolFactory.get_type(type);
 		}
 	}
 	

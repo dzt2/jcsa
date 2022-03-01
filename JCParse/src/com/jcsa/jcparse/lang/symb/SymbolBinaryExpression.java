@@ -68,7 +68,7 @@ public class SymbolBinaryExpression extends SymbolExpression {
 	
 	/**
 	 * @param type
-	 * @param operator	{+,-,*,/,%, &,|,^,<<,>>, &&,||, <,<=,>,>=,==,!=, :=}
+	 * @param operator	{+,-,*,/,%, &,|,^,<<,>>, &&, ||, ^^, <,<=,>,>=,==,!=, :=}
 	 * @param loperand
 	 * @param roperand
 	 * @return	
@@ -108,7 +108,8 @@ public class SymbolBinaryExpression extends SymbolExpression {
 			case smaller_eq:
 			case not_equals:
 			case equal_with:
-			case assign:		break;
+			case assign:		
+			case bit_xor_assign:	break;
 			default:	throw new IllegalArgumentException("Invalid operator");
 			}
 			
