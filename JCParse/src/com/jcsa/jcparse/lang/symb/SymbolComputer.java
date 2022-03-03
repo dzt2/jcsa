@@ -1360,165 +1360,62 @@ final class SymbolComputer {
 		return computer.compute_type_cast(cast_type, operand);
 	}
 	
-	/* domain-determination */
+	/* domain-compartions */
 	/**
-	 * @param expression
-	 * @return true {zero} | false {nzro} | null {unknown}
+	 * @param constant
+	 * @param value
+	 * @return whether the constant equals with specified value.
 	 * @throws Exception
 	 */
-	protected static Boolean is_zero_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	protected static boolean do_compare(SymbolConstant constant, Object value) throws Exception {
+		if(constant == null) {
+			throw new IllegalArgumentException("Invalid constant: null");
 		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() == 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() == 0L);
-			}
-			else {
-				return Boolean.valueOf(((Double) value).doubleValue() == 0.0);
-			}
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid value as: null");
 		}
 		else {
-			return null;	/** null to denote 'unknown' **/
+			SymbolConstant v_const = SymbolFactory.sym_constant(value);
+			return computer.compute_equal_with(constant, v_const).get_bool();
 		}
 	}
 	/**
-	 * @param expression
-	 * @return true {nzro} | false {zero} | null {unknown}
+	 * @param loperand
+	 * @param roperand
+	 * @return true if two operands are equivalent, or false if not-equivalent or unknown
 	 * @throws Exception
 	 */
-	protected static Boolean is_nzro_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	protected static boolean is_equivalent(SymbolExpression loperand, SymbolExpression roperand) throws Exception {
+		if(loperand == null) {
+			throw new IllegalArgumentException("Invalid loperand: null");
 		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() != 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() != 0L);
-			}
-			else {
-				return Boolean.valueOf(((Double) value).doubleValue() != 0.0);
-			}
+		else if(roperand == null) {
+			throw new IllegalArgumentException("Invalid roperand: null");
 		}
 		else {
-			return null;	/** null to denote 'unknown' **/
-		}
-	}
-	/**
-	 * @param expression
-	 * @return true {post} false {npos} null {unknown}
-	 * @throws Exception
-	 */
-	protected static Boolean is_post_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() > 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() > 0L);
+			if(loperand instanceof SymbolConstant) {
+				if(roperand instanceof SymbolConstant) {
+					SymbolConstant lconstant = (SymbolConstant) loperand;
+					SymbolConstant rconstant = (SymbolConstant) roperand;
+					return computer.compute_equal_with(lconstant, rconstant).get_bool();
+				}
+				else {
+					return false;
+				}
 			}
 			else {
-				return Boolean.valueOf(((Double) value).doubleValue() > 0.0);
+				if(roperand instanceof SymbolConstant) {
+					return false;
+				}
+				else {
+					return loperand.equals(roperand);
+				}
 			}
-		}
-		else {
-			return null;	/** null to denote 'unknown' **/
 		}
 	}
-	/**
-	 * @param expression
-	 * @return true {negt} false {nneg} null {unknown}
-	 * @throws Exception
-	 */
-	protected static Boolean is_negt_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() < 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() < 0L);
-			}
-			else {
-				return Boolean.valueOf(((Double) value).doubleValue() < 0.0);
-			}
-		}
-		else {
-			return null;	/** null to denote 'unknown' **/
-		}
-	}
-	/**
-	 * @param expression
-	 * @return true {npos} false {post} null {unknown}
-	 * @throws Exception
-	 */
-	protected static Boolean is_npos_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() <= 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() <= 0L);
-			}
-			else {
-				return Boolean.valueOf(((Double) value).doubleValue() <= 0.0);
-			}
-		}
-		else {
-			return null;	/** null to denote 'unknown' **/
-		}
-	}
-	/**
-	 * @param expression
-	 * @return true {nneg} false {negt} null {unknown}
-	 * @throws Exception
-	 */
-	protected static Boolean is_nneg_domain(SymbolExpression expression) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(expression instanceof SymbolConstant) {
-			Object value = ((SymbolConstant) expression).get_number();
-			if(value instanceof Integer) {
-				return Boolean.valueOf(((Integer) value).intValue() < 0);
-			}
-			else if(value instanceof Long) {
-				return Boolean.valueOf(((Long) value).longValue() < 0L);
-			}
-			else {
-				return Boolean.valueOf(((Double) value).doubleValue() < 0.0);
-			}
-		}
-		else {
-			return SymbolFactory.is_usig(expression) || SymbolFactory.is_addr(expression);
-		}
-	}
-	/**
-	 * @param x
-	 * @param y
-	 * @return
-	 * @throws Exception
-	 */
-	protected static boolean is_equivalence(SymbolExpression x, SymbolExpression y) throws Exception {
-		return x.equals(y);
-	}
+	
+	
+	
+	
 	
 }

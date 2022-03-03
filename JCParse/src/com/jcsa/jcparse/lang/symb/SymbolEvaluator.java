@@ -60,13 +60,7 @@ public class SymbolEvaluator {
 	
 	/* partial evaluation methods (recursive) */
 	/**
-	 * 	The recursive evaluation of symbolic expressions based on following rule:
-	 * 	<br>
-	 * 	<code>
-	 * 		base_expr			|--	return self;								<br>
-	 * 		cast_expr			|--	const | boolean | otherwise					<br>
-	 * 	TODO comment add here...
-	 * 	</code>
+	 * 	The recursive evaluation of symbolic expressions.
 	 * 	@param expression
 	 * 	@return
 	 * 	@throws Exception
@@ -96,7 +90,9 @@ public class SymbolEvaluator {
 		else if(expression instanceof SymbolUnaryExpression) {
 			return this.eval_unary_exp((SymbolUnaryExpression) expression);
 		}
-		// TODO implement the syntax-directed evaluation algorithms for symbolic
+		else if(expression instanceof SymbolBinaryExpression) {
+			return this.eval_biny_expr((SymbolBinaryExpression) expression);
+		}
 		else {
 			throw new IllegalArgumentException(expression.get_symbol_class().toString());
 		}
@@ -165,7 +161,7 @@ public class SymbolEvaluator {
 				return f_operand;
 			}
 		}
-		else if(SymbolComputer.is_equivalence(t_operand, f_operand)) {
+		else if(SymbolComputer.is_equivalent(t_operand, f_operand)) {
 			return t_operand;
 		}
 		else {
@@ -537,9 +533,10 @@ public class SymbolEvaluator {
 	 */
 	private SymbolExpression eval_biny_expr(SymbolBinaryExpression expression) throws Exception {
 		COperator operator = expression.get_operator().get_operator();
+		// TODO implement the binary operator evaluation
 		switch(operator) {
-		case arith_add:		return this.eval_arith_add_or_sub(expression);
-		case arith_sub:		return this.eval_arith_add_or_sub(expression);
+		case arith_add:		return this.eval_arith_add_and_sub(expression);
+		case arith_sub:		return this.eval_arith_add_and_sub(expression);
 		case arith_mul:
 		case arith_div:
 		case arith_mod:
@@ -561,74 +558,105 @@ public class SymbolEvaluator {
 	}
 	/**
 	 * @param operands
-	 * @return the list of operands evaluated from the input
+	 * @return the list of operands evaluated from the input operands
 	 * @throws Exception
 	 */
-	private List<SymbolExpression> eval_operands(List<SymbolExpression> operands) throws Exception {
+	private List<SymbolExpression> eval_operand_list(List<SymbolExpression> operands) throws Exception {
 		List<SymbolExpression> outputs = new ArrayList<SymbolExpression>();
 		for(SymbolExpression operand : operands) {
 			outputs.add(this.eval(operand));
 		}
 		return outputs;
 	}
-	
-	/* arith_add accumulation for two operators {negative, arith_add, arith_sub} */
 	/**
-	 * @param expression {arith_pos, arith_neg, arith_add, arith_sub}
-	 * @param p_operands to preserve the positive operands in add-accumulate
-	 * @param n_operands to preserve the negative operands in sub-accumulate
+	 * It updates the two lists by deleting operands that are equivalent to each other. 
+	 * @param alist
+	 * @param blist
+	 * @throws Exception
+	 */
+	private void del_equivalent_operands(List<SymbolExpression> alist, List<SymbolExpression> blist) throws Exception {
+		while(alist.size() > 0 && blist.size() > 0) {
+			SymbolExpression arm = null, brm = null;
+			for(SymbolExpression aop : alist) {
+				for(SymbolExpression bop : blist) {
+					if(SymbolComputer.is_equivalent(aop, bop)) {
+						arm = aop; 
+						brm = bop;
+						break;
+					}
+				}
+				if(arm != null) { break; }
+			}
+			
+			if(arm != null) {
+				alist.remove(arm);
+				blist.remove(brm);
+			}
+			else {
+				break;
+			}
+		}
+	}
+	
+	/* evaluation for arithmetic addition (+) and arithmetic subtract (-) */
+	/**
+	 * It proceeds {arith_add, arith_sub, positive, negative, boolean}
+	 * @param expression	the expression, in which the operands are collected
+	 * @param pos_operands	to preserve the operands that are taken as positive
+	 * @param neg_operands	to preserve the operands that are taken as negative
 	 * @throws Exception
 	 */
 	private void div_operands_in_add_sub(SymbolExpression expression, 
-			List<SymbolExpression> p_operands, 
-			List<SymbolExpression> n_operands) throws Exception {
-		if(expression instanceof SymbolUnaryExpression) {
-			SymbolExpression operand = ((SymbolUnaryExpression) expression).get_operand();
+			List<SymbolExpression> pos_operands,
+			List<SymbolExpression> neg_operands) throws Exception {
+		if(expression == null) { return; }						/* 1. None */
+		else if(expression instanceof SymbolUnaryExpression) {	
+			SymbolExpression u_operand = ((SymbolUnaryExpression) expression).get_operand();
 			COperator operator = ((SymbolUnaryExpression) expression).get_operator().get_operator();
-			if(operator == COperator.positive) {
-				this.div_operands_in_add_sub(operand, p_operands, n_operands);
+			if(operator == COperator.positive) {				/* 2. post */
+				this.div_operands_in_add_sub(u_operand, pos_operands, neg_operands);
 			}
-			else if(operator == COperator.negative) {
-				this.div_operands_in_add_sub(operand, n_operands, p_operands);
+			else if(operator == COperator.negative) {			/* 3. negt */
+				this.div_operands_in_add_sub(u_operand, neg_operands, pos_operands);
 			}
-			else {
-				p_operands.add(operand);
+			else {												/* 4. unary */
+				pos_operands.add(expression);
 			}
 		}
 		else if(expression instanceof SymbolBinaryExpression) {
-			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
 			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
 			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
-			if(operator == COperator.arith_add) {
-				this.div_operands_in_add_sub(loperand, p_operands, n_operands);
-				this.div_operands_in_add_sub(roperand, p_operands, n_operands);
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.arith_add) {				/* 5. add */
+				this.div_operands_in_add_sub(loperand, pos_operands, neg_operands);
+				this.div_operands_in_add_sub(roperand, pos_operands, neg_operands);
 			}
-			else if(operator == COperator.arith_sub) {
-				this.div_operands_in_add_sub(loperand, p_operands, n_operands);
-				this.div_operands_in_add_sub(roperand, n_operands, p_operands);
+			else if(operator == COperator.arith_sub) {			/* 6. sub */
+				this.div_operands_in_add_sub(loperand, pos_operands, neg_operands);
+				this.div_operands_in_add_sub(roperand, neg_operands, pos_operands);
 			}
-			else {
-				p_operands.add(expression);
+			else {												/* 7. binary */
+				pos_operands.add(expression);
 			}
 		}
-		else {
-			p_operands.add(expression);
+		else {													/* 8. other */
+			pos_operands.add(expression);
 		}
 	}
 	/**
-	 * @param operands	the operands used in {arith_add}
-	 * @param variables	to preserve the non-constant expressions
-	 * @return			the constant accumulated from the operands
+	 * @param operands
+	 * @param variables	to preserve the set of expressions that are variable
+	 * @return			the constant accumulated from input constants in list
 	 * @throws Exception
 	 */
-	private SymbolConstant acc_operands_in_add(List<SymbolExpression> 
-			operands, List<SymbolExpression> variables) throws Exception {
+	private SymbolConstant com_operands_in_add_sub(
+			List<SymbolExpression> operands,
+			List<SymbolExpression> variables) throws Exception {
 		SymbolConstant constant = SymbolFactory.sym_constant(Integer.valueOf(0));
 		variables.clear();
 		for(SymbolExpression operand : operands) {
 			if(operand instanceof SymbolConstant) {
-				constant = SymbolComputer.do_compute(COperator.
-						arith_add, constant, (SymbolConstant) operand);
+				constant = SymbolComputer.do_compute(COperator.arith_add, constant, (SymbolConstant) operand);
 			}
 			else {
 				variables.add(operand);
@@ -637,149 +665,184 @@ public class SymbolEvaluator {
 		return constant;
 	}
 	/**
-	 * It removes the operands equivalent with each other in add_sub
-	 * @param p_operands
-	 * @param n_operands
+	 * @param variables
+	 * @return null if the variables are empty
 	 * @throws Exception
 	 */
-	private void mux_operands_in_add_sub(List<SymbolExpression> p_operands,
-			List<SymbolExpression> n_operands) throws Exception {
-		while(p_operands.size() > 0 && n_operands.size() > 0) {
-			SymbolExpression common = null;
-			for(SymbolExpression p_operand : p_operands) {
-				for(SymbolExpression n_operand : n_operands) {
-					if(SymbolComputer.is_equivalence(p_operand, n_operand)) {
-						common = p_operand; 
-						break;
-					}
-				}
-				if(common != null) { break; }
-			}
-			
-			if(common == null) {
-				break;
+	private SymbolExpression acc_operands_in_add_sub(CType type, List<SymbolExpression> variables) throws Exception {
+		SymbolExpression output = null;
+		for(SymbolExpression variable : variables) {
+			if(output == null) {
+				output = variable;
 			}
 			else {
-				p_operands.remove(common);
-				n_operands.remove(common);
+				output = SymbolFactory.arith_add(type, output, variable);
 			}
 		}
+		return output;
 	}
 	/**
-	 * @param p_operands
-	 * @param n_operands
-	 * @param constant
-	 * @return rebuild the arithmetic add expression from inputs 
+	 * @param expression {+, -}
+	 * @return 
 	 * @throws Exception
 	 */
-	private SymbolExpression gen_operands_in_add(CType type, List<SymbolExpression> p_operands,
-				List<SymbolExpression> n_operands, SymbolConstant constant) throws Exception {
-		if(p_operands.isEmpty()) {
-			if(n_operands.isEmpty()) {
-				return constant;
-			}
-			else if(SymbolComputer.is_zero_domain(constant)) {
-				SymbolExpression roperand = null;
-				for(SymbolExpression n_operand : n_operands) {
-					if(roperand == null) {
-						roperand = n_operand;
-					}
-					else {
-						roperand = SymbolFactory.arith_add(type, roperand, n_operand);
-					}
-				}
-				return SymbolFactory.arith_neg(roperand);
-			}
-			else {
-				SymbolExpression roperand = null;
-				for(SymbolExpression n_operand : n_operands) {
-					if(roperand == null) {
-						roperand = n_operand;
-					}
-					else {
-						roperand = SymbolFactory.arith_add(type, roperand, n_operand);
-					}
-				}
-				return SymbolFactory.arith_sub(type, constant, roperand);
-			}
-		}
-		else {
-			if(n_operands.isEmpty()) {
-				SymbolExpression loperand = null;
-				for(SymbolExpression p_operand : p_operands) {
-					if(loperand == null) {
-						loperand = p_operand;
-					}
-					else {
-						loperand = SymbolFactory.arith_add(type, loperand, p_operand);
-					}
-				}
-				
-				if(SymbolComputer.is_zero_domain(constant)) {
-					return loperand;
-				}
-				else {
-					return SymbolFactory.arith_add(type, constant, loperand);
-				}
-			}
-			else {
-				SymbolExpression loperand = null;
-				for(SymbolExpression p_operand : p_operands) {
-					if(loperand == null) {
-						loperand = p_operand;
-					}
-					else {
-						loperand = SymbolFactory.arith_add(type, loperand, p_operand);
-					}
-				}
-				
-				SymbolExpression roperand = null;
-				for(SymbolExpression n_operand : n_operands) {
-					if(roperand == null) {
-						roperand = n_operand;
-					}
-					else {
-						roperand = SymbolFactory.arith_add(type, roperand, n_operand);
-					}
-				}
-				
-				SymbolExpression expression = SymbolFactory.arith_sub(type, loperand, roperand);
-				if(SymbolComputer.is_zero_domain(constant)) {
-					return expression;
-				}
-				else {
-					return SymbolFactory.arith_add(type, constant, expression);
-				}
-			}
-		}
-	}
-	/**
-	 * @param expression
-	 * @return accumulation algorithms for + and -
-	 * @throws Exception
-	 */
-	private SymbolExpression eval_arith_add_or_sub(SymbolBinaryExpression expression) throws Exception {
-		/* declarations */
+	private SymbolExpression eval_arith_add_and_sub(SymbolExpression expression) throws Exception {
+		/* 1. declarations */
 		List<SymbolExpression> p_operands = new ArrayList<SymbolExpression>();
 		List<SymbolExpression> n_operands = new ArrayList<SymbolExpression>();
 		List<SymbolExpression> p_variables = new ArrayList<SymbolExpression>();
 		List<SymbolExpression> n_variables = new ArrayList<SymbolExpression>();
-		SymbolConstant lconstant, rconstant, constant;
+		SymbolConstant lconstant, rconstant, constant; 
+		SymbolExpression loperand, roperand; CType type = expression.get_data_type();
 		
-		/* divide the operands and then accumulate the constant */
+		/* 2. divide expression into operands */
 		this.div_operands_in_add_sub(expression, p_operands, n_operands);
-		p_operands = this.eval_operands(p_operands);
-		n_operands = this.eval_operands(n_operands);
-		lconstant = this.acc_operands_in_add(p_operands, p_variables);
-		rconstant = this.acc_operands_in_add(n_operands, n_variables);
-		constant = SymbolComputer.do_compute(COperator.arith_sub, lconstant, rconstant);
-		this.mux_operands_in_add_sub(p_operands, n_operands);
+		p_operands = this.eval_operand_list(p_operands);
+		n_operands = this.eval_operand_list(n_operands);
 		
-		/* re-generate the arithmetic add and sub expressions */
-		return this.gen_operands_in_add(
-						expression.get_data_type(), p_variables, n_variables, constant);
+		/* 3. accumulate constant and collect variables */
+		lconstant = this.com_operands_in_add_sub(p_operands, p_variables);
+		rconstant = this.com_operands_in_add_sub(n_operands, n_variables);
+		this.del_equivalent_operands(p_variables, n_variables);
+		constant = SymbolComputer.do_compute(COperator.arith_add, lconstant, rconstant);
+		
+		/* 4. accumulate the variables at left and right */
+		loperand = this.acc_operands_in_add_sub(expression.get_data_type(), p_variables);
+		roperand = this.acc_operands_in_add_sub(expression.get_data_type(), n_variables);
+		
+		/* 5. reconstruction algorithm based on syntax */
+		if(loperand == null && roperand == null) {				/* constant */
+			return constant;
+		}
+		else if(loperand == null) {
+			if(SymbolComputer.do_compare(constant, 0)) {		/* -roperand */
+				return SymbolFactory.arith_neg(roperand);
+			}
+			else {												/* C - roperand */
+				return SymbolFactory.arith_sub(type, constant, roperand);
+			}
+		}
+		else if(roperand == null) {
+			if(SymbolComputer.do_compare(constant, 0)) {		/* loperand */
+				return loperand;
+			}
+			else {												/* C + loperand */
+				return SymbolFactory.arith_add(type, constant, loperand);
+			}
+		}
+		else {
+			expression = SymbolFactory.arith_sub(type, loperand, roperand);
+			if(!SymbolComputer.do_compare(constant, 0)) {
+				return SymbolFactory.arith_add(type, constant, expression);
+			}
+			else {
+				return expression;
+			}
+		}
 	}
 	
+	/* evaluation for arithmetic multiply (*) and arithmetic division (/) */
+	/**
+	 * @param expression	the expression in which the operands are collected.
+	 * @param did_operands	to preserve the operands in divided part
+	 * @param div_operands	to preserve the operands in division part
+	 * @throws Exception
+	 */
+	private void div_operands_in_mul_div(SymbolExpression expression,
+			List<SymbolExpression> did_operands,
+			List<SymbolExpression> div_operands) throws Exception {
+		if(expression == null) { return; }							/* 1. null */
+		else if(expression instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			COperator operator = ((SymbolBinaryExpression) expression).get_operator().get_operator();
+			if(operator == COperator.arith_mul) {					/* 2. mul */
+				this.div_operands_in_mul_div(loperand, did_operands, div_operands);
+				this.div_operands_in_mul_div(roperand, did_operands, div_operands);
+			}
+			else if(operator == COperator.arith_div) {				/* 3. div */
+				this.div_operands_in_mul_div(loperand, did_operands, div_operands);
+				this.div_operands_in_mul_div(roperand, div_operands, did_operands);
+			}
+			else {													/* 4. bin */
+				did_operands.add(expression);
+			}
+		}
+		else {														/* others */
+			did_operands.add(expression);
+		}
+	}
+	/**
+	 * @param operands	the list of operands in arithmetic multiply
+	 * @param variables	the set of operands that are non-constants
+	 * @return			the constant accumulated by const-operands
+	 * @throws Exception
+	 */
+	private SymbolConstant com_operands_in_mul_div(
+			List<SymbolExpression> operands,
+			List<SymbolExpression> variables) throws Exception {
+		SymbolConstant constant = SymbolFactory.sym_constant(Integer.valueOf(1));
+		variables.clear();
+		for(SymbolExpression operand : operands) {
+			if(operand instanceof SymbolConstant) {
+				constant = SymbolComputer.do_compute(COperator.
+						arith_mul, constant, (SymbolConstant) operand);
+			}
+			else {
+				variables.add(operand);
+			}
+		}
+		return constant;
+	}
+	/**
+	 * @param type
+	 * @param variables
+	 * @return x1 * x2 * x3 * ... * xN
+	 * @throws Exception
+	 */
+	private SymbolExpression acc_operands_in_mul_div(CType type, List<SymbolExpression> variables) throws Exception {
+		SymbolExpression result = null;
+		for(SymbolExpression variable : variables) {
+			if(result == null) {
+				result = variable;
+			}
+			else {
+				result = SymbolFactory.arith_mul(type, result, variable);
+			}
+		}
+		return result;
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression eval_arith_mul_and_div(SymbolExpression expression) throws Exception {
+		/* 1. declarations */
+		List<SymbolExpression> did_operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> div_operands = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> did_variables = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> div_variables = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant; 
+		SymbolExpression loperand, roperand; CType type = expression.get_data_type();
+		
+		/* 2. divide the operands and evaluate them */
+		this.div_operands_in_mul_div(expression, did_operands, div_operands);
+		did_operands = this.eval_operand_list(did_operands);
+		div_operands = this.eval_operand_list(div_operands);
+		
+		/* 3. accumulate constant and collect variables */
+		lconstant = this.com_operands_in_mul_div(did_operands, did_variables);
+		rconstant = this.com_operands_in_mul_div(div_operands, div_variables);
+		if(SymbolComputer.do_compare(lconstant, 0)) { return SymbolFactory.sym_constant(0); }
+		
+		/* 4. accumulate the variables at left and right */
+		loperand = this.acc_operands_in_mul_div(type, did_variables);
+		roperand = this.acc_operands_in_mul_div(type, div_variables);
+		
+		/* 5. construction of TODO */
+		return null;
+	}
 	
 	
 	
