@@ -176,17 +176,17 @@ public class SymbolConstant extends SymbolBasicExpression {
 		}
 	}
 	/**
-	 * @return Integer | Long | Double
+	 * @return Long | Double
 	 */
 	public Object get_number() {
 		switch(this.constant.get_type().get_tag()) {
-		case c_bool:		return Integer.valueOf((this.constant.get_bool() ? 1 : 0));
+		case c_bool:		return Long.valueOf((this.constant.get_bool() ? 1 : 0));
 		case c_char:
-		case c_uchar:		return Integer.valueOf(this.constant.get_char().charValue());
+		case c_uchar:		return Long.valueOf(this.constant.get_char().charValue());
 		case c_short:
 		case c_ushort:
 		case c_int:
-		case c_uint:		return Integer.valueOf(this.constant.get_integer().intValue());
+		case c_uint:		return Long.valueOf(this.constant.get_integer().intValue());
 		case c_long:
 		case c_ulong:
 		case c_llong:
