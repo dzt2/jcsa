@@ -47,7 +47,8 @@ public class SymbolOperator extends SymbolElement {
 		case increment:
 		case decrement:
 		case arith_add_assign:
-		case arith_sub_assign:	this.operator = operator;	break;
+		case arith_sub_assign:	
+		case bit_xor_assign:	this.operator = operator;	break;
 		default:	throw new IllegalArgumentException("unsupport: " + operator);
 		}
 	}
@@ -94,6 +95,7 @@ public class SymbolOperator extends SymbolElement {
 		case decrement:			return "--";
 		case arith_add_assign:	return "+=";
 		case arith_sub_assign:	return "-=";
+		case bit_xor_assign:	return "^=";
 		default:	throw new IllegalArgumentException("unsupport: " + operator);
 		}
 	}

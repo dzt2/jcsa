@@ -5,7 +5,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * <code>
- * 	SymbolBinaryExpression		{+,-,*,/,%, &,|,^,<<,>>, &&,||, <,<=,>,>=,==,!=, :=}
+ * 	SymbolBinaryExpression		{+,-,*,/,%, &,|,^,eqv,<<,>>, &&,||, <,<=,>,>=,==,!=, :=}
  * </code>
  * 
  * @author yukimula
@@ -18,7 +18,7 @@ public class SymbolBinaryExpression extends SymbolExpression {
 	}
 	
 	/**
-	 * @return	{+,-,*,/,%, &,|,^,<<,>>, &&,||, <,<=,>,>=,==,!=, :=}
+	 * @return	{+,-,*,/,%, &,|,^,eqv,<<,>>, &&,||, <,<=,>,>=,==,!=, :=}
 	 */
 	public SymbolOperator get_operator() { return (SymbolOperator) this.get_child(0); }
 	
