@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
  * @author yukimula
  *
  */
-public class SymbolCallExpression extends SymbolExpression {
+public class SymbolCallExpression extends SymbolSpecialExpression {
 	
 	/**
 	 * It creates a call-expression with specified return type

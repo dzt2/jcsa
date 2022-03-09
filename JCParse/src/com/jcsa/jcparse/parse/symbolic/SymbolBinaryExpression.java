@@ -11,7 +11,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  * 	@author yukimula
  *
  */
-public class SymbolBinaryExpression extends SymbolExpression {
+public class SymbolBinaryExpression extends SymbolCompositeExpression {
 
 	private SymbolBinaryExpression(CType type) throws Exception {
 		super(SymbolClass.binary_expression, type);

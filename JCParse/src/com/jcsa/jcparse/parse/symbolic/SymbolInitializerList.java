@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
  * @author yukimula
  *
  */
-public class SymbolInitializerList extends SymbolExpression {
+public class SymbolInitializerList extends SymbolSpecialExpression {
 
 	/**
 	 * It creates an empty initializer list

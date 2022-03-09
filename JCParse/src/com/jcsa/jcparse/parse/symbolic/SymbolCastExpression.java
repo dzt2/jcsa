@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
  * @author yukimula
  *
  */
-public class SymbolCastExpression extends SymbolExpression {
+public class SymbolCastExpression extends SymbolSpecialExpression {
 	
 	/**
 	 * It creates a type-casting expression

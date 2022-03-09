@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
  * @author yukimula
  *
  */
-public class SymbolConditionExpression extends SymbolExpression {
+public class SymbolConditionExpression extends SymbolSpecialExpression {
 	
 	/**
 	 * It creates a symbolic node for conditional expression

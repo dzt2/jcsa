@@ -2,7 +2,7 @@ package com.jcsa.jcparse.parse.symbolic;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 
-public class SymbolFieldExpression extends SymbolExpression {
+public class SymbolFieldExpression extends SymbolSpecialExpression {
 
 	private SymbolFieldExpression(CType type) throws Exception {
 		super(SymbolClass.field_expression, type);

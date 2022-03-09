@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  * 	@author yukimula
  *
  */
-public class SymbolUnaryExpression extends SymbolExpression {
+public class SymbolUnaryExpression extends SymbolCompositeExpression {
 	
 	/**
 	 * It creates a unary expression in symbolic node
@@ -20,16 +20,6 @@ public class SymbolUnaryExpression extends SymbolExpression {
 	private SymbolUnaryExpression(CType type) throws Exception {
 		super(SymbolClass.unary_expression, type);
 	}
-	
-	/**
-	 * @return {neg, rsv, not, inc, dec, adr, ref}
-	 */
-	public SymbolOperator get_operator() { return (SymbolOperator) this.get_child(0); }
-	
-	/**
-	 * @return	{neg, rsv, not, inc, dec, adr, ref}
-	 */
-	public COperator get_coperator() { return this.get_operator().get_operator(); }
 	
 	/**
 	 * @return the unary operand in the expression
