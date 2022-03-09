@@ -452,6 +452,26 @@ public final class SymbolComputer {
 		}
 	}
 	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand --> roperand
+	 * @throws Exception
+	 */
+	private	SymbolConstant	compute_logic_imp(SymbolConstant loperand, SymbolConstant roperand) throws Exception {
+		if(loperand == null) {
+			throw new IllegalArgumentException("Invalid loperand: null");
+		}
+		else if(roperand == null) {
+			throw new IllegalArgumentException("Invalid roperand: null");
+		}
+		else {
+			boolean x = loperand.get_bool().booleanValue();
+			boolean y = roperand.get_bool().booleanValue();
+			Boolean result = Boolean.valueOf(!x || y);
+			return SymbolFactory.sym_constant(result);
+		}
+	}
+	/**
 	 * @param loperand	
 	 * @param roperand
 	 * @return				((long|double) loperand > roperand)
@@ -726,7 +746,7 @@ public final class SymbolComputer {
 		}
 	}
 	/**
-	 * @param operator	[+, -, *, /, %, &, |, ^, <<, >>, &&, ||, <, <=, >, >=, ==, !=]
+	 * @param operator	[+, -, *, /, %, &, |, ^, <<, >>, &&, ||, imp, <, <=, >, >=, ==, !=]
 	 * @param loperand
 	 * @param roperand
 	 * @return
@@ -756,6 +776,7 @@ public final class SymbolComputer {
 			case righ_shift:	return this.compute_bitws_rsh(loperand, roperand);
 			case logic_and:		return this.compute_logic_and(loperand, roperand);
 			case logic_or:		return this.compute_logic_ior(loperand, roperand);
+			case positive:		return this.compute_logic_imp(loperand, roperand);
 			case greater_tn:	return this.compute_greater_tn(loperand, roperand);
 			case greater_eq:	return this.compute_greater_eq(loperand, roperand);
 			case smaller_tn:	return this.compute_smaller_tn(loperand, roperand);

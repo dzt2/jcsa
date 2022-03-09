@@ -9,24 +9,29 @@ import java.util.List;
  * 	the symbolic expressions used in Z3-theorem prover and satisfiability proof.
  * 	<br>
  * 	<code>
- * 	SymbolNode								[_class; source; parent; children]					<br>
- * 	|--	SymbolElement						(Non-Expression as Elemental Node)					<br>
- * 	|--	|--	SymbolArgumentList				{arg_list --> (expr {, expr}*)}						<br>		
- * 	|--	|--	SymbolField						[field_name: String]								<br>
- * 	|--	|--	SymbolType						[type: CType]										<br>
- * 	|--	|--	SymbolOperator					[operator: COperator]								<br>
- * 	|--	SymbolExpression					[data_type: CType]									<br>
- * 	|--	|--	SymbolBasicExpression			(basic expression as the leaf node)					<br>
- * 	|--	|--	|--	SymbolIdentifier			[name: String; scope: Object; identifier: String]	<br>
- * 	|--	|--	|--	SymbolConstant				[constant: CConstant]								<br>
- * 	|--	|--	|--	SymbolLiteral				[literal: String]									<br>
- * 	|--	|--	SymbolUnaryExpression			[neg, rsv, not, inc, dec, addr, defr]				<br>
- * 	|--	|--	SymbolBinaryExpression			[add, sub, mul, div, mod, and, ior, xor, lsh, rsh]	<br>
- * 											[and, ior, imp, eqv, neq, grt, gre, smt, sme, ass]	<br>
- * 	|--	|--	SymbolCastExpression			(cast_expr --> {type_name} expression)				<br>
- * 	|--	|--	SymbolCallExpression			(call_expr --> expression argument_list)			<br>
- * 	|--	|--	SymbolConditionExpression		(cond_expr --> expr ? expr : expr)					<br>
- * 	|--	|--	SymbolInitializerList			(init_list --> {expr (, expr)*})					<br>
+ * 	SymbolNode								[_class; source; parent; children]	<br>
+ * 	|--	SymbolElement						(Non-Expression as Elemental Node)	<br>
+ * 	|--	|--	SymbolArgumentList				{arg_list --> (expr {, expr}*)}		<br>		
+ * 	|--	|--	SymbolField						[field_name: String]				<br>
+ * 	|--	|--	SymbolType						[type: CType]						<br>
+ * 	|--	|--	SymbolOperator					[operator: COperator]				<br>
+ * 	|--	SymbolExpression					[data_type: CType]					<br>
+ * 	|--	|--	SymbolBasicExpression			(basic expression as the leaf node)	<br>
+ * 	|--	|--	|--	SymbolIdentifier			[name: String; scope: Object;]		<br>
+ * 	|--	|--	|--	SymbolConstant				[constant: CConstant]				<br>
+ * 	|--	|--	|--	SymbolLiteral				[literal: String]					<br>
+ * 	|--	|--	SymbolCompositeExpression		(comp_expr --> operator expression)	<br>
+ * 	|--	|--	|--	SymbolUnaryExpression		(unary)	[neg, rsv, not, adr, ref]	<br>
+ * 	|--	|--	|--	SymbolBinaryExpression		(arith)	[add, sub, mul, div, mod]	<br>
+ * 	|--	|--	|--	SymbolBinaryExpression		(bitws)	[and, ior, xor, lsh, rsh]	<br>
+ * 	|--	|--	|--	SymbolBinaryExpression		(logic)	[and, ior, eqv, neq, imp]	<br>
+ * 	|--	|--	|--	SymbolBinaryExpression		(relate)[grt, gre, smt, sme, neq...]<br>
+ * 	|--	|--	|--	SymbolBinaryExpression		(assign)[ass, pss]					<br>
+ * 	|--	|--	SymbolSpecialExpression												<br>
+ * 	|--	|--	|--	SymbolCastExpression		(cast_expr --> {type_name} expr)	<br>
+ * 	|--	|--	|--	SymbolCallExpression		(call_expr --> expr arg_list)		<br>
+ * 	|--	|--	|--	SymbolConditionExpression	(cond_expr --> expr ? expr : expr)	<br>
+ * 	|--	|--	|--	SymbolInitializerList		(init_list --> {expr (, expr)*})	<br>
  * 	</code>
  * 	
  * 	@author yukimula

@@ -243,16 +243,14 @@ public class SymbolEvaluator {
 		switch(expression.get_operator().get_operator()) {
 		case negative:			
 		case bit_not:			
-		case logic_not:		
-		case increment:			
-		case decrement:			
+		case logic_not:				
 		case address_of:		
 		case dereference:		
 		default:				throw new IllegalArgumentException(expression.generate_code(false));
 		}
 	}
 	/**
-	 * @param expression	{+, -, *, /, %, &, |, ^, imp(pos), <<, >>, &&, ||, <, <=, >, >=, ==, !=, :=}
+	 * @param expression	{+, -, *, /, %, &, |, ^, imp(pos), <<, >>, &&, ||, <, <=, >, >=, ==, !=, :=, <-(inc)}
 	 * @return				
 	 * @throws Exception
 	 */
@@ -271,14 +269,15 @@ public class SymbolEvaluator {
 		case righ_shift:	
 		case logic_and:		
 		case logic_or:		
-		case positive:		
+		case positive:		/* logical implication */
 		case equal_with:	
 		case not_equals:	
 		case greater_tn:	
 		case greater_eq:	
 		case smaller_tn:	
 		case smaller_eq:	
-		case assign:		
+		case assign:		/* explicit assignment */
+		case increment:		/* implicit assignment */
 		default:			throw new IllegalArgumentException(expression.generate_code(false));
 		}
 	}
@@ -755,6 +754,9 @@ public class SymbolEvaluator {
 	private	SymbolExpression	eval_arith_div(SymbolBinaryExpression expression) throws Exception {
 		return this.eval_arith_mul_and_div(expression);
 	}
+	/* symbolic evaluation on arithmetic operations {neg} */
+	
+	
 	
 	
 }

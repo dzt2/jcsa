@@ -929,7 +929,7 @@ public class SymbolFactory {
 	}
 	/**
 	 * @param source
-	 * @return @stmt#ast_id := init_list({declarator := initializer | default_value})
+	 * @return @stmt#ast_id <- init_list({declarator := initializer | default_value})
 	 * @throws Exception
 	 */
 	private	SymbolNode	parse_ast_declaration(AstDeclaration source) throws Exception {
@@ -940,7 +940,7 @@ public class SymbolFactory {
 		else {
 			roperand = SymbolInitializerList.create(new ArrayList<SymbolExpression>());
 		}
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1083,11 +1083,11 @@ public class SymbolFactory {
 	private	SymbolNode	parse_ast_switch_statement(AstSwitchStatement source) throws Exception {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_switch());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
-	 * @return case_stmt --> case := (switch_loperand == case_constant)
+	 * @return case_stmt --> case <- (switch_loperand == case_constant)
 	 * @throws Exception
 	 */
 	private	SymbolNode	parse_ast_case_statement(AstCaseStatement source) throws Exception {
@@ -1100,7 +1100,7 @@ public class SymbolFactory {
 				SymbolExpression condition = 
 						SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, COperator.equal_with, loperand, roperand);
 				SymbolExpression reference = (SymbolExpression) this.parse_ast_node(source.get_case());
-				return SymbolBinaryExpression.create(reference.get_data_type(), COperator.assign, reference, condition);
+				return SymbolBinaryExpression.create(reference.get_data_type(), COperator.increment, reference, condition);
 			}
 			else {
 				node = node.get_parent();
@@ -1117,7 +1117,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_if());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1128,7 +1128,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_while());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1139,7 +1139,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_do());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1150,7 +1150,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_for());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1459,12 +1459,24 @@ public class SymbolFactory {
 	 * @throws Exception
 	 */
 	private SymbolNode	parse_ast_postfix_expression(AstPostfixExpression source) throws Exception {
-		SymbolExpression operand = (SymbolExpression) this.parse_ast_node(source.get_operand());
+		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_operand());
+		SymbolExpression roperand;
 		switch(source.get_operator().get_operator()) {
-		case increment:	return SymbolUnaryExpression.create(source.get_value_type(), COperator.increment, operand);
-		case decrement:	return SymbolUnaryExpression.create(source.get_value_type(), COperator.decrement, operand);
+		case increment:
+		{
+			roperand = SymbolBinaryExpression.create(loperand.get_data_type(), 
+					COperator.arith_add, loperand, this.parse_cons(Integer.valueOf(1)));
+			break;
+		}
+		case decrement:
+		{
+			roperand = SymbolBinaryExpression.create(loperand.get_data_type(), 
+					COperator.arith_sub, loperand, this.parse_cons(Integer.valueOf(1)));
+			break;
+		}
 		default:	throw new IllegalArgumentException(source.generate_code());
 		}
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1803,7 +1815,7 @@ public class SymbolFactory {
 		SymbolExpression loperand, roperand;
 		roperand = (SymbolExpression) this.parse_cir_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "@keys", CKeyword.c89_if);
+		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "if", CKeyword.c89_if);
 		loperand.set_source(CKeyword.c89_if);
 		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
@@ -1816,9 +1828,9 @@ public class SymbolFactory {
 		SymbolExpression loperand, roperand;
 		roperand = (SymbolExpression) this.parse_cir_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "@keys", CKeyword.c89_case);
+		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "case", CKeyword.c89_case);
 		loperand.set_source(CKeyword.c89_case);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -2223,46 +2235,6 @@ public class SymbolFactory {
 		return SymbolUnaryExpression.create(type, COperator.dereference, expression);
 	}
 	/**
-	 * @param operand
-	 * @return operand++
-	 * @throws Exception
-	 */
-	public static	SymbolUnaryExpression	post_inc(Object operand) throws Exception {
-		SymbolExpression expression = sym_expression(operand);
-		if(expression.is_reference()) {
-			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.increment, expression);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type.generate_code());
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Not a reference: " + expression);
-		}
-	}
-	/**
-	 * @param operand
-	 * @return operand--
-	 * @throws Exception
-	 */
-	public static	SymbolUnaryExpression	post_dec(Object operand) throws Exception {
-		SymbolExpression expression = sym_expression(operand);
-		if(expression.is_reference()) {
-			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.decrement, expression);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type.generate_code());
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Not a reference: " + expression);
-		}
-	}
-	/**
 	 * 
 	 * @param condition
 	 * @param tvalue
@@ -2410,12 +2382,12 @@ public class SymbolFactory {
 	/**
 	 * @param loperand
 	 * @param roperand
-	 * @return
+	 * @return loperand -> roperand
 	 * @throws Exception
 	 */
-	public static	SymbolBinaryExpression	logic_xor(Object loperand, Object roperand) throws Exception {
+	public static	SymbolBinaryExpression	logic_imp(Object loperand, Object roperand) throws Exception {
 		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
-				COperator.not_equals, sym_condition(loperand, true), sym_condition(roperand, true));
+				COperator.positive, sym_condition(loperand, true), sym_condition(roperand, true));
 	}
 	/**
 	 * @param loperand
@@ -2477,5 +2449,26 @@ public class SymbolFactory {
 		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
 				COperator.not_equals, sym_expression(loperand), sym_expression(roperand));
 	}
-	
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand := roperand
+	 * @throws Exception
+	 */
+	public static 	SymbolBinaryExpression	exp_assign(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lexpression = sym_expression(loperand);
+		SymbolExpression rexpression = sym_expression(roperand);
+		return SymbolBinaryExpression.create(lexpression.get_data_type(), COperator.assign, lexpression, rexpression);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand <- roperand
+	 * @throws Exception
+	 */
+	public static 	SymbolBinaryExpression	imp_assign(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lexpression = sym_expression(loperand);
+		SymbolExpression rexpression = sym_expression(roperand);
+		return SymbolBinaryExpression.create(lexpression.get_data_type(), COperator.increment, lexpression, rexpression);
+	}
 }
