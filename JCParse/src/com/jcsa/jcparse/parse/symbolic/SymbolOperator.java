@@ -4,12 +4,12 @@ import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * 	<code>
- * 		ArithExpression		{neg, add, sub, mul, div, mod}						<br>
- * 		BitwsExpression		{rsv, and, ior, xor, lsh, rsh}						<br>
- * 		LogicExpression		{not, and, ior, xor, eqv, imp}						<br>
- * 		RelationExpression	{grt, gre, smt, sme, eqv, neq}						<br>
- * 		AssignExpression	{ass, inc, dec}										<br>
- * 	</code>
+ * 		arith:	[neg, add, sub, mul, div, mod]			<br>
+ * 		bitws:	[rsv, and, ior, xor, lsh, rsh]			<br>
+ * 		logic:	[not, and, ior, eqv, neq, imp(pos)]		<br>
+ * 		relate:	[eqv, neq, smt, sme, grt, gre]			<br>
+ * 		other:	[adr, ref, ass, inc, dec]				<br>
+ * </code>
  * 	
  * 	@author yukimula
  *
@@ -41,11 +41,11 @@ public class SymbolOperator extends SymbolElement {
 	
 	/**
 	 * <code>
-	 * 		ArithExpression		{neg, add, sub, mul, div, mod}				<br>
-	 * 		BitwsExpression		{rsv, and, ior, xor, lsh, rsh}				<br>
-	 * 		LogicExpression		{not, and, ior, xor, eqv, imp}				<br>
-	 * 		RelationExpression	{grt, gre, smt, sme, eqv, neq}				<br>
-	 * 		AssignExpression	{ass, inc, dec}								<br>
+	 * 		arith:	[neg, add, sub, mul, div, mod]			<br>
+	 * 		bitws:	[rsv, and, ior, xor, lsh, rsh]			<br>
+	 * 		logic:	[not, and, ior, eqv, neq, imp(pos)]		<br>
+	 * 		relate:	[eqv, neq, smt, sme, grt, gre]			<br>
+	 * 		other:	[adr, ref, ass, inc, dec]				<br>
 	 * </code>
 	 * @param operator
 	 * @return
@@ -57,6 +57,9 @@ public class SymbolOperator extends SymbolElement {
 		}
 		else {
 			switch(operator) {
+			/* point_expression */
+			case address_of:
+			case dereference:
 			/* arith_expression */
 			case negative:
 			case arith_add:
@@ -68,20 +71,20 @@ public class SymbolOperator extends SymbolElement {
 			case bit_not:
 			case bit_and:
 			case bit_or:
-			case bit_xor:		
+			case bit_xor:
 			case left_shift:
 			case righ_shift:
-			/* logic_expression, relate_expression */
+			/* logic_expression + relate_expression */
 			case logic_not:
 			case logic_and:
 			case logic_or:
-			case address_of:	/* logic_imp */
-			case equal_with:	/* logic_eqv, relate_eqv */
-			case not_equals:	/* logic_neq, relate_neq */
-			case greater_eq:	
+			case positive:			/* logic_imp */
+			case equal_with:		/* logic_eqv, relate_eqv */
+			case not_equals:		/* logic_neq, relate_neq */
+			case greater_eq:
 			case greater_tn:
-			case smaller_eq:
 			case smaller_tn:
+			case smaller_eq:
 			/* assign_expression */
 			case assign:
 			case increment:
@@ -90,46 +93,49 @@ public class SymbolOperator extends SymbolElement {
 				return new SymbolOperator(operator);
 			}
 			/* unsupported case */
-			default:	throw new IllegalArgumentException("Invalid: " + operator);
+			default:	
+			{
+				throw new IllegalArgumentException("Unsupported: " + operator);
+			}
 			}
 		}
 	}
-
 	
 	@Override
 	protected SymbolNode new_one() throws Exception { return new SymbolOperator(this.operator); }
-
 	
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
 		switch(this.operator) {
-		/* arith_expr */
+		/* arith_expression */
 		case negative:		return "-";
 		case arith_add:		return "+";
 		case arith_sub:		return "-";
 		case arith_mul:		return "*";
 		case arith_div:		return "/";
 		case arith_mod:		return "%";
-		/* bitws_expr */
+		/* bitws_expression */
 		case bit_not:		return "~";
 		case bit_and:		return "&";
 		case bit_or:		return "|";
 		case bit_xor:		return "^";
 		case left_shift:	return "<<";
 		case righ_shift:	return ">>";
-		/* logic_expr */
+		/* logic_expression */
 		case logic_not:		return "!";
 		case logic_and:		return "&&";
 		case logic_or:		return "||";
-		case address_of:	return "->";
-		/* relate_expr */
+		case positive:		return "->";
 		case equal_with:	return "==";
 		case not_equals:	return "!=";
-		case greater_eq:	return ">=";
+		/* relate_expression */
 		case greater_tn:	return ">";
-		case smaller_eq:	return "<=";
+		case greater_eq:	return ">=";
 		case smaller_tn:	return "<";
-		/* assign_expr */
+		case smaller_eq:	return "<=";
+		/* other_expression */
+		case address_of:	return "&";
+		case dereference:	return "*";
 		case assign:		return ":=";
 		case increment:		return "++";
 		case decrement:		return "--";
@@ -137,19 +143,10 @@ public class SymbolOperator extends SymbolElement {
 		}
 	}
 	
-
 	@Override
 	protected boolean is_refer_type() { return false; }
-
 	
 	@Override
-	protected boolean is_side_affected() { 
-		switch(this.operator) {
-		case assign:
-		case increment:
-		case decrement:	return true;
-		default:		return false;
-		}
-	}
+	protected boolean is_side_affected() { return false; }
 	
 }

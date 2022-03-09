@@ -18,10 +18,8 @@ public enum SymbolClass {
 	constant,
 	string_literal,
 	/* composite */
-	arith_expression,
-	bitws_expression,
-	logic_expression,
-	relat_expression,
+	binary_expression,
+	unary_expression,
 	/* special */
 	cast_expression,
 	call_expression,

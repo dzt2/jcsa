@@ -20,14 +20,9 @@ import java.util.List;
  * 	|--	|--	|--	SymbolIdentifier			[name: String; scope: Object; identifier: String]	<br>
  * 	|--	|--	|--	SymbolConstant				[constant: CConstant]								<br>
  * 	|--	|--	|--	SymbolLiteral				[literal: String]									<br>
- * 	|--	|--	SymbolCompositeExpression		{comp_expr --> operator {expression}+)				<br>
- * 	|--	|--	|--	SymbolArithExpression		(neg, add, sub, mul, div, mod)						<br>
- * 	|--	|--	|--	SymbolBitwsExpression		(rsv, and, ior, xor, lsh, rsh)						<br>
- * 	|--	|--	|--	SymbolLogicExpression		(not, and, ior, xor, eqv, imp)						<br>
- * 	|--	|--	|--	SymbolRelationExpression	(gtn, geq, stn, ste, eqv, neq)						<br>
- * 	|--	|--	|--	SymbolAssignExpression		(ass, inc, dec)										<br>
- * 	|--	|--	SymbolAddressExpression			(addr_expr --> addr_of refer_expression)			<br>
- * 	|--	|--	SymbolDeferedExpression			(defr_expr --> derefer addr_expression)				<br>
+ * 	|--	|--	SymbolUnaryExpression			[neg, rsv, not, inc, dec, addr, defr]				<br>
+ * 	|--	|--	SymbolBinaryExpression			[add, sub, mul, div, mod, and, ior, xor, lsh, rsh]	<br>
+ * 											[and, ior, imp, eqv, neq, grt, gre, smt, sme, ass]	<br>
  * 	|--	|--	SymbolCastExpression			(cast_expr --> {type_name} expression)				<br>
  * 	|--	|--	SymbolCallExpression			(call_expr --> expression argument_list)			<br>
  * 	|--	|--	SymbolConditionExpression		(cond_expr --> expr ? expr : expr)					<br>
@@ -162,7 +157,10 @@ public abstract class SymbolNode {
 			return null;
 		}
 		
-		/* 2. append the children under parent */
+		/* 2. set the data source */
+		parent.set_source(this.source);
+		
+		/* 3. add the children to parent */
 		for(SymbolNode child : this.children) {
 			parent.add_child(child.clone());
 		}
