@@ -241,7 +241,7 @@ public class SymbolEvaluator {
 	private	SymbolExpression	eval_unay_expr(SymbolUnaryExpression expression) throws Exception {
 		// TODO implement here more
 		switch(expression.get_operator().get_operator()) {
-		case negative:			
+		case negative:			return this.eval_arith_neg(expression);
 		case bit_not:			
 		case logic_not:				
 		case address_of:		
@@ -413,7 +413,6 @@ public class SymbolEvaluator {
 		}
 	}
 	
-	// TODO implement unary and binary composite expressions as following...
 	/* symbolic evaluation on arithmetic operations {add, sub} */
 	/**
 	 * It divides the expression into positive part and negative part
@@ -480,6 +479,10 @@ public class SymbolEvaluator {
 			if(SymbolComputer.compare_values(constant, Integer.valueOf(0))) {
 				return SymbolFactory.arith_neg(roperand);
 			}
+			else if(SymbolComputer.is_negative(constant)) {
+				roperand = SymbolFactory.arith_add(type, constant, roperand);
+				return SymbolFactory.arith_neg(roperand);
+			}
 			else {
 				return SymbolFactory.arith_sub(type, constant, roperand);
 			}
@@ -488,6 +491,10 @@ public class SymbolEvaluator {
 			if(SymbolComputer.compare_values(constant, Integer.valueOf(0))) {
 				return loperand;
 			}
+			else if(SymbolComputer.is_negative(constant)) {
+				constant = SymbolComputer.do_compute(COperator.negative, constant);
+				return SymbolFactory.arith_sub(type, loperand, constant);
+			}
 			else {
 				return SymbolFactory.arith_add(type, constant, loperand);
 			}
@@ -495,6 +502,11 @@ public class SymbolEvaluator {
 		else {
 			if(SymbolComputer.compare_values(constant, Integer.valueOf(0))) {
 				return SymbolFactory.arith_sub(type, loperand, roperand);
+			}
+			else if(SymbolComputer.is_negative(constant)) {
+				constant = SymbolComputer.do_compute(COperator.negative, constant);
+				loperand = SymbolFactory.arith_sub(type, loperand, roperand);
+				return SymbolFactory.arith_sub(type, loperand, constant);
 			}
 			else {
 				roperand = SymbolFactory.arith_sub(type, loperand, roperand);
@@ -755,6 +767,45 @@ public class SymbolEvaluator {
 		return this.eval_arith_mul_and_div(expression);
 	}
 	/* symbolic evaluation on arithmetic operations {neg} */
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_arith_neg(SymbolUnaryExpression expression) throws Exception {
+		SymbolExpression operand = this.eval(expression.get_operand());
+		if(operand instanceof SymbolConstant) {
+			return SymbolComputer.do_compute(COperator.negative, (SymbolConstant) operand);
+		}
+		else if(operand instanceof SymbolUnaryExpression) {
+			SymbolExpression uoperand = ((SymbolUnaryExpression) operand).get_operand();
+			COperator operator = ((SymbolUnaryExpression) operand).get_coperator();
+			if(operator == COperator.negative) {
+				return uoperand;
+			}
+			else if(operator == COperator.bit_not) {
+				return SymbolFactory.arith_add(expression.get_data_type(), uoperand, Integer.valueOf(1));
+			}
+			else { return SymbolFactory.arith_neg(operand); }
+		}
+		else if(operand instanceof SymbolBinaryExpression) {
+			SymbolExpression loperand = ((SymbolBinaryExpression) operand).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) operand).get_roperand();
+			COperator operator = ((SymbolBinaryExpression) operand).get_coperator();
+			if(operator == COperator.arith_sub) {
+				return SymbolFactory.arith_sub(expression.get_data_type(), roperand, loperand);
+			}
+			else { return SymbolFactory.arith_neg(operand); }
+		}
+		else { return SymbolFactory.arith_neg(operand); }
+	}
+	/* symbolic evaluation on arithmetic operations (mod) */
+	// TODO ...
+	
+	
+	
+	
+	
 	
 	
 	

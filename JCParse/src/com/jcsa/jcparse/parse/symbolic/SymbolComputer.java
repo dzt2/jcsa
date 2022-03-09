@@ -957,5 +957,43 @@ public final class SymbolComputer {
 			return new SymbolDomain(lvalue, rvalue);
 		}
 	}
+	/**
+	 * @param expression
+	 * @return whether the expression must be in the domain of positive value
+	 * @throws Exception
+	 */
+	public static boolean	is_positive(SymbolExpression expression) throws Exception {
+		SymbolDomain domain = get_domain(expression);
+		Object min_value = domain.get_min_value();
+		if(min_value instanceof Long) {
+			return ((Long) min_value).longValue() > 0;
+		}
+		else {
+			return ((Double) min_value).doubleValue() > 0;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression must be in the domain of negative value
+	 * @throws Exception
+	 */
+	public static boolean	is_negative(SymbolExpression expression) throws Exception {
+		SymbolDomain domain = get_domain(expression);
+		Object max_value = domain.get_max_value();
+		if(max_value instanceof Long) {
+			return ((Long) max_value).longValue() < 0;
+		}
+		else {
+			return ((Double) max_value).doubleValue() < 0;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return whether the expression must be in domain of non-zero value
+	 * @throws Exception
+	 */
+	public static boolean 	is_non_zero(SymbolExpression expression) throws Exception {
+		return is_positive(expression) || is_negative(expression);
+	}
 	
 }
