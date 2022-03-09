@@ -60,6 +60,7 @@ import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CQualifierType;
@@ -69,8 +70,37 @@ import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
+import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirComputeExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeclarator;
+import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirField;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirIdentifier;
+import com.jcsa.jcparse.lang.irlang.expr.CirImplicator;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
+import com.jcsa.jcparse.lang.irlang.expr.CirNameExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirReturnPoint;
+import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
+import com.jcsa.jcparse.lang.irlang.expr.CirType;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.lexical.COperator;
@@ -653,10 +683,60 @@ public class SymbolFactory {
 	/* AST-based parsing */
 	/**
 	 * 	<code>
-	 * 	TODO implement this comment...
+	 * 	[STATEMENTS]															<br>
+	 * 	|--	break;					|--	@stmt#ast_key: int						<br>
+	 * 	|--	continue;				|--	@stmt#ast_key: int						<br>
+	 * 	|--	case expr:				|--	switch.condition == case.expression		<br>
+	 * 	|--	{stmt_list}				|--	@stmt#ast_key: int						<br>
+	 * 	|--	{specifiers;}			|--	@stmt#ast_key: int						<br>
+	 * 	|--	{spec init_list;}		|--	@stmt#ast_key := parse(init_list)		<br>
+	 * 	|--	default:				|--	@stmt#ast_key: int						<br>
+	 * 	|--	empty;					|--	TRUE									<br>
+	 * 	|--	expression;				|--	parse(expression)						<br>
+	 * 	|--	goto label;				|--	@stmt#ast_key: int						<br>
+	 * 	|--	label:					|--	@stmt#ast_key: int						<br>
+	 * 	|--	if expr then:			|--	@keys#if := parse(expr, true)			<br>
+	 * 	|--	switch expr:			|--	@keys#switch := parse(switch.condition)	<br>
+	 * 	|--	while expr:				|--	@keys#while := parse(expr, true)		<br>
+	 * 	|--	do while(expr);			|--	@keys#do := parse(expr, true)			<br>
+	 * 	|--	for(x; cond; i)			|--	@keys#for := parse(cond, true)			<br>
+	 * 	|--	return;					|--	return#func_name := default_value		<br>
+	 * 	|--	return expr;			|--	return#func_name := parse(expression)	<br>
+	 * 	<br>
+	 * 	[EXPRESSION]															<br>
+	 * 	|--	array[index]			|--	*(array + index)						<br>
+	 * 	|--	id_expression			|--	CName | int | name#scope				<br>
+	 * 	|--	constant				|--	Constant								<br>
+	 * 	|--	literal					|--	Literal									<br>
+	 * 	|--	bin_expr				|--	loperand op roperand					<br>
+	 * 	|--	unary_expr				|--	op operand								<br>
+	 * 	|--	postfix_expr			|--	op operand								<br>
+	 * 	|--	(type) expr				|--	cast(type, expr)						<br>
+	 * 	|--	e1, e2, ..., en			|--	parse(en)								<br>
+	 * 	|--	C ? T : F				|--	parse(C, true) ? parse(T) : parse(F)	<br>
+	 * 	|--	const_expr				|--	parse(sub_expression)					<br>
+	 * 	|--	(expr)					|--	parse(expr)								<br>
+	 * 	|--	body.field				|--	parse(body).parse(field)				<br>
+	 * 	|--	fun(a1, a2, ..., an)	|--	fun(a1, a2, ..., an)					<br>
+	 * 	|--	sizeof(expr)			|--	int | sizeof#data_type					<br>
+	 * 	|--	{e1, e2, ..., en}		|--	{e1, e2, ..., en}						<br>
+	 * 	[SPECIFIERS]															<br>
+	 * 	|--	declaration				|--	@stmt#stmt (:= parse(init_declarators))	<br>
+	 * 	|--	init_decl_list			|--	{d1, d2, d3, ..., dn}					<br>
+	 * 	|--	init_declarator			|--	declarator := initializer | default_val	<br>
+	 * 	|--	declarator				|--	parse(declarator.name)					<br>
+	 * 	|--	name					|--	cname | int | name#scope				<br>
+	 * 	|--	initializer				|--	parse(initializer.expr|body)			<br>
+	 * 	|--	initializer_list		|--	{e1, e2, e3, ..., en}					<br>
+	 * 	|--	field_initializer		|--	parse(initializer)						<br>
+	 * 	|--	field					|--	field									<br>
+	 * 	|--	operator				|--	operator'								<br>
+	 * 	|--	type_name				|--	type(data_type)							<br>
+	 * 	|--	keyword					|--	@keys#keyword							<br>
+	 * 	|--	statement_list			|--	@stmt#ast_key							<br>
 	 * 	</code>
-	 * 	@param source	the AST-node to be parsed from the factory
-	 * 	@return			the symbolic node parsed from the AST-node
+	 * 	@param source	the abstract syntax node from which the symbolic expression is generated
+	 * 	@return			the symbolic node (expression) generated from the abstract syntax source
 	 * 	@throws Exception
 	 */
 	private	SymbolNode	parse_ast_node(AstNode source) throws Exception {
@@ -873,7 +953,14 @@ public class SymbolFactory {
 			SymbolExpression reference = (SymbolExpression) this.parse_ast_node(func_name);
 			return SymbolIdentifier.create(reference.get_data_type(), "return", func_name.get_name());
 		}
-		return SymbolIdentifier.create(CBasicTypeImpl.bool_type, "@keys", source.get_keyword());
+		else {
+			String keyword = source.get_keyword().toString();
+			int index = keyword.indexOf('_');
+			if(index > 0) {
+				keyword = keyword.substring(index + 1).strip();
+			}
+			return SymbolIdentifier.create(CBasicTypeImpl.bool_type, keyword, source.get_key());
+		}
 	}
 	/**
 	 * @param source
@@ -1468,22 +1555,966 @@ public class SymbolFactory {
 	}
 	
 	
+	/* cir-node parse */
+	/**
+	 * 	<code>
+	 * 	|--	CirDeclarator			|--	cname{name#scope: type}				<br>
+	 * 	|--	CirIdentifier			|--	cname{name#scope: type}				<br>
+	 * 	|--	CirImplicator			|--	@ast#ast_source: type				<br>
+	 * 	|--	CirReturnPoint			|--	return#func_name: type				<br>
+	 * 	|--	CirConstExpression		|--	constant							<br>
+	 * 	|--	CirStringLiteral		|--	literal								<br>
+	 * 	|--	CirDeferExpression		|--	*(operand)							<br>
+	 * 	|--	CirAddressExpression	|--	&expression							<br>
+	 * 	|--	CirCastExpression		|--	(type) expression					<br>
+	 * 	|--	CirDefaultValue			|--	constant | default#data_type		<br>
+	 * 	|--	CirInitializerBody		|--	init_list{e1, e2, e3, ..., en}		<br>
+	 * 	|--	CirWaitExpression		|--	func(a1, a2, a3, ..., an)			<br>
+	 * 	|--	CirComputeExpression	|--	operator...							<br>
+	 * 	|--	CirAssignStatement		|--	loperand := roperand				<br>
+	 * 	|--	CirIfStatement			|--	@keys#if := condition				<br>
+	 * 	|--	CirCaseStatement		|--	@keys#case := condition				<br>
+	 * 	|--	CirStatement{other}		|--	@exec#exec_id						<br>
+	 * 	|--	CirCallStatement		|--	func(a1, a2, a3, ..., an)			<br>
+	 * 	|--	CirArgumentList			|--	(a1, a2, a3, ..., an)				<br>
+	 * 	|--	CirType					|--	type								<br>
+	 * 	|--	CirLabel				|--	@exec#exec_id						<br>
+	 * 	|--	CirField				|--	field(name)							<br>
+	 * 	</code>
+	 * 	@param source
+	 * 	@return
+	 * 	@throws Exception
+	 */
+	private SymbolNode	parse_cir_node(CirNode source) throws Exception {
+		SymbolNode target;
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof CirExpression) {
+			target = this.parse_cir_expression((CirExpression) source);
+		}
+		else if(source instanceof CirStatement) {
+			target = this.parse_cir_statement((CirStatement) source);
+		}
+		else {
+			target = this.parse_cir_otherwise(source);
+		}
+		if(!target.has_source()) { target.set_source(source); }
+		return target;
+	}
+	/* cir-expression */
+	/**
+	 * @param source
+	 * @return cname | enumerator(int) | @ast#ast_key | return@func_name
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_name_expression(CirNameExpression source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof CirDeclarator) {
+			CName cname = ((CirDeclarator) source).get_cname();
+			return SymbolIdentifier.create(source.get_data_type(), 
+					cname.get_name(), cname.get_scope().hashCode());
+		}
+		else if(source instanceof CirIdentifier) {
+			CName cname = ((CirIdentifier) source).get_cname();
+			return SymbolIdentifier.create(source.get_data_type(), 
+					cname.get_name(), cname.get_scope().hashCode());
+		}
+		else if(source instanceof CirImplicator) {
+			return SymbolIdentifier.create(source.get_data_type(), "@ast", source.get_ast_source().get_key());
+		}
+		else if(source instanceof CirReturnPoint) {
+			CirFunctionDefinition def = source.function_of();
+			String func_name = def.get_declarator().get_name();
+			return SymbolIdentifier.create(source.get_data_type(), "return", func_name);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_const_expression(CirConstExpression source) throws Exception {
+		return this.parse_cons(source.get_constant());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_string_literal(CirStringLiteral source) throws Exception {
+		return SymbolLiteral.create(source.get_literal());
+	}
+	/**
+	 * @param source
+	 * @return *operand
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_defer_expression(CirDeferExpression source) throws Exception {
+		SymbolExpression operand = (SymbolExpression) this.parse_cir_node(source.get_address());
+		return SymbolUnaryExpression.create(source.get_data_type(), COperator.dereference, operand);
+	}
+	/**
+	 * @param source
+	 * @return body.field
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_field_expression(CirFieldExpression source) throws Exception {
+		SymbolExpression body = (SymbolExpression) this.parse_cir_node(source.get_body());
+		SymbolField field = (SymbolField) this.parse_cir_node(source.get_field());
+		return SymbolFieldExpression.create(source.get_data_type(), body, field);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_address_expression(CirAddressExpression source) throws Exception {
+		SymbolExpression operand = (SymbolExpression) this.parse_cir_node(source.get_operand());
+		return SymbolUnaryExpression.create(source.get_data_type(), COperator.address_of, operand);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_cast_expression(CirCastExpression source) throws Exception {
+		SymbolType cast_type = (SymbolType) this.parse_cir_node(source.get_type());
+		SymbolExpression operand = (SymbolExpression) this.parse_cir_node(source.get_operand());
+		return SymbolCastExpression.create(cast_type, operand);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_default_value(CirDefaultValue source) throws Exception {
+		return this.get_default_value(source.get_data_type());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_initializer_body(CirInitializerBody source) throws Exception {
+		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_elements(); k++) {
+			elements.add((SymbolExpression) this.parse_cir_node(source.get_element(k)));
+		}
+		return SymbolInitializerList.create(elements);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_wait_expression(CirWaitExpression source) throws Exception {
+		CirExecution wait_execution = source.execution_of();
+		CirExecution call_execution = wait_execution.get_graph().get_execution(wait_execution.get_id() - 1);
+		return this.parse_cir_node(call_execution.get_statement());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_compute_expression(CirComputeExpression source) throws Exception {
+		COperator operator = source.get_operator();
+		if(source.number_of_operand() == 1) {
+			SymbolExpression operand = (SymbolExpression) this.parse_cir_node(source.get_operand(0));
+			return SymbolUnaryExpression.create(source.get_data_type(), operator, operand);
+		}
+		else {
+			SymbolExpression loperand = (SymbolExpression) this.parse_cir_node(source.get_operand(0));
+			SymbolExpression roperand = (SymbolExpression) this.parse_cir_node(source.get_operand(1));
+			return SymbolBinaryExpression.create(source.get_data_type(), operator, loperand, roperand);
+		}
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_expression(CirExpression source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof CirNameExpression) {
+			return this.parse_cir_name_expression((CirNameExpression) source);
+		}
+		else if(source instanceof CirConstExpression) {
+			return this.parse_cir_const_expression((CirConstExpression) source);
+		}
+		else if(source instanceof CirStringLiteral) {
+			return this.parse_cir_string_literal((CirStringLiteral) source);
+		}
+		else if(source instanceof CirDeferExpression) {
+			return this.parse_cir_defer_expression((CirDeferExpression) source);
+		}
+		else if(source instanceof CirFieldExpression) {
+			return this.parse_cir_field_expression((CirFieldExpression) source);
+		}
+		else if(source instanceof CirAddressExpression) {
+			return this.parse_cir_address_expression((CirAddressExpression) source);
+		}
+		else if(source instanceof CirWaitExpression) {
+			return this.parse_cir_wait_expression((CirWaitExpression) source);
+		}
+		else if(source instanceof CirComputeExpression) {
+			return this.parse_cir_compute_expression((CirComputeExpression) source);
+		}
+		else if(source instanceof CirCastExpression) {
+			return this.parse_cir_cast_expression((CirCastExpression) source);
+		}
+		else if(source instanceof CirDefaultValue) {
+			return this.parse_cir_default_value((CirDefaultValue) source);
+		}
+		else if(source instanceof CirInitializerBody) {
+			return this.parse_cir_initializer_body((CirInitializerBody) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/* cir-statements */
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_assign_statement(CirAssignStatement source) throws Exception {
+		SymbolExpression loperand, roperand;
+		loperand = (SymbolExpression) this.parse_cir_node(source.get_lvalue());
+		roperand = (SymbolExpression) this.parse_cir_node(source.get_rvalue());
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+	}
+	/**
+	 * @param source
+	 * @return @keys#if := source.condition
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_if_statement(CirIfStatement source) throws Exception {
+		SymbolExpression loperand, roperand;
+		roperand = (SymbolExpression) this.parse_cir_node(source.get_condition());
+		roperand = this.parse_bool(roperand, true);
+		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "@keys", CKeyword.c89_if);
+		loperand.set_source(CKeyword.c89_if);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_case_statement(CirCaseStatement source) throws Exception {
+		SymbolExpression loperand, roperand;
+		roperand = (SymbolExpression) this.parse_cir_node(source.get_condition());
+		roperand = this.parse_bool(roperand, true);
+		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "@keys", CKeyword.c89_case);
+		loperand.set_source(CKeyword.c89_case);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
+	}
+	/**
+	 * @param source
+	 * @return execution
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_goto_statement(CirGotoStatement source) throws Exception {
+		return this.parse_exec(source.execution_of());
+	}
+	/**
+	 * @param source
+	 * @return execution
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_tag_statement(CirTagStatement source) throws Exception {
+		return this.parse_exec(source.execution_of());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_call_statement(CirCallStatement source) throws Exception {
+		SymbolExpression function = (SymbolExpression) this.parse_cir_node(source.get_function());
+		SymbolArgumentList arguments = (SymbolArgumentList) this.parse_cir_node(source.get_arguments());
+		
+		CirExecution call_execution = source.execution_of();
+		CirExecution wait_execution = call_execution.get_graph().get_execution(call_execution.get_id() + 1);
+		CirWaitAssignStatement statement = (CirWaitAssignStatement) wait_execution.get_statement();
+		CirWaitExpression wait_expression = (CirWaitExpression) statement.get_rvalue();
+		return SymbolCallExpression.create(wait_expression.get_data_type(), function, arguments);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_statement(CirStatement source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof CirAssignStatement) {
+			return this.parse_cir_assign_statement((CirAssignStatement) source);
+		}
+		else if(source instanceof CirCallStatement) {
+			return this.parse_cir_call_statement((CirCallStatement) source);
+		}
+		else if(source instanceof CirCaseStatement) {
+			return this.parse_cir_case_statement((CirCaseStatement) source);
+		}
+		else if(source instanceof CirIfStatement) {
+			return this.parse_cir_if_statement((CirIfStatement) source);
+		}
+		else if(source instanceof CirGotoStatement) {
+			return this.parse_cir_goto_statement((CirGotoStatement) source);
+		}
+		else if(source instanceof CirTagStatement) {
+			return this.parse_cir_tag_statement((CirTagStatement) source);
+		}
+		else {
+			return this.parse_exec(source.execution_of());
+		}
+	}
+	/* cir-specifiers */
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_argument_list(CirArgumentList source) throws Exception {
+		List<SymbolExpression> arguments = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_arguments(); k++) {
+			arguments.add((SymbolExpression) this.parse_cir_node(source.get_argument(k)));
+		}
+		return SymbolArgumentList.create(arguments);
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolNode	parse_cir_field(CirField source) throws Exception {
+		return SymbolField.create(source.get_name());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_type(CirType source) throws Exception {
+		return SymbolType.create(source.get_typename());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_label(CirLabel source) throws Exception {
+		return this.parse_exec(source.execution_of());
+	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_cir_otherwise(CirNode source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof CirField) {
+			return this.parse_cir_field((CirField) source);
+		}
+		else if(source instanceof CirType) {
+			return this.parse_cir_type((CirType) source);
+		}
+		else if(source instanceof CirArgumentList) {
+			return this.parse_cir_argument_list((CirArgumentList) source);
+		}
+		else if(source instanceof CirLabel) {
+			return this.parse_cir_label((CirLabel) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
 	
+	/* object-based symbolic generators */
+	/**
+	 * @param source	Boolean|Character|Short|Integer|Long|Float|Double|CConstant
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolConstant	sym_constant(Object source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof Boolean || source instanceof Character
+				|| source instanceof Short || source instanceof Integer
+				|| source instanceof Long || source instanceof Float
+				|| source instanceof Double || source instanceof CConstant) {
+			return symb_factory.parse_cons(source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/**
+	 * @param source	{Boolean|Character|Short|Integer|Long|Float|Double|String|
+	 * 					CConstant|AstNode|CirNode|CirExecution|SymbolExpression}
+	 * @return			SymbolExpression to which the source object corresponds.
+	 * @throws Exception
+	 */
+	public static	SymbolExpression	sym_expression(Object source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof Boolean || source instanceof Character
+				|| source instanceof Short || source instanceof Integer
+				|| source instanceof Long || source instanceof Float
+				|| source instanceof Double || source instanceof CConstant) {
+			return symb_factory.parse_cons(source);
+		}
+		else if(source instanceof String) {
+			return SymbolLiteral.create((String) source);
+		}
+		else if(source instanceof AstNode) {
+			return (SymbolExpression) symb_factory.parse_ast_node((AstNode) source);
+		}
+		else if(source instanceof CirNode) {
+			return (SymbolExpression) symb_factory.parse_cir_node((CirNode) source);
+		}
+		else if(source instanceof CirExecution) {
+			return symb_factory.parse_exec(source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/**
+	 * @param source
+	 * @param value
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolExpression	sym_condition(Object source, boolean value) throws Exception {
+		SymbolExpression expression = sym_expression(source);
+		return symb_factory.parse_bool(expression, value);
+	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	/* factory construction methods */
+	/**
+	 * @param type
+	 * @param name
+	 * @param scope
+	 * @return name#scope: type
+	 * @throws Exception
+	 */
+	public static	SymbolIdentifier		identifier(CType type, String name, Object scope) throws Exception {
+		return SymbolIdentifier.create(type, name, scope);
+	}
+	/**
+	 * @param value		{Boolean|Character|Short|Integer|Long|Float|Double|CConstant}
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolConstant			constant(Object value) throws Exception {
+		return symb_factory.parse_cons(value);
+	}
+	/**
+	 * @param literal
+	 * @return string_literal
+	 * @throws Exception
+	 */
+	public static	SymbolLiteral			literal(Object literal) throws Exception {
+		return SymbolLiteral.create(literal.toString());
+	}
+	/**
+	 * @param type
+	 * @param operand
+	 * @return (type) operand
+	 * @throws Exception
+	 */
+	public static	SymbolCastExpression	cast_expression(CType type, Object operand) throws Exception {
+		SymbolType cast_type = SymbolType.create(type);
+		SymbolExpression expression = sym_expression(operand);
+		return SymbolCastExpression.create(cast_type, expression);
+	}
+	/**
+	 * @param body
+	 * @param field
+	 * @return body.field
+	 * @throws Exception
+	 */
+	public static	SymbolFieldExpression	field_expression(Object body, String field) throws Exception {
+		SymbolExpression sbody = sym_expression(body);
+		SymbolField sfield = SymbolField.create(field);
+		CFieldBody fbody;
+		
+		CType data_type = CTypeAnalyzer.get_value_type(sbody.get_data_type());
+		if(data_type instanceof CStructType) {
+			fbody = ((CStructType) data_type).get_fields();
+		}
+		else if(data_type instanceof CUnionType) {
+			fbody = ((CUnionType) data_type).get_fields();
+		}
+		else {
+			throw new IllegalArgumentException(data_type.generate_code());
+		}
+		data_type = fbody.get_field(field).get_type();
+		return SymbolFieldExpression.create(data_type, sbody, sfield);
+	}
+	/**
+	 * @param elements
+	 * @return
+	 * @throws Exception
+	 */
+	public static 	SymbolInitializerList	initializer_list(List<Object> elements) throws Exception {
+		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
+		for(Object element : elements) {
+			expressions.add(sym_expression(element));
+		}
+		return SymbolInitializerList.create(expressions);
+	}
+	/**
+	 * @param function
+	 * @param arguments
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolCallExpression	call_expression(Object function, List<Object> arguments) throws Exception {
+		SymbolExpression sfunction = sym_expression(function);
+		List<SymbolExpression> alist = new ArrayList<SymbolExpression>();
+		for(Object argument : arguments) {
+			alist.add(sym_expression(argument));
+		}
+		
+		CType type = CTypeAnalyzer.get_value_type(sfunction.get_data_type());
+		if(type instanceof CArrayType) {
+			type = CTypeAnalyzer.get_value_type(((CArrayType) type).get_element_type());
+		}
+		else if(type instanceof CPointerType) {
+			type = CTypeAnalyzer.get_value_type(((CPointerType) type).get_pointed_type());
+		}
+		
+		if(type instanceof CFunctionType) {
+			type = ((CFunctionType) type).get_return_type();
+		}
+		else {
+			throw new IllegalArgumentException(type.generate_code());
+		}
+		return SymbolCallExpression.create(type, sfunction, SymbolArgumentList.create(alist));
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	arith_neg(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_bool:
+			case c_char:
+			case c_uchar:
+			case c_short:
+			case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+			case c_int:
+			case c_uint:
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:	break;
+			case c_float:	type = CBasicTypeImpl.double_type; break;
+			case c_double:
+			case c_ldouble:	break;
+			default:		throw new IllegalArgumentException(type.generate_code());
+			}
+		}
+		else if(type instanceof CEnumType) {
+			type = CBasicTypeImpl.int_type;
+		}
+		else {
+			throw new IllegalArgumentException(type.generate_code());
+		}
+		return SymbolUnaryExpression.create(type, COperator.negative, expression);
+	}
+	/**
+	 * @param operand
+	 * @return ~operand
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	bitws_rsv(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		if(type instanceof CBasicType) {
+			switch(((CBasicType) type).get_tag()) {
+			case c_bool:
+			case c_char:
+			case c_uchar:
+			case c_short:
+			case c_ushort:	type = CBasicTypeImpl.int_type;	break;
+			case c_int:
+			case c_uint:
+			case c_long:
+			case c_ulong:
+			case c_llong:
+			case c_ullong:	break;
+			default:		throw new IllegalArgumentException(type.generate_code());
+			}
+		}
+		else if(type instanceof CEnumType) {
+			type = CBasicTypeImpl.int_type;
+		}
+		else {
+			throw new IllegalArgumentException(type.generate_code());
+		}
+		return SymbolUnaryExpression.create(type, COperator.bit_not, expression);
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	logic_not(Object operand) throws Exception {
+		SymbolExpression expression = sym_condition(operand, true);
+		return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type, COperator.logic_not, expression);
+	}
+	/**
+	 * @param operand
+	 * @return &operand
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	address_of(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			type = type_factory.get_pointer_type(type);
+			return SymbolUnaryExpression.create(type, COperator.address_of, expression);
+		}
+		else {
+			throw new IllegalArgumentException("Not a reference: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return *operand
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	dereference(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+		if(type instanceof CArrayType) {
+			type = ((CArrayType) type).get_element_type();
+		}
+		else if(type instanceof CPointerType) {
+			type = ((CPointerType) type).get_pointed_type();
+		}
+		else {
+			type = CBasicTypeImpl.void_type;
+		}
+		return SymbolUnaryExpression.create(type, COperator.dereference, expression);
+	}
+	/**
+	 * @param operand
+	 * @return ++operand
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	prev_inc(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+				return SymbolUnaryExpression.create(type, COperator.increment, expression);
+			}
+			else {
+				throw new IllegalArgumentException("Invalid: " + type.generate_code());
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Not a reference: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return --operand
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	prev_dec(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+				return SymbolUnaryExpression.create(type, COperator.decrement, expression);
+			}
+			else {
+				throw new IllegalArgumentException("Invalid: " + type.generate_code());
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Not a reference: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return operand++
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	post_inc(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+				return SymbolUnaryExpression.create(type, COperator.arith_add_assign, expression);
+			}
+			else {
+				throw new IllegalArgumentException("Invalid: " + type.generate_code());
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Not a reference: " + expression);
+		}
+	}
+	/**
+	 * @param operand
+	 * @return operand--
+	 * @throws Exception
+	 */
+	public static	SymbolUnaryExpression	post_dec(Object operand) throws Exception {
+		SymbolExpression expression = sym_expression(operand);
+		if(expression.is_reference()) {
+			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
+			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
+				return SymbolUnaryExpression.create(type, COperator.arith_sub_assign, expression);
+			}
+			else {
+				throw new IllegalArgumentException("Invalid: " + type.generate_code());
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Not a reference: " + expression);
+		}
+	}
+	/**
+	 * 
+	 * @param condition
+	 * @param tvalue
+	 * @param fvalue
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolConditionExpression	cond_expr(CType type, 
+			Object condition, Object tvalue, Object fvalue) throws Exception {
+		SymbolExpression cond = sym_condition(condition, true);
+		SymbolExpression tval = sym_expression(tvalue);
+		SymbolExpression fval = sym_expression(fvalue);
+		return SymbolConditionExpression.create(type, cond, tval, fval);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	arith_add(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.arith_add, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	arith_sub(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.arith_sub, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	arith_mul(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.arith_mul, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	arith_div(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.arith_div, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	arith_mod(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.arith_mod, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	bitws_and(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.bit_and, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	bitws_ior(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.bit_or, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	bitws_xor(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.bit_xor, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	bitws_lsh(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.left_shift, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return 
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	bitws_rsh(CType type, Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(type, COperator.righ_shift, 
+				sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	logic_and(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.logic_and, sym_condition(loperand, true), sym_condition(roperand, true));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	logic_ior(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.logic_or, sym_condition(loperand, true), sym_condition(roperand, true));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	logic_xor(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.not_equals, sym_condition(loperand, true), sym_condition(roperand, true));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	greater_tn(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.smaller_tn, sym_expression(roperand), sym_expression(loperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	greater_eq(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.smaller_eq, sym_expression(roperand), sym_expression(loperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	smaller_tn(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.smaller_tn, sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	smaller_eq(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.smaller_eq, sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	equal_with(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.equal_with, sym_expression(loperand), sym_expression(roperand));
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolBinaryExpression	not_equals(Object loperand, Object roperand) throws Exception {
+		return SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, 
+				COperator.not_equals, sym_expression(loperand), sym_expression(roperand));
+	}
 	
 }

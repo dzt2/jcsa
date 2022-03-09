@@ -61,7 +61,7 @@ public class SymbolCallExpression extends SymbolExpression {
 
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
-		return this.get_function().generate_code(simplified) + " " + 
+		return this.get_function().generate_code(simplified) + 
 				this.get_argument_list().generate_code(simplified);
 	}
 

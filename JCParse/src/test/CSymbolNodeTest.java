@@ -29,8 +29,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.symb.SymbolExpression;
-import com.jcsa.jcparse.lang.symb.SymbolFactory;
+import com.jcsa.jcparse.parse.symbolic.SymbolExpression;
+import com.jcsa.jcparse.parse.symbolic.SymbolFactory;
 
 public class CSymbolNodeTest {
 	
@@ -105,7 +105,7 @@ public class CSymbolNodeTest {
 				writer.write("AST\t" + key + "\t" + class_name + "\t" + function + "\t" + line + "\n");
 				writer.write("COD:\t" + code + "\n");
 				SymbolExpression expression = SymbolFactory.sym_expression(node);
-				writer.write("SYM:\t" + expression.generate_code(true) + "\n");
+				writer.write("SYM:\t" + expression.generate_simple_code() + "\n");
 				writer.write("\n");
 			}
 		}
@@ -126,16 +126,16 @@ public class CSymbolNodeTest {
 				if(statement instanceof CirAssignStatement) {
 					SymbolExpression lvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
 					SymbolExpression rvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
-					writer.write("\t==> [1] " + lvalue.generate_code(true) + "\n");
-					writer.write("\t==> [2] " + rvalue.generate_code(true) + "\n");
+					writer.write("\t==> [1] " + lvalue.generate_simple_code() + "\n");
+					writer.write("\t==> [2] " + rvalue.generate_simple_code() + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
+					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_code(true) + "\n");
+					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
 				}
 			}
 			writer.write("END FUNC\n");

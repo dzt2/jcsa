@@ -57,7 +57,24 @@ public class SymbolLiteral extends SymbolBasicExpression {
 
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
-		return this.literal;
+		StringBuilder buffer = new StringBuilder();
+		buffer.append("\"");
+		for(int k = 0; k < this.literal.length(); k++) {
+			char ch = this.literal.charAt(k);
+			switch(ch) {
+			case '\b':	buffer.append("\\b");	break;
+			case '\t':	buffer.append("\\t");	break;
+			case '\n':	buffer.append("\\n");	break;
+			case '\f':	buffer.append("\\f");	break;
+			case '\r':	buffer.append("\\r");	break;
+			case '\\':	buffer.append("\\\\");	break;
+			case '\'':	buffer.append("\\\'");	break;
+			case '\"':	buffer.append("\\\"");	break;
+			default:	buffer.append(ch);		break;
+			}
+		}
+		buffer.append("\"");
+		return buffer.toString();
 	}
 
 	@Override
