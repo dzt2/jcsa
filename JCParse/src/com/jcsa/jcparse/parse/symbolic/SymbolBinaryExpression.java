@@ -108,6 +108,9 @@ public class SymbolBinaryExpression extends SymbolExpression {
 			case assign:		expression.add_child(SymbolOperator.create(operator)); break;
 			default:			throw new IllegalArgumentException("Unsupport: " + operator);
 			}
+			if(operator == COperator.assign && !loperand.is_reference()) {
+				throw new IllegalArgumentException("Not reference: " + loperand);
+			}
 			expression.add_child(loperand); expression.add_child(roperand); return expression;
 		}
 	}

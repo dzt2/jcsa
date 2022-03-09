@@ -1727,6 +1727,7 @@ public class SymbolFactory {
 		COperator operator = source.get_operator();
 		if(source.number_of_operand() == 1) {
 			SymbolExpression operand = (SymbolExpression) this.parse_cir_node(source.get_operand(0));
+			if(operator == COperator.positive) return operand;
 			return SymbolUnaryExpression.create(source.get_data_type(), operator, operand);
 		}
 		else {
@@ -2223,46 +2224,6 @@ public class SymbolFactory {
 	}
 	/**
 	 * @param operand
-	 * @return ++operand
-	 * @throws Exception
-	 */
-	public static	SymbolUnaryExpression	prev_inc(Object operand) throws Exception {
-		SymbolExpression expression = sym_expression(operand);
-		if(expression.is_reference()) {
-			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.increment, expression);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type.generate_code());
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Not a reference: " + expression);
-		}
-	}
-	/**
-	 * @param operand
-	 * @return --operand
-	 * @throws Exception
-	 */
-	public static	SymbolUnaryExpression	prev_dec(Object operand) throws Exception {
-		SymbolExpression expression = sym_expression(operand);
-		if(expression.is_reference()) {
-			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
-			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.decrement, expression);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + type.generate_code());
-			}
-		}
-		else {
-			throw new IllegalArgumentException("Not a reference: " + expression);
-		}
-	}
-	/**
-	 * @param operand
 	 * @return operand++
 	 * @throws Exception
 	 */
@@ -2271,7 +2232,7 @@ public class SymbolFactory {
 		if(expression.is_reference()) {
 			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.arith_add_assign, expression);
+				return SymbolUnaryExpression.create(type, COperator.increment, expression);
 			}
 			else {
 				throw new IllegalArgumentException("Invalid: " + type.generate_code());
@@ -2291,7 +2252,7 @@ public class SymbolFactory {
 		if(expression.is_reference()) {
 			CType type = CTypeAnalyzer.get_value_type(expression.get_data_type());
 			if(CTypeAnalyzer.is_number(type) || CTypeAnalyzer.is_pointer(type)) {
-				return SymbolUnaryExpression.create(type, COperator.arith_sub_assign, expression);
+				return SymbolUnaryExpression.create(type, COperator.decrement, expression);
 			}
 			else {
 				throw new IllegalArgumentException("Invalid: " + type.generate_code());

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb.util;
+package com.jcsa.jcparse.parse.symbolic;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,43 +10,20 @@ import com.jcsa.jcparse.lang.ctype.CEnumeratorList;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.symb.SymbolConstant;
-import com.jcsa.jcparse.lang.symb.SymbolExpression;
-import com.jcsa.jcparse.lang.symb.SymbolFactory;
 
 /**
- * 	This class implements the constant-computation, domain-comparison and 
- *	partial evaluation.
- * 	
- * 	@author yukimula
+ * It implements the constant-evaluation and the domain-evaluation.
+ * 
+ * @author yukimula
  *
  */
 public final class SymbolComputer {
 	
+
 	/* singleton */	 /** construction **/  private SymbolComputer() { }
 	private static final SymbolComputer computer = new SymbolComputer();
 	
 	/* constant-computation */
-	/**
-	 * @param operand	the numeric constant for being arithmetic translate
-	 * @return			+((long|double) operand)
-	 * @throws Exception
-	 */
-	private	SymbolConstant	compute_arith_pos(SymbolConstant operand) throws Exception {
-		if(operand == null) {
-			throw new IllegalArgumentException("Invalid operand: null");
-		}
-		else {
-			Object number = operand.get_number(), result;
-			if(number instanceof Long) {
-				result = Long.valueOf(((Long) number).longValue());
-			}
-			else {
-				result = Double.valueOf(((Double) number).doubleValue());
-			}
-			return SymbolFactory.sym_constant(result);
-		}
-	}
 	/**
 	 * @param operand	the numeric constant for being arithmetically negated
 	 * @return			-((long|double) operand.number)
@@ -94,46 +71,6 @@ public final class SymbolComputer {
 		else {
 			boolean value = operand.get_bool().booleanValue();
 			Boolean result = Boolean.valueOf(!value);
-			return SymbolFactory.sym_constant(result);
-		}
-	}
-	/**
-	 * @param operand	the numeric constant for being arithmetic translate
-	 * @return			((long|double) operand) + 1
-	 * @throws Exception
-	 */
-	private	SymbolConstant	compute_increment(SymbolConstant operand) throws Exception {
-		if(operand == null) {
-			throw new IllegalArgumentException("Invalid operand: null");
-		}
-		else {
-			Object number = operand.get_number(), result;
-			if(number instanceof Long) {
-				result = Long.valueOf(((Long) number).longValue() + 1);
-			}
-			else {
-				result = Double.valueOf(((Double) number).doubleValue() + 1.0);
-			}
-			return SymbolFactory.sym_constant(result);
-		}
-	}
-	/**
-	 * @param operand	the numeric constant for being arithmetic translate
-	 * @return			((long|double) operand) - 1
-	 * @throws Exception
-	 */
-	private	SymbolConstant	compute_decrement(SymbolConstant operand) throws Exception {
-		if(operand == null) {
-			throw new IllegalArgumentException("Invalid operand: null");
-		}
-		else {
-			Object number = operand.get_number(), result;
-			if(number instanceof Long) {
-				result = Long.valueOf(((Long) number).longValue() - 1);
-			}
-			else {
-				result = Double.valueOf(((Double) number).doubleValue() - 1.0);
-			}
 			return SymbolFactory.sym_constant(result);
 		}
 	}
@@ -767,7 +704,7 @@ public final class SymbolComputer {
 		}
 	}
 	/**
-	 * @param operator	[pos, neg, not, inc, dec]
+	 * @param operator	[pos, neg, not]
 	 * @param operand	
 	 * @return			
 	 * @throws Exception
@@ -781,12 +718,9 @@ public final class SymbolComputer {
 		}
 		else {
 			switch(operator) {
-			case positive:	return this.compute_arith_pos(operand);
 			case negative:	return this.compute_arith_neg(operand);
 			case bit_not:	return this.compute_bitws_rsv(operand);
 			case logic_not:	return this.compute_logic_not(operand);
-			case increment:	return this.compute_increment(operand);
-			case decrement:	return this.compute_decrement(operand);
 			default:		throw new IllegalArgumentException(operator.toString());
 			}
 		}

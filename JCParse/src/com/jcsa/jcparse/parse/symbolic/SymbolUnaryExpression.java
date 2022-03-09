@@ -96,12 +96,22 @@ public class SymbolUnaryExpression extends SymbolExpression {
 			case negative:
 			case bit_not:
 			case logic_not:
+			case dereference:	
+			{
+				break;
+			}
 			case increment:	
 			case decrement:	
-			case address_of:	
-			case dereference:	expression.add_child(SymbolOperator.create(operator)); break;
+			case address_of:
+			{
+				if(!operand.is_reference()) {
+					throw new IllegalArgumentException("Not a reference: " + operand);
+				}
+				break;
+			}
 			default:	throw new IllegalArgumentException("Unsupport: " + operator);
 			}
+			expression.add_child(SymbolOperator.create(operator));
 			expression.add_child(operand); return expression;
 		}
 	}

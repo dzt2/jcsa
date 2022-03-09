@@ -61,7 +61,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as boolean value
 	 */
-	public boolean		get_bool() {
+	public Boolean		get_bool() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return this.constant.get_bool().booleanValue();
 		case c_char:		return Boolean.valueOf(this.constant.get_char() != '\0');
@@ -83,7 +83,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as character
 	 */
-	public char			get_char() {
+	public Character	get_char() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return this.constant.get_bool() ? '\1' : '\0';
 		case c_char:		return Character.valueOf(this.constant.get_char());
@@ -105,7 +105,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as short-int
 	 */
-	public short		get_short() {
+	public Short		get_short() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (short) (this.constant.get_bool() ? 1 : 0);
 		case c_char:		return Short.valueOf((short) this.constant.get_char().charValue());
@@ -127,7 +127,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as normal int
 	 */
-	public int			get_int() {
+	public Integer		get_int() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (int) (this.constant.get_bool() ? 1 : 0);
 		case c_char:		return Integer.valueOf((int) this.constant.get_char().charValue());
@@ -149,7 +149,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as long int
 	 */
-	public long			get_long() {
+	public Long			get_long() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (long) (this.constant.get_bool() ? 1 : 0);
 		case c_char:		return Long.valueOf((long) this.constant.get_char().charValue());
@@ -171,7 +171,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as float
 	 */
-	public float		get_float() {
+	public Float		get_float() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (float) (this.constant.get_bool() ? 1 : 0);
 		case c_char:		return Float.valueOf((float) this.constant.get_char().charValue());
@@ -193,7 +193,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	/**
 	 * @return taken as double
 	 */
-	public double		get_double() {
+	public Double		get_double() {
 		switch(this.constant.get_type().get_tag()) {
 		case c_bool:		return (double) (this.constant.get_bool() ? 1 : 0);
 		case c_char:		return Double.valueOf((double) this.constant.get_char().charValue());

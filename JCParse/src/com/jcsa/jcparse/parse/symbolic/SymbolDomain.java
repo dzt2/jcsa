@@ -1,7 +1,5 @@
-package com.jcsa.jcparse.lang.symb.util;
+package com.jcsa.jcparse.parse.symbolic;
 
-import com.jcsa.jcparse.lang.symb.SymbolConstant;
-import com.jcsa.jcparse.lang.symb.SymbolFactory;
 
 /**
  * It defines the value-domain of SymbolExpression.
