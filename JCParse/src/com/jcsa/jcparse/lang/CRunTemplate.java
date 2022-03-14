@@ -302,12 +302,38 @@ public class CRunTemplate {
 		buffer.clear(); return buffer.array();
 	}
 	/**
+	 * It extends the byte-array to the length of data type
+	 * @param type
+	 * @param bytes
+	 * @return
+	 * @throws Exception
+	 */
+	private	byte[]	extend_bytes(CType type, byte[] bytes) throws Exception {
+		type = CTypeAnalyzer.get_value_type(type);
+		int length = this.sizeof(type);
+		if(length == 1) { length = 2; }
+		if(length > bytes.length) {
+			byte[] new_bytes = new byte[length];
+			for(int k = 0; k < length; k++) {
+				if(k < bytes.length) {
+					new_bytes[k] = bytes[k];
+				}
+				else {
+					new_bytes[k] = 0;
+				}
+			}
+			bytes = new_bytes;
+		}
+		return bytes;
+	}
+	/**
 	 * @param type
 	 * @param bytes
 	 * @return Boolean|Character|Short|Integer|Long|Float|Double|Complex|ByteBuffer
 	 * @throws Exception
 	 */
 	public Object generate_value(CType type, byte[] bytes) throws Exception {
+		bytes = this.extend_bytes(type, bytes);
 		type = CTypeAnalyzer.get_value_type(type);
 		ByteBuffer byte_buffer = ByteBuffer.wrap(bytes);
 		if(this.little_endian) {

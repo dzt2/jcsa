@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.MutaClass;
@@ -41,7 +40,7 @@ import com.jcsa.jcparse.test.state.CStatePath;
 public class MuTestProjectResultsTest {
 	
 	/* parameters used */
-	private static final Random random = new Random(System.currentTimeMillis());
+	// private static final Random random = new Random(System.currentTimeMillis());
 	/** the path of directory where the xxx.c code files are preserved **/
 	static final String code_file_directory = "/home/dzt2/Development/Data/cfiles/";
 	/** the directory where the data files in test/inputs/ are used **/
@@ -67,6 +66,7 @@ public class MuTestProjectResultsTest {
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(projects_directory).listFiles()) {
 			//if(root.getName().equals("is_prime")) {
+			// if(root.getName().equals("replace")) {
 			if(true) {
 				/* 1. obtain the mutation test project */
 				System.out.println("Testing " + root.getName());
@@ -76,15 +76,25 @@ public class MuTestProjectResultsTest {
 				/* 2. collect all the test cases for running */
 				// TODO fix here to change the tests being selected
 				// Collection<TestInput> test_cases = select_all_test_cases(project);
-				Collection<TestInput> test_cases = select_test_cases(project, 0, 128);
+				Collection<TestInput> test_cases = select_test_cases(project, 0, 96);
 				project.execute_instrumental(test_cases);
+				// project.execute_instrumental(test_cases);
 				
 				/* 3. perform the execution or evaluations */
 				// TODO fix this method to choose the function you want to do
 				//do_mutation_executing(project, test_cases, false);
 				// do_evaluate_detect_ratio(project, test_cases);
 				// do_evaluate_coincidental_correctness(project, test_cases);
+				int succeeds = 0, total = 0;
 				for(TestInput test_case : test_cases) {
+					File output = new File(output_directory + root.
+							getName() + "." + test_case.get_id() + ".txt");
+					if(do_visualize_coverage_path(project, test_case, output)) {
+						//System.out.println("\tvisualize: " + output.getAbsolutePath());
+						succeeds++;
+					}
+					total++;
+					/*
 					if(random.nextBoolean()) {
 						File output = new File(output_directory + root.
 								getName() + "." + test_case.get_id() + ".txt");
@@ -93,7 +103,9 @@ public class MuTestProjectResultsTest {
 							break;
 						}
 					}
+					*/
 				}
+				System.out.println("\tVisualized " + succeeds + "/" + total + " test cases");
 				System.out.println();
 			}
 		}

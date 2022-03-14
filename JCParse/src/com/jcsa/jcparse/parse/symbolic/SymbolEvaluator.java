@@ -2,9 +2,14 @@ package com.jcsa.jcparse.parse.symbolic;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
@@ -242,8 +247,8 @@ public class SymbolEvaluator {
 		// TODO implement here more
 		switch(expression.get_operator().get_operator()) {
 		case negative:			return this.eval_arith_neg(expression);
-		case bit_not:			
-		case logic_not:				
+		case bit_not:			return this.eval_bitws_rsv(expression);
+		case logic_not:			return this.eval_logic_not(expression);
 		case address_of:		
 		case dereference:		
 		default:				throw new IllegalArgumentException(expression.generate_code(false));
@@ -261,15 +266,16 @@ public class SymbolEvaluator {
 		case arith_sub:		return this.eval_arith_sub(expression);
 		case arith_mul:		return this.eval_arith_mul(expression);
 		case arith_div:		return this.eval_arith_div(expression);
-		case arith_mod:		
-		case bit_and:		
-		case bit_or:		
-		case bit_xor:		
-		case left_shift:	
-		case righ_shift:	
-		case logic_and:		
-		case logic_or:		
+		case arith_mod:		return this.eval_arith_mod(expression);
+		case bit_and:		return this.eval_bitws_and(expression);
+		case bit_or:		return this.eval_bitws_ior(expression);
+		case bit_xor:		return this.eval_bitws_xor(expression);
+		case left_shift:	return this.eval_bitws_lsh(expression);
+		case righ_shift:	return this.eval_bitws_rsh(expression);
+		case logic_and:		return this.eval_logic_and(expression);
+		case logic_or:		return this.eval_logic_ior(expression);
 		case positive:		/* logical implication */
+							return this.eval_logic_imp(expression);
 		case equal_with:	
 		case not_equals:	
 		case greater_tn:	
@@ -308,7 +314,7 @@ public class SymbolEvaluator {
 		}
 	}
 	/**
-	 * @param operator	[add, mul, and, ior, xor]
+	 * @param operator	[add, mul, and, ior, xor, eqv]
 	 * @param elist		the expressions being evaluated and to accumulate constant
 	 * @return			the constant to be accumulated from constants in the elist
 	 * @throws Exception
@@ -329,6 +335,7 @@ public class SymbolEvaluator {
 			case bit_and:	constant = SymbolFactory.sym_constant(Long.valueOf(~0));break;
 			case bit_or:	constant = SymbolFactory.sym_constant(Long.valueOf(0));	break;
 			case bit_xor:	constant = SymbolFactory.sym_constant(Long.valueOf(0));	break;
+			case equal_with:constant = SymbolFactory.sym_constant(Long.valueOf(0));	break;
 			case logic_and:	constant = SymbolFactory.sym_constant(Boolean.TRUE);	break;
 			case logic_or:	constant = SymbolFactory.sym_constant(Boolean.FALSE);	break;
 			default:		throw new IllegalArgumentException("Unsupported " + operator);
@@ -338,7 +345,14 @@ public class SymbolEvaluator {
 			List<SymbolExpression> vlist = new ArrayList<SymbolExpression>();
 			for(SymbolExpression ei : elist) {
 				if(ei instanceof SymbolConstant) {
-					constant = SymbolComputer.do_compute(operator, constant, (SymbolConstant) ei);
+					if(operator == COperator.equal_with) {
+						SymbolConstant value = (SymbolConstant) ei;
+						value = SymbolComputer.do_compute(COperator.bit_not, value);
+						constant = SymbolComputer.do_compute(COperator.bit_xor, constant, value);
+					}
+					else {
+						constant = SymbolComputer.do_compute(operator, constant, (SymbolConstant) ei);
+					}
 				}
 				else {
 					vlist.add(ei);
@@ -388,6 +402,23 @@ public class SymbolEvaluator {
 			}
 			return expression;
 		}
+	}
+	/**
+	 * Whether there are equivalent operands in two list
+	 * @param alist
+	 * @param blist
+	 * @return
+	 * @throws Exception
+	 */
+	private	boolean				heqv_expression_list(List<SymbolExpression> alist, List<SymbolExpression> blist) throws Exception {
+		for(SymbolExpression aexp : alist) {
+			for(SymbolExpression bexp : blist) {
+				if(SymbolComputer.is_equivalence(aexp, bexp)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	/**
 	 * It reduces (cancels) the equivalent-pairs (peq) in both lists
@@ -800,11 +831,860 @@ public class SymbolEvaluator {
 		else { return SymbolFactory.arith_neg(operand); }
 	}
 	/* symbolic evaluation on arithmetic operations (mod) */
-	// TODO ...
+	/**
+	 * It divides the operands in expression as multiply and serves to arith_mod
+	 * @param expression
+	 * @param ulist
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_arith_mod_by_mul(SymbolExpression 
+					expression, List<SymbolExpression> ulist) throws Exception {
+		if(expression == null)	{ return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** LONG-CONS **/
+			Long value = ((SymbolConstant) expression).get_long();
+			ulist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.negative) {								/** ARITH_NEG **/
+				ulist.add(SymbolFactory.sym_constant(Long.valueOf(-1)));
+				this.div_operands_in_arith_mod_by_mul(uoperand, ulist);
+			}
+			else { ulist.add(expression); }										/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.arith_mul) {								/** ARITH_MUL **/
+				this.div_operands_in_arith_mod_by_mul(loperand, ulist);
+				this.div_operands_in_arith_mod_by_mul(roperand, ulist);
+			}
+			else { ulist.add(expression); }										/** OTHERWISE **/
+		}
+		else 	{ ulist.add(expression); }										/** OTHERWISE **/
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_arith_mod(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declarations and initialization */
+		List<SymbolExpression> ulist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> dlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant;
+		SymbolExpression loperand, roperand;
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		/* 2. divide the loperands and roperands */
+		this.div_operands_in_arith_mod_by_mul(expression.get_loperand(), ulist);
+		this.div_operands_in_arith_mod_by_mul(expression.get_roperand(), dlist);
+		this.eval_expression_list(ulist); this.eval_expression_list(dlist);
+		
+		/* 3. accumulate the constant results */
+		lconstant = this.cacc_expression_list(COperator.arith_mul, ulist);
+		rconstant = this.cacc_expression_list(COperator.arith_mul, dlist);
+		if(SymbolComputer.compare_values(rconstant, Long.valueOf(0))) {
+			throw new ArithmeticException("Divided by zero.");
+		}
+		else if(this.heqv_expression_list(ulist, dlist)) { 
+			return SymbolFactory.sym_constant(Long.valueOf(0));
+		}
+		else if(!SymbolComputer.compare_values(rconstant, Long.valueOf(1))
+				&& !SymbolComputer.compare_values(rconstant, Long.valueOf(-1))
+				&& lconstant.get_long() % rconstant.get_long() == 0) {
+			return SymbolFactory.sym_constant(Long.valueOf(0));
+		}
+		else {
+			SymbolConstant[] slr = this.normalize_operands_in_arith_div(
+						CBasicTypeImpl.long_type, lconstant, rconstant);
+			boolean sign = slr[0].get_bool().booleanValue();
+			long lvalue = slr[1].get_long().longValue();
+			long rvalue = slr[2].get_long().longValue();
+			if(sign) lvalue = -lvalue;
+			lconstant = SymbolFactory.sym_constant(Long.valueOf(lvalue));
+			rconstant = SymbolFactory.sym_constant(Long.valueOf(rvalue));
+		}
+		
+		/* 4. accumulate to operands */
+		loperand = this.vacc_expression_list(type, COperator.arith_mul, ulist);
+		roperand = this.vacc_expression_list(type, COperator.arith_mul, dlist);
+		if(loperand == null) { loperand = lconstant; }
+		else if(lconstant.get_long() == -1) {
+			loperand = SymbolFactory.arith_neg(loperand);
+		}
+		else if(lconstant.get_long() != 1) {
+			loperand = SymbolFactory.arith_mul(type, lconstant, loperand);
+		}
+		else { /* no more modify for lconstant == 1 */ }
+		if(roperand == null) { roperand = rconstant; }
+		else if(rconstant.get_long() == -1) {
+			roperand = SymbolFactory.arith_neg(roperand);
+		}
+		else if(rconstant.get_long() != 1) {
+			roperand = SymbolFactory.arith_mul(type, rconstant, roperand);
+		}
+		else { /* no more modify for rconstant == 1 */ }
+		
+		/* 6. partial evaluation on mod */
+		if(loperand instanceof SymbolConstant) {
+			long lvalue = ((SymbolConstant) loperand).get_long();
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				return SymbolFactory.sym_constant(Long.valueOf(lvalue % rvalue));
+			}
+			else {
+				if(lvalue == 0) {
+					return SymbolFactory.sym_constant(Long.valueOf(0));
+				}
+				else {
+					return SymbolFactory.arith_mod(type, loperand, roperand);
+				}
+			}
+		}
+		else {
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				if(rvalue == 1 || rvalue == -1) {
+					return SymbolFactory.sym_constant(Long.valueOf(0));
+				}
+				else {
+					return SymbolFactory.arith_mod(type, loperand, roperand);
+				}
+			}
+			else {
+				return SymbolFactory.arith_mod(type, loperand, roperand);
+			}
+		}
+	}
 	
+	/* symbolic evaluation on bitwise operations {&, |, ^} */
+	/**
+	 * @param expression	the expression or suboperand in bitws_and
+	 * @param plist			to preserve the operands in not-rsv parts
+	 * @param nlist			to preserve the operands in bit-rsv parts
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_bitws_and(SymbolExpression expression,
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		if(expression == null) { return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** LONG-CONS **/
+			Long value = ((SymbolConstant) expression).get_long();
+			plist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.bit_not) {									/** BITWS_RSV **/
+				this.div_operands_in_bitws_ior(uoperand, nlist, plist);
+			}
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.bit_and) {									/** BITWS_AND **/
+				this.div_operands_in_bitws_and(loperand, plist, nlist);
+				this.div_operands_in_bitws_and(roperand, plist, nlist);
+			}
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else 	{ plist.add(expression); }										/** OTHERWISE **/
+	}
+	/**
+	 * @param expression	the expression or suboperand in bitws_ior
+	 * @param plist			to preserve the operands in not-rsv parts
+	 * @param nlist			to preserve the operands in bit-rsv parts
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_bitws_ior(SymbolExpression expression,
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		if(expression == null) { return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** LONG-CONS **/
+			Long value = ((SymbolConstant) expression).get_long();
+			plist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.bit_not) {									/** BITWS_RSV **/
+				this.div_operands_in_bitws_and(uoperand, nlist, plist);
+			}
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.bit_or) {									/** BITWS_IOR **/
+				this.div_operands_in_bitws_ior(loperand, plist, nlist);
+				this.div_operands_in_bitws_ior(roperand, plist, nlist);
+			}
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else 	{ plist.add(expression); }										/** OTHERWISE **/
+	}
+	/**
+	 * @param expression	the expression or suboperand in bitws_xor
+	 * @param plist			to preserve the operands in not-rsv parts
+	 * @param nlist			to preserve the operands in bit-rsv parts
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_bitws_xor(SymbolExpression expression,
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		if(expression == null) { return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** LONG-CONS **/
+			Long value = ((SymbolConstant) expression).get_long();
+			plist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.bit_not) {	nlist.add(uoperand); }			/** BITWS_RSV **/
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.bit_xor) {									/** BITWS_XOR **/
+				this.div_operands_in_bitws_xor(loperand, plist, nlist);
+				this.div_operands_in_bitws_xor(roperand, plist, nlist);
+			}
+			else { plist.add(expression); }										/** OTHERWISE **/
+		}
+		else 	{ plist.add(expression); }										/** OTHERWISE **/
+	}
+	/**
+	 * the simplified form of variables (no-duplicated)
+	 * @param type
+	 * @param elist
+	 * @throws Exception
+	 */
+	private	SymbolExpression	sim_operands_in_bitws_and(CType type, List<SymbolExpression> elist) throws Exception {
+		Set<SymbolExpression> operands = new HashSet<SymbolExpression>();
+		for(SymbolExpression operand : elist) { operands.add(operand); }
+		elist.clear();
+		for(SymbolExpression operand : operands) { elist.add(operand); }
+		return this.vacc_expression_list(type, COperator.bit_and, elist);
+	}
+	/**
+	 * the simplified form of variables (no-duplicated)
+	 * @param type
+	 * @param elist
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	sim_operands_in_bitws_ior(CType type, List<SymbolExpression> elist) throws Exception {
+		Set<SymbolExpression> operands = new HashSet<SymbolExpression>();
+		for(SymbolExpression operand : elist) { operands.add(operand); }
+		elist.clear();
+		for(SymbolExpression operand : operands) { elist.add(operand); }
+		return this.vacc_expression_list(type, COperator.bit_or, elist);
+	}
+	/**
+	 * @param type
+	 * @param plist
+	 * @param nlist
+	 * @return the simplified version of operands
+	 * @throws Exception
+	 */
+	private	SymbolExpression	sim_operands_in_bitws_xor(CType type, 
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		Map<SymbolExpression, Integer> counters = new HashMap<SymbolExpression, Integer>();
+		
+		/* count the operand's numbers by positive as pos */
+		for(SymbolExpression operand : plist) {
+			if(!counters.containsKey(operand)) {
+				counters.put(operand, Integer.valueOf(0));
+			}
+			int counter = counters.get(operand) + 1;
+			counters.put(operand, Integer.valueOf(counter));
+		}
+		
+		/* count the operand's numbers by negative as rsv */
+		for(SymbolExpression operand : nlist) {
+			if(!counters.containsKey(operand)) {
+				counters.put(operand, Integer.valueOf(0));
+			}
+			int counter = counters.get(operand) - 1;
+			counters.put(operand, Integer.valueOf(counter));
+		}
+		
+		/* generate the operands list */
+		List<SymbolExpression> operands = new ArrayList<SymbolExpression>();
+		for(SymbolExpression operand : counters.keySet()) {
+			int counter = counters.get(operand).intValue();
+			if(counter % 2 != 0) {
+				if(counter < 0) {
+					operands.add(SymbolFactory.bitws_rsv(operand));
+				}
+				else {
+					operands.add(operand);
+				}
+			}
+		}
+		
+		/* return */	
+		return this.vacc_expression_list(type, COperator.bit_xor, operands);
+	}
+	/**
+	 * @param expression	{&}
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_and(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declaration and initialization */
+		List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant;
+		SymbolExpression operand;
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		/* 2. divide the operands in positive and reversed */
+		this.div_operands_in_bitws_and(expression, plist, nlist);
+		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		lconstant = this.cacc_expression_list(COperator.bit_and, plist);
+		rconstant = this.cacc_expression_list(COperator.bit_or, nlist);
+		rconstant = SymbolComputer.do_compute(COperator.bit_not, rconstant);
+		constant = SymbolComputer.do_compute(COperator.bit_and, lconstant, rconstant);
+		
+		/* 3. partial evaluation on constants and operands */
+		if(constant.get_long() == 0) {
+			return SymbolFactory.sym_constant(Long.valueOf(0));
+		}
+		else if(this.heqv_expression_list(plist, nlist)) {
+			return SymbolFactory.sym_constant(Long.valueOf(0));
+		}
+		else {
+			for(SymbolExpression nexp : nlist) {
+				plist.add(SymbolFactory.bitws_rsv(nexp));
+			}
+			operand = this.sim_operands_in_bitws_and(type, plist);
+		}
+		
+		/* 4. return */	
+		if(operand == null) {
+			return constant;
+		}
+		else if(SymbolComputer.compare_values(constant, Long.valueOf(~0))) {
+			return operand;
+		}
+		else {
+			return SymbolFactory.bitws_and(type, constant, operand);
+		}
+	}
+	/**
+	 * @param expression	{|}
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_ior(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declaration and initialization */
+		List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant; SymbolExpression operand;
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		/* 2. divide the operands in positive and reversed */
+		this.div_operands_in_bitws_ior(expression, plist, nlist);
+		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		lconstant = this.cacc_expression_list(COperator.bit_or, plist);
+		rconstant = this.cacc_expression_list(COperator.bit_and, nlist);
+		rconstant = SymbolComputer.do_compute(COperator.bit_not, rconstant);
+		constant = SymbolComputer.do_compute(COperator.bit_or, lconstant, rconstant);
+		
+		/* 3. partial evaluation on constants and operands */
+		if(SymbolComputer.compare_values(constant, Long.valueOf(~0))) {
+			return SymbolFactory.sym_constant(Long.valueOf(~0));
+		}
+		else if(this.heqv_expression_list(plist, nlist)) {
+			return SymbolFactory.sym_constant(Long.valueOf(~0));
+		}
+		else {
+			for(SymbolExpression nexp : nlist) {
+				plist.add(SymbolFactory.bitws_rsv(nexp));
+			}
+			operand = this.sim_operands_in_bitws_ior(type, plist);
+		}
+		
+		/* 5. return */
+		if(operand == null) {
+			return constant;
+		}
+		else if(SymbolComputer.compare_values(constant, Long.valueOf(0))) {
+			return operand;
+		}
+		else {
+			return SymbolFactory.bitws_ior(type, constant, operand);
+		}
+	}
+	/**
+	 * @param expression	{^}
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_xor(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declaration and initialization */
+		List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant; SymbolExpression operand;
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		/* 2. divide the operands in {xor} */
+		this.div_operands_in_bitws_xor(expression, plist, nlist);
+		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		
+		/* 3. constant evaluation and partial */
+		lconstant = this.cacc_expression_list(COperator.bit_xor, plist);
+		rconstant = this.cacc_expression_list(COperator.equal_with, nlist);
+		constant = SymbolComputer.do_compute(COperator.bit_xor, lconstant, rconstant);
+		operand = this.sim_operands_in_bitws_xor(type, plist, nlist);
+		
+		/* 4. construct the expression by constant and variable */
+		if(operand == null) {
+			return constant;
+		}
+		else {
+			if(SymbolComputer.compare_values(constant, Long.valueOf(0))) {
+				return operand;
+			}
+			else if(SymbolComputer.compare_values(constant, Long.valueOf(~0))) {
+				return SymbolFactory.bitws_rsv(operand);
+			}
+			else {
+				return SymbolFactory.bitws_xor(type, constant, operand);
+			}
+		}
+	}
 	
+	/* symbolic evaluation on {<<, >>, ~} */
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_lsh(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		if(loperand instanceof SymbolConstant) {
+			long lvalue = ((SymbolConstant) loperand).get_long();
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				return SymbolFactory.sym_constant(Long.valueOf(lvalue << rvalue));
+			}
+			else if(lvalue == 0) {
+				return SymbolFactory.sym_constant(Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.bitws_lsh(type, lvalue, roperand);
+			}
+		}
+		else {
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				if(rvalue == 0) {
+					return loperand;
+				}
+				else {
+					return SymbolFactory.bitws_lsh(type, loperand, rvalue);
+				}
+			}
+			else {
+				return SymbolFactory.bitws_lsh(type, loperand, roperand);
+			}
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_rsh(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		CType type = SymbolFactory.get_type(expression.get_data_type());
+		
+		if(loperand instanceof SymbolConstant) {
+			long lvalue = ((SymbolConstant) loperand).get_long();
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				return SymbolFactory.sym_constant(Long.valueOf(lvalue >> rvalue));
+			}
+			else if(lvalue == 0) {
+				return SymbolFactory.sym_constant(Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.bitws_rsh(type, lvalue, roperand);
+			}
+		}
+		else {
+			if(roperand instanceof SymbolConstant) {
+				long rvalue = ((SymbolConstant) roperand).get_long();
+				if(rvalue == 0) {
+					return loperand;
+				}
+				else {
+					return SymbolFactory.bitws_rsh(type, loperand, rvalue);
+				}
+			}
+			else {
+				return SymbolFactory.bitws_rsh(type, loperand, roperand);
+			}
+		}
+	}
+	/**
+	 * @param rsv			true to reverse or not
+	 * @param expression	the expression to be reversed in bitwise operation
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_rsv(boolean rsv, SymbolExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(expression instanceof SymbolConstant) {
+			Long value = ((SymbolConstant) expression).get_long();
+			if(rsv) { value = Long.valueOf(~value); }
+			return SymbolFactory.sym_constant(value);
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.negative) {
+				return this.eval(SymbolFactory.arith_sub(uoperand.get_data_type(), uoperand, Integer.valueOf(1)));
+			}
+			else if(operator == COperator.bit_not) {
+				return this.eval_bitws_rsv(!rsv, uoperand);
+			}
+			else {
+				if(rsv) {
+					return SymbolFactory.bitws_rsv(expression);
+				}
+				else {
+					return expression;
+				}
+			}
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+			List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+			CType type = SymbolFactory.get_type(expression.get_data_type());
+			
+			if(operator == COperator.bit_and) {
+				this.div_operands_in_bitws_and(expression, plist, nlist);
+				for(SymbolExpression pexp : plist) {
+					nlist.add(SymbolFactory.bitws_rsv(pexp));
+				}
+				return this.vacc_expression_list(type, COperator.bit_or, nlist);
+			}
+			else if(operator == COperator.bit_or) {
+				this.div_operands_in_bitws_ior(expression, plist, nlist);
+				for(SymbolExpression pexp : plist) {
+					nlist.add(SymbolFactory.bitws_rsv(pexp));
+				}
+				return this.vacc_expression_list(type, COperator.bit_and, nlist);
+			}
+			else {
+				if(rsv) {
+					return SymbolFactory.bitws_rsv(expression);
+				}
+				else {
+					return expression;
+				}
+			}
+		}
+		else {
+			if(rsv) {
+				return SymbolFactory.bitws_rsv(expression);
+			}
+			else {
+				return expression;
+			}
+		}
+	}
+	/**
+	 * @param expression {~}
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_bitws_rsv(SymbolUnaryExpression expression) throws Exception {
+		return this.eval_bitws_rsv(true, expression);
+	}
 	
+	/* symbolic evaluation on {&&, ||, ->, not} */
+	/**
+	 * @param expression	{&&}
+	 * @param plist			to preserve the operands in non-not part
+	 * @param nlist			to preserve the operands in log_not part
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_logic_and(SymbolExpression expression,
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		if(expression == null) { return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** BOOL-CONS **/
+			Boolean value = ((SymbolConstant) expression).get_bool();
+			plist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.logic_not) {								/** LOGIC_NOT **/
+				this.div_operands_in_logic_ior(uoperand, nlist, plist);
+			}
+			else { plist.add(SymbolFactory.sym_condition(expression, true)); }	/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.logic_and) {								/** LOGIC_AND **/
+				this.div_operands_in_logic_and(loperand, plist, nlist);
+				this.div_operands_in_logic_and(roperand, plist, nlist);
+			}
+			else { plist.add(SymbolFactory.sym_condition(expression, true)); }	/** OTHERWISE **/
+		}
+		else { plist.add(SymbolFactory.sym_condition(expression, true)); }		/** OTHERWISE **/
+	}
+	/**
+	 * @param expression	{||}
+	 * @param plist			to preserve the operands in non-not part
+	 * @param nlist			to preserve the operands in log_not part
+	 * @throws Exception
+	 */
+	private	void				div_operands_in_logic_ior(SymbolExpression expression,
+			List<SymbolExpression> plist, List<SymbolExpression> nlist) throws Exception {
+		if(expression == null) { return; }										/** NULL-NONE **/
+		else if(expression instanceof SymbolConstant) {							/** BOOL-CONS **/
+			Boolean value = ((SymbolConstant) expression).get_bool();
+			plist.add(SymbolFactory.sym_constant(value));
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.logic_not) {								/** LOGIC_NOT **/
+				this.div_operands_in_logic_and(uoperand, nlist, plist);
+			}
+			else { plist.add(SymbolFactory.sym_condition(expression, true)); }	/** OTHERWISE **/
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
+			if(operator == COperator.logic_or) {								/** LOGIC_IOR **/
+				this.div_operands_in_logic_ior(loperand, plist, nlist);
+				this.div_operands_in_logic_ior(roperand, plist, nlist);
+			}
+			else { plist.add(SymbolFactory.sym_condition(expression, true)); }	/** OTHERWISE **/
+		}
+		else { plist.add(SymbolFactory.sym_condition(expression, true)); }		/** OTHERWISE **/
+	}
+	/**
+	 * @param elist
+	 * @return	it removes the duplicated operands
+	 * @throws Exception
+	 */
+	private	SymbolExpression	sim_operands_in_logic_and(List<SymbolExpression> elist) throws Exception {
+		Set<SymbolExpression> operands = new HashSet<SymbolExpression>();
+		for(SymbolExpression operand : elist) { operands.add(operand); }
+		elist.clear();
+		for(SymbolExpression operand : operands) { elist.add(operand); }
+		return this.vacc_expression_list(CBasicTypeImpl.bool_type, COperator.logic_and, elist);
+	}
+	/**
+	 * @param elist
+	 * @return	it removes the duplicated operands
+	 * @throws Exception
+	 */
+	private	SymbolExpression	sim_operands_in_logic_ior(List<SymbolExpression> elist) throws Exception {
+		Set<SymbolExpression> operands = new HashSet<SymbolExpression>();
+		for(SymbolExpression operand : elist) { operands.add(operand); }
+		elist.clear();
+		for(SymbolExpression operand : operands) { elist.add(operand); }
+		return this.vacc_expression_list(CBasicTypeImpl.bool_type, COperator.logic_or, elist);
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_logic_and(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declaration and initialization */
+		List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant;
+		SymbolExpression operand;
+		
+		/* 2. divide the operands in positive and reversed */
+		this.div_operands_in_logic_and(expression, plist, nlist);
+		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		
+		/* 3. accumulate the left-constant and right-constant */
+		lconstant = this.cacc_expression_list(COperator.logic_and, plist);
+		rconstant = this.cacc_expression_list(COperator.logic_or, nlist);
+		rconstant = SymbolComputer.do_compute(COperator.logic_not, rconstant);
+		constant = SymbolComputer.do_compute(COperator.logic_and, lconstant, rconstant);
+		
+		/* 4. partial evaluation */
+		if(!constant.get_bool()) {
+			return SymbolFactory.sym_constant(Boolean.FALSE);
+		}
+		else if(this.heqv_expression_list(plist, nlist)) {
+			return SymbolFactory.sym_constant(Boolean.FALSE);
+		}
+		else {
+			for(SymbolExpression nexp : nlist) {
+				plist.add(SymbolFactory.sym_condition(nexp, false));
+			}
+			operand = this.sim_operands_in_logic_and(plist);
+		}
+		
+		if(operand != null) {
+			return constant;
+		}
+		else {
+			return operand;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_logic_ior(SymbolBinaryExpression expression) throws Exception {
+		/* 1. declaration and initialization */
+		List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+		List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+		SymbolConstant lconstant, rconstant, constant;
+		SymbolExpression operand;
+		
+		/* 2. divide the operands in positive and reversed */
+		this.div_operands_in_logic_ior(expression, plist, nlist);
+		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		
+		/* 3. accumulate the left-constant and right-constant */
+		lconstant = this.cacc_expression_list(COperator.logic_or, plist);
+		rconstant = this.cacc_expression_list(COperator.logic_and, nlist);
+		rconstant = SymbolComputer.do_compute(COperator.logic_not, rconstant);
+		constant = SymbolComputer.do_compute(COperator.logic_or, lconstant, rconstant);
+		
+		/* 4. partial evaluation */
+		if(constant.get_bool()) {
+			return SymbolFactory.sym_constant(Boolean.TRUE);
+		}
+		else if(this.heqv_expression_list(plist, nlist)) {
+			return SymbolFactory.sym_constant(Boolean.TRUE);
+		}
+		else {
+			for(SymbolExpression nexp : nlist) {
+				plist.add(SymbolFactory.sym_condition(nexp, false));
+			}
+			operand = this.sim_operands_in_logic_ior(plist);
+		}
+		if(operand != null) {
+			return operand;
+		}
+		else {
+			return SymbolFactory.sym_constant(Boolean.TRUE);
+		}
+	}
+	/**
+	 * @param expression
+	 * @return !X || Y
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_logic_imp(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.sym_condition(loperand, false);
+		roperand = SymbolFactory.sym_condition(roperand, true);
+		expression = SymbolFactory.logic_ior(loperand, roperand);
+		return this.eval(expression);
+	}
+	/**
+	 * @param not
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_logic_not(boolean not, SymbolExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(expression instanceof SymbolConstant) {
+			Boolean value = ((SymbolConstant) expression).get_bool();
+			if(not) { value = Boolean.valueOf(!value); }
+			return SymbolFactory.sym_constant(value);
+		}
+		else if(expression instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) expression).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) expression).get_operand();
+			if(operator == COperator.logic_not) {
+				return this.eval_logic_not(!not, uoperand);
+			}
+			else {
+				if(not) {
+					return SymbolFactory.sym_condition(expression, false);
+				}
+				else {
+					return SymbolFactory.sym_condition(expression, true);
+				}
+			}
+		}
+		else if(expression instanceof SymbolBinaryExpression) {
+			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
+			List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
+			if(operator == COperator.logic_and) {
+				this.div_operands_in_logic_and(expression, plist, nlist);
+				this.eval_expression_list(plist); this.eval_expression_list(nlist);
+				for(SymbolExpression pexp : plist) {
+					nlist.add(SymbolFactory.sym_condition(pexp, false));
+				}
+				return this.vacc_expression_list(CBasicTypeImpl.bool_type, COperator.logic_or, nlist);
+			}
+			else if(operator == COperator.logic_or) {
+				this.div_operands_in_logic_ior(expression, plist, nlist);
+				this.eval_expression_list(plist); this.eval_expression_list(nlist);
+				for(SymbolExpression pexp : plist) {
+					nlist.add(SymbolFactory.sym_condition(pexp, false));
+				}
+				return this.vacc_expression_list(CBasicTypeImpl.bool_type, COperator.logic_and, nlist);
+			}
+			else {
+				if(not) {
+					return SymbolFactory.sym_condition(expression, false);
+				}
+				else {
+					return SymbolFactory.sym_condition(expression, true);
+				}
+			}
+		}
+		else {
+			if(not) {
+				return SymbolFactory.sym_condition(expression, false);
+			}
+			else {
+				return SymbolFactory.sym_condition(expression, true);
+			}
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_logic_not(SymbolUnaryExpression expression) throws Exception {
+		return this.eval_logic_not(true, expression);
+	}
 	
+	// TODO implement more...
 	
 	
 	
