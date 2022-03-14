@@ -23,17 +23,39 @@ public class SymbolEvaluator {
 	/* definition */
 	/** the list of invokers to invoke call-expressions **/
 	private	List<SymbolMethodInvoker> 				invokers;
+	/** the map from variables to corresponding values before evaluations **/
+	private	Map<SymbolExpression, SymbolExpression> in_state;
 	/** the map from reference to the new symbolic value after evaluation **/
-	private	Map<SymbolExpression, SymbolExpression> state_map;
+	private	Map<SymbolExpression, SymbolExpression> ou_state;
 	/**
 	 * private constructor for singleton mode
 	 */
 	private	SymbolEvaluator() {
 		this.invokers = new ArrayList<SymbolMethodInvoker>();
-		this.state_map = null;
+		this.in_state = null; this.ou_state = null;
 	}
 	
 	/* configuration */
+	/**
+	 * It derives the states of which values are used in evaluation
+	 * @param reference
+	 * @return null if the value is not used
+	 * @throws Exception
+	 */
+	private	SymbolExpression get_state(SymbolExpression reference) throws Exception {
+		if(reference == null) {
+			return null;
+		}
+		else if(this.in_state == null) {
+			return null;
+		}
+		else if(this.in_state.containsKey(reference)) {
+			return this.in_state.get(reference);
+		}
+		else {
+			return null;
+		}
+	}
 	/**
 	 * It sets the reference with a new value
 	 * @param reference
@@ -50,8 +72,8 @@ public class SymbolEvaluator {
 		else if(!reference.is_reference()) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
-		else if(this.state_map != null) { this.state_map.put(reference, value); }
-		else { /* no state map is specified and thus no updating arises here */ }
+		else if(this.ou_state != null) { this.ou_state.put(reference, value); }
+		else { /* no state map is specified and thus no update arises here */ }
 	}
 	/**
 	 * It adds a new invoker into the evaluator memory-set
@@ -66,10 +88,13 @@ public class SymbolEvaluator {
 	}
 	/**
 	 * It resets the state map for evaluating with side-effects
-	 * @param state_map
+	 * @param in_map	the state before evaluation
+	 * @param ou_map	the state after evaluation
 	 */
-	private void set_state_map(Map<SymbolExpression, SymbolExpression> state_map) {
-		this.state_map = state_map;
+	private void set_state_map(Map<SymbolExpression, SymbolExpression> in_map, 
+			Map<SymbolExpression, SymbolExpression> ou_map) {
+		this.in_state = in_map;
+		this.ou_state = ou_map;
 	}
 	
 	/* singleton mode and methods */
@@ -92,18 +117,9 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	public static SymbolExpression evaluate(SymbolExpression expression, 
-			Map<SymbolExpression, SymbolExpression> state_map) throws Exception {
-		evaluator.set_state_map(state_map);
-		return evaluator.eval(expression);
-	}
-	/**
-	 * It evaluates the expression to a uniform simplification resulting (without recording the side-effects)
-	 * @param expression	the expression to be evaluated to uniform style.
-	 * @return				the resulting expression being evaluated from input.
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
-		evaluator.set_state_map(null);
+			Map<SymbolExpression, SymbolExpression> in_state,
+			Map<SymbolExpression, SymbolExpression> ou_state) throws Exception {
+		evaluator.set_state_map(in_state, ou_state);
 		return evaluator.eval(expression);
 	}
 	/**
@@ -115,6 +131,9 @@ public class SymbolEvaluator {
 	private	SymbolExpression	eval(SymbolExpression expression) throws Exception {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(this.get_state(expression) != null) {
+			return this.get_state(expression);
 		}
 		else if(expression instanceof SymbolBasicExpression) {
 			return this.eval_base_expr((SymbolBasicExpression) expression);

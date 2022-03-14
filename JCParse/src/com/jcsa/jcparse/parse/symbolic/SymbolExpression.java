@@ -50,20 +50,44 @@ public abstract class SymbolExpression extends SymbolNode {
 	public CType get_data_type() { return this.data_type; }
 	
 	/**
-	 * @param state_map
-	 * @return
+	 * with both input and output state data
+	 * @param in_state	the state to provide values used before evaluation
+	 * @param ou_state	the state to preserve values defined after evaluation
+	 * @return			the symbolic expression as main result of the expression
 	 * @throws Exception
 	 */
-	public SymbolExpression evaluate(Map<SymbolExpression, SymbolExpression> state_map) throws Exception {
-		return SymbolEvaluator.evaluate(this, state_map);
+	public SymbolExpression io_evaluate(Map<SymbolExpression, SymbolExpression> in_state,
+			Map<SymbolExpression, SymbolExpression> ou_state) throws Exception {
+		return SymbolEvaluator.evaluate(this, in_state, ou_state);
 	}
 	
 	/**
-	 * @return
+	 * with only input state data
+	 * @param in_state	the state to provide values used before evaluation
+	 * @return			the symbolic expression as main result of the expression
+	 * @throws Exception
+	 */
+	public SymbolExpression i_evaluate(Map<SymbolExpression, SymbolExpression> in_state) throws Exception {
+		return SymbolEvaluator.evaluate(this, in_state, null);
+	}
+	
+	/**
+	 * with only output state data
+	 * @param ou_state	the state to preserve values defined after evaluation
+	 * @return			the symbolic expression as main result of the expression
+	 * @throws Exception
+	 */
+	public SymbolExpression o_evaluate(Map<SymbolExpression, SymbolExpression> ou_state) throws Exception {
+		return SymbolEvaluator.evaluate(this, null, ou_state);
+	}
+	
+	/**
+	 * without input and output state data 
+	 * @return	the symbolic expression as main result of the expression
 	 * @throws Exception
 	 */
 	public SymbolExpression evaluate() throws Exception {
-		return SymbolEvaluator.evaluate(this, null);
+		return SymbolEvaluator.evaluate(this, null, null);
 	}
 	
 }
