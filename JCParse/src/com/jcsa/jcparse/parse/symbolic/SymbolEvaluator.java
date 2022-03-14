@@ -50,7 +50,7 @@ public class SymbolEvaluator {
 		else if(!reference.is_reference()) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
-		else if(this.state_map == null) { this.state_map.put(reference, value); }
+		else if(this.state_map != null) { this.state_map.put(reference, value); }
 		else { /* no state map is specified and thus no updating arises here */ }
 	}
 	/**
@@ -244,13 +244,12 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private	SymbolExpression	eval_unay_expr(SymbolUnaryExpression expression) throws Exception {
-		// TODO implement here more
 		switch(expression.get_operator().get_operator()) {
 		case negative:			return this.eval_arith_neg(expression);
 		case bit_not:			return this.eval_bitws_rsv(expression);
 		case logic_not:			return this.eval_logic_not(expression);
-		case address_of:		
-		case dereference:		
+		case address_of:		return this.eval_addr_of(expression);
+		case dereference:		return this.eval_de_refer(expression);
 		default:				throw new IllegalArgumentException(expression.generate_code(false));
 		}
 	}
@@ -260,7 +259,6 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private SymbolExpression	eval_biny_expr(SymbolBinaryExpression expression) throws Exception {
-		// TODO implement here more
 		switch(expression.get_operator().get_operator()) {
 		case arith_add:		return this.eval_arith_add(expression);
 		case arith_sub:		return this.eval_arith_sub(expression);
@@ -276,14 +274,16 @@ public class SymbolEvaluator {
 		case logic_or:		return this.eval_logic_ior(expression);
 		case positive:		/* logical implication */
 							return this.eval_logic_imp(expression);
-		case equal_with:	
-		case not_equals:	
-		case greater_tn:	
-		case greater_eq:	
-		case smaller_tn:	
-		case smaller_eq:	
+		case equal_with:	return this.eval_equal_with(expression);
+		case not_equals:	return this.eval_not_equals(expression);
+		case greater_tn:	return this.eval_greater_tn(expression);
+		case greater_eq:	return this.eval_greater_eq(expression);
+		case smaller_tn:	return this.eval_smaller_tn(expression);
+		case smaller_eq:	return this.eval_smaller_eq(expression);
 		case assign:		/* explicit assignment */
+							return this.eval_ex_assign(expression);
 		case increment:		/* implicit assignment */
+							return this.eval_im_assign(expression);
 		default:			throw new IllegalArgumentException(expression.generate_code(false));
 		}
 	}
@@ -1684,10 +1684,167 @@ public class SymbolEvaluator {
 		return this.eval_logic_not(true, expression);
 	}
 	
-	// TODO implement more...
+	/* symbolic evaluation on {&, *, :=, <-} */
+	private	SymbolExpression	eval_addr_of(SymbolUnaryExpression expression) throws Exception {
+		SymbolExpression operand = this.eval(expression.get_operand());
+		if(operand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) operand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) operand).get_operand();
+			if(operator == COperator.dereference) {
+				return uoperand;
+			}
+			else {
+				return SymbolFactory.address_of(operand);
+			}
+		}
+		else {
+			return SymbolFactory.address_of(operand);
+		}
+	}
+	private	SymbolExpression	eval_de_refer(SymbolUnaryExpression expression) throws Exception {
+		SymbolExpression operand = this.eval(expression.get_operand());
+		if(operand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) operand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) operand).get_operand();
+			if(operator == COperator.address_of) {
+				return uoperand;
+			}
+			else {
+				return SymbolFactory.dereference(operand);
+			}
+		}
+		else {
+			return SymbolFactory.dereference(operand);
+		}
+	}
+	private	SymbolExpression	eval_ex_assign(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		this.set_state(loperand, roperand);
+		return roperand;
+	}
+	private	SymbolExpression	eval_im_assign(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		this.set_state(loperand, roperand);
+		return loperand;
+	}
 	
-	
-	
+	/* symbolic evaluation on {<, <=, >, >=, ==, !=} */
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_equal_with(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.equal_with, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.equal_with(loperand, Long.valueOf(0));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_not_equals(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.not_equals, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.not_equals(loperand, Long.valueOf(0));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_greater_tn(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.greater_tn, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.greater_tn(loperand, Long.valueOf(0));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_greater_eq(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.greater_eq, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.greater_eq(loperand, Long.valueOf(0));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_smaller_tn(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.smaller_tn, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.smaller_tn(loperand, Long.valueOf(0));
+		}
+	}
+	/**
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_smaller_eq(SymbolBinaryExpression expression) throws Exception {
+		SymbolExpression loperand = this.eval(expression.get_loperand());
+		SymbolExpression roperand = this.eval(expression.get_roperand());
+		loperand = SymbolFactory.arith_sub(loperand.get_data_type(), loperand, roperand);
+		loperand = this.eval(loperand);
+		if(loperand instanceof SymbolConstant) {
+			SymbolConstant lconstant = (SymbolConstant) loperand;
+			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
+			return SymbolComputer.do_compute(COperator.smaller_eq, lconstant, rconstant);
+		}
+		else {
+			return SymbolFactory.smaller_eq(loperand, Long.valueOf(0));
+		}
+	}
 	
 	
 }

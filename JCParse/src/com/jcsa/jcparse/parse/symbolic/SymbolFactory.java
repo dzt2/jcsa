@@ -940,7 +940,7 @@ public class SymbolFactory {
 		else {
 			roperand = SymbolInitializerList.create(new ArrayList<SymbolExpression>());
 		}
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1083,7 +1083,7 @@ public class SymbolFactory {
 	private	SymbolNode	parse_ast_switch_statement(AstSwitchStatement source) throws Exception {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_switch());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1100,7 +1100,7 @@ public class SymbolFactory {
 				SymbolExpression condition = 
 						SymbolBinaryExpression.create(CBasicTypeImpl.bool_type, COperator.equal_with, loperand, roperand);
 				SymbolExpression reference = (SymbolExpression) this.parse_ast_node(source.get_case());
-				return SymbolBinaryExpression.create(reference.get_data_type(), COperator.increment, reference, condition);
+				return SymbolBinaryExpression.create(reference.get_data_type(), COperator.assign, reference, condition);
 			}
 			else {
 				node = node.get_parent();
@@ -1117,7 +1117,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_if());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1128,7 +1128,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_while());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1139,7 +1139,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_do());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1150,7 +1150,7 @@ public class SymbolFactory {
 		SymbolExpression loperand = (SymbolExpression) this.parse_ast_node(source.get_for());
 		SymbolExpression roperand = (SymbolExpression) this.parse_ast_node(source.get_condition());
 		roperand = this.parse_bool(roperand, true);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -1830,7 +1830,7 @@ public class SymbolFactory {
 		roperand = this.parse_bool(roperand, true);
 		loperand = SymbolIdentifier.create(CBasicTypeImpl.bool_type, "case", CKeyword.c89_case);
 		loperand.set_source(CKeyword.c89_case);
-		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.increment, loperand, roperand);
+		return SymbolBinaryExpression.create(loperand.get_data_type(), COperator.assign, loperand, roperand);
 	}
 	/**
 	 * @param source
@@ -2005,6 +2005,9 @@ public class SymbolFactory {
 		else if(source instanceof CirExecution) {
 			return symb_factory.parse_exec(source);
 		}
+		else if(source instanceof SymbolExpression) {
+			return (SymbolExpression) source;
+		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
@@ -2070,6 +2073,12 @@ public class SymbolFactory {
 		CFieldBody fbody;
 		
 		CType data_type = CTypeAnalyzer.get_value_type(sbody.get_data_type());
+		if(data_type instanceof CArrayType) {
+			data_type = get_type(((CArrayType) data_type).get_element_type());
+		}
+		else if(data_type instanceof CPointerType) {
+			data_type = get_type(((CPointerType) data_type).get_pointed_type());
+		}
 		if(data_type instanceof CStructType) {
 			fbody = ((CStructType) data_type).get_fields();
 		}

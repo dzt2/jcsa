@@ -106,6 +106,7 @@ public class CSymbolNodeTest {
 				writer.write("COD:\t" + code + "\n");
 				SymbolExpression expression = SymbolFactory.sym_expression(node);
 				writer.write("SYM:\t" + expression.generate_simple_code() + "\n");
+				writer.write("EVA:\t" + expression.evaluate().generate_simple_code() + "\n");
 				writer.write("\n");
 			}
 		}

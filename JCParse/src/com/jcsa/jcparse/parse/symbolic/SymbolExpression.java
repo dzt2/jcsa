@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.parse.symbolic;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
@@ -46,5 +48,22 @@ public abstract class SymbolExpression extends SymbolNode {
 	 * @return the data type of expression value
 	 */
 	public CType get_data_type() { return this.data_type; }
+	
+	/**
+	 * @param state_map
+	 * @return
+	 * @throws Exception
+	 */
+	public SymbolExpression evaluate(Map<SymbolExpression, SymbolExpression> state_map) throws Exception {
+		return SymbolEvaluator.evaluate(this, state_map);
+	}
+	
+	/**
+	 * @return
+	 * @throws Exception
+	 */
+	public SymbolExpression evaluate() throws Exception {
+		return SymbolEvaluator.evaluate(this, null);
+	}
 	
 }
