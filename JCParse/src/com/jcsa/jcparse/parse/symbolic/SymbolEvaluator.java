@@ -1566,13 +1566,7 @@ public class SymbolEvaluator {
 		
 		/* 2. divide the operands in positive and reversed */
 		this.div_operands_in_logic_ior(expression, plist, nlist);
-		System.out.println("\t\t[OR]\t" + expression.generate_simple_code());
-		System.out.println("\t\t[PL]\t" + plist.toString());
-		System.out.println("\t\t[NL]\t" + nlist.toString());
 		this.eval_expression_list(plist); this.eval_expression_list(nlist);
-		System.out.println("\t\t[PE]\t" + plist.toString());
-		System.out.println("\t\t[NE]\t" + nlist.toString());
-		System.out.println();
 		
 		/* 3. accumulate the left-constant and right-constant */
 		lconstant = this.cacc_expression_list(COperator.logic_or, plist);

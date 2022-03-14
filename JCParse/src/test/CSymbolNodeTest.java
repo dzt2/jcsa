@@ -128,15 +128,19 @@ public class CSymbolNodeTest {
 					SymbolExpression lvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
 					SymbolExpression rvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
 					writer.write("\t==> [1] " + lvalue.generate_simple_code() + "\n");
+					writer.write("\t==> {1} " + lvalue.evaluate().generate_simple_code() + "\n");
 					writer.write("\t==> [2] " + rvalue.generate_simple_code() + "\n");
+					writer.write("\t==> {2} " + rvalue.evaluate().generate_simple_code() + "\n");
 				}
 				else if(statement instanceof CirIfStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
+					writer.write("\t==> {1} " + value.evaluate().generate_simple_code() + "\n");
 				}
 				else if(statement instanceof CirCaseStatement) {
 					SymbolExpression value = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
 					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
+					writer.write("\t==> {1} " + value.evaluate().generate_simple_code() + "\n");
 				}
 			}
 			writer.write("END FUNC\n");
