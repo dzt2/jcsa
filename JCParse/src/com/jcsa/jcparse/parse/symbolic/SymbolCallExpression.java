@@ -66,7 +66,7 @@ public class SymbolCallExpression extends SymbolSpecialExpression {
 	}
 
 	@Override
-	protected boolean is_refer_type() { return false; }
+	protected boolean is_refer_type() { return true; }
 
 	@Override
 	protected boolean is_side_affected() { return true; }

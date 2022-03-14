@@ -34,22 +34,21 @@ import com.jcsa.jcparse.parse.symbolic.SymbolFactory;
 
 public class CSymbolNodeTest {
 	
-	private static final String root_path = "/home/dzt2/Development/Data/projects";
+	private static final String root_path = "/home/dzt2/Development/Data/ifiles/";
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
-	private static final String output_directory = "results/";
+	private static final String output_directory = "results/symb/";
 	
 	public static void main(String[] args) throws Exception {
-		for(File root : new File(root_path).listFiles()) {
-			System.out.println("Testing on " + root.getName());
-			AstCirFile cfile = parse(root);
+		for(File file : new File(root_path).listFiles()) {
+			System.out.println("Testing on " + file.getName());
+			AstCirFile cfile = parse(file);
 			SymbolFactory.set_config(cfile.get_run_template(), true);	// configure
-			write(cfile.get_ast_tree(), new File(output_directory + root.getName() + ".ast"));
-			write(cfile.get_cir_tree(), new File(output_directory + root.getName() + ".cir"));
+			write(cfile.get_ast_tree(), new File(output_directory + file.getName() + ".ast"));
+			write(cfile.get_cir_tree(), new File(output_directory + file.getName() + ".cir"));
 		}
 	}
 	
-	private static AstCirFile parse(File root) throws Exception { 
-		File cfile = new File(root.getAbsolutePath() + "/code/ifiles/" + root.getName() + ".c");
+	private static AstCirFile parse(File cfile) throws Exception { 
 		return AstCirFile.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
 	}
 	

@@ -33,7 +33,7 @@ public class SymbolFieldExpression extends SymbolSpecialExpression {
 			throw new IllegalArgumentException("Invalid field: null");
 		}
 		else if(!body.is_reference()) {
-			throw new IllegalArgumentException("Not-reference: " + body);
+			throw new IllegalArgumentException("Not-reference: " + body.generate_code(true));
 		}
 		else {
 			SymbolFieldExpression expression = new SymbolFieldExpression(type);
