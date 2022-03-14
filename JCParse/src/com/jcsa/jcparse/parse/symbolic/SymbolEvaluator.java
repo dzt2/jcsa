@@ -1546,10 +1546,10 @@ public class SymbolEvaluator {
 		}
 		
 		if(operand != null) {
-			return constant;
+			return operand;
 		}
 		else {
-			return operand;
+			return constant;
 		}
 	}
 	/**
@@ -1566,7 +1566,13 @@ public class SymbolEvaluator {
 		
 		/* 2. divide the operands in positive and reversed */
 		this.div_operands_in_logic_ior(expression, plist, nlist);
+		System.out.println("\t\t[OR]\t" + expression.generate_simple_code());
+		System.out.println("\t\t[PL]\t" + plist.toString());
+		System.out.println("\t\t[NL]\t" + nlist.toString());
 		this.eval_expression_list(plist); this.eval_expression_list(nlist);
+		System.out.println("\t\t[PE]\t" + plist.toString());
+		System.out.println("\t\t[NE]\t" + nlist.toString());
+		System.out.println();
 		
 		/* 3. accumulate the left-constant and right-constant */
 		lconstant = this.cacc_expression_list(COperator.logic_or, plist);
@@ -1591,7 +1597,7 @@ public class SymbolEvaluator {
 			return operand;
 		}
 		else {
-			return SymbolFactory.sym_constant(Boolean.TRUE);
+			return constant;
 		}
 	}
 	/**
@@ -1639,6 +1645,8 @@ public class SymbolEvaluator {
 		}
 		else if(expression instanceof SymbolBinaryExpression) {
 			COperator operator = ((SymbolBinaryExpression) expression).get_coperator();
+			SymbolExpression loperand = ((SymbolBinaryExpression) expression).get_loperand();
+			SymbolExpression roperand = ((SymbolBinaryExpression) expression).get_roperand();
 			List<SymbolExpression> plist = new ArrayList<SymbolExpression>();
 			List<SymbolExpression> nlist = new ArrayList<SymbolExpression>();
 			if(operator == COperator.logic_and) {
@@ -1656,6 +1664,54 @@ public class SymbolEvaluator {
 					nlist.add(SymbolFactory.sym_condition(pexp, false));
 				}
 				return this.vacc_expression_list(CBasicTypeImpl.bool_type, COperator.logic_and, nlist);
+			}
+			else if(operator == COperator.greater_eq) {
+				if(not) {
+					return SymbolFactory.smaller_tn(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
+			}
+			else if(operator == COperator.greater_tn) {
+				if(not) {
+					return SymbolFactory.smaller_eq(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
+			}
+			else if(operator == COperator.smaller_eq) {
+				if(not) {
+					return SymbolFactory.greater_tn(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
+			}
+			else if(operator == COperator.smaller_tn) {
+				if(not) {
+					return SymbolFactory.greater_eq(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
+			}
+			else if(operator == COperator.equal_with) {
+				if(not) {
+					return SymbolFactory.not_equals(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
+			}
+			else if(operator == COperator.not_equals) {
+				if(not) {
+					return SymbolFactory.equal_with(loperand, roperand);
+				}
+				else {
+					return expression;
+				}
 			}
 			else {
 				if(not) {
