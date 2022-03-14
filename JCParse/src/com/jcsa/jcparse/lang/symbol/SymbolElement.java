@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbolic;
+package com.jcsa.jcparse.lang.symbol;
 
 /**
  * 	<code>

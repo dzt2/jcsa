@@ -16,7 +16,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.parse.symbol.SymbolEvaluator;
 
 
 /**
@@ -377,7 +376,7 @@ public class CirExecutionPath {
 		}
 	}
 	private SymbolExpression condition_of(CirExpression expression) throws Exception {
-		return SymbolEvaluator.evaluate_on(SymbolFactory.sym_condition(expression, true));
+		return SymbolFactory.sym_condition(expression, true).evaluate();
 	}
 	/**
 	 * @param cross_function whether to collect input flows based on function-cross analysis

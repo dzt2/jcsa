@@ -1,46 +1,58 @@
 package com.jcsa.jcparse.lang.symbol;
 
 /**
- * field |-- {name: String}
- * @author yukimula
+ * 	<code>
+ * 	SymbolField						[field_name: String]
+ * 	</code>
+ * 	
+ * 	@author yukimula
  *
  */
-public class SymbolField extends SymbolUnit {
-
+public class SymbolField extends SymbolElement {
+	
 	/** the name of the field **/
-	private String name;
-
+	private	String field_name;
+	
 	/**
-	 * field |-- {name: String}
-	 * @param name
-	 * @throws IllegalArgumentException
+	 * It creates a field node in field_expression
+	 * @param field_name
+	 * @throws Exception
 	 */
-	private SymbolField(String name) throws IllegalArgumentException {
-		if(name == null || name.trim().isEmpty())
-			throw new IllegalArgumentException("Invalid: " + name);
+	private SymbolField(String field_name) throws Exception {
+		super(SymbolClass.field_name);
+		if(field_name == null || field_name.strip().isEmpty()) {
+			throw new IllegalArgumentException("Invalid name");
+		}
 		else {
-			this.name = name.trim();
+			this.field_name = field_name.strip();
 		}
 	}
 
 	/**
 	 * @return the name of the field
 	 */
-	public String get_name() { return this.name; }
+	public String get_name() { return this.field_name; }
 
 	@Override
-	protected SymbolNode construct() throws Exception {
-		return new SymbolField(this.name);
-	}
+	protected SymbolNode new_one() throws Exception { return new SymbolField(this.field_name); }
 
+	@Override
+	protected String generate_code(boolean simplified) throws Exception { return this.field_name; }
+
+	@Override
+	protected boolean is_refer_type() { return false; }
+
+	@Override
+	protected boolean is_side_affected() { return false; }
+	
 	/**
-	 * field |-- {name: String}
-	 * @param name
-	 * @return
+	 * 
+	 * @param field_name	the name of the field
+	 * @return				It creates a field node in field_expression
 	 * @throws Exception
 	 */
-	protected static SymbolField create(String name) throws Exception {
-		return new SymbolField(name);
+	protected static SymbolField create(String field_name) throws Exception {
+		return new SymbolField(field_name);
 	}
-
+	
 }

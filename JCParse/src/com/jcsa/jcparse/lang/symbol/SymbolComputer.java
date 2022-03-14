@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbolic;
+package com.jcsa.jcparse.lang.symbol;
 
 import java.util.ArrayList;
 import java.util.Collections;

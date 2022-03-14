@@ -29,8 +29,8 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.parse.symbolic.SymbolExpression;
-import com.jcsa.jcparse.parse.symbolic.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 public class CSymbolNodeTest {
 	

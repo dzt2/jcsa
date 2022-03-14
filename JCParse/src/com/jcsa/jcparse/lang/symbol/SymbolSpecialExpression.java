@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbolic;
+package com.jcsa.jcparse.lang.symbol;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.parse.symbolic;
+package com.jcsa.jcparse.lang.symbol;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +18,7 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  * @author yukimula
  *
  */
-public class SymbolEvaluator {
+public final class SymbolEvaluator {
 	
 	/* definition */
 	/** the list of invokers to invoke call-expressions **/
@@ -1914,6 +1914,5 @@ public class SymbolEvaluator {
 			return SymbolFactory.smaller_eq(loperand, Long.valueOf(0));
 		}
 	}
-	
 	
 }

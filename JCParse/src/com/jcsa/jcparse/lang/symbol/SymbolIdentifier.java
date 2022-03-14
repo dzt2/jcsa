@@ -1,110 +1,81 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
-import com.jcsa.jcparse.lang.irlang.expr.CirDefaultValue;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
-import com.jcsa.jcparse.lang.scope.CName;
 
 /**
- * identifier |-- {name: String}	<br>
- * 	(1) name#scope		{AST|CIR}
- * 	(2) #ast.key		{AST}
- * 	(3)	return#cir.id	{CIR}
- * 	(4)	default#cir.id	{CIR}
- * 	(5) do#func#exe_id	{EXECUTION}
+ * <code>identifier --> name#scope</code>
+ * 
  * @author yukimula
  *
  */
 public class SymbolIdentifier extends SymbolBasicExpression {
-
-	/** the name of the identifier **/
+	
+	/** the simple name of the identifier **/
 	private String name;
-
+	
+	/** the scope where the name is defined **/
+	private Object scope;
+	
 	/**
-	 * create an identifier node w.r.t. complete variable name
-	 * @param data_type
-	 * @param name
-	 * @throws IllegalArgumentException
+	 * It creates an identifier as expression used in symbolic expression.
+	 * @param type		the type of the identifier
+	 * @param name		the simple name of identifier
+	 * @param scope		the scope where the name is defined
+	 * @throws Exception
 	 */
-	private SymbolIdentifier(CType data_type, String name) throws IllegalArgumentException {
-		super(data_type);
-		if(name == null || name.trim().isEmpty())
-			throw new IllegalArgumentException("Invalid name: " + name);
-		else
-			this.name = name.trim();
+	private SymbolIdentifier(CType type, String name, Object scope) throws Exception {
+		super(SymbolClass.identifier, type);
+		if(name == null || name.strip().isEmpty()) {
+			throw new IllegalArgumentException("Invalid name: null");
+		}
+		else { this.name = name.strip(); this.scope = scope; }
 	}
-
+	
 	/**
-	 * @return the name of the identifier
+	 * @return the simple name of the identifier
 	 */
 	public String get_name() { return this.name; }
+	
+	/**
+	 * @return the scope where the name is defined
+	 */
+	public Object get_scope() { return this.scope; }
+	
+	/**
+	 * @return name#scope
+	 */
+	public String get_identifier() { return this.name + "#" + this.scope; }
 
 	@Override
-	protected SymbolNode construct() throws Exception {
-		return new SymbolIdentifier(this.get_data_type(), this.get_name());
+	protected SymbolNode new_one() throws Exception { 
+		return new SymbolIdentifier(this.get_data_type(), this.name, this.scope); 
 	}
 
-	/* factory methods */
-	/**
-	 * @param data_type
-	 * @param cname
-	 * @return name#scope
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CType data_type, CName cname) throws Exception {
-		String name = cname.get_name() + "#" + cname.get_scope().hashCode();
-		return new SymbolIdentifier(data_type, name);
-	}
-	/**
-	 * @param data_type
-	 * @param ast_reference
-	 * @return #ast.key
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CType data_type, AstNode ast_reference) throws Exception {
-		String name = "#" + ast_reference.get_key();
-		return new SymbolIdentifier(data_type, name);
-	}
-	/**
-	 * @param data_type
-	 * @param function
-	 * @return return#function.id
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CType data_type, CirFunctionDefinition function) throws Exception {
-		String name = "return#" + function.get_node_id();
-		return new SymbolIdentifier(data_type, name);
-	}
-	/**
-	 * @param data_type
-	 * @param default_value
-	 * @return default#value.id
-	 * @throws Excecption
-	 */
-	protected static SymbolIdentifier create(CType data_type, CirDefaultValue default_value) throws Exception {
-		String name = "default#" + default_value.get_node_id();
-		return new SymbolIdentifier(data_type, name);
-	}
-	/**
-	 * @param execution
-	 * @return do#execution
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CirExecution execution) throws Exception {
-		String name = "do#" + execution.toString();
-		return new SymbolIdentifier(CBasicTypeImpl.int_type, name);
-	}
-	/**
-	 * @param data_type
-	 * @param name
-	 * @return
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CType data_type, String name) throws Exception {
-		return new SymbolIdentifier(data_type, name);
+	@Override
+	protected String generate_code(boolean simplified) throws Exception {
+		if(simplified) {
+			return this.get_name();
+		}
+		else {
+			return this.get_identifier();
+		}
 	}
 
+	@Override
+	protected boolean is_refer_type() { return true; }
+
+	@Override
+	protected boolean is_side_affected() { return false; }
+	
+	/**
+	 * It creates an identifier as expression used in symbolic expression.
+	 * @param type		the type of the identifier
+	 * @param name		the simple name of identifier
+	 * @param scope		the scope where the name is defined
+	 * @throws Exception
+	 */
+	protected static SymbolIdentifier create(CType type, String name, Object scope) throws Exception {
+		return new SymbolIdentifier(type, name, scope);
+	}
+	
 }
