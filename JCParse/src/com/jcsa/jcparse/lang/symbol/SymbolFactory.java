@@ -2174,6 +2174,7 @@ public class SymbolFactory {
 		else if(type instanceof CEnumType) {
 			type = CBasicTypeImpl.int_type;
 		}
+		else if(type instanceof CPointerType) { }
 		else {
 			throw new IllegalArgumentException(type.generate_code());
 		}

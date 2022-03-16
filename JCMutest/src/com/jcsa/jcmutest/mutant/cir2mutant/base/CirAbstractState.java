@@ -72,6 +72,7 @@ public abstract class CirAbstractState {
 			this.execution = execution;
 			this.location = location;
 			this.identifier = identifier;
+			//System.out.println("\t\t" + category + "\t" + loperand.generate_simple_code() + "\t" + roperand.generate_simple_code());
 			this.loperand = CirMutations.evaluate(loperand);
 			this.roperand = CirMutations.evaluate(roperand);
 		}
