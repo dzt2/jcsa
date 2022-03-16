@@ -91,6 +91,16 @@ public abstract class SymbolExpression extends SymbolNode {
 	}
 	
 	/**
+	 * It evaluates the expression on the input state map
+	 * @param process
+	 * @return
+	 * @throws Exception
+	 */
+	public SymbolExpression evaluate(SymbolProcess process) throws Exception {
+		return SymbolEvaluator.evaluate(this, process);
+	}
+	
+	/**
 	 * @param reset			true to reset the source-name index
 	 * @param index			to preserve map from soruce to identifier name (unique)
 	 * @return 				the expression as normalized version of input source

@@ -76,8 +76,8 @@ import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolOperator;
+import com.jcsa.jcparse.lang.symbol.SymbolProcess;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
-import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
@@ -851,7 +851,7 @@ public class CirStateFeatureWriter {
 		}
 		this.cfile_writer.write("\t" + this.encode_token(content));
 
-		this.cfile_writer.write("\t" + this.encode_token(node.generate_code(true)));
+		this.cfile_writer.write("\t" + this.encode_token(node.generate_simple_code()));
 
 		this.cfile_writer.write("\t[");
 		for(SymbolNode child : node.get_children()) {
@@ -1037,9 +1037,12 @@ public class CirStateFeatureWriter {
 			}
 			
 			/* dynamic analysis using symbolic context and state paths */
+			/*
 			SymbolProcess process = new SymbolProcess(
 					this.source_cfile.get_ast_tree(), 
 					this.source_cfile.get_cir_tree());
+			*/
+			SymbolProcess process = new SymbolProcess();
 			for(CStateNode state_node : ((CStatePath) context).get_nodes()) {
 				process.accumulate(state_node);
 				CirExecution execution = state_node.get_execution();

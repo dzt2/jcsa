@@ -679,6 +679,28 @@ public class SymbolFactory {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
 	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	parse_name(CName cname) throws Exception {
+		if(cname instanceof CInstanceName) {
+			CInstance instance = ((CInstanceName) cname).get_instance();
+			return SymbolIdentifier.create(instance.get_type(), cname.get_name(), cname.get_scope().hashCode());
+		}
+		else if(cname instanceof CParameterName) {
+			CInstance instance = ((CParameterName) cname).get_parameter();
+			return SymbolIdentifier.create(instance.get_type(), cname.get_name(), cname.get_scope().hashCode());
+		}
+		else if(cname instanceof CEnumeratorName) {
+			int value = ((CEnumeratorName) cname).get_enumerator().get_value();
+			return this.parse_cons(Integer.valueOf(value));
+		}
+		else {
+			throw new IllegalArgumentException(cname.getClass().getSimpleName());
+		}
+	}
 	
 	/* AST-based parsing */
 	/**
@@ -1359,20 +1381,8 @@ public class SymbolFactory {
 				return SymbolIdentifier.create(data_type, source.get_name(), scope.get_scope().hashCode());
 			}
 		}
-		else if(cname instanceof CInstanceName) {
-			CInstance instance = ((CInstanceName) cname).get_instance();
-			return SymbolIdentifier.create(instance.get_type(), cname.get_name(), cname.get_scope().hashCode());
-		}
-		else if(cname instanceof CParameterName) {
-			CInstance instance = ((CParameterName) cname).get_parameter();
-			return SymbolIdentifier.create(instance.get_type(), cname.get_name(), cname.get_scope().hashCode());
-		}
-		else if(cname instanceof CEnumeratorName) {
-			int value = ((CEnumeratorName) cname).get_enumerator().get_value();
-			return this.parse_cons(Integer.valueOf(value));
-		}
 		else {
-			throw new IllegalArgumentException(cname.getClass().getSimpleName());
+			return this.parse_name(cname);
 		}
 	}
 	/**
@@ -1627,13 +1637,11 @@ public class SymbolFactory {
 		}
 		else if(source instanceof CirDeclarator) {
 			CName cname = ((CirDeclarator) source).get_cname();
-			return SymbolIdentifier.create(source.get_data_type(), 
-					cname.get_name(), cname.get_scope().hashCode());
+			return this.parse_name(cname);
 		}
 		else if(source instanceof CirIdentifier) {
 			CName cname = ((CirIdentifier) source).get_cname();
-			return SymbolIdentifier.create(source.get_data_type(), 
-					cname.get_name(), cname.get_scope().hashCode());
+			return this.parse_name(cname);
 		}
 		else if(source instanceof CirImplicator) {
 			return SymbolIdentifier.create(source.get_data_type(), "@ast", source.get_ast_source().get_key());
@@ -1993,6 +2001,9 @@ public class SymbolFactory {
 				|| source instanceof Long || source instanceof Float
 				|| source instanceof Double || source instanceof CConstant) {
 			return symb_factory.parse_cons(source);
+		}
+		else if(source instanceof CName) {
+			return symb_factory.parse_name((CName) source);
 		}
 		else if(source instanceof String) {
 			return SymbolLiteral.create((String) source);
@@ -2481,4 +2492,18 @@ public class SymbolFactory {
 		SymbolExpression rexpression = sym_expression(roperand);
 		return SymbolBinaryExpression.create(lexpression.get_data_type(), COperator.increment, lexpression, rexpression);
 	}
+	/**
+	 * @param type
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	public static	SymbolIdentifier		variable(CType type, String name) {
+		try {
+			return SymbolIdentifier.create(type, name, null);
+		} catch (Exception e) {
+			e.printStackTrace(); return null;
+		}
+	}
+	
 }

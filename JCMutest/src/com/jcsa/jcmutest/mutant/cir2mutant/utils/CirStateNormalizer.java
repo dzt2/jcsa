@@ -22,7 +22,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.parse.symbol.process.SymbolProcess;
+import com.jcsa.jcparse.lang.symbol.SymbolProcess;
 
 /**
  * It implements the normalization of CirAbstractState based on some context
@@ -310,7 +310,7 @@ public final class CirStateNormalizer {
 			/* 2. collect the actually executed times in the context */
 			Set<Integer> actual_times = new HashSet<Integer>();
 			for(CirExecution execution : executions) {
-				SymbolExpression res = context.get_data_stack().load(execution);
+				SymbolExpression res = context.get_value(SymbolFactory.sym_expression(execution));
 				if(res != null) {
 					Integer act_times = ((SymbolConstant) res).get_int();
 					actual_times.add(act_times);
@@ -376,7 +376,7 @@ public final class CirStateNormalizer {
 			
 			/* 2. determine whether the execution is executed or not */
 			for(CirExecution execution : executions) {
-				SymbolExpression res = context.get_data_stack().load(execution);
+				SymbolExpression res = context.get_value(SymbolFactory.sym_expression(execution));
 				if(res != null) {
 					Integer act_times = ((SymbolConstant) res).get_int();
 					if(act_times.intValue() > 0) { return null; }

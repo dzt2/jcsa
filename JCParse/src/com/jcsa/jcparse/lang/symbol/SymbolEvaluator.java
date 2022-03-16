@@ -27,6 +27,8 @@ public final class SymbolEvaluator {
 	private	Map<SymbolExpression, SymbolExpression> in_state;
 	/** the map from reference to the new symbolic value after evaluation **/
 	private	Map<SymbolExpression, SymbolExpression> ou_state;
+	/** to preserve the input-output state values in current state **/
+	private	SymbolProcess							process;
 	/**
 	 * private constructor for singleton mode
 	 */
@@ -46,11 +48,11 @@ public final class SymbolEvaluator {
 		if(reference == null) {
 			return null;
 		}
-		else if(this.in_state == null) {
-			return null;
-		}
-		else if(this.in_state.containsKey(reference)) {
+		else if(this.in_state != null && this.in_state.containsKey(reference)) {
 			return this.in_state.get(reference);
+		}
+		else if(this.process != null && this.process.has_value(reference)) {
+			return this.process.get_value(reference);
 		}
 		else {
 			return null;
@@ -96,6 +98,11 @@ public final class SymbolEvaluator {
 		this.in_state = in_map;
 		this.ou_state = ou_map;
 	}
+	/**
+	 * it sets the execution state as input-output-value domain
+	 * @param process
+	 */
+	private	void set_state_process(SymbolProcess process) { this.process = process; }
 	
 	/* singleton mode and methods */
 	/** singleton **/ private static final SymbolEvaluator evaluator = new SymbolEvaluator();
@@ -120,6 +127,19 @@ public final class SymbolEvaluator {
 			Map<SymbolExpression, SymbolExpression> in_state,
 			Map<SymbolExpression, SymbolExpression> ou_state) throws Exception {
 		evaluator.set_state_map(in_state, ou_state);
+		evaluator.set_state_process(null);
+		return evaluator.eval(expression);
+	}
+	/**
+	 * It evaluates the expression given an execution state process
+	 * @param expression
+	 * @param process
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess process) throws Exception {
+		evaluator.set_state_map(null, null);
+		evaluator.set_state_process(process);
 		return evaluator.eval(expression);
 	}
 	/**

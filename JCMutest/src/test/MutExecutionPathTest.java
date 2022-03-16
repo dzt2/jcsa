@@ -110,7 +110,7 @@ public class MutExecutionPathTest {
 			for(CStateUnit unit : state_node.get_units()) {
 				writer.write("\t[UNIT]");
 				writer.write("\t\"" + strip_code(unit.get_expression().generate_code(true)) + "\"");
-				writer.write(": " + strip_code(SymbolFactory.sym_expression(unit.get_value()).generate_code(false)));
+				writer.write(": " + strip_code(SymbolFactory.sym_expression(unit.get_value()).generate_simple_code()));
 				writer.write("\n");
 			}
 			

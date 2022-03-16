@@ -27,7 +27,7 @@ public class VRRPCirMutationParser extends CirMutationParser {
 				CScope scope = ((AstScopeNode) location).get_scope();
 				if(scope.has_name(parameter)) {
 					CName cname = scope.get_name(parameter);
-					return SymbolFactory.identifier(cname);
+					return SymbolFactory.sym_expression(cname);
 				}
 				else {
 					throw new IllegalArgumentException("Undefined: " + parameter);
