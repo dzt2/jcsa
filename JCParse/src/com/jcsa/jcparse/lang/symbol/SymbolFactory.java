@@ -805,7 +805,8 @@ public class SymbolFactory {
 			return this.parse_cons(Integer.valueOf(value));
 		}
 		else {
-			throw new IllegalArgumentException("Invalid-class " + cname.getClass().getSimpleName());
+			return SymbolIdentifier.create(CBasicTypeImpl.void_type, name, null);
+			//throw new IllegalArgumentException("Invalid-class " + cname.getClass().getSimpleName());
 		}
 	}
 	/**

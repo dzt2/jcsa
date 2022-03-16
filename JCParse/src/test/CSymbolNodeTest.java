@@ -2,7 +2,9 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 import com.jcsa.jcparse.lang.AstCirFile;
@@ -12,22 +14,15 @@ import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
-import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
-import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
-import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -65,6 +60,54 @@ public class CSymbolNodeTest {
 		return buffer.toString();
 	}
 	
+	/**
+	 * @param writer
+	 * @param node
+	 * @throws Exception
+	 */
+	private	static void write_ast_node(FileWriter writer, AstNode node, int max_length) throws Exception {
+		if(node instanceof AstExpression || node instanceof AstStatement) {
+			String class_name = node.getClass().getSimpleName().strip();
+			class_name = class_name.substring(3, class_name.length() - 4);
+			int node_id = node.get_key();
+			AstFunctionDefinition definition = node.get_function_of();
+			String func_name;
+			if(definition == null) {
+				func_name = "Null";
+			}
+			else {
+				AstDeclarator declarator = definition.get_declarator();
+				while(declarator.get_production() != DeclaratorProduction.identifier) {
+					declarator = declarator.get_declarator();
+				}
+				func_name = declarator.get_identifier().get_name();
+			}
+			int code_line = node.get_location().line_of();
+			String ast_code = strip_code(node.generate_code(), max_length);
+			
+			writer.write("BEG\n");
+			writer.write("\tASTN:\t" + class_name + "#" + node_id + "\n");
+			writer.write("\tLOCT:\t" + func_name + "#" + code_line + "\n");
+			writer.write("\tCODE:\t\"" + ast_code + "\"\n");
+			
+			SymbolExpression expression = SymbolFactory.sym_expression(node);
+			Map<SymbolExpression, SymbolExpression> output = new HashMap<SymbolExpression, SymbolExpression>();
+			SymbolExpression eval_expr = expression.o_evaluate(output);
+			SymbolExpression norm_expr = eval_expr.normalize();
+			
+			writer.write("\tSEXP:\t" + expression.generate_simple_code() + "\n");
+			writer.write("\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
+			for(SymbolExpression lvalue : output.keySet()) {
+				SymbolExpression rvalue = output.get(lvalue);
+				writer.write("\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");
+			}
+			writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			
+			writer.write("END\n");
+			writer.write("\n");
+		}
+	}
+	
 	private static void write(AstTree tree, File output) throws Exception {
 		Queue<AstNode> queue = new LinkedList<AstNode>();
 		queue.add(tree.get_ast_root());
@@ -75,41 +118,52 @@ public class CSymbolNodeTest {
 			for(int k = 0; k < node.number_of_children(); k++) {
 				queue.add(node.get_child(k));
 			}
-			
-			if(node instanceof AstIfStatement
-				|| node instanceof AstSwitchStatement
-				|| node instanceof AstWhileStatement
-				|| node instanceof AstDoWhileStatement
-				|| node instanceof AstForStatement
-				|| node instanceof AstExpressionStatement
-				|| node instanceof AstExpression
-				|| node instanceof AstReturnStatement) {
-				/* AST[KEY] CLASS FUNC LINE CODE */
-				int key = node.get_key();
-				String class_name = node.getClass().getSimpleName();
-				class_name = class_name.substring(3, class_name.length() - 4).strip();
-				AstFunctionDefinition def = node.get_function_of();
-				String function = "null";
-				if(def != null) {
-					AstDeclarator declarator = def.get_declarator();
+			write_ast_node(writer, node, 96);
+		}
+		writer.close();
+	}
+	
+	private	static void write_cir_node(FileWriter writer, CirNode node, int max_length) throws Exception {
+		if(node instanceof CirExpression || node instanceof CirStatement) {
+			String class_name = node.getClass().getSimpleName().strip();
+			class_name = class_name.substring(3, class_name.length() - 4);
+			int node_id = node.get_node_id();
+			String func_name = "Null"; int code_line = -1;
+			if(node.get_ast_source() != null) {
+				AstFunctionDefinition definition = node.get_ast_source().get_function_of();
+				if(definition != null) {
+					AstDeclarator declarator = definition.get_declarator();
 					while(declarator.get_production() != DeclaratorProduction.identifier) {
 						declarator = declarator.get_declarator();
 					}
-					function = declarator.get_identifier().get_name();
+					func_name = declarator.get_identifier().get_name();
+					code_line = node.get_ast_source().get_location().line_of();
 				}
-				int line = node.get_location().line_of();
-				String code = node.generate_code();
-				code = "\"" + strip_code(code, 96) + "\"";
-				
-				writer.write("AST\t" + key + "\t" + class_name + "\t" + function + "\t" + line + "\n");
-				writer.write("COD:\t" + code + "\n");
-				SymbolExpression expression = SymbolFactory.sym_expression(node);
-				writer.write("SYM:\t" + expression.generate_simple_code() + "\n");
-				writer.write("EVA:\t" + expression.evaluate().generate_simple_code() + "\n");
-				writer.write("\n");
 			}
+			String cir_code = strip_code(node.generate_code(true), max_length);
+			CirExecution execution = node.execution_of();
+			
+			writer.write("\tBEG\n");
+			writer.write("\t\tCIRN:\t" + class_name + "#" + node_id + "\n");
+			writer.write("\t\tLOCT:\t" + func_name + "#" + code_line + "#" + execution + "\n");
+			writer.write("\t\tCODE:\t\"" + cir_code + "\"\n");
+			
+			SymbolExpression expression = SymbolFactory.sym_expression(node);
+			Map<SymbolExpression, SymbolExpression> output = new HashMap<SymbolExpression, SymbolExpression>();
+			SymbolExpression eval_expr = expression.o_evaluate(output);
+			SymbolExpression norm_expr = eval_expr.normalize();
+			
+			writer.write("\t\tSEXP:\t" + expression.generate_simple_code() + "\n");
+			writer.write("\t\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
+			for(SymbolExpression lvalue : output.keySet()) {
+				SymbolExpression rvalue = output.get(lvalue);
+				writer.write("\t\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");
+			}
+			writer.write("\t\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			
+			writer.write("\tEND\n");
+			writer.write("\n");
 		}
-		writer.close();
 	}
 	
 	private static void write(CirTree tree, File output) throws Exception {
@@ -121,26 +175,7 @@ public class CSymbolNodeTest {
 			CirExecutionFlowGraph fgraph = function.get_flow_graph();
 			for(int k = 1; k <= fgraph.size(); k++) {
 				CirExecution execution = fgraph.get_execution(k % fgraph.size());
-				writer.write("\t" + execution.toString() + ":\t" + execution.get_statement().generate_code(true) + "\n");
-				CirStatement statement = execution.get_statement();
-				if(statement instanceof CirAssignStatement) {
-					SymbolExpression lvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_lvalue());
-					SymbolExpression rvalue = SymbolFactory.sym_expression(((CirAssignStatement) statement).get_rvalue());
-					writer.write("\t==> [1] " + lvalue.generate_simple_code() + "\n");
-					writer.write("\t==> {1} " + lvalue.evaluate().generate_simple_code() + "\n");
-					writer.write("\t==> [2] " + rvalue.generate_simple_code() + "\n");
-					writer.write("\t==> {2} " + rvalue.evaluate().generate_simple_code() + "\n");
-				}
-				else if(statement instanceof CirIfStatement) {
-					SymbolExpression value = SymbolFactory.sym_expression(((CirIfStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
-					writer.write("\t==> {1} " + value.evaluate().generate_simple_code() + "\n");
-				}
-				else if(statement instanceof CirCaseStatement) {
-					SymbolExpression value = SymbolFactory.sym_expression(((CirCaseStatement) statement).get_condition());
-					writer.write("\t==> [1] " + value.generate_simple_code() + "\n");
-					writer.write("\t==> {1} " + value.evaluate().generate_simple_code() + "\n");
-				}
+				write_cir_node(writer, execution.get_statement(), 96);
 			}
 			writer.write("END FUNC\n");
 		}

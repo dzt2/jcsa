@@ -90,4 +90,37 @@ public abstract class SymbolExpression extends SymbolNode {
 		return SymbolEvaluator.evaluate(this, null, null);
 	}
 	
+	/**
+	 * @param reset			true to reset the source-name index
+	 * @param index			to preserve map from soruce to identifier name (unique)
+	 * @return 				the expression as normalized version of input source
+	 * @throws Exception
+	 */
+	public SymbolExpression normalize(boolean reset, Map<SymbolExpression, SymbolIdentifier> index) throws Exception {
+		return SymbolNormalizer.normalize(this, reset, index);
+	}
+	/**
+	 * @param reset			true to reset the source-name index
+	 * @return 				the expression as normalized version of input source
+	 * @throws Exception
+	 */
+	public SymbolExpression normalize(boolean reset) throws Exception {
+		return SymbolNormalizer.normalize(this, reset, null);
+	}
+	/**
+	 * it will reset the source-name map
+	 * @param index			to preserve map from soruce to identifier name (unique)
+	 * @return 				the expression as normalized version of input source
+	 * @throws Exception
+	 */
+	public SymbolExpression normalize(Map<SymbolExpression, SymbolIdentifier> index) throws Exception {
+		return SymbolNormalizer.normalize(this, true, index);
+	}
+	/**
+	 * it will reset the source-name map
+	 * @return	the expression as normalized version of input source
+	 * @throws Exception
+	 */
+	public SymbolExpression normalize() throws Exception { return SymbolNormalizer.normalize(this, true, null); }
+
 }
