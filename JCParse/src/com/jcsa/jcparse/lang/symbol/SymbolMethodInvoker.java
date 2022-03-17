@@ -13,6 +13,6 @@ public interface SymbolMethodInvoker {
 	 * @return the evaluation result of calling or null for unsupported methods
 	 * @throws Exception
 	 */
-	public SymbolExpression invoke(SymbolCallExpression source) throws Exception;
+	public SymbolExpression invoke(SymbolCallExpression source, SymbolProcess ou_state) throws Exception;
 	
 }

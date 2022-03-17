@@ -1,5 +1,6 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,36 +10,41 @@ import java.util.Map;
  * @author yukimula
  *
  */
-public class SymbolScope {
+final class SymbolScope {
 	
 	/* attributes */
 	private SymbolScope parent_scope;
 	private Object		scope_identifier;
 	private	Map<SymbolExpression, SymbolExpression> state_map;
-	protected SymbolScope() {
-		this.parent_scope = null;
-		this.scope_identifier = null;
-		this.state_map = new HashMap<SymbolExpression, SymbolExpression>();
+	protected SymbolScope(Object identifier) throws IllegalArgumentException {
+		if(identifier == null) {
+			throw new IllegalArgumentException("Invalid identifier: null");
+		}
+		else {
+			this.parent_scope = null;
+			this.scope_identifier = identifier;
+			this.state_map = new HashMap<SymbolExpression, SymbolExpression>();
+		}
 	}
 	
 	/* getters */
 	/**
 	 * @return whether this scope is the root
 	 */
-	public boolean 			is_root_scope() 	{ return this.parent_scope == null; }
+	protected boolean 			is_root_scope() 	{ return this.parent_scope == null; }
 	/**
 	 * @return the parent scope enclosing this one
 	 */
-	public SymbolScope 		get_parent_scope() 	{ return this.parent_scope; }
+	protected SymbolScope 		get_parent_scope() 	{ return this.parent_scope; }
 	/**
 	 * @return the identifier to tag this scope uniquely
 	 */
-	public Object			get_identifier()	{ return this.scope_identifier; }
+	protected Object			get_identifier()	{ return this.scope_identifier; }
 	/**
 	 * @param source
 	 * @return the value hold for the source or null if not defined
 	 */
-	public boolean 			has_value(SymbolExpression source) {
+	protected boolean 			has_value(SymbolExpression source) {
 		if(source == null) {
 			return false;
 		}
@@ -56,7 +62,7 @@ public class SymbolScope {
 	 * @param source
 	 * @return the value hold for the source or null if not defined
 	 */
-	public SymbolExpression	get_value(SymbolExpression source) {
+	protected SymbolExpression	get_value(SymbolExpression source) {
 		if(source == null) {
 			return null;
 		}
@@ -77,11 +83,9 @@ public class SymbolScope {
 	 * @param identifier
 	 * @return
 	 */
-	protected SymbolScope	new_child(Object identifier) {
-		SymbolScope child = new SymbolScope();
-		child.parent_scope = this;
-		child.scope_identifier = identifier;
-		return child;
+	protected SymbolScope		new_child(Object identifier) throws IllegalArgumentException {
+		SymbolScope child = new SymbolScope(identifier);
+		child.parent_scope = this; return child;
 	}
 	/**
 	 * It updates the source-target pair in state-map
@@ -89,7 +93,7 @@ public class SymbolScope {
 	 * @param target
 	 * @throws Exception
 	 */
-	protected void			put_value(SymbolExpression source, SymbolExpression target) throws Exception {
+	protected void				put_value(SymbolExpression source, SymbolExpression target) throws IllegalArgumentException {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
@@ -100,5 +104,72 @@ public class SymbolScope {
 			this.state_map.put(source, target);
 		}
 	}
+	/**
+	 * It derives the source-target pairs into the input table
+	 * @param table
+	 * @throws Exception
+	 */
+	protected void				derive_loc_values(Map<SymbolExpression, SymbolExpression> table) throws IllegalArgumentException {
+		if(table == null) {
+			throw new IllegalArgumentException("Invalid table: null");
+		}
+		else {
+			for(SymbolExpression source : this.state_map.keySet()) {
+				SymbolExpression target = this.state_map.get(source);
+				table.put(source, target);
+			}
+		}
+	}
+	/**
+	 * It derives all the source-target pairs in the scope until its root
+	 * @param table
+	 * @throws Exception
+	 */
+	protected void				derive_all_values(Map<SymbolExpression, SymbolExpression> table) throws IllegalArgumentException {
+		if(table == null) {
+			throw new IllegalArgumentException("Invalid table: null");
+		}
+		else {
+			if(this.parent_scope != null) {
+				this.parent_scope.derive_all_values(table);
+			}
+			this.derive_loc_values(table);
+		}
+	}
+	/**
+	 * It derives the set of expressions as sources to derive in local scope
+	 * @param keys
+	 * @throws Exception
+	 */
+	protected void				derive_loc_keys(Collection<SymbolExpression> keys) throws IllegalArgumentException {
+		if(keys == null) {
+			throw new IllegalArgumentException("Invalid keys as null");
+		}
+		else {
+			for(SymbolExpression source : this.state_map.keySet()) {
+				keys.add(source);
+			}
+		}
+	}
+	/**
+	 * It derives the set of expressions as sources to derive in all scopes
+	 * @param keys
+	 * @throws Exception
+	 */
+	protected void				derive_all_keys(Collection<SymbolExpression> keys) throws IllegalArgumentException {
+		if(keys == null) {
+			throw new IllegalArgumentException("Invalid keys as null");
+		}
+		else {
+			if(this.parent_scope != null) {
+				this.parent_scope.derive_all_keys(keys);
+			}
+			this.derive_loc_keys(keys);
+		}
+	}
+	/**
+	 * It clears the state-map data
+	 */
+	protected void				clear() { this.state_map.clear(); }
 	
 }

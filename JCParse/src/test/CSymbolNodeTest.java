@@ -2,7 +2,6 @@ package test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -26,6 +25,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolProcess;
 
 public class CSymbolNodeTest {
 	
@@ -91,12 +91,13 @@ public class CSymbolNodeTest {
 			writer.write("\tCODE:\t\"" + ast_code + "\"\n");
 			
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			Map<SymbolExpression, SymbolExpression> output = new HashMap<SymbolExpression, SymbolExpression>();
-			SymbolExpression eval_expr = expression.o_evaluate(output);
+			SymbolProcess context = new SymbolProcess();
+			SymbolExpression eval_expr = expression.evaluate(context);
 			SymbolExpression norm_expr = eval_expr.normalize();
 			
 			writer.write("\tSEXP:\t" + expression.generate_simple_code() + "\n");
 			writer.write("\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
+			Map<SymbolExpression, SymbolExpression> output = context.get_value_table();
 			for(SymbolExpression lvalue : output.keySet()) {
 				SymbolExpression rvalue = output.get(lvalue);
 				writer.write("\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");
@@ -149,12 +150,13 @@ public class CSymbolNodeTest {
 			writer.write("\t\tCODE:\t\"" + cir_code + "\"\n");
 			
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			Map<SymbolExpression, SymbolExpression> output = new HashMap<SymbolExpression, SymbolExpression>();
-			SymbolExpression eval_expr = expression.o_evaluate(output);
+			SymbolProcess context = new SymbolProcess();
+			SymbolExpression eval_expr = expression.evaluate(context);
 			SymbolExpression norm_expr = eval_expr.normalize();
 			
 			writer.write("\t\tSEXP:\t" + expression.generate_simple_code() + "\n");
 			writer.write("\t\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
+			Map<SymbolExpression, SymbolExpression> output = context.get_value_table();
 			for(SymbolExpression lvalue : output.keySet()) {
 				SymbolExpression rvalue = output.get(lvalue);
 				writer.write("\t\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");

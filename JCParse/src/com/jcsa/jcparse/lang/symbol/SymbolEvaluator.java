@@ -23,48 +23,41 @@ public final class SymbolEvaluator {
 	/* definition */
 	/** the list of invokers to invoke call-expressions **/
 	private	List<SymbolMethodInvoker> 				invokers;
-	/** the map from variables to corresponding values before evaluations **/
-	private	Map<SymbolExpression, SymbolExpression> in_state;
-	/** the map from reference to the new symbolic value after evaluation **/
-	private	Map<SymbolExpression, SymbolExpression> ou_state;
 	/** to preserve the input-output state values in current state **/
-	private	SymbolProcess							process;
+	private	SymbolProcess							in_state;
+	/** it preserves the states as output of side-effect operation **/
+	private	SymbolProcess							ou_state;
 	/**
 	 * private constructor for singleton mode
 	 */
 	private	SymbolEvaluator() {
 		this.invokers = new ArrayList<SymbolMethodInvoker>();
 		this.in_state = null; this.ou_state = null;
+		this.invokers.add(new SymbolDefaultInvoker());
 	}
 	
 	/* configuration */
 	/**
-	 * It derives the states of which values are used in evaluation
 	 * @param reference
-	 * @return null if the value is not used
+	 * @return it derives the value of the reference from the state-context
 	 * @throws Exception
 	 */
-	private	SymbolExpression get_state(SymbolExpression reference) throws Exception {
-		if(reference == null) {
+	private	SymbolExpression get_state_value(SymbolExpression reference) throws Exception {
+		if(reference == null || this.in_state == null) {
 			return null;
-		}
-		else if(this.in_state != null && this.in_state.containsKey(reference)) {
-			return this.in_state.get(reference);
-		}
-		else if(this.process != null && this.process.has_value(reference)) {
-			return this.process.get_value(reference);
 		}
 		else {
-			return null;
+			return this.in_state.get_value(reference);
 		}
 	}
 	/**
-	 * It sets the reference with a new value
+	 * It saves the reference-value to output state 
 	 * @param reference
 	 * @param value
+	 * @return false if the reference-value fails to be saved
 	 * @throws Exception
 	 */
-	private void set_state(SymbolExpression reference, SymbolExpression value) throws Exception {
+	private void set_state_value(SymbolExpression reference, SymbolExpression value) throws Exception {
 		if(reference == null) {
 			throw new IllegalArgumentException("Invalid reference: null");
 		}
@@ -74,7 +67,7 @@ public final class SymbolEvaluator {
 		else if(!reference.is_reference()) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
-		else if(this.ou_state != null) { this.ou_state.put(reference, value); }
+		else if(this.ou_state != null) {this.ou_state.set_value(reference, value);}
 		else { /* no state map is specified and thus no update arises here */ }
 	}
 	/**
@@ -89,20 +82,13 @@ public final class SymbolEvaluator {
 		else if(!this.invokers.contains(invoker)) { this.invokers.add(invoker); }
 	}
 	/**
-	 * It resets the state map for evaluating with side-effects
-	 * @param in_map	the state before evaluation
-	 * @param ou_map	the state after evaluation
+	 * It sets the state-contexts as input and output
+	 * @param in_state
+	 * @param ou_state
 	 */
-	private void set_state_map(Map<SymbolExpression, SymbolExpression> in_map, 
-			Map<SymbolExpression, SymbolExpression> ou_map) {
-		this.in_state = in_map;
-		this.ou_state = ou_map;
+	private	void set_io_states(SymbolProcess in_state, SymbolProcess ou_state) {
+		this.in_state = in_state; this.ou_state = ou_state;
 	}
-	/**
-	 * it sets the execution state as input-output-value domain
-	 * @param process
-	 */
-	private	void set_state_process(SymbolProcess process) { this.process = process; }
 	
 	/* singleton mode and methods */
 	/** singleton **/ private static final SymbolEvaluator evaluator = new SymbolEvaluator();
@@ -117,30 +103,45 @@ public final class SymbolEvaluator {
 	
 	/* syntax-directed evaluation algorithms */
 	/**
-	 * It evaluates the expression to a uniform simplification resulting
-	 * @param expression	the expression to be evaluated to uniform style.
-	 * @param state_map		to preserve the side-effect of evaluation 
-	 * @return				the resulting expression being evaluated from input.
+	 * @param expression	the symbolic expression to be evaluated
+	 * @return				the resulting expression from the input
 	 * @throws Exception
 	 */
-	public static SymbolExpression evaluate(SymbolExpression expression, 
-			Map<SymbolExpression, SymbolExpression> in_state,
-			Map<SymbolExpression, SymbolExpression> ou_state) throws Exception {
-		evaluator.set_state_map(in_state, ou_state);
-		evaluator.set_state_process(null);
-		return evaluator.eval(expression);
+	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
+		return evaluator.eval_on(expression, null, null);
 	}
 	/**
-	 * It evaluates the expression given an execution state process
-	 * @param expression
-	 * @param process
-	 * @return
+	 * @param expression	the symbolic expression to be evaluated
+	 * @param io_state		as both states to input and save output
+	 * @return				the resulting expression from the input
 	 * @throws Exception
 	 */
-	public static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess process) throws Exception {
-		evaluator.set_state_map(null, null);
-		evaluator.set_state_process(process);
-		return evaluator.eval(expression);
+	public static SymbolExpression evaluate(SymbolExpression expression,
+			SymbolProcess io_state) throws Exception {
+		return evaluator.eval_on(expression, io_state, io_state);
+	}
+	/**
+	 * @param expression	the symbolic expression to be evaluated
+	 * @param in_state		the state-context to provide the inputs
+	 * @param ou_state		the state-context to preserve an output
+	 * @return				the resulting expression from the input
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression,
+			SymbolProcess in_state, SymbolProcess ou_state) throws Exception {
+		return evaluator.eval_on(expression, in_state, ou_state);
+	}
+	/**
+	 * @param expression	the symbolic expression to be evaluated
+	 * @param in_state		the state-context to provide the inputs
+	 * @param ou_state		the state-context to preserve an output
+	 * @return				the resulting expression from the input
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_on(SymbolExpression expression, 
+			SymbolProcess in_state, SymbolProcess ou_state) throws Exception {
+		this.set_io_states(in_state, ou_state);
+		return this.eval(expression);
 	}
 	/**
 	 * It recursively evaluates the expression to a uniform simplification form.
@@ -152,8 +153,8 @@ public final class SymbolEvaluator {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
-		else if(this.get_state(expression) != null) {
-			return this.get_state(expression);
+		else if(this.get_state_value(expression) != null) {
+			return this.get_state_value(expression);
 		}
 		else if(expression instanceof SymbolBasicExpression) {
 			return this.eval_base_expr((SymbolBasicExpression) expression);
@@ -221,13 +222,16 @@ public final class SymbolEvaluator {
 		SymbolCallExpression result = SymbolFactory.call_expression(function, arguments);
 		
 		/* 2. it tries to invoke the function calls */
+		SymbolExpression output = result;
 		for(SymbolMethodInvoker invoker : this.invokers) {
-			SymbolExpression new_result = invoker.invoke(result);
+			SymbolExpression new_result = invoker.invoke(result, this.ou_state);
 			if(new_result != null) {
-				return new_result;
+				output = new_result; break;
 			}
 		}
-		return result;
+		
+		/* 3. it saves the function-calling state in output-state */
+		this.set_state_value(expression, output); return output;
 	}
 	/**
 	 * @param expression
@@ -1809,13 +1813,13 @@ public final class SymbolEvaluator {
 	private	SymbolExpression	eval_ex_assign(SymbolBinaryExpression expression) throws Exception {
 		SymbolExpression loperand = this.eval(expression.get_loperand());
 		SymbolExpression roperand = this.eval(expression.get_roperand());
-		this.set_state(loperand, roperand);
+		this.set_state_value(loperand, roperand);
 		return roperand;
 	}
 	private	SymbolExpression	eval_im_assign(SymbolBinaryExpression expression) throws Exception {
 		SymbolExpression loperand = this.eval(expression.get_loperand());
 		SymbolExpression roperand = this.eval(expression.get_roperand());
-		this.set_state(loperand, roperand);
+		this.set_state_value(loperand, roperand);
 		return loperand;
 	}
 	
@@ -1834,6 +1838,16 @@ public final class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.equal_with, lconstant, rconstant);
+		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.equal_with(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.equal_with(loperand, Long.valueOf(0));
+			}
 		}
 		else {
 			return SymbolFactory.equal_with(loperand, Long.valueOf(0));
@@ -1854,6 +1868,16 @@ public final class SymbolEvaluator {
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.not_equals, lconstant, rconstant);
 		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.not_equals(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.not_equals(loperand, Long.valueOf(0));
+			}
+		}
 		else {
 			return SymbolFactory.not_equals(loperand, Long.valueOf(0));
 		}
@@ -1872,6 +1896,16 @@ public final class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.greater_tn, lconstant, rconstant);
+		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.smaller_tn(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.greater_tn(loperand, Long.valueOf(0));
+			}
 		}
 		else {
 			return SymbolFactory.greater_tn(loperand, Long.valueOf(0));
@@ -1892,6 +1926,16 @@ public final class SymbolEvaluator {
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.greater_eq, lconstant, rconstant);
 		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.smaller_eq(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.greater_eq(loperand, Long.valueOf(0));
+			}
+		}
 		else {
 			return SymbolFactory.greater_eq(loperand, Long.valueOf(0));
 		}
@@ -1911,6 +1955,16 @@ public final class SymbolEvaluator {
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.smaller_tn, lconstant, rconstant);
 		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.greater_tn(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.smaller_tn(loperand, Long.valueOf(0));
+			}
+		}
 		else {
 			return SymbolFactory.smaller_tn(loperand, Long.valueOf(0));
 		}
@@ -1929,6 +1983,16 @@ public final class SymbolEvaluator {
 			SymbolConstant lconstant = (SymbolConstant) loperand;
 			SymbolConstant rconstant = SymbolFactory.sym_constant(Long.valueOf(0));
 			return SymbolComputer.do_compute(COperator.smaller_eq, lconstant, rconstant);
+		}
+		else if(loperand instanceof SymbolUnaryExpression) {
+			COperator operator = ((SymbolUnaryExpression) loperand).get_coperator();
+			SymbolExpression uoperand = ((SymbolUnaryExpression) loperand).get_operand();
+			if(operator == COperator.negative) {
+				return SymbolFactory.greater_eq(uoperand, Long.valueOf(0));
+			}
+			else {
+				return SymbolFactory.smaller_eq(loperand, Long.valueOf(0));
+			}
 		}
 		else {
 			return SymbolFactory.smaller_eq(loperand, Long.valueOf(0));

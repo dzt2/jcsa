@@ -19,7 +19,9 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="" />
+    <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -70,7 +72,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.Z2test">
+  <component name="RunManager" selected="Python.mining">
     <configuration name="Z2test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -199,9 +201,9 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.Z2test" />
         <item itemvalue="Python.mining" />
         <item itemvalue="Python.encode" />
+        <item itemvalue="Python.Z2test" />
         <item itemvalue="Python.strule" />
         <item itemvalue="Python.test" />
       </list>

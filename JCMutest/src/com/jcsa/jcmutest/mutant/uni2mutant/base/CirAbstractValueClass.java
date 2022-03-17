@@ -6,7 +6,7 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
  * @author yukimula
  *
  */
-public enum CirAbstractClass {
+public enum CirAbstractValueClass {
 	
 	/** cov_stmt(location; min_times, max_times) **/	cov_time,
 	/** eva_cond(location; condition, must_need) **/	eva_cond,
