@@ -16,9 +16,17 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
+import com.jcsa.jcparse.lang.astree.stmt.AstBreakStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstContinueStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstGotoStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirArithExpression;
@@ -38,11 +46,12 @@ import com.jcsa.jcparse.lang.irlang.expr.CirRelationExpression;
 import com.jcsa.jcparse.lang.irlang.expr.CirReturnPoint;
 import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowType;
+import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirBinAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIncreAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirInitAssignStatement;
@@ -154,6 +163,24 @@ final class CirAbstractLocalizer {
 		else if(cir_location instanceof CirWaitAssignStatement) {
 			return this.loc_wait_assign((CirWaitAssignStatement) cir_location);
 		}
+		else if(cir_location instanceof CirCallStatement) {
+			return this.loc_call_stmt((CirCallStatement) cir_location);
+		}
+		else if(cir_location instanceof CirIfStatement) {
+			return this.loc_ifte_stmt((CirIfStatement) cir_location);
+		}
+		else if(cir_location instanceof CirCaseStatement) {
+			return this.loc_case_stmt((CirCaseStatement) cir_location);
+		}
+		else if(cir_location instanceof CirGotoStatement) {
+			return this.loc_goto_stmt((CirGotoStatement) cir_location);
+		}
+		else if(cir_location instanceof CirBegStatement) {
+			return this.loc_beg_stmt((CirBegStatement) cir_location);
+		}
+		else if(cir_location instanceof CirEndStatement) {
+			return this.loc_end_stmt((CirEndStatement) cir_location);
+		}
 		// TODO implement the syntax-directed c-intermediate transformation
 		else {
 			throw new IllegalArgumentException("Unsupport: " + cir_location);
@@ -195,12 +222,14 @@ final class CirAbstractLocalizer {
 			AstConditionalExpression cond_expr = (AstConditionalExpression) ast_location;
 			if(cir_location.get_parent() instanceof CirSaveAssignStatement) {
 				CirSaveAssignStatement save_stmt = (CirSaveAssignStatement) cir_location.get_parent();
-				CirExecution exe_location = save_stmt.execution_of();
-				if(exe_location.get_in_flow(0).get_type() == CirExecutionFlowType.true_flow) {
+				if(save_stmt.get_rvalue().get_ast_source() == cond_expr.get_true_branch()) {
 					return CirAbstractStore.cir_expr(cond_expr.get_true_branch(), cir_location);
 				}
-				else {
+				else if(save_stmt.get_rvalue().get_ast_source() == cond_expr.get_false_branch()) {
 					return CirAbstractStore.cir_expr(cond_expr.get_false_branch(), cir_location);
+				}
+				else {
+					throw new IllegalArgumentException("Invalid: " + save_stmt.generate_code(true));
 				}
 			}
 			else {
@@ -428,9 +457,64 @@ final class CirAbstractLocalizer {
 	private CirAbstractStore	loc_wait_assign(CirWaitAssignStatement cir_location) throws Exception {
 		return CirAbstractStore.cir_stmt(CirAbstractStoreClass.wait, cir_location.get_ast_source(), cir_location);
 	}
-	
-	
-	
+	private	CirAbstractStore	loc_call_stmt(CirCallStatement cir_location) throws Exception {
+		return CirAbstractStore.cir_stmt(CirAbstractStoreClass.call, cir_location.get_ast_source(), cir_location);
+	}
+	private	CirAbstractStore	loc_ifte_stmt(CirIfStatement cir_location) throws Exception {
+		AstNode ast_location = cir_location.get_ast_source();
+		if(ast_location instanceof AstConditionalExpression) {
+			ast_location = ((AstConditionalExpression) ast_location).get_condition();
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.ifte, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstWhileStatement
+				|| ast_location instanceof AstDoWhileStatement
+				|| ast_location instanceof AstForStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.loop, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstIfStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.ifte, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstLogicBinaryExpression) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.ifte, ast_location, cir_location);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + ast_location);
+		}
+	}
+	private	CirAbstractStore	loc_case_stmt(CirCaseStatement cir_location) throws Exception {
+		return CirAbstractStore.cir_stmt(CirAbstractStoreClass.ifte, cir_location.get_ast_source(), cir_location);
+	}
+	private	CirAbstractStore	loc_goto_stmt(CirGotoStatement cir_location) throws Exception {
+		AstNode ast_location = cir_location.get_ast_source();
+		if(ast_location == null) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.brac, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstBreakStatement
+				|| ast_location instanceof AstContinueStatement
+				|| ast_location instanceof AstGotoStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.skip, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstReturnStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.retr, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstIfStatement
+				|| ast_location instanceof AstSwitchStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.brac, ast_location, cir_location);
+		}
+		else if(ast_location instanceof AstWhileStatement
+				|| ast_location instanceof AstForStatement) {
+			return CirAbstractStore.cir_stmt(CirAbstractStoreClass.conv, ast_location, cir_location);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + ast_location);
+		}
+	}
+	private	CirAbstractStore	loc_beg_stmt(CirBegStatement cir_location) throws Exception {
+		return CirAbstractStore.cir_stmt(CirAbstractStoreClass.labs, cir_location.get_ast_source(), cir_location);
+	}
+	private	CirAbstractStore	loc_end_stmt(CirEndStatement cir_location) throws Exception {
+		return CirAbstractStore.cir_stmt(CirAbstractStoreClass.labs, cir_location.get_ast_source(), cir_location);
+	}
 	
 	
 	

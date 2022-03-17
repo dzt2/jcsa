@@ -17,6 +17,10 @@ public enum CirAbstractStoreClass {
 	retr,
 	ifte,
 	loop,
+	skip,
+	brac,
+	conv,
+	labs,
 	args,
 	// TODO implement more class of CirAbstractStore
 }
