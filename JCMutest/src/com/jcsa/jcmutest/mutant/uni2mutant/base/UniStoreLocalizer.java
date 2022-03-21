@@ -17,16 +17,29 @@ import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstArithUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstAssignExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseAssignExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseBinaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPointUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstRelationExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftAssignExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstShiftBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
@@ -92,6 +105,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionBody;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 
 /**
@@ -682,13 +696,21 @@ final class UniStoreLocalizer {
 	 * @return the list of CirNode(s) referring to the ast-location with given type
 	 * @throws Exception
 	 */
-	private	List<CirNode>		loc_ast_tree(AstNode ast_location, Class<?> cir_class) throws Exception {
+	private CirNode				loc_ast_tree(AstNode ast_location, Class<?> cir_class) throws Exception {
+		List<CirNode> cir_nodes;
 		if(cir_class == null) {
-			return this.cir_tree.get_cir_nodes(ast_location);
+			cir_nodes = this.cir_tree.get_cir_nodes(ast_location);
 		}
 		else {
-			return this.cir_tree.get_cir_nodes(ast_location, cir_class);
+			cir_nodes = this.cir_tree.get_cir_nodes(ast_location, cir_class);
 		}
+		for(int k = cir_nodes.size() - 1; k >= 0; k--) {
+			CirNode cir_node = cir_nodes.get(k);
+			if(cir_node.execution_of() != null) {
+				return cir_node;
+			}
+		}
+		return null;
 	}
 	/* AST-Specifiers Classes */
 	private	UniAbstractStore	loc_ast_otherwise(AstNode ast_location) throws Exception {
@@ -713,9 +735,6 @@ final class UniStoreLocalizer {
 		else if(ast_location instanceof AstInitializer) {
 			return this.loc_ast_initializer((AstInitializer) ast_location);
 		}
-		else if(ast_location instanceof AstInitializerBody) {
-			return this.loc_ast_initializer_body((AstInitializerBody) ast_location);
-		}
 		else if(ast_location instanceof AstInitializerList) {
 			return this.loc_ast_initializer_list((AstInitializerList) ast_location);
 		}
@@ -733,18 +752,18 @@ final class UniStoreLocalizer {
 		}
 	}
 	private	UniAbstractStore	loc_ast_argument_list(AstArgumentList ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirArgumentList.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirArgumentList.class);
 		return this.new_cir_node(UniAbstractSType.args_list, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_declarator(AstDeclarator ast_location) throws Exception {
 		while(ast_location.get_production() != DeclaratorProduction.identifier) {
 			ast_location = ast_location.get_declarator();
 		}
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirDeclarator.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirDeclarator.class);
 		return this.new_cir_expr(ast_location, (CirExpression) cir_location);
 	}
 	private	UniAbstractStore	loc_ast_init_declarator(AstInitDeclarator ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirInitAssignStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirInitAssignStatement.class);
 		return this.new_cir_node(UniAbstractSType.assg_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_initializer(AstInitializer ast_location) throws Exception {
@@ -755,10 +774,6 @@ final class UniStoreLocalizer {
 			return this.loc_ast(this.cir_tree, ast_location.get_expression());
 		}
 	}
-	private	UniAbstractStore	loc_ast_initializer_body(AstInitializerBody ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirInitializerBody.class).get(0);
-		return this.new_cir_expr(ast_location, (CirExpression) cir_location);
-	}
 	private	UniAbstractStore	loc_ast_initializer_list(AstInitializerList ast_location) throws Exception {
 		return this.loc_ast(this.cir_tree, ast_location.get_parent());
 	}
@@ -766,7 +781,7 @@ final class UniStoreLocalizer {
 		return this.loc_ast(this.cir_tree, ast_location.get_initializer());
 	}
 	private	UniAbstractStore	loc_ast_type_name(AstTypeName ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirType.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirType.class);
 		return this.new_cir_node(UniAbstractSType.type_name, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_stmt_list(AstStatementList ast_location) throws Exception {
@@ -834,31 +849,30 @@ final class UniStoreLocalizer {
 		else if(ast_location instanceof AstSwitchStatement) {
 			return this.loc_ast_switch_stmt((AstSwitchStatement) ast_location);
 		}
-		// TODO implement more classes here...
 		else {
 			throw new IllegalArgumentException("Unsupport: " + ast_location);
 		}
 	}
 	private	UniAbstractStore	loc_ast_break_stmt(AstBreakStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class);
 		return this.new_cir_node(UniAbstractSType.gend_node, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_comp_stmt(AstCompoundStatement ast_location) throws Exception {
 		return this.loc_ast(this.cir_tree, ast_location.get_statement_list());
 	}
 	private	UniAbstractStore	loc_ast_continue_stmt(AstContinueStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class);
 		return this.new_cir_node(UniAbstractSType.rlop_node, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_decl_stmt(AstDeclarationStatement ast_location) throws Exception {
 		return this.loc_ast(this.cir_tree, ast_location.get_declaration());
 	}
 	private	UniAbstractStore	loc_ast_default_stmt(AstDefaultStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirDefaultStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirDefaultStatement.class);
 		return this.new_cir_node(UniAbstractSType.labl_node, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_do_while_stmt(AstDoWhileStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class);
 		return this.new_cir_node(UniAbstractSType.loop_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_expr_stmt(AstExpressionStatement ast_location) throws Exception {
@@ -874,41 +888,41 @@ final class UniStoreLocalizer {
 		}
 	}
 	private	UniAbstractStore	loc_ast_for_stmt(AstForStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class);
 		return this.new_cir_node(UniAbstractSType.loop_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_while_stmt(AstWhileStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class);
 		return this.new_cir_node(UniAbstractSType.loop_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore 	loc_ast_if_statement(AstIfStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirIfStatement.class);
 		return this.new_cir_node(UniAbstractSType.cond_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_switch_stmt(AstSwitchStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirSaveAssignStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirSaveAssignStatement.class);
 		return this.new_cir_node(UniAbstractSType.assg_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_case_stmt(AstCaseStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirCaseStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirCaseStatement.class);
 		return this.new_cir_node(UniAbstractSType.cond_stmt, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_goto_stmt(AstGotoStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class);
 		return this.new_cir_node(UniAbstractSType.skip_node, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_label_stmt(AstLabeledStatement ast_location) throws Exception {
-		CirNode cir_location = this.loc_ast_tree(ast_location, CirLabelStatement.class).get(0);
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirLabelStatement.class);
 		return this.new_cir_node(UniAbstractSType.labl_node, ast_location, cir_location);
 	}
 	private	UniAbstractStore	loc_ast_return_stmt(AstReturnStatement ast_location) throws Exception {
 		CirNode cir_location;
 		if(ast_location.has_expression()) {
-			cir_location = this.loc_ast_tree(ast_location, CirReturnAssignStatement.class).get(0);
+			cir_location = this.loc_ast_tree(ast_location, CirReturnAssignStatement.class);
 			return this.new_cir_node(UniAbstractSType.retr_stmt, ast_location, cir_location);
 		}
 		else {
-			cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class).get(0);
+			cir_location = this.loc_ast_tree(ast_location, CirGotoStatement.class);
 			return this.new_cir_node(UniAbstractSType.retr_stmt, ast_location, cir_location);
 		}
 	}
@@ -917,18 +931,226 @@ final class UniStoreLocalizer {
 		if(ast_location == null) {
 			throw new IllegalArgumentException("Invalid ast_location: null");
 		}
-		// TODO implement more classes here...
+		else if(ast_location instanceof AstIdExpression) {
+			return this.loc_ast_id_expr((AstIdExpression) ast_location);
+		}
+		else if(ast_location instanceof AstConstant) {
+			return this.loc_ast_constant((AstConstant) ast_location);
+		}
+		else if(ast_location instanceof AstLiteral) {
+			return this.loc_ast_literal((AstLiteral) ast_location);
+		}
+		else if(ast_location instanceof AstArrayExpression) {
+			return this.loc_ast_array_expr((AstArrayExpression) ast_location);
+		}
+		else if(ast_location instanceof AstCastExpression) {
+			return this.loc_ast_cast_expr((AstCastExpression) ast_location);
+		}
+		else if(ast_location instanceof AstCommaExpression) {
+			return this.loc_ast_comma_expr((AstCommaExpression) ast_location);
+		}
+		else if(ast_location instanceof AstConditionalExpression) {
+			return this.loc_ast_cond_expr((AstConditionalExpression) ast_location);
+		}
+		else if(ast_location instanceof AstConstExpression) {
+			return this.loc_ast_const_expr((AstConstExpression) ast_location);
+		}
+		else if(ast_location instanceof AstParanthExpression) {
+			return this.loc_ast_paranth_expr((AstParanthExpression) ast_location);
+		}
+		else if(ast_location instanceof AstSizeofExpression) {
+			return this.loc_ast_sizeof_expr((AstSizeofExpression) ast_location);
+		}
+		else if(ast_location instanceof AstInitializerBody) {
+			return this.loc_ast_initializer_body((AstInitializerBody) ast_location);
+		}
+		else if(ast_location instanceof AstFieldExpression) {
+			return this.loc_ast_field_expr((AstFieldExpression) ast_location);
+		}
+		else if(ast_location instanceof AstFunCallExpression) {
+			return this.loc_ast_fun_call_expr((AstFunCallExpression) ast_location);
+		}
+		else if(ast_location instanceof AstArithUnaryExpression) {
+			return this.loc_ast_arith_unary_expr((AstArithUnaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstBitwiseUnaryExpression) {
+			return this.loc_ast_bitws_unary_expr((AstBitwiseUnaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstLogicUnaryExpression) {
+			return this.loc_ast_logic_unary_expr((AstLogicUnaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstPointUnaryExpression) {
+			return this.loc_ast_point_unary_expr((AstPointUnaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstIncreUnaryExpression) {
+			return this.loc_ast_incre_unary_expr((AstIncreUnaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstIncrePostfixExpression) {
+			return this.loc_ast_incre_postfx_expr((AstIncrePostfixExpression) ast_location);
+		}
+		else if(ast_location instanceof AstArithBinaryExpression) {
+			return this.loc_ast_arith_binary_expr((AstArithBinaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstBitwiseBinaryExpression) {
+			return this.loc_ast_bitws_binary_expr((AstBitwiseBinaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstLogicBinaryExpression) {
+			return this.loc_ast_logic_binary_expr((AstLogicBinaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstRelationExpression) {
+			return this.loc_ast_relation_binary_expr((AstRelationExpression) ast_location);
+		}
+		else if(ast_location instanceof AstShiftBinaryExpression) {
+			return this.loc_ast_shift_binary_expr((AstShiftBinaryExpression) ast_location);
+		}
+		else if(ast_location instanceof AstAssignExpression) {
+			return this.loc_ast_assign_expr((AstAssignExpression) ast_location);
+		}
+		else if(ast_location instanceof AstArithAssignExpression) {
+			return this.loc_ast_airth_assign_expr((AstArithAssignExpression) ast_location);
+		}
+		else if(ast_location instanceof AstBitwiseAssignExpression) {
+			return this.loc_ast_bitws_assign_expr((AstBitwiseAssignExpression) ast_location);
+		}
+		else if(ast_location instanceof AstShiftAssignExpression) {
+			return this.loc_ast_shift_assign_expr((AstShiftAssignExpression) ast_location);
+		}
 		else {
 			throw new IllegalArgumentException("Unsupport: " + ast_location);
 		}
 	}
 	private	UniAbstractStore	loc_ast_array_expr(AstArrayExpression ast_location) throws Exception {
-		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirDeferExpression.class).get(0);
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirDeferExpression.class);
 		return this.new_cir_expr(ast_location, cir_location);
 	}
-	
-	
-	
-	
+	private	UniAbstractStore	loc_ast_id_expr(AstIdExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_constant(AstConstant ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirConstExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_literal(AstLiteral ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirStringLiteral.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_cast_expr(AstCastExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirCastExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_comma_expr(AstCommaExpression ast_location) throws Exception {
+		return this.loc_ast(this.cir_tree, ast_location.get_expression(ast_location.number_of_arguments() - 1));
+	}
+	private	UniAbstractStore	loc_ast_cond_expr(AstConditionalExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirImplicator.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_const_expr(AstConstExpression ast_location) throws Exception {
+		return this.loc_ast(this.cir_tree, ast_location.get_expression());
+	}
+	private	UniAbstractStore	loc_ast_paranth_expr(AstParanthExpression ast_location) throws Exception {
+		return this.loc_ast(this.cir_tree, ast_location.get_sub_expression());
+	}
+	private	UniAbstractStore	loc_ast_sizeof_expr(AstSizeofExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirConstExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_initializer_body(AstInitializerBody ast_location) throws Exception {
+		CirNode cir_location = this.loc_ast_tree(ast_location, CirInitializerBody.class);
+		return this.new_cir_expr(ast_location, (CirExpression) cir_location);
+	}
+	private	UniAbstractStore	loc_ast_field_expr(AstFieldExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirFieldExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_fun_call_expr(AstFunCallExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.loc_ast_tree(ast_location, CirWaitExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_arith_unary_expr(AstArithUnaryExpression ast_location) throws Exception {
+		COperator operator = ast_location.get_operator().get_operator();
+		if(operator == COperator.positive) {
+			return this.loc_ast(this.cir_tree, ast_location.get_operand());
+		}
+		else if(operator == COperator.negative) {
+			CirExpression cir_location = (CirExpression) this.
+					loc_ast_tree(ast_location, CirArithExpression.class);
+			return this.new_cir_expr(ast_location, cir_location);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + operator.toString());
+		}
+	}
+	private	UniAbstractStore	loc_ast_bitws_unary_expr(AstBitwiseUnaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirBitwsExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_logic_unary_expr(AstLogicUnaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirLogicExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_point_unary_expr(AstPointUnaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirExpression.class);
+		return this.new_cir_expr(ast_location, cir_location);
+	}
+	private	UniAbstractStore	loc_ast_incre_unary_expr(AstIncreUnaryExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirIncreAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
+	private	UniAbstractStore	loc_ast_incre_postfx_expr(AstIncrePostfixExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirSaveAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
+	private	UniAbstractStore	loc_ast_arith_binary_expr(AstArithBinaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirArithExpression.class);
+		return this.new_cir_expr(ast_location, cir_location); 
+	}
+	private	UniAbstractStore	loc_ast_bitws_binary_expr(AstBitwiseBinaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirBitwsExpression.class);
+		return this.new_cir_expr(ast_location, cir_location); 
+	}
+	private	UniAbstractStore	loc_ast_shift_binary_expr(AstShiftBinaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirBitwsExpression.class);
+		return this.new_cir_expr(ast_location, cir_location); 
+	}
+	private	UniAbstractStore	loc_ast_relation_binary_expr(AstRelationExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirRelationExpression.class);
+		return this.new_cir_expr(ast_location, cir_location); 
+	}
+	private	UniAbstractStore	loc_ast_logic_binary_expr(AstLogicBinaryExpression ast_location) throws Exception {
+		CirExpression cir_location = (CirExpression) this.
+				loc_ast_tree(ast_location, CirImplicator.class);
+		return this.new_cir_expr(ast_location, cir_location); 
+	}
+	private	UniAbstractStore	loc_ast_assign_expr(AstAssignExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
+	private	UniAbstractStore	loc_ast_airth_assign_expr(AstArithAssignExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
+	private	UniAbstractStore	loc_ast_bitws_assign_expr(AstBitwiseAssignExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
+	private	UniAbstractStore	loc_ast_shift_assign_expr(AstShiftAssignExpression ast_location) throws Exception {
+		CirAssignStatement statement = (CirAssignStatement) this.
+				loc_ast_tree(ast_location, CirAssignStatement.class);
+		return this.new_cir_expr(ast_location, statement.get_rvalue());
+	}
 	
 }

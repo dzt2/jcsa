@@ -2,6 +2,7 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 
 /**
@@ -81,6 +82,87 @@ public class UniAbstractStore {
 	 */
 	public	CirExecution		get_exe_location() { return this.exe_location; }
 	
+	/* general */
+	@Override
+	public 	String				toString() {
+		StringBuilder buffer = new StringBuilder();
+		buffer.append(this._store_class.toString());
+		buffer.append("#");
+		buffer.append(ast_location.get_key() + "#");
+		buffer.append(cir_location.get_node_id() + "#");
+		buffer.append(exe_location.toString());
+		return buffer.toString();
+	}
+	@Override
+	public	int					hashCode() { return this.toString().hashCode(); }
+	@Override
+	public 	boolean				equals(Object obj) {
+		if(obj instanceof UniAbstractStore) {
+			return obj.toString().equals(this.toString());
+		}
+		else {
+			return false;
+		}
+	}
+	
+	/* classify */
+	/**
+	 * @return functional statement
+	 */
+	public 	boolean	is_statement() {
+		switch(this._store_class) {
+		case assg_stmt:
+		case cond_stmt:
+		case loop_stmt: 
+		case call_stmt:
+		case wait_stmt:
+		case retr_stmt:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return non-functional statement
+	 */
+	public	boolean is_gotolabel() {
+		switch(this._store_class) {
+		case gend_node:
+		case skip_node:
+		case rlop_node:
+		case bend_node:
+		case labl_node:
+		case conv_node:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return computational expression
+	 */
+	public 	boolean	is_expression() {
+		switch(this._store_class) {
+		case cond_expr:
+		case args_expr:
+		case oprd_expr:
+		case cdef_expr:
+		case vdef_expr:
+		case refr_expr:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return otherwise element object
+	 */
+	public	boolean	is_element() {
+		switch(this._store_class) {
+		case func_defs:
+		case stmt_list:
+		case args_list:
+		case type_name:
+		case fiel_name:
+		case labl_name:	return true;
+		default:		return false;
+		}
+	}
+	
 	/* factory */
 	/**
 	 * It translates the C-intermediate location to a best-matching store location with given AstNode
@@ -98,8 +180,29 @@ public class UniAbstractStore {
 	 * @return
 	 * @throws Exception
 	 */
-	public static UniAbstractStore	cir_vdef(AstNode ast_location, CirNode cir_location) throws Exception {
+	public static UniAbstractStore	new_vdef(AstNode ast_location, CirNode cir_location) throws Exception {
 		return new UniAbstractStore(UniAbstractSType.vdef_expr, ast_location, cir_location, cir_location.execution_of());
+	}
+	/**
+	 * It localizes the best-matched state point of AstNode under CirTree
+	 * @param cir_tree
+	 * @param ast_location
+	 * @return
+	 * @throws Exception
+	 */
+	public static UniAbstractStore	ast_node(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return UniStoreLocalizer.loc(cir_tree, ast_location);
+	}
+	/**
+	 * It creates a originated instance of CirAbstractStore to preserve state value
+	 * @param store_class
+	 * @param ast_location
+	 * @param cir_location
+	 * @return
+	 * @throws Exception
+	 */
+	public static UniAbstractStore	new_node(UniAbstractSType store_class, AstNode ast_location, CirNode cir_location) throws Exception {
+		return new UniAbstractStore(store_class, ast_location, cir_location, cir_location.execution_of());
 	}
 	
 }
