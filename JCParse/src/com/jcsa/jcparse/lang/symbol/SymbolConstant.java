@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.lexical.CConstant;
 
 /**
@@ -233,6 +235,12 @@ public class SymbolConstant extends SymbolBasicExpression {
 		case c_ldouble:		return Double.valueOf((double) this.constant.get_double().doubleValue());
 		default:			throw new IllegalArgumentException("Invalid: " + this.constant);
 		}
+	}
+
+	
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		return this;
 	}
 	
 }

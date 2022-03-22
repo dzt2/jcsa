@@ -1,5 +1,9 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
@@ -66,9 +70,26 @@ public class SymbolCallExpression extends SymbolSpecialExpression {
 	}
 
 	@Override
-	protected boolean is_refer_type() { return true; }
+	protected boolean is_refer_type() { return false; }
 
 	@Override
 	protected boolean is_side_affected() { return true; }
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		CType data_type = this.get_data_type();
+		SymbolExpression function = this.get_function();
+		SymbolArgumentList alist = this.get_argument_list();
+		
+		List<SymbolExpression> arguments = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < alist.number_of_arguments(); k++) {
+			SymbolExpression argument = alist.get_argument(k);
+			argument = argument.symb_replace(name_value_map);
+			arguments.add(argument);
+		}
+		alist = SymbolArgumentList.create(arguments);
+		
+		return create(data_type, function, alist);
+	}
 	
 }

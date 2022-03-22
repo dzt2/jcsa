@@ -376,7 +376,7 @@ public class CirExecutionPath {
 		}
 	}
 	private SymbolExpression condition_of(CirExpression expression) throws Exception {
-		return SymbolFactory.sym_condition(expression, true).evaluate();
+		return SymbolFactory.sym_condition(expression, true).evaluate(null, null);
 	}
 	/**
 	 * @param cross_function whether to collect input flows based on function-cross analysis

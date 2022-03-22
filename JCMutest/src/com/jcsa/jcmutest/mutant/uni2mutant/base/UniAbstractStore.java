@@ -123,7 +123,7 @@ public class UniAbstractStore {
 	/**
 	 * @return non-functional statement
 	 */
-	public	boolean is_gotolabel() {
+	public	boolean is_goto_label() {
 		switch(this._store_class) {
 		case gend_node:
 		case skip_node:
@@ -151,7 +151,7 @@ public class UniAbstractStore {
 	/**
 	 * @return otherwise element object
 	 */
-	public	boolean	is_element() {
+	public	boolean	is_elemental() {
 		switch(this._store_class) {
 		case func_defs:
 		case stmt_list:

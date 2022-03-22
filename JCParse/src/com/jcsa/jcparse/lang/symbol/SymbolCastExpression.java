@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
@@ -66,5 +68,13 @@ public class SymbolCastExpression extends SymbolSpecialExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
+	
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		SymbolType cast_type = this.get_cast_type();
+		SymbolExpression operand = this.get_operand();
+		operand = operand.symb_replace(name_value_map);
+		return create(cast_type, operand);
+	}
 	
 }

@@ -236,128 +236,14 @@ final class UniStoreLocalizer {
 		if(cir_location == null) {
 			throw new IllegalArgumentException("Invalid cir_location: null");
 		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
+		else if(cir_location instanceof CirExpression) {
+			return this.loc_cir_expression((CirExpression) cir_location);
 		}
-		else if(cir_location instanceof CirArgumentList) {
-			return this.loc_cir_argument_list((CirArgumentList) cir_location);
-		}
-		else if(cir_location instanceof CirFunctionBody) {
-			return this.loc_cir_function_body((CirFunctionBody) cir_location);
-		}
-		else if(cir_location instanceof CirFunctionDefinition) {
-			return this.loc_cir_function_definition((CirFunctionDefinition) cir_location);
-		}
-		else if(cir_location instanceof CirLabel) {
-			return this.loc_cir_label((CirLabel) cir_location);
-		}
-		else if(cir_location instanceof CirField) {
-			return this.loc_cir_field((CirField) cir_location);
-		}
-		else if(cir_location instanceof CirType) {
-			return this.loc_cir_type((CirType) cir_location);
-		}
-		else if(cir_location instanceof CirBinAssignStatement) {
-			return this.loc_cir_bin_assign_stmt((CirBinAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirSaveAssignStatement) {
-			return this.loc_cir_sav_assign_stmt((CirSaveAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirIncreAssignStatement) {
-			return this.loc_cir_inc_assign_stmt((CirIncreAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirInitAssignStatement) {
-			return this.loc_cir_ini_assign_stmt((CirInitAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirWaitAssignStatement) {
-			return this.loc_cir_wat_assign_stmt((CirWaitAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirReturnAssignStatement) {
-			return this.loc_cir_ret_assign_stmt((CirReturnAssignStatement) cir_location);
-		}
-		else if(cir_location instanceof CirCallStatement) {
-			return this.loc_cir_call_stmt((CirCallStatement) cir_location);
-		}
-		else if(cir_location instanceof CirIfStatement) {
-			return this.loc_cir_if_stmt((CirIfStatement) cir_location);
-		}
-		else if(cir_location instanceof CirCaseStatement) {
-			return this.loc_cir_case_stmt((CirCaseStatement) cir_location);
-		}
-		else if(cir_location instanceof CirBegStatement) {
-			return this.loc_cir_beg_stmt((CirBegStatement) cir_location);
-		}
-		else if(cir_location instanceof CirEndStatement) {
-			return this.loc_cir_end_stmt((CirEndStatement) cir_location);
-		}
-		else if(cir_location instanceof CirIfEndStatement) {
-			return this.loc_cir_if_end_stmt((CirIfEndStatement) cir_location);
-		}
-		else if(cir_location instanceof CirCaseEndStatement) {
-			return this.loc_cir_case_end_stmt((CirCaseEndStatement) cir_location);
-		}
-		else if(cir_location instanceof CirDefaultStatement) {
-			return this.loc_cir_default_stmt((CirDefaultStatement) cir_location);
-		}
-		else if(cir_location instanceof CirLabelStatement) {
-			return this.loc_cir_label_stmt((CirLabelStatement) cir_location);
-		}
-		else if(cir_location instanceof CirGotoStatement) {
-			return this.loc_cir_goto_stmt((CirGotoStatement) cir_location);
-		}
-		else if(cir_location instanceof CirDeclarator) {
-			return this.loc_cir_declarator((CirDeclarator) cir_location);
-		}
-		else if(cir_location instanceof CirIdentifier) {
-			return this.loc_cir_identifier((CirIdentifier) cir_location);
-		}
-		else if(cir_location instanceof CirImplicator) {
-			return this.loc_cir_implicator((CirImplicator) cir_location);
-		}
-		else if(cir_location instanceof CirReturnPoint) {
-			return this.loc_cir_retr_point((CirReturnPoint) cir_location);
-		}
-		else if(cir_location instanceof CirDeferExpression) {
-			return this.loc_cir_defer_expr((CirDeferExpression) cir_location);
-		}
-		else if(cir_location instanceof CirFieldExpression) {
-			return this.loc_cir_field_expr((CirFieldExpression) cir_location);
-		}
-		else if(cir_location instanceof CirConstExpression) {
-			return this.loc_cir_const_expr((CirConstExpression) cir_location);
-		}
-		else if(cir_location instanceof CirStringLiteral) {
-			return this.loc_cir_str_literal((CirStringLiteral) cir_location);
-		}
-		else if(cir_location instanceof CirDefaultValue) {
-			return this.loc_cir_default_val((CirDefaultValue) cir_location);
-		}
-		else if(cir_location instanceof CirAddressExpression) {
-			return this.loc_cir_addr_expr((CirAddressExpression) cir_location);
-		}
-		else if(cir_location instanceof CirWaitExpression) {
-			return this.loc_cir_wait_expr((CirWaitExpression) cir_location);
-		}
-		else if(cir_location instanceof CirInitializerBody) {
-			return this.loc_cir_init_body((CirInitializerBody) cir_location);
-		}
-		else if(cir_location instanceof CirCastExpression) {
-			return this.loc_cir_cast_expr((CirCastExpression) cir_location);
-		}
-		else if(cir_location instanceof CirArithExpression) {
-			return this.loc_cir_arith_expr((CirArithExpression) cir_location);
-		}
-		else if(cir_location instanceof CirBitwsExpression) {
-			return this.loc_cir_bitws_expr((CirBitwsExpression) cir_location);
-		}
-		else if(cir_location instanceof CirLogicExpression) {
-			return this.loc_cir_logic_expr((CirLogicExpression) cir_location);
-		}
-		else if(cir_location instanceof CirRelationExpression) {
-			return this.loc_cir_relate_expr((CirRelationExpression) cir_location);
+		else if(cir_location instanceof CirStatement) {
+			return this.loc_cir_statement((CirStatement) cir_location);
 		}
 		else {
-			throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
+			return this.loc_cir_element(cir_location);
 		}
 	}
 	/* CIR-Elements Classes */
@@ -390,6 +276,35 @@ final class UniStoreLocalizer {
 	}
 	private	UniAbstractStore	loc_cir_type(CirType cir_location) throws Exception {
 		return this.new_cir_node(UniAbstractSType.type_name, cir_location.get_ast_source(), cir_location);
+	}
+	private	UniAbstractStore	loc_cir_element(CirNode cir_location) throws Exception {
+		if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid exe_location: null");
+		}
+		else if(cir_location instanceof CirArgumentList) {
+			return this.loc_cir_argument_list((CirArgumentList) cir_location);
+		}
+		else if(cir_location instanceof CirFunctionBody) {
+			return this.loc_cir_function_body((CirFunctionBody) cir_location);
+		}
+		else if(cir_location instanceof CirFunctionDefinition) {
+			return this.loc_cir_function_definition((CirFunctionDefinition) cir_location);
+		}
+		else if(cir_location instanceof CirLabel) {
+			return this.loc_cir_label((CirLabel) cir_location);
+		}
+		else if(cir_location instanceof CirField) {
+			return this.loc_cir_field((CirField) cir_location);
+		}
+		else if(cir_location instanceof CirType) {
+			return this.loc_cir_type((CirType) cir_location);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + cir_location);
+		}
 	}
 	/* CIR-Statement Classes */
 	private	UniAbstractStore	loc_cir_bin_assign_stmt(CirBinAssignStatement cir_location) throws Exception {
@@ -504,6 +419,62 @@ final class UniStoreLocalizer {
 		}
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
+		}
+	}
+	private	UniAbstractStore	loc_cir_statement(CirStatement cir_location) throws Exception {
+		if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location instanceof CirBinAssignStatement) {
+			return this.loc_cir_bin_assign_stmt((CirBinAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirSaveAssignStatement) {
+			return this.loc_cir_sav_assign_stmt((CirSaveAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirIncreAssignStatement) {
+			return this.loc_cir_inc_assign_stmt((CirIncreAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirInitAssignStatement) {
+			return this.loc_cir_ini_assign_stmt((CirInitAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirWaitAssignStatement) {
+			return this.loc_cir_wat_assign_stmt((CirWaitAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirReturnAssignStatement) {
+			return this.loc_cir_ret_assign_stmt((CirReturnAssignStatement) cir_location);
+		}
+		else if(cir_location instanceof CirCallStatement) {
+			return this.loc_cir_call_stmt((CirCallStatement) cir_location);
+		}
+		else if(cir_location instanceof CirIfStatement) {
+			return this.loc_cir_if_stmt((CirIfStatement) cir_location);
+		}
+		else if(cir_location instanceof CirCaseStatement) {
+			return this.loc_cir_case_stmt((CirCaseStatement) cir_location);
+		}
+		else if(cir_location instanceof CirBegStatement) {
+			return this.loc_cir_beg_stmt((CirBegStatement) cir_location);
+		}
+		else if(cir_location instanceof CirEndStatement) {
+			return this.loc_cir_end_stmt((CirEndStatement) cir_location);
+		}
+		else if(cir_location instanceof CirIfEndStatement) {
+			return this.loc_cir_if_end_stmt((CirIfEndStatement) cir_location);
+		}
+		else if(cir_location instanceof CirCaseEndStatement) {
+			return this.loc_cir_case_end_stmt((CirCaseEndStatement) cir_location);
+		}
+		else if(cir_location instanceof CirDefaultStatement) {
+			return this.loc_cir_default_stmt((CirDefaultStatement) cir_location);
+		}
+		else if(cir_location instanceof CirLabelStatement) {
+			return this.loc_cir_label_stmt((CirLabelStatement) cir_location);
+		}
+		else if(cir_location instanceof CirGotoStatement) {
+			return this.loc_cir_goto_stmt((CirGotoStatement) cir_location);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + cir_location);
 		}
 	}
 	/* CIR-Expression Classes */
@@ -661,6 +632,65 @@ final class UniStoreLocalizer {
 	}
 	private	UniAbstractStore	loc_cir_relate_expr(CirRelationExpression cir_location) throws Exception {
 		return this.new_cir_expr(cir_location.get_ast_source(), cir_location);
+	}
+	private	UniAbstractStore	loc_cir_expression(CirExpression cir_location) throws Exception {
+		if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location instanceof CirDeclarator) {
+			return this.loc_cir_declarator((CirDeclarator) cir_location);
+		}
+		else if(cir_location instanceof CirIdentifier) {
+			return this.loc_cir_identifier((CirIdentifier) cir_location);
+		}
+		else if(cir_location instanceof CirImplicator) {
+			return this.loc_cir_implicator((CirImplicator) cir_location);
+		}
+		else if(cir_location instanceof CirReturnPoint) {
+			return this.loc_cir_retr_point((CirReturnPoint) cir_location);
+		}
+		else if(cir_location instanceof CirDeferExpression) {
+			return this.loc_cir_defer_expr((CirDeferExpression) cir_location);
+		}
+		else if(cir_location instanceof CirFieldExpression) {
+			return this.loc_cir_field_expr((CirFieldExpression) cir_location);
+		}
+		else if(cir_location instanceof CirConstExpression) {
+			return this.loc_cir_const_expr((CirConstExpression) cir_location);
+		}
+		else if(cir_location instanceof CirStringLiteral) {
+			return this.loc_cir_str_literal((CirStringLiteral) cir_location);
+		}
+		else if(cir_location instanceof CirDefaultValue) {
+			return this.loc_cir_default_val((CirDefaultValue) cir_location);
+		}
+		else if(cir_location instanceof CirAddressExpression) {
+			return this.loc_cir_addr_expr((CirAddressExpression) cir_location);
+		}
+		else if(cir_location instanceof CirWaitExpression) {
+			return this.loc_cir_wait_expr((CirWaitExpression) cir_location);
+		}
+		else if(cir_location instanceof CirInitializerBody) {
+			return this.loc_cir_init_body((CirInitializerBody) cir_location);
+		}
+		else if(cir_location instanceof CirCastExpression) {
+			return this.loc_cir_cast_expr((CirCastExpression) cir_location);
+		}
+		else if(cir_location instanceof CirArithExpression) {
+			return this.loc_cir_arith_expr((CirArithExpression) cir_location);
+		}
+		else if(cir_location instanceof CirBitwsExpression) {
+			return this.loc_cir_bitws_expr((CirBitwsExpression) cir_location);
+		}
+		else if(cir_location instanceof CirLogicExpression) {
+			return this.loc_cir_logic_expr((CirLogicExpression) cir_location);
+		}
+		else if(cir_location instanceof CirRelationExpression) {
+			return this.loc_cir_relate_expr((CirRelationExpression) cir_location);
+		}
+		else {
+			throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
+		}
 	}
 	
 	/* AST-centered localization */

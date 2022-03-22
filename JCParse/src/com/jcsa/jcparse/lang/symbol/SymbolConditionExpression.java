@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
@@ -81,6 +83,18 @@ public class SymbolConditionExpression extends SymbolSpecialExpression {
 			expression.add_child(t_operand);
 			expression.add_child(f_operand); return expression;
 		}
+	}
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		CType data_type = this.get_data_type();
+		SymbolExpression condition = this.get_condition();
+		SymbolExpression t_operand = this.get_t_operand();
+		SymbolExpression f_operand = this.get_f_operand();
+		condition = condition.symb_replace(name_value_map);
+		t_operand = t_operand.symb_replace(name_value_map);
+		f_operand = f_operand.symb_replace(name_value_map);
+		return create(data_type, condition, t_operand, f_operand);
 	}
 	
 }

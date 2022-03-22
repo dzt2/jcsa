@@ -120,7 +120,7 @@ public final class CirMutations {
 		}
 		else {																	/* otherwise, compute */
 			try {
-				expression = expression.evaluate(context);
+				expression = expression.evaluate(context, null);
 			}
 			catch(ArithmeticException ex) {
 				expression = trap_value;

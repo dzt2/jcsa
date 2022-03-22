@@ -1,8 +1,21 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
+import com.jcsa.jcparse.lang.ctype.CArrayType;
+import com.jcsa.jcparse.lang.ctype.CBasicType;
+import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CPointerType;
+import com.jcsa.jcparse.lang.ctype.CStructType;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.CUnionType;
 
 /**
  * 	<code>
@@ -49,41 +62,6 @@ public abstract class SymbolExpression extends SymbolNode {
 	 */
 	public CType get_data_type() { return this.data_type; }
 	
-	/* normalization */
-	/**
-	 * @param reset			true to reset the source-name index
-	 * @param index			to preserve map from soruce to identifier name (unique)
-	 * @return 				the expression as normalized version of input source
-	 * @throws Exception
-	 */
-	public SymbolExpression normalize(boolean reset, Map<SymbolExpression, SymbolIdentifier> index) throws Exception {
-		return SymbolNormalizer.normalize(this, reset, index);
-	}
-	/**
-	 * @param reset			true to reset the source-name index
-	 * @return 				the expression as normalized version of input source
-	 * @throws Exception
-	 */
-	public SymbolExpression normalize(boolean reset) throws Exception {
-		return SymbolNormalizer.normalize(this, reset, null);
-	}
-	/**
-	 * it will reset the source-name map
-	 * @param index			to preserve map from soruce to identifier name (unique)
-	 * @return 				the expression as normalized version of input source
-	 * @throws Exception
-	 */
-	public SymbolExpression normalize(Map<SymbolExpression, SymbolIdentifier> index) throws Exception {
-		return SymbolNormalizer.normalize(this, true, index);
-	}
-	/**
-	 * it will reset the source-name map
-	 * @return	the expression as normalized version of input source
-	 * @throws Exception
-	 */
-	public SymbolExpression normalize() throws Exception { return SymbolNormalizer.normalize(this, true, null); }
-	
-	/* evaluation */
 	/**
 	 * @param in_state		the state-context to provide the inputs
 	 * @param ou_state		the state-context to preserve an output
@@ -93,20 +71,141 @@ public abstract class SymbolExpression extends SymbolNode {
 	public SymbolExpression	evaluate(SymbolProcess in_state, SymbolProcess ou_state) throws Exception {
 		return SymbolEvaluator.evaluate(this, in_state, ou_state);
 	}
+	
 	/**
-	 * @param io_state		as both states to input and save output
-	 * @return				the resulting expression from the input
-	 * @throws Exception
+	 * @return the set of reference-expressions used in this expression
 	 */
-	public SymbolExpression evaluate(SymbolProcess io_state) throws Exception {
-		return SymbolEvaluator.evaluate(this, io_state, io_state);
+	public List<SymbolExpression> get_variables() {
+		Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+		List<SymbolExpression> variables = new ArrayList<SymbolExpression>();
+		queue.add(this);
+		while(!queue.isEmpty()) {
+			SymbolNode parent = queue.poll();
+			if(parent.is_refer_type() && parent instanceof SymbolExpression) {
+				variables.add((SymbolExpression) parent);
+			}
+			for(SymbolNode child : parent.get_children()) {
+				queue.add(child);
+			}
+		}
+		return variables;
 	}
+	
 	/**
-	 * @return				the resulting expression from the input
+	 * It replaces the variables used in this expression by the given values 
+	 * @param name_value_map	map from source expression to the value that replaces with it.
+	 * @return					the expression after replacing the specified variables in map.
 	 * @throws Exception
 	 */
-	public SymbolExpression evaluate() throws Exception {
-		return SymbolEvaluator.evaluate(this, null, null);
+	protected abstract SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception;
+	
+	/**
+	 * It replaces the variables used in this expression by the given values 
+	 * @param name_value_map	map from source expression to the value that replaces with it.
+	 * @return					the expression after replacing the specified variables in map.
+	 * @throws Exception
+	 */
+	public SymbolExpression replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		if(name_value_map == null || name_value_map.isEmpty()) {
+			return (SymbolExpression) this.clone();
+		}
+		else {
+			return this.symb_replace(name_value_map);
+		}
+	}
+	
+	/**
+	 * @param variable
+	 * @return the normalized version of variable
+	 * @throws Exception
+	 */
+	private	SymbolExpression normalize(SymbolExpression variable, Set<String> names) throws Exception {
+		if(variable == null || !variable.is_refer_type()) {
+			throw new IllegalArgumentException("Invalid variable: null");
+		}
+		else {
+			if(variable instanceof SymbolIdentifier) {
+				String name = ((SymbolIdentifier) variable).get_name();
+				if(SymbolFactory.special_names.contains(name)) {
+					return variable;
+				}
+			}
+			
+			CType type = SymbolFactory.get_type(variable.get_data_type());
+			String name;
+			if(type instanceof CBasicType) {
+				name = ((CBasicType) type).get_tag().name();
+				if(name.startsWith("c_")) {
+					name = name.substring(2).strip();
+				}
+			}
+			else if(type instanceof CArrayType) {
+				name = "array";
+			}
+			else if(type instanceof CPointerType) {
+				name = "point";
+			}
+			else if(type instanceof CStructType) {
+				name = ((CStructType) type).get_name();
+				if(name == null) {
+					name = "struct";
+				}
+				else if(name.startsWith("struct")) {
+					name = name.substring(6).strip();
+				}
+				if(name.isEmpty()) {
+					name = "struct";
+				}
+			}
+			else if(type instanceof CUnionType) {
+				name = ((CStructType) type).get_name();
+				if(name == null) {
+					name = "union";
+				}
+				else if(name.startsWith("union")) {
+					name = name.substring(5).strip();
+				}
+				if(name.isEmpty()) {
+					name = "union";
+				}
+			}
+			else if(type instanceof CEnumType) {
+				name = "int";
+			}
+			else {
+				name = "auto";
+			}
+			
+			for(int code = 0; code < Integer.MAX_VALUE; code++) {
+				String identifier = name + "#" + code;
+				if(!names.contains(identifier)) {
+					names.add(identifier);
+					return SymbolFactory.identifier(type, name, code);
+				}
+			}
+			throw new IllegalArgumentException("Out-of-Name-Range");
+		}
+	}
+	
+	/**
+	 * @return the normalized version of the expression
+	 * @throws Exception
+	 */
+	public SymbolExpression	normalize() throws Exception {
+		/* 1. derive the variables and their values */
+		List<SymbolExpression> variables = this.get_variables();
+		Map<SymbolExpression, SymbolExpression> name_value_map = 
+				new HashMap<SymbolExpression, SymbolExpression>();
+		Set<String> identifiers = new HashSet<String>();
+		for(SymbolExpression variable : variables) {
+			if(!name_value_map.containsKey(variable)) {
+				SymbolExpression norm_variable = this.normalize(variable, identifiers);
+				name_value_map.put(variable, norm_variable);
+			}
+		}
+		
+		/* 2. it performs the name-value-replacement */
+		return this.replace(name_value_map);
 	}
 	
 }

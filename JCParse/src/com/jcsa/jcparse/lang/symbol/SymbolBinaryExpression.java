@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -124,6 +126,17 @@ public class SymbolBinaryExpression extends SymbolCompositeExpression {
 			expression.add_child(roperand);
 			return expression;
 		}
+	}
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		CType data_type = this.get_data_type();
+		COperator operator = this.get_coperator();
+		SymbolExpression loperand = this.get_loperand();
+		SymbolExpression roperand = this.get_roperand();
+		loperand = loperand.symb_replace(name_value_map);
+		roperand = roperand.symb_replace(name_value_map);
+		return create(data_type, operator, loperand, roperand);
 	}
 	
 }

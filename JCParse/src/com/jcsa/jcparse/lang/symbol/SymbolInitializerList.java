@@ -2,6 +2,8 @@ package com.jcsa.jcparse.lang.symbol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 
 /**
@@ -84,5 +86,15 @@ public class SymbolInitializerList extends SymbolSpecialExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < this.number_of_elements(); k++) {
+			SymbolExpression element = this.get_element(k);
+			elements.add(element.symb_replace(name_value_map));
+		}
+		return create(elements);
+	}
 	
 }

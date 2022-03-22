@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
@@ -76,6 +78,16 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	 */
 	protected static SymbolIdentifier create(CType type, String name, Object scope) throws Exception {
 		return new SymbolIdentifier(type, name, scope);
+	}
+	
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		if(name_value_map.containsKey(this)) {
+			return name_value_map.get(this);
+		}
+		else {
+			return this;
+		}
 	}
 	
 }

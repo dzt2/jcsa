@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 
 public class SymbolFieldExpression extends SymbolSpecialExpression {
@@ -32,9 +34,6 @@ public class SymbolFieldExpression extends SymbolSpecialExpression {
 		else if(field == null) {
 			throw new IllegalArgumentException("Invalid field: null");
 		}
-		else if(!body.is_reference()) {
-			throw new IllegalArgumentException("Not-reference: " + body.generate_code(true));
-		}
 		else {
 			SymbolFieldExpression expression = new SymbolFieldExpression(type);
 			expression.add_child(body); expression.add_child(field); return expression;
@@ -60,5 +59,19 @@ public class SymbolFieldExpression extends SymbolSpecialExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		if(name_value_map.containsKey(this)) {
+			return name_value_map.get(this);
+		}
+		else {
+			CType data_type = this.get_data_type();
+			SymbolExpression body = this.get_body();
+			SymbolField field = this.get_field();
+			body = body.symb_replace(name_value_map);
+			return create(data_type, body, field);
+		}
+	}
 	
 }

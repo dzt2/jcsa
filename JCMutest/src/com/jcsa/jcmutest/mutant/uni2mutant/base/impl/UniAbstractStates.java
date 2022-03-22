@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.uni2mutant;
+package com.jcsa.jcmutest.mutant.uni2mutant.base.impl;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -8,7 +8,6 @@ import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
-import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
@@ -22,14 +21,15 @@ import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolProcess;
 
 /**
- * It defines the abstract values used in UniAbstractState and constructors.
+ * 	It performs the construction and generation of UniAbstractState from various
+ * 	state-location based on CirNode or AstNode.
  * 
- * @author yukimula
+ * 	@author yukimula
  *
  */
-public final class UniMutations {
+public final class UniAbstractStates {
 	
-	/* definitions */
+	/* abstract-values */
 	/** {true, false} **/
 	public static final SymbolExpression bool_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@BoolValue");
 	/** true **/
@@ -59,138 +59,128 @@ public final class UniMutations {
 	/** abstract value of the exception **/
 	public static final SymbolExpression trap_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");	
 	
-	/* exception-included symbolic computation */
+	/* value-verification */
 	/**
-	 * @param root
-	 * @return whether the node has trap_value among it.
+	 * @param node
+	 * @return whether the node is 
 	 */
-	private static boolean has_trap_value(SymbolNode root) {
-		Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-		queue.add(root); SymbolNode parent;
-		while(!queue.isEmpty()) {
-			parent = queue.poll();
-			if(parent.is_leaf()) {
-				if(parent instanceof SymbolIdentifier
-					&& parent.equals(trap_value))
-				return true;
-			}
-			else {
-				for(SymbolNode child : parent.get_children()) {
-					queue.add(child);
-				}
-			}
-		}
-		return false;
+	private static boolean is_trap_value(SymbolNode node) {
+		if(node instanceof SymbolIdentifier)
+			return node.equals(trap_value);
+		else
+			return false;
 	}
 	/**
 	 * @param expression
-	 * @param context
-	 * @return trap_value iff. arithmetic operation occurs
-	 * @throws Exception
+	 * @return whether the symbolic expression contains trap_value
 	 */
-	private static SymbolExpression compute(SymbolExpression expression, SymbolProcess context) throws Exception {
-		if(expression == null) {												/* input-validate */
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(has_trap_value(expression)) {									/* trap at this point */
-			return trap_value;
-		}
-		else {																	/* otherwise, compute */
-			try {
-				expression = expression.evaluate(context);
-			}
-			catch(ArithmeticException ex) {
-				expression = trap_value;
-			}
-			return expression;
-		}
-	}
-	/**
-	 * @param expression
-	 * @param context
-	 * @return optimized expression from the context or trap_value
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess context) throws Exception {
-		return compute(expression, context);
-	}
-	/**
-	 * @param expression
-	 * @return optimized expression from the context or trap_value
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
-		return compute(expression, null);
-	}
-	/**
-	 * @param expression
-	 * @return whether the symbolic expression contains trapping exception results
-	 * @throws Exception
-	 */
-	public static boolean is_trap_value(SymbolExpression expression) throws Exception { return has_trap_value(expression); }
-	/**
-	 * @param expression
-	 * @return whether the expression uses any abstract value within
-	 * @throws Exception
-	 */
-	private static boolean is_abst_value(SymbolExpression expression) throws Exception {
+	public static boolean has_trap_value(SymbolExpression expression) {
 		if(expression == null) {
 			return false;
 		}
 		else {
-			return expression.equals(bool_value) || expression.equals(true_value) || expression.equals(fals_value)
-					|| expression.equals(post_value) || expression.equals(negt_value) || expression.equals(zero_value)
-					|| expression.equals(npos_value) || expression.equals(nneg_value) || expression.equals(nzro_value)
-					|| expression.equals(numb_value) || expression.equals(null_value) || expression.equals(nnul_value)
-					|| expression.equals(addr_value);
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(expression);
+			while(!queue.isEmpty()) {
+				SymbolNode parent = queue.poll();
+				if(is_trap_value(parent)) { return true; }
+				for(SymbolNode child : parent.get_children()) {
+					queue.add(child);
+				}
+			}
+			return false;
 		}
 	}
 	/**
-	 * @param root
-	 * @return whether it contains the abstract values defined
-	 * @throws Exception
+	 * @param node
+	 * @return whether the node is any abstract value defined in
 	 */
-	public static boolean has_abst_value(SymbolNode root) throws Exception {
-		if(root == null) {
+	private static boolean is_abst_value(SymbolNode node) {
+		if(node instanceof SymbolIdentifier) {
+			return node.equals(bool_value) || node.equals(true_value) || node.equals(fals_value) || 
+					node.equals(numb_value) || node.equals(post_value) || node.equals(negt_value) || 
+					node.equals(zero_value) || node.equals(npos_value) || node.equals(nneg_value) ||
+					node.equals(nzro_value) || node.equals(addr_value) || node.equals(null_value) ||
+					node.equals(nnul_value);
+		}
+		else {
+			return false;
+		}
+	}
+	/**
+	 * @param expression
+	 * @return whether the symbolic expression contains any abstract values
+	 */
+	public static boolean has_abst_value(SymbolExpression expression) {
+		if(expression == null) {
 			return false;
 		}
 		else {
 			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(root); SymbolNode parent;
+			queue.add(expression);
 			while(!queue.isEmpty()) {
-				parent = queue.poll();
-				if(parent.is_leaf()) {
-					if(parent instanceof SymbolIdentifier
-						&& is_abst_value((SymbolExpression) parent))
-					return true;
-				}
-				else {
-					for(SymbolNode child : parent.get_children()) {
-						queue.add(child);
-					}
+				SymbolNode parent = queue.poll();
+				if(is_abst_value(parent)) { return true; }
+				for(SymbolNode child : parent.get_children()) {
+					queue.add(child);
 				}
 			}
 			return false;
 		}
 	}
-	
-	/* data type classification */
 	/**
-	 * @param data_type
-	 * @return null if the original data type is invalid
-	 */ 
-	private static CType get_normalized_type(CType data_type) {
-		if(data_type == null) {
-			return CBasicTypeImpl.void_type;	
+	 * @param expression
+	 * @param context
+	 * @return return trap_value if arithmetic-exception arises during computation
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression, 
+			SymbolProcess in_context, SymbolProcess ou_context) throws Exception {
+		if(expression == null) {												/* input-validate */
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(has_trap_value(expression)) {
+			return trap_value;
+		}
+		else if(has_abst_value(expression)) {
+			return expression;
 		}
 		else {
 			try {
-				return CTypeAnalyzer.get_value_type(data_type);
+				return expression.evaluate(in_context, ou_context);
 			}
-			catch(Exception ex) {
-				return CBasicTypeImpl.void_type;
+			catch(ArithmeticException ex) {
+				return trap_value;
 			}
 		}
+	}
+	/**
+	 * @param expression
+	 * @param context
+	 * @return return trap_value if arithmetic-exception arises during computation
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression, 
+			SymbolProcess io_context) throws Exception {
+		return evaluate(expression, io_context, io_context);
+	}
+	/**
+	 * @param expression
+	 * @param context
+	 * @return return trap_value if arithmetic-exception arises during computation
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
+		return evaluate(expression, null, null);
+	}
+	
+	/* type-classification */
+	/**
+	 * @param data_type
+	 * @return the normalized data type
+	 */
+	public static CType get_normalized_type(CType data_type) {
+		return SymbolFactory.get_type(data_type);
 	}
 	/**
 	 * @param data_type
@@ -410,9 +400,7 @@ public final class UniMutations {
 		}
 	}
 	
-	
-	
-	
+	/* symbolic evaluation */
 	
 	
 	

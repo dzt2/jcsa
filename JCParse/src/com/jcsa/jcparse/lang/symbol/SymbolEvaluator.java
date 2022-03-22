@@ -64,7 +64,7 @@ public final class SymbolEvaluator {
 		else if(value == null) {
 			throw new IllegalArgumentException("Invalid value as null");
 		}
-		else if(!reference.is_reference()) {
+		else if(!reference.is_reference() && !(reference instanceof SymbolCallExpression)) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
 		else if(this.ou_state != null) {this.ou_state.set_value(reference, value);}

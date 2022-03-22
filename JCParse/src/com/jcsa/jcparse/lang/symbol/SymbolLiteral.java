@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 
@@ -82,5 +84,10 @@ public class SymbolLiteral extends SymbolBasicExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
+	
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		return this;
+	}
 	
 }

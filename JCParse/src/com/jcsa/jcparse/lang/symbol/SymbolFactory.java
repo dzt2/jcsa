@@ -1,7 +1,9 @@
 package com.jcsa.jcparse.lang.symbol;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -118,6 +120,83 @@ import com.jcsa.jcparse.lang.scope.CParameterName;
  *
  */
 public class SymbolFactory {
+	
+	/* parameters */
+	protected static final Set<String> special_names = new HashSet<String>();
+	static {
+		special_names.add("return");
+		special_names.add("if");
+		special_names.add("case");
+		special_names.add("switch");
+		special_names.add("for");
+		special_names.add("while");
+		special_names.add("do");
+		special_names.add("@stmt");
+		// special_names.add("@ast");
+		special_names.add("default");
+	}
+	/**
+	 * @param expression
+	 * @return it produces the normalized name for given expression (reference)
+	 * @throws Exception
+	 */
+	protected static SymbolExpression normalize(SymbolExpression expression) throws Exception {
+		if(expression == null || !expression.is_refer_type()) {
+			throw new IllegalArgumentException("Invalid: " + expression);
+		}
+		else {
+			if(expression instanceof SymbolIdentifier) {
+				String name = ((SymbolIdentifier) expression).get_name();
+				if(special_names.contains(name)) { return expression; }
+			}
+			CType type = get_type(expression.get_data_type());
+			
+			String name;
+			if(type instanceof CBasicType) {
+				name = ((CBasicType) type).get_tag().name();
+				if(name.startsWith("c_")) {
+					name = name.substring(2).strip();
+				}
+			}
+			else if(type instanceof CArrayType) {
+				name = "array";
+			}
+			else if(type instanceof CPointerType) {
+				name = "point";
+			}
+			else if(type instanceof CStructType) {
+				name = ((CStructType) type).get_name();
+				if(name == null) {
+					name = "struct";
+				}
+				else if(name.startsWith("struct")) {
+					name = name.substring(6).strip();
+				}
+				if(name.isEmpty()) {
+					name = "struct";
+				}
+			}
+			else if(type instanceof CUnionType) {
+				name = ((CStructType) type).get_name();
+				if(name == null) {
+					name = "union";
+				}
+				else if(name.startsWith("union")) {
+					name = name.substring(5).strip();
+				}
+				if(name.isEmpty()) {
+					name = "union";
+				}
+			}
+			else if(type instanceof CEnumType) {
+				name = "int";
+			}
+			else {
+				name = "auto";
+			}
+			return SymbolIdentifier.create(type, name, expression.hashCode());
+		}
+	}
 	
 	/* definitions */
 	/** the template used to support sizeof-operation **/

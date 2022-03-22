@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.symbol;
 
+import java.util.Map;
+
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
@@ -86,6 +88,20 @@ public class SymbolUnaryExpression extends SymbolCompositeExpression {
 			}
 			expression.add_child(SymbolOperator.create(operator));
 			expression.add_child(operand); return expression;
+		}
+	}
+
+	@Override
+	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
+		if(name_value_map.containsKey(this)) {
+			return name_value_map.get(this);
+		}
+		else {
+			CType data_type = this.get_data_type();
+			COperator operator = this.get_coperator();
+			SymbolExpression operand = this.get_operand();
+			operand = operand.symb_replace(name_value_map);
+			return create(data_type, operator, operand);
 		}
 	}
 	

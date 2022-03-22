@@ -1,17 +1,32 @@
 package com.jcsa.jcmutest.mutant.uni2mutant.base;
 
-import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.uni2mutant.UniMutations;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.impl.UniAbstractStates;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
-import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * It creates an abstract symbolic state used to describe mutation testing process.
+ * 	It creates an abstract symbolic state used to describe mutation testing process.
+ * 	<br>
+ * 	<code>
+ * 	UniAbstractState				[class; store; lvalue, rvalue]				<br>
+ * 	|--	UniConditionalState			class(statement; lvalue, rvalue)			<br>
+ * 	|--	|--	UniCoverTimesState		cov_time(statement; min_times, max_times)	<br>
+ * 	|--	|--	UniConstraintState		eva_bool(statement; condition, must_need)	<br>
+ * 	|--	|--	UniSeedMutantState		sed_muta(statement; mutant_ID, clas_oprt)	<br>
+ * 	|--	UniPathErrorState			class(statement; lvalue, rvalue)			<br>
+ * 	|--	|--	UniBlockErrorState		mut_stmt(statement; orig_exec, muta_exec)	<br>
+ * 	|--	|--	UniFlowsErrorState		mut_flow(statement; orig_next, muta_next)	<br>
+ * 	|--	|--	UniTrapsErrorState		trp_stmt(statement; exception, exception)	<br>
+ * 	|--	UniDataErrorState			class(expression; orig_value, parameter)	<br>
+ * 	|--	|--	UniValueErrorState		set_expr(expression; orig_value, muta_value)<br>
+ * 	|--	|--	UniIncreErrorState		inc_expr(expression; orig_value, difference)<br>
+ * 	|--	|--	UniBixorErrorState		xor_expr(expression; orig_value, difference)<br>
+ * 	</code>
  * 
- * @author yukimula
+ * 	@author yukimula
  *
  */
-public class UniAbstractState {
+public abstract class UniAbstractState {
 	
 	/* attributes */
 	/** the class of this abstract symbolic state **/
@@ -30,7 +45,7 @@ public class UniAbstractState {
 	 * @param roperand		the righ-operand used to define the state
 	 * @throws Exception
 	 */
-	private	UniAbstractState(UniAbstractClass state_class,
+	protected UniAbstractState(UniAbstractClass state_class,
 			UniAbstractStore state_store,
 			SymbolExpression loperand,
 			SymbolExpression roperand) throws Exception {
@@ -49,8 +64,8 @@ public class UniAbstractState {
 		else {
 			this.state_class = state_class;
 			this.state_store = state_store;
-			this.loperand = UniMutations.evaluate(loperand);
-			this.roperand = UniMutations.evaluate(roperand);
+			this.loperand = UniAbstractStates.evaluate(loperand);
+			this.roperand = UniAbstractStates.evaluate(roperand);
 		}
 	}
 	
@@ -71,6 +86,10 @@ public class UniAbstractState {
 	 * @return the righ-operand used to define the state
 	 */
 	public 	SymbolExpression	get_rvalue() { return this.roperand; }
+	/**
+	 * @return the execution point where this state is defined
+	 */
+	public 	CirExecution get_execution() { return this.state_store.get_exe_location(); }
 	
 	/* general */
 	@Override
@@ -97,83 +116,45 @@ public class UniAbstractState {
 		}
 	}
 	
-	/* factory */
+	/* classify */
 	/**
-	 * @param store		the location where this state will be evaluated
-	 * @param min_times	the minimal times to execute the target statement
-	 * @param max_times	the maximal times to execute the target statement
-	 * @return			cov_times(store_location; min_times, max_times)
-	 * @throws Exception
+	 * @return {cov_time, eva_bool, sed_muta}
 	 */
-	public static UniAbstractState	cov_time(UniAbstractStore store, int min_times, int max_times) throws Exception {
-		if(store == null) {
-			throw new IllegalArgumentException("Invalid store: null");
-		}
-		else if(min_times > max_times || max_times < 0) {
-			throw new IllegalArgumentException("Invalid: " + min_times + " --> " + max_times);
-		}
-		else {
-			if(store.is_statement() || store.is_gotolabel()) {
-				return new UniAbstractState(UniAbstractClass.cov_time, store,
-						SymbolFactory.sym_constant(Integer.valueOf(min_times)),
-						SymbolFactory.sym_constant(Integer.valueOf(max_times)));
-			}
-			else {
-				throw new IllegalArgumentException("Unsupport: " + store.toString());
-			}
+	public boolean is_conditions() {
+		switch(this.state_class) {
+		case cov_time:
+		case eva_bool:
+		case sed_muta:	return true;
+		default:		return false;
 		}
 	}
 	/**
-	 * @param store		the location where this state will be evaluated
-	 * @param condition	the condition to be evaluated at the given node
-	 * @param must_need	True (always satisfied); False (met at least once)
-	 * @return			eva_bool(store_location; condition, must_need)
-	 * @throws Exception
+	 * @return {mut_stmt, mut_flow, trp_stmt}
 	 */
-	public static UniAbstractState	eva_bool(UniAbstractStore store, Object condition, boolean must_need) throws Exception {
-		if(store == null) {
-			throw new IllegalArgumentException("Invalid store: null");
-		}
-		else if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition: null");
-		}
-		else {
-			if(store.is_statement() || store.is_gotolabel()) {
-				return new UniAbstractState(UniAbstractClass.eva_bool, store,
-						SymbolFactory.sym_condition(condition, true),
-						SymbolFactory.sym_constant(Boolean.valueOf(must_need)));
-			}
-			else {
-				throw new IllegalArgumentException("Unsupport: " + store.toString());
-			}
+	public boolean is_path_error() {
+		switch(this.state_class) {
+		case mut_stmt:
+		case mut_flow:
+		case trp_stmt:	return true;
+		default:		return false;
 		}
 	}
 	/**
-	 * @param store		the location where this state will be evaluated
-	 * @param mutant	the syntactic mutation to be injected here.....
-	 * @return			sed_muta(store_location; mutant_ID, clas_oprt)
-	 * @throws Exception
+	 * @return {set_expr, inc_expr, xor_expr}
 	 */
-	public static UniAbstractState	sed_muta(UniAbstractStore store, Mutant mutant) throws Exception {
-		if(store == null) {
-			throw new IllegalArgumentException("Invalid store: null");
-		}
-		else if(mutant == null) {
-			throw new IllegalArgumentException("Invalid mutant: null");
-		}
-		else {
-			if(store.is_statement() || store.is_gotolabel()) {
-				String literal = mutant.get_mutation().get_operator().toString();
-				return new UniAbstractState(UniAbstractClass.sed_muta, store,
-						SymbolFactory.sym_constant(Integer.valueOf(mutant.get_id())),
-						SymbolFactory.sym_expression(literal));
-			}
-			else {
-				throw new IllegalArgumentException("Unsupport: " + store.toString());
-			}
+	public boolean is_data_error() {
+		switch(this.state_class) {
+		case set_expr:
+		case inc_expr:
+		case xor_expr:	return true;
+		default:		return false;
 		}
 	}
-	// TODO append more classes factory here...
-	
+	/**
+	 * @return {mut_stmt, mut_flow, trp_stmt, set_expr, inc_expr, xor_expr}
+	 */
+	public boolean is_abst_error() {
+		return this.is_path_error() || this.is_data_error();
+	}
 	
 }
