@@ -93,7 +93,7 @@ public class CSymbolNodeTest {
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
 			SymbolProcess context = new SymbolProcess();
 			SymbolExpression eval_expr = expression.evaluate(null, context);
-			SymbolExpression norm_expr = expression.normalize();
+			SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 			
 			writer.write("\tSEXP:\t" + expression.generate_simple_code() + "\n");
 			writer.write("\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
@@ -152,7 +152,7 @@ public class CSymbolNodeTest {
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
 			SymbolProcess context = new SymbolProcess();
 			SymbolExpression eval_expr = expression.evaluate(null, context);
-			SymbolExpression norm_expr = expression.normalize();
+			SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 			
 			writer.write("\t\tSEXP:\t" + expression.generate_simple_code() + "\n");
 			writer.write("\t\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
