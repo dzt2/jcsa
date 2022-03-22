@@ -823,11 +823,14 @@ final class UniStoreLocalizer {
 			return this.loc_ast(this.cir_tree, ast_location.get_declarator_list());
 		}
 		else {
-			throw new IllegalArgumentException("Undefined init_declarator_list.");
+			CirStatement cir_location = this.cir_tree.get_localizer().beg_statement(ast_location);
+			return this.loc_cir(cir_location);
 		}
 	}
 	private	UniAbstractStore	loc_ast_init_declarator_list(AstInitDeclaratorList ast_location) throws Exception {
-		return this.loc_ast(this.cir_tree, ast_location.get_init_declarator(0));
+		CirStatement cir_location = this.cir_tree.get_localizer().beg_statement(ast_location);
+		return this.loc_cir(cir_location);
+		// return this.loc_ast(this.cir_tree, ast_location.get_init_declarator(0));
 	}
 	/* AST-Statement Classes */
 	private	UniAbstractStore	loc_ast_statement(AstStatement ast_location) throws Exception {

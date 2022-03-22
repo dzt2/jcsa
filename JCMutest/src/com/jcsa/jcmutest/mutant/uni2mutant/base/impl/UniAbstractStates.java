@@ -6,12 +6,14 @@ import java.util.Queue;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractSType;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractStore;
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
@@ -692,5 +694,77 @@ public final class UniAbstractStates {
 			return new UniBixorErrorState(store, orig_value, muta_value);
 		}
 	}
+	
+	/* factory methods (AST-based) */
+	/**
+	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
+	 * @param location	the AST-based location where the coverage state is validated
+	 * @param min_times	the minimal times of the location should be executed for
+	 * @param max_times	the maximal times of the location should be executed for
+	 * @return			cov_time(location; min_times, max_times)
+	 * @throws Exception
+	 */
+	public static UniCoverTimesState	cov_time(CirTree cir_tree, 
+			AstNode location, int min_times, int max_times) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid statement: null");
+		}
+		else if(min_times > max_times || max_times < 0) {
+			throw new IllegalArgumentException(min_times + "::" + max_times);
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
+			return new UniCoverTimesState(store, min_times, max_times);
+		}
+	}
+	/**
+	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
+	 * @param location	the AST-based location where the coverage state is validated
+	 * @param condition	the symbolic condition to be evaluated and needs be satisfied there
+	 * @param must_need	True {always be satisfied}; False {be satisfied at least one time};
+	 * @return			eva_bool(statement; condition, must_need)
+	 * @throws Exception
+	 */
+	public static UniConstraintState	eva_bool(CirTree cir_tree, 
+			AstNode location, Object condition, boolean must_need) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid statement: null");
+		}
+		else if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
+			return new UniConstraintState(store, condition, must_need);
+		}
+	}
+	/**
+	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
+	 * @param statement	the statement, in which the syntactic mutation is injected
+	 * @param mutant	the syntactic variant to be injected in the statement node
+	 * @return			sed_muta(statement; mutant_ID, class_operator)
+	 * @throws Exception
+	 */
+	public static UniSeedMutantState	sed_muta(CirTree cir_tree, 
+			AstNode location, Mutant mutant) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid statement: null");
+		}
+		else if(mutant == null) {
+			throw new IllegalArgumentException("Invalid mutant: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
+			return new UniSeedMutantState(store, mutant);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	
 }
