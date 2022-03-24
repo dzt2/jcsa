@@ -13,6 +13,7 @@ public enum SymbolClass {
 	argument_list,
 	field_name,
 	expr_operator,
+	func_definition,
 	/* base_expr */
 	identifier,
 	constant,

@@ -4,16 +4,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractSType;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractStore;
-import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
-import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
@@ -525,125 +522,27 @@ public final class UniAbstractStates {
 		}
 	}
 	/**
-	 * @param expression	the expression of which value will be replaced by value
-	 * @param value			the value to replace the original value of expression
-	 * @return				set_expr(expression; orig_expr, muta_expr)
+	 * @param expression	the expression of which value will be replaced by
+	 * @param value			the value to replace the original expression given
+	 * @return				set_expr(expression; orig_value, muta_value)
 	 * @throws Exception
 	 */
 	public static UniValueErrorState	set_expr(CirExpression expression, Object value) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
+		if(expression == null || expression.statement_of() == null) {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
 		else if(value == null) {
-			throw new IllegalArgumentException("Invalid value: null");
+			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
 		else {
+			SymbolExpression orig_value, muta_value;
 			UniAbstractStore store = UniAbstractStore.cir_node(expression);
-			SymbolExpression orig_value, muta_value;
-			if(store.get_store_class() == UniAbstractSType.cdef_expr) {
+			if(UniAbstractStates.is_assigned(expression)) {
 				CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-				CirExpression rvalue = statement.get_rvalue();
-				if(UniAbstractStates.is_boolean(rvalue)) {
-					orig_value = SymbolFactory.sym_condition(rvalue, true);
-					muta_value = SymbolFactory.sym_condition(value, true);
-				}
-				else {
-					orig_value = SymbolFactory.sym_expression(rvalue);
-					muta_value = SymbolFactory.sym_expression(value);
-				}
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(value);
 			}
-			else if(store.get_store_class() == UniAbstractSType.cond_expr) {
-				orig_value = SymbolFactory.sym_condition(expression, true);
-				muta_value = SymbolFactory.sym_condition(value, true);
-			}
-			else {
-				if(UniAbstractStates.is_boolean(expression)) {
-					orig_value = SymbolFactory.sym_condition(expression, true);
-					muta_value = SymbolFactory.sym_condition(value, true);
-				}
-				else {
-					orig_value = SymbolFactory.sym_expression(expression);
-					muta_value = SymbolFactory.sym_expression(value);
-				}
-			}
-			return new UniValueErrorState(store, orig_value, muta_value);
-		}
-	}
-	/**
-	 * @param expression	the expression of which value is incremented by difference
-	 * @param difference	the different value to be incremented to the input expression
-	 * @return				inc_expr(expression; orig_value, difference)
-	 * @throws Exception
-	 */
-	public static UniIncreErrorState	inc_expr(CirExpression expression, Object difference) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else {
-			UniAbstractStore store = UniAbstractStore.cir_node(expression);
-			SymbolExpression orig_value, muta_value;
-			if(store.get_store_class() == UniAbstractSType.cdef_expr) {
-				CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-				CirExpression rvalue = statement.get_rvalue();
-				orig_value = SymbolFactory.sym_expression(rvalue);
-				muta_value = SymbolFactory.sym_expression(difference);
-			}
-			else {
-				orig_value = SymbolFactory.sym_expression(expression);
-				muta_value = SymbolFactory.sym_expression(difference);
-			}
-			return new UniIncreErrorState(store, orig_value, muta_value);
-		}
-	}
-	/**
-	 * @param expression	the expression of which value is incremented by difference
-	 * @param difference	the different value to be incremented to the input expression
-	 * @return				xor_expr(expression; orig_value, difference)
-	 * @throws Exception
-	 */
-	public static UniBixorErrorState	xor_expr(CirExpression expression, Object difference) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else {
-			UniAbstractStore store = UniAbstractStore.cir_node(expression);
-			SymbolExpression orig_value, muta_value;
-			if(store.get_store_class() == UniAbstractSType.cdef_expr) {
-				CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
-				CirExpression rvalue = statement.get_rvalue();
-				orig_value = SymbolFactory.sym_expression(rvalue);
-				muta_value = SymbolFactory.sym_expression(difference);
-			}
-			else {
-				orig_value = SymbolFactory.sym_expression(expression);
-				muta_value = SymbolFactory.sym_expression(difference);
-			}
-			return new UniBixorErrorState(store, orig_value, muta_value);
-		}
-	}
-	/**
-	 * @param expression	the expression as the new-definition point to accept the value
-	 * @param value			the mutated value to replace with the original expression
-	 * @return				set_expr(vdef:expression; orig_value, muta_value)
-	 * @throws Exception
-	 */
-	public static UniValueErrorState	set_vdef(CirExpression expression, Object value) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid value: null");
-		}
-		else {
-			UniAbstractStore store = UniAbstractStore.new_vdef(expression.get_ast_source(), expression);
-			SymbolExpression orig_value, muta_value;
-			if(UniAbstractStates.is_boolean(expression)) {
+			else if(UniAbstractStates.is_boolean(expression)) {
 				orig_value = SymbolFactory.sym_condition(expression, true);
 				muta_value = SymbolFactory.sym_condition(value, true);
 			}
@@ -655,114 +554,67 @@ public final class UniAbstractStates {
 		}
 	}
 	/**
-	 * @param expression	the expression as the new-definition point to accept the value
-	 * @param value			the mutated value to replace with the original expression
-	 * @return				inc_expr(vdef:expression; orig_value, difference)
+	 * @param expression	the expression of which value will be incremented by
+	 * @param value			the value to increment the original expression given
+	 * @return				inc_expr(expression; orig_value, muta_value)
 	 * @throws Exception
 	 */
-	public static UniIncreErrorState	inc_vdef(CirExpression expression, Object difference) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
+	public static UniIncreErrorState	inc_expr(CirExpression expression, Object value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
 		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid value: null");
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
-		else {
-			UniAbstractStore store = UniAbstractStore.new_vdef(expression.get_ast_source(), expression);
-			SymbolExpression orig_value = SymbolFactory.sym_expression(expression);
-			SymbolExpression muta_value = SymbolFactory.sym_expression(difference);
+		else if(UniAbstractStates.is_numeric(expression) || UniAbstractStates.is_address(expression)) {
+			SymbolExpression orig_value, muta_value;
+			UniAbstractStore store = UniAbstractStore.cir_node(expression);
+			if(UniAbstractStates.is_assigned(expression)) {
+				CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(value);
+			}
+			else {
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(value);
+			}
 			return new UniIncreErrorState(store, orig_value, muta_value);
 		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + expression);
+		}
 	}
 	/**
-	 * @param expression	the expression as the new-definition point to accept the value
-	 * @param value			the mutated value to replace with the original expression
-	 * @return				xor_expr(vdef:expression; orig_value, difference)
+	 * @param expression	the expression of which value will be incremented by
+	 * @param value			the value to increment the original expression given
+	 * @return				xor_expr(expression; orig_value, muta_value)
 	 * @throws Exception
 	 */
-	public static UniBixorErrorState	xor_vdef(CirExpression expression, Object difference) throws Exception {
-		if(expression == null || expression.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
+	public static UniBixorErrorState	xor_expr(CirExpression expression, Object value) throws Exception {
+		if(expression == null || expression.statement_of() == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
 		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid value: null");
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
-		else {
-			UniAbstractStore store = UniAbstractStore.new_vdef(expression.get_ast_source(), expression);
-			SymbolExpression orig_value = SymbolFactory.sym_expression(expression);
-			SymbolExpression muta_value = SymbolFactory.sym_expression(difference);
+		else if(UniAbstractStates.is_integer(expression)) {
+			SymbolExpression orig_value, muta_value;
+			UniAbstractStore store = UniAbstractStore.cir_node(expression);
+			if(UniAbstractStates.is_assigned(expression)) {
+				CirAssignStatement statement = (CirAssignStatement) expression.statement_of();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(value);
+			}
+			else {
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(value);
+			}
 			return new UniBixorErrorState(store, orig_value, muta_value);
 		}
-	}
-	
-	/* factory methods (AST-based) */
-	/**
-	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
-	 * @param location	the AST-based location where the coverage state is validated
-	 * @param min_times	the minimal times of the location should be executed for
-	 * @param max_times	the maximal times of the location should be executed for
-	 * @return			cov_time(location; min_times, max_times)
-	 * @throws Exception
-	 */
-	public static UniCoverTimesState	cov_time(CirTree cir_tree, 
-			AstNode location, int min_times, int max_times) throws Exception {
-		if(location == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(min_times > max_times || max_times < 0) {
-			throw new IllegalArgumentException(min_times + "::" + max_times);
-		}
 		else {
-			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
-			return new UniCoverTimesState(store, min_times, max_times);
+			throw new IllegalArgumentException("Unsupported: " + expression);
 		}
 	}
-	/**
-	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
-	 * @param location	the AST-based location where the coverage state is validated
-	 * @param condition	the symbolic condition to be evaluated and needs be satisfied there
-	 * @param must_need	True {always be satisfied}; False {be satisfied at least one time};
-	 * @return			eva_bool(statement; condition, must_need)
-	 * @throws Exception
-	 */
-	public static UniConstraintState	eva_bool(CirTree cir_tree, 
-			AstNode location, Object condition, boolean must_need) throws Exception {
-		if(location == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition: null");
-		}
-		else {
-			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
-			return new UniConstraintState(store, condition, must_need);
-		}
-	}
-	/**
-	 * @param cir_tree	the C-intermediate representation tree to derive cir_node
-	 * @param statement	the statement, in which the syntactic mutation is injected
-	 * @param mutant	the syntactic variant to be injected in the statement node
-	 * @return			sed_muta(statement; mutant_ID, class_operator)
-	 * @throws Exception
-	 */
-	public static UniSeedMutantState	sed_muta(CirTree cir_tree, 
-			AstNode location, Mutant mutant) throws Exception {
-		if(location == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(mutant == null) {
-			throw new IllegalArgumentException("Invalid mutant: null");
-		}
-		else {
-			UniAbstractStore store = UniAbstractStore.ast_node(cir_tree, location);
-			return new UniSeedMutantState(store, mutant);
-		}
-	}
-	
-	
-	
-	
-	
 	
 	
 	
