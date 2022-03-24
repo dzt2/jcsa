@@ -1,9 +1,13 @@
 package com.jcsa.jcparse.lang.symb;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
+import com.jcsa.jcparse.lang.ctype.CFieldBody;
 import com.jcsa.jcparse.lang.ctype.CFunctionType;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CQualifierType;
@@ -410,8 +414,145 @@ public final class SymbolFactory {
 		return SymbolParser.parse_to_bool(source, value);
 	}
 	
-	// TODO implement factory interfaces as following.
-	
+	/* factory methods */
+	/**
+	 * @param type	the data type of the identifier expression
+	 * @param name	the simple name of the identifier
+	 * @param scope	the scope where the name is defined
+	 * @return		name#scope
+	 * @throws Exception
+	 */
+	public static SymbolIdentifier	new_identifier(CType type, String name, Object scope) throws Exception {
+		return SymbolIdentifier.create(type, name, scope);
+	}
+	/**
+	 * @param constant	[Boolean|Character|Short|Integer|Long|Float|Double|CConstant]
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolConstant	new_constant(Object constant) throws Exception {
+		return sym_constant(constant);
+	}
+	/**
+	 * @param literal
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolLiteral		new_literal(String literal) throws Exception {
+		return SymbolLiteral.create(literal);
+	}
+	/**
+	 * @param cast_type	the type to cast the sub-operand
+	 * @param operand	the unary operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolCastExpression new_cast_expression(CType cast_type, Object operand) throws Exception {
+		return SymbolCastExpression.create(SymbolType.create(cast_type), sym_expression(operand));
+	}
+	/**	
+	 * @param body	the symbolic expression as the body of field-expression
+	 * @param field	the field to derive the body's expression
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolFieldExpression new_field_expression(Object body, String field) throws Exception {
+		SymbolExpression sbody = sym_expression(body);
+		SymbolField sfield = SymbolField.create(field);
+		
+		CType data_type = sbody.get_data_type();
+		if(data_type instanceof CPointerType) {
+			data_type = ((CPointerType) data_type).get_pointed_type();
+			data_type = SymbolFactory.get_type(data_type);
+		}
+		
+		CFieldBody fields;
+		if(data_type instanceof CStructType) {
+			fields = ((CStructType) data_type).get_fields();
+		}
+		else if(data_type instanceof CUnionType) {
+			fields = ((CUnionType) data_type).get_fields();
+		}
+		else {
+			throw new IllegalArgumentException(data_type.generate_code());
+		}
+		data_type = fields.get_field(field).get_type();
+		
+		return SymbolFieldExpression.create(data_type, sbody, sfield);
+	}
+	/**
+	 * @param condition
+	 * @param t_operand
+	 * @param f_operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolIfElseExpression new_ifte_expression(Object condition, 
+						Object t_operand, Object f_operand) throws Exception {
+		SymbolExpression cond = sym_condition(condition, true);
+		SymbolExpression tval = sym_expression(t_operand);
+		SymbolExpression fval = sym_expression(f_operand);
+		return SymbolIfElseExpression.create(tval.get_data_type(), cond, tval, fval);
+	}
+	/**
+	 * @param elements
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolInitializerList new_initializer_list(Iterable<Object> elements) throws Exception {
+		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
+		if(elements != null) {
+			for(Object element : elements) {
+				elist.add(sym_expression(element));
+			}
+		}
+		return SymbolInitializerList.create(elist);
+	}
+	/**
+	 * @param elements
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolExpressionList new_expression_list(Iterable<Object> elements) throws Exception {
+		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
+		if(elements != null) {
+			for(Object element : elements) {
+				elist.add(sym_expression(element));
+			}
+		}
+		return SymbolExpressionList.create(elist);
+	}
+	/**
+	 * @param function
+	 * @param arguments
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolCallExpression new_call_expression(Object function, Iterable<Object> arguments) throws Exception {
+		SymbolExpression func = sym_expression(function);
+		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
+		if(arguments != null) {
+			for(Object argument : arguments) {
+				list.add(sym_expression(argument));
+			}
+		}
+		CType data_type = func.get_data_type();
+		if(data_type instanceof CArrayType) {
+			data_type = ((CArrayType) data_type).get_element_type();
+		}
+		else if(data_type instanceof CPointerType) {
+			data_type = ((CPointerType) data_type).get_pointed_type();
+		}
+		data_type = SymbolFactory.get_type(data_type);
+		if(data_type instanceof CFunctionType) {
+			data_type = ((CFunctionType) data_type).get_return_type();
+		}
+		else {
+			throw new IllegalArgumentException(data_type.generate_code());
+		}
+		return SymbolCallExpression.create(data_type, func, SymbolArgumentList.create(list));
+	}
+	// TODO implement factory interfaces as following...
 	
 	
 	
