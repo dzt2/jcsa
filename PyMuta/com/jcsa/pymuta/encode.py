@@ -722,13 +722,13 @@ def encode_all(in_directory: str, middle_name: str, ou_directory: str):
 	:return:
 	"""
 	for file_name in os.listdir(in_directory):
+		print("Encoding CDocument of Program {}".format(file_name))
 		directory = os.path.join(in_directory, file_name)
 		c_document = jctest.CDocument(directory, file_name, middle_name)
 		directory = os.path.join(ou_directory, file_name)
 		if not os.path.exists(directory):
 			os.mkdir(directory)
 		MerDataEncoder.encode_document(c_document, directory, file_name)
-		print("Encoding CDocument of Program {}".format(c_document.get_name()))
 		tests = len(c_document.get_project().test_space.get_test_cases())
 		mutants = len(c_document.get_project().muta_space.get_mutants())
 		states = len(c_document.get_state_graph().get_states())

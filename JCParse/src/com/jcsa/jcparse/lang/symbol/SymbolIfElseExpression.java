@@ -70,6 +70,9 @@ public class SymbolIfElseExpression extends SymbolSpecialExpression {
 		String condition = this.get_condition().generate_code(simplified);
 		String t_operand = this.get_t_operand().generate_code(simplified);
 		String f_operand = this.get_f_operand().generate_code(simplified);
+		if(!this.get_condition().is_leaf()) condition = "(" + condition + ")";
+		if(!this.get_t_operand().is_leaf()) t_operand = "(" + t_operand + ")";
+		if(!this.get_f_operand().is_leaf()) f_operand = "(" + f_operand + ")";
 		return condition + " ? " + t_operand + " : " + f_operand; 
 	}
 

@@ -38,8 +38,8 @@ public abstract class SymbolBinaryExpression extends SymbolCompositeExpression {
 		String operator = this.get_operator().generate_code(simplified);
 		String loperand = this.get_loperand().generate_code(simplified);
 		String roperand = this.get_roperand().generate_code(simplified);
-		if(this.get_loperand().is_leaf()) loperand = "(" + loperand + ")";
-		if(this.get_roperand().is_leaf()) roperand = "(" + roperand + ")";
+		if(!this.get_loperand().is_leaf()) loperand = "(" + loperand + ")";
+		if(!this.get_roperand().is_leaf()) roperand = "(" + roperand + ")";
 		return loperand + " " + operator + " " + roperand;
 	}
 	

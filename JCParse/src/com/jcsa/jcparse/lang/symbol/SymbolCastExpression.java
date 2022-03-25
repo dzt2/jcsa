@@ -58,6 +58,7 @@ public class SymbolCastExpression extends SymbolSpecialExpression {
 	protected String generate_code(boolean simplified) throws Exception {
 		String type = "(" + this.get_cast_type().generate_code(simplified) + ")";
 		String operand = this.get_operand().generate_code(simplified);
+		if(!this.get_operand().is_leaf()) operand = "(" + operand + ")";
 		return type + " " + operand;
 	}
 

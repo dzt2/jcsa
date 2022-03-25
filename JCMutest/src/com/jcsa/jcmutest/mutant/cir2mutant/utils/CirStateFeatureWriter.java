@@ -296,8 +296,8 @@ public class CirStateFeatureWriter {
 			return "tst@" + ((TestInput) token).get_id();
 		}
 		else if(token instanceof SymbolNode) {
-			if(!this.symbol_nodes.contains((SymbolNode) token)) this.symbol_nodes.add((SymbolNode) token); 
 			String key = "sym@" + token.getClass().getSimpleName().substring(6).trim() + "@" + token.hashCode();
+			if(!this.symbol_nodes.contains((SymbolNode) token)) { this.symbol_nodes.add((SymbolNode) token); }
 			return key;
 		}
 		else if(token instanceof CirAbstractState) {

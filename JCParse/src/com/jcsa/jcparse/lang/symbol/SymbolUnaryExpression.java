@@ -62,7 +62,7 @@ public class SymbolUnaryExpression extends SymbolCompositeExpression {
 	protected String generate_code(boolean simplified) throws Exception {
 		String operator = this.get_operator().generate_code(simplified);
 		String operand = this.get_operand().generate_code(simplified);
-		if(this.get_operand().is_leaf()) operand = "(" + operand + ")";
+		if(!this.get_operand().is_leaf()) operand = "(" + operand + ")";
 		return operator + operand;
 	}
 

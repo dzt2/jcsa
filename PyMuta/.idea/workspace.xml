@@ -20,7 +20,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../JCMutest/jars/jcparse.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/jars/jcparse.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/utils/CirStateFeatureWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/cir2mutant/utils/CirStateFeatureWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolBinaryExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolBinaryExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolCastExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolCastExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolIfElseExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolIfElseExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolUnaryExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCParse/src/com/jcsa/jcparse/lang/symbol/SymbolUnaryExpression.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta/encode.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta/encode.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,7 +79,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/jcmuta" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.mining">
+  <component name="RunManager" selected="Python.encode">
     <configuration name="Z2test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -201,8 +208,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.mining" />
         <item itemvalue="Python.encode" />
+        <item itemvalue="Python.mining" />
         <item itemvalue="Python.Z2test" />
         <item itemvalue="Python.strule" />
         <item itemvalue="Python.test" />
