@@ -16,6 +16,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.ctype.impl.CTypeFactory;
+import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
  * 	It implements the creation and parsing of SymbolNode.
@@ -422,7 +423,7 @@ public final class SymbolFactory {
 	 * @return		name#scope
 	 * @throws Exception
 	 */
-	public static SymbolIdentifier	new_identifier(CType type, String name, Object scope) throws Exception {
+	public static SymbolIdentifier			identifier(CType type, String name, Object scope) throws Exception {
 		return SymbolIdentifier.create(type, name, scope);
 	}
 	/**
@@ -430,7 +431,7 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolConstant	new_constant(Object constant) throws Exception {
+	public static SymbolConstant			constant(Object constant) throws Exception {
 		return sym_constant(constant);
 	}
 	/**
@@ -438,8 +439,8 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolLiteral		new_literal(String literal) throws Exception {
-		return SymbolLiteral.create(literal);
+	public static SymbolLiteral				literal(Object literal) throws Exception {
+		return SymbolLiteral.create(literal.toString());
 	}
 	/**
 	 * @param cast_type	the type to cast the sub-operand
@@ -447,7 +448,7 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolCastExpression new_cast_expression(CType cast_type, Object operand) throws Exception {
+	public static SymbolCastExpression 		cast_expression(CType cast_type, Object operand) throws Exception {
 		return SymbolCastExpression.create(SymbolType.create(cast_type), sym_expression(operand));
 	}
 	/**	
@@ -456,16 +457,22 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolFieldExpression new_field_expression(Object body, String field) throws Exception {
+	public static SymbolFieldExpression 	field_expression(Object body, String field) throws Exception {
+		/* recursively translate the body-field */
 		SymbolExpression sbody = sym_expression(body);
 		SymbolField sfield = SymbolField.create(field);
 		
+		/* derive the struct-union data type */
 		CType data_type = sbody.get_data_type();
 		if(data_type instanceof CPointerType) {
 			data_type = ((CPointerType) data_type).get_pointed_type();
-			data_type = SymbolFactory.get_type(data_type);
 		}
+		else if(data_type instanceof CArrayType) {
+			data_type = ((CArrayType) data_type).get_element_type();
+		}
+		data_type = SymbolFactory.get_type(data_type);
 		
+		/* derive the field-body and field type */
 		CFieldBody fields;
 		if(data_type instanceof CStructType) {
 			fields = ((CStructType) data_type).get_fields();
@@ -487,19 +494,19 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolIfElseExpression new_ifte_expression(Object condition, 
-						Object t_operand, Object f_operand) throws Exception {
+	public static SymbolIfElseExpression 	ifte_expression(CType data_type, 
+			Object condition, Object t_operand, Object f_operand) throws Exception {
 		SymbolExpression cond = sym_condition(condition, true);
 		SymbolExpression tval = sym_expression(t_operand);
 		SymbolExpression fval = sym_expression(f_operand);
-		return SymbolIfElseExpression.create(tval.get_data_type(), cond, tval, fval);
+		return SymbolIfElseExpression.create(data_type, cond, tval, fval);
 	}
 	/**
 	 * @param elements
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolInitializerList new_initializer_list(Iterable<Object> elements) throws Exception {
+	public static SymbolInitializerList 	initializer_list(Iterable<Object> elements) throws Exception {
 		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
 		if(elements != null) {
 			for(Object element : elements) {
@@ -513,7 +520,7 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolExpressionList new_expression_list(Iterable<Object> elements) throws Exception {
+	public static SymbolExpressionList 		expression_list(Iterable<Object> elements) throws Exception {
 		List<SymbolExpression> elist = new ArrayList<SymbolExpression>();
 		if(elements != null) {
 			for(Object element : elements) {
@@ -528,7 +535,8 @@ public final class SymbolFactory {
 	 * @return
 	 * @throws Exception
 	 */
-	public static SymbolCallExpression new_call_expression(Object function, Iterable<Object> arguments) throws Exception {
+	public static SymbolCallExpression 		call_expression(Object function, Iterable<Object> arguments) throws Exception {
+		/* recursively construct function-arguments */
 		SymbolExpression func = sym_expression(function);
 		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
 		if(arguments != null) {
@@ -536,6 +544,9 @@ public final class SymbolFactory {
 				list.add(sym_expression(argument));
 			}
 		}
+		SymbolArgumentList alist = SymbolArgumentList.create(list);
+		
+		/* derive the function type and its return type */
 		CType data_type = func.get_data_type();
 		if(data_type instanceof CArrayType) {
 			data_type = ((CArrayType) data_type).get_element_type();
@@ -550,10 +561,293 @@ public final class SymbolFactory {
 		else {
 			throw new IllegalArgumentException(data_type.generate_code());
 		}
-		return SymbolCallExpression.create(data_type, func, SymbolArgumentList.create(list));
+		
+		/* construct the calling-expression with type finally */
+		return SymbolCallExpression.create(data_type, func, alist);
 	}
-	// TODO implement factory interfaces as following...
-	
-	
+	/**
+	 * @param operand
+	 * @return -operand
+	 * @throws Exception
+	 */
+	public static SymbolUnaryExpression		arith_neg(Object operand) throws Exception {
+		SymbolExpression uoperand = sym_expression(operand);
+		CType data_type = uoperand.get_data_type();
+		if(SymbolFactory.is_bool(data_type)) {
+			data_type = CBasicTypeImpl.int_type;
+			uoperand = SymbolFactory.cast_expression(data_type, uoperand);
+			return SymbolUnaryExpression.create(data_type, COperator.negative, uoperand);
+		}
+		else if(SymbolFactory.is_numb(data_type) || 
+				SymbolFactory.is_real(data_type) ||
+				SymbolFactory.is_addr(data_type)) {
+			return SymbolUnaryExpression.create(data_type, COperator.negative, uoperand);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + data_type.generate_code());
+		}
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolUnaryExpression		bitws_rsv(Object operand) throws Exception {
+		SymbolExpression uoperand = sym_expression(operand);
+		CType data_type = uoperand.get_data_type();
+		if(SymbolFactory.is_bool(data_type)) {
+			data_type = CBasicTypeImpl.int_type;
+			uoperand = SymbolFactory.cast_expression(data_type, uoperand);
+			return SymbolUnaryExpression.create(data_type, COperator.bit_not, uoperand); 
+		}
+		else if(SymbolFactory.is_numb(data_type)) {
+			return SymbolUnaryExpression.create(data_type, COperator.bit_not, uoperand);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + data_type.generate_code());
+		}
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolUnaryExpression		logic_not(Object operand) throws Exception {
+		SymbolExpression uoperand = sym_condition(operand, true);
+		return SymbolUnaryExpression.create(CBasicTypeImpl.bool_type, COperator.logic_not, uoperand);
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolUnaryExpression		address_of(Object operand) throws Exception {
+		SymbolExpression uoperand = sym_expression(operand);
+		CType data_type = uoperand.get_data_type();
+		data_type = type_factory.get_pointer_type(data_type);
+		return SymbolUnaryExpression.create(data_type, COperator.address_of, uoperand);
+	}
+	/**
+	 * @param operand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolUnaryExpression		dereference(Object operand) throws Exception {
+		SymbolExpression uoperand = sym_expression(operand);
+		CType data_type = uoperand.get_data_type();
+		if(data_type instanceof CArrayType) {
+			data_type = ((CArrayType) data_type).get_element_type();
+		}
+		else if(data_type instanceof CPointerType) {
+			data_type = ((CPointerType) data_type).get_pointed_type();
+		}
+		else {
+			throw new IllegalArgumentException(data_type.generate_code());
+		}
+		return SymbolUnaryExpression.create(data_type, COperator.dereference, uoperand);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolArithExpression		arith_add(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolArithExpression.create(type, COperator.arith_add, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolArithExpression		arith_sub(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolArithExpression.create(type, COperator.arith_sub, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolArithExpression		arith_mul(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolArithExpression.create(type, COperator.arith_mul, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolArithExpression		arith_div(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolArithExpression.create(type, COperator.arith_div, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolArithExpression		arith_mod(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolArithExpression.create(type, COperator.arith_mod, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolBitwsExpression		bitws_and(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolBitwsExpression.create(type, COperator.bit_and, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolBitwsExpression		bitws_ior(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolBitwsExpression.create(type, COperator.bit_or, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolBitwsExpression		bitws_xor(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolBitwsExpression.create(type, COperator.bit_xor, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolBitwsExpression		bitws_lsh(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolBitwsExpression.create(type, COperator.left_shift, lvalue, rvalue);
+	}
+	/**
+	 * @param type
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolBitwsExpression		bitws_rsh(CType type, Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolBitwsExpression.create(type, COperator.righ_shift, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolLogicExpression		logic_and(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lcondition = sym_condition(loperand, true);
+		SymbolExpression rcondition = sym_condition(roperand, true);
+		return SymbolLogicExpression.create(COperator.logic_and, lcondition, rcondition);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolLogicExpression		logic_ior(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lcondition = sym_condition(loperand, true);
+		SymbolExpression rcondition = sym_condition(roperand, true);
+		return SymbolLogicExpression.create(COperator.logic_or, lcondition, rcondition);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolLogicExpression		logic_imp(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lcondition = sym_condition(loperand, true);
+		SymbolExpression rcondition = sym_condition(roperand, true);
+		return SymbolLogicExpression.create(COperator.positive, lcondition, rcondition);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	greater_tn(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.greater_tn, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	greater_eq(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.greater_eq, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	smaller_tn(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.smaller_tn, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	smaller_eq(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.smaller_eq, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	equal_with(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.equal_with, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	public static SymbolRelationExpression	not_equals(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand), rvalue = sym_expression(roperand);
+		return SymbolRelationExpression.create(COperator.not_equals, lvalue, rvalue);
+	}
 	
 }

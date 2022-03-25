@@ -12,6 +12,7 @@ import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator.DeclaratorProduction;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclaratorList;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstParameterList;
@@ -25,6 +26,7 @@ import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstPostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
@@ -96,13 +98,11 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
-import com.jcsa.jcparse.lang.scope.CFieldName;
 import com.jcsa.jcparse.lang.scope.CInstance;
 import com.jcsa.jcparse.lang.scope.CInstanceName;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 import com.jcsa.jcparse.lang.scope.CScope;
-import com.jcsa.jcparse.lang.scope.CTypeName;
 
 /**
  * 	It implements the parsing from the object to SymbolNode based on the following translation rules.
@@ -144,47 +144,58 @@ import com.jcsa.jcparse.lang.scope.CTypeName;
  * 		CirInitializerBody		-->	SymbolInitializerList					<br>
  * 		CirComputeExpression	-->	SymbolUnaryExpr | SymbolBinaryExpr		<br>
  * 	[AST_SYNTAXS]															<br>
- * 		AstIdExpression			-->	SymbolIdentifier | SymbolConstant		<br>
- * 		AstConstant				-->	SymbolConstant							<br>
- * 		AstLiteral				-->	SymbolLiteral							<br>
- * 		AstArrayExpression		-->	*(array + index)						<br>
- * 		AstCastExpression		--> (type) expression						<br>
- * 		AstCommaExpression		-->	SymbolExpressionList					<br>
- * 		AstConditionalExpr		-->	SymbolIfElseExpression					<br>
- * 		AstUnaryExpression		-->	SymbolUnaryExpr | SymbolAssignExpr		<br>
- * 		AstConstExpression		-->	parse(sub_expression)					<br>
- * 		AstParanthExpression	-->	parse(sub_expression)					<br>
- * 		AstFunCallExpression	-->	SymbolCallExpression					<br>
- * 		AstSizeofExpression		-->	SymbolConstant							<br>
- * 		AstFieldExpression		-->	SymbolFieldExpression					<br>
- * 		AstBinaryExpression		-->	SymbolBinaryExpression					<br>
- * 		AstInitializerBody		-->	SymbolInitializerList					<br>
- * 		AstBreakStatement		-->	next(stmt) := @stmt#next				<br>
- * 		AstContinueStatement	-->	next(stmt) := @stmt#next				<br>
- * 		AstGotoStatement		-->	next(stmt) := @stmt#next				<br>
- * 		AstCompoundStatement	-->	@stmt#comp_stmt							<br>
- * 		AstIfStatement			-->	condition ? @stmt#true : @stmt#else		<br>
- * 		AstSwitchStatement		--> parse(switch.condition)					<br>
- * 		AstCaseStatement		-->	SV == CV ? @stmt#true : @stmt#else		<br>
- * 		AstWhileStatement		-->	condition ? @stmt#true : @stmt#else		<br>
- * 		AstForStatement			-->	condition ? @stmt#true : @stmt#else		<br>
- * 		AstDoWhileStatement		-->	condition ? @stmt#true : @stmt#else		<br>
- * 		AstExpression			-->	parse(expression) | TRUE				<br>
- * 		AstDeclarationStatement	-->	parse(declaration)						<br>
- * 		AstReturnStatement		-->	return := value;						<br>
- * 		AstLabelStatement		-->	@stmt#statement							<br>
- * 		AstDefaultStatement		-->	@stmt#statement							<br>
- * 		AstStatementList		--> @stmt#comp_stmt							<br>
- * 		AstDeclaration			--> parse(init_decl_list) | @stmt#decl_stmt	<br>
- * 		AstInitDeclaratorList	--> expr_list(dk := ik)						<br>
- * 		AstDeclarator			-->	parse(name)								<br>
- * 		AstName					-->	SymbolIdentifier | SymbolConstant		<br>
+ * 		{AST-EXPRESSION}													<br>
+ * 		AstIdExpression				-->	SymbolIdentifier {CName|name#scope}	<br>
+ * 		AstIdExpression				-->	SymbolConstant 	{CEnumeratorName}	<br>
+ * 		AstConstant					-->	SymbolConstant						<br>
+ * 		AstLiteral					-->	SymbolLiteral	{literal: String}	<br>
+ * 		AstConstExpression			-->	parse(expr.sub_expression)			<br>
+ * 		AstParanthExpression		-->	parse(expr.sub_expression)			<br>
+ * 		AstArithBinaryExpression	-->	SymbolArithExpression{+,-,*,/,%}	<br>
+ * 		AstBitwsBinaryExpression	-->	SymbolBitwsExpression{&,|,^,<<,>>}	<br>
+ * 		AstLogicBinaryExpression	-->	SymbolLogicExpression{&&,||}		<br>
+ * 		AstRelationExpression		-->	SymbolRelationExpression{<,<=,>,>=}	<br>
+ * 		AstXXXAssignExpression		-->	SymbolAssignExpression{:=, inc}		<br>
+ * 		AstArrayExpression			-->	(defer (arith_add address index))	<br>
+ * 		AstCastExpression			--> (cast_type) parse(operand)			<br>
+ * 		AstConditionalExpression	-->	SymbolConditionalExpression			<br>
+ * 		AstFieldExpression			-->	SymbolFieldExpression				<br>
+ * 		AstFunCallExpression		-->	SymbolCallExpression				<br>
+ * 		AstSizeofExpression			-->	SymbolConstant	[template != null]	<br>
+ * 		AstSizeofExpression			--> SymbolIdentifier{sizeof#data_type}	<br>
+ * 		AstInitializerBody			--> parse(initializer_list)				<br>
+ * 		AstCommaExpression			-->	SymbolExpressionList				<br>
+ * 	{AST-STATEMENTS}														<br>
+ * 		AstBreakStatement			-->	next(break) := stmt(loop)			<br>
+ * 		AstContinueStatement		-->	next(continue) := stmt(loop.cond)	<br>
+ * 		AstGotoStatement			-->	next(goto) := stmt(label)			<br>
+ * 		AstReturnStatement			-->	return#func_name := expression		<br>
+ * 		AstSwitchStatement			-->	parse(switch.condition)				<br>
+ * 		AstIfStatement				--> condition ? stmt(true) : stmt(false)<br>	
+ * 		AstCaseStatement			-->	switch.condition == case.expression	<br>
+ * 		AstWhileStatement			-->	condition ? stmt(body) : stmt(loop)	<br>
+ * 		AstDoWhileStatement			-->	condition ? stmt(body) : stmt(loop)	<br>
+ * 		AstForStatement				-->	condition ? stmt(body) : stmt(loop)	<br>
+ * 		AstDefaultStatement			-->	stmt(source)						<br>
+ * 		AstLabeledStatement			-->	stmt(source)						<br>
+ * 		AstCompoundStatement		-->	SymbolExpressionList				<br>
+ * 	{AST-OTHERWISE}															<br>
+ * 		AstStatementList		-->	SymbolExpressionList					<br>
+ * 		AstLabel				-->	stmt(labeled_stmt)						<br>
+ * 		AstArgumentList			--> SymbolArgumentList						<br>
+ * 		AstDeclaration			-->	SymbolExpressionList [init_decl_list]	<br>
+ * 		AstDeclaration			-->	stmt(decl_stmt)							<br>
+ * 		AstInitDeclaratorList	-->	SymbolExpressionList {decl := value}	<br>
+ * 		AstInitDeclarator		-->	decl := parse(initializer)|default_value<br>
+ * 		AstName					--> parse(CName) | SymbolIdentifier			<br>
+ * 		AstInitializer			-->	parse(body|expression)					<br>
  * 		AstInitializerList		-->	SymbolInitializerList					<br>
  * 		AstFieldInitializer		-->	parse(initializer)						<br>
- * 		AstInitializer			--> parse(expression|body)					<br>
  * 		AstTypeName				-->	SymbolType								<br>
- * 		AstTypedefName			-->	SymbolType								<br>
  * 		AstField				-->	SymbolField								<br>
+ * 		AstTypedefName			-->	SymbolType								<br>
+ * 		AstParameterDeclaration	-->	decl := default_value | stmt(source)	<br>
+ * 		AstParamList			-->	SymbolExpressionList					<br>
  * 	</code>
  * 
  * 	@author yukimula
@@ -233,6 +244,9 @@ final class SymbolParser {
 		}
 		else if(source instanceof String) {
 			return SymbolLiteral.create(source.toString());
+		}
+		else if(source instanceof CName) {
+			return (SymbolExpression) parser.parse_name((CName) source);
 		}
 		else if(source instanceof AstNode) {
 			return (SymbolExpression) parser.parse_ast((AstNode) source);
@@ -398,14 +412,8 @@ final class SymbolParser {
 			constant.set_int(value);
 			return SymbolConstant.create(constant);
 		}
-		else if(source instanceof CTypeName) {
-			return SymbolType.create(((CTypeName) source).get_type());
-		}
-		else if(source instanceof CFieldName) {
-			return SymbolField.create(source.get_name());
-		}
 		else {
-			throw new IllegalArgumentException(source.getClass().getSimpleName());
+			return SymbolIdentifier.create(CBasicTypeImpl.void_type, source.get_name(), source);
 		}
 	}
 	/**
@@ -669,7 +677,8 @@ final class SymbolParser {
 			return this.parse_name(((CirIdentifier) source).get_cname());
 		}
 		else if(source instanceof CirImplicator) {
-			return this.parse_ast(source.get_ast_source());
+			// return this.parse_ast(source.get_ast_source());
+			return SymbolIdentifier.create(source.get_data_type(), "@ast", source);
 		}
 		else if(source instanceof CirReturnPoint) {
 			CType type = source.get_data_type();
@@ -843,7 +852,11 @@ final class SymbolParser {
 	}
 	/* AST-Specifier Class */
 	private	SymbolNode	parse_ast_stmt_list(AstStatementList source) throws Exception {
-		return this.parse_stmt(source.get_parent());
+		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_statements(); k++) {
+			expressions.add((SymbolExpression) this.parse_ast(source.get_statement(k)));
+		}
+		return SymbolExpressionList.create(expressions);
 	}
 	private	SymbolNode	parse_ast_label(AstLabel source) throws Exception {
 		AstFunctionDefinition function = source.get_function_of();
@@ -945,7 +958,7 @@ final class SymbolParser {
 			return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
 		}
 		else {
-			return this.parse_stmt(source);
+			throw new IllegalArgumentException("Invalid access: " + source.generate_code());
 		}
 	}
 	private	SymbolNode	parse_ast_field(AstField source) throws Exception {
@@ -954,13 +967,50 @@ final class SymbolParser {
 	private	SymbolNode	parse_parameter_declaration_list(AstParameterList source) throws Exception {
 		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
 		for(int k = 0; k < source.number_of_parameters(); k++) {
-			expressions.add((SymbolExpression) this.parse_ast(source.get_parameter(k)));
+			if(source.get_parameter(k).has_declarator())
+				expressions.add((SymbolExpression) this.parse_ast(source.get_parameter(k)));
 		}
 		return SymbolExpressionList.create(expressions);
 	}
 	private	SymbolNode	parse_typedef_name(AstTypedefName source) throws Exception {
 		return this.parse_name(source.get_cname());
 	}
+	/**
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolNode	parse_ast_init_declarator_list(AstInitDeclaratorList source) throws Exception {
+		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_init_declarators(); k++) {
+			elements.add((SymbolExpression) this.parse_ast(source.get_init_declarator(k)));
+		}
+		return SymbolExpressionList.create(elements);
+	}
+	/**
+	 * 	<code>
+	 * 	{AST-OTHERWISE}															<br>
+	 * 		AstStatementList		-->	SymbolExpressionList					<br>
+	 * 		AstLabel				-->	stmt(labeled_stmt)						<br>
+	 * 		AstArgumentList			--> SymbolArgumentList						<br>
+	 * 		AstDeclaration			-->	SymbolExpressionList [init_decl_list]	<br>
+	 * 		AstDeclaration			-->	stmt(decl_stmt)							<br>
+	 * 		AstInitDeclaratorList	-->	SymbolExpressionList {decl := value}	<br>
+	 * 		AstInitDeclarator		-->	decl := parse(initializer)|default_value<br>
+	 * 		AstName					--> parse(CName) | SymbolIdentifier			<br>
+	 * 		AstInitializer			-->	parse(body|expression)					<br>
+	 * 		AstInitializerList		-->	SymbolInitializerList					<br>
+	 * 		AstFieldInitializer		-->	parse(initializer)						<br>
+	 * 		AstTypeName				-->	SymbolType								<br>
+	 * 		AstField				-->	SymbolField								<br>
+	 * 		AstTypedefName			-->	SymbolType								<br>
+	 * 		AstParameterDeclaration	-->	decl := default_value | stmt(source)	<br>
+	 * 		AstParamList			-->	SymbolExpressionList					<br>
+	 * 	</code>
+	 * @param source
+	 * @return
+	 * @throws Exception
+	 */
 	private	SymbolNode	parse_ast_otherwise(AstNode source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
@@ -1018,6 +1068,9 @@ final class SymbolParser {
 		}
 		else if(source instanceof AstStatementList) {
 			return this.parse_ast_stmt_list((AstStatementList) source);
+		}
+		else if(source instanceof AstInitDeclaratorList) {
+			return this.parse_ast_init_declarator_list((AstInitDeclaratorList) source);
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
@@ -1150,11 +1203,39 @@ final class SymbolParser {
 			rvalue = this.get_default_value(false, CBasicTypeImpl.void_type);
 		}
 		SymbolExpression lvalue = this.parse_retr(rvalue.get_data_type(), source);
-		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, rvalue, lvalue);
+		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
 	}
 	private	SymbolNode	parse_ast_compound_stmt(AstCompoundStatement source) throws Exception {
-		return this.parse_stmt(source);
+		if(source.has_statement_list()) {
+			return this.parse_ast(source.get_statement_list());
+		}
+		else {
+			return SymbolExpressionList.create(new ArrayList<SymbolExpression>());
+		}
+		// return this.parse_stmt(source);
 	}
+	/**
+	 * 	<code>
+	 * 	{AST-STATEMENTS}														<br>
+	 * 		AstBreakStatement			-->	next(break) := stmt(loop)			<br>
+	 * 		AstContinueStatement		-->	next(continue) := stmt(loop.cond)	<br>
+	 * 		AstGotoStatement			-->	next(goto) := stmt(label)			<br>
+	 * 		AstReturnStatement			-->	return#func_name := expression		<br>
+	 * 		AstSwitchStatement			-->	parse(switch.condition)				<br>
+	 * 		AstIfStatement				--> condition ? stmt(true) : stmt(false)<br>	
+	 * 		AstCaseStatement			-->	switch.condition == case.expression	<br>
+	 * 		AstWhileStatement			-->	condition ? stmt(body) : stmt(loop)	<br>
+	 * 		AstDoWhileStatement			-->	condition ? stmt(body) : stmt(loop)	<br>
+	 * 		AstForStatement				-->	condition ? stmt(body) : stmt(loop)	<br>
+	 * 		AstDefaultStatement			-->	stmt(source)						<br>
+	 * 		AstLabeledStatement			-->	stmt(source)						<br>
+	 * 		AstCompoundStatement		-->	SymbolExpressionList				<br>
+	 * 	</code>
+	 * 	
+	 * 	@param source	the statement to be symbolized
+	 * 	@return
+	 * 	@throws Exception
+	 */
 	private	SymbolNode	parse_ast_statement(AstStatement source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
@@ -1286,7 +1367,7 @@ final class SymbolParser {
 			return this.parse_cons(Integer.valueOf(size));
 		}
 		else {
-			return this.get_default_value(false, data_type);
+			return SymbolIdentifier.create(CBasicTypeImpl.int_type, "sizeof", data_type);
 		}
 	}
 	private	SymbolNode	parse_ast_unary_expr(AstUnaryExpression source) throws Exception {
@@ -1299,6 +1380,27 @@ final class SymbolParser {
 		case logic_not:
 		case address_of:
 		case dereference:	return SymbolUnaryExpression.create(source.get_value_type(), operator, operand);
+		case increment:
+		{
+			SymbolExpression lvalue = operand;
+			SymbolExpression rvalue = SymbolArithExpression.create(operand.get_data_type(), 
+					COperator.arith_add, operand, this.parse_cons(Integer.valueOf(1)));
+			return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
+		}
+		case decrement:
+		{
+			SymbolExpression lvalue = operand;
+			SymbolExpression rvalue = SymbolArithExpression.create(operand.get_data_type(), 
+					COperator.arith_sub, operand, this.parse_cons(Integer.valueOf(1)));
+			return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
+		}
+		default:	throw new IllegalArgumentException("Invalid operator: " + operator);
+		}
+	}
+	private	SymbolNode	parse_ast_postfix_expr(AstPostfixExpression source) throws Exception {
+		SymbolExpression operand = (SymbolExpression) this.parse_ast(source.get_operand());
+		COperator operator = source.get_operator().get_operator();
+		switch(operator) {
 		case increment:
 		{
 			SymbolExpression lvalue = operand;
@@ -1371,6 +1473,35 @@ final class SymbolParser {
 		default:	throw new IllegalArgumentException("Unsupported operator: " + operator);
 		}
 	}
+	/**
+	 * 	<code>
+	 * 	{AST-EXPRESSION}														<br>
+	 * 		AstIdExpression				-->	SymbolIdentifier {CName|name#scope}	<br>
+	 * 		AstIdExpression				-->	SymbolConstant 	{CEnumeratorName}	<br>
+	 * 		AstConstant					-->	SymbolConstant						<br>
+	 * 		AstLiteral					-->	SymbolLiteral	{literal: String}	<br>
+	 * 		AstConstExpression			-->	parse(expr.sub_expression)			<br>
+	 * 		AstParanthExpression		-->	parse(expr.sub_expression)			<br>
+	 * 		AstArithBinaryExpression	-->	SymbolArithExpression{+,-,*,/,%}	<br>
+	 * 		AstBitwsBinaryExpression	-->	SymbolBitwsExpression{&,|,^,<<,>>}	<br>
+	 * 		AstLogicBinaryExpression	-->	SymbolLogicExpression{&&,||}		<br>
+	 * 		AstRelationExpression		-->	SymbolRelationExpression{<,<=,>,>=}	<br>
+	 * 		AstXXXAssignExpression		-->	SymbolAssignExpression{:=, inc}		<br>
+	 * 		AstArrayExpression			-->	(defer (arith_add address index))	<br>
+	 * 		AstCastExpression			--> (cast_type) parse(operand)			<br>
+	 * 		AstConditionalExpression	-->	SymbolConditionalExpression			<br>
+	 * 		AstFieldExpression			-->	SymbolFieldExpression				<br>
+	 * 		AstFunCallExpression		-->	SymbolCallExpression				<br>
+	 * 		AstSizeofExpression			-->	SymbolConstant	[template != null]	<br>
+	 * 		AstSizeofExpression			--> SymbolIdentifier{sizeof#data_type}	<br>
+	 * 		AstInitializerBody			--> parse(initializer_list)				<br>
+	 * 		AstCommaExpression			-->	SymbolExpressionList				<br>
+	 * 	</code>
+	 * 	
+	 * 	@param source	the expression to be symbolized
+	 * 	@return
+	 * 	@throws Exception
+	 */
 	private	SymbolNode	parse_ast_expression(AstExpression source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
@@ -1413,6 +1544,9 @@ final class SymbolParser {
 		}
 		else if(source instanceof AstBinaryExpression) {
 			return this.parse_ast_binary_expr((AstBinaryExpression) source);
+		}
+		else if(source instanceof AstPostfixExpression) {
+			return this.parse_ast_postfix_expr((AstPostfixExpression) source);
 		}
 		else if(source instanceof AstSizeofExpression) {
 			return this.parse_ast_sizeof_expr((AstSizeofExpression) source);

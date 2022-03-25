@@ -1,6 +1,8 @@
 package com.jcsa.jcparse.lang.symb;
 
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.symb.impl.SymbolContext;
+import com.jcsa.jcparse.lang.symb.impl.SymbolEvaluator;
 
 /**
  * 	The typed evaluation unit as expression used in symbolic analysis.
@@ -51,5 +53,16 @@ public abstract class SymbolExpression extends SymbolNode {
 	 * @return the data type of the value hold by this expression
 	 */
 	public CType get_data_type() { return this.data_type; }
+	
+	/**
+	 * @param in_state		the state-context to provide the inputs
+	 * @param ou_state		the state-context to preserve an output
+	 * @return				the resulting expression from the input
+	 * @throws Exception
+	 */
+	public SymbolExpression	evaluate(SymbolContext in_state, SymbolContext ou_state) throws Exception {
+		return SymbolEvaluator.evaluate(this, in_state, ou_state);
+	}
+	
 	
 }

@@ -23,9 +23,9 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.symbol.SymbolExpression;
-import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolProcess;
+import com.jcsa.jcparse.lang.symb.SymbolExpression;
+import com.jcsa.jcparse.lang.symb.SymbolFactory;
+import com.jcsa.jcparse.lang.symb.impl.SymbolContext;
 
 public class CSymbolNodeTest {
 	
@@ -91,18 +91,18 @@ public class CSymbolNodeTest {
 			writer.write("\tCODE:\t\"" + ast_code + "\"\n");
 			
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			SymbolProcess context = new SymbolProcess();
+			SymbolContext context = new SymbolContext();
 			SymbolExpression eval_expr = expression.evaluate(null, context);
-			SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
+			// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 			
-			writer.write("\tSEXP:\t" + expression.generate_simple_code() + "\n");
-			writer.write("\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
-			Map<SymbolExpression, SymbolExpression> output = context.get_value_table();
+			writer.write("\tSEXP:\t" + expression.get_simple_code() + "\n");
+			writer.write("\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
+			Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
 			for(SymbolExpression lvalue : output.keySet()) {
 				SymbolExpression rvalue = output.get(lvalue);
-				writer.write("\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");
+				writer.write("\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
 			}
-			writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			//writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
 			
 			writer.write("END\n");
 			writer.write("\n");
@@ -150,18 +150,18 @@ public class CSymbolNodeTest {
 			writer.write("\t\tCODE:\t\"" + cir_code + "\"\n");
 			
 			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			SymbolProcess context = new SymbolProcess();
+			SymbolContext context = new SymbolContext();
 			SymbolExpression eval_expr = expression.evaluate(null, context);
-			SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
+			// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 			
-			writer.write("\t\tSEXP:\t" + expression.generate_simple_code() + "\n");
-			writer.write("\t\t\tRES <-- " + eval_expr.generate_simple_code() + "\n");
-			Map<SymbolExpression, SymbolExpression> output = context.get_value_table();
+			writer.write("\t\tSEXP:\t" + expression.get_simple_code() + "\n");
+			writer.write("\t\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
+			Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
 			for(SymbolExpression lvalue : output.keySet()) {
 				SymbolExpression rvalue = output.get(lvalue);
-				writer.write("\t\t\t" + lvalue.generate_simple_code() + " <-- " + rvalue.generate_simple_code() + "\n");
+				writer.write("\t\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
 			}
-			writer.write("\t\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			// writer.write("\t\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
 			
 			writer.write("\tEND\n");
 			writer.write("\n");

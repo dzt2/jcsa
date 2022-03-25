@@ -42,7 +42,7 @@ public class SymbolAssignExpression extends SymbolBinaryExpression {
 			throw new IllegalArgumentException("Invalid operator: null");
 		}
 		else if(loperand == null || !loperand.is_refer_type()) {
-			throw new IllegalArgumentException("Invalid loperand: null");
+			throw new IllegalArgumentException("Invalid loperand: " + loperand);
 		}
 		else if(roperand == null) {
 			throw new IllegalArgumentException("Invalid roperand: null");
