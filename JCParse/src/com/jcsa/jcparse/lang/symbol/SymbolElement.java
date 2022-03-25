@@ -1,20 +1,23 @@
 package com.jcsa.jcparse.lang.symbol;
 
 /**
+ * 	The non-typed token used in symbolic expressions.
+ * 	<br>
  * 	<code>
- * 	|--	SymbolElement						(Non-Expression as Elemental Node)					<br>
- * 	|--	|--	SymbolArgumentList				{arg_list --> (expr {, expr}*)}						<br>		
- * 	|--	|--	SymbolField						[field_name: String]								<br>
- * 	|--	|--	SymbolType						[type: CType]										<br>
- * 	|--	|--	SymbolOperator					[operator: COperator]								<br>
+ * 	SymbolNode								[_class, source, parent, children]	<br>
+ * 	|--	SymbolElement						(non-typed symbolic node as token)	<br>
+ * 	|--	|--	SymbolType						[type_name: CType]					<br>
+ * 	|--	|--	SymbolField						[field_name: String]				<br>
+ * 	|--	|--	SymbolOperator					[operator: COperator]				<br>
+ * 	|--	|--	SymbolArgumentList				(args_list --> (expr {, expr}+))	<br>
  * 	</code>
- * 
+ * 	
  * 	@author yukimula
  *
  */
 public abstract class SymbolElement extends SymbolNode {
 
-	protected SymbolElement(SymbolClass _class) throws Exception {
+	protected SymbolElement(SymbolClass _class) throws IllegalArgumentException {
 		super(_class);
 	}
 

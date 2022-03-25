@@ -161,7 +161,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 			SymbolExpression condition = SymbolFactory.smaller_tn(arg0, Integer.valueOf(0));
 			SymbolExpression t_operand = SymbolFactory.arith_neg(arg0);
 			SymbolExpression f_operand = SymbolFactory.sym_expression(arg0);
-			return SymbolFactory.cond_expr(arg0.get_data_type(), condition, t_operand, f_operand);
+			return SymbolFactory.ifte_expression(arg0.get_data_type(), condition, t_operand, f_operand);
 		}
 	}
 	
@@ -191,7 +191,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 	private	SymbolExpression printf(SymbolArgumentList alist) throws Exception {
 		SymbolExpression literal = alist.get_argument(0);
 		if(literal instanceof SymbolLiteral) {
-			String template = literal.generate_simple_code();
+			String template = literal.get_simple_code();
 			StringBuilder buffer = new StringBuilder();
 			int j = 1;
 			
@@ -203,7 +203,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 						ch = template.charAt(++k);
 					}
 					SymbolExpression arg = alist.get_argument(j++);
-					buffer.append(arg.generate_simple_code());
+					buffer.append(arg.get_simple_code());
 				}
 				else {
 					buffer.append(ch);
@@ -221,10 +221,10 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 	}
 	private	SymbolExpression fprintf(SymbolArgumentList alist) throws Exception {
 		SymbolIdentifier source = SymbolFactory.identifier(CBasicTypeImpl.
-				void_type, alist.get_argument(0).generate_simple_code(), alist);
+				void_type, alist.get_argument(0).get_simple_code(), alist);
 		SymbolExpression literal = alist.get_argument(1);
 		if(literal instanceof SymbolLiteral) {
-			String template = literal.generate_simple_code();
+			String template = literal.get_simple_code();
 			StringBuilder buffer = new StringBuilder();
 			int j = 2;
 			
@@ -236,7 +236,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 						ch = template.charAt(++k);
 					}
 					SymbolExpression arg = alist.get_argument(j++);
-					buffer.append(arg.generate_simple_code());
+					buffer.append(arg.get_simple_code());
 				}
 				else {
 					buffer.append(ch);
@@ -251,8 +251,8 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 	}
 	
 	@Override
-	public SymbolExpression invoke(SymbolCallExpression source, SymbolProcess ou_state) throws Exception {
-		this.ou_state = ou_state;
+	public SymbolExpression invoke(SymbolCallExpression source, SymbolContext in_state, SymbolContext ou_state) throws Exception {
+		this.ou_state = ou_state; this.in_state = in_state;
 		SymbolArgumentList alist = source.get_argument_list();
 		SymbolExpression function = source.get_function();
 		
@@ -325,7 +325,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 		return null;
 	}
 	
-	private	SymbolProcess ou_state;
+	protected	SymbolContext in_state, ou_state;
 	/**
 	 * It sets the source-target value-pair in the table
 	 * @param reference
@@ -342,9 +342,8 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 		else if(!reference.is_reference()) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
-		else if(this.ou_state != null) {this.ou_state.set_value(reference, value);}
+		else if(this.ou_state != null) {this.ou_state.put_value(reference, value);}
 		else { /* no state map is specified and thus no update arises here */ }
 	}
-	
 	
 }

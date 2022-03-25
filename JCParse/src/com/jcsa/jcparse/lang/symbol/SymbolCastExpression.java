@@ -1,44 +1,32 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.Map;
-
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
- * <code>SymbolCastExpression (cast_expr --> {type_name} expression)</code>
- * 
+ * cast_expr --> type expression
  * @author yukimula
  *
  */
 public class SymbolCastExpression extends SymbolSpecialExpression {
 	
 	/**
-	 * It creates a type-casting expression
-	 * @param type
-	 * @throws Exception
+	 * It creates an isolated node of casting expression
+	 * @param data_type
+	 * @throws IllegalArgumentException
 	 */
-	private SymbolCastExpression(CType type) throws Exception {
-		super(SymbolClass.cast_expression, type);
+	private SymbolCastExpression(CType data_type) throws IllegalArgumentException {
+		super(SymbolClass.cast_expression, data_type);
 	}
 	
 	/**
-	 * @return the casted type
+	 * It creates a type-casting expression
+	 * @param type		the type to cast
+	 * @param operand	the operand being casted
+	 * @return			cast_expr : type expression
+	 * @throws IllegalArgumentException
 	 */
-	public SymbolType get_cast_type() { return (SymbolType) this.get_child(0); }
-	
-	/**
-	 * @return the expression being casted
-	 */
-	public SymbolExpression get_operand() { return (SymbolExpression) this.get_child(1); }
-	
-	/**
-	 * It creates a casting: (type) operand
-	 * @param type		the casted type
-	 * @param operand	the expression to be casted
-	 * @return			(type) operand
-	 * @throws Exception
-	 */
-	protected static SymbolCastExpression create(SymbolType type, SymbolExpression operand) throws Exception {
+	protected static SymbolCastExpression create(SymbolType type, 
+			SymbolExpression operand) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
@@ -50,6 +38,16 @@ public class SymbolCastExpression extends SymbolSpecialExpression {
 			expression.add_child(type); expression.add_child(operand); return expression;
 		}
 	}
+	
+	/**
+	 * @return the type to cast the operand's value
+	 */
+	public SymbolType get_cast_type() { return (SymbolType) this.get_child(0); }
+	
+	/** 
+	 * @return the operand being casted in the expression
+	 */
+	public SymbolExpression get_operand() { return (SymbolExpression) this.get_child(1); }
 
 	@Override
 	protected SymbolNode new_one() throws Exception {
@@ -58,9 +56,9 @@ public class SymbolCastExpression extends SymbolSpecialExpression {
 
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
+		String type = "(" + this.get_cast_type().generate_code(simplified) + ")";
 		String operand = this.get_operand().generate_code(simplified);
-		if(!this.get_operand().is_leaf()) { operand = "(" + operand + ")"; }
-		return "(" + this.get_cast_type().generate_code(simplified) + ") " + operand;
+		return type + " " + operand;
 	}
 
 	@Override
@@ -68,13 +66,5 @@ public class SymbolCastExpression extends SymbolSpecialExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
-	
-	@Override
-	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
-		SymbolType cast_type = this.get_cast_type();
-		SymbolExpression operand = this.get_operand();
-		operand = operand.symb_replace(name_value_map);
-		return create(cast_type, operand);
-	}
 	
 }

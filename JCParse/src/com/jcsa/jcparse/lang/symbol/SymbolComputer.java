@@ -19,7 +19,6 @@ import com.jcsa.jcparse.lang.lexical.COperator;
  */
 public final class SymbolComputer {
 	
-
 	/* singleton */	 /** construction **/  private SymbolComputer() { }
 	private static final SymbolComputer computer = new SymbolComputer();
 	
@@ -997,3 +996,4 @@ public final class SymbolComputer {
 	}
 	
 }
+

@@ -20,7 +20,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
-import com.jcsa.jcparse.lang.symbol.SymbolProcess;
+import com.jcsa.jcparse.lang.symbol.SymbolContext;
 
 
 /**
@@ -138,7 +138,7 @@ public final class UniAbstractStates {
 	 * @throws Exception
 	 */
 	public static SymbolExpression b_evaluate(SymbolExpression expression, 
-			SymbolProcess in_context, SymbolProcess ou_context) throws Exception {
+			SymbolContext in_context, SymbolContext ou_context) throws Exception {
 		if(expression == null) {												/* input-validate */
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
@@ -164,7 +164,7 @@ public final class UniAbstractStates {
 	 * @throws Exception
 	 */
 	public static SymbolExpression i_evaluate(SymbolExpression expression, 
-			SymbolProcess i_context) throws Exception {
+			SymbolContext i_context) throws Exception {
 		return b_evaluate(expression, i_context, null);
 	}
 	/**
@@ -174,7 +174,7 @@ public final class UniAbstractStates {
 	 * @throws Exception
 	 */
 	public static SymbolExpression o_evaluate(SymbolExpression expression, 
-			SymbolProcess o_context) throws Exception {
+			SymbolContext o_context) throws Exception {
 		return b_evaluate(expression, null, o_context);
 	}
 	/**

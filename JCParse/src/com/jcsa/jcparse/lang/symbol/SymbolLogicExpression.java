@@ -1,27 +1,27 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.symbol;
 
-import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
- * <code> [and, ior, xor, lsh, rsh] </code>
+ * <code> [and, ior, imp(pos)] </code>
  * @author yukimula
  *
  */
-public class SymbolBitwsExpression extends SymbolBinaryExpression {
+public class SymbolLogicExpression extends SymbolBinaryExpression {
 	
 	/**
 	 * It creates an isolated expression for arithmetic
 	 * @param data_type
 	 * @throws IllegalArgumentException
 	 */
-	private SymbolBitwsExpression(CType data_type) throws IllegalArgumentException {
-		super(SymbolClass.bitws_expression, data_type);
+	private SymbolLogicExpression() throws IllegalArgumentException {
+		super(SymbolClass.logic_expression, CBasicTypeImpl.bool_type);
 	}
 
 	@Override
 	protected SymbolNode new_one() throws Exception {
-		return new SymbolBitwsExpression(this.get_data_type());
+		return new SymbolLogicExpression();
 	}
 	
 	@Override
@@ -32,18 +32,15 @@ public class SymbolBitwsExpression extends SymbolBinaryExpression {
 	
 	/**
 	 * @param type		the data type of the expression's value
-	 * @param operator	{and, ior, xor, lsh, rsh}
+	 * @param operator	{and, ior, imp(pos)}
 	 * @param loperand	the left-operand
 	 * @param roperand	the right-operand
 	 * @return			loperand operator roperand
 	 * @throws IllegalArgumentException
 	 */
-	protected static SymbolBitwsExpression create(CType type, COperator operator,
+	protected static SymbolLogicExpression create(COperator operator,
 			SymbolExpression loperand, SymbolExpression roperand) throws IllegalArgumentException {
-		if(type == null) {
-			throw new IllegalArgumentException("Invalid type: null");
-		}
-		else if(operator == null) {
+		if(operator == null) {
 			throw new IllegalArgumentException("Invalid operator: null");
 		}
 		else if(loperand == null) {
@@ -54,15 +51,13 @@ public class SymbolBitwsExpression extends SymbolBinaryExpression {
 		}
 		else {
 			switch(operator) {
-			case bit_and:
-			case bit_or:
-			case bit_xor:
-			case left_shift:
-			case righ_shift:	break;
-			default:			throw new IllegalArgumentException("Invalid: " + operator);
+			case logic_and:
+			case logic_or:
+			case positive:	break;
+			default:		throw new IllegalArgumentException("Invalid: " + operator);
 			}
 			
-			SymbolBitwsExpression expression = new SymbolBitwsExpression(type);
+			SymbolLogicExpression expression = new SymbolLogicExpression();
 			expression.add_child(SymbolOperator.create(operator));
 			expression.add_child(loperand); expression.add_child(roperand);
 			return expression;

@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symb;
+package com.jcsa.jcparse.lang.symbol;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 

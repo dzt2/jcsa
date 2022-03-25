@@ -4,41 +4,46 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 /**
- * <code>
- * 	|--	|--	SymbolUnaryExpression			[neg, rsv, not, inc, dec, addr, defr]				<br>
- * 	|--	|--	SymbolBinaryExpression			[add, sub, mul, div, mod, and, ior, xor, lsh, rsh]	<br>
- * 											[and, ior, imp, eqv, neq, grt, gre, smt, sme, ass]	<br>
- * </code>
- * 
- * @author yukimula
+ * 	The composite expression is driven by an operator
+ * 	<code>
+ * 	SymbolNode								[_class, source, parent, children]	<br>
+ * 	|--	SymbolExpression					(typed evaluation unit) [data_type]	<br>
+ * 	|--	|--	SymbolCompositeExpression		[comp_expr --> operator expression+]<br>
+ * 	|--	|--	|--	SymbolUnaryExpression		(unary)	[neg, rsv, not, adr, ref]	<br>
+ * 	|--	|--	|--	SymbolArithExpression		(arith)	[add, sub, mul, div, mod]	<br>
+ * 	|--	|--	|--	SymbolBitwsExpression		(bitws)	[and, ior, xor, lsh, rsh]	<br>
+ * 	|--	|--	|--	SymbolLogicExpression		(logic)	[and, ior, eqv, neq, imp]	<br>
+ * 	|--	|--	|--	SymbolRelationExpression	(relate)[grt, gre, smt, sme, neq]	<br>
+ * 	|--	|--	|--	SymbolAssignExpression		(assign)[eas, ias]					<br>
+ * 	</code>
+ * 	@author yukimula
  *
  */
 public abstract class SymbolCompositeExpression extends SymbolExpression {
 
-	protected SymbolCompositeExpression(SymbolClass _class, CType type) throws Exception {
-		super(_class, type);
+	protected SymbolCompositeExpression(SymbolClass _class, CType data_type) throws IllegalArgumentException {
+		super(_class, data_type);
 	}
 	
 	/**
-	 * @return
+	 * @return the operator node of the composite expression
 	 */
 	public SymbolOperator get_operator() { return (SymbolOperator) this.get_child(0); }
 	
 	/**
-	 * @return	[neg, rsv, not, inc, dec, adr, ref]
-	 * 			[add, sub, mul, div, mod, and, ior, xor, lsh, rsh]
-	 * 			[and, ior, imp, eqv, neq, grt, gre, smt, sme, ass]
+	 * @return {neg, rsv, not, adr, der, add, sub, mul, div, mod, and, ior, xor, lsh,
+	 * 			rsh, and, ior, imp(pos), grt, gre, smt, sme, eqv, neq, ass, ias(inc)}
 	 */
 	public COperator get_coperator() { return this.get_operator().get_operator(); }
 	
 	/**
-	 * @return the number of operands under composite expression
+	 * @return the number of operands used in the composite expression
 	 */
 	public int number_of_operands() { return this.number_of_children() - 1; }
 	
 	/**
 	 * @param k
-	 * @return the kth operand in the expression
+	 * @return the kth operand used in this composite expression
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymbolExpression get_operand(int k) throws IndexOutOfBoundsException {

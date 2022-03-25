@@ -1,42 +1,34 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <code> {arg_list --> (expr {, expr}*)} </code>
- * @author yukimula
+ * 	<code>args_list --> (expr {, expr}*)</code>
+ * 	@author yukimula
  *
  */
 public class SymbolArgumentList extends SymbolElement {
-
-	private SymbolArgumentList() throws Exception {
+	
+	/**
+	 * It creates the empty argument list for calling
+	 * @throws IllegalArgumentException
+	 */
+	private SymbolArgumentList() throws IllegalArgumentException {
 		super(SymbolClass.argument_list);
 	}
 	
 	/**
-	 * @return the number of arguments in the list
+	 * @return the number of arguments inserted in this list
 	 */
-	public int number_of_arguments() { return this.number_of_children(); }
+	public int number_of_arguments() { return this.number_of_children(); } 
 	
 	/**
 	 * @param k
-	 * @return the kth argument in the list
+	 * @return it fetches the kth argument in the list
 	 * @throws IndexOutOfBoundsException
 	 */
 	public SymbolExpression get_argument(int k) throws IndexOutOfBoundsException {
 		return (SymbolExpression) this.get_child(k);
-	}
-	
-	/**
-	 * @return the arguments in the list
-	 */
-	public Iterable<SymbolExpression> get_arguments() {
-		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
-		for(SymbolNode child : this.get_children()) {
-			list.add((SymbolExpression) child);
-		}
-		return list;
 	}
 
 	@Override
@@ -48,7 +40,7 @@ public class SymbolArgumentList extends SymbolElement {
 		buffer.append("(");
 		for(int k = 0; k < this.number_of_arguments(); k++) {
 			buffer.append(this.get_argument(k).generate_code(simplified));
-			if(k < this.number_of_arguments() - 1){ buffer.append(", "); }
+			if(k < this.number_of_arguments() - 1) { buffer.append(", "); }
 		}
 		buffer.append(")");
 		return buffer.toString();
@@ -61,16 +53,18 @@ public class SymbolArgumentList extends SymbolElement {
 	protected boolean is_side_affected() { return false; }
 	
 	/**
-	 * @param arguments	the list of expressions inserted in argument list
-	 * @return			the argument list incorporating input expressions
-	 * @throws Exception
+	 * @param list
+	 * @return it creates an argument list with specified input expressions
+	 * @throws IllegalArgumentException
 	 */
-	protected static SymbolArgumentList create(Iterable<SymbolExpression> arguments) throws Exception {
-		SymbolArgumentList list = new SymbolArgumentList();
-		for(SymbolExpression argument : arguments) {
-			list.add_child(argument);
+	protected static SymbolArgumentList create(List<SymbolExpression> list) throws IllegalArgumentException {
+		SymbolArgumentList alist = new SymbolArgumentList();
+		if(list != null && !list.isEmpty()) {
+			for(SymbolExpression argument : list) {
+				alist.add_child(argument);
+			}
 		}
-		return list;
+		return alist;
 	}
 	
 }

@@ -10,40 +10,47 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CUnionType;
 
 /**
- * 	<code>SymbolType	[type: CType]</code>
- * 	
+ * 	<code>SymbolType	[type_name: CType]</code>
  * 	@author yukimula
  *
  */
 public class SymbolType extends SymbolElement {
 	
-	/** the type represented by the cast node **/
-	private	CType type;
+	/** the type included in this element node **/
+	private CType data_type;
 	
 	/**
-	 * It creates a type-node in cast_expression
-	 * @param type	the type of this type-node
-	 * @throws Exception
+	 * It creates a node to incorporate the data type included
+	 * @param data_type
+	 * @throws IllegalArgumentException
 	 */
-	private SymbolType(CType type) throws Exception {
+	private SymbolType(CType data_type) throws IllegalArgumentException {
 		super(SymbolClass.type_name);
-		this.type = SymbolFactory.get_type(type);
+		if(data_type == null) {
+			throw new IllegalArgumentException("Invalid data_type: null");
+		}
+		else {
+			this.data_type = data_type;
+		}
 	}
 	
 	/**
-	 * @return the type represented by the cast node 
+	 * @return the type included in this element node
 	 */
-	public CType get_type() { return this.type; }
+	public CType get_type() { return this.data_type; }
 
 	@Override
-	protected SymbolNode new_one() throws Exception { return new SymbolType(this.type); }
+	protected SymbolNode new_one() throws Exception {
+		return new SymbolType(this.data_type);
+	}
 	
 	/**
+	 * It recursively generates the code describing the data type
 	 * @param type
-	 * @return the type-name form of type code
+	 * @return
 	 * @throws Exception
 	 */
-	private	String generate_type_code(CType type) throws Exception {
+	private String generate_type_code(CType type) throws Exception {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
@@ -123,7 +130,7 @@ public class SymbolType extends SymbolElement {
 	
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
-		return this.generate_type_code(this.type);
+		return this.generate_type_code(this.data_type);
 	}
 
 	@Override
@@ -133,12 +140,12 @@ public class SymbolType extends SymbolElement {
 	protected boolean is_side_affected() { return false; }
 	
 	/**
-	 * @param type 	the type represented by the cast node 
-	 * @return		It creates a type-node in cast_expression
-	 * @throws Exception
+	 * @param type	the type included in this element node
+	 * @return		it creates a node to include data type
+	 * @throws IllegalArgumentException
 	 */
-	protected static SymbolType create(CType type) throws Exception {
+	protected static SymbolType create(CType type) throws IllegalArgumentException { 
 		return new SymbolType(type);
 	}
-	
+
 }

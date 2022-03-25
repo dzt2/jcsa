@@ -1,43 +1,42 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.Map;
-
 import com.jcsa.jcparse.lang.lexical.CConstant;
 
 /**
- * Numeric const value {bool|char|short|int|long|float|double}
+ * It represents a numeric constant of expression. 
  * 
  * @author yukimula
  *
  */
 public class SymbolConstant extends SymbolBasicExpression {
 	
-	/** the constant value **/
+	/** the constant included **/
 	private CConstant constant;
 	
 	/**
-	 * It creates a symbolic value to represent numeric constant
+	 * It creates an isolated node with specified constant
 	 * @param constant
-	 * @throws Exception
+	 * @throws IllegalArgumentException
 	 */
-	private SymbolConstant(CConstant constant) throws Exception {
+	private SymbolConstant(CConstant constant) throws IllegalArgumentException {
 		super(SymbolClass.constant, constant.get_type());
 		this.constant = constant;
 	}
 	
 	/**
-	 * It creates a symbolic value to represent numeric constant
-	 * @param constant
-	 * @throws Exception
+	 * It creates an isolated node with specified constant
+	 * @param constant	the numeric constant being included
+	 * @return
+	 * @throws IllegalArgumentException
 	 */
-	protected static SymbolConstant create(CConstant constant) throws Exception {
-		if(constant == null) {
-			throw new IllegalArgumentException("Invalid constant: null");
-		}
-		else {
-			return new SymbolConstant(constant);
-		}
+	protected static SymbolConstant create(CConstant constant) throws IllegalArgumentException {
+		return new SymbolConstant(constant);
 	}
+	
+	/**
+	 * @return the constant included in this symbolic node
+	 */
+	public CConstant get_constant() { return this.constant; }
 
 	@Override
 	protected SymbolNode new_one() throws Exception {
@@ -55,11 +54,7 @@ public class SymbolConstant extends SymbolBasicExpression {
 	@Override
 	protected boolean is_side_affected() { return false; }
 	
-	/* value getters */
-	/**
-	 * @return the original constant object of the symbolic value
-	 */
-	public CConstant 	get_constant() { return this.constant; }
+	/* typed getters */
 	/**
 	 * @return taken as boolean value
 	 */
@@ -235,12 +230,6 @@ public class SymbolConstant extends SymbolBasicExpression {
 		case c_ldouble:		return Double.valueOf((double) this.constant.get_double().doubleValue());
 		default:			throw new IllegalArgumentException("Invalid: " + this.constant);
 		}
-	}
-
-	
-	@Override
-	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
-		return this;
 	}
 	
 }

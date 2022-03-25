@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolProcess;
+import com.jcsa.jcparse.lang.symbol.SymbolContext;
 
 /**
  * 	It represents an abstract execution state specified at some program location.
@@ -490,7 +490,7 @@ public abstract class CirAbstractState {
 	 * @return the normalized version of the state under the context
 	 * @throws Exception
 	 */
-	public CirAbstractState normalize(SymbolProcess context) throws Exception {
+	public CirAbstractState normalize(SymbolContext context) throws Exception {
 		return CirMutations.normalize(this, context);
 	}
 	/**
@@ -505,7 +505,7 @@ public abstract class CirAbstractState {
 	 * @return True {passed}; False {failed}; null {unknown}
 	 * @throws Exception
 	 */
-	public Boolean evaluate(SymbolProcess context) throws Exception {
+	public Boolean evaluate(SymbolContext context) throws Exception {
 		return CirMutations.evaluate(this, context);
 	}
 	/**

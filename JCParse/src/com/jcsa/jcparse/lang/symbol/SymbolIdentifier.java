@@ -1,12 +1,9 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.Map;
-
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
- * <code>identifier --> name#scope</code>
- * 
+ * <code>id_expr --> name#scope</code>
  * @author yukimula
  *
  */
@@ -19,18 +16,27 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	private Object scope;
 	
 	/**
-	 * It creates an identifier as expression used in symbolic expression.
-	 * @param type		the type of the identifier
-	 * @param name		the simple name of identifier
-	 * @param scope		the scope where the name is defined
-	 * @throws Exception
+	 * It creates an isolated identifier expression with given name in scope
+	 * @param name
+	 * @param scope
+	 * @throws IllegalArgumentException
 	 */
-	private SymbolIdentifier(CType type, String name, Object scope) throws Exception {
-		super(SymbolClass.identifier, type);
+	private SymbolIdentifier(CType data_type, String name, Object scope) throws IllegalArgumentException {
+		super(SymbolClass.identifier, data_type);
 		if(name == null || name.strip().isEmpty()) {
 			throw new IllegalArgumentException("Invalid name: null");
 		}
 		else { this.name = name.strip(); this.scope = scope; }
+	}
+	
+	/**
+	 * It creates an isolated identifier expression with given name in scope
+	 * @param name
+	 * @param scope
+	 * @throws IllegalArgumentException
+	 */
+	protected static SymbolIdentifier create(CType data_type, String name, Object scope) throws IllegalArgumentException {
+		return new SymbolIdentifier(data_type, name, scope);
 	}
 	
 	/**
@@ -44,15 +50,16 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 	public Object get_scope() { return this.scope; }
 	
 	/**
-	 * @return name#scope
+	 * @return the unique identifier of this expression
 	 */
 	public String get_identifier() { return this.name + "#" + this.scope; }
-
+	
 	@Override
-	protected SymbolNode new_one() throws Exception { 
-		return new SymbolIdentifier(this.get_data_type(), this.name, this.scope); 
+	protected SymbolNode new_one() throws Exception {
+		return new SymbolIdentifier(this.get_data_type(), 
+					this.get_name(), this.get_scope());
 	}
-
+	
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
 		if(simplified) {
@@ -68,26 +75,5 @@ public class SymbolIdentifier extends SymbolBasicExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
-	
-	/**
-	 * It creates an identifier as expression used in symbolic expression.
-	 * @param type		the type of the identifier
-	 * @param name		the simple name of identifier
-	 * @param scope		the scope where the name is defined
-	 * @throws Exception
-	 */
-	protected static SymbolIdentifier create(CType type, String name, Object scope) throws Exception {
-		return new SymbolIdentifier(type, name, scope);
-	}
-	
-	@Override
-	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
-		if(name_value_map.containsKey(this)) {
-			return name_value_map.get(this);
-		}
-		else {
-			return this;
-		}
-	}
 	
 }

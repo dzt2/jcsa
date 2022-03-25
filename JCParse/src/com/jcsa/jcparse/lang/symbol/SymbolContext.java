@@ -1,8 +1,10 @@
-package com.jcsa.jcparse.lang.symb.impl;
+package com.jcsa.jcparse.lang.symbol;
 
 import java.util.Map;
 
-import com.jcsa.jcparse.lang.symb.SymbolExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.test.state.CStateNode;
+import com.jcsa.jcparse.test.state.CStateUnit;
 
 /**
  * 	It provides the value-read-write operations to preserve states used in
@@ -105,6 +107,40 @@ public class SymbolContext {
 		}
 		else {
 			this.top_scope = this.top_scope.get_parent();
+		}
+	}
+	
+	/**
+	 * It accumulates the instrumental path state to the context
+	 * @param state_node
+	 * @throws Exception
+	 */
+	public void accumulate(CStateNode state_node) throws Exception {
+		if(state_node == null) {
+			throw new IllegalArgumentException("Invalid state_node: null");
+		}
+		else {
+			/* 1. set the data-states before executing */
+			for(CStateUnit unit : state_node.get_units()) {
+				if(unit.has_value() && unit.get_expression() != null) {
+					SymbolExpression source = SymbolFactory.sym_expression(unit.get_expression());
+					SymbolExpression target = SymbolFactory.sym_expression(unit.get_value());
+					this.put_value(source, target);
+				}
+			}
+			
+			/* 2. account the prior executed statement */
+			if(state_node.get_prev_node() != null) {
+				CirExecution execution = state_node.get_prev_node().get_execution();
+				SymbolExpression source = SymbolFactory.sym_expression(execution);
+				if(!this.has_value(source)) {
+					this.put_value(source, SymbolFactory.sym_constant(Integer.valueOf(0)));
+				}
+				
+				SymbolConstant target = (SymbolConstant) this.get_value(source);
+				target = SymbolFactory.sym_constant(Integer.valueOf(target.get_int() + 1));
+				this.put_value(source, target);
+			}
 		}
 	}
 	

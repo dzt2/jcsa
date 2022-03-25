@@ -3,11 +3,15 @@ package com.jcsa.jcparse.lang.symbol;
 import com.jcsa.jcparse.lang.ctype.CType;
 
 /**
+ * 	The basic expression without children.
+ * 	<br>
  * 	<code>
- * 	|--	|--	SymbolBasicExpression			(basic expression as the leaf node)					<br>
- * 	|--	|--	|--	SymbolIdentifier			[name: String; scope: Object; identifier: String]	<br>
- * 	|--	|--	|--	SymbolConstant				[constant: CConstant]								<br>
- * 	|--	|--	|--	SymbolLiteral				[literal: String]									<br>
+ * 	SymbolNode								[_class, source, parent, children]	<br>
+ * 	|--	SymbolExpression					(typed evaluation unit) [data_type]	<br>
+ * 	|--	|--	SymbolBasicExpression			(basic expression without child)	<br>
+ * 	|--	|--	|--	SymbolIdentifier			[name: String, scope: Object]		<br>
+ * 	|--	|--	|--	SymbolConstant				[constant: CConstant]				<br>
+ * 	|--	|--	|--	SymbolLiteral				[literal: String]					<br>
  * 	</code>
  * 	
  * 	@author yukimula
@@ -15,8 +19,8 @@ import com.jcsa.jcparse.lang.ctype.CType;
  */
 public abstract class SymbolBasicExpression extends SymbolExpression {
 
-	protected SymbolBasicExpression(SymbolClass _class, CType type) throws Exception {
-		super(_class, type);
+	protected SymbolBasicExpression(SymbolClass _class, CType data_type) throws IllegalArgumentException {
+		super(_class, data_type);
 	}
 
 }

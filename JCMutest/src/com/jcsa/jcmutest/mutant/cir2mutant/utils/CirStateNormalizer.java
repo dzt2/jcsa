@@ -22,7 +22,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolProcess;
+import com.jcsa.jcparse.lang.symbol.SymbolContext;
 
 /**
  * It implements the normalization of CirAbstractState based on some context
@@ -44,7 +44,7 @@ public final class CirStateNormalizer {
 	 * @return			the normalized structural form of input state
 	 * @throws Exception
 	 */
-	public static CirAbstractState normalize(CirAbstractState state, SymbolProcess context) throws Exception {
+	public static CirAbstractState normalize(CirAbstractState state, SymbolContext context) throws Exception {
 		return normalizer.norm(state, context);
 	}
 	/**
@@ -54,7 +54,7 @@ public final class CirStateNormalizer {
 	 * @return			the normalized structural form of input state
 	 * @throws Exception
 	 */
-	private CirAbstractState norm(CirAbstractState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm(CirAbstractState state, SymbolContext context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -95,7 +95,7 @@ public final class CirStateNormalizer {
 	 * @return cov_times([S], (bool, times)) --> cov_times([S'], (bool, times))
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_cov_times(CirCoverTimesState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_cov_times(CirCoverTimesState state, SymbolContext context) throws Exception {
 		CirExecution target = state.get_execution();
 		CirExecutionPath path = CirMutations.inblock_prev_path(target);
 		int times = state.get_executed_times();
@@ -113,7 +113,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_constrain(CirConstraintState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_constrain(CirConstraintState state, SymbolContext context) throws Exception {
 		SymbolExpression condition = state.get_condition();
 		condition = CirMutations.evaluate(condition, context);
 		if(CirMutations.is_trap_value(condition)) {
@@ -137,7 +137,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_sy_mutant(CirSyMutationState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_sy_mutant(CirSyMutationState state, SymbolContext context) throws Exception {
 		CirExecution target = state.get_execution();
 		CirExecutionPath path = CirMutations.inblock_prev_path(target);
 		CirExecution execution = path.get_source();
@@ -149,7 +149,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_blc_error(CirBlockErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_blc_error(CirBlockErrorState state, SymbolContext context) throws Exception {
 		return state;
 	}
 	/**
@@ -158,7 +158,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_flw_error(CirFlowsErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_flw_error(CirFlowsErrorState state, SymbolContext context) throws Exception {
 		return state;
 	}
 	/**
@@ -167,7 +167,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_trp_error(CirTrapsErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_trp_error(CirTrapsErrorState state, SymbolContext context) throws Exception {
 		return state;
 	}
 	/**
@@ -176,7 +176,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_val_error(CirValueErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_val_error(CirValueErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression muta_value = state.get_muta_value();
 		muta_value = CirMutations.evaluate(muta_value, context);
 		if(CirMutations.is_trap_value(muta_value)) {
@@ -196,7 +196,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_inc_error(CirIncreErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_inc_error(CirIncreErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression muta_value = state.get_difference();
 		muta_value = CirMutations.evaluate(muta_value, context);
 		if(CirMutations.is_trap_value(muta_value)) {
@@ -216,7 +216,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private CirAbstractState norm_xor_error(CirBixorErrorState state, SymbolProcess context) throws Exception {
+	private CirAbstractState norm_xor_error(CirBixorErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression muta_value = state.get_difference();
 		muta_value = CirMutations.evaluate(muta_value, context);
 		if(CirMutations.is_trap_value(muta_value)) {
@@ -240,7 +240,7 @@ public final class CirStateNormalizer {
 	 * @return			True {passed}; False {fail}; null {Unknown}
 	 * @throws Exception
 	 */
-	public static Boolean evaluate(CirAbstractState state, SymbolProcess context) throws Exception {
+	public static Boolean evaluate(CirAbstractState state, SymbolContext context) throws Exception {
 		return normalizer.eval(state, context);
 	}
 	/**
@@ -251,7 +251,7 @@ public final class CirStateNormalizer {
 	 * @return			True {passed}; False {fail}; null {Unknown}
 	 * @throws Exception
 	 */
-	private Boolean eval(CirAbstractState state, SymbolProcess context) throws Exception {
+	private Boolean eval(CirAbstractState state, SymbolContext context) throws Exception {
 		if(state == null) {
 			throw new IllegalArgumentException("Invalid state: null");
 		}
@@ -292,7 +292,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_cov_times(CirCoverTimesState state, SymbolProcess context) throws Exception {
+	private Boolean eval_cov_times(CirCoverTimesState state, SymbolContext context) throws Exception {
 		if(context == null) {
 			return null;
 		}
@@ -342,7 +342,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_constrain(CirConstraintState state, SymbolProcess context) throws Exception {
+	private Boolean eval_constrain(CirConstraintState state, SymbolContext context) throws Exception {
 		SymbolExpression condition = state.get_condition();
 		condition = CirMutations.evaluate(condition, context);
 		if(CirMutations.is_trap_value(condition)) {
@@ -361,7 +361,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_sy_mutant(CirSyMutationState state, SymbolProcess context) throws Exception {
+	private Boolean eval_sy_mutant(CirSyMutationState state, SymbolContext context) throws Exception {
 		if(context == null) {
 			return null;
 		}
@@ -391,7 +391,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_blc_error(CirBlockErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_blc_error(CirBlockErrorState state, SymbolContext context) throws Exception {
 		if(state.get_execution().get_statement() instanceof CirTagStatement) {
 			return Boolean.FALSE;
 		}
@@ -405,7 +405,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_flw_error(CirFlowsErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_flw_error(CirFlowsErrorState state, SymbolContext context) throws Exception {
 		return Boolean.valueOf(state.get_orig_target() != state.get_muta_target());
 	}
 	/**
@@ -414,7 +414,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_trp_error(CirTrapsErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_trp_error(CirTrapsErrorState state, SymbolContext context) throws Exception {
 		return Boolean.TRUE;
 	}
 	/**
@@ -423,7 +423,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_val_error(CirValueErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_val_error(CirValueErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression orig_value = state.get_orig_value();
 		SymbolExpression muta_value = state.get_muta_value();
 		orig_value = CirMutations.evaluate(orig_value, context);
@@ -445,7 +445,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_inc_error(CirIncreErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_inc_error(CirIncreErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression difference = state.get_difference();
 		difference = CirMutations.evaluate(difference, context);
 		
@@ -470,7 +470,7 @@ public final class CirStateNormalizer {
 	 * @return
 	 * @throws Exception
 	 */
-	private Boolean eval_xor_error(CirBixorErrorState state, SymbolProcess context) throws Exception {
+	private Boolean eval_xor_error(CirBixorErrorState state, SymbolContext context) throws Exception {
 		SymbolExpression difference = state.get_difference();
 		difference = CirMutations.evaluate(difference, context);
 		

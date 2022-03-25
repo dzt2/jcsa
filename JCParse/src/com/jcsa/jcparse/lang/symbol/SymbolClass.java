@@ -1,30 +1,37 @@
 package com.jcsa.jcparse.lang.symbol;
 
 /**
- * 	It defines the category of SymbolNode (symbolic node) describing expressions
- * 	being evaluated at p-state.
+ * 	It specifies the class of SymbolNode.
  * 	
  * 	@author yukimula
- *	
+ *
  */
 public enum SymbolClass {
 	/* element */
 	type_name,
-	argument_list,
 	field_name,
-	expr_operator,
-	func_definition,
+	operator,
+	argument_list,
+	
 	/* base_expr */
 	identifier,
 	constant,
-	string_literal,
+	literal,
+	
 	/* composite */
-	binary_expression,
 	unary_expression,
-	/* special */
+	arith_expression,
+	bitws_expression,
+	logic_expression,
+	relation_expression,
+	assign_expression,
+	
+	/* special_expr */
 	cast_expression,
 	call_expression,
-	field_expression,
 	initializer_list,
-	cond_expression,
+	field_expression,
+	ifte_expression,
+	expression_list,
+	
 }

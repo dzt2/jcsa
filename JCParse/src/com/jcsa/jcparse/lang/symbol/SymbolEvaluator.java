@@ -7,26 +7,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
+
 /**
- * It supports the evaluation of SymbolExpression.
+ * It implements the evaluation of SymbolExpression using state-driven approach.
  * 
  * @author yukimula
  *
  */
-public final class SymbolEvaluator {
+public class SymbolEvaluator {
 	
 	/* definition */
 	/** the list of invokers to invoke call-expressions **/
 	private	List<SymbolMethodInvoker> 				invokers;
 	/** to preserve the input-output state values in current state **/
-	private	SymbolProcess							in_state;
+	private	SymbolContext							in_state;
 	/** it preserves the states as output of side-effect operation **/
-	private	SymbolProcess							ou_state;
+	private	SymbolContext							ou_state;
 	/**
 	 * private constructor for singleton mode
 	 */
@@ -67,7 +67,7 @@ public final class SymbolEvaluator {
 		else if(!reference.is_reference() && !(reference instanceof SymbolCallExpression)) {
 			throw new IllegalArgumentException("Invalid reference: " + reference);
 		}
-		else if(this.ou_state != null) {this.ou_state.set_value(reference, value);}
+		else if(this.ou_state != null) {this.ou_state.put_value(reference, value);}
 		else { /* no state map is specified and thus no update arises here */ }
 	}
 	/**
@@ -86,7 +86,7 @@ public final class SymbolEvaluator {
 	 * @param in_state
 	 * @param ou_state
 	 */
-	private	void set_io_states(SymbolProcess in_state, SymbolProcess ou_state) {
+	private	void set_io_states(SymbolContext in_state, SymbolContext ou_state) {
 		this.in_state = in_state; this.ou_state = ou_state;
 	}
 	
@@ -101,36 +101,7 @@ public final class SymbolEvaluator {
 		evaluator.add_invoker(invoker);
 	}
 	
-	/* syntax-directed evaluation algorithms */
-	/**
-	 * @param expression	the symbolic expression to be evaluated
-	 * @return				the resulting expression from the input
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
-		return evaluator.eval_on(expression, null, null);
-	}
-	/**
-	 * @param expression	the symbolic expression to be evaluated
-	 * @param io_state		as both states to input and save output
-	 * @return				the resulting expression from the input
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression,
-			SymbolProcess io_state) throws Exception {
-		return evaluator.eval_on(expression, io_state, io_state);
-	}
-	/**
-	 * @param expression	the symbolic expression to be evaluated
-	 * @param in_state		the state-context to provide the inputs
-	 * @param ou_state		the state-context to preserve an output
-	 * @return				the resulting expression from the input
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression,
-			SymbolProcess in_state, SymbolProcess ou_state) throws Exception {
-		return evaluator.eval_on(expression, in_state, ou_state);
-	}
+	/* recursively evaluation methods */
 	/**
 	 * @param expression	the symbolic expression to be evaluated
 	 * @param in_state		the state-context to provide the inputs
@@ -139,7 +110,7 @@ public final class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private	SymbolExpression	eval_on(SymbolExpression expression, 
-			SymbolProcess in_state, SymbolProcess ou_state) throws Exception {
+			SymbolContext in_state, SymbolContext ou_state) throws Exception {
 		this.set_io_states(in_state, ou_state);
 		return this.eval(expression);
 	}
@@ -171,8 +142,8 @@ public final class SymbolEvaluator {
 		else if(expression instanceof SymbolCastExpression) {
 			return this.eval_cast_expr((SymbolCastExpression) expression);
 		}
-		else if(expression instanceof SymbolConditionExpression) {
-			return this.eval_cond_expr((SymbolConditionExpression) expression);
+		else if(expression instanceof SymbolIfElseExpression) {
+			return this.eval_cond_expr((SymbolIfElseExpression) expression);
 		}
 		else if(expression instanceof SymbolFieldExpression) {
 			return this.eval_fiel_expr((SymbolFieldExpression) expression);
@@ -180,9 +151,23 @@ public final class SymbolEvaluator {
 		else if(expression instanceof SymbolInitializerList) {
 			return this.eval_init_list((SymbolInitializerList) expression);
 		}
-		else {
-			throw new IllegalArgumentException(expression.generate_code(true));
+		else if(expression instanceof SymbolExpressionList) {
+			return this.eval_expr_list((SymbolExpressionList) expression);
 		}
+		else {
+			throw new IllegalArgumentException(expression.get_symbol_class().toString());
+		}
+	}
+	/**
+	 * @param expression	the symbolic expression to be evaluated
+	 * @param in_state		the state-context to provide the inputs
+	 * @param ou_state		the state-context to preserve an output
+	 * @return				the resulting expression from the input
+	 * @throws Exception
+	 */
+	public static SymbolExpression evaluate(SymbolExpression expression,
+			SymbolContext in_state, SymbolContext ou_state) throws Exception {
+		return evaluator.eval_on(expression, in_state, ou_state);
 	}
 	
 	/* basic expression evaluation */
@@ -224,7 +209,7 @@ public final class SymbolEvaluator {
 		/* 2. it tries to invoke the function calls */
 		SymbolExpression output = result;
 		for(SymbolMethodInvoker invoker : this.invokers) {
-			SymbolExpression new_result = invoker.invoke(result, this.ou_state);
+			SymbolExpression new_result = invoker.invoke(result, this.in_state, this.ou_state);
 			if(new_result != null) {
 				output = new_result; break;
 			}
@@ -238,7 +223,7 @@ public final class SymbolEvaluator {
 	 * @return	[const-condition; equal-t-fvalue; otherwise]
 	 * @throws Exception
 	 */
-	private	SymbolExpression	eval_cond_expr(SymbolConditionExpression expression) throws Exception {
+	private	SymbolExpression	eval_cond_expr(SymbolIfElseExpression expression) throws Exception {
 		SymbolExpression condition = this.eval(expression.get_condition());
 		SymbolExpression t_operand = this.eval(expression.get_t_operand());
 		SymbolExpression f_operand = this.eval(expression.get_f_operand());
@@ -254,7 +239,7 @@ public final class SymbolEvaluator {
 			return t_operand;
 		}
 		else {
-			return SymbolFactory.cond_expr(expression.get_data_type(), condition, t_operand, f_operand);
+			return SymbolFactory.ifte_expression(expression.get_data_type(), condition, t_operand, f_operand);
 		}
 	}
 	/**
@@ -293,7 +278,7 @@ public final class SymbolEvaluator {
 		case logic_not:			return this.eval_logic_not(expression);
 		case address_of:		return this.eval_addr_of(expression);
 		case dereference:		return this.eval_de_refer(expression);
-		default:				throw new IllegalArgumentException(expression.generate_code(false));
+		default:				throw new IllegalArgumentException(expression.get_simple_code());
 		}
 	}
 	/**
@@ -327,7 +312,49 @@ public final class SymbolEvaluator {
 							return this.eval_ex_assign(expression);
 		case increment:		/* implicit assignment */
 							return this.eval_im_assign(expression);
-		default:			throw new IllegalArgumentException(expression.generate_code(false));
+		default:			throw new IllegalArgumentException(expression.get_simple_code());
+		}
+	}
+	/**
+	 * It extends the elements in expression list to flat form
+	 * @param expression
+	 * @param elist
+	 * @throws Exception
+	 */
+	private	void	extend_expr_list(SymbolExpression expression, List<SymbolExpression> elist) throws Exception {
+		if(expression instanceof SymbolExpressionList) {
+			SymbolExpressionList list = (SymbolExpressionList) expression;
+			for(int k = 0; k < list.number_of_expressions(); k++) {
+				this.extend_expr_list(list.get_expression(k), elist);
+			}
+		}
+		else {
+			elist.add(expression);
+		}
+	}
+	/**
+	 * It evaluates the expression-list by extending its elements in flat-forms.
+	 * @param expression
+	 * @return
+	 * @throws Exception
+	 */
+	private	SymbolExpression	eval_expr_list(SymbolExpressionList expression) throws Exception {
+		List<SymbolExpression> alist = new ArrayList<SymbolExpression>();
+		this.extend_expr_list(expression, alist);
+		
+		List<Object> blist = new ArrayList<Object>();
+		for(SymbolExpression element : alist) {
+			blist.add(this.eval(element));
+		}
+		SymbolExpressionList elist = SymbolFactory.expression_list(blist);
+		SymbolExpression lvalue = SymbolFactory.identifier(elist.get_data_type(), "@ast", elist);
+		this.set_state_value(lvalue, elist);
+		
+		if(elist.number_of_expressions() > 0) {
+			return elist.get_expression(elist.number_of_expressions() - 1);
+		}
+		else {
+			return elist;
 		}
 	}
 	

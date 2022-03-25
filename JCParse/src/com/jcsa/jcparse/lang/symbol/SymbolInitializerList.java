@@ -1,29 +1,37 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 
-/**
- * <code>(init_list --> {expr (, expr)*})</code>
- * 
- * @author yukimula
- *
- */
 public class SymbolInitializerList extends SymbolSpecialExpression {
-
+	
 	/**
 	 * It creates an empty initializer list
-	 * @throws Exception
+	 * @throws IllegalArgumentException
 	 */
-	private SymbolInitializerList() throws Exception {
+	private SymbolInitializerList() throws IllegalArgumentException {
 		super(SymbolClass.initializer_list, CBasicTypeImpl.void_type);
 	}
 	
 	/**
-	 * @return the number of elements included in list
+	 * It creates an initializer list with specified list of elements
+	 * @param list
+	 * @return
+	 * @throws IllegalArgumentException
+	 */
+	protected static SymbolInitializerList create(List<SymbolExpression> list) throws IllegalArgumentException {
+		SymbolInitializerList elist = new SymbolInitializerList();
+		if(list != null && !list.isEmpty()) {
+			for(SymbolExpression element : list) {
+				elist.add_child(element);
+			}
+		}
+		return elist;
+	}
+	
+	/**
+	 * @return the number of elements included in the initializer list
 	 */
 	public int number_of_elements() { return this.number_of_children(); }
 	
@@ -32,52 +40,22 @@ public class SymbolInitializerList extends SymbolSpecialExpression {
 	 * @return the kth element in the list
 	 * @throws IndexOutOfBoundsException
 	 */
-	public SymbolExpression get_element(int k) throws IndexOutOfBoundsException { 
-		return (SymbolExpression) this.get_child(k); 
-	}
-	
-	/**
-	 * @return the elements included in the list
-	 */
-	public Iterable<SymbolExpression> get_elements() {
-		List<SymbolExpression> list = new ArrayList<SymbolExpression>();
-		for(SymbolNode child : this.get_children()) {
-			list.add((SymbolExpression) child);
-		}
-		return list;
-	}
-	
-	/**
-	 * @param elements
-	 * @return {e1, e2, e3, ..., eN}
-	 * @throws Exception
-	 */
-	protected static SymbolInitializerList create(Iterable<SymbolExpression> elements) throws Exception {
-		if(elements == null) {
-			throw new IllegalArgumentException("Invalid elements: null");
-		}
-		else {
-			SymbolInitializerList list = new SymbolInitializerList();
-			for(SymbolExpression element : elements) {
-				list.add_child(element);
-			}
-			return list;
-		}
-	}
+	public SymbolExpression get_element(int k) throws IndexOutOfBoundsException { return (SymbolExpression) this.get_child(k); }
 
 	@Override
-	protected SymbolNode new_one() throws Exception { return new SymbolInitializerList(); }
+	protected SymbolNode new_one() throws Exception {
+		return new SymbolInitializerList();
+	}
 
 	@Override
 	protected String generate_code(boolean simplified) throws Exception {
 		StringBuilder buffer = new StringBuilder();
-		buffer.append("{");
+		buffer.append("[");
 		for(int k = 0; k < this.number_of_elements(); k++) {
-			String element = this.get_element(k).generate_code(simplified);
-			buffer.append(element);
+			buffer.append(this.get_element(k).generate_code(simplified));
 			if(k < this.number_of_elements() - 1) { buffer.append(", "); }
 		}
-		buffer.append("}");
+		buffer.append("]");
 		return buffer.toString();
 	}
 
@@ -86,15 +64,5 @@ public class SymbolInitializerList extends SymbolSpecialExpression {
 
 	@Override
 	protected boolean is_side_affected() { return false; }
-
-	@Override
-	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
-		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
-		for(int k = 0; k < this.number_of_elements(); k++) {
-			SymbolExpression element = this.get_element(k);
-			elements.add(element.symb_replace(name_value_map));
-		}
-		return create(elements);
-	}
 	
 }

@@ -1,56 +1,39 @@
 package com.jcsa.jcparse.lang.symbol;
 
-import java.util.Map;
-
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 
 /**
- * SymbolLiteral				[literal: String]
+ * It represents a string literal in symbolic evaluation.
  * 
  * @author yukimula
  *
  */
 public class SymbolLiteral extends SymbolBasicExpression {
 	
-	/** the literal of this symbolic node **/
+	/** the text literal included in this node **/
 	private String literal;
 	
 	/**
-	 * It creates a string literal
-	 * @param _class
-	 * @param type
-	 * @throws Exception
-	 */
-	private SymbolLiteral(CType type, String literal) throws Exception {
-		super(SymbolClass.string_literal, type);
-		if(literal == null) {
-			throw new IllegalArgumentException("invalid literal");
-		}
-		this.literal = literal;
-	}
-	
-	/**
-	 * @return the literal of the string node
-	 */
-	public String get_literal() { return this.literal; }
-	
-	/**
-	 * It creates a node representing the string-literal
+	 * It creates a string literal node with specified text
+	 * @param data_type
 	 * @param literal
-	 * @return
-	 * @throws Exception
+	 * @throws IllegalArgumentException
 	 */
-	protected static SymbolLiteral create(String literal) throws Exception {
+	private SymbolLiteral(CType data_type, String literal) throws IllegalArgumentException {
+		super(SymbolClass.literal, data_type);
 		if(literal == null) {
 			throw new IllegalArgumentException("Invalid literal: null");
 		}
 		else {
-			CType type = SymbolFactory.type_factory.get_array_type(
-					CBasicTypeImpl.char_type, literal.length() + 1);
-			return new SymbolLiteral(type, literal);
+			this.literal = literal;
 		}
 	}
+	
+	/**
+	 * @return the text literal included in the node
+	 */
+	public String get_literal() { return this.literal; }
 
 	@Override
 	protected SymbolNode new_one() throws Exception {
@@ -85,9 +68,19 @@ public class SymbolLiteral extends SymbolBasicExpression {
 	@Override
 	protected boolean is_side_affected() { return false; }
 	
-	@Override
-	protected SymbolExpression symb_replace(Map<SymbolExpression, SymbolExpression> name_value_map) throws Exception {
-		return this;
+	/**
+	 * @param literal
+	 * @return	It creates a string literal node with specified text
+	 * @throws IllegalArgumentException
+	 */
+	protected static SymbolLiteral create(String literal) throws Exception {
+		if(literal == null) {
+			throw new IllegalArgumentException("Invalid literal: null");
+		}
+		else {
+			CType type = SymbolFactory.type_factory.get_array_type(CBasicTypeImpl.char_type, literal.length() + 1);
+			return new SymbolLiteral(type, literal);
+		}
 	}
 	
 }

@@ -41,7 +41,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
-import com.jcsa.jcparse.lang.symbol.SymbolProcess;
+import com.jcsa.jcparse.lang.symbol.SymbolContext;
 import com.jcsa.jcparse.test.file.TestInput;
 
 /**
@@ -111,7 +111,7 @@ public final class CirMutations {
 	 * @return trap_value iff. arithmetic operation occurs
 	 * @throws Exception
 	 */
-	private static SymbolExpression compute(SymbolExpression expression, SymbolProcess context) throws Exception {
+	private static SymbolExpression compute(SymbolExpression expression, SymbolContext context) throws Exception {
 		if(expression == null) {												/* input-validate */
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
@@ -134,7 +134,7 @@ public final class CirMutations {
 	 * @return optimized expression from the context or trap_value
 	 * @throws Exception
 	 */
-	public static SymbolExpression evaluate(SymbolExpression expression, SymbolProcess context) throws Exception {
+	public static SymbolExpression evaluate(SymbolExpression expression, SymbolContext context) throws Exception {
 		return compute(expression, context);
 	}
 	/**
@@ -793,7 +793,7 @@ public final class CirMutations {
 	 * @return			the normalized structural form of input state
 	 * @throws Exception
 	 */
-	public static CirAbstractState normalize(CirAbstractState state, SymbolProcess context) throws Exception {
+	public static CirAbstractState normalize(CirAbstractState state, SymbolContext context) throws Exception {
 		return CirStateNormalizer.normalize(state, context);
 	}
 	/**
@@ -813,7 +813,7 @@ public final class CirMutations {
 	 * @return			True {passed}; False {fail}; null {Unknown}
 	 * @throws Exception
 	 */
-	public static Boolean evaluate(CirAbstractState state, SymbolProcess context) throws Exception {
+	public static Boolean evaluate(CirAbstractState state, SymbolContext context) throws Exception {
 		return CirStateNormalizer.evaluate(state, context);
 	}
 	/**

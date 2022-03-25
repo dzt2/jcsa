@@ -85,11 +85,11 @@ public class MuStateMutationTest {
 						execution.get_statement().getClass().getSimpleName(),
 						normalize_code(execution.get_statement().generate_code(true), 96)));
 				writer.write(String.format("\t%d[I]\t%s\t%s\t[%s]\n", index, constraint.get_execution().toString(),
-						constraint.getClass().getSimpleName(), constraint.get_roperand().generate_simple_code()));
+						constraint.getClass().getSimpleName(), constraint.get_roperand().get_simple_code()));
 				writer.write(String.format("\t%d[P]\t%s\t%s\t\"%s\"\t[%s]\n", index, init_error.get_execution().toString(),
 						init_error.getClass().getSimpleName(),
 						normalize_code(init_error.get_location().generate_code(true), 96),
-						init_error.get_roperand().generate_simple_code()));
+						init_error.get_roperand().get_simple_code()));
 				index++;
 			}
 			writer.write("\n");
