@@ -165,7 +165,7 @@ final class SymbolScope {
 	 * @param target
 	 * @throws Exception
 	 */
-	protected void put_value(SymbolExpression source, SymbolExpression target) throws Exception {
+	protected void put_value(SymbolExpression source, SymbolExpression target) throws IllegalArgumentException {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}

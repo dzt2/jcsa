@@ -64,5 +64,9 @@ public abstract class SymbolExpression extends SymbolNode {
 		return SymbolEvaluator.evaluate(this, in_state, ou_state);
 	}
 	
+	/**
+	 * @return it generates a symbolic context including free-variables used in this expression
+	 */
+	public SymbolContext get_lambda_context() { return SymbolContext.new_context(this); }
 	
 }

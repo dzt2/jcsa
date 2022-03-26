@@ -1,11 +1,14 @@
 package com.jcsa.jcparse.parse.parser3;
 
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStateUnit;
 
@@ -23,7 +26,7 @@ public class SymbolContext {
 	/**
 	 * It creates an empty context with only one single root scope
 	 */
-	public SymbolContext() {
+	private SymbolContext() {
 		this.top_scope = new SymbolScope(this);
 	}
 	
@@ -66,7 +69,7 @@ public class SymbolContext {
 	 * @param target
 	 * @throws Exception
 	 */
-	public void put_value(SymbolExpression source, SymbolExpression target) throws Exception {
+	public void put_value(SymbolExpression source, SymbolExpression target) throws IllegalArgumentException {
 		this.top_scope.put_value(source, target);
 	}
 	/**
@@ -112,13 +115,12 @@ public class SymbolContext {
 			this.top_scope = this.top_scope.get_parent();
 		}
 	}
-	
 	/**
 	 * It accumulates the instrumental path state to the context
 	 * @param state_node
 	 * @throws Exception
 	 */
-	public void accumulate(CStateNode state_node) throws Exception {
+	public void acc(CStateNode state_node) throws Exception {
 		if(state_node == null) {
 			throw new IllegalArgumentException("Invalid state_node: null");
 		}
@@ -145,6 +147,32 @@ public class SymbolContext {
 				this.put_value(source, target);
 			}
 		}
+	}
+	
+	/* constructor */
+	/**
+	 * @return It creates a new empty context for symbolic evaluation
+	 */
+	public static SymbolContext new_context() { return new SymbolContext(); }
+	/**
+	 * @param root
+	 * @return It creates a context including references used in root for identify-maps
+	 */
+	public static SymbolContext new_context(SymbolNode root) {
+		SymbolContext context = new SymbolContext();
+		if(root != null) {
+			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
+			queue.add(root); 
+			while(!queue.isEmpty()) {
+				SymbolNode parent = queue.poll();
+				if(parent instanceof SymbolExpression && parent.is_reference()) {
+					SymbolExpression identifier = (SymbolExpression) parent;
+					context.put_value(identifier, identifier);
+				}
+				for(SymbolNode child : parent.get_children()) queue.add(child);
+			}
+		}
+		return context;
 	}
 	
 }

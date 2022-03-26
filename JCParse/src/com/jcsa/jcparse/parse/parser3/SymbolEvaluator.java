@@ -352,22 +352,26 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private	SymbolExpression	eval_expr_list(SymbolExpressionList expression) throws Exception {
+		/* 1. evaluate sub-expressions in evaluation list */
 		List<SymbolExpression> alist = new ArrayList<SymbolExpression>();
 		this.extend_expr_list(expression, alist);
-		
 		List<Object> blist = new ArrayList<Object>();
 		for(SymbolExpression element : alist) {
 			blist.add(this.eval(element));
 		}
-		SymbolExpressionList elist = SymbolFactory.expression_list(blist);
-		SymbolExpression lvalue = SymbolFactory.identifier(elist.get_data_type(), "@ast", elist);
-		this.set_state_value(lvalue, elist);
 		
-		if(elist.number_of_expressions() > 0) {
-			return elist.get_expression(elist.number_of_expressions() - 1);
+		/* 2. construct the expression list for recording */
+		SymbolExpressionList rvalue = SymbolFactory.expression_list(blist);
+		SymbolExpression lvalue = SymbolFactory.
+						identifier(rvalue.get_data_type(), "@eval", rvalue);
+		this.set_state_value(lvalue, rvalue);
+		
+		/* 3. return the final expression as evaluating result */
+		if(rvalue.number_of_expressions() > 0) {
+			return rvalue.get_expression(rvalue.number_of_expressions() - 1);
 		}
 		else {
-			return elist;
+			return rvalue;
 		}
 	}
 	

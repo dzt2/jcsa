@@ -62,7 +62,7 @@ public class CSymbolNodeTest {
 	
 	private	static void write_sym_node(FileWriter writer, SymbolExpression node, int max_length) throws Exception {
 		SymbolExpression expression = node;
-		SymbolContext context = new SymbolContext();
+		SymbolContext context = SymbolContext.new_context();
 		SymbolExpression eval_expr = expression.evaluate(null, context);
 		// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 		writer.write("\tSEXP:\t" + expression.get_simple_code() + "\n");

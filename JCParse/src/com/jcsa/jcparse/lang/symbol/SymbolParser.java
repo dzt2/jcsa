@@ -1292,7 +1292,6 @@ final class SymbolParser {
 		else {
 			return SymbolExpressionList.create(new ArrayList<SymbolExpression>());
 		}
-		// return this.parse_stmt(source);
 	}
 	/**
 	 * 	<code>

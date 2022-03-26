@@ -1042,9 +1042,9 @@ public class CirStateFeatureWriter {
 					this.source_cfile.get_ast_tree(), 
 					this.source_cfile.get_cir_tree());
 			*/
-			SymbolContext process = new SymbolContext();
+			SymbolContext process = SymbolContext.new_context();
 			for(CStateNode state_node : ((CStatePath) context).get_nodes()) {
-				process.accumulate(state_node);
+				process.acc(state_node);
 				CirExecution execution = state_node.get_execution();
 				if(exec_states.containsKey(execution)) {
 					for(CirAbstractState state : exec_states.get(execution)) {
