@@ -1,14 +1,11 @@
 package com.jcsa.jcparse.parse.parser3;
 
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStateUnit;
 
@@ -154,25 +151,5 @@ public class SymbolContext {
 	 * @return It creates a new empty context for symbolic evaluation
 	 */
 	public static SymbolContext new_context() { return new SymbolContext(); }
-	/**
-	 * @param root
-	 * @return It creates a context including references used in root for identify-maps
-	 */
-	public static SymbolContext new_context(SymbolNode root) {
-		SymbolContext context = new SymbolContext();
-		if(root != null) {
-			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(root); 
-			while(!queue.isEmpty()) {
-				SymbolNode parent = queue.poll();
-				if(parent instanceof SymbolExpression && parent.is_reference()) {
-					SymbolExpression identifier = (SymbolExpression) parent;
-					context.put_value(identifier, identifier);
-				}
-				for(SymbolNode child : parent.get_children()) queue.add(child);
-			}
-		}
-		return context;
-	}
 	
 }

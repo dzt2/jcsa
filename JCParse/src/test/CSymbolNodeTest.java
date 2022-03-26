@@ -23,6 +23,8 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.symbol.SymbolAbstraction;
+import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.parse.parser3.SymbolContext;
@@ -64,7 +66,6 @@ public class CSymbolNodeTest {
 		SymbolExpression expression = node;
 		SymbolContext context = SymbolContext.new_context();
 		SymbolExpression eval_expr = expression.evaluate(null, context);
-		// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
 		writer.write("\tSEXP:\t" + expression.get_simple_code() + "\n");
 		writer.write("\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
 		Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
@@ -72,7 +73,12 @@ public class CSymbolNodeTest {
 			SymbolExpression rvalue = output.get(lvalue);
 			writer.write("\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
 		}
-		//writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+		
+		SymbolAbstraction expr_abst = expression.new_abstraction();
+		writer.write("\tLAMB:\t");
+		SymbolArgumentList in_parameters = expr_abst.get_in_parameters();
+		SymbolArgumentList ou_parameters = expr_abst.get_ou_parameters();
+		writer.write(in_parameters.get_simple_code() + "\t-->\t" + ou_parameters.get_simple_code() + "\n");
 	}
 	
 	private	static void write_ast_node(FileWriter writer, AstNode node, int max_length) throws Exception {

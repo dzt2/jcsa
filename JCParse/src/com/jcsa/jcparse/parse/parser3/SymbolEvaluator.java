@@ -364,15 +364,16 @@ public class SymbolEvaluator {
 		SymbolExpressionList rvalue = SymbolFactory.expression_list(blist);
 		SymbolExpression lvalue = SymbolFactory.
 						identifier(rvalue.get_data_type(), "@eval", rvalue);
-		this.set_state_value(lvalue, rvalue);
-		
+		this.set_state_value(lvalue, rvalue);	return rvalue;
 		/* 3. return the final expression as evaluating result */
+		/*
 		if(rvalue.number_of_expressions() > 0) {
 			return rvalue.get_expression(rvalue.number_of_expressions() - 1);
 		}
 		else {
 			return rvalue;
 		}
+		*/
 	}
 	
 	/* structural analysis based on composite expression */

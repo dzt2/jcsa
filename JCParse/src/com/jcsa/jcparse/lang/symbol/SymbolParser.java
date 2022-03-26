@@ -1231,7 +1231,7 @@ final class SymbolParser {
 		SymbolExpression t_operand = this.parse_stmt(source.get_true_branch());
 		SymbolExpression f_operand;
 		if(source.has_else()) {
-			f_operand = (SymbolExpression) this.parse_ast(source.get_false_branch());
+			f_operand = this.parse_stmt(source.get_false_branch());
 		}
 		else {
 			f_operand = this.parse_stmt(source);

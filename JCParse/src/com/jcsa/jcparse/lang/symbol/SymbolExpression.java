@@ -65,8 +65,8 @@ public abstract class SymbolExpression extends SymbolNode {
 	}
 	
 	/**
-	 * @return it generates a symbolic context including free-variables used in this expression
+	 * @return a naive abstraction of the local symbolic expression
 	 */
-	public SymbolContext get_lambda_context() { return SymbolContext.new_context(this); }
+	public SymbolAbstraction new_abstraction() { return SymbolAbstraction.naive_abstraction(this); }
 	
 }

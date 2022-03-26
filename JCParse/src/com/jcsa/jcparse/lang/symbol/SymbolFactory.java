@@ -858,5 +858,27 @@ public final class SymbolFactory {
 	public static SymbolIdentifier			variable(CType data_type, String name) {
 		return SymbolIdentifier.create(data_type, name, null);	
 	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand := roperand
+	 * @throws Exception
+	 */
+	public static SymbolAssignExpression	exp_assign(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand);
+		SymbolExpression rvalue = sym_expression(roperand);
+		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
+	}
+	/**
+	 * @param loperand
+	 * @param roperand
+	 * @return loperand <- roperand
+	 * @throws Exception
+	 */
+	public static SymbolAssignExpression	imp_assign(Object loperand, Object roperand) throws Exception {
+		SymbolExpression lvalue = sym_expression(loperand);
+		SymbolExpression rvalue = sym_expression(roperand);
+		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.increment, lvalue, rvalue);
+	}
 	
 }
