@@ -1,8 +1,11 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
 import java.util.Map;
 
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStateUnit;
 

@@ -1,5 +1,7 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * It defines the value-domain of SymbolExpression.

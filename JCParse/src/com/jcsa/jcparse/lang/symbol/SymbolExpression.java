@@ -1,6 +1,8 @@
 package com.jcsa.jcparse.lang.symbol;
 
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.parse.parser3.SymbolEvaluator;
 
 /**
  * 	The typed evaluation unit as expression used in symbolic analysis.

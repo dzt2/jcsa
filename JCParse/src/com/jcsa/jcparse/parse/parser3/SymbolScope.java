@@ -1,10 +1,12 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 /**
  * 	It defines the local scope of name-value in symbolic evaluation for context.

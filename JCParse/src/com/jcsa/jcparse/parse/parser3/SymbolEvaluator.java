@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -10,6 +10,19 @@ import java.util.Set;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
+import com.jcsa.jcparse.lang.symbol.SymbolBasicExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolCastExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolExpressionList;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolFieldExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolIfElseExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolInitializerList;
+import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 
 
 /**

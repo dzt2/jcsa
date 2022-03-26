@@ -25,7 +25,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.lang.symbol.SymbolContext;
+import com.jcsa.jcparse.parse.parser3.SymbolContext;
 
 public class CSymbolNodeTest {
 	

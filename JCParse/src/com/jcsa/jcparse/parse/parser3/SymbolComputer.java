@@ -1,4 +1,4 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +10,9 @@ import com.jcsa.jcparse.lang.ctype.CEnumeratorList;
 import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * It implements the constant-evaluation and the domain-evaluation.

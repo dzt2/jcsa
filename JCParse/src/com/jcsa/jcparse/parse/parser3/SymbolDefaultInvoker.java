@@ -1,6 +1,13 @@
-package com.jcsa.jcparse.lang.symbol;
+package com.jcsa.jcparse.parse.parser3;
 
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
+import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
+import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
+import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 
 /**
  * It implements the standard library functions.

@@ -64,8 +64,8 @@ public abstract class UniAbstractState {
 		else {
 			this.state_class = state_class;
 			this.state_store = state_store;
-			this.loperand = UniAbstractStates.evaluate(loperand);
-			this.roperand = UniAbstractStates.evaluate(roperand);
+			this.loperand = UniAbstractStates.evaluate(loperand, null, null);
+			this.roperand = UniAbstractStates.evaluate(roperand, null, null);
 		}
 	}
 	

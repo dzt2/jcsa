@@ -20,7 +20,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
-import com.jcsa.jcparse.lang.symbol.SymbolContext;
+import com.jcsa.jcparse.parse.parser3.SymbolContext;
 
 
 /**
@@ -137,7 +137,7 @@ public final class UniAbstractStates {
 	 * @return return trap_value if arithmetic-exception arises during computation
 	 * @throws Exception
 	 */
-	public static SymbolExpression b_evaluate(SymbolExpression expression, 
+	public static SymbolExpression evaluate(SymbolExpression expression, 
 			SymbolContext in_context, SymbolContext ou_context) throws Exception {
 		if(expression == null) {												/* input-validate */
 			throw new IllegalArgumentException("Invalid expression: null");
@@ -156,35 +156,6 @@ public final class UniAbstractStates {
 				return trap_value;
 			}
 		}
-	}
-	/**
-	 * @param expression
-	 * @param context
-	 * @return return trap_value if arithmetic-exception arises during computation
-	 * @throws Exception
-	 */
-	public static SymbolExpression i_evaluate(SymbolExpression expression, 
-			SymbolContext i_context) throws Exception {
-		return b_evaluate(expression, i_context, null);
-	}
-	/**
-	 * @param expression
-	 * @param o_context		the state to preserve outputs
-	 * @return	return trap_value if arithmetic-exception arises during computation
-	 * @throws Exception
-	 */
-	public static SymbolExpression o_evaluate(SymbolExpression expression, 
-			SymbolContext o_context) throws Exception {
-		return b_evaluate(expression, null, o_context);
-	}
-	/**
-	 * @param expression
-	 * @param context
-	 * @return return trap_value if arithmetic-exception arises during computation
-	 * @throws Exception
-	 */
-	public static SymbolExpression evaluate(SymbolExpression expression) throws Exception {
-		return b_evaluate(expression, null, null);
 	}
 	
 	/* type-classification */
