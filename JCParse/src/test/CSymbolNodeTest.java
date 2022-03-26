@@ -60,11 +60,21 @@ public class CSymbolNodeTest {
 		return buffer.toString();
 	}
 	
-	/**
-	 * @param writer
-	 * @param node
-	 * @throws Exception
-	 */
+	private	static void write_sym_node(FileWriter writer, SymbolExpression node, int max_length) throws Exception {
+		SymbolExpression expression = node;
+		SymbolContext context = new SymbolContext();
+		SymbolExpression eval_expr = expression.evaluate(null, context);
+		// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
+		writer.write("\tSEXP:\t" + expression.get_simple_code() + "\n");
+		writer.write("\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
+		Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
+		for(SymbolExpression lvalue : output.keySet()) {
+			SymbolExpression rvalue = output.get(lvalue);
+			writer.write("\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
+		}
+		//writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+	}
+	
 	private	static void write_ast_node(FileWriter writer, AstNode node, int max_length) throws Exception {
 		if(node instanceof AstExpression || node instanceof AstStatement) {
 			String class_name = node.getClass().getSimpleName().strip();
@@ -90,19 +100,13 @@ public class CSymbolNodeTest {
 			writer.write("\tLOCT:\t" + func_name + "#" + code_line + "\n");
 			writer.write("\tCODE:\t\"" + ast_code + "\"\n");
 			
-			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			SymbolContext context = new SymbolContext();
-			SymbolExpression eval_expr = expression.evaluate(null, context);
-			// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
-			
-			writer.write("\tSEXP:\t" + expression.get_simple_code() + "\n");
-			writer.write("\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
-			Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
-			for(SymbolExpression lvalue : output.keySet()) {
-				SymbolExpression rvalue = output.get(lvalue);
-				writer.write("\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
+			try {
+				SymbolExpression expression = SymbolFactory.sym_expression(node);
+				write_sym_node(writer, expression, max_length);
 			}
-			//writer.write("\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			catch(Exception ex) {
+				writer.write("\tSymbolic Translation Failed.\n");
+			}
 			
 			writer.write("END\n");
 			writer.write("\n");
@@ -149,19 +153,13 @@ public class CSymbolNodeTest {
 			writer.write("\t\tLOCT:\t" + func_name + "#" + code_line + "#" + execution + "\n");
 			writer.write("\t\tCODE:\t\"" + cir_code + "\"\n");
 			
-			SymbolExpression expression = SymbolFactory.sym_expression(node);
-			SymbolContext context = new SymbolContext();
-			SymbolExpression eval_expr = expression.evaluate(null, context);
-			// SymbolExpression norm_expr = expression.normalize().evaluate(null, null);
-			
-			writer.write("\t\tSEXP:\t" + expression.get_simple_code() + "\n");
-			writer.write("\t\t\tRES <-- " + eval_expr.get_simple_code() + "\n");
-			Map<SymbolExpression, SymbolExpression> output = context.get_kvalues();
-			for(SymbolExpression lvalue : output.keySet()) {
-				SymbolExpression rvalue = output.get(lvalue);
-				writer.write("\t\t\t" + lvalue.get_simple_code() + " <-- " + rvalue.get_simple_code() + "\n");
+			try {
+				SymbolExpression expression = SymbolFactory.sym_expression(node);
+				write_sym_node(writer, expression, max_length);
 			}
-			// writer.write("\t\tNEXP:\t" + norm_expr.generate_unique_code() + "\n");
+			catch(Exception ex) {
+				writer.write("\tSymbolic Translation Failed.\n");
+			}
 			
 			writer.write("\tEND\n");
 			writer.write("\n");

@@ -98,11 +98,14 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
+import com.jcsa.jcparse.lang.scope.CFieldName;
 import com.jcsa.jcparse.lang.scope.CInstance;
 import com.jcsa.jcparse.lang.scope.CInstanceName;
+import com.jcsa.jcparse.lang.scope.CLabelName;
 import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.scope.CParameterName;
 import com.jcsa.jcparse.lang.scope.CScope;
+import com.jcsa.jcparse.lang.scope.CTypedefName;
 
 /**
  * 	It implements the parsing from the object to SymbolNode based on the following translation rules.
@@ -213,6 +216,7 @@ final class SymbolParser {
 	 * @throws Exception
 	 */
 	protected static SymbolConstant 	parse_to_cons(Object source) throws Exception {
+		SymbolConstant target;
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
@@ -220,11 +224,15 @@ final class SymbolParser {
 				|| source instanceof Short || source instanceof Integer
 				|| source instanceof Long || source instanceof Float
 				|| source instanceof Double || source instanceof CConstant) {
-			return (SymbolConstant) parser.parse_cons(source);
+			target = (SymbolConstant) parser.parse_cons(source);
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
+		if(target.get_source() == null) {
+			target.set_source(source);
+		}
+		return target;
 	}
 	/**
 	 * @param source	[Boolean|Character|Short|Integer|Long|Float|Double|CConstant|String
@@ -233,6 +241,8 @@ final class SymbolParser {
 	 * @throws Exception
 	 */
 	protected static SymbolExpression 	parse_to_expr(Object source) throws Exception {
+		SymbolExpression target;
+		
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
@@ -240,32 +250,37 @@ final class SymbolParser {
 				|| source instanceof Short || source instanceof Integer
 				|| source instanceof Long || source instanceof Float
 				|| source instanceof Double || source instanceof CConstant) {
-			return parser.parse_cons(source);
+			target = parser.parse_cons(source);
 		}
 		else if(source instanceof String) {
-			return SymbolLiteral.create(source.toString());
+			target = SymbolLiteral.create(source.toString());
 		}
 		else if(source instanceof CName) {
-			return (SymbolExpression) parser.parse_name((CName) source);
+			target = (SymbolExpression) parser.parse_name((CName) source);
 		}
 		else if(source instanceof AstNode) {
-			return (SymbolExpression) parser.parse_ast((AstNode) source);
+			target = (SymbolExpression) parser.parse_ast((AstNode) source);
 		}
 		else if(source instanceof CirNode) {
-			return (SymbolExpression) parser.parse_cir((CirNode) source);
+			target = (SymbolExpression) parser.parse_cir((CirNode) source);
 		}
 		else if(source instanceof CirExecution) {
-			return parser.parse_stmt(source);
+			target = parser.parse_stmt(source);
 		}
 		else if(source instanceof CType) {
-			return parser.get_default_value(SymbolFactory.is_optimized(), (CType) source);
+			target = parser.get_dvalue(SymbolFactory.is_optimized(), (CType) source);
 		}
 		else if(source instanceof SymbolExpression) {
-			return (SymbolExpression) ((SymbolExpression) source).clone();
+			target = (SymbolExpression) ((SymbolExpression) source).clone();
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
+		
+		if(target.get_source() == null) {
+			target.set_source(source);
+		}
+		return target;
 	}
 	/**
 	 * @param source	[Boolean|Character|Short|Integer|Long|Float|Double|CConstant|String
@@ -394,7 +409,7 @@ final class SymbolParser {
 	 * @return
 	 * @throws Exception
 	 */
-	private SymbolNode 	parse_name(CName source) throws Exception {
+	private SymbolNode 		 parse_name(CName source) throws Exception {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
@@ -412,8 +427,19 @@ final class SymbolParser {
 			constant.set_int(value);
 			return SymbolConstant.create(constant);
 		}
+		else if(source instanceof CTypedefName) {
+			return SymbolType.create(((CTypedefName) source).get_type());
+		}
+		else if(source instanceof CFieldName) {
+			return SymbolField.create(((CFieldName) source).get_field().get_name());
+		}
+		else if(source instanceof CLabelName) {
+			String labeled_name = source.get_name();
+			AstNode statement = this.find_label(source.get_source(), labeled_name);
+			return this.parse_stmt(statement);
+		}
 		else {
-			return SymbolIdentifier.create(CBasicTypeImpl.void_type, source.get_name(), source);
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
 	}
 	/**
@@ -464,7 +490,7 @@ final class SymbolParser {
 	 * @return			the default value w.r.t. the given data type
 	 * @throws Exception
 	 */
-	private	SymbolExpression get_default_value(boolean optimize, CType data_type) throws Exception {
+	private	SymbolExpression get_dvalue(boolean optimize, CType data_type) throws Exception {
 		data_type = SymbolFactory.get_type(data_type);
 		if(data_type == null) {
 			throw new IllegalArgumentException("Invalid data_type: null");
@@ -488,7 +514,7 @@ final class SymbolParser {
 			case c_float:	return this.parse_cons(Float.valueOf(0.0f));
 			case c_double:
 			case c_ldouble:	return this.parse_cons(Double.valueOf(0.0));
-			default:		return this.get_default_value(false, data_type);
+			default:		return this.get_dvalue(false, data_type);
 			}
 		}
 		else if(data_type instanceof CPointerType) {
@@ -498,7 +524,7 @@ final class SymbolParser {
 			return this.parse_cons(Integer.valueOf(0));
 		}
 		else {
-			return this.get_default_value(false, data_type);
+			return this.get_dvalue(false, data_type);
 		}
 	}
 	
@@ -704,7 +730,7 @@ final class SymbolParser {
 		return SymbolFieldExpression.create(source.get_data_type(), body, field);
 	}
 	private	SymbolNode	parse_cir_default_value(CirDefaultValue source) throws Exception {
-		return this.get_default_value(SymbolFactory.is_optimized(), source.get_data_type());
+		return this.get_dvalue(SymbolFactory.is_optimized(), source.get_data_type());
 	}
 	private	SymbolNode	parse_cir_addr_expr(CirAddressExpression source) throws Exception {
 		SymbolExpression operand = (SymbolExpression) this.parse_cir(source.get_operand());
@@ -828,6 +854,28 @@ final class SymbolParser {
 	}
 	/**
 	 * @param source
+	 * @param labeled_name
+	 * @return AstLabeledStatement w.r.t. the labeled_name or null
+	 */
+	private	AstNode 	find_label(AstNode source, String labeled_name) {
+		AstFunctionDefinition def = source.get_function_of();
+		Queue<AstNode> queue = new LinkedList<AstNode>();
+		if(def != null) queue.add(def);
+		while(!queue.isEmpty()) {
+			AstNode parent = queue.poll();
+			if(parent instanceof AstLabeledStatement) {
+				if(((AstLabeledStatement) parent).get_label().get_name().equals(labeled_name)) {
+					return parent;
+				}
+			}
+			for(int k = 0; k < parent.number_of_children(); k++) {
+				queue.add(parent.get_child(k));
+			}
+		}
+		return null;
+	}
+	/**
+	 * @param source
 	 * @return
 	 * @throws Exception
 	 */
@@ -851,13 +899,6 @@ final class SymbolParser {
 		return target;
 	}
 	/* AST-Specifier Class */
-	private	SymbolNode	parse_ast_stmt_list(AstStatementList source) throws Exception {
-		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
-		for(int k = 0; k < source.number_of_statements(); k++) {
-			expressions.add((SymbolExpression) this.parse_ast(source.get_statement(k)));
-		}
-		return SymbolExpressionList.create(expressions);
-	}
 	private	SymbolNode	parse_ast_label(AstLabel source) throws Exception {
 		AstFunctionDefinition function = source.get_function_of();
 		Queue<AstNode> queue = new LinkedList<AstNode>();
@@ -882,6 +923,21 @@ final class SymbolParser {
 		}
 		return SymbolArgumentList.create(arguments);
 	}
+	private	SymbolNode	parse_ast_declaration_list(AstDeclarationList source) throws Exception {
+		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_declarations(); k++) {
+			expressions.add((SymbolExpression) this.parse_ast(source.get_declaration(k)));
+		}
+		if(expressions.isEmpty()) {
+			return this.parse_stmt(source);
+		}
+		else if(expressions.size() == 1) {
+			return expressions.get(0);
+		}
+		else {
+			return SymbolExpressionList.create(expressions);
+		}
+	}
 	private	SymbolNode	parse_ast_declaration(AstDeclaration source) throws Exception {
 		if(source.has_declarator_list()) {
 			return this.parse_ast(source.get_declarator_list());
@@ -890,12 +946,20 @@ final class SymbolParser {
 			return this.parse_stmt(source.get_parent());
 		}
 	}
-	private	SymbolNode	parse_ast_declaration_list(AstDeclarationList source) throws Exception {
-		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
-		for(int k = 0; k < source.number_of_declarations(); k++) {
-			expressions.add((SymbolExpression) this.parse_ast(source.get_declaration(k)));
+	private	SymbolNode	parse_ast_init_declarator_list(AstInitDeclaratorList source) throws Exception {
+		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_init_declarators(); k++) {
+			elements.add((SymbolExpression) this.parse_ast(source.get_init_declarator(k)));
 		}
-		return SymbolExpressionList.create(expressions);
+		if(elements.isEmpty()) {
+			return this.parse_stmt(source.get_parent());
+		}
+		else if(elements.size() == 1) {
+			return elements.get(0);
+		}
+		else {
+			return SymbolExpressionList.create(elements);
+		}
 	}
 	private	SymbolNode	parse_ast_declarator(AstDeclarator source) throws Exception {
 		if(source.get_production() == DeclaratorProduction.identifier) {
@@ -917,15 +981,20 @@ final class SymbolParser {
 		}
 	}
 	private	SymbolNode	parse_ast_init_declarator(AstInitDeclarator source) throws Exception {
-		SymbolExpression lvalue = (SymbolExpression) this.parse_ast(source.get_declarator());
-		SymbolExpression rvalue;
-		if(source.has_initializer()) {
-			rvalue = (SymbolExpression) this.parse_ast(source.get_initializer());
+		SymbolNode declarator = this.parse_ast(source.get_declarator());
+		if(declarator instanceof SymbolExpression) {
+			SymbolExpression lvalue = (SymbolExpression) declarator, rvalue;
+			if(source.has_initializer()) {
+				rvalue = (SymbolExpression) this.parse_ast(source.get_initializer());
+			}
+			else {
+				rvalue = this.get_dvalue(SymbolFactory.is_optimized(), lvalue.get_data_type());
+			}
+			return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
 		}
 		else {
-			rvalue = this.get_default_value(SymbolFactory.is_optimized(), lvalue.get_data_type());
+			return this.parse_stmt(source);
 		}
-		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
 	}
 	private	SymbolNode	parse_ast_initializer(AstInitializer source) throws Exception {
 		if(source.is_body()) {
@@ -951,18 +1020,21 @@ final class SymbolParser {
 	private	SymbolNode	parse_ast_type_name(AstTypeName source) throws Exception {
 		return SymbolType.create(source.get_type());
 	}
+	private	SymbolNode	parse_typedef_name(AstTypedefName source) throws Exception {
+		return this.parse_name(source.get_cname());
+	}
+	private	SymbolNode	parse_ast_field(AstField source) throws Exception {
+		return SymbolField.create(source.get_name());
+	}
 	private	SymbolNode	parse_ast_parameter_declaration(AstParameterDeclaration source) throws Exception {
 		if(source.has_declarator()) {
 			SymbolExpression lvalue = (SymbolExpression) this.parse_ast(source.get_declarator());
-			SymbolExpression rvalue = this.get_default_value(false, lvalue.get_data_type());
+			SymbolExpression rvalue = this.get_dvalue(false, lvalue.get_data_type());
 			return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
 		}
 		else {
 			throw new IllegalArgumentException("Invalid access: " + source.generate_code());
 		}
-	}
-	private	SymbolNode	parse_ast_field(AstField source) throws Exception {
-		return SymbolField.create(source.get_name());
 	}
 	private	SymbolNode	parse_parameter_declaration_list(AstParameterList source) throws Exception {
 		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
@@ -970,22 +1042,30 @@ final class SymbolParser {
 			if(source.get_parameter(k).has_declarator())
 				expressions.add((SymbolExpression) this.parse_ast(source.get_parameter(k)));
 		}
-		return SymbolExpressionList.create(expressions);
-	}
-	private	SymbolNode	parse_typedef_name(AstTypedefName source) throws Exception {
-		return this.parse_name(source.get_cname());
-	}
-	/**
-	 * @param source
-	 * @return
-	 * @throws Exception
-	 */
-	private	SymbolNode	parse_ast_init_declarator_list(AstInitDeclaratorList source) throws Exception {
-		List<SymbolExpression> elements = new ArrayList<SymbolExpression>();
-		for(int k = 0; k < source.number_of_init_declarators(); k++) {
-			elements.add((SymbolExpression) this.parse_ast(source.get_init_declarator(k)));
+		if(expressions.isEmpty()) {
+			return this.parse_stmt(source);
 		}
-		return SymbolExpressionList.create(elements);
+		else if(expressions.size() == 1) {
+			return expressions.get(0);
+		}
+		else {
+			return SymbolExpressionList.create(expressions);
+		}
+	}
+	private	SymbolNode	parse_ast_stmt_list(AstStatementList source) throws Exception {
+		List<SymbolExpression> expressions = new ArrayList<SymbolExpression>();
+		for(int k = 0; k < source.number_of_statements(); k++) {
+			expressions.add((SymbolExpression) this.parse_ast(source.get_statement(k)));
+		}
+		if(expressions.isEmpty()) {
+			return this.parse_stmt(source.get_parent());
+		}
+		else if(expressions.size() == 1) {
+			return expressions.get(0);
+		}
+		else {
+			return SymbolExpressionList.create(expressions);
+		}
 	}
 	/**
 	 * 	<code>
@@ -1200,7 +1280,7 @@ final class SymbolParser {
 			rvalue = (SymbolExpression) this.parse_ast(source.get_expression());
 		}
 		else {
-			rvalue = this.get_default_value(false, CBasicTypeImpl.void_type);
+			rvalue = this.get_dvalue(false, CBasicTypeImpl.void_type);
 		}
 		SymbolExpression lvalue = this.parse_retr(rvalue.get_data_type(), source);
 		return SymbolAssignExpression.create(lvalue.get_data_type(), COperator.assign, lvalue, rvalue);
