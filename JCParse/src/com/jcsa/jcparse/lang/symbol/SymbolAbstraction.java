@@ -9,6 +9,7 @@ import java.util.Queue;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.parse.parser3.SymbolContext;
 
 /**
  * 	It represents the abstraction of a symbolic expression in lambda format:
@@ -155,7 +156,7 @@ public class SymbolAbstraction {
 			case negative: 		return SymbolFactory.arith_neg(operand);
 			case bit_not:		return SymbolFactory.bitws_rsv(operand);
 			case logic_not:		return SymbolFactory.logic_not(operand);
-			case address_of:	return SymbolFactory.address_of(operand);
+			case address_of:	return SymbolFactory.address_of(((SymbolUnaryExpression) root).get_operand());
 			case dereference:	return SymbolFactory.dereference(operand);
 			default:	throw new IllegalArgumentException("Invalid: " + operator);
 			}
@@ -187,8 +188,8 @@ public class SymbolAbstraction {
 			case smaller_eq:	return SymbolFactory.smaller_eq(loperand, roperand);
 			case equal_with:	return SymbolFactory.equal_with(loperand, roperand);
 			case not_equals:	return SymbolFactory.not_equals(loperand, roperand);
-			case assign:		return SymbolFactory.exp_assign(loperand, roperand);
-			case increment:		return SymbolFactory.imp_assign(loperand, roperand);
+			case assign:		return SymbolFactory.exp_assign(((SymbolBinaryExpression) root).get_loperand(), roperand);
+			case increment:		return SymbolFactory.imp_assign(((SymbolBinaryExpression) root).get_loperand(), roperand);
 			default:			throw new IllegalArgumentException("Invalid: " + operator);
 			}
 		}
@@ -270,11 +271,53 @@ public class SymbolAbstraction {
 		}
 	}
 	/**
-	 * @return the simplified version of the lambda version (removing useless variable)
+	 * It replaces the input-parameters by values (arguments) provided in context
+	 * @param in_context	to provide values of input-parameters used in this
+	 * @return				a new abstraction by replacing input-parameters by context provided values
 	 * @throws Exception
 	 */
-	public SymbolAbstraction simplify() throws Exception {
-		return SymbolAbstraction.naive_abstraction(this.expression_body.evaluate(null, null));
+	public SymbolAbstraction replace(SymbolContext in_context) throws Exception {
+		/* 1. collect the arguments from in_context */
+		Map<SymbolExpression, SymbolExpression> pa_maps = 
+				new HashMap<SymbolExpression, SymbolExpression>();
+		if(in_context != null) {
+			for(int k = 0; k < this.in_parameters.number_of_arguments(); k++) {
+				SymbolExpression parameter = this.in_parameters.get_argument(k);
+				if(in_context.has_value(parameter)) {
+					pa_maps.put(parameter, in_context.get_value(parameter));
+				}
+			}
+		}
+		
+		/* 2. create the new lambda-abstraction */
+		SymbolExpression expression = this.expression_body;
+		expression = this.replace(expression, pa_maps);
+		return SymbolAbstraction.naive_abstraction(expression);
+	}
+	/**
+	 * @return it evaluates the expression using parameters directly and updates an output-table
+	 * @throws Exception
+	 */
+	public SymbolContext evaluate() throws Exception {
+		SymbolExpression expression = this.expression_body;
+		SymbolContext ou_context = SymbolContext.new_context();
+		expression.evaluate(null, ou_context); return ou_context;
+	}
+	/**
+	 * @param in_context used to replace the values of in_parameters
+	 * @return	it evaluates the expression using replaced parameters and updates the output-context
+	 * @throws Exception
+	 */
+	public SymbolContext evaluate(SymbolContext in_context) throws Exception {
+		return this.replace(in_context).evaluate();
+	}
+	/**
+	 * @param in_context used to replace the values of in_parameters
+	 * @return	it evaluates the expression using replaced arguments and updates the output-context
+	 * @throws Exception
+	 */
+	public SymbolContext evaluate(SymbolArgumentList arguments) throws Exception {
+		return this.replace(arguments).evaluate();
 	}
 	
 }
