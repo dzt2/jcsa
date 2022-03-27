@@ -237,4 +237,46 @@ public class UniAbstractStore {
 		}
 	}
 	
+	/* classify */
+	/**
+	 * @return	whether this location is elementary
+	 */
+	public boolean is_elem() {
+		switch(this._store_class) {
+		case argls_elm:
+		case field_elm:
+		case label_elm:
+		case ctype_elm:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether this location is expression
+	 */
+	public boolean is_expr() {
+		switch(this._store_class) {
+		case bool_expr:
+		case cdef_expr:
+		case used_expr:
+		case vdef_expr:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether the location is a statement
+	 */
+	public boolean is_stmt() {
+		switch(this._store_class) {
+		case assg_stmt:
+		case ifte_stmt:
+		case case_stmt:
+		case call_stmt:
+		case goto_stmt:
+		case bend_stmt:
+		case conv_stmt:
+		case labl_stmt:	return true;
+		default:		return false;
+		}
+	}
+	
 }
