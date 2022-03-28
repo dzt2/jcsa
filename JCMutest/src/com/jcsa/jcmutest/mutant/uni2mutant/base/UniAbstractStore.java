@@ -2,7 +2,10 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 
 /**
  * 	It specifies the state-location where UniAbstractState is evaluated using a
@@ -140,6 +143,44 @@ public class UniAbstractStore {
 		case type_elem:
 		case args_elem:	return true;
 		default:		return false;
+		}
+	}
+	
+	/* factory */
+	public static UniAbstractStore new_node(CirNode cir_location) throws Exception {
+		return UniStoreLocalizer.parse(cir_location);
+	}
+	public static UniAbstractStore new_node(CirExecution exe_location) throws Exception {
+		return UniStoreLocalizer.parse(exe_location);
+	}
+	public static UniAbstractStore new_node(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return UniStoreLocalizer.parse(cir_tree, ast_location);
+	}
+	public static UniAbstractStore new_vdef(AstNode ast_location, CirExpression cir_location) throws Exception {
+		if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid exe_location: null");
+		}
+		else {
+			UniAbstractLType store_class;
+			if(cir_location.get_parent() instanceof CirAssignStatement) {
+				CirAssignStatement statement = (CirAssignStatement) cir_location.statement_of();
+				if(statement.get_lvalue() == cir_location) {
+					store_class = UniAbstractLType.cdef_expr;
+				}
+				else {
+					store_class = UniAbstractLType.vdef_expr;
+				}
+			}
+			else {
+				store_class = UniAbstractLType.vdef_expr;
+			}
+			return new UniAbstractStore(store_class, ast_location, cir_location, cir_location.execution_of());
 		}
 	}
 	

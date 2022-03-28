@@ -14,27 +14,42 @@ import com.jcsa.jcparse.lang.astree.decl.initializer.AstFieldInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializer;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerList;
+import com.jcsa.jcparse.lang.astree.expr.AstExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstBasicExpression;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
 import com.jcsa.jcparse.lang.astree.expr.base.AstIdExpression;
+import com.jcsa.jcparse.lang.astree.expr.base.AstLiteral;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPointUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstPostfixExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConstExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstField;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstParanthExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstSizeofExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstBreakStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstCaseStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstCompoundStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstContinueStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstDeclarationStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstDefaultStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstGotoStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstIfStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstLabeledStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstReturnStatement;
+import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -83,6 +98,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
+import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
@@ -211,20 +227,22 @@ final class UniStoreLocalizer {
 			return cir_nodes.get(0);
 		}
 	}
-	private	CirNode				local_final_node(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
+	private	CirStatement		local_beg_execution(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return cir_tree.get_localizer().beg_statement(ast_location);
+	}
+	private	CirExpression		loacl_use_expression(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) throws Exception {
 		List<CirNode> cir_nodes = this.local_cir_nodes(cir_tree, ast_location, cir_class);
-		if(cir_nodes.isEmpty()) {
-			return null;
+		CirExpression expression = null; 
+		for(int k = 0; k < cir_nodes.size(); k++) {
+			CirNode child = cir_nodes.get(k);
+			if(child instanceof CirExpression) {
+				expression = (CirExpression) child;
+				if(expression.execution_of() != null) {
+					return expression;
+				}
+			}
 		}
-		else {
-			return cir_nodes.get(cir_nodes.size() - 1);
-		}
-	}
-	private	CirExecution		local_beg_execution(CirTree cir_tree, AstNode ast_location) throws Exception {
-		return cir_tree.get_localizer().beg_statement(ast_location).execution_of();
-	}
-	private	CirExecution		local_end_execution(CirTree cir_tree, AstNode ast_location) throws Exception {
-		return cir_tree.get_localizer().end_statement(ast_location).execution_of();
+		return expression;
 	}
 	
 	/* basic construction */
@@ -885,9 +903,14 @@ final class UniStoreLocalizer {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
-		// TODO implement the syntax-directed algorithm for transformation...
+		else if(source instanceof AstExpression) {
+			return this.parse_ast_expression(cir_tree, (AstExpression) source);
+		}
+		else if(source instanceof AstStatement) {
+			return this.parse_ast_statement(cir_tree, (AstStatement) source);
+		}
 		else {
-			throw new IllegalArgumentException(source.getClass().getSimpleName());
+			return this.parse_ast_element(cir_tree, source);
 		}
 	}
 	/* AST-Elementals */
@@ -900,7 +923,7 @@ final class UniStoreLocalizer {
 			return this.parse_ast(cir_tree, source.get_declarator_list());
 		}
 		else {
-			return this.parse_cir(this.local_beg_execution(cir_tree, source).get_statement());
+			return this.parse_cir(this.local_beg_execution(cir_tree, source));
 		}
 	}
 	private	UniAbstractStore	parse_ast_init_declarator_list(CirTree 
@@ -995,9 +1018,329 @@ final class UniStoreLocalizer {
 		}
 	}
 	/* AST-Expression */
-	
-	
-	
-	
+	private	UniAbstractStore	parse_ast_id_expr(CirTree cir_tree, AstIdExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_constant(CirTree cir_tree, AstConstant source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirConstExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_literal(CirTree cir_tree, AstLiteral source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirStringLiteral.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_base_expr(CirTree cir_tree, AstBasicExpression source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof AstIdExpression) {
+			return this.parse_ast_id_expr(cir_tree, (AstIdExpression) source);
+		}
+		else if(source instanceof AstConstant) {
+			return this.parse_ast_constant(cir_tree, (AstConstant) source);
+		}
+		else if(source instanceof AstLiteral) {
+			return this.parse_ast_literal(cir_tree, (AstLiteral) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	private	UniAbstractStore	parse_ast_array_expr(CirTree cir_tree, AstArrayExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirDeferExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_cast_expr(CirTree cir_tree, AstCastExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirCastExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_comma_expr(CirTree cir_tree, AstCommaExpression source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_expression(source.number_of_arguments() - 1));
+	}
+	private	UniAbstractStore	parse_ast_cond_expr(CirTree cir_tree, AstConditionalExpression source) throws Exception {
+		CirNode cir_location = this.local_cir_nodes(cir_tree, source, CirImplicator.class).get(2);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_const_expr(CirTree cir_tree, AstConstExpression source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_expression());
+	}
+	private	UniAbstractStore	parse_ast_paranth_expr(CirTree cir_tree, AstParanthExpression source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_sub_expression());
+	}
+	private	UniAbstractStore	parse_ast_field_expr(CirTree cir_tree, AstFieldExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirFieldExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_sizeof_expr(CirTree cir_tree, AstSizeofExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirConstExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_fun_call_expr(CirTree cir_tree, AstFunCallExpression source) throws Exception {
+		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirWaitExpression.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_unary_expr(CirTree cir_tree, AstUnaryExpression source) throws Exception {
+		COperator operator = source.get_operator().get_operator(); CirNode cir_location;
+		switch(operator) {
+		case positive:		return this.parse_ast(cir_tree, source.get_operand());
+		case negative:		cir_location = this.loacl_use_expression(cir_tree, source, CirArithExpression.class);	break;
+		case bit_not:		cir_location = this.loacl_use_expression(cir_tree, source, CirBitwsExpression.class);	break;
+		case logic_not:		cir_location = this.loacl_use_expression(cir_tree, source, CirLogicExpression.class);	break;
+		case address_of:	cir_location = this.loacl_use_expression(cir_tree, source, CirAddressExpression.class);	break;
+		case dereference:	cir_location = this.loacl_use_expression(cir_tree, source, CirDeferExpression.class);	break;
+		case increment:
+		case decrement:
+		{
+			CirAssignStatement statement = (CirAssignStatement) this.local_first_node(cir_tree, source, CirIncreAssignStatement.class);
+			cir_location = statement.get_rvalue(); break;
+		}
+		default:	throw new IllegalArgumentException("Invalid operator: " + operator);
+		}
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_postfix_expr(CirTree cir_tree, AstPostfixExpression source) throws Exception {
+		COperator operator = source.get_operator().get_operator(); CirNode cir_location;
+		switch(operator) {
+		case increment:
+		case decrement:	
+		{
+			cir_location = this.loacl_use_expression(cir_tree, source, CirImplicator.class); break;
+		}
+		default:	throw new IllegalArgumentException("Invalid operator: " + operator);
+		}
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_binary_expr(CirTree cir_tree, AstBinaryExpression source) throws Exception {
+		COperator operator = source.get_operator().get_operator();	CirNode cir_location;
+		switch(operator) {
+		case arith_add:
+		case arith_sub:
+		case arith_mul:
+		case arith_div:
+		case arith_mod:	
+		{
+			cir_location = this.loacl_use_expression(cir_tree, source, CirArithExpression.class); break;
+		}
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case left_shift:
+		case righ_shift:
+		{
+			cir_location = this.loacl_use_expression(cir_tree, source, CirBitwsExpression.class); break;
+		}
+		case logic_and:
+		case logic_or:
+		{
+			cir_location = this.local_cir_nodes(cir_tree, source, CirImplicator.class).get(2); break;
+		}
+		case greater_tn:
+		case greater_eq:
+		case smaller_tn:
+		case smaller_eq:
+		case not_equals:
+		case equal_with:
+		{
+			cir_location = this.loacl_use_expression(cir_tree, source, CirRelationExpression.class); break;
+		}
+		case assign:
+		{
+			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+		}
+		case arith_add_assign:
+		case arith_sub_assign:
+		case arith_mul_assign:
+		case arith_div_assign:
+		case arith_mod_assign:
+		{
+			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+		}
+		case bit_and_assign:
+		case bit_or_assign:
+		case bit_xor_assign:
+		case left_shift_assign:
+		case righ_shift_assign:
+		{
+			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+		}
+		default:	throw new IllegalArgumentException("Invalid operator: null");
+		}
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_expression(CirTree cir_tree, AstExpression source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof AstBasicExpression) {
+			return this.parse_ast_base_expr(cir_tree, (AstBasicExpression) source);
+		}
+		else if(source instanceof AstCastExpression) {
+			return this.parse_ast_cast_expr(cir_tree, (AstCastExpression) source);
+		}
+		else if(source instanceof AstArrayExpression) {
+			return this.parse_ast_array_expr(cir_tree, (AstArrayExpression) source);
+		}
+		else if(source instanceof AstCommaExpression) {
+			return this.parse_ast_comma_expr(cir_tree, (AstCommaExpression) source);
+		}
+		else if(source instanceof AstConditionalExpression) {
+			return this.parse_ast_cond_expr(cir_tree, (AstConditionalExpression) source);
+		}
+		else if(source instanceof AstParanthExpression) {
+			return this.parse_ast_paranth_expr(cir_tree, (AstParanthExpression) source);
+		}
+		else if(source instanceof AstConstExpression) {
+			return this.parse_ast_const_expr(cir_tree, (AstConstExpression) source);
+		}
+		else if(source instanceof AstUnaryExpression) {
+			return this.parse_ast_unary_expr(cir_tree, (AstUnaryExpression) source);
+		}
+		else if(source instanceof AstPostfixExpression) {
+			return this.parse_ast_postfix_expr(cir_tree, (AstPostfixExpression) source);
+		}
+		else if(source instanceof AstBinaryExpression) {
+			return this.parse_ast_binary_expr(cir_tree, (AstBinaryExpression) source);
+		}
+		else if(source instanceof AstFunCallExpression) {
+			return this.parse_ast_fun_call_expr(cir_tree, (AstFunCallExpression) source);
+		}
+		else if(source instanceof AstSizeofExpression) {
+			return this.parse_ast_sizeof_expr(cir_tree, (AstSizeofExpression) source);
+		}
+		else if(source instanceof AstFieldExpression) {
+			return this.parse_ast_field_expr(cir_tree, (AstFieldExpression) source);
+		}
+		else if(source instanceof AstInitializerBody) {
+			return this.parse_ast_initializer_body(cir_tree, (AstInitializerBody) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/* AST-Statements */
+	private	UniAbstractStore	parse_ast_break_stmt(CirTree cir_tree, AstBreakStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_continue_stmt(CirTree cir_tree, AstContinueStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_goto_stmt(CirTree cir_tree, AstGotoStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_return_stmt(CirTree cir_tree, AstReturnStatement source) throws Exception {
+		CirNode cir_location;
+		if(source.has_expression()) {
+			cir_location = this.local_first_node(cir_tree, source, CirReturnAssignStatement.class);
+		}
+		else {
+			cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
+		}
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_compound_stmt(CirTree cir_tree, AstCompoundStatement source) throws Exception {
+		CirNode cir_location = this.local_beg_execution(cir_tree, source);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_declaration_stmt(CirTree cir_tree, AstDeclarationStatement source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_declaration());
+	}
+	private	UniAbstractStore	parse_ast_expression_stmt(CirTree cir_tree, AstExpressionStatement source) throws Exception {
+		if(source.has_expression()) {
+			return this.parse_ast(cir_tree, source.get_expression());
+		}
+		else {
+			CirNode cir_location = this.local_beg_execution(cir_tree, source);
+			return this.new_cir_node(source, cir_location);
+		}
+	}
+	private	UniAbstractStore	parse_ast_if_stmt(CirTree cir_tree, AstIfStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_switch_stmt(CirTree cir_tree, AstIfStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirSaveAssignStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_while_stmt(CirTree cir_tree, AstWhileStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_do_while_stmt(CirTree cir_tree, AstDoWhileStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_for_stmt(CirTree cir_tree, AstForStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_case_stmt(CirTree cir_tree, AstCaseStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirCaseStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_default_stmt(CirTree cir_tree, AstDefaultStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirDefaultStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_labeled_stmt(CirTree cir_tree, AstLabeledStatement source) throws Exception {
+		CirNode cir_location = this.local_first_node(cir_tree, source, CirLabelStatement.class);
+		return this.new_cir_node(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_statement(CirTree cir_tree, AstStatement source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof AstBreakStatement) {
+			return this.parse_ast_break_stmt(cir_tree, (AstBreakStatement) source);
+		}
+		else if(source instanceof AstContinueStatement) {
+			return this.parse_ast_continue_stmt(cir_tree, (AstContinueStatement) source);
+		}
+		else if(source instanceof AstGotoStatement) {
+			return this.parse_ast_goto_stmt(cir_tree, (AstGotoStatement) source);
+		}
+		else if(source instanceof AstReturnStatement) {
+			return this.parse_ast_return_stmt(cir_tree, (AstReturnStatement) source);
+		}
+		else if(source instanceof AstExpressionStatement) {
+			return this.parse_ast_expression_stmt(cir_tree, (AstExpressionStatement) source);
+		}
+		else if(source instanceof AstDeclarationStatement) {
+			return this.parse_ast_declaration_stmt(cir_tree, (AstDeclarationStatement) source);
+		}
+		else if(source instanceof AstCompoundStatement) {
+			return this.parse_ast_compound_stmt(cir_tree, (AstCompoundStatement) source);
+		}
+		else if(source instanceof AstIfStatement) {
+			return this.parse_ast_if_stmt(cir_tree, (AstIfStatement) source);
+		}
+		else if(source instanceof AstSwitchStatement) {
+			return this.parse_ast_switch_stmt(cir_tree, (AstIfStatement) source);
+		}
+		else if(source instanceof AstForStatement) {
+			return this.parse_ast_for_stmt(cir_tree, (AstForStatement) source);
+		}
+		else if(source instanceof AstWhileStatement) {
+			return this.parse_ast_while_stmt(cir_tree, (AstWhileStatement) source);
+		}
+		else if(source instanceof AstDoWhileStatement) {
+			return this.parse_ast_do_while_stmt(cir_tree, (AstDoWhileStatement) source);
+		}
+		else if(source instanceof AstCaseStatement) {
+			return this.parse_ast_case_stmt(cir_tree, (AstCaseStatement) source);
+		}
+		else if(source instanceof AstDefaultStatement) {
+			return this.parse_ast_default_stmt(cir_tree, (AstDefaultStatement) source);
+		}
+		else if(source instanceof AstLabeledStatement) {
+			return this.parse_ast_labeled_stmt(cir_tree, (AstLabeledStatement) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
 	
 }
