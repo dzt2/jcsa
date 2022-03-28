@@ -2,24 +2,7 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
-import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirField;
-import com.jcsa.jcparse.lang.irlang.expr.CirReferExpression;
-import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
-import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirBegStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirCaseEndStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirEndStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
-import com.jcsa.jcparse.lang.irlang.stmt.CirLabel;
-import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
-import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * 	It specifies the state-location where UniAbstractState is evaluated using a
@@ -56,7 +39,7 @@ public class UniAbstractStore {
 	 * @param exe_location	the CFG-node where this state is located and evaluated
 	 * @throws IllegalArgumentException
 	 */
-	private UniAbstractStore(UniAbstractLType _store_class, 
+	protected UniAbstractStore(UniAbstractLType _store_class, 
 			AstNode ast_location, CirNode cir_location, 
 			CirExecution exe_location) throws IllegalArgumentException {
 		if(_store_class == null) {
@@ -118,154 +101,23 @@ public class UniAbstractStore {
 		return new UniAbstractStore(this._store_class, this.ast_location, this.cir_location, this.exe_location);
 	}
 	
-	/* factory */
+	/* classifier */
 	/**
-	 * @param ast_location the abstract syntactic location to preserve this state
-	 * @param cir_location a C-intermediate representative to preserve this state
-	 * @return				
-	 * @throws Exception
+	 * @return whether the store-location represents an expression
 	 */
-	protected static UniAbstractStore new_node(AstNode ast_location, CirNode cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null || cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else {
-			UniAbstractLType _store_class;
-			if(cir_location instanceof CirExpression) {
-				CirExpression expression = (CirExpression) cir_location;
-				CirStatement statement = expression.statement_of();
-				if(expression.get_parent() instanceof CirAssignStatement) {
-					if(((CirAssignStatement) statement).get_lvalue() == expression) {
-						_store_class = UniAbstractLType.cdef_expr;
-					}
-					else if(SymbolFactory.is_bool(expression.get_data_type())) {
-						_store_class = UniAbstractLType.bool_expr;
-					}
-					else {
-						_store_class = UniAbstractLType.used_expr;
-					}
-				}
-				else if(SymbolFactory.is_bool(expression.get_data_type())
-						|| expression.get_parent() instanceof CirIfStatement
-						|| expression.get_parent() instanceof CirCaseStatement) {
-					_store_class = UniAbstractLType.bool_expr;
-				}
-				else {
-					_store_class = UniAbstractLType.used_expr;
-				}
-			}
-			else if(cir_location instanceof CirStatement) {
-				CirStatement statement = (CirStatement) cir_location;
-				if(statement instanceof CirAssignStatement) {
-					_store_class = UniAbstractLType.assg_stmt;
-				}
-				else if(statement instanceof CirIfStatement) {
-					_store_class = UniAbstractLType.ifte_stmt;
-				}
-				else if(statement instanceof CirCaseStatement) {
-					_store_class = UniAbstractLType.case_stmt;
-				}
-				else if(statement instanceof CirCallStatement) {
-					_store_class = UniAbstractLType.call_stmt;
-				}
-				else if(statement instanceof CirGotoStatement) {
-					_store_class = UniAbstractLType.goto_stmt;
-				}
-				else if(statement instanceof CirBegStatement
-						|| statement instanceof CirEndStatement) {
-					_store_class = UniAbstractLType.bend_stmt;
-				}
-				else if(statement instanceof CirIfEndStatement
-						|| statement instanceof CirCaseEndStatement) {
-					_store_class = UniAbstractLType.conv_stmt;
-				}
-				else {
-					_store_class = UniAbstractLType.labl_stmt;
-				}
-			}
-			else {
-				if(cir_location instanceof CirArgumentList) {
-					_store_class = UniAbstractLType.argls_elm;
-				}
-				else if(cir_location instanceof CirField) {
-					_store_class = UniAbstractLType.field_elm;
-				}
-				else if(cir_location instanceof CirType) {
-					_store_class = UniAbstractLType.ctype_elm;
-				}
-				else if(cir_location instanceof CirLabel) {
-					_store_class = UniAbstractLType.label_elm;
-				}
-				else {
-					throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
-				}
-			}
-			return new UniAbstractStore(_store_class, ast_location, cir_location, cir_location.execution_of());
-		}
-	}
-	/**
-	 * @param ast_location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	protected static UniAbstractStore new_vdef(AstNode ast_location, CirReferExpression cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null || cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else {
-			UniAbstractLType _store_class;
-			if(cir_location.get_parent() instanceof CirAssignStatement) {
-				CirAssignStatement statement = (CirAssignStatement) cir_location.get_parent();
-				if(statement.get_lvalue() == cir_location) {
-					_store_class = UniAbstractLType.cdef_expr;
-				}
-				else {
-					_store_class = UniAbstractLType.vdef_expr;
-				}
-			}
-			else {
-				_store_class = UniAbstractLType.vdef_expr;
-			}
-			return new UniAbstractStore(_store_class, ast_location, cir_location, cir_location.execution_of());
-		}
-	}
-	
-	/* classify */
-	/**
-	 * @return	whether this location is elementary
-	 */
-	public boolean is_elem() {
-		switch(this._store_class) {
-		case argls_elm:
-		case field_elm:
-		case label_elm:
-		case ctype_elm:	return true;
-		default:		return false;
-		}
-	}
-	/**
-	 * @return whether this location is expression
-	 */
-	public boolean is_expr() {
+	public boolean is_expression() {
 		switch(this._store_class) {
 		case bool_expr:
 		case cdef_expr:
-		case used_expr:
-		case vdef_expr:	return true;
+		case argv_expr:
+		case used_expr:	return true;
 		default:		return false;
 		}
 	}
 	/**
-	 * @return whether the location is a statement
+	 * @return whether the store-location represents a statement
 	 */
-	public boolean is_stmt() {
+	public boolean is_statement() {
 		switch(this._store_class) {
 		case assg_stmt:
 		case ifte_stmt:
@@ -275,6 +127,18 @@ public class UniAbstractStore {
 		case bend_stmt:
 		case conv_stmt:
 		case labl_stmt:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether the store-location represents an elemental
+	 */
+	public boolean is_element() {
+		switch(this._store_class) {
+		case fiel_elem:
+		case labl_elem:
+		case type_elem:
+		case args_elem:	return true;
 		default:		return false;
 		}
 	}

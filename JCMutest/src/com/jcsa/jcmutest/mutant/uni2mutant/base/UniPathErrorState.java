@@ -27,7 +27,7 @@ public abstract class UniPathErrorState extends UniAbstractState {
 	protected UniPathErrorState(UniAbstractClass _class, UniAbstractStore _store, SymbolExpression lvalue,
 			SymbolExpression rvalue) throws Exception {
 		super(_class, _store, lvalue, rvalue);
-		if(!_store.is_stmt()) {
+		if(!_store.is_statement()) {
 			throw new IllegalArgumentException("Statement-Store required.");
 		}
 	}

@@ -9,27 +9,30 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
 public enum UniAbstractLType {
 	
 	/* elementals */
-	/** CirAgumentList|AstArgumentList	**/	argls_elm,
-	/** CirType|AstTypeName 			**/	ctype_elm,
-	/** CirField|AstField 				**/	field_elm,
-	/** CirLabel|AstLabel 				**/	label_elm,
+	/** CirField **/								fiel_elem,
+	/** CirLabel **/								labl_elem,
+	/** CirArgumentList **/							args_elem,
+	/** CirType **/									type_elem,
 	
 	/* expression */
-	/** CirExpression (bool|IF.cond) 	**/	bool_expr,
-	/** CirReferExpression (assg.lop) 	**/	cdef_expr,
-	/** CirExpression (otherwise) 		**/	used_expr,
-	/** CirExpression (specified def) 	**/	vdef_expr,
+	/** CirExpression (if|case.condition) **/		bool_expr,
+	/** CirReferExpression (assignment.lvalue) **/	cdef_expr,
+	/** CirExpression (CirArgumentList.arg[k]) **/	argv_expr,
+	/** CirExpression (otherwise) **/				used_expr,
 	
 	/* statements */
-	/** CirAssignStatement 				**/	assg_stmt,
-	/** CirIfStatement					**/	ifte_stmt,
-	/** CirCaseStatement				**/	case_stmt,
-	/** CirCallStatement 				**/	call_stmt,
+	/** CirAssignStatement **/						assg_stmt,
+	/** CirIfStatement **/							ifte_stmt,
+	/** CirCaseStatement (case) **/					case_stmt,
+	/** CirCallStatement **/						call_stmt,
 	
 	/* goto-label */
-	/** CirGotoStatement 				**/	goto_stmt,
-	/** CirBegStatement|CirEndStatement **/	bend_stmt,
-	/** CirIfEndStatement|CirCaseEnd 	**/	conv_stmt,
-	/** CirLabelStatement 				**/	labl_stmt,
+	/** CirBegStatement|CirEndStatement **/			bend_stmt,
+	/** CirGotoStatement **/						goto_stmt,
+	/** CirLabelStatement|CirDefaultStatement **/	labl_stmt,
+	/** CirIfEndStatement|CirCaseEndStatement **/	conv_stmt,
+	
+	/* virtualize */
+	/** virtually definition point of non-def **/	vdef_expr,
 	
 }

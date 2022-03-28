@@ -27,7 +27,7 @@ public abstract class UniDataErrorState extends UniAbstractState {
 	protected UniDataErrorState(UniAbstractClass _class, UniAbstractStore _store, 
 			SymbolExpression lvalue, SymbolExpression rvalue) throws Exception {
 		super(_class, _store, lvalue, rvalue);
-		if(!_store.is_expr()) {
+		if(!_store.is_expression()) {
 			throw new IllegalArgumentException("Expression-Store required.");
 		}
 	}
