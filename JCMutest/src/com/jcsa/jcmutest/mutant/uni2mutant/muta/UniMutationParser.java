@@ -1,13 +1,18 @@
 package com.jcsa.jcmutest.mutant.uni2mutant.muta;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.uni2mutant.UniMutation;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstErrorState;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractStates;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractStore;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniConditionState;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniConstraintState;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniCoverTimesState;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniValueErrorState;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
@@ -52,18 +57,18 @@ public abstract class UniMutationParser {
 	 * @param mutation
 	 * @throws Exception
 	 */
-	protected abstract void generate_infection_map(AstMutation mutation) throws Exception;
+	protected abstract void generate_infection_map(CirStatement statement, AstMutation mutation) throws Exception;
 	/**
 	 * @param cir_tree	the C-intermediate representative root where the mutant is derived
 	 * @param mutation	the syntactic mutation, from which RIP-based mutations are created
 	 * @return			the set of RIP-based state mutations, from which mutant is created
 	 * @throws Exception
 	 */
-	public Collection<UniMutation> parse(CirTree cir_tree, AstMutation mutation) throws Exception {
+	public List<UniMutation> parse(CirTree cir_tree, Mutant mutant) throws Exception {
 		if(cir_tree == null) {
 			throw new IllegalArgumentException("Invalid cir_tree: null");
 		}
-		else if(mutation == null) {
+		else if(mutant == null) {
 			throw new IllegalArgumentException("Invalid mutation: null");
 		}
 		else {
@@ -73,10 +78,10 @@ public abstract class UniMutationParser {
 			this.i_states.clear();
 			this.p_states.clear();
 			
-			/* reachability */
-			this.rec_stmt = this.get_reach_node(mutation);
+			/* transformation */
+			this.rec_stmt = this.get_reach_node(mutant.get_mutation());
 			if(this.rec_stmt != null) {
-				this.generate_infection_map(mutation);
+				this.generate_infection_map(this.rec_stmt, mutant.get_mutation());
 			}
 			
 			/* construction */
@@ -84,13 +89,13 @@ public abstract class UniMutationParser {
 			for(int k = 0; k < this.i_states.size(); k++) {
 				UniConditionState i_state = this.i_states.get(k);
 				UniAbstErrorState p_state = this.p_states.get(k);
-				mutations.add(new UniMutation(this.rec_stmt, i_state, p_state));
+				mutations.add(new UniMutation(mutant, this.rec_stmt, i_state, p_state));
 			}
 			return mutations;
 		}
 	}
 	
-	/* base methods */
+	/* localize methods */
 	/**
 	 * @param source
 	 * @param cir_class
@@ -161,5 +166,56 @@ public abstract class UniMutationParser {
 		}
 		return expression;
 	}
+	
+	/* generate methods */ 
+	/**
+	 * @param statement
+	 * @return	cov_stmt(statement; 1, 2^32)
+	 * @throws Exception
+	 */
+	protected UniCoverTimesState	cov_time(CirStatement statement) throws Exception {
+		UniAbstractStore store = UniAbstractStore.new_node(statement);
+		return UniAbstractStates.cov_time(store, 1, Integer.MAX_VALUE);
+	}
+	/**
+	 * @param statement
+	 * @param max_time
+	 * @return cov_stmt(statement; 1, max_time)
+	 * @throws Exception
+	 */
+	protected UniCoverTimesState 	max_time(CirStatement statement, int max_time) throws Exception {
+		UniAbstractStore store = UniAbstractStore.new_node(statement);
+		return UniAbstractStates.cov_time(store, 1, max_time);
+	}
+	/**
+	 * @param statement
+	 * @param condition
+	 * @return	eva_cond(statement; condition, false)
+	 * @throws Exception
+	 */
+	protected UniConstraintState	eva_need(CirStatement statement, Object condition) throws Exception {
+		UniAbstractStore store = UniAbstractStore.new_node(statement);
+		return UniAbstractStates.eva_cond(store, condition, false);
+	}
+	/**
+	 * @param statement
+	 * @param condition
+	 * @return	eva_cond(statement; condition, true)
+	 * @throws Exception
+	 */
+	protected UniConstraintState	eva_must(CirStatement statement, Object condition) throws Exception {
+		UniAbstractStore store = UniAbstractStore.new_node(statement);
+		return UniAbstractStates.eva_cond(store, condition, true);
+	}
+	/**
+	 * @param store	the store of the expression where the data error is seeded
+	 * @param value	the mutated value to replace with the original expression
+	 * @return
+	 * @throws Exception
+	 */
+	protected UniValueErrorState	set_expr(CirExpression expression, Object value) throws Exception {
+		return UniAbstractStates.set_expr(UniAbstractStore.new_node(expression), value);
+	}
+	// TODO generate the methods
 	
 }
