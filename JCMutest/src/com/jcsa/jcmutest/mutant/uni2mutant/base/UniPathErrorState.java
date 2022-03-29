@@ -15,7 +15,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
  * 	@author yukimula
  *
  */
-public abstract class UniPathErrorState extends UniAbstractState {
+public abstract class UniPathErrorState extends UniAbstErrorState {
 	
 	/**
 	 * @param _class
