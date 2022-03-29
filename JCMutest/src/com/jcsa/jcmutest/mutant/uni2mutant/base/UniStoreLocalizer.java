@@ -215,6 +215,12 @@ final class UniStoreLocalizer {
 			return ast_location;
 		}
 	}
+	/**
+	 * @param cir_tree
+	 * @param ast_location
+	 * @param cir_class
+	 * @return	the list of CirNode(s) to which the ast_location refers with respect to specified data type
+	 */
 	private	List<CirNode>		local_cir_nodes(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
 		return cir_tree.get_localizer().get_cir_nodes(ast_location, cir_class);
 	}
@@ -254,7 +260,7 @@ final class UniStoreLocalizer {
 	 * @return				the store-location created by given inputs
 	 * @throws Exception
 	 */
-	private	UniAbstractStore	new_storage(UniAbstractLType store_class,
+	private	UniAbstractStore	new_location(UniAbstractLType store_class,
 			AstNode ast_location, CirNode cir_location) throws Exception {
 		if(store_class == null) {
 			throw new IllegalArgumentException("Invalid store_class: null");
@@ -311,7 +317,7 @@ final class UniStoreLocalizer {
 			else {
 				store_class = UniAbstractLType.used_expr;
 			}
-			return this.new_storage(store_class, ast_location, cir_location);
+			return this.new_location(store_class, ast_location, cir_location);
 		}
 	}
 	/**
@@ -363,7 +369,7 @@ final class UniStoreLocalizer {
 			else {
 				throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
 			}
-			return this.new_storage(store_class, ast_location, cir_location);
+			return this.new_location(store_class, ast_location, cir_location);
 		}
 	}
 	/**
@@ -400,7 +406,7 @@ final class UniStoreLocalizer {
 			else {
 				throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
 			}
-			return this.new_storage(store_class, ast_location, cir_location);
+			return this.new_location(store_class, ast_location, cir_location);
 		}
 	}
 	/**
