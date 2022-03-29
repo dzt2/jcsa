@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.mutant.uni2mutant.base;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -10,7 +11,9 @@ import com.jcsa.jcparse.lang.ctype.CPointerType;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -300,7 +303,7 @@ public final class UniAbstractStates {
 	 * @param source
 	 * @return whether the expression is a trap-value
 	 */
-	private static boolean is_trap_value(SymbolNode source) {
+	private static boolean 	is_trap_value(SymbolNode source) {
 		if(source == null) {
 			return false;
 		}
@@ -315,7 +318,7 @@ public final class UniAbstractStates {
 	 * @param expression
 	 * @return whether the expression encloses any trap-values
 	 */
-	public static boolean has_trap_value(SymbolExpression expression) {
+	public static boolean 	has_trap_value(SymbolExpression expression) {
 		if(expression == null) {
 			return false;
 		}
@@ -336,7 +339,7 @@ public final class UniAbstractStates {
 	 * @param source
 	 * @return whether the source is any abstract value defined in this class
 	 */
-	private static boolean is_abst_value(SymbolNode source) {
+	private static boolean 	is_abst_value(SymbolNode source) {
 		if(source == null) {
 			return false;
 		}
@@ -354,7 +357,7 @@ public final class UniAbstractStates {
 	 * @param expression
 	 * @return whether the expression ecloses any abstract values defined
 	 */
-	public static boolean has_abst_value(SymbolExpression expression) {
+	public static boolean 	has_abst_value(SymbolExpression expression) {
 		if(expression == null) {
 			return false;
 		}
@@ -394,12 +397,115 @@ public final class UniAbstractStates {
 		}
 	}
 	
-	/*  */
-	
-	
-	
-	
-	
+	/* CIR-based factory */
+	/**
+	 * @param location	the statement (location) where the coverage is required
+	 * @param min_times	the minimal times for running state statement-locations
+	 * @param max_times	the maximal times for running state statement-locations
+	 * @return			cov_time(location.statement; min_times, max_times)
+	 * @throws Exception
+	 */
+	public static UniCoverTimesState	cov_time(CirNode location, int min_times, int max_times) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(min_times > max_times || max_times < 0) {
+			throw new IllegalArgumentException(min_times + " --> " + max_times);
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniCoverTimesState(store, min_times, max_times);
+		}
+	}
+	/**
+	 * @param location	the statement (location) where the condition is asserted
+	 * @param condition	the condition to be evaluated at a given statement-point
+	 * @param must_need	true (be satisfied always); false (satisfied at only one)
+	 * @return			eva_cond(location.statement; condition, must_need)
+	 * @throws Exception
+	 */
+	public static UniConstraintState	eva_cond(CirNode location, Object condition, boolean must_need) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniConstraintState(store, condition, must_need);
+		}
+	}
+	/**
+	 * @param location	the statement (location) where the mutation is injected.
+	 * @param mutant	the synactic alteration being injected in that location.
+	 * @return			sed_muta(location.statement; mutant_ID, clas_oprt)
+	 * @throws Exception
+	 */
+	public static UniSeedMutantState	sed_muta(CirNode location, Mutant mutant) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(mutant == null) {
+			throw new IllegalArgumentException("Invalid mutant: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniSeedMutantState(store, mutant);
+		}
+	}
+	/**
+	 * @param location	the statement (location) where the path-error is arised.
+	 * @param muta_exec	True (if incorrectly executed) False (or otherwise).
+	 * @return			mut_stmt(location.statement; !muta_exec, muta_exec)
+	 * @throws Exception
+	 */
+	public static UniBlockErrorState	mut_stmt(CirNode location, boolean muta_exec) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniBlockErrorState(store, muta_exec);
+		}
+	}
+	/**
+	 * @param location		the statement (location) where the path-error is arised.
+	 * @param original_next	the next statement being executed in the original version
+	 * @param mutation_next	the next statement being executed in the mutated version
+	 * @return				mut_flow(location.statement; orig_next, muta_next)
+	 * @throws Exception
+	 */
+	public static UniFlowsErrorState	mut_flow(CirNode location, 
+			CirExecution original_next, CirExecution mutation_next) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(original_next == null) {
+			throw new IllegalArgumentException("Invalid original_next");
+		}
+		else if(mutation_next == null) {
+			throw new IllegalArgumentException("Invalid mutation_next");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniFlowsErrorState(store, original_next, mutation_next);
+		}
+	}
+	/**
+	 * @param location	the statement (location) where the trapping should arise
+	 * @return			trp_stmt(location.statement; exception, exception)
+	 * @throws Exception
+	 */
+	public static UniTrapsErrorState	trp_stmt(CirNode location) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else {
+			UniAbstractStore store = UniAbstractStore.new_node(location.execution_of());
+			return new UniTrapsErrorState(store);
+		}
+	}
 	
 	
 	

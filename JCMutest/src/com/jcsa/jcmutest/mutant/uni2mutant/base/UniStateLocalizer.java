@@ -98,92 +98,196 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirSaveAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionBody;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
- * 	It implements the localization from AstNode or CirNode to UniAbstractStore.
+ * 	It implements the localization of state-storage used in UniAbstractState.	<br>
+ * 	<br>
+ * 	<code>
+ * 	</code>
  * 	
  * 	@author yukimula
  *
  */
-final class UniStoreLocalizer {
+public final class UniStateLocalizer {
 	
-	/* singleton mode */  /** constructor **/  private UniStoreLocalizer() { }
-	private static final UniStoreLocalizer localizer = new UniStoreLocalizer();
+	/* singleton pattern */ /** constructor **/ private UniStateLocalizer() { }
+	private static final UniStateLocalizer localizer = new UniStateLocalizer();
 	
-	/* localization-interface */
+	/* storage-construction */
 	/**
-	 * @param cir_location
-	 * @return it transforms the cir-location to the store-localization
-	 * @throws Exception
+	 * 	It infers the class of the UniAbstractStore based on the cir_location.	<br>
+	 * 	<br>
+	 * 	<code>
+	 * 		CirFunctionDefinition			-->	func_elem						<br>
+	 * 		CirFunctionBody					-->	func_elem						<br>
+	 * 		CirArgumentList					-->	args_elem						<br>
+	 * 		CirLabel						-->	labl_elem						<br>
+	 * 		CirField						-->	fiel_elem						<br>
+	 * 		CirType							-->	type_elem						<br>
+	 * 		CirExpression (assg.lvalue)		-->	cdef_expr						<br>
+	 * 		CirExpression (assg.rvalue)		-->	used_expr						<br>
+	 * 		CirExpression (if|case|bool)	-->	bool_expr						<br>
+	 * 		CirExpression (arg_list.arg)	-->	argv_expr						<br>
+	 * 		CirExpression (otherwise)		-->	used_expr						<br>
+	 * 		CirCallStatement				-->	call_stmt						<br>
+	 * 		CirWaitAssignStatement			-->	wait_stmt						<br>
+	 * 		CirIfStatement					-->	ifte_stmt						<br>
+	 * 		CirCaseStatement				-->	case_stmt						<br>
+	 * 		CirReturnAssignStatement		-->	retr_stmt						<br>
+	 * 		CirGotoStatement (return)		-->	retr_stmt						<br>
+	 * 		CirGotoStatement				-->	goto_stmt						<br>
+	 * 		CirAssignStatement				-->	assg_stmt						<br>
+	 * 		CirBeg|EndStatement				-->	bend_stmt						<br>
+	 * 		CirLabel|DefaultStatement		-->	labl_stmt						<br>
+	 * 		CirIfEnd|CaseEndStatement		-->	conv_stmt						<br>
+	 * 	</code>
+	 * 	
+	 * 	@param cir_location
+	 * 	@return it infers the UniAbstractLType that the location corresponds to
 	 */
-	protected static UniAbstractStore parse(CirNode cir_location) throws Exception {
-		return localizer.parse_cir(cir_location);
+	private	UniAbstractLType	infer_store_class(CirNode cir_location) {
+		if(cir_location == null) {
+			return null;
+		}
+		else if(cir_location instanceof CirExpression) {
+			if(cir_location.get_parent() instanceof CirAssignStatement) {
+				CirAssignStatement statement = (CirAssignStatement) cir_location.get_parent();
+				if(statement.get_lvalue() == cir_location) {
+					return UniAbstractLType.cdef_expr;
+				}
+				else {
+					return UniAbstractLType.used_expr;
+				}
+			}
+			else if(cir_location.get_parent() instanceof CirIfStatement ||
+					cir_location.get_parent() instanceof CirCaseStatement || 
+					SymbolFactory.is_bool(((CirExpression) cir_location).get_data_type())) {
+				return UniAbstractLType.bool_expr;
+			}
+			else if(cir_location.get_parent() instanceof CirArgumentList) {
+				return UniAbstractLType.args_elem;
+			}
+			else {
+				return UniAbstractLType.used_expr;
+			}
+		}
+		else if(cir_location instanceof CirStatement) {
+			if(cir_location instanceof CirWaitAssignStatement) {
+				return UniAbstractLType.wait_stmt;
+			}
+			else if(cir_location instanceof CirAssignStatement) {
+				return UniAbstractLType.assg_stmt;
+			}
+			else if(cir_location instanceof CirReturnAssignStatement) {
+				return UniAbstractLType.retr_stmt;
+			}
+			else if(cir_location instanceof CirIfStatement) {
+				return UniAbstractLType.ifte_stmt;
+			}
+			else if(cir_location instanceof CirCaseStatement) {
+				return UniAbstractLType.case_stmt;
+			}
+			else if(cir_location instanceof CirCallStatement) {
+				return UniAbstractLType.call_stmt;
+			}
+			else if(cir_location instanceof CirGotoStatement) {
+				if(cir_location.get_ast_source() instanceof AstReturnStatement) {
+					return UniAbstractLType.retr_stmt;
+				}
+				else {
+					return UniAbstractLType.goto_stmt;
+				}
+			}
+			else if(cir_location instanceof CirBegStatement
+					|| cir_location instanceof CirEndStatement) {
+				return UniAbstractLType.bend_stmt;
+			}
+			else if(cir_location instanceof CirIfEndStatement
+					|| cir_location instanceof CirCaseEndStatement) {
+				return UniAbstractLType.conv_stmt;
+			}
+			else if(cir_location instanceof CirLabelStatement
+					|| cir_location instanceof CirDefaultStatement) {
+				return UniAbstractLType.labl_stmt;
+			}
+			else {
+				return null;
+			}
+		}
+		else {
+			if(cir_location instanceof CirArgumentList) {
+				return UniAbstractLType.args_elem;
+			}
+			else if(cir_location instanceof CirField) {
+				return UniAbstractLType.fiel_elem;
+			}
+			else if(cir_location instanceof CirLabel) {
+				return UniAbstractLType.labl_elem;
+			}
+			else if(cir_location instanceof CirType) {
+				return UniAbstractLType.type_elem;
+			}
+			else if(cir_location instanceof CirFunctionDefinition
+					|| cir_location instanceof CirFunctionBody) {
+				return UniAbstractLType.func_elem;
+			}
+			else {
+				return null;
+			}
+		}
 	}
 	/**
-	 * @param exe_location
-	 * @return it transforms the statement to the store-localization
+	 * @param ast_location	the abstract syntax location that the storage refers
+	 * @param cir_location	the C-intermediate location for which storage refers
+	 * @return				_store_class[ast_location:cir_location]
 	 * @throws Exception
 	 */
-	protected static UniAbstractStore parse(CirExecution exe_location) throws Exception {
-		if(exe_location == null) {
+	private	UniAbstractStore	construct_storage(AstNode ast_location, CirNode cir_location) throws Exception {
+		if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location.execution_of() == null) {
 			throw new IllegalArgumentException("Invalid exe_location: null");
 		}
 		else {
-			return localizer.parse_cir(exe_location.get_statement());
+			return new UniAbstractStore(this.infer_store_class(cir_location), 
+					ast_location, cir_location, cir_location.execution_of());
 		}
-	}
-	/**
-	 * @param cir_tree
-	 * @param ast_location
-	 * @return	it transforms the ast-location using C-intermediate representative tree
-	 * @throws Exception
-	 */
-	protected static UniAbstractStore parse(CirTree cir_tree, AstNode ast_location) throws Exception {
-		if(cir_tree == null) {
-			throw new IllegalArgumentException("Invalid cir_tree: null");
-		}
-		else if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else { return localizer.parse_ast(cir_tree, ast_location); }
 	}
 	
-	/* localization methods */
+	/* localization-methods */
 	/**
-	 * 	It derives the real child being represented by the input location.<br>
-	 * 	<code>
-	 * 	AstParanthExpression		--> derive(sub_expression)			<br>
-	 * 	AstConstExpression			-->	derive(sub_expression)			<br>
-	 * 	AstInitializer				-->	derive(body|expression)			<br>
-	 * 	AstFieldInitializer			-->	derive(initializer)				<br>
-	 * 	AstDeclarator				--> derive*(name)					<br>
-	 * 	AstInitializerBody			-->	initializer_list				<br>
-	 * 	AstExpressionStatement		--> derive*(expression)				<br>
-	 * 	otherwise					--> itself							<br>
-	 * 	</code>
-	 * 	
-	 *	@param ast_location
-	 * 	@return
+	 * It localizes the real expression under the ast_location that it represents
+	 * @param ast_location
+	 * @return
 	 */
-	private	AstNode				local_ast_child(AstNode ast_location) {
-		if(ast_location instanceof AstParanthExpression) {
+	private	AstExpression		loc_ast_expression(AstNode ast_location) {
+		if(ast_location == null) {
+			return null;
+		}
+		else if(ast_location instanceof AstParanthExpression) {
 			ast_location = ((AstParanthExpression) ast_location).get_sub_expression();
-			return this.local_ast_child(ast_location);
+			return this.loc_ast_expression(ast_location);
 		}
 		else if(ast_location instanceof AstConstExpression) {
 			ast_location = ((AstConstExpression) ast_location).get_expression();
-			return this.local_ast_child(ast_location);
+			return this.loc_ast_expression(ast_location);
 		}
-		else if(ast_location instanceof AstExpressionStatement) {
-			if(((AstExpressionStatement) ast_location).has_expression()) {
-				ast_location = ((AstExpressionStatement) ast_location).get_expression();
-				return this.local_ast_child(ast_location);
+		else if(ast_location instanceof AstInitDeclarator) {
+			if(((AstInitDeclarator) ast_location).has_initializer()) {
+				ast_location = ((AstInitDeclarator) ast_location).get_initializer();
 			}
 			else {
-				return ast_location;
+				ast_location = ((AstInitDeclarator) ast_location).get_declarator();
 			}
+			return this.loc_ast_expression(ast_location);
 		}
 		else if(ast_location instanceof AstInitializer) {
 			if(((AstInitializer) ast_location).is_body()) {
@@ -192,15 +296,11 @@ final class UniStoreLocalizer {
 			else {
 				ast_location = ((AstInitializer) ast_location).get_expression();
 			}
-			return this.local_ast_child(ast_location);
+			return this.loc_ast_expression(ast_location);
 		}
-		else if(ast_location instanceof AstFieldInitializer) {
-			ast_location = ((AstFieldInitializer) ast_location).get_initializer();
-			return this.local_ast_child(ast_location);
-		}
-		else if(ast_location instanceof AstInitializerBody) {
-			ast_location = ((AstInitializerBody) ast_location).get_initializer_list();
-			return this.local_ast_child(ast_location);
+		else if(ast_location instanceof AstInitializerList) {
+			ast_location = ast_location.get_parent();
+			return this.loc_ast_expression(ast_location);
 		}
 		else if(ast_location instanceof AstDeclarator) {
 			if(((AstDeclarator) ast_location).get_production() == DeclaratorProduction.identifier) {
@@ -209,235 +309,99 @@ final class UniStoreLocalizer {
 			else {
 				ast_location = ((AstDeclarator) ast_location).get_declarator();
 			}
-			return this.local_ast_child(ast_location);
+			return this.loc_ast_expression(ast_location);
+		}
+		else if(ast_location instanceof AstName) {
+			return null;
+		}
+		else if(ast_location instanceof AstExpression) {
+			return (AstExpression) ast_location;
 		}
 		else {
-			return ast_location;
+			return null;
+		}
+	}
+	/**
+	 * It derives the list of CirNode(s) w.r.t. the given class under the abstract syntax location
+	 * @param cir_tree
+	 * @param ast_location
+	 * @param cir_class
+	 * @return
+	 */
+	private	List<CirNode>		loc_cir_locations(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
+		return cir_tree.get_localizer().get_cir_nodes(ast_location, cir_class);
+	}
+	/**
+	 * @param cir_tree
+	 * @param ast_location
+	 * @param cir_class
+	 * @param index
+	 * @return the kth cir-node w.r.t. the abstract syntax location or null if it is out of range
+	 */
+	private	CirNode				loc_cir_location(CirTree cir_tree, AstNode ast_location, Class<?> cir_class, int index) {
+		List<CirNode> cir_nodes = this.loc_cir_locations(cir_tree, ast_location, cir_class);
+		if(index < 0 || index >= cir_nodes.size()) {
+			return cir_nodes.get(index);
+		}
+		else {
+			return null;
 		}
 	}
 	/**
 	 * @param cir_tree
 	 * @param ast_location
 	 * @param cir_class
-	 * @return	the list of CirNode(s) to which the ast_location refers with respect to specified data type
+	 * @param index
+	 * @return the first cir-node w.r.t. the abstract syntax location or null if it is out of range
 	 */
-	private	List<CirNode>		local_cir_nodes(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
-		return cir_tree.get_localizer().get_cir_nodes(ast_location, cir_class);
-	}
-	private	CirNode				local_first_node(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
-		List<CirNode> cir_nodes = this.local_cir_nodes(cir_tree, ast_location, cir_class);
-		if(cir_nodes.isEmpty()) {
-			return null;
+	private	CirNode				loc_cir_location(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
+		List<CirNode> cir_nodes = this.loc_cir_locations(cir_tree, ast_location, cir_class);
+		for(CirNode cir_node : cir_nodes) {
+			if(cir_node.execution_of() != null) {
+				return cir_node;
+			}
 		}
-		else {
-			return cir_nodes.get(0);
-		}
+		return null;
 	}
-	private	CirStatement		local_beg_execution(CirTree cir_tree, AstNode ast_location) throws Exception {
+	/**
+	 * @param cir_tree		the C-intermediate representation tree to derive the locations
+	 * @param ast_location	the abstract syntactic location to which the beg-statement is derived
+	 * @return				the first statement to which node is in or null if unable to localize
+	 * @throws Exception
+	 */
+	private	CirStatement		loc_beg_statement(CirTree cir_tree, AstNode ast_location) throws Exception {
 		return cir_tree.get_localizer().beg_statement(ast_location);
 	}
-	private	CirExpression		loacl_use_expression(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) throws Exception {
-		List<CirNode> cir_nodes = this.local_cir_nodes(cir_tree, ast_location, cir_class);
-		CirExpression expression = null; 
-		for(int k = 0; k < cir_nodes.size(); k++) {
-			CirNode child = cir_nodes.get(k);
-			if(child instanceof CirExpression) {
-				expression = (CirExpression) child;
+	/**
+	 * @param cir_tree		the C-intermediate representation tree to derive the locations
+	 * @param ast_location	the abstract syntactic location to which the beg-statement is derived
+	 * @return				the first statement to which node is in or null if unable to localize
+	 * @throws Exception
+	 */
+	private	CirStatement		loc_end_statement(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return cir_tree.get_localizer().end_statement(ast_location);
+	}
+	/**
+	 * @param cir_tree		the C-intermediate representation tree to derive the locations
+	 * @param ast_location	the abstract syntactic location to which the expression is derived
+	 * @param cir_class		the class of CirExpression's sub-classes to which the expression is
+	 * @return				the expression that represent the ast_location w.r.t. the cir_class
+	 */
+	private	CirExpression		loc_use_expression(CirTree cir_tree, AstNode ast_location, Class<?> cir_class) {
+		List<CirNode> cir_nodes = this.loc_cir_locations(cir_tree, ast_location, cir_class);
+		CirExpression expression = null;
+		for(CirNode cir_node : cir_nodes) {
+			if(cir_node instanceof CirExpression) {
+				expression = (CirExpression) cir_node;
 				if(expression.execution_of() != null) {
-					return expression;
+					break;
 				}
 			}
 		}
 		return expression;
 	}
 	
-	/* basic construction */
-	/**
-	 * It creates an isolated store-location with the given parameters
-	 * @param store_class	the category of the store-location created
-	 * @param ast_location	the abstract syntax node this store refers
-	 * @param cir_location	the C-intermediation node the store refers
-	 * @return				the store-location created by given inputs
-	 * @throws Exception
-	 */
-	private	UniAbstractStore	new_location(UniAbstractLType store_class,
-			AstNode ast_location, CirNode cir_location) throws Exception {
-		if(store_class == null) {
-			throw new IllegalArgumentException("Invalid store_class: null");
-		}
-		else if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else {
-			return new UniAbstractStore(store_class, ast_location, cir_location, cir_location.execution_of());
-		}
-	}
-	/**
-	 * It creates a store-location of which class best-matches with the expression types
-	 * @param ast_location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	private	UniAbstractStore	new_cir_expr(AstNode ast_location, CirExpression cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else {
-			UniAbstractLType store_class;
-			if(cir_location.get_parent() instanceof CirAssignStatement) {
-				CirAssignStatement statement = (CirAssignStatement) cir_location.statement_of();
-				if(statement.get_lvalue() == cir_location) {
-					store_class = UniAbstractLType.cdef_expr;
-				}
-				else {
-					store_class = UniAbstractLType.used_expr;
-				}
-			}
-			else if(cir_location.get_parent() instanceof CirArgumentList) {
-				store_class = UniAbstractLType.argv_expr;
-			}
-			else if(SymbolFactory.is_bool(cir_location.get_data_type())
-					|| cir_location.get_parent() instanceof CirIfStatement
-					|| cir_location.get_parent() instanceof CirCaseStatement) {
-				store_class = UniAbstractLType.bool_expr;
-			}
-			else {
-				store_class = UniAbstractLType.used_expr;
-			}
-			return this.new_location(store_class, ast_location, cir_location);
-		}
-	}
-	/**
-	 * It creates a store-location of which class best-matches with the statement inputs
-	 * @param ast_location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	private	UniAbstractStore	new_cir_stmt(AstNode ast_location, CirStatement cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else {
-			UniAbstractLType store_class;
-			if(cir_location instanceof CirAssignStatement) {
-				store_class = UniAbstractLType.assg_stmt;
-			}
-			else if(cir_location instanceof CirIfStatement) {
-				store_class = UniAbstractLType.ifte_stmt;
-			}
-			else if(cir_location instanceof CirCaseStatement) {
-				store_class = UniAbstractLType.case_stmt;
-			}
-			else if(cir_location instanceof CirCallStatement) {
-				store_class = UniAbstractLType.call_stmt;
-			}
-			else if(cir_location instanceof CirGotoStatement) {
-				store_class = UniAbstractLType.goto_stmt;
-			}
-			else if(cir_location instanceof CirBegStatement
-					|| cir_location instanceof CirEndStatement) {
-				store_class = UniAbstractLType.bend_stmt;
-			}
-			else if(cir_location instanceof CirLabelStatement
-					|| cir_location instanceof CirDefaultStatement) {
-				store_class = UniAbstractLType.labl_elem;
-			}
-			else if(cir_location instanceof CirIfEndStatement
-					|| cir_location instanceof CirCaseEndStatement) {
-				store_class = UniAbstractLType.conv_stmt;
-			}
-			else {
-				throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
-			}
-			return this.new_location(store_class, ast_location, cir_location);
-		}
-	}
-	/**
-	 * It creates a store-location of which class best matches with the element as given
-	 * @param ast_location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	private	UniAbstractStore	new_cir_elem(AstNode ast_location, CirNode cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else {
-			UniAbstractLType store_class;
-			if(cir_location instanceof CirField) {
-				store_class = UniAbstractLType.fiel_elem;
-			}
-			else if(cir_location instanceof CirLabel) {
-				store_class = UniAbstractLType.labl_elem;
-			}
-			else if(cir_location instanceof CirArgumentList) {
-				store_class = UniAbstractLType.args_elem;
-			}
-			else if(cir_location instanceof CirType) {
-				store_class = UniAbstractLType.type_elem;
-			}
-			else {
-				throw new IllegalArgumentException(cir_location.getClass().getSimpleName());
-			}
-			return this.new_location(store_class, ast_location, cir_location);
-		}
-	}
-	/**
-	 * It creates a store-location of which class best-matches with the Cir-based location
-	 * @param ast_location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	private	UniAbstractStore	new_cir_node(AstNode ast_location, CirNode cir_location) throws Exception {
-		if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else if(cir_location instanceof CirExpression) {
-			return this.new_cir_expr(ast_location, (CirExpression) cir_location);
-		}
-		else if(cir_location instanceof CirStatement) {
-			return this.new_cir_stmt(ast_location, (CirStatement) cir_location);
-		}
-		else {
-			return this.new_cir_elem(ast_location, cir_location);
-		}
-	}
-	
-	/* CIR-Based Construction */
+	/* CIR-based Localization */
 	/**
 	 * It automatically localizes the store-location of the Cir-based source
 	 * @param source	the location where this store will be localized with
@@ -464,11 +428,11 @@ final class UniStoreLocalizer {
 	/* CIR-Expression */
 	private	UniAbstractStore	parse_cir_identifier(CirIdentifier source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_declarator(CirDeclarator source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_implicator(CirImplicator source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
@@ -477,7 +441,7 @@ final class UniStoreLocalizer {
 		}
 		else if(ast_location instanceof AstSwitchStatement) {
 			ast_location = ((AstSwitchStatement) ast_location).get_condition();
-			ast_location = this.local_ast_child(ast_location);
+			ast_location = this.loc_ast_expression(ast_location);
 		}
 		else if(ast_location instanceof AstConditionalExpression) {
 			if(source.get_parent() instanceof CirSaveAssignStatement) {
@@ -491,7 +455,7 @@ final class UniStoreLocalizer {
 		else if(ast_location instanceof AstIncrePostfixExpression) { } 
 		else if(ast_location instanceof AstLogicBinaryExpression) {
 			AstNode loperand = ((AstLogicBinaryExpression) ast_location).get_loperand();
-			loperand = this.local_ast_child(loperand); 
+			loperand = this.loc_ast_expression(loperand); 
 			
 			if(source.get_parent() instanceof CirSaveAssignStatement) {
 				CirSaveAssignStatement statement = (CirSaveAssignStatement) source.get_parent();
@@ -509,11 +473,11 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_retr_point(CirReturnPoint source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private UniAbstractStore	parse_cir_name_expr(CirNameExpression source) throws Exception {
 		if(source == null) {
@@ -545,11 +509,11 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_field_expr(CirFieldExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_const_expr(CirConstExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
@@ -564,51 +528,51 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_st_literal(CirStringLiteral source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_defa_value(CirDefaultValue source) throws Exception {
 		CirAssignStatement statement = (CirAssignStatement) source.statement_of();
 		AstNode ast_location = statement.get_lvalue().get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_addr_expr(CirAddressExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_cast_expr(CirCastExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_init_body(CirInitializerBody source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_wait_expr(CirWaitExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_arith_expr(CirArithExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
 		if(ast_location == null) {
 			ast_location = source.get_parent().get_ast_source();
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_bitws_expr(CirBitwsExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_logic_expr(CirLogicExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_relation_expr(CirRelationExpression source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_compt_expr(CirComputeExpression source) throws Exception {
 		if(source == null) {
@@ -674,23 +638,23 @@ final class UniStoreLocalizer {
 	/* CIR-Statements */
 	private	UniAbstractStore	parse_cir_bin_assgn(CirBinAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_inc_assgn(CirIncreAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_ini_assgn(CirInitAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_ret_assgn(CirReturnAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_wat_assgn(CirWaitAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_sav_assgn(CirSaveAssignStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
@@ -708,7 +672,7 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_assg_stmt(CirAssignStatement source) throws Exception {
 		if(source == null) {
@@ -750,15 +714,15 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_case_stmt(CirCaseStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_call_stmt(CirCallStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_goto_stmt(CirGotoStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
@@ -778,31 +742,31 @@ final class UniStoreLocalizer {
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_beg_stmt(CirBegStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_end_stmt(CirEndStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_default_stmt(CirDefaultStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_label_stmt(CirLabelStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_if_end_stmt(CirIfEndStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_case_end_stmt(CirCaseEndStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_tags_stmt(CirTagStatement source) throws Exception {
 		if(source == null) {
@@ -862,19 +826,25 @@ final class UniStoreLocalizer {
 		if(ast_location == null) {
 			ast_location = source.get_parent().get_ast_source();
 		}
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_field(CirField source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_label(CirLabel source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
 	}
 	private	UniAbstractStore	parse_cir_type(CirType source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
-		return this.new_cir_node(ast_location, source);
+		return this.construct_storage(ast_location, source);
+	}
+	private	UniAbstractStore	parse_cir_func_def(CirFunctionDefinition source) throws Exception {
+		return this.construct_storage(source.get_ast_source(), source);
+	}
+	private	UniAbstractStore	parse_cir_func_body(CirFunctionBody source) throws Exception {
+		return this.parse_cir(source.get_parent());
 	}
 	private	UniAbstractStore	parse_cir_element(CirNode source) throws Exception {
 		if(source == null) {
@@ -892,21 +862,29 @@ final class UniStoreLocalizer {
 		else if(source instanceof CirType) {
 			return this.parse_cir_type((CirType) source);
 		}
+		else if(source instanceof CirFunctionBody) {
+			return this.parse_cir_func_body((CirFunctionBody) source);
+		}
+		else if(source instanceof CirFunctionDefinition) {
+			return this.parse_cir_func_def((CirFunctionDefinition) source);
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported: " + source);
 		}
 	}
 	
-	/* AST-based Parsing */
+	/* AST-Based Localize */
 	/**
-	 * It transforms the abstract syntax node based on C-intermediate program
-	 * @param cir_tree
+	 * It generates the storage-location that best-matches with the input source.
 	 * @param source
-	 * @return
+	 * @return	the storage-location to which UniAbstractStore best matches with.
 	 * @throws Exception
 	 */
 	private	UniAbstractStore	parse_ast(CirTree cir_tree, AstNode source) throws Exception {
-		if(source == null) {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		}
+		else if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
 		else if(source instanceof AstExpression) {
@@ -919,122 +897,18 @@ final class UniStoreLocalizer {
 			return this.parse_ast_element(cir_tree, source);
 		}
 	}
-	/* AST-Elementals */
-	private	UniAbstractStore	parse_ast_args_list(CirTree cir_tree, AstArgumentList source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirArgumentList.class);
-		return this.new_cir_node(source, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_declaration(CirTree cir_tree, AstDeclaration source) throws Exception {
-		if(source.has_declarator_list()) {
-			return this.parse_ast(cir_tree, source.get_declarator_list());
-		}
-		else {
-			return this.parse_cir(this.local_beg_execution(cir_tree, source));
-		}
-	}
-	private	UniAbstractStore	parse_ast_init_declarator_list(CirTree 
-			cir_tree, AstInitDeclaratorList source) throws Exception {
-		return this.parse_ast(cir_tree, source.get_init_declarator(0));
-	}
-	private	UniAbstractStore	parse_ast_init_declarator(CirTree cir_tree, AstInitDeclarator source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirInitAssignStatement.class);
-		return this.new_cir_node(source, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_declarator(CirTree cir_tree, AstDeclarator source) throws Exception {
-		if(source.get_production() == DeclaratorProduction.identifier) {
-			return this.parse_ast(cir_tree, source.get_identifier());
-		}
-		else {
-			return this.parse_ast(cir_tree, source.get_declarator());
-		}
-	}
-	private	UniAbstractStore	parse_ast_name(CirTree cir_tree, AstName source) throws Exception {
-		AstDeclarator declarator = (AstDeclarator) source.get_parent();
-		CirNode cir_location = this.local_first_node(cir_tree, declarator, CirDeclarator.class);
-		return this.new_cir_node(declarator, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_initializer(CirTree cir_tree, AstInitializer source) throws Exception {
-		if(source.is_body()) {
-			return this.parse_ast(cir_tree, source.get_body());
-		}
-		else {
-			return this.parse_ast(cir_tree, source.get_expression());
-		}
-	}
-	private	UniAbstractStore	parse_ast_initializer_body(CirTree cir_tree, AstInitializerBody source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirInitializerBody.class);
-		return this.new_cir_node(source, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_initializer_list(CirTree cir_tree, AstInitializerList source) throws Exception {
-		return this.parse_ast(cir_tree, source.get_parent());
-	}
-	private	UniAbstractStore	parse_ast_field_initializer(CirTree cir_tree, AstFieldInitializer source) throws Exception {
-		return this.parse_ast(cir_tree, source.get_initializer());
-	}
-	private	UniAbstractStore	parse_ast_type_name(CirTree cir_tree, AstTypeName source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirType.class);
-		return this.new_cir_node(source, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_field(CirTree cir_tree, AstField source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirField.class);
-		return this.new_cir_node(source, cir_location);
-	}
-	private	UniAbstractStore	parse_ast_element(CirTree cir_tree, AstNode source) throws Exception {
-		if(source == null) {
-			throw new IllegalArgumentException("Invalid source: null");
-		}
-		else if(source instanceof AstArgumentList) {
-			return this.parse_ast_args_list(cir_tree, (AstArgumentList) source);
-		}
-		else if(source instanceof AstDeclaration) {
-			return this.parse_ast_declaration(cir_tree, (AstDeclaration) source);
-		}
-		else if(source instanceof AstInitDeclaratorList) {
-			return this.parse_ast_init_declarator_list(cir_tree, (AstInitDeclaratorList) source);
-		}
-		else if(source instanceof AstInitDeclarator) {
-			return this.parse_ast_init_declarator(cir_tree, (AstInitDeclarator) source);
-		}
-		else if(source instanceof AstDeclarator) {
-			return this.parse_ast_declarator(cir_tree, (AstDeclarator) source);
-		}
-		else if(source instanceof AstName) {
-			return this.parse_ast_name(cir_tree, (AstName) source);
-		}
-		else if(source instanceof AstField) {
-			return this.parse_ast_field(cir_tree, (AstField) source);
-		}
-		else if(source instanceof AstTypeName) {
-			return this.parse_ast_type_name(cir_tree, (AstTypeName) source);
-		}
-		else if(source instanceof AstInitializer) {
-			return this.parse_ast_initializer(cir_tree, (AstInitializer) source);
-		}
-		else if(source instanceof AstInitializerBody) {
-			return this.parse_ast_initializer_body(cir_tree, (AstInitializerBody) source);
-		}
-		else if(source instanceof AstInitializerList) {
-			return this.parse_ast_initializer_list(cir_tree, (AstInitializerList) source);
-		}
-		else if(source instanceof AstFieldInitializer) {
-			return this.parse_ast_field_initializer(cir_tree, (AstFieldInitializer) source);
-		}
-		else {
-			throw new IllegalArgumentException(source.getClass().getSimpleName());
-		}
-	}
 	/* AST-Expression */
 	private	UniAbstractStore	parse_ast_id_expr(CirTree cir_tree, AstIdExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_constant(CirTree cir_tree, AstConstant source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirConstExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirConstExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_literal(CirTree cir_tree, AstLiteral source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirStringLiteral.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirStringLiteral.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_base_expr(CirTree cir_tree, AstBasicExpression source) throws Exception {
 		if(source == null) {
@@ -1054,19 +928,19 @@ final class UniStoreLocalizer {
 		}
 	}
 	private	UniAbstractStore	parse_ast_array_expr(CirTree cir_tree, AstArrayExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirDeferExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirDeferExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_cast_expr(CirTree cir_tree, AstCastExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirCastExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirCastExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_comma_expr(CirTree cir_tree, AstCommaExpression source) throws Exception {
 		return this.parse_ast(cir_tree, source.get_expression(source.number_of_arguments() - 1));
 	}
 	private	UniAbstractStore	parse_ast_cond_expr(CirTree cir_tree, AstConditionalExpression source) throws Exception {
-		CirNode cir_location = this.local_cir_nodes(cir_tree, source, CirImplicator.class).get(2);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirImplicator.class, 2);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_const_expr(CirTree cir_tree, AstConstExpression source) throws Exception {
 		return this.parse_ast(cir_tree, source.get_expression());
@@ -1075,35 +949,35 @@ final class UniStoreLocalizer {
 		return this.parse_ast(cir_tree, source.get_sub_expression());
 	}
 	private	UniAbstractStore	parse_ast_field_expr(CirTree cir_tree, AstFieldExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirFieldExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirFieldExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_sizeof_expr(CirTree cir_tree, AstSizeofExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirConstExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirConstExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_fun_call_expr(CirTree cir_tree, AstFunCallExpression source) throws Exception {
-		CirNode cir_location = this.loacl_use_expression(cir_tree, source, CirWaitExpression.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_use_expression(cir_tree, source, CirWaitExpression.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_unary_expr(CirTree cir_tree, AstUnaryExpression source) throws Exception {
 		COperator operator = source.get_operator().get_operator(); CirNode cir_location;
 		switch(operator) {
 		case positive:		return this.parse_ast(cir_tree, source.get_operand());
-		case negative:		cir_location = this.loacl_use_expression(cir_tree, source, CirArithExpression.class);	break;
-		case bit_not:		cir_location = this.loacl_use_expression(cir_tree, source, CirBitwsExpression.class);	break;
-		case logic_not:		cir_location = this.loacl_use_expression(cir_tree, source, CirLogicExpression.class);	break;
-		case address_of:	cir_location = this.loacl_use_expression(cir_tree, source, CirAddressExpression.class);	break;
-		case dereference:	cir_location = this.loacl_use_expression(cir_tree, source, CirDeferExpression.class);	break;
+		case negative:		cir_location = this.loc_use_expression(cir_tree, source, CirArithExpression.class);	break;
+		case bit_not:		cir_location = this.loc_use_expression(cir_tree, source, CirBitwsExpression.class);	break;
+		case logic_not:		cir_location = this.loc_use_expression(cir_tree, source, CirLogicExpression.class);	break;
+		case address_of:	cir_location = this.loc_use_expression(cir_tree, source, CirAddressExpression.class);	break;
+		case dereference:	cir_location = this.loc_use_expression(cir_tree, source, CirDeferExpression.class);	break;
 		case increment:
 		case decrement:
 		{
-			CirAssignStatement statement = (CirAssignStatement) this.local_first_node(cir_tree, source, CirIncreAssignStatement.class);
+			CirAssignStatement statement = (CirAssignStatement) this.loc_cir_location(cir_tree, source, CirIncreAssignStatement.class);
 			cir_location = statement.get_rvalue(); break;
 		}
 		default:	throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
-		return this.new_cir_node(source, cir_location);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_postfix_expr(CirTree cir_tree, AstPostfixExpression source) throws Exception {
 		COperator operator = source.get_operator().get_operator(); CirNode cir_location;
@@ -1111,11 +985,11 @@ final class UniStoreLocalizer {
 		case increment:
 		case decrement:	
 		{
-			cir_location = this.loacl_use_expression(cir_tree, source, CirImplicator.class); break;
+			cir_location = this.loc_use_expression(cir_tree, source, CirImplicator.class); break;
 		}
 		default:	throw new IllegalArgumentException("Invalid operator: " + operator);
 		}
-		return this.new_cir_node(source, cir_location);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_binary_expr(CirTree cir_tree, AstBinaryExpression source) throws Exception {
 		COperator operator = source.get_operator().get_operator();	CirNode cir_location;
@@ -1126,7 +1000,7 @@ final class UniStoreLocalizer {
 		case arith_div:
 		case arith_mod:	
 		{
-			cir_location = this.loacl_use_expression(cir_tree, source, CirArithExpression.class); break;
+			cir_location = this.loc_use_expression(cir_tree, source, CirArithExpression.class); break;
 		}
 		case bit_and:
 		case bit_or:
@@ -1134,12 +1008,12 @@ final class UniStoreLocalizer {
 		case left_shift:
 		case righ_shift:
 		{
-			cir_location = this.loacl_use_expression(cir_tree, source, CirBitwsExpression.class); break;
+			cir_location = this.loc_use_expression(cir_tree, source, CirBitwsExpression.class); break;
 		}
 		case logic_and:
 		case logic_or:
 		{
-			cir_location = this.local_cir_nodes(cir_tree, source, CirImplicator.class).get(2); break;
+			cir_location = this.loc_cir_location(cir_tree, source, CirImplicator.class, 2); break;
 		}
 		case greater_tn:
 		case greater_eq:
@@ -1148,11 +1022,11 @@ final class UniStoreLocalizer {
 		case not_equals:
 		case equal_with:
 		{
-			cir_location = this.loacl_use_expression(cir_tree, source, CirRelationExpression.class); break;
+			cir_location = this.loc_use_expression(cir_tree, source, CirRelationExpression.class); break;
 		}
 		case assign:
 		{
-			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+			cir_location = this.loc_cir_location(cir_tree, source, CirBinAssignStatement.class); break;
 		}
 		case arith_add_assign:
 		case arith_sub_assign:
@@ -1160,7 +1034,7 @@ final class UniStoreLocalizer {
 		case arith_div_assign:
 		case arith_mod_assign:
 		{
-			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+			cir_location = this.loc_cir_location(cir_tree, source, CirBinAssignStatement.class); break;
 		}
 		case bit_and_assign:
 		case bit_or_assign:
@@ -1168,11 +1042,15 @@ final class UniStoreLocalizer {
 		case left_shift_assign:
 		case righ_shift_assign:
 		{
-			cir_location = this.local_first_node(cir_tree, source, CirBinAssignStatement.class); break;
+			cir_location = this.loc_cir_location(cir_tree, source, CirBinAssignStatement.class); break;
 		}
 		default:	throw new IllegalArgumentException("Invalid operator: null");
 		}
-		return this.new_cir_node(source, cir_location);
+		return this.construct_storage(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_initializer_body(CirTree cir_tree, AstInitializerBody source) throws Exception {
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirInitializerBody.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_expression(CirTree cir_tree, AstExpression source) throws Exception {
 		if(source == null) {
@@ -1226,30 +1104,30 @@ final class UniStoreLocalizer {
 	}
 	/* AST-Statements */
 	private	UniAbstractStore	parse_ast_break_stmt(CirTree cir_tree, AstBreakStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirGotoStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_continue_stmt(CirTree cir_tree, AstContinueStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirGotoStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_goto_stmt(CirTree cir_tree, AstGotoStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirGotoStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_return_stmt(CirTree cir_tree, AstReturnStatement source) throws Exception {
 		CirNode cir_location;
 		if(source.has_expression()) {
-			cir_location = this.local_first_node(cir_tree, source, CirReturnAssignStatement.class);
+			cir_location = this.loc_cir_location(cir_tree, source, CirReturnAssignStatement.class);
 		}
 		else {
-			cir_location = this.local_first_node(cir_tree, source, CirGotoStatement.class);
+			cir_location = this.loc_cir_location(cir_tree, source, CirGotoStatement.class);
 		}
-		return this.new_cir_node(source, cir_location);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_compound_stmt(CirTree cir_tree, AstCompoundStatement source) throws Exception {
-		CirNode cir_location = this.local_beg_execution(cir_tree, source);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_beg_statement(cir_tree, source);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_declaration_stmt(CirTree cir_tree, AstDeclarationStatement source) throws Exception {
 		return this.parse_ast(cir_tree, source.get_declaration());
@@ -1259,41 +1137,41 @@ final class UniStoreLocalizer {
 			return this.parse_ast(cir_tree, source.get_expression());
 		}
 		else {
-			CirNode cir_location = this.local_beg_execution(cir_tree, source);
-			return this.new_cir_node(source, cir_location);
+			CirNode cir_location = this.loc_beg_statement(cir_tree, source);
+			return this.construct_storage(source, cir_location);
 		}
 	}
 	private	UniAbstractStore	parse_ast_if_stmt(CirTree cir_tree, AstIfStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirIfStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_switch_stmt(CirTree cir_tree, AstIfStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirSaveAssignStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirSaveAssignStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_while_stmt(CirTree cir_tree, AstWhileStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirIfStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_do_while_stmt(CirTree cir_tree, AstDoWhileStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirIfStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_for_stmt(CirTree cir_tree, AstForStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirIfStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirIfStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_case_stmt(CirTree cir_tree, AstCaseStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirCaseStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirCaseStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_default_stmt(CirTree cir_tree, AstDefaultStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirDefaultStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirDefaultStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_labeled_stmt(CirTree cir_tree, AstLabeledStatement source) throws Exception {
-		CirNode cir_location = this.local_first_node(cir_tree, source, CirLabelStatement.class);
-		return this.new_cir_node(source, cir_location);
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirLabelStatement.class);
+		return this.construct_storage(source, cir_location);
 	}
 	private	UniAbstractStore	parse_ast_statement(CirTree cir_tree, AstStatement source) throws Exception {
 		if(source == null) {
@@ -1346,6 +1224,160 @@ final class UniStoreLocalizer {
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	/* AST-Elementals */
+	private	UniAbstractStore	parse_ast_args_list(CirTree cir_tree, AstArgumentList source) throws Exception {
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirArgumentList.class);
+		return this.construct_storage(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_declaration(CirTree cir_tree, AstDeclaration source) throws Exception {
+		if(source.has_declarator_list()) {
+			return this.parse_ast(cir_tree, source.get_declarator_list());
+		}
+		else {
+			return this.parse_cir(this.loc_beg_statement(cir_tree, source));
+		}
+	}
+	private	UniAbstractStore	parse_ast_init_declarator_list(CirTree 
+			cir_tree, AstInitDeclaratorList source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_init_declarator(0));
+	}
+	private	UniAbstractStore	parse_ast_init_declarator(CirTree cir_tree, AstInitDeclarator source) throws Exception {
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirInitAssignStatement.class);
+		return this.construct_storage(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_declarator(CirTree cir_tree, AstDeclarator source) throws Exception {
+		if(source.get_production() == DeclaratorProduction.identifier) {
+			return this.parse_ast(cir_tree, source.get_identifier());
+		}
+		else {
+			return this.parse_ast(cir_tree, source.get_declarator());
+		}
+	}
+	private	UniAbstractStore	parse_ast_name(CirTree cir_tree, AstName source) throws Exception {
+		AstDeclarator declarator = (AstDeclarator) source.get_parent();
+		CirNode cir_location = this.loc_cir_location(cir_tree, declarator, CirDeclarator.class);
+		return this.construct_storage(declarator, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_initializer(CirTree cir_tree, AstInitializer source) throws Exception {
+		if(source.is_body()) {
+			return this.parse_ast(cir_tree, source.get_body());
+		}
+		else {
+			return this.parse_ast(cir_tree, source.get_expression());
+		}
+	}
+	private	UniAbstractStore	parse_ast_initializer_list(CirTree cir_tree, AstInitializerList source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_parent());
+	}
+	private	UniAbstractStore	parse_ast_field_initializer(CirTree cir_tree, AstFieldInitializer source) throws Exception {
+		return this.parse_ast(cir_tree, source.get_initializer());
+	}
+	private	UniAbstractStore	parse_ast_type_name(CirTree cir_tree, AstTypeName source) throws Exception {
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirType.class);
+		return this.construct_storage(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_field(CirTree cir_tree, AstField source) throws Exception {
+		CirNode cir_location = this.loc_cir_location(cir_tree, source, CirField.class);
+		return this.construct_storage(source, cir_location);
+	}
+	private	UniAbstractStore	parse_ast_element(CirTree cir_tree, AstNode source) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof AstArgumentList) {
+			return this.parse_ast_args_list(cir_tree, (AstArgumentList) source);
+		}
+		else if(source instanceof AstDeclaration) {
+			return this.parse_ast_declaration(cir_tree, (AstDeclaration) source);
+		}
+		else if(source instanceof AstInitDeclaratorList) {
+			return this.parse_ast_init_declarator_list(cir_tree, (AstInitDeclaratorList) source);
+		}
+		else if(source instanceof AstInitDeclarator) {
+			return this.parse_ast_init_declarator(cir_tree, (AstInitDeclarator) source);
+		}
+		else if(source instanceof AstDeclarator) {
+			return this.parse_ast_declarator(cir_tree, (AstDeclarator) source);
+		}
+		else if(source instanceof AstName) {
+			return this.parse_ast_name(cir_tree, (AstName) source);
+		}
+		else if(source instanceof AstField) {
+			return this.parse_ast_field(cir_tree, (AstField) source);
+		}
+		else if(source instanceof AstTypeName) {
+			return this.parse_ast_type_name(cir_tree, (AstTypeName) source);
+		}
+		else if(source instanceof AstInitializer) {
+			return this.parse_ast_initializer(cir_tree, (AstInitializer) source);
+		}
+		else if(source instanceof AstInitializerBody) {
+			return this.parse_ast_initializer_body(cir_tree, (AstInitializerBody) source);
+		}
+		else if(source instanceof AstInitializerList) {
+			return this.parse_ast_initializer_list(cir_tree, (AstInitializerList) source);
+		}
+		else if(source instanceof AstFieldInitializer) {
+			return this.parse_ast_field_initializer(cir_tree, (AstFieldInitializer) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
+	
+	/* statement-localize */
+	/**
+	 * It localizes the CIR-based location to a best-matched point in the state
+	 * @param cir_location	the location where this store will be localized with
+	 * @return				the store-location as best-matching with given input
+	 * @throws Exception
+	 */
+	protected static UniAbstractStore	parse_cir_node(CirNode cir_location) throws Exception {
+		return localizer.parse_cir(cir_location);
+	}
+	/**
+	 * It generates the storage-location that best-matches with the input source.
+	 * @param source
+	 * @return	the storage-location to which UniAbstractStore best matches with.
+	 * @throws Exception
+	 */
+	protected static UniAbstractStore	parse_ast_node(CirTree cir_tree, AstNode source) throws Exception {
+		return localizer.parse_ast(cir_tree, source);
+	}
+	/**
+	 * @param cir_tree
+	 * @param source
+	 * @return the first statement as location to execute the source
+	 * @throws Exception
+	 */
+	protected static UniAbstractStore 	parse_beg_stmt(CirTree cir_tree, AstNode source) throws Exception {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else {
+			return localizer.construct_storage(source, localizer.loc_beg_statement(cir_tree, source));
+		}
+	}
+	/**
+	 * @param cir_tree
+	 * @param source
+	 * @return the final statement as location to execute the source
+	 * @throws Exception
+	 */
+	protected static UniAbstractStore 	parse_end_stmt(CirTree cir_tree, AstNode source) throws Exception {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else {
+			return localizer.construct_storage(source, localizer.loc_end_statement(cir_tree, source));
 		}
 	}
 	

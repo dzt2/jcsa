@@ -13,26 +13,27 @@ public enum UniAbstractLType {
 	/** CirLabel **/								labl_elem,
 	/** CirArgumentList **/							args_elem,
 	/** CirType **/									type_elem,
+	/** CirFunctionDefinition **/					func_elem,
 	
 	/* expression */
 	/** CirExpression (if|case.condition) **/		bool_expr,
 	/** CirReferExpression (assignment.lvalue) **/	cdef_expr,
 	/** CirExpression (CirArgumentList.arg[k]) **/	argv_expr,
 	/** CirExpression (otherwise) **/				used_expr,
+	/** virtually definition point of non-def **/	vdef_expr,
 	
 	/* statements */
 	/** CirAssignStatement **/						assg_stmt,
 	/** CirIfStatement **/							ifte_stmt,
 	/** CirCaseStatement (case) **/					case_stmt,
 	/** CirCallStatement **/						call_stmt,
+	/** CirWaitAssignStatement **/					wait_stmt,
 	
 	/* goto-label */
 	/** CirBegStatement|CirEndStatement **/			bend_stmt,
 	/** CirGotoStatement **/						goto_stmt,
 	/** CirLabelStatement|CirDefaultStatement **/	labl_stmt,
 	/** CirIfEndStatement|CirCaseEndStatement **/	conv_stmt,
-	
-	/* virtualize */
-	/** virtually definition point of non-def **/	vdef_expr,
+	/** CirRetAssignStatement|CirGotoStatement **/	retr_stmt,
 	
 }

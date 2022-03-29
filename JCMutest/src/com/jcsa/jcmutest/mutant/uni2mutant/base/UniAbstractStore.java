@@ -86,7 +86,8 @@ public class UniAbstractStore {
 	/* general */
 	@Override
 	public	String	toString() { 
-		return this._store_class + "[cir#" + this.cir_location.get_node_id() + ", " + this.exe_location.toString() + "]";
+		return this._store_class + "#" + this.ast_location.get_key() + "#" + this.
+				cir_location.get_node_id() + "#" + this.exe_location.toString();
 	}
 	@Override
 	public	int	hashCode()	{ return this.toString().hashCode(); }
@@ -113,7 +114,8 @@ public class UniAbstractStore {
 		case bool_expr:
 		case cdef_expr:
 		case argv_expr:
-		case used_expr:	return true;
+		case used_expr:	
+		case vdef_expr:	return true;
 		default:		return false;
 		}
 	}
@@ -126,10 +128,12 @@ public class UniAbstractStore {
 		case ifte_stmt:
 		case case_stmt:
 		case call_stmt:
+		case wait_stmt:
 		case goto_stmt:
 		case bend_stmt:
 		case conv_stmt:
-		case labl_stmt:	return true;
+		case labl_stmt:	
+		case retr_stmt:	return true;
 		default:		return false;
 		}
 	}
@@ -138,6 +142,7 @@ public class UniAbstractStore {
 	 */
 	public boolean is_element() {
 		switch(this._store_class) {
+		case func_elem:
 		case fiel_elem:
 		case labl_elem:
 		case type_elem:
@@ -148,13 +153,13 @@ public class UniAbstractStore {
 	
 	/* factory */
 	public static UniAbstractStore new_node(CirNode cir_location) throws Exception {
-		return UniStoreLocalizer.parse(cir_location);
+		return UniStateLocalizer.parse_cir_node(cir_location);
 	}
 	public static UniAbstractStore new_node(CirExecution exe_location) throws Exception {
-		return UniStoreLocalizer.parse(exe_location);
+		return UniStateLocalizer.parse_cir_node(exe_location.get_statement());
 	}
 	public static UniAbstractStore new_node(CirTree cir_tree, AstNode ast_location) throws Exception {
-		return UniStoreLocalizer.parse(cir_tree, ast_location);
+		return UniStateLocalizer.parse_ast_node(cir_tree, ast_location);
 	}
 	public static UniAbstractStore new_vdef(AstNode ast_location, CirExpression cir_location) throws Exception {
 		if(ast_location == null) {
@@ -182,6 +187,12 @@ public class UniAbstractStore {
 			}
 			return new UniAbstractStore(store_class, ast_location, cir_location, cir_location.execution_of());
 		}
+	}
+	public static UniAbstractStore beg_stmt(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return UniStateLocalizer.parse_beg_stmt(cir_tree, ast_location);
+	}
+	public static UniAbstractStore end_stmt(CirTree cir_tree, AstNode ast_location) throws Exception {
+		return UniStateLocalizer.parse_end_stmt(cir_tree, ast_location);
 	}
 	
 }
