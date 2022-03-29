@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.ctype.CArrayType;
 import com.jcsa.jcparse.lang.ctype.CBasicType;
 import com.jcsa.jcparse.lang.ctype.CEnumType;
@@ -14,7 +15,9 @@ import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
+import com.jcsa.jcparse.lang.irlang.stmt.CirArgumentList;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
@@ -399,6 +402,40 @@ public final class UniAbstractStates {
 	
 	/* CIR-based factory */
 	/**
+	 * @param location
+	 * @return it derives CirExpression enclosed in the input for representation
+	 * @throws Exception
+	 */
+	private static CirExpression		find_expression(CirNode location) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid location as null");
+		}
+		else if(location instanceof CirExpression) {
+			return (CirExpression) location;
+		}
+		else if(location instanceof CirArgumentList) {
+			return find_expression(location.get_parent());
+		}
+		else if(location instanceof CirCallStatement) {
+			CirExecution call_execution = location.execution_of();
+			CirExecution wait_execution = call_execution.get_graph().
+						get_execution(call_execution.get_id() + 1);
+			return find_expression(wait_execution.get_statement());
+		}
+		else if(location instanceof CirAssignStatement) {
+			return ((CirAssignStatement) location).get_lvalue();
+		}
+		else if(location instanceof CirIfStatement) {
+			return ((CirIfStatement) location).get_condition();
+		}
+		else if(location instanceof CirCaseStatement) {
+			return ((CirCaseStatement) location).get_condition();
+		}
+		else {
+			throw new IllegalArgumentException(location.getClass().getSimpleName());
+		}
+	}
+	/**
 	 * @param location	the statement (location) where the coverage is required
 	 * @param min_times	the minimal times for running state statement-locations
 	 * @param max_times	the maximal times for running state statement-locations
@@ -506,7 +543,255 @@ public final class UniAbstractStates {
 			return new UniTrapsErrorState(store);
 		}
 	}
-	
-	
+	/**
+	 * @param location	the expression (location) where the data error is arised
+	 * @param value		the incorrect value to replace the original expression
+	 * @return			set_expr(expression; orig_value, muta_value)
+	 * @throws Exception
+	 */
+	public static UniValueErrorState	set_expr(CirNode location, Object value) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid value as: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(location);
+			UniAbstractStore store = UniAbstractStore.new_node(expression);
+			SymbolExpression orig_value, muta_value;
+			
+			/* 2. it generates the values for being mutated in expression */
+			switch(store.get_store_class()) {
+			case bool_expr:
+			{
+				orig_value = SymbolFactory.sym_condition(expression, true);
+				muta_value = SymbolFactory.sym_condition(value, true);
+				break;
+			}
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(value);
+				break;
+			}
+			case argv_expr:
+			case used_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(value);
+				break;
+			}
+			default:	throw new IllegalArgumentException(store.toString());
+			}
+			return new UniValueErrorState(store, orig_value, muta_value);
+		}
+	}
+	/**
+	 * @param location		the expression (location) where the data error is arised
+	 * @param difference	the difference to be incremented to the given expression
+	 * @return				inc_expr(expression; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static UniIncreErrorState	inc_expr(CirNode location, Object difference) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(location);
+			UniAbstractStore store = UniAbstractStore.new_node(expression);
+			SymbolExpression orig_value, muta_value;
+			
+			/* 2. it generates the base_value and difference values */
+			switch(store.get_store_class()) {
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(difference);
+			}
+			case argv_expr:
+			case used_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			default:	throw new IllegalArgumentException("Invalid: " + store);
+			}
+			return new UniIncreErrorState(store, orig_value, muta_value);
+		}
+	}
+	/**
+	 * @param location		the expression (location) where the data error is arised
+	 * @param difference	the difference to be incremented to the given expression
+	 * @return				xor_expr(expression; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static UniBixorErrorState	xor_expr(CirNode location, Object difference) throws Exception {
+		if(location == null || location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid location: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(location);
+			UniAbstractStore store = UniAbstractStore.new_node(expression);
+			SymbolExpression orig_value, muta_value;
+			
+			/* 2. it generates the base_value and difference values */
+			switch(store.get_store_class()) {
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(difference);
+			}
+			case argv_expr:
+			case used_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			default:	throw new IllegalArgumentException("Invalid: " + store);
+			}
+			return new UniBixorErrorState(store, orig_value, muta_value);
+		}
+	}
+	/**
+	 * @param ast_location	the syntactic location to represent the expression being assigned
+	 * @param cir_location	the C-intermediate location to represent expression being defined
+	 * @param value
+	 * @return				set_expr(vdef_expression; orig_expr, muta_expr)
+	 * @throws Exception
+	 */
+	public static UniValueErrorState	set_vdef(AstNode ast_location, CirNode cir_location, Object value) throws Exception {
+		if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else if(cir_location == null || cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(value == null) {
+			throw new IllegalArgumentException("Invalid value: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(cir_location);
+			UniAbstractStore store = UniAbstractStore.new_vdef(ast_location, expression);
+			SymbolExpression orig_value, muta_value;
+			
+			switch(store.get_store_class()) {
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(value);
+				break;
+			}
+			case vdef_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(value);
+				break;
+			}
+			default:	throw new IllegalArgumentException(store.toString());
+			}
+			return new UniValueErrorState(store, orig_value, muta_value);
+		}
+	}
+	/**
+	 * @param ast_location
+	 * @param cir_location
+	 * @param difference
+	 * @return
+	 * @throws Exception
+	 */
+	public static UniIncreErrorState	inc_vdef(AstNode ast_location, CirNode cir_location, Object difference) throws Exception {
+		if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else if(cir_location == null || cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(cir_location);
+			UniAbstractStore store = UniAbstractStore.new_vdef(ast_location, expression);
+			SymbolExpression orig_value, muta_value;
+			
+			switch(store.get_store_class()) {
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			case vdef_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			default:	throw new IllegalArgumentException(store.toString());
+			}
+			return new UniIncreErrorState(store, orig_value, muta_value);
+		}
+	}
+	/**
+	 * @param ast_location
+	 * @param cir_location
+	 * @param difference
+	 * @return
+	 * @throws Exception
+	 */
+	public static UniBixorErrorState	xor_vdef(AstNode ast_location, CirNode cir_location, Object difference) throws Exception {
+		if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else if(cir_location == null || cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else {
+			/* 1. it localizes the expression location for seeding errors */
+			CirExpression expression = find_expression(cir_location);
+			UniAbstractStore store = UniAbstractStore.new_vdef(ast_location, expression);
+			SymbolExpression orig_value, muta_value;
+			
+			switch(store.get_store_class()) {
+			case cdef_expr:
+			{
+				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
+				orig_value = SymbolFactory.sym_expression(statement.get_rvalue());
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			case vdef_expr:
+			{
+				orig_value = SymbolFactory.sym_expression(expression);
+				muta_value = SymbolFactory.sym_expression(difference);
+				break;
+			}
+			default:	throw new IllegalArgumentException(store.toString());
+			}
+			return new UniBixorErrorState(store, orig_value, muta_value);
+		}
+	}
 	
 }
