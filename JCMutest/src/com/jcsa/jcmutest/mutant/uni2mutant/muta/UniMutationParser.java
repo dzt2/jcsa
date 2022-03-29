@@ -12,6 +12,7 @@ import com.jcsa.jcmutest.mutant.uni2mutant.base.UniAbstractStore;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniConditionState;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniConstraintState;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniCoverTimesState;
+import com.jcsa.jcmutest.mutant.uni2mutant.base.UniTrapsErrorState;
 import com.jcsa.jcmutest.mutant.uni2mutant.base.UniValueErrorState;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
@@ -92,6 +93,23 @@ public abstract class UniMutationParser {
 				mutations.add(new UniMutation(mutant, this.rec_stmt, i_state, p_state));
 			}
 			return mutations;
+		}
+	}
+	/**
+	 * It puts the infection-propagation pairs to the table
+	 * @param i_state
+	 * @param p_state
+	 * @throws Exception
+	 */
+	protected void put_infection_pair(UniConditionState i_state, UniAbstErrorState p_state) throws Exception {
+		if(i_state == null) {
+			throw new IllegalArgumentException("Invalid i_state: null");
+		}
+		else if(p_state != null) {
+			throw new IllegalArgumentException("Invalid p_state: null");
+		}
+		else {
+			this.i_states.add(i_state); this.p_states.add(p_state);
 		}
 	}
 	
@@ -215,6 +233,14 @@ public abstract class UniMutationParser {
 	 */
 	protected UniValueErrorState	set_expr(CirExpression expression, Object value) throws Exception {
 		return UniAbstractStates.set_expr(UniAbstractStore.new_node(expression), value);
+	}
+	/**
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	protected UniTrapsErrorState	trp_stmt(CirStatement statement) throws Exception {
+		return UniAbstractStates.trp_stmt(UniAbstractStore.new_node(statement));
 	}
 	// TODO generate the methods
 	
