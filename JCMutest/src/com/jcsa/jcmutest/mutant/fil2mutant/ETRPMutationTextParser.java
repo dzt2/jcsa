@@ -1,11 +1,13 @@
-package com.jcsa.jcmutest.mutant.txt2mutant;
+package com.jcsa.jcmutest.mutant.fil2mutant;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-public class VRRPMutationTextParser extends MutationTextParser {
+public class ETRPMutationTextParser extends MutationTextParser {
+
+	private static final String template = "(jcm_trap_on_expr(%s))";
 
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
@@ -15,7 +17,7 @@ public class VRRPMutationTextParser extends MutationTextParser {
 
 	@Override
 	protected String get_muta_code(AstMutation source, AstNode location) throws Exception {
-		return source.get_parameter().toString();
+		return String.format(template, "(" + location.generate_code() + ")");
 	}
 
 }

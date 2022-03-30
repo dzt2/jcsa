@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.txt2mutant;
+package com.jcsa.jcmutest.mutant.fil2mutant;
 
 import java.io.File;
 import java.io.FileWriter;

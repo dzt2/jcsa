@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.txt2mutant;
+package com.jcsa.jcmutest.mutant.fil2mutant;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
@@ -7,12 +7,12 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-public class UIORMutationTextParser extends MutationTextParser {
+public class UIODMutationTextParser extends MutationTextParser {
 
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
 		AstExpression expression = (AstExpression) source.get_location();
-		return expression;
+		return CTypeAnalyzer.get_expression_of(expression);
 	}
 
 	@Override
@@ -25,23 +25,7 @@ public class UIORMutationTextParser extends MutationTextParser {
 			operand = ((AstIncrePostfixExpression) location).get_operand();
 		}
 		operand = CTypeAnalyzer.get_expression_of(operand);
-		String opcode = operand.generate_code();
-
-		switch(source.get_operator()) {
-		case prev_inc_to_post_inc:
-		case prev_dec_to_post_inc:
-		case post_dec_to_post_inc:	return opcode + "++";
-		case prev_inc_to_post_dec:
-		case prev_dec_to_post_dec:
-		case post_inc_to_post_dec:	return opcode + "--";
-		case prev_dec_to_prev_inc:
-		case post_dec_to_prev_inc:
-		case post_inc_to_prev_inc:	return "++" + opcode;
-		case prev_inc_to_prev_dec:
-		case post_inc_to_prev_dec:
-		case post_dec_to_prev_dec:	return "--" + opcode;
-		default: throw new IllegalArgumentException("Invalid: " + source);
-		}
+		return "(" + operand.generate_code() + ")";
 	}
 
 }
