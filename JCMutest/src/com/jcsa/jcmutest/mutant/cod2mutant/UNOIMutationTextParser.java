@@ -1,11 +1,11 @@
-package com.jcsa.jcmutest.mutant.fil2mutant;
+package com.jcsa.jcmutest.mutant.cod2mutant;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CTypeAnalyzer;
 
-public class UIOIMutationTextParser extends MutationTextParser {
+public class UNOIMutationTextParser extends MutationTextParser {
 
 	@Override
 	protected AstNode get_location(AstMutation source) throws Exception {
@@ -16,12 +16,17 @@ public class UIOIMutationTextParser extends MutationTextParser {
 	@Override
 	protected String get_muta_code(AstMutation source, AstNode location) throws Exception {
 		AstExpression expression = (AstExpression) location;
-		String operand = expression.generate_code();
 		switch(source.get_operator()) {
-		case insert_prev_inc:	return "(++(" + operand + "))";
-		case insert_prev_dec:	return "(--(" + operand + "))";
-		case insert_post_inc:	return "((" + operand + ")++)";
-		case insert_post_dec:	return "((" + operand + ")--)";
+		case insert_arith_neg:
+			return "(-(" + expression.generate_code() + "))";
+		case insert_bitws_rsv:
+			return "(~(" + expression.generate_code() + "))";
+		case insert_logic_not:
+			return "(!(" + expression.generate_code() + "))";
+		case insert_abs_value:
+			return "(jcm_insert_abs_value((" + expression.generate_code() + ")))";
+		case insert_nabs_value:
+			return "(jcm_insert_nabs_value((" + expression.generate_code() + ")))";
 		default: throw new IllegalArgumentException(source.toString());
 		}
 	}

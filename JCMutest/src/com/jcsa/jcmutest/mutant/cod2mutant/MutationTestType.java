@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.fil2mutant;
+package com.jcsa.jcmutest.mutant.cod2mutant;
 
 public enum MutationTestType {
 	original,
