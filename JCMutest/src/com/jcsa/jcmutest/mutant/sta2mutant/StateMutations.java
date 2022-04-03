@@ -32,18 +32,12 @@ public final class StateMutations {
 	/* definitions */
 	/** {true, false} **/
 	public static final SymbolExpression bool_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@BoolValue");
-	/** true **/
-	public static final SymbolExpression true_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@TrueValue");
-	/** false **/
-	public static final SymbolExpression fals_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@FalsValue");
 	/** integer or double **/
 	public static final SymbolExpression numb_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NumbValue");
 	/** { x | x > 0 } **/
 	public static final SymbolExpression post_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@PostValue");
 	/** { x | x < 0 } **/
 	public static final SymbolExpression negt_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NegtValue");
-	/** 0 **/
-	public static final SymbolExpression zero_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@ZeroValue");
 	/** { x | x <= 0 } **/
 	public static final SymbolExpression npos_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NposValue");
 	/** { x | x >= 0 } **/
@@ -52,10 +46,8 @@ public final class StateMutations {
 	public static final SymbolExpression nzro_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NzroValue");
 	/** address value in pointer **/
 	public static final SymbolExpression addr_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@AddrValue");
-	/** null **/
-	public static final SymbolExpression null_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NullValue");
-	/** {p | p != null} **/
-	public static final SymbolExpression nnul_value = SymbolFactory.variable(CBasicTypeImpl.long_type, "@NnulValue");
+	/** non-numeric value domain **/
+	public static final SymbolExpression auto_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@AutoValue");
 	/** abstract value of the exception **/
 	public static final SymbolExpression trap_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");	
 	
@@ -320,9 +312,10 @@ public final class StateMutations {
 			return false;
 		}
 		else if(source instanceof SymbolIdentifier) {
-			return source.equals(true_value) || source.equals(fals_value) || source.equals(bool_value) || source.equals(post_value)
-					|| source.equals(negt_value) || source.equals(zero_value) || source.equals(npos_value) || source.equals(nneg_value)
-					|| source.equals(nzro_value) || source.equals(addr_value) || source.equals(null_value) || source.equals(nnul_value);
+			return  source.equals(bool_value) || source.equals(auto_value) ||
+					source.equals(post_value) || source.equals(negt_value) ||
+					source.equals(npos_value) || source.equals(nneg_value) ||
+					source.equals(nzro_value) || source.equals(addr_value);
 		}
 		else {
 			return false;
