@@ -1,5 +1,6 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
@@ -10,12 +11,10 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
  * 	<br>
  * 	<code>
  * 	AbsExecutionState				{state_class, location, state_value}		<br>
- * 	|--	AbsCoverTimesState			{covt, statement,  min_times}				<br>
- * 	|--	AbsReachTimesState			{rect, statement,  max_times}				<br>
- * 	|--	AbsConstraintState			{eval, statement,  condition}				<br>
- * 	|--	AbsValidationState			{vald, statement,  condition}				<br>
- * 	|--	AbsExpressionState			{expr, expression, sym_value}				<br>
- * 	|--	AbsReferencesState			{refr, reference,  sym_value}				<br>
+ * 	|--	AbsCoverTimeState			{covt, statement,  min_times}				<br>
+ * 	|--	AbsConstrainState			{eval, statement,  condition}				<br>
+ * 	|--	AbsDataValueState			{expr, expression, sym_value}				<br>
+ * 	|--	AbsStatementState			{exec, statement,  sym_value}				<br>
  * 	</code>
  * 	
  * 	@author yukimula
@@ -30,6 +29,34 @@ public abstract class AbsExecutionState {
 	private	AbsExecutionStore	state_store;
 	/** the symbolic parameter of the state **/
 	private	SymbolExpression	state_value;
+	/**
+	 * @param state_class the category of this abstract state
+	 * @param state_store the location to preserve this state
+	 * @param state_value the symbolic parameter of the state
+	 * @throws Exception
+	 */
+	protected AbsExecutionState(AbsExecutionClass state_class,
+			AbsExecutionStore state_store,
+			SymbolExpression state_value) throws Exception {
+		if(state_class == null) {
+			throw new IllegalArgumentException("Invalid state_class: null");
+		}
+		else if(state_store == null) {
+			throw new IllegalArgumentException("Invalid state_store: null");
+		}
+		else if(state_value == null) {
+			throw new IllegalArgumentException("Invalid state_value: null");
+		}
+		else {
+			this.state_class = state_class;
+			this.state_store = state_store;
+			this.state_value = StateMutations.evaluate(state_value, null, null);
+		}
+	}
+	/**
+	 * @return the clone of this state
+	 */
+	protected abstract AbsExecutionState copy() throws Exception;
 	
 	/* getters */
 	/**
@@ -60,5 +87,38 @@ public abstract class AbsExecutionState {
 	 * @return the execution location of the state
 	 */
 	public CirExecution			get_exe_location()	{ return this.state_store.get_exe_location(); }
+	
+	/* general */
+	@Override
+	public String				toString() {
+		return this.state_class + "(" + this.state_store + ", " + this.state_value + ")";
+	}
+	@Override
+	public int					hashCode() { return this.toString().hashCode(); }
+	@Override
+	public boolean				equals(Object obj) {
+		if(obj instanceof AbsExecutionState) {
+			return obj.toString().equals(this.toString());
+		}
+		else {
+			return false;
+		}
+	}
+	@Override
+	public AbsExecutionState	clone() {
+		try {
+			return this.copy();
+		}
+		catch(Exception ex) {
+			return null;
+		}
+	}
+	
+	/* factory */
+	
+	
+	
+	
+	
 	
 }
