@@ -56,6 +56,36 @@ public final class AbsExecutionStore {
 	 */
 	public	CirExecution		get_exe_location()	{ return this.exe_location; }
 	
+	/* classify */
+	/**
+	 * @return whether the location is an execution-able statement
+	 */
+	public boolean is_statement() {
+		switch(this._store_class) {
+		case assg:
+		case ifte:
+		case call:
+		case wait:
+		case gots:
+		case bend:
+		case labl:
+		case tags:	return true;
+		default:	return false;
+		}
+	}
+	/**
+	 * @return whether the location is an evaluate-able expression
+	 */
+	public boolean is_expression() {
+		switch(this._store_class) {
+		case bool:
+		case argv:
+		case expr:
+		case refr:	return true;
+		default:	return false;
+		}
+	}
+	
 	/* general */
 	@Override
 	public String toString() {
@@ -170,13 +200,51 @@ public final class AbsExecutionStore {
 		}
 	}
 	/**
-	 * It creates a location as the definition point
-	 * @param ast_location
-	 * @param cir_location should be reference-expression
+	 * It creates a location with cir-node best-match the ast-location
+	 * @param cir_tree		to derive the C-intermediate representative code
+	 * @param ast_location	the abstract syntactic tree location in analysis
+	 * @return				
+	 * @throws Exception
+	 */
+	public 		static AbsExecutionStore ast_store(CirTree cir_tree, AstNode ast_location) throws Exception {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree as: null");
+		}
+		else if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else {
+			CirNode cir_location = AstCirLocalizer.localize(cir_tree, ast_location);
+			return new AbsExecutionStore(new_type(cir_location), 
+					ast_location, cir_location, cir_location.execution_of());
+		}
+	}
+	/**
+	 * It creates a location with ast-node best-match the cir-location
+	 * @param cir_location
 	 * @return
 	 * @throws Exception
 	 */
-	protected 	static AbsExecutionStore def_store(AstNode ast_location, CirReferExpression cir_location) throws Exception {
+	public 		static AbsExecutionStore cir_store(CirNode cir_location) throws Exception {
+		if(cir_location == null) {
+			throw new IllegalArgumentException("Invalid cir_location: null");
+		}
+		else if(cir_location.execution_of() == null) {
+			throw new IllegalArgumentException("Invalid exe_location: null");
+		}
+		else {
+			return new AbsExecutionStore(new_type(cir_location), AstCirLocalizer.
+					localize(cir_location), cir_location, cir_location.execution_of());
+		}
+	}
+	/**
+	 * It creates a location as the definition point
+	 * @param ast_location	the abstract syntactic location
+	 * @param cir_location	the reference-expression to define 
+	 * @return				
+	 * @throws Exception
+	 */
+	public 		static AbsExecutionStore def_store(AstNode ast_location, CirReferExpression cir_location) throws Exception {
 		if(ast_location == null) {
 			throw new IllegalArgumentException("Invalid ast_location: null");
 		}
@@ -191,60 +259,13 @@ public final class AbsExecutionStore {
 		}
 	}
 	/**
-	 * It creates a location with ast-node best-match the cir-location
-	 * @param cir_location
-	 * @return
-	 * @throws Exception
-	 */
-	protected	static AbsExecutionStore new_store(CirNode cir_location) throws Exception {
-		if(cir_location == null) {
-			throw new IllegalArgumentException("Invalid cir_location: null");
-		}
-		else if(cir_location.execution_of() == null) {
-			throw new IllegalArgumentException("Invalid exe_location: null");
-		}
-		else {
-			return new AbsExecutionStore(new_type(cir_location), AstCirLocalizer.
-					localize(cir_location), cir_location, cir_location.execution_of());
-		}
-	}
-	/**
-	 * It creates a location with ast-node best-match the cir-statement
-	 * @param exe_location
-	 * @return
-	 * @throws Exception
-	 */
-	protected	static AbsExecutionStore new_store(CirExecution exe_location) throws Exception {
-		return new_store(exe_location.get_statement());
-	}
-	/**
-	 * It creates a location with cir-node best-match the ast-location
-	 * @param ast_location
-	 * @return
-	 * @throws Exception
-	 */
-	protected 	static AbsExecutionStore new_store(CirTree cir_tree, AstNode ast_location) throws Exception {
-		if(cir_tree == null) {
-			throw new IllegalArgumentException("Invalid cir_tree as: null");
-		}
-		else if(ast_location == null) {
-			throw new IllegalArgumentException("Invalid ast_location: null");
-		}
-		else {
-			CirNode cir_location = AstCirLocalizer.localize(cir_tree, ast_location);
-			return new AbsExecutionStore(new_type(cir_location), 
-					ast_location, cir_location, cir_location.execution_of());
-		}
-	}
-	/**
-	 * It creates the location where the first and final statement of specified ast-range
+	 * It creates a location to the first statement of the location
 	 * @param cir_tree
 	 * @param ast_location
-	 * @param beg_end		true to select the first statement or final otherwise
 	 * @return
 	 * @throws Exception
 	 */
-	protected	static AbsExecutionStore new_store(CirTree cir_tree, AstNode ast_location, boolean beg_end) throws Exception {
+	public 		static AbsExecutionStore beg_store(CirTree cir_tree, AstNode ast_location) throws Exception {
 		if(cir_tree == null) {
 			throw new IllegalArgumentException("Invalid cir_tree as: null");
 		}
@@ -252,46 +273,31 @@ public final class AbsExecutionStore {
 			throw new IllegalArgumentException("Invalid ast_location: null");
 		}
 		else {
-			CirNode cir_location;
-			if(beg_end) {
-				cir_location = AstCirLocalizer.localize_beg(cir_tree, ast_location);
-			}
-			else {
-				cir_location = AstCirLocalizer.localize_end(cir_tree, ast_location);
-			}
+			CirNode cir_location = AstCirLocalizer.localize_beg(cir_tree, ast_location);
 			ast_location = AstCirLocalizer.localize(cir_location);
 			return new AbsExecutionStore(new_type(cir_location), 
 					ast_location, cir_location, cir_location.execution_of());
 		}
 	}
-	
-	/* classify */
 	/**
-	 * @return whether the location is an execution-able statement
+	 * It creates a location to the first statement of the location
+	 * @param cir_tree
+	 * @param ast_location
+	 * @return
+	 * @throws Exception
 	 */
-	public boolean is_statement() {
-		switch(this._store_class) {
-		case assg:
-		case ifte:
-		case call:
-		case wait:
-		case gots:
-		case bend:
-		case labl:
-		case tags:	return true;
-		default:	return false;
+	public 		static AbsExecutionStore end_store(CirTree cir_tree, AstNode ast_location) throws Exception {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree as: null");
 		}
-	}
-	/**
-	 * @return whether the location is an evaluate-able expression
-	 */
-	public boolean is_expression() {
-		switch(this._store_class) {
-		case bool:
-		case argv:
-		case expr:
-		case refr:	return true;
-		default:	return false;
+		else if(ast_location == null) {
+			throw new IllegalArgumentException("Invalid ast_location: null");
+		}
+		else {
+			CirNode cir_location = AstCirLocalizer.localize_end(cir_tree, ast_location);
+			ast_location = AstCirLocalizer.localize(cir_location);
+			return new AbsExecutionStore(new_type(cir_location), 
+					ast_location, cir_location, cir_location.execution_of());
 		}
 	}
 	
