@@ -11,8 +11,8 @@ import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
-import com.jcsa.jcmutest.mutant.cod2mutant.MutaCodeGeneration;
-import com.jcsa.jcmutest.mutant.cod2mutant.MutationTestType;
+import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
+import com.jcsa.jcmutest.mutant.txt2mutant.MutationTestType;
 import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 
