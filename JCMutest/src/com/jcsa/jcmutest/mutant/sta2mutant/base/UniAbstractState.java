@@ -5,7 +5,6 @@ import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
-import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -249,176 +248,154 @@ public abstract class UniAbstractState {
 			return new UniTrapsErrorState(execution.get_statement());
 		}
 	}
+	
+	/* data-error */
 	/**
-	 * @param expression	the location in which the value-error was injected
-	 * @param muta_value	the mutation value of the expression being mutated
-	 * @return				set_expr(expr|stmt, orig_value, muta_value)
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param muta_value	the values to replace this expression with another
+	 * @return				set_expr(expression; orig_value, muta_value);
 	 * @throws Exception
 	 */
-	public static UniValueErrorState set_expr(CirExpression expression, Object value) throws Exception {
+	public static UniValueErrorState set_expr(CirExpression expression, Object orig_value, Object muta_value) throws Exception {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid location as null");
 		}
-		else if(value == null) {
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(muta_value == null) {
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
 		else {
-			CirExpression target;
-			if(StateMutations.is_assigned(expression)) {
-				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
-				target = statement.get_rvalue();
-			}
-			else {
-				target = expression;
-			}
-			
-			SymbolExpression orig_value, muta_value;
+			SymbolExpression source, target;
 			if(StateMutations.is_boolean(expression)) {
-				orig_value = SymbolFactory.sym_condition(target, true);
-				muta_value = SymbolFactory.sym_condition(value, true);
+				source = SymbolFactory.sym_condition(orig_value, true);
+				target = SymbolFactory.sym_condition(muta_value, true);
 			}
 			else {
-				orig_value = SymbolFactory.sym_expression(target);
-				muta_value = SymbolFactory.sym_expression(value);
+				source = SymbolFactory.sym_expression(orig_value);
+				target = SymbolFactory.sym_expression(muta_value);
 			}
-			return new UniValueErrorState(expression, orig_value, muta_value);
+			return new UniValueErrorState(expression, source, target);
 		}
 	}
 	/**
-	 * @param expression	the location in which the value-error was injected
-	 * @param muta_value	the mutation value of the expression being mutated
-	 * @return				inc_expr(expr|stmt, orig_value, muta_value)
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param muta_value	the values to replace this expression with another
+	 * @return				set_expr(expression; orig_value, muta_value);
 	 * @throws Exception
 	 */
-	public static UniIncreErrorState inc_expr(CirExpression expression, Object value) throws Exception {
+	public static UniValueErrorState set_expr(CirStatement statement, Object identifier, Object muta_value) throws Exception {
+		if(statement == null) {
+			throw new IllegalArgumentException("Invalid location as null");
+		}
+		else if(identifier == null) {
+			throw new IllegalArgumentException("Invalid identifier: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else {
+			SymbolExpression source, target;
+			source = SymbolFactory.sym_expression(identifier);
+			target = SymbolFactory.sym_expression(muta_value);
+			return new UniValueErrorState(statement, source, target);
+		}
+	}
+	/**
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param difference	the difference to be incremented in the expression
+	 * @return				inc_expr(expression; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static UniIncreErrorState inc_expr(CirExpression expression, Object orig_value, Object difference) throws Exception {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid location as null");
 		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else if(StateMutations.is_numeric(expression) || StateMutations.is_address(expression)) {
+			return new UniIncreErrorState(expression, SymbolFactory.
+					sym_expression(orig_value), SymbolFactory.sym_expression(difference));
 		}
 		else {
-			CirExpression target;
-			if(StateMutations.is_assigned(expression)) {
-				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
-				target = statement.get_rvalue();
-			}
-			else {
-				target = expression;
-			}
-			
-			SymbolExpression orig_value, muta_value;
-			if(StateMutations.is_address(target) || StateMutations.is_numeric(target)) {
-				orig_value = SymbolFactory.sym_expression(target);
-				muta_value = SymbolFactory.sym_expression(value);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + target.getClass().getSimpleName());
-			}
-			return new UniIncreErrorState(expression, orig_value, muta_value);
+			throw new IllegalArgumentException("Unsupported: " + expression.getClass().getSimpleName());
 		}
 	}
 	/**
-	 * @param expression	the location in which the value-error was injected
-	 * @param muta_value	the mutation value of the expression being mutated
-	 * @return				xor_expr(expr|stmt, orig_value, muta_value)
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param difference	the difference to be incremented in the expression
+	 * @return				inc_expr(expression; orig_value, difference)
 	 * @throws Exception
 	 */
-	public static UniBixorErrorState xor_expr(CirExpression expression, Object value) throws Exception {
+	public static UniIncreErrorState inc_expr(CirStatement statement, Object identifier, Object difference) throws Exception {
+		if(statement == null) {
+			throw new IllegalArgumentException("Invalid location as null");
+		}
+		else if(identifier == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else {
+			return new UniIncreErrorState(statement, SymbolFactory.
+					sym_expression(identifier), SymbolFactory.sym_expression(difference));
+		}
+	}
+	/**
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param difference	the difference to be incremented in the expression
+	 * @return				inc_expr(expression; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static UniBixorErrorState xor_expr(CirExpression expression, Object orig_value, Object difference) throws Exception {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid location as null");
 		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
+		}
+		else if(StateMutations.is_numeric(expression) || StateMutations.is_address(expression)) {
+			return new UniBixorErrorState(expression, SymbolFactory.
+					sym_expression(orig_value), SymbolFactory.sym_expression(difference));
 		}
 		else {
-			CirExpression target;
-			if(StateMutations.is_assigned(expression)) {
-				CirAssignStatement statement = (CirAssignStatement) expression.get_parent();
-				target = statement.get_rvalue();
-			}
-			else {
-				target = expression;
-			}
-			
-			SymbolExpression orig_value, muta_value;
-			if(StateMutations.is_integer(target)) {
-				orig_value = SymbolFactory.sym_expression(target);
-				muta_value = SymbolFactory.sym_expression(value);
-			}
-			else {
-				throw new IllegalArgumentException("Invalid: " + target.getClass().getSimpleName());
-			}
-			return new UniBixorErrorState(expression, orig_value, muta_value);
+			throw new IllegalArgumentException("Unsupported: " + expression.getClass().getSimpleName());
 		}
 	}
 	/**
-	 * @param statement
-	 * @param identifier
-	 * @param value
-	 * @return
+	 * @param expression	the expression in which the data error is injected
+	 * @param orig_value	the original value hold by this expression applied
+	 * @param difference	the difference to be incremented in the expression
+	 * @return				inc_expr(expression; orig_value, difference)
 	 * @throws Exception
 	 */
-	public static UniValueErrorState set_expr(CirStatement statement, Object identifier, Object value) throws Exception {
+	public static UniBixorErrorState xor_expr(CirStatement statement, Object identifier, Object difference) throws Exception {
 		if(statement == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
+			throw new IllegalArgumentException("Invalid location as null");
 		}
 		else if(identifier == null) {
-			throw new IllegalArgumentException("Invalid identifier: null");
+			throw new IllegalArgumentException("Invalid orig_value: null");
 		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
-		}
-		else {
-			return new UniValueErrorState(statement, 
-					SymbolFactory.sym_expression(identifier), 
-					SymbolFactory.sym_expression(value));
-		}
-	}
-	/**
-	 * @param statement
-	 * @param identifier
-	 * @param value
-	 * @return
-	 * @throws Exception
-	 */
-	public static UniIncreErrorState inc_expr(CirStatement statement, Object identifier, Object value) throws Exception {
-		if(statement == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(identifier == null) {
-			throw new IllegalArgumentException("Invalid identifier: null");
-		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
+		else if(difference == null) {
+			throw new IllegalArgumentException("Invalid difference: null");
 		}
 		else {
-			return new UniIncreErrorState(statement, 
-					SymbolFactory.sym_expression(identifier), 
-					SymbolFactory.sym_expression(value));
-		}
-	}
-	/**
-	 * @param statement
-	 * @param identifier
-	 * @param value
-	 * @return
-	 * @throws Exception
-	 */
-	public static UniBixorErrorState xor_expr(CirStatement statement, Object identifier, Object value) throws Exception {
-		if(statement == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(identifier == null) {
-			throw new IllegalArgumentException("Invalid identifier: null");
-		}
-		else if(value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
-		}
-		else {
-			return new UniBixorErrorState(statement, 
-					SymbolFactory.sym_expression(identifier), 
-					SymbolFactory.sym_expression(value));
+			return new UniBixorErrorState(statement, SymbolFactory.
+					sym_expression(identifier), SymbolFactory.sym_expression(difference));
 		}
 	}
 	
