@@ -57,6 +57,7 @@ import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatementList;
 import com.jcsa.jcparse.lang.astree.stmt.AstSwitchStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
+import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
@@ -153,7 +154,7 @@ public class AstCirLocalizer {
 			return (AstExpression) source;
 		}
 		else {
-			throw new IllegalArgumentException(source.getClass().getSimpleName());
+			return null;
 		}
 	}
 	/**
@@ -188,10 +189,12 @@ public class AstCirLocalizer {
 			throw new IllegalArgumentException("Invalid source as null");
 		}
 		else {
+			AstCirPair range;
 			while(!this.cir_tree.has_cir_range(source)) {
 				source = source.get_parent();
 			}
-			return this.cir_tree.get_cir_range(source).get_beg_statement();
+			range = this.cir_tree.get_cir_range(source);
+			return range.get_beg_statement();
 		}
 	}
 	/**
@@ -207,10 +210,12 @@ public class AstCirLocalizer {
 			throw new IllegalArgumentException("Invalid source as null");
 		}
 		else {
+			AstCirPair range;
 			while(!this.cir_tree.has_cir_range(source)) {
 				source = source.get_parent();
 			}
-			return this.cir_tree.get_cir_range(source).get_end_statement();
+			range = this.cir_tree.get_cir_range(source);
+			return range.get_end_statement();
 		}
 	}
 	/**
