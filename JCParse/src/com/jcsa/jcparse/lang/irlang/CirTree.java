@@ -128,7 +128,7 @@ public interface CirTree {
 	 * @return the localization algorithm machine
 	 */
 	public CirLocalizer get_localizer();
-
+	
 	/* factory methods */
 	/**
 	 * generate the copy of the specified node in this tree

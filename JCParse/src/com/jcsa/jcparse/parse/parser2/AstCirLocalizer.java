@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.sta2mutant.base;
+package com.jcsa.jcparse.parse.parser2;
 
 import java.util.List;
 
@@ -100,19 +100,24 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
-/**
- * 	It determines the location of AstNode and CirNode or reversed.
- * 	
- * 	@author yukimula
- *
- */
-final class AstCirLocalizer {
+public class AstCirLocalizer {
 	
 	/* definitions */
 	/** the C-intermediate program for localization **/
 	private	CirTree cir_tree;
-	/** constructor **/ private AstCirLocalizer() { this.cir_tree = null; }
-	private static final AstCirLocalizer localizer = new AstCirLocalizer();
+	/**
+	 * It constructs a localizer for ast-cir connection in given tree space
+	 * @param cir_tree
+	 * @throws IllegalArgumentException
+	 */
+	public AstCirLocalizer(CirTree cir_tree) throws IllegalArgumentException {
+		if(cir_tree == null) {
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		}
+		else {
+			this.cir_tree = cir_tree;
+		}
+	}
 	
 	/* basic methods */
 	/**
@@ -183,6 +188,9 @@ final class AstCirLocalizer {
 			throw new IllegalArgumentException("Invalid source as null");
 		}
 		else {
+			while(!this.cir_tree.has_cir_range(source)) {
+				source = source.get_parent();
+			}
 			return this.cir_tree.get_cir_range(source).get_beg_statement();
 		}
 	}
@@ -199,6 +207,9 @@ final class AstCirLocalizer {
 			throw new IllegalArgumentException("Invalid source as null");
 		}
 		else {
+			while(!this.cir_tree.has_cir_range(source)) {
+				source = source.get_parent();
+			}
 			return this.cir_tree.get_cir_range(source).get_end_statement();
 		}
 	}
@@ -242,8 +253,8 @@ final class AstCirLocalizer {
 	 * @return it infers the ast-location that the source represents
 	 * @throws Exception
 	 */
-	protected static AstNode localize(CirNode cir_location) throws Exception {
-		return localizer.loc_cir(cir_location);
+	public AstNode localize(CirNode cir_location) throws Exception {
+		return this.loc_cir(cir_location);
 	}
 	private	AstNode	loc_cir(CirNode source) throws Exception {
 		if(source == null) {
@@ -531,7 +542,8 @@ final class AstCirLocalizer {
 	private	AstNode	loc_cir_goto_statement(CirGotoStatement source) throws Exception {
 		AstNode ast_location = source.get_ast_source();
 		if(ast_location == null) {
-			throw new IllegalArgumentException("invalid ast_location as: null");
+			// throw new IllegalArgumentException("invalid ast_location as: null");
+			return source.execution_of().get_ou_flow(0).get_target().get_statement().get_ast_source();
 		}
 		else if(ast_location instanceof AstBreakStatement ||
 				ast_location instanceof AstContinueStatement ||
@@ -540,7 +552,6 @@ final class AstCirLocalizer {
 				ast_location instanceof AstReturnStatement) { return ast_location; }
 		else if(ast_location instanceof AstWhileStatement
 				|| ast_location instanceof AstForStatement
-				|| ast_location instanceof AstConditionalExpression
 				|| ast_location instanceof AstIfStatement) { return ast_location; }
 		else {
 			throw new IllegalArgumentException(ast_location.getClass().getSimpleName());
@@ -605,51 +616,21 @@ final class AstCirLocalizer {
 	 * @return it infers the C-intermediate location that the source represents
 	 * @throws Exception
 	 */
-	protected static CirNode localize(CirTree cir_tree, AstNode source) throws Exception {
-		if(cir_tree == null) {
-			throw new IllegalArgumentException("Invalid cir_tree: null");
-		}
-		else if(source == null) {
-			throw new IllegalArgumentException("Invalid source as null");
-		}
-		else {
-			localizer.cir_tree = cir_tree; return localizer.loc_ast(source);
-		}
+	public CirNode localize(AstNode source) throws Exception {
+		return this.loc_ast(source);
 	}
 	/**
-	 * @param cir_tree
 	 * @param source
-	 * @return the first statement of the source
+	 * @param beg_end	true to return first statement; or the final otherwise
+	 * @return
 	 * @throws Exception
 	 */
-	protected static CirNode localize_beg(CirTree cir_tree, AstNode source) throws Exception {
-		if(cir_tree == null) {
-			throw new IllegalArgumentException("Invalid cir_tree: null");
-		}
-		else if(source == null) {
-			throw new IllegalArgumentException("Invalid source as null");
+	public CirStatement localize(AstNode source, boolean beg_end) throws Exception {
+		if(beg_end) {
+			return this.get_beg_statement(source);
 		}
 		else {
-			localizer.cir_tree = cir_tree; 
-			return localizer.get_beg_statement(source);
-		}
-	}
-	/**
-	 * @param cir_tree
-	 * @param source
-	 * @return the final statement of the source
-	 * @throws Exception
-	 */
-	protected static CirNode localize_end(CirTree cir_tree, AstNode source) throws Exception {
-		if(cir_tree == null) {
-			throw new IllegalArgumentException("Invalid cir_tree: null");
-		}
-		else if(source == null) {
-			throw new IllegalArgumentException("Invalid source as null");
-		}
-		else {
-			localizer.cir_tree = cir_tree; 
-			return localizer.get_end_statement(source);
+			return this.get_end_statement(source);
 		}
 	}
 	private	CirNode	loc_ast(AstNode source) throws Exception {
