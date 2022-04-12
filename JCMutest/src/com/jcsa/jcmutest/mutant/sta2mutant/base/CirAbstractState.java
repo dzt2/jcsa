@@ -1,11 +1,14 @@
 package com.jcsa.jcmutest.mutant.sta2mutant.base;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.sta2mutant.StateMutations;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
 /**
  * 	The abstract execution state defined in the context of mutation testing.	<br>
@@ -243,9 +246,199 @@ public abstract class CirAbstractState {
 			return new CirTrapsErrorState(CirAbstractStore.new_store(source, statement));
 		}
 	}
-	
-	
-	
-	
+	/**
+	 * @param source
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @return set_expr(expression; orig_value, muta_value)
+	 * @throws Exception
+	 */
+	public static CirValueErrorState set_expr(AstNode source, CirExpression expression, 
+			Object orig_value, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else {
+			SymbolExpression ovalue, mvalue;
+			if(SymbolFactory.is_bool(expression.get_data_type())) {
+				ovalue = SymbolFactory.sym_condition(orig_value, true);
+				mvalue = SymbolFactory.sym_condition(muta_value, true);
+			}
+			else {
+				ovalue = SymbolFactory.sym_expression(orig_value);
+				mvalue = SymbolFactory.sym_expression(muta_value);
+			}
+			return new CirValueErrorState(CirAbstractStore.new_store(source, expression), ovalue, mvalue);
+		}
+	}
+	/**
+	 * @param source
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @return inc_expr(expression, orig_value, difference)
+	 * @throws Exception
+	 */
+	public static CirIncreErrorState inc_expr(AstNode source, CirExpression expression, 
+			Object orig_value, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else {
+			if(StateMutations.is_address(expression) || StateMutations.is_numeric(expression)) {
+				return new CirIncreErrorState(CirAbstractStore.new_store(source, expression),
+						SymbolFactory.sym_expression(orig_value), SymbolFactory.sym_expression(muta_value));
+			}
+			else {
+				throw new IllegalArgumentException(expression.get_data_type().generate_code());
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @return inc_expr(expression, orig_value, difference)
+	 * @throws Exception
+	 */
+	public static CirBixorErrorState xor_expr(AstNode source, CirExpression expression, 
+			Object orig_value, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else if(orig_value == null) {
+			throw new IllegalArgumentException("Invalid orig_value: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else {
+			if(StateMutations.is_integer(expression)) {
+				return new CirBixorErrorState(CirAbstractStore.new_store(source, expression),
+						SymbolFactory.sym_expression(orig_value), SymbolFactory.sym_expression(muta_value));
+			}
+			else {
+				throw new IllegalArgumentException(expression.get_data_type().generate_code());
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param statement
+	 * @param identifier
+	 * @param muta_value
+	 * @return
+	 * @throws Exception
+	 */
+	public static CirValueErrorState set_expr(AstNode source, CirStatement statement,
+			SymbolExpression identifier, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(statement == null) {
+			throw new IllegalArgumentException("Invalid statements: null");
+		}
+		else if(identifier == null) {
+			throw new IllegalArgumentException("Invalid identifier: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else {
+			if(SymbolFactory.is_bool(identifier)) {
+				return new CirValueErrorState(CirAbstractStore.new_store(source, statement), 
+								identifier, SymbolFactory.sym_condition(muta_value, true));
+			}
+			else {
+				return new CirValueErrorState(CirAbstractStore.new_store(source, statement), 
+									identifier, SymbolFactory.sym_expression(muta_value));
+			}
+		}
+	}
+	/**
+	 * @param source
+	 * @param statement
+	 * @param identifier
+	 * @param muta_value
+	 * @return inc_expr(statement; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static CirIncreErrorState inc_expr(AstNode source, CirStatement statement, 
+			SymbolExpression identifier, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(statement == null) {
+			throw new IllegalArgumentException("Invalid statements: null");
+		}
+		else if(identifier == null) {
+			throw new IllegalArgumentException("Invalid identifier: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else if(SymbolFactory.is_numb(identifier) ||
+				SymbolFactory.is_addr(identifier) || 
+				SymbolFactory.is_real(identifier)) {
+			return new CirIncreErrorState(CirAbstractStore.new_store(source, statement), 
+					identifier, SymbolFactory.sym_expression(muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(identifier.get_simple_code());
+		}
+	}
+	/**
+	 * @param source
+	 * @param statement
+	 * @param identifier
+	 * @param muta_value
+	 * @return inc_expr(statement; orig_value, difference)
+	 * @throws Exception
+	 */
+	public static CirBixorErrorState xor_expr(AstNode source, CirStatement statement, 
+			SymbolExpression identifier, Object muta_value) throws Exception {
+		if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(statement == null) {
+			throw new IllegalArgumentException("Invalid statements: null");
+		}
+		else if(identifier == null) {
+			throw new IllegalArgumentException("Invalid identifier: null");
+		}
+		else if(muta_value == null) {
+			throw new IllegalArgumentException("Invalid muta_value: null");
+		}
+		else if(SymbolFactory.is_numb(identifier)) {
+			return new CirBixorErrorState(CirAbstractStore.new_store(source, statement), 
+					identifier, SymbolFactory.sym_expression(muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(identifier.get_simple_code());
+		}
+	}
 	
 }
