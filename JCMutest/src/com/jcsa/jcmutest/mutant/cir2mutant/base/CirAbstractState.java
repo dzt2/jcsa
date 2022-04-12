@@ -10,7 +10,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlow;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
 /**
  * 	It represents an abstract execution state specified at some program location.

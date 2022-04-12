@@ -9,7 +9,7 @@ import java.util.Queue;
 
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
 /**
  * 	It represents the abstraction of a symbolic expression in lambda format:

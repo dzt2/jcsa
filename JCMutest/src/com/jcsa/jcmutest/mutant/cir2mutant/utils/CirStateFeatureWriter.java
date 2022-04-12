@@ -77,7 +77,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.SymbolOperator;
 import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
-import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 import com.jcsa.jcparse.test.file.TestInput;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
@@ -1037,11 +1037,6 @@ public class CirStateFeatureWriter {
 			}
 			
 			/* dynamic analysis using symbolic context and state paths */
-			/*
-			SymbolContext process = new SymbolContext(
-					this.source_cfile.get_ast_tree(), 
-					this.source_cfile.get_cir_tree());
-			*/
 			SymbolContext process = SymbolContext.new_context();
 			for(CStateNode state_node : ((CStatePath) context).get_nodes()) {
 				process.acc(state_node);

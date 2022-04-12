@@ -27,7 +27,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolAbstraction;
 import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
-import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
 public class CSymbolNodeTest {
 	

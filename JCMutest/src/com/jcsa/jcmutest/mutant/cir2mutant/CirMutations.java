@@ -41,7 +41,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
-import com.jcsa.jcparse.parse.parser3.SymbolContext;
+import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 import com.jcsa.jcparse.test.file.TestInput;
 
 /**
