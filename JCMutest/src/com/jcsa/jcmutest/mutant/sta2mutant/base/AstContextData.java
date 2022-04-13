@@ -40,9 +40,9 @@ public class AstContextData {
 		else if(store == null) {
 			throw new IllegalArgumentException("Invalid store: null");
 		}
-		else if(value == null) {
+		/*else if(value == null) {
 			throw new IllegalArgumentException("Invalid value: null");
-		}
+		}*/
 		else {
 			this.node = node; this.type = type;
 			this.store = store; this.value = value;

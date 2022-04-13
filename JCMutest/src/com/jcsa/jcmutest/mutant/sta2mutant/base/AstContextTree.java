@@ -32,7 +32,7 @@ public class AstContextTree {
 	private	AstContextNode					root;
 	private	List<AstContextNode>			nodes;
 	private	Map<AstNode, AstContextNode>	index;
-	private	AstContextTree(AstTree ast_tree, CirTree cir_tree) throws Exception {
+	public	AstContextTree(AstTree ast_tree, CirTree cir_tree) throws Exception {
 		if(ast_tree == null) {
 			throw new IllegalArgumentException("Invalid ast_tree: null");
 		}

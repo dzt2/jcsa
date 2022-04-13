@@ -7,6 +7,7 @@ import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
+import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstName;
 import com.jcsa.jcparse.lang.astree.decl.initializer.AstInitializerBody;
 import com.jcsa.jcparse.lang.astree.expr.base.AstConstant;
@@ -19,6 +20,7 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseAssignExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBitwiseBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstOperator;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstPointUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstRelationExpression;
@@ -159,6 +161,7 @@ public class AstContextNode {
 		else if(source instanceof AstArithBinaryExpression || 
 				source instanceof AstBitwiseBinaryExpression ||
 				source instanceof AstShiftBinaryExpression || 
+				source instanceof AstLogicBinaryExpression ||
 				source instanceof AstRelationExpression)	{ return AstContextNodeType.bnry_expression; }
 		else if(source instanceof AstPointUnaryExpression) {
 			if(((AstPointUnaryExpression) source).get_operator().get_operator() == COperator.dereference) {
@@ -168,6 +171,7 @@ public class AstContextNode {
 				return AstContextNodeType.unry_expression;
 			}
 		}
+		else if(source instanceof AstInitDeclarator)	{ return AstContextNodeType.assg_expression; }
 		else if(source instanceof AstUnaryExpression)	{ return AstContextNodeType.unry_expression; }
 		else if(source instanceof AstCastExpression)	{ return AstContextNodeType.cast_expression; }
 		else {

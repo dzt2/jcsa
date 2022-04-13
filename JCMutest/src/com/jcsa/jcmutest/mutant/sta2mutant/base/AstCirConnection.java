@@ -67,6 +67,7 @@ import com.jcsa.jcparse.lang.irlang.expr.CirType;
 import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
 import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirDefaultStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
@@ -110,9 +111,9 @@ public final class AstCirConnection {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
 		else if(store == null) { return null; /* no valid data is */ }
-		else if(value == null) {
+		/*else if(value == null) {
 			throw new IllegalArgumentException("Invalid value: null");
-		}
+		}*/
 		else { return this.tree_node.add_state(type, store, value); }
 	}
 	/**
@@ -480,15 +481,18 @@ public final class AstCirConnection {
 	/* statement */
 	private	void	parse_declaration_statement(AstDeclarationStatement source) throws Exception {
 		CirStatement store = this.loc_cir_statement(source);
-		this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
+		if(store != null)
+			this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
 	}
 	private	void	parse_expression_statement(AstExpressionStatement source) throws Exception {
 		CirStatement store = this.loc_cir_statement(source);
-		this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
+		if(store != null)
+			this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
 	}
 	private	void	parse_compound_statement(AstCompoundStatement source) throws Exception {
 		CirStatement store = this.loc_cir_statement(source);
-		this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
+		if(store != null)
+			this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
 	}
 	private	void	parse_break_statement(AstBreakStatement source) throws Exception {
 		CirNode store = this.loc_cir_location(source, CirGotoStatement.class, 0);
@@ -537,7 +541,7 @@ public final class AstCirConnection {
 	}
 	private	void	parse_case_statement(AstCaseStatement source) throws Exception {
 		CirNode store;
-		store = this.loc_cir_location(source, CirIfStatement.class, 0);
+		store = this.loc_cir_location(source, CirCaseStatement.class, 0);
 		this.new_context_data(AstContextDataType.select, store, SymbolFactory.sym_expression(store));
 	}
 	private	void	parse_default_statement(AstDefaultStatement source) throws Exception {
@@ -604,7 +608,8 @@ public final class AstCirConnection {
 	/* elemental */
 	private	void	parse_declaration(AstDeclaration source) throws Exception {
 		CirStatement store = this.loc_cir_statement(source);
-		this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
+		if(store != null)
+			this.new_context_data(AstContextDataType.execute, store, SymbolFactory.sym_expression(store));
 	}
 	private	void	parse_init_declarator(AstInitDeclarator source) throws Exception {
 		CirNode store = this.loc_cir_location(source, CirInitAssignStatement.class, 0);
@@ -619,8 +624,10 @@ public final class AstCirConnection {
 		}
 	}
 	private	void	parse_name(AstName source) throws Exception {
+		/*
 		CirExpression store = this.loc_cir_expression(source.get_parent(), CirExpression.class);
 		this.new_context_data(AstContextDataType.value, store, SymbolFactory.sym_expression(source));
+		*/
 	}
 	private	void	parse_typename(AstTypeName source) throws Exception {
 		CirNode store = this.loc_cir_location(source, CirType.class, 0);
