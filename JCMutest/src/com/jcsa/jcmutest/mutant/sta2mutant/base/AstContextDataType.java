@@ -7,5 +7,13 @@ package com.jcsa.jcmutest.mutant.sta2mutant.base;
  *
  */
 public enum AstContextDataType {
-
+	value,
+	assign,
+	select,
+	invoke,
+	execute,
+	type,
+	field,
+	function,
+	transition,
 }

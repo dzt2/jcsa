@@ -44,9 +44,10 @@ public class AstContextTree {
 			this.ast_tree = ast_tree;
 			this.nodes = new ArrayList<AstContextNode>();
 			this.index = new HashMap<AstNode, AstContextNode>();
-			
-			// TODO implement the construction & parsing
 			this.root = AstContextParser.parser.parse(this);
+			for(AstContextNode tree_node : this.nodes) {
+				AstCirConnection.connector.connect(tree_node);
+			}
 		}
 	}
 	

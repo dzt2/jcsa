@@ -117,7 +117,7 @@ public final class AstContextParser {
 			return this.tree.new_node(source);
 		}
 	}
-	/* (I) statement */
+	/* statement */
 	private	AstContextNode	parse_ast_expression_statement(AstExpressionStatement source) throws Exception {
 		AstContextNode parent = this.new_context_node(source);
 		if(source.has_expression()) {
@@ -259,7 +259,7 @@ public final class AstContextParser {
 			throw new IllegalArgumentException("Unsupport: " + source);
 		}
 	}
-	/* (I) expression */
+	/* expression */
 	private AstContextNode	parse_ast_basic_expression(AstBasicExpression source) throws Exception {
 		return this.new_context_node(source);
 	}
@@ -453,7 +453,7 @@ public final class AstContextParser {
 			throw new IllegalArgumentException("Unsupport: " + source);
 		}
 	}
-	/* (I) elemental */
+	/* elemental */
 	private	AstContextNode	parse_ast_declaration(AstDeclaration source) throws Exception {
 		AstContextNode parent = this.new_context_node(source);
 		if(source.has_declarator_list()) {
@@ -569,8 +569,5 @@ public final class AstContextParser {
 			throw new IllegalArgumentException("Unsupport: " + source);
 		}
 	}
-	
-	
-	
 	
 }
