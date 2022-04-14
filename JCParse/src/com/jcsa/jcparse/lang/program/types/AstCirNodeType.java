@@ -12,7 +12,7 @@ public enum AstCirNodeType {
 	/** function definition **/						func_def,
 	
 	/** AstIdExpression|AstName|return **/			name_expr,
-	/** AstConstant **/								cons_expr,
+	/** AstConstant|AstSizeofExpression **/			cons_expr,
 	/** AstStringLiteral **/						strg_expr,
 	/** AstArray|Field|PointUnaryExpression **/		refr_expr,
 	/** AstInitDeclarator **/						decl_expr,

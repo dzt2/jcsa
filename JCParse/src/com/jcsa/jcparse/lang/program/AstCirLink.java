@@ -2,7 +2,7 @@ package com.jcsa.jcparse.lang.program;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.CirNode;
-import com.jcsa.jcparse.lang.program.types.AstCirDataType;
+import com.jcsa.jcparse.lang.program.types.AstCirLinkType;
 
 /**
  * 	It represents a connection from AstNode to CirNode with given types.
@@ -10,13 +10,13 @@ import com.jcsa.jcparse.lang.program.types.AstCirDataType;
  * 	@author yukimula
  *
  */
-public class AstCirData {
+public class AstCirLink {
 	
 	/* definitions */
 	/** the original tree node to connect this data item **/
 	private	AstCirNode		node;
 	/** the type of the connection from AstNode to CirNode **/
-	private	AstCirDataType	type;
+	private	AstCirLinkType	type;
 	/** the C-intermediate representated node to be linked **/
 	private	CirNode			loct;
 	
@@ -28,7 +28,7 @@ public class AstCirData {
 	 * @param loct
 	 * @throws IllegalArgumentException
 	 */
-	protected AstCirData(AstCirNode node, AstCirDataType type, 
+	protected AstCirLink(AstCirNode node, AstCirLinkType type, 
 				CirNode loct) throws IllegalArgumentException {
 		if(node == null) {
 			throw new IllegalArgumentException("Invalid node: null");
@@ -50,7 +50,7 @@ public class AstCirData {
 	/**
 	 * @return the type of the connection from AstNode to CirNode
 	 */
-	public AstCirDataType	get_type()		{ return this.type; }
+	public AstCirLinkType	get_type()		{ return this.type; }
 	/**
 	 * @return the abstract syntactic source from which it connects
 	 */

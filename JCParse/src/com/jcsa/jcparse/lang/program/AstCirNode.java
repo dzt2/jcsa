@@ -52,14 +52,14 @@ import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.lexical.COperator;
-import com.jcsa.jcparse.lang.program.types.AstCirDataType;
 import com.jcsa.jcparse.lang.program.types.AstCirEdgeType;
+import com.jcsa.jcparse.lang.program.types.AstCirLinkType;
 import com.jcsa.jcparse.lang.program.types.AstCirNodeType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 
 /**
  * 	It represents a functional simplified abstract syntactic node w.r.t. the 
- * 	CirNode(s) using AstCirData, and organized as tree + graph structure.
+ * 	CirNode(s) using AstCirLink, and organized as tree + graph structure.
  * 	@author yukimula
  *
  */
@@ -77,7 +77,7 @@ public class AstCirNode {
 	/** the token to represent the content of this node **/
 	private	Object				token;
 	/** the list of data-connection from AstNode to CirNode(s) related **/
-	private	List<AstCirData>	data_list;
+	private	List<AstCirLink>	link_list;
 	/** the parent of this node or null if this node is a root **/
 	private	AstCirNode			parent;
 	/** the type of the node in the context of its parent or null if it is root **/
@@ -113,7 +113,7 @@ public class AstCirNode {
 	/**
 	 * @return the list of data-connection from AstNode to CirNode(s) related
 	 */
-	public	Iterable<AstCirData>	get_data_items()	{ return this.data_list; }
+	public	Iterable<AstCirLink>	get_links()	{ return this.link_list; }
 	/**
 	 * @return whether this node is a root without any parent
 	 */
@@ -147,7 +147,7 @@ public class AstCirNode {
 	/**
 	 * @return the number of data-connections from AstNode to CirNode related
 	 */
-	public	int			number_of_data_items()	{ return this.data_list.size(); }
+	public	int			number_of_links()		{ return this.link_list.size(); }
 	/**
 	 * @return the number of children inserted under this node
 	 */
@@ -165,7 +165,7 @@ public class AstCirNode {
 	 * @return the kth data-connection from this AstNode to the CirNode related
 	 * @throws IndexOutOfBoundsException
 	 */
-	public	AstCirData	get_data_item(int k) throws IndexOutOfBoundsException { return this.data_list.get(k); }
+	public	AstCirLink	get_link(int k) throws IndexOutOfBoundsException { return this.link_list.get(k); }
 	/**
 	 * @param k
 	 * @return the kth child inserted under this node
@@ -207,7 +207,7 @@ public class AstCirNode {
 			this.tree = tree; this.node_id = node_id;
 			this.type = this.new_type(source);
 			this.source = source; this.token = token;
-			this.data_list = new ArrayList<AstCirData>();
+			this.link_list = new ArrayList<AstCirLink>();
 			this.pc_type = null; this.parent = null;
 			this.children = new ArrayList<AstCirNode>();
 			this.in_edges = new ArrayList<AstCirEdge>();
@@ -309,7 +309,7 @@ public class AstCirNode {
 	 * @param location
 	 * @throws IllegalArgumentException
 	 */
-	protected AstCirData 	add_state(AstCirDataType type, CirNode location) throws IllegalArgumentException {
+	protected AstCirLink 	add_state(AstCirLinkType type, CirNode location) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type as null");
 		}
@@ -317,8 +317,8 @@ public class AstCirNode {
 			throw new IllegalArgumentException("Invalid location: null");
 		}
 		else {
-			this.data_list.add(new AstCirData(this, type, location));
-			return this.data_list.get(this.data_list.size() - 1);
+			this.link_list.add(new AstCirLink(this, type, location));
+			return this.link_list.get(this.link_list.size() - 1);
 		}
 	}
 	/**

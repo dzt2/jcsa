@@ -64,7 +64,7 @@ import com.jcsa.jcparse.lang.scope.CTypeName;
  */
 final class AstCirTreeParser {
 	
-	
+	/* definition */
 	/** the tree to be constructed as input **/	private	AstCirTree	tree;
 	/** singleton mode **/ private AstCirTreeParser() { this.tree = null; }
 	private static final AstCirTreeParser parser = new AstCirTreeParser();
@@ -609,5 +609,18 @@ final class AstCirTreeParser {
 			throw new IllegalArgumentException("Unsupport: " + source);
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 }
