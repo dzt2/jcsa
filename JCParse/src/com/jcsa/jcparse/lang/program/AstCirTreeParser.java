@@ -50,7 +50,9 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.irlang.CirNode;
 import com.jcsa.jcparse.lang.lexical.CConstant;
+import com.jcsa.jcparse.lang.program.types.AstCirLinkType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 import com.jcsa.jcparse.lang.scope.CName;
@@ -66,7 +68,8 @@ final class AstCirTreeParser {
 	
 	/* definition */
 	/** the tree to be constructed as input **/	private	AstCirTree	tree;
-	/** singleton mode **/ private AstCirTreeParser() { this.tree = null; }
+	/** the current node to be link to CIR **/	private	AstCirNode	cur_node;
+	private AstCirTreeParser() { this.tree = null; this.cur_node = null; }
 	private static final AstCirTreeParser parser = new AstCirTreeParser();
 	
 	/* construct methods */
@@ -610,8 +613,59 @@ final class AstCirTreeParser {
 		}
 	}
 	
-	
-	
+	/* LINK-METHODS */
+	/**
+	 * It constructs the linking from AstNode to CirNode
+	 * @param tree
+	 * @throws Exception
+	 */
+	protected static void link(AstCirTree tree) throws Exception {
+		if(tree == null) {
+			throw new IllegalArgumentException("Invalid tree: null");
+		}
+		else {
+			parser.tree = tree;
+			for(AstCirNode tree_node : tree.get_tree_nodes()) {
+				parser.cur_node = tree_node;
+				parser.link_ast(tree_node.get_ast_source());
+			}
+		}
+	}
+	/**
+	 * @param type
+	 * @param target
+	 * @return it creates a link from AstNode to CirNode in C-intermediate code
+	 * @throws Exception
+	 */
+	private	AstCirLink	new_ast_link(AstCirLinkType type, CirNode target) throws Exception {
+		if(this.cur_node == null) {
+			throw new IllegalArgumentException("Invalid curr_node: null");
+		}
+		else if(type == null) {
+			throw new IllegalArgumentException("Invalid type: null");
+		}
+		else if(target == null) {
+			throw new IllegalArgumentException("Invalid target: null");
+		}
+		else { return this.cur_node.add_link(type, target); }
+	}
+	/**
+	 * It links the node to CirNode location in the current tree-node
+	 * @param source
+	 * @throws Exception
+	 */
+	private	void		link_ast(AstNode source) throws Exception {
+		if(this.cur_node == null) {
+			throw new IllegalArgumentException("Invalid cur_node: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		// TODO implement the linking algorithm.
+		else {
+			throw new IllegalArgumentException("Unsupport: " + source);
+		}
+	}
 	
 	
 	

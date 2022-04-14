@@ -309,7 +309,7 @@ public class AstCirNode {
 	 * @param location
 	 * @throws IllegalArgumentException
 	 */
-	protected AstCirLink 	add_state(AstCirLinkType type, CirNode location) throws IllegalArgumentException {
+	protected AstCirLink 	add_link(AstCirLinkType type, CirNode location) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type as null");
 		}
@@ -328,7 +328,7 @@ public class AstCirNode {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-	protected AstCirEdge	link_edge(AstCirEdgeType type, AstCirNode target) throws IllegalArgumentException {
+	protected AstCirEdge	add_edge(AstCirEdgeType type, AstCirNode target) throws IllegalArgumentException {
 		if(type == null) {
 			throw new IllegalArgumentException("Invalid type as null");
 		}
