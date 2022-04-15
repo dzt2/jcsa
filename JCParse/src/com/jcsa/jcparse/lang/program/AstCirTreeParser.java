@@ -1,5 +1,7 @@
 package com.jcsa.jcparse.lang.program;
 
+import java.util.List;
+
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
@@ -50,8 +52,42 @@ import com.jcsa.jcparse.lang.astree.stmt.AstWhileStatement;
 import com.jcsa.jcparse.lang.astree.unit.AstFunctionDefinition;
 import com.jcsa.jcparse.lang.astree.unit.AstTranslationUnit;
 import com.jcsa.jcparse.lang.ctype.CType;
+import com.jcsa.jcparse.lang.irlang.AstCirPair;
 import com.jcsa.jcparse.lang.irlang.CirNode;
+import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.irlang.expr.CirAddressExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirArithExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirBitwsExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirCastExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirConstExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirDeferExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirField;
+import com.jcsa.jcparse.lang.irlang.expr.CirFieldExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirImplicator;
+import com.jcsa.jcparse.lang.irlang.expr.CirInitializerBody;
+import com.jcsa.jcparse.lang.irlang.expr.CirLogicExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirRelationExpression;
+import com.jcsa.jcparse.lang.irlang.expr.CirReturnPoint;
+import com.jcsa.jcparse.lang.irlang.expr.CirStringLiteral;
+import com.jcsa.jcparse.lang.irlang.expr.CirWaitExpression;
+import com.jcsa.jcparse.lang.irlang.stmt.CirAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCallStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirCaseStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirDefaultStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirGotoStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfEndStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIfStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirIncreAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirInitAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirLabelStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirReturnAssignStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
+import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
+import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 import com.jcsa.jcparse.lang.lexical.CConstant;
+import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.program.types.AstCirLinkType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
@@ -619,7 +655,7 @@ final class AstCirTreeParser {
 	 * @param tree
 	 * @throws Exception
 	 */
-	protected static void link(AstCirTree tree) throws Exception {
+	protected static void 	link(AstCirTree tree) throws Exception {
 		if(tree == null) {
 			throw new IllegalArgumentException("Invalid tree: null");
 		}
@@ -637,16 +673,14 @@ final class AstCirTreeParser {
 	 * @return it creates a link from AstNode to CirNode in C-intermediate code
 	 * @throws Exception
 	 */
-	private	AstCirLink	new_ast_link(AstCirLinkType type, CirNode target) throws Exception {
+	private	AstCirLink		new_ast_link(AstCirLinkType type, CirNode target) throws Exception {
 		if(this.cur_node == null) {
 			throw new IllegalArgumentException("Invalid curr_node: null");
 		}
 		else if(type == null) {
 			throw new IllegalArgumentException("Invalid type: null");
 		}
-		else if(target == null) {
-			throw new IllegalArgumentException("Invalid target: null");
-		}
+		else if(target == null) { return null; /* none of linking */ }
 		else { return this.cur_node.add_link(type, target); }
 	}
 	/**
@@ -654,27 +688,520 @@ final class AstCirTreeParser {
 	 * @param source
 	 * @throws Exception
 	 */
-	private	void		link_ast(AstNode source) throws Exception {
+	private	void			link_ast(AstNode source) throws Exception {
 		if(this.cur_node == null) {
 			throw new IllegalArgumentException("Invalid cur_node: null");
 		}
 		else if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
-		// TODO implement the linking algorithm.
-		else {
-			throw new IllegalArgumentException("Unsupport: " + source);
+		else if(source instanceof AstExpression) {
+			this.link_ast_expression((AstExpression) source);
+		}
+		else if(source instanceof AstStatement) {
+			this.link_ast_statement((AstStatement) source);
+		}
+		else { this.link_ast_element(source); }
+	}
+	/* LOCALIZATION */
+	/**
+	 * @param source
+	 * @param cir_class
+	 * @return the list of CirNode(s) as locations to be assess from AST source
+	 * @throws Exception
+	 */
+	private	List<CirNode>	loc_cir_locations(AstNode source, Class<?> cir_class) throws Exception {
+		if(this.cur_node == null) {
+			throw new IllegalArgumentException("Invalid cur_node: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(cir_class == null) {
+			throw new IllegalArgumentException("Invalid cir_class: null");
+		}
+		else { 
+			return this.cur_node.get_tree().get_cir_tree().get_cir_nodes(source, cir_class);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	/**
+	 * @param source
+	 * @param cir_class
+	 * @param k
+	 * @return the kth C-intermediate location w.r.t. the type of the source
+	 * @throws Exception
+	 */
+	private	CirNode			loc_cir_location(AstNode source, Class<?> cir_class, int k) throws Exception {
+		List<CirNode> cir_nodes = this.loc_cir_locations(source, cir_class);
+		if(k < 0 || k >= cir_nodes.size()) { return null; }
+		else { return cir_nodes.get(k); }
+	}
+	/**
+	 * @param source
+	 * @param cir_class
+	 * @return the expression being localized w.r.t. the source and class
+	 * @throws Exception
+	 */
+	private	CirExpression	loc_cir_expression(AstNode source, Class<?> cir_class) throws Exception {
+		List<CirNode> cir_nodes = this.loc_cir_locations(source, cir_class);
+		CirExpression expression = null;
+		for(CirNode cir_node : cir_nodes) {
+			if(cir_node instanceof CirExpression) {
+				expression = (CirExpression) cir_node;
+				if(expression.execution_of() == null) {
+					break;
+				}
+			}
+		}
+		return expression;
+	}
+	/**
+	 * @param source
+	 * @return the statement w.r.t. the source and given class
+	 * @throws Exception
+	 */
+	private	CirStatement	loc_cir_statement(AstNode source) throws Exception {
+		if(this.cur_node == null) {
+			throw new IllegalArgumentException("Invalid cir_tree: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source as null");
+		}
+		else {
+			AstCirPair range;
+			CirTree cir_tree = this.cur_node.get_tree().get_cir_tree();
+			while(!cir_tree.has_cir_range(source)) {
+				source = source.get_parent();
+			}
+			range = cir_tree.get_cir_range(source);
+			return range.get_beg_statement();
+		}
+	}
+	/* EXPRESSION */
+	private	void			link_ast_expression(AstExpression source) throws Exception {
+		if(source instanceof AstBasicExpression) {
+			this.link_ast_basic_expression((AstBasicExpression) source);
+		}
+		else if(source instanceof AstUnaryExpression) {
+			this.link_ast_unary_expression((AstUnaryExpression) source);
+		}
+		else if(source instanceof AstPostfixExpression) {
+			this.link_ast_postfix_expression((AstPostfixExpression) source);
+		}
+		else if(source instanceof AstBinaryExpression) {
+			this.link_ast_binary_expression((AstBinaryExpression) source);
+		}
+		else if(source instanceof AstArrayExpression) {
+			this.link_ast_array_expression((AstArrayExpression) source);
+		}
+		else if(source instanceof AstCastExpression) {
+			this.link_ast_cast_expression((AstCastExpression) source);
+		}
+		else if(source instanceof AstCommaExpression) {
+			this.link_ast_comma_expression((AstCommaExpression) source);
+		}
+		else if(source instanceof AstConstExpression) {
+			this.link_ast_const_expression((AstConstExpression) source);
+		}
+		else if(source instanceof AstParanthExpression) {
+			this.link_ast_paranth_expression((AstParanthExpression) source);
+		}
+		else if(source instanceof AstConditionalExpression) {
+			this.link_ast_conditional_expression((AstConditionalExpression) source);
+		}
+		else if(source instanceof AstFieldExpression) {
+			this.link_ast_field_expression((AstFieldExpression) source);
+		}
+		else if(source instanceof AstFunCallExpression) {
+			this.link_ast_fun_call_expression((AstFunCallExpression) source);
+		}
+		else if(source instanceof AstInitializerBody) {
+			this.link_ast_initializer_body((AstInitializerBody) source);
+		}
+		else if(source instanceof AstSizeofExpression) {
+			this.link_ast_sizeof_expression((AstSizeofExpression) source);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + source.generate_code());
+		}
+	}
+	private	void			link_ast_id_expression(AstIdExpression source) throws Exception {
+		CirExpression target = this.loc_cir_expression(source, CirExpression.class);
+		this.new_ast_link(AstCirLinkType.used_expr, target);
+	}
+	private	void			link_ast_constant(AstConstant source) throws Exception {
+		CirExpression target = this.
+				loc_cir_expression(source, CirConstExpression.class);
+		this.new_ast_link(AstCirLinkType.used_expr, target);
+	}
+	private	void			link_ast_literal(AstLiteral source) throws Exception {
+		CirExpression target = this.
+				loc_cir_expression(source, CirStringLiteral.class);
+		this.new_ast_link(AstCirLinkType.used_expr, target);
+	}
+	private	void			link_ast_basic_expression(AstBasicExpression source) throws Exception {
+		if(source instanceof AstIdExpression) {
+			this.link_ast_id_expression((AstIdExpression) source);
+		}
+		else if(source instanceof AstConstant) {
+			this.link_ast_constant((AstConstant) source);
+		}
+		else {
+			this.link_ast_literal((AstLiteral) source);
+		}
+	}
+	private	void			link_ast_unary_expression(AstUnaryExpression source) throws Exception {
+		switch(source.get_operator().get_operator()) {
+		case positive:		
+		{
+			this.link_ast(source.get_operand()); break;
+		}
+		case negative:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirArithExpression.class));
+			break;
+		}
+		case bit_not:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirBitwsExpression.class));
+			break;
+		}
+		case logic_not:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirLogicExpression.class));
+			break;
+		}
+		case address_of:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirAddressExpression.class));
+			break;
+		}
+		case dereference:	
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirDeferExpression.class));
+			break;
+		}
+		case increment:
+		case decrement:
+		{
+			CirIncreAssignStatement statement = (CirIncreAssignStatement) this.
+					loc_cir_location(source, CirIncreAssignStatement.class, 0);
+			this.new_ast_link(AstCirLinkType.assg_stmt, statement);
+			this.new_ast_link(AstCirLinkType.used_expr, statement.get_rvalue());
+			break;
+		}
+		default:
+		{
+			throw new IllegalArgumentException("Invalid: " + source.generate_code());
+		}
+		}
+	}
+	private	void			link_ast_postfix_expression(AstPostfixExpression source) throws Exception {
+		switch(source.get_operator().get_operator()) {
+		case increment:
+		case decrement:
+		{
+			CirIncreAssignStatement statement = (CirIncreAssignStatement) this.
+					loc_cir_location(source, CirIncreAssignStatement.class, 0);
+			this.new_ast_link(AstCirLinkType.assg_stmt, statement);
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_location(source, CirImplicator.class, 1));
+			break;
+		}
+		default:
+		{
+			throw new IllegalArgumentException("Invalid: " + source.generate_code());
+		}
+		}
+	}
+	private	void			link_ast_binary_expression(AstBinaryExpression source) throws Exception {
+		switch(source.get_operator().get_operator()) {
+		case arith_add:
+		case arith_sub:
+		case arith_mul:
+		case arith_div:
+		case arith_mod:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirArithExpression.class));
+			break;
+		}
+		case bit_and:
+		case bit_or:
+		case bit_xor:
+		case left_shift:
+		case righ_shift:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirBitwsExpression.class));
+			break;
+		}
+		case greater_tn:
+		case greater_eq:
+		case smaller_tn:
+		case smaller_eq:
+		case equal_with:
+		case not_equals:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirRelationExpression.class));
+			break;
+		}
+		case logic_and:
+		case logic_or:
+		{
+			this.new_ast_link(AstCirLinkType.ifte_stmt, this.
+					loc_cir_location(source, CirIfStatement.class, 0));
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_location(source, CirImplicator.class, 3));
+			break;
+		}
+		case assign:
+		{
+			this.new_ast_link(AstCirLinkType.assg_stmt, this.
+					loc_cir_location(source, CirAssignStatement.class, 0));
+			break;
+		}
+		case arith_add_assign:
+		case arith_sub_assign:
+		case arith_mul_assign:
+		case arith_div_assign:
+		case arith_mod_assign:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirArithExpression.class));
+			this.new_ast_link(AstCirLinkType.assg_stmt, this.
+					loc_cir_location(source, CirAssignStatement.class, 0));
+			break;
+		}
+		case bit_and_assign:
+		case bit_or_assign:
+		case bit_xor_assign:
+		case left_shift_assign:
+		case righ_shift_assign:
+		{
+			this.new_ast_link(AstCirLinkType.used_expr, this.
+					loc_cir_expression(source, CirBitwsExpression.class));
+			this.new_ast_link(AstCirLinkType.assg_stmt, this.
+					loc_cir_location(source, CirAssignStatement.class, 0));
+			break;
+		}
+		default:	throw new IllegalArgumentException(source.generate_code());
+		}
+	}
+	private	void			link_ast_array_expression(AstArrayExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, 
+				this.loc_cir_expression(source, CirDeferExpression.class));
+	}
+	private	void			link_ast_cast_expression(AstCastExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, 
+				this.loc_cir_expression(source, CirCastExpression.class));
+	}
+	private	void			link_ast_comma_expression(AstCommaExpression source) throws Exception {
+		int index = source.number_of_arguments() - 1;
+		this.link_ast(source.get_expression(index));
+	}
+	private	void			link_ast_conditional_expression(AstConditionalExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.
+				loc_cir_location(source, AstIfStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.used_expr, this.
+				loc_cir_location(source, CirImplicator.class, 2));
+	}
+	private	void			link_ast_paranth_expression(AstParanthExpression source) throws Exception {
+		this.link_ast(source.get_sub_expression());
+	}
+	private	void			link_ast_const_expression(AstConstExpression source) throws Exception {
+		this.link_ast(source.get_expression());
+	}
+	private	void			link_ast_field_expression(AstFieldExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, 
+				this.loc_cir_expression(source, CirFieldExpression.class));
+	}
+	private	void			link_ast_sizeof_expression(AstSizeofExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, this.
+				loc_cir_expression(source, CirConstExpression.class));
+	}
+	private	void			link_ast_initializer_body(AstInitializerBody source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, this.
+				loc_cir_expression(source, CirInitializerBody.class));
+	}
+	private	void			link_ast_fun_call_expression(AstFunCallExpression source) throws Exception {
+		this.new_ast_link(AstCirLinkType.call_stmt, this.
+				loc_cir_location(source, CirCallStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.assg_stmt, this.
+				loc_cir_location(source, CirWaitAssignStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.used_expr, this.
+				loc_cir_location(source, CirWaitExpression.class, 0));
+	}
+	/* STATEMENTS */
+	private	void			link_ast_statement(AstStatement source) throws Exception {
+		if(source instanceof AstDeclarationStatement) {
+			this.link_ast_declaration_statement((AstDeclarationStatement) source);
+		}
+		else if(source instanceof AstExpressionStatement) {
+			this.link_ast_expression_statement((AstExpressionStatement) source);
+		}
+		else if(source instanceof AstCompoundStatement) {
+			this.link_ast_compound_statement((AstCompoundStatement) source);
+		}
+		else if(source instanceof AstBreakStatement) {
+			this.link_ast_break_statement((AstBreakStatement) source);
+		}
+		else if(source instanceof AstContinueStatement) {
+			this.link_ast_continue_statement((AstContinueStatement) source);
+		}
+		else if(source instanceof AstGotoStatement) {
+			this.link_ast_goto_statement((AstGotoStatement) source);
+		}
+		else if(source instanceof AstReturnStatement) {
+			this.link_ast_return_statement((AstReturnStatement) source);
+		}
+		else if(source instanceof AstIfStatement) {
+			this.link_ast_if_statement((AstIfStatement) source);
+		}
+		else if(source instanceof AstSwitchStatement) {
+			this.link_ast_switch_statement((AstSwitchStatement) source);
+		}
+		else if(source instanceof AstCaseStatement) {
+			this.link_ast_case_statement((AstCaseStatement) source);
+		}
+		else if(source instanceof AstLabeledStatement) {
+			this.link_ast_labeled_statement((AstLabeledStatement) source);
+		}
+		else if(source instanceof AstDefaultStatement) {
+			this.link_ast_default_statement((AstDefaultStatement) source);
+		}
+		else if(source instanceof AstForStatement) {
+			this.link_ast_for_statement((AstForStatement) source);
+		}
+		else if(source instanceof AstWhileStatement) {
+			this.link_ast_while_statement((AstWhileStatement) source);
+		}
+		else if(source instanceof AstDoWhileStatement) {
+			this.link_ast_do_while_statement((AstDoWhileStatement) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
+	}
+	private	void			link_ast_declaration_statement(AstDeclarationStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.loct_stmt, this.loc_cir_statement(source));
+	}
+	private	void			link_ast_expression_statement(AstExpressionStatement source) throws Exception {
+		if(source.get_parent() instanceof AstForStatement) {
+			AstForStatement statement = (AstForStatement) source.get_parent();
+			if(source == statement.get_condition()) {
+				CirIfStatement if_stmt = (CirIfStatement) this.
+						loc_cir_location(statement, CirIfStatement.class, 0);
+				this.new_ast_link(AstCirLinkType.used_expr, if_stmt.get_condition());
+			}
+			else {
+				this.new_ast_link(AstCirLinkType.loct_stmt, this.loc_cir_statement(source));
+			}
+		}
+		else {
+			this.new_ast_link(AstCirLinkType.loct_stmt, this.loc_cir_statement(source));
+		}
+	}
+	private	void			link_ast_compound_statement(AstCompoundStatement source) throws Exception { }
+	private	void			link_ast_break_statement(AstBreakStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.skip_stmt, this.loc_cir_location(source, CirGotoStatement.class, 0));
+	}
+	private	void			link_ast_continue_statement(AstContinueStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.skip_stmt, this.loc_cir_location(source, CirGotoStatement.class, 0));
+	}
+	private	void			link_ast_goto_statement(AstGotoStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.skip_stmt, this.loc_cir_location(source, CirGotoStatement.class, 0));
+	}
+	private	void			link_ast_return_statement(AstReturnStatement source) throws Exception {
+		if(source.has_expression()) {
+			this.new_ast_link(
+					AstCirLinkType.assg_stmt, this.loc_cir_location(source, CirReturnAssignStatement.class, 0));
+		}
+		this.new_ast_link(AstCirLinkType.skip_stmt, this.loc_cir_location(source, CirGotoStatement.class, 0));
+	}
+	private	void			link_ast_labeled_statement(AstLabeledStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirLabelStatement.class, 0));
+	}
+	private	void			link_ast_default_statement(AstDefaultStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirDefaultStatement.class, 0));
+	}
+	private	void			link_ast_if_statement(AstIfStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.loc_cir_location(source, CirIfStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirIfEndStatement.class, 0));
+	}
+	private	void			link_ast_case_statement(AstCaseStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.loc_cir_location(source, CirCaseStatement.class, 0));
+	}
+	private	void			link_ast_switch_statement(AstSwitchStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.loct_stmt, this.loc_cir_statement(source));
+	}
+	private	void			link_ast_for_statement(AstForStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.loc_cir_location(source, CirIfStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirIfEndStatement.class, 0));
+	}
+	private	void			link_ast_while_statement(AstWhileStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.loc_cir_location(source, CirIfStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirIfEndStatement.class, 0));
+	}
+	private	void			link_ast_do_while_statement(AstDoWhileStatement source) throws Exception {
+		this.new_ast_link(AstCirLinkType.ifte_stmt, this.loc_cir_location(source, CirIfStatement.class, 0));
+		this.new_ast_link(AstCirLinkType.labl_stmt, this.loc_cir_location(source, CirIfEndStatement.class, 0));
+	}
+	/* ELEMENTAL */
+	private	void			link_ast_init_declarator(AstInitDeclarator source) throws Exception {
+		this.new_ast_link(AstCirLinkType.assg_stmt, this.
+				loc_cir_location(source, CirInitAssignStatement.class, 0));
+	}
+	private	void			link_ast_name(AstName source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, this.
+				loc_cir_expression(source.get_parent(), CirExpression.class));
+	}
+	private	void			link_ast_keyword(AstKeyword source) throws Exception {
+		if(source.get_keyword() == CKeyword.c89_return) {
+			this.new_ast_link(AstCirLinkType.used_expr, this.loc_cir_expression(source, CirReturnPoint.class));
+		}
+	}
+	private	void			link_ast_function_definition(AstFunctionDefinition source) throws Exception {
+		this.new_ast_link(AstCirLinkType.func_defs, this.
+				loc_cir_location(source, CirFunctionDefinition.class, 0));
+	}
+	private	void			link_ast_translation_unit(AstTranslationUnit source) throws Exception {
+		this.new_ast_link(AstCirLinkType.func_defs, this.
+				loc_cir_location(source, CirFunctionDefinition.class, 0));
+		this.new_ast_link(AstCirLinkType.tran_unit, this.
+				loc_cir_location(source, CirTransitionUnit.class, 0));
+	}
+	private	void			link_ast_field(AstField source) throws Exception {
+		this.new_ast_link(AstCirLinkType.used_expr, this.loc_cir_location(source, CirField.class, 0));
+	}
+	private	void			link_ast_element(AstNode source) throws Exception {
+		if(source instanceof AstInitDeclarator) {
+			this.link_ast_init_declarator((AstInitDeclarator) source);
+		}
+		else if(source instanceof AstName) {
+			this.link_ast_name((AstName) source);
+		}
+		else if(source instanceof AstField) {
+			this.link_ast_field((AstField) source);
+		}
+		else if(source instanceof AstKeyword) {
+			this.link_ast_keyword((AstKeyword) source);
+		}
+		else if(source instanceof AstFunctionDefinition) {
+			this.link_ast_function_definition((AstFunctionDefinition) source);
+		}
+		else if(source instanceof AstTranslationUnit) {
+			this.link_ast_translation_unit((AstTranslationUnit) source);
+		}
+		else {
+			throw new IllegalArgumentException(source.getClass().getSimpleName());
+		}
+	}
 	
 }

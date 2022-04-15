@@ -52,6 +52,7 @@ public class AstCirTree {
 			this.index = new HashMap<AstNode, AstCirNode>();
 			// TODO implement the parsing
 			AstCirTreeParser.parse(this);
+			AstCirTreeParser.link(this);
 		}
 	}
 	public static AstCirTree parse(File cfile, File template_file, ClangStandard standard) throws Exception {

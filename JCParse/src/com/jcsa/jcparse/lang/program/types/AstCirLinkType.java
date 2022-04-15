@@ -7,5 +7,15 @@ package com.jcsa.jcparse.lang.program.types;
  *
  */
 public enum AstCirLinkType {
-
+	
+	used_expr,
+	assg_stmt,
+	ifte_stmt,
+	call_stmt,
+	loct_stmt,
+	skip_stmt,
+	labl_stmt,
+	func_defs,
+	tran_unit,
+	
 }
