@@ -1,6 +1,8 @@
 package com.jcsa.jcparse.lang.program;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
@@ -89,6 +91,7 @@ import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.irlang.unit.CirTransitionUnit;
 import com.jcsa.jcparse.lang.lexical.CConstant;
 import com.jcsa.jcparse.lang.lexical.CKeyword;
+import com.jcsa.jcparse.lang.program.types.AstCirEdgeType;
 import com.jcsa.jcparse.lang.program.types.AstCirLinkType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
@@ -671,6 +674,7 @@ final class AstCirTreeParser {
 			for(AstCirNode tree_node : tree.get_tree_nodes()) {
 				parser.cur_node = tree_node;
 				parser.link_ast(tree_node.get_ast_source());
+				parser.cond_ast(tree_node.get_ast_source());
 			}
 		}
 	}
@@ -1210,5 +1214,131 @@ final class AstCirTreeParser {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());
 		}
 	}
+	
+	/* COND-METHODS */
+	/**
+	 * It builds the dependence relationships between AstCirNode.
+	 * @param source
+	 * @throws Exception
+	 */
+	private	void			cond_ast(AstNode source) throws Exception {
+		if(this.cur_node == null) {
+			throw new IllegalArgumentException("Invalid cur_node: null");
+		}
+		else if(source == null) {
+			throw new IllegalArgumentException("Invalid source: null");
+		}
+		else if(source instanceof AstStatement) {
+			this.cond_ast_statement((AstStatement) source);
+		}
+		/* TODO implement syntax-directed algorithm here */
+		else { /* simply do nothing to unsupported nodes */ }
+	}
+	private	void			cond_ast_statement(AstStatement source) throws Exception {
+		if(source instanceof AstBreakStatement) {
+			this.cond_ast_break_statement((AstBreakStatement) source);
+		}
+		else if(source instanceof AstContinueStatement) {
+			this.cond_ast_continue_statement((AstContinueStatement) source);
+		}
+		else if(source instanceof AstReturnStatement) {
+			this.cond_ast_return_statement((AstReturnStatement) source);
+		}
+		else if(source instanceof AstGotoStatement) {
+			this.cond_ast_goto_statement((AstGotoStatement) source);
+		}
+		else {
+			this.cond_ast_otherwise_statement(source);
+		}
+	}
+	private	void			cond_ast_break_statement(AstBreakStatement source) throws Exception {
+		AstNode parent = source.get_parent();
+		while(parent != null) {
+			if(parent instanceof AstSwitchStatement
+				|| parent instanceof AstForStatement
+				|| parent instanceof AstWhileStatement
+				|| parent instanceof AstDoWhileStatement) {
+				AstCirNode target = this.cur_node.get_tree().get_tree_node(parent);
+				this.cur_node.add_edge(AstCirEdgeType.skip_depend, target);
+				return;
+			}
+			else { parent = parent.get_parent(); }
+		}
+		throw new IllegalArgumentException("No target found");
+	}
+	private	void			cond_ast_continue_statement(AstContinueStatement source) throws Exception {
+		AstNode parent = source.get_parent();
+		while(parent != null) {
+			if(parent instanceof AstForStatement
+				|| parent instanceof AstWhileStatement
+				|| parent instanceof AstDoWhileStatement) {
+				AstCirNode target = this.cur_node.get_tree().get_tree_node(parent);
+				this.cur_node.add_edge(AstCirEdgeType.skip_depend, target); return;
+			}
+			else { parent = parent.get_parent(); }
+		}
+		throw new IllegalArgumentException("No target found");
+	}
+	private	void			cond_ast_return_statement(AstReturnStatement source) throws Exception {
+		AstFunctionDefinition function = source.get_function_of();
+		AstCirNode target = this.cur_node.get_tree().get_tree_node(function);
+		this.cur_node.add_edge(AstCirEdgeType.retr_depend, target);
+	}
+	private	void			cond_ast_goto_statement(AstGotoStatement source) throws Exception {
+		AstFunctionDefinition function = source.get_function_of();
+		Queue<AstNode> queue = new LinkedList<AstNode>();
+		queue.add(function); String name = source.get_label().get_name();
+		while(!queue.isEmpty()) {
+			AstNode parent = queue.poll();
+			if(parent instanceof AstLabeledStatement) {
+				if(((AstLabeledStatement) parent).get_label().get_name().equals(name)) {
+					AstCirNode target = this.cur_node.get_tree().get_tree_node(parent);
+					this.cur_node.add_edge(AstCirEdgeType.skip_depend, target); return;
+				}
+			}
+			for(int k = 0; k < parent.number_of_children(); k++) {
+				queue.add(parent.get_child(k));
+			}
+		}
+	}
+	private	void			cond_ast_otherwise_statement(AstStatement source) throws Exception {
+		AstNode child = source, parent; AstCirNode target;
+		do {
+			parent = child.get_parent();
+			if(parent instanceof AstFunctionDefinition) {
+				target = this.cur_node.get_tree().get_tree_node(parent);
+				target.add_edge(AstCirEdgeType.func_depend, this.cur_node);
+				break;
+			}
+			else if(parent instanceof AstIfStatement) {
+				target = this.cur_node.get_tree().get_tree_node(parent);
+				if(((AstIfStatement) parent).has_else() && ((AstIfStatement) parent).get_false_branch() == child) {
+					target.add_edge(AstCirEdgeType.fals_depend, this.cur_node);
+				}
+				else {
+					target.add_edge(AstCirEdgeType.true_depend, this.cur_node);
+				}
+				break;
+			}
+			else if(parent instanceof AstSwitchStatement) {
+				target = this.cur_node.get_tree().get_tree_node(parent);
+				target.add_edge(AstCirEdgeType.case_depend, this.cur_node);
+				break;
+			}
+			else if(parent instanceof AstWhileStatement || 
+					parent instanceof AstForStatement || 
+					parent instanceof AstDoWhileStatement) {
+				target = this.cur_node.get_tree().get_tree_node(parent);
+				target.add_edge(AstCirEdgeType.true_depend, this.cur_node);
+				break;
+			}
+			else { child = parent; }
+		}
+		while(parent != null);
+	}
+	
+	
+	
+	
 	
 }

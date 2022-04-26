@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.cit2mutant;
+package com.jcsa.jcmutest.mutant.sta2mutant;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -11,13 +11,7 @@ import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
-/**
- * 	It defines the interfaces for generating CIR-mutations and symbolic states
- * 	
- * 	@author yukimula
- *
- */
-public class CirMutations {
+public class StateMutations {
 	
 	/* definitions */
 	/** {true, false} **/
@@ -196,7 +190,5 @@ public class CirMutations {
 			catch(ArithmeticException ex)  	{ return trap_value; }
 		}
 	}
-	
-	
 	
 }

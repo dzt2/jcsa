@@ -8,7 +8,7 @@ import com.jcsa.jcparse.lang.program.AstCirTree;
 public class ASTCodeTest {
 
 	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
-	protected static final String postfx = "/home/dzt2/Development/Data/gfiles/";
+	protected static final String postfx = "results/cfiles/";
 	protected static final File template_file = new File("config/cruntime.txt");
 
 	public static void main(String[] args) throws Exception {
