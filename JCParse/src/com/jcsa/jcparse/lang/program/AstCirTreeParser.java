@@ -3,6 +3,7 @@ package com.jcsa.jcparse.lang.program;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
+import com.jcsa.jcparse.lang.astree.base.AstIdentifier;
 import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
@@ -326,8 +327,14 @@ final class AstCirTreeParser {
 		return this.parse_ast(source.get_expression());
 	}
 	private	AstCirNode	parse_ast_fun_call_expression(AstFunCallExpression source) throws Exception {
-		AstCirNode parent = this.new_tree_node(source, null);
-		parent.add_child(AstCirParChild.callee, this.parse_ast(source.get_function()));
+		AstCirNode function = this.parse_ast(source.get_function());
+		String func_name = null;
+		if(function.get_ast_source() instanceof AstIdentifier) {
+			func_name = function.get_token().toString();
+		}
+		
+		AstCirNode parent = this.new_tree_node(source, func_name);
+		parent.add_child(AstCirParChild.callee, function);
 		if(source.has_argument_list()) {
 			AstArgumentList list = source.get_argument_list();
 			for(int k = 0; k < list.number_of_arguments(); k++) {

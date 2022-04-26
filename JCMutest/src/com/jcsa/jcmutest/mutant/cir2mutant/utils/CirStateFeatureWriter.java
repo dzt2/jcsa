@@ -233,7 +233,7 @@ public class CirStateFeatureWriter {
 			return "s@" + this.normalize_cstring(token.toString());
 		}
 		else if(token instanceof CName) {
-			return "s@" + this.normalize_cstring(((CName) token).get_name());
+			return this.encode_base_token(((CName) token).get_name());
 		}
 		else if(token instanceof CConstant) {
 			return this.encode_base_token(((CConstant) token).get_object());

@@ -8,8 +8,8 @@ package com.jcsa.jcparse.lang.program.types;
  */
 public enum AstCirNodeType {
 	
-	/** translation unit as the root of AST **/		tra_unit,
-	/** function definition **/						func_def,
+	/** translation unit as the root of AST **/		tran_unit,
+	/** function definition **/						funct_def,
 	
 	/** AstIdExpression|AstName|return **/			name_expr,
 	/** AstConstant|AstSizeofExpression **/			cons_expr,

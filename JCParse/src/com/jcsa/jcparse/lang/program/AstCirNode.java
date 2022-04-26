@@ -113,7 +113,7 @@ public class AstCirNode {
 	/**
 	 * @return the list of data-connection from AstNode to CirNode(s) related
 	 */
-	public	Iterable<AstCirLink>	get_links()	{ return this.link_list; }
+	public	Iterable<AstCirLink>	get_links()			{ return this.link_list; }
 	/**
 	 * @return whether this node is a root without any parent
 	 */
@@ -223,8 +223,8 @@ public class AstCirNode {
 		if(source == null) {
 			throw new IllegalArgumentException("Invalid source: null");
 		}
-		else if(source instanceof AstTranslationUnit)		{ return AstCirNodeType.tra_unit; }
-		else if(source instanceof AstFunctionDefinition)	{ return AstCirNodeType.func_def; } 
+		else if(source instanceof AstTranslationUnit)		{ return AstCirNodeType.tran_unit; }
+		else if(source instanceof AstFunctionDefinition)	{ return AstCirNodeType.funct_def; } 
 		else if(source instanceof AstField)					{ return AstCirNodeType.name_expr; }
 		else if(source instanceof AstIdExpression || 
 				source instanceof AstName) 					{ return AstCirNodeType.name_expr; }
