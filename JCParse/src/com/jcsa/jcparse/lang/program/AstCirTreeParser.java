@@ -345,7 +345,7 @@ final class AstCirTreeParser {
 		else {
 			type = source.get_typename().get_type();
 		}
-		int size = this.tree.get_template().sizeof(type);
+		int size = this.tree.get_sizeof_template().sizeof(type);
 		CConstant constant = new CConstant();
 		constant.set_int(size);
 		return this.new_tree_node(source, constant);

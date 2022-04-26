@@ -5,7 +5,6 @@ import java.io.FileWriter;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
@@ -22,6 +21,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.parse.parser2.AstCirLocalizer;
 
@@ -35,15 +35,15 @@ public class AstCirLocalizerTest {
 		int max_length = 96;
 		for(File file : new File(root_path).listFiles()) {
 			System.out.println("Testing on " + file.getName());
-			AstCirFile ast_file = parse(file);
-			SymbolFactory.set_config(ast_file.get_run_template(), true);	// configure
+			AstCirTree ast_file = parse(file);
+			SymbolFactory.set_config(ast_file.get_sizeof_template(), true);	// configure
 			write_ast(ast_file, new File(output_directory + file.getName() + ".ast"), max_length);
 			write_cir(ast_file, new File(output_directory + file.getName() + ".cir"), max_length);
 		}
 	}
 	
-	private static AstCirFile parse(File cfile) throws Exception { 
-		return AstCirFile.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
+	private static AstCirTree parse(File cfile) throws Exception { 
+		return AstCirTree.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
 	}
 	
 	private static String strip_code(String code, int max_length) {
@@ -109,7 +109,7 @@ public class AstCirLocalizerTest {
 		}
 	}
 	
-	private static void write_ast(AstCirFile ast_file, File output_file, int max_length) throws Exception {
+	private static void write_ast(AstCirTree ast_file, File output_file, int max_length) throws Exception {
 		FileWriter writer = new FileWriter(output_file);
 		AstTree tree = ast_file.get_ast_tree();
 		AstCirLocalizer localizer = new AstCirLocalizer(ast_file.get_cir_tree());
@@ -168,7 +168,7 @@ public class AstCirLocalizerTest {
 		}
 	}
 	
-	private static void write_cir(AstCirFile ast_file, File output_file, int max_length) throws Exception {
+	private static void write_cir(AstCirTree ast_file, File output_file, int max_length) throws Exception {
 		FileWriter writer = new FileWriter(output_file);
 		
 		CirTree cir_tree = ast_file.get_cir_tree();

@@ -10,12 +10,12 @@ import com.jcsa.jcparse.flwa.depend.CDependEdge;
 import com.jcsa.jcparse.flwa.depend.CDependGraph;
 import com.jcsa.jcparse.flwa.depend.CDependNode;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 
 public class CDependenceTest {
 
@@ -32,15 +32,15 @@ public class CDependenceTest {
 		}
 	}
 	protected static void testing(File file) throws Exception {
-		AstCirFile ast_file = parse(file);
+		AstCirTree ast_file = parse(file);
 		CirCallContextInstanceGraph program_graph = translate(ast_file.get_cir_tree());
 		CDependGraph depend_graph = CDependGraph.graph(program_graph);
 		output(depend_graph, new File(postfx + file.getName() + ".txt"));
 	}
 
 	/* basic methods */
-	private static AstCirFile parse(File file) throws Exception {
-		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
+	private static AstCirTree parse(File file) throws Exception {
+		return AstCirTree.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");

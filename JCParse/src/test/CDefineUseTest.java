@@ -13,17 +13,17 @@ import com.jcsa.jcparse.flwa.defuse.CDefineUseGraph;
 import com.jcsa.jcparse.flwa.defuse.CDefineUseNode;
 import com.jcsa.jcparse.flwa.graph.CirInstanceGraph;
 import com.jcsa.jcparse.flwa.graph.CirInstanceNode;
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.CirTree;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 
 public class CDefineUseTest {
 
-	protected static final String prefix = "/home/dzt2/Development/DataSet/Code/ifiles/";
-	protected static final String postfx = "result/";
+	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
+	protected static final String postfx = "results/defuse/";
 	protected static final File template_file = new File("config/cruntime.txt");
 
 	public static void main(String[] args) {
@@ -38,8 +38,8 @@ public class CDefineUseTest {
 	}
 
 	/* basic methods */
-	private static AstCirFile parse(File file) throws Exception {
-		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
+	private static AstCirTree parse(File file) throws Exception {
+		return AstCirTree.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static CirCallContextInstanceGraph translate(CirTree cir_tree) throws Exception {
 		CirFunction root_function = cir_tree.get_function_call_graph().get_function("main");
@@ -117,7 +117,7 @@ public class CDefineUseTest {
 	}
 	private static void testing(File file) throws Exception {
 		System.out.println("Testing " + file.getName());
-		AstCirFile ast_file = parse(file);
+		AstCirTree ast_file = parse(file);
 
 		ast_file.get_ast_tree();
 		System.out.println("\t(1) parsing to AST tree");
@@ -131,7 +131,7 @@ public class CDefineUseTest {
 		CDefineUseGraph define_use_graph = define_use_graph(program_graph);
 		System.out.println("\t(4) generate def-use graph (" + define_use_graph.size() + ")");
 
-		output(program_graph, define_use_graph, new File(postfx + "use/" + file.getName() + ".txt"));
+		output(program_graph, define_use_graph, new File(postfx + file.getName() + ".txt"));
 		System.out.println("\t(5) output the def-use graph to the output file");
 
 		System.out.println();

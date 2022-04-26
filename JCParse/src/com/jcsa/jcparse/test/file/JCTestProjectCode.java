@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
@@ -32,7 +32,7 @@ public class JCTestProjectCode {
 	/** the test project that performs on the code **/
 	private JCTestProject project;
 	/** the buffer to preserve the parsed data for c source code **/
-	private Map<String, AstCirFile> program_buff;
+	private Map<String, AstCirTree> program_buff;
 	/**
 	 * create the code space in the test project.
 	 * @param project
@@ -141,7 +141,7 @@ public class JCTestProjectCode {
 	 * @return the program being parsed for the kth source file in ifiles/
 	 * @throws Exception
 	 */
-	public AstCirFile get_program(int k) throws Exception {
+	public AstCirTree get_program(int k) throws Exception {
 		File[] cfiles = this.project.get_project_files().get_i_file_directory().listFiles();
 		if(cfiles == null) {
 			throw new IllegalArgumentException("No .c file is generated in ifiles/");
@@ -149,7 +149,7 @@ public class JCTestProjectCode {
 		else {
 			File cfile = cfiles[k];
 			if(!this.program_buff.containsKey(cfile.getName())) {
-				AstCirFile program = AstCirFile.parse(cfile,
+				AstCirTree program = AstCirTree.parse(cfile,
 						this.project.get_config().get_c_template_file(),
 						this.project.get_config().get_lang_standard());
 				this.program_buff.put(cfile.getName(), program);

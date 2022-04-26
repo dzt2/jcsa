@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 
@@ -66,7 +66,7 @@ public class CompilationTest {
 
 	protected static void testing_parsing(File tfile) throws Exception {
 		try {
-			AstCirFile.parse(tfile, new File("config/cruntime.txt"), ClangStandard.gnu_c89);
+			AstCirTree.parse(tfile, new File("config/cruntime.txt"), ClangStandard.gnu_c89);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

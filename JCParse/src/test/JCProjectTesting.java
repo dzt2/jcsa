@@ -5,8 +5,8 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.JCTestProject;
@@ -76,7 +76,7 @@ public class JCProjectTesting {
 	}
 
 	protected static void output_cir_code(JCTestProject project, File output) throws Exception {
-		AstCirFile program = project.get_code_part().get_program(0);
+		AstCirTree program = project.get_code_part().get_program(0);
 		FileWriter writer = new FileWriter(output);
 		writer.write(program.get_cir_tree().get_root().generate_code(true));
 		writer.close();

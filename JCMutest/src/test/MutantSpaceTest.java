@@ -13,8 +13,8 @@ import com.jcsa.jcmutest.mutant.MutantSpace;
 import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.txt2mutant.MutaCodeGeneration;
 import com.jcsa.jcmutest.mutant.txt2mutant.MutationTestType;
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 
 public class MutantSpaceTest {
 
@@ -33,7 +33,7 @@ public class MutantSpaceTest {
 
 	protected static void testing(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
-		AstCirFile program = parse(cfile);
+		AstCirTree program = parse(cfile);
 		MutantSpace space = new_space(program);
 		save_space(space, cfile);
 		load_space(space, cfile);
@@ -43,9 +43,9 @@ public class MutantSpaceTest {
 		generate_mfiles(space, new File(postfix + name));
 		System.out.println();
 	}
-	private static AstCirFile parse(File cfile) throws Exception {
+	private static AstCirTree parse(File cfile) throws Exception {
 		System.out.println("\t1. Parse program from " + cfile.getName());
-		return AstCirFile.parse(cfile, template_file, ClangStandard.gnu_c89);
+		return AstCirTree.parse(cfile, template_file, ClangStandard.gnu_c89);
 	}
 	private static Iterable<MutaClass> get_classes() {
 		Set<MutaClass> classes = new HashSet<>();
@@ -57,7 +57,7 @@ public class MutantSpaceTest {
 		classes.addAll(MutationGenerators.reference_classes());
 		return classes;
 	}
-	private static MutantSpace new_space(AstCirFile program) throws Exception {
+	private static MutantSpace new_space(AstCirTree program) throws Exception {
 		MutantSpace space = new MutantSpace(program.get_ast_tree(), program.get_cir_tree());
 		space.update(get_classes());
 		System.out.println("\t2. Generate " + space.size() + " mutants.");

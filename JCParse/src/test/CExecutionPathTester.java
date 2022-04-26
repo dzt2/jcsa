@@ -3,10 +3,10 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.test.state.CStateNode;
 import com.jcsa.jcparse.test.state.CStatePath;
 
@@ -40,9 +40,9 @@ public class CExecutionPathTester {
 	 * @return
 	 * @throws Exception
 	 */
-	private static AstCirFile derive_ast_cir(String name) throws Exception {
+	private static AstCirTree derive_ast_cir(String name) throws Exception {
 		String path = projects_directory + name + "/code/ifiles/" + name + ".c";
-		return AstCirFile.parse(new File(path), sizeof_template_file, ClangStandard.gnu_c89);
+		return AstCirTree.parse(new File(path), sizeof_template_file, ClangStandard.gnu_c89);
 	}
 	/**
 	 * It loads the coverage path from projects/name/test/s_output/tid.ins
@@ -51,9 +51,9 @@ public class CExecutionPathTester {
 	 * @return
 	 * @throws Exception
 	 */
-	private static CStatePath load_state_path(String name, AstCirFile ast_file, int tid) throws Exception {
+	private static CStatePath load_state_path(String name, AstCirTree ast_file, int tid) throws Exception {
 		String path = projects_directory + name + "/test/s_output/" + tid + ".ins";
-		return CStatePath.read_path(ast_file.get_run_template(), ast_file.get_ast_tree(), ast_file.get_cir_tree(), new File(path));
+		return CStatePath.read_path(ast_file.get_sizeof_template(), ast_file.get_ast_tree(), ast_file.get_cir_tree(), new File(path));
 	}
 	/**
 	 * @param name
@@ -61,7 +61,7 @@ public class CExecutionPathTester {
 	 * @param tid
 	 * @throws Exception
 	 */
-	private static boolean write_state_path(String name, AstCirFile ast_file, int tid) throws Exception {
+	private static boolean write_state_path(String name, AstCirTree ast_file, int tid) throws Exception {
 		CStatePath path;
 		try {
 			path = load_state_path(name, ast_file, tid);
@@ -127,7 +127,7 @@ public class CExecutionPathTester {
 	 * @throws Exception
 	 */
 	protected static void testing(String name, int beg_tid, int end_tid) throws Exception {
-		AstCirFile ast_file = derive_ast_cir(name);
+		AstCirTree ast_file = derive_ast_cir(name);
 		System.out.println("Testing on " + ast_file.get_source_file().getName());
 		int total = 0, succeeds = 0;
 		for(int tid = beg_tid; tid < end_tid; tid++) {

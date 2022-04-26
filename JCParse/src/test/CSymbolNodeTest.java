@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstTree;
@@ -23,6 +22,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.lang.symbol.SymbolAbstraction;
 import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -38,15 +38,15 @@ public class CSymbolNodeTest {
 	public static void main(String[] args) throws Exception {
 		for(File file : new File(root_path).listFiles()) {
 			System.out.println("Testing on " + file.getName());
-			AstCirFile cfile = parse(file);
-			SymbolFactory.set_config(cfile.get_run_template(), true);	// configure
+			AstCirTree cfile = parse(file);
+			SymbolFactory.set_config(cfile.get_sizeof_template(), true);	// configure
 			write(cfile.get_ast_tree(), new File(output_directory + file.getName() + ".ast"));
 			write(cfile.get_cir_tree(), new File(output_directory + file.getName() + ".cir"));
 		}
 	}
 	
-	private static AstCirFile parse(File cfile) throws Exception { 
-		return AstCirFile.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
+	private static AstCirTree parse(File cfile) throws Exception { 
+		return AstCirTree.parse(cfile, sizeof_template_file, ClangStandard.gnu_c89);
 	}
 	
 	private static String strip_code(String code, int max_length) {

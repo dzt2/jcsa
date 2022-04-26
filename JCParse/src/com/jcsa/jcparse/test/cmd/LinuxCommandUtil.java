@@ -3,9 +3,9 @@ package com.jcsa.jcparse.test.cmd;
 import java.io.File;
 import java.io.FileWriter;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.astree.AstTree;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.parse.code.CodeGeneration;
 import com.jcsa.jcparse.test.CommandUtil;
 import com.jcsa.jcparse.test.file.TestInput;
@@ -96,7 +96,7 @@ public class LinuxCommandUtil implements CommandUtil {
 	public boolean do_instrument(File ifile, File sfile, File
 			rfile, File c_template_file, ClangStandard standard) throws Exception {
 		/* 1. parse the intermediate code file (after pre-processing) */
-		AstCirFile ast_file = AstCirFile.parse(ifile, c_template_file, standard);
+		AstCirTree ast_file = AstCirTree.parse(ifile, c_template_file, standard);
 		AstTree ast_tree = ast_file.get_ast_tree();
 
 		/* 2. generate the code with instrumental methods being seeded */

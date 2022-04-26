@@ -3,13 +3,13 @@ package test;
 import java.io.File;
 import java.io.FileWriter;
 
-import com.jcsa.jcparse.lang.AstCirFile;
 import com.jcsa.jcparse.lang.ClangStandard;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecution;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionEdge;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPath;
 import com.jcsa.jcparse.lang.irlang.graph.CirExecutionPathFinder;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 
 public class CirExecutionPathTest {
 
@@ -29,8 +29,8 @@ public class CirExecutionPathTest {
 		}
 	}
 
-	private static AstCirFile parse(File file) throws Exception {
-		return AstCirFile.parse(file, template_file, ClangStandard.gnu_c89);
+	private static AstCirTree parse(File file) throws Exception {
+		return AstCirTree.parse(file, template_file, ClangStandard.gnu_c89);
 	}
 	private static String strip_code(String code) {
 		StringBuilder buffer = new StringBuilder();
@@ -76,7 +76,7 @@ public class CirExecutionPathTest {
 	}
 	protected static void test_df_paths(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
-		AstCirFile ast_file = parse(cfile);
+		AstCirTree ast_file = parse(cfile);
 		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
 		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			output_df_paths(writer, function);
@@ -103,7 +103,7 @@ public class CirExecutionPathTest {
 	}
 	protected static void test_db_paths(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
-		AstCirFile ast_file = parse(cfile);
+		AstCirTree ast_file = parse(cfile);
 		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
 		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			output_db_paths(writer, function);
@@ -131,7 +131,7 @@ public class CirExecutionPathTest {
 	}
 	protected static void test_vf_paths(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
-		AstCirFile ast_file = parse(cfile);
+		AstCirTree ast_file = parse(cfile);
 		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
 		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			output_vf_paths(writer, function);
@@ -159,7 +159,7 @@ public class CirExecutionPathTest {
 	}
 	protected static void test_vb_paths(File cfile) throws Exception {
 		System.out.println("Testing on " + cfile.getName());
-		AstCirFile ast_file = parse(cfile);
+		AstCirTree ast_file = parse(cfile);
 		FileWriter writer = new FileWriter(new File(postfx + ast_file.get_source_file().getName() + ".txt"));
 		for(CirFunction function : ast_file.get_cir_tree().get_function_call_graph().get_functions()) {
 			output_vb_paths(writer, function);

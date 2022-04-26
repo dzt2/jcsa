@@ -11,6 +11,7 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 import com.jcsa.jcparse.lang.CRunTemplate;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.parse.CTranslate;
 import com.jcsa.jcparse.parse.code.CodeGeneration;
 
@@ -42,6 +43,8 @@ public class MuTestProjectCodeFile {
 	private AstTree ast_tree;
 	/** the c-intermediate representation from ast **/
 	private CirTree cir_tree;
+	/** the combination tree at abstraction level-2 **/
+	private	AstCirTree ast_cir_tree;
 	/** the space of mutants seeded in specified AST **/
 	private MutantSpace mutant_space;
 	/**
@@ -121,6 +124,10 @@ public class MuTestProjectCodeFile {
 	 */
 	public CirTree get_cir_tree() { return this.cir_tree; }
 	/**
+	 * @return the combination at abstraction level-II
+	 */
+	public AstCirTree get_ast_file() { return this.ast_cir_tree; }
+	/**
 	 * @return the space of mutants seeded in specified AST
 	 */
 	public MutantSpace get_mutant_space() { return this.mutant_space; }
@@ -139,6 +146,7 @@ public class MuTestProjectCodeFile {
 		this.sizeof_template = null;
 		this.ast_tree = null;
 		this.cir_tree = null;
+		this.ast_cir_tree = null;
 		this.mutant_space.clear();
 		this.mutant_space = null;
 	}
@@ -152,6 +160,7 @@ public class MuTestProjectCodeFile {
 				this.code_space.get_project().get_config().get_lang_standard(),
 				this.sizeof_template);
 		this.cir_tree = CTranslate.parse(this.ast_tree, this.sizeof_template);
+		this.ast_cir_tree = AstCirTree.load(ast_tree, cir_tree, sizeof_template);
 		this.mutant_space = new MutantSpace(this.ast_tree, this.cir_tree);
 
 		/* 2. update the instrumental code file */
