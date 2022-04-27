@@ -1,9 +1,8 @@
-package com.jcsa.jcmutest.mutant.sta2mutant;
+package com.jcsa.jcmutest.mutant.ctx2mutant;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -11,7 +10,14 @@ import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
 import com.jcsa.jcparse.lang.symbol.SymbolNode;
 import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
-public class StateMutations {
+/**
+ * 	It implements the interfaces for supporting the utility methods of Context
+ * 	based mutation analysis.
+ * 	
+ * 	@author yukimula
+ *
+ */
+public class ContextMutations {
 	
 	/* definitions */
 	/** {true, false} **/
@@ -43,77 +49,44 @@ public class StateMutations {
 	/** abstract value of the exception **/
 	public static final SymbolExpression trap_value = SymbolFactory.variable(CBasicTypeImpl.bool_type, "@Exception");	
 	
-	/* type classifier */
+	/* symbolic interfaces */
 	/**
-	 * @param type
-	 * @return void
+	 * @param node
+	 * @return whether the node is a trap_value
 	 */
-	public 	static	boolean	is_void(CType type) { return SymbolFactory.is_void(type); }
-	/**
-	 * @param type
-	 * @return boolean
-	 */
-	public 	static 	boolean	is_bool(CType type) { return SymbolFactory.is_bool(type); }
-	/**
-	 * @param type
-	 * @return {char | uchar}
-	 */
-	public	static	boolean	is_char(CType type)	{ return SymbolFactory.is_char(type); }
-	/**
-	 * @param type
-	 * @return {uchar | ushort | uint | ulong | ullong}
-	 */
-	public	static	boolean	is_usig(CType type)	{ return SymbolFactory.is_usig(type); }
-	/**
-	 * @param type
-	 * @return {char | short | int | long | llong | enum}
-	 */
-	public	static	boolean	is_sign(CType type)	{ return SymbolFactory.is_sign(type); }
-	/**
-	 * @param type
-	 * @return {char|uchar|short|ushort|int|uint|long|ulong|llong|ullong|enum}
-	 */
-	public	static	boolean	is_numb(CType type)	{ return SymbolFactory.is_numb(type); }
-	/**
-	 * @param type
-	 * @return {float|double|ldouble}
-	 */
-	public	static	boolean	is_real(CType type)	{ return SymbolFactory.is_real(type); }
-	/**
-	 * @param type
-	 * @return {array|point}
-	 */
-	public	static	boolean	is_addr(CType type)	{ return SymbolFactory.is_addr(type); }
-	/**
-	 * @param type
-	 * @return {struct|union|function}
-	 */
-	public	static	boolean	is_auto(CType type)	{ return SymbolFactory.is_auto(type); }
-	
-	/* symbolic computation */
-	/**
-	 * @param expression
-	 * @return whether the expression is trapping
-	 */
-	private static 	boolean	is_trap_value(SymbolNode expression) {
-		if(expression instanceof SymbolIdentifier) {
-			return expression.equals(trap_value);
+	private	static	boolean is_trap_value(SymbolNode node) {
+		if(node == null) { return false; }
+		else if(node instanceof SymbolIdentifier) {
+			return node.equals(trap_value);
 		}
-		else {
-			return false;
-		}
+		else { return false; }
 	}
 	/**
-	 * @param expression
-	 * @return whether the expression contains trap
+	 * @param node
+	 * @return whether the node is abstract domain expression
 	 */
-	public 	static 	boolean	has_trap_value(SymbolExpression expression) {
-		if(expression == null) {
+	private static	boolean	is_abst_value(SymbolNode node) {
+		if(node == null) { return false; }
+		else if(node instanceof SymbolIdentifier) {
+			return 	node.equals(bool_value) || node.equals(true_value) || node.equals(fals_value) ||
+					node.equals(numb_value) || node.equals(post_value) || node.equals(negt_value) ||
+					node.equals(npos_value) || node.equals(nneg_value) || node.equals(zero_value) ||
+					node.equals(nzro_value) || node.equals(addr_value) || node.equals(null_value) ||
+					node.equals(nnul_value);
+		}
+		else { return false; }
+	}
+	/**
+	 * @param source
+	 * @return whether the source contains trap_value expression
+	 */
+	public	static	boolean	has_trap_value(SymbolExpression source) {
+		if(source == null) {
 			return false;
 		}
 		else {
 			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(expression);
+			queue.add(source);
 			while(!queue.isEmpty()) {
 				SymbolNode parent = queue.poll();
 				if(is_trap_value(parent)) {
@@ -129,32 +102,16 @@ public class StateMutations {
 		}
 	}
 	/**
-	 * @param expression
-	 * @return whether the expression is abstract domain
+	 * @param source
+	 * @return whether the source contains trap_value expression
 	 */
-	private	static	boolean	is_abst_value(SymbolNode expression) {
-		if(expression instanceof SymbolIdentifier) {
-			return 	expression.equals(bool_value) || expression.equals(true_value) || expression.equals(fals_value) ||
-					expression.equals(numb_value) || expression.equals(post_value) || expression.equals(negt_value) ||
-					expression.equals(zero_value) || expression.equals(npos_value) || expression.equals(nneg_value) ||
-					expression.equals(nzro_value) || expression.equals(addr_value) || expression.equals(null_value) ||
-					expression.equals(nnul_value);
-		}
-		else {
-			return false;
-		}
-	}
-	/**
-	 * @param expression
-	 * @return whether the expression contains abstract domain
-	 */
-	public 	static	boolean	has_abst_value(SymbolExpression expression) {
-		if(expression == null) {
+	public	static	boolean	has_abst_value(SymbolExpression source) {
+		if(source == null) {
 			return false;
 		}
 		else {
 			Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-			queue.add(expression);
+			queue.add(source);
 			while(!queue.isEmpty()) {
 				SymbolNode parent = queue.poll();
 				if(is_abst_value(parent)) {
@@ -170,25 +127,26 @@ public class StateMutations {
 		}
 	}
 	/**
-	 * @param expression
-	 * @param in_context
-	 * @param ou_context
-	 * @return the expression being evaluated from input and output state
+	 * @param expression	the symbolic expression to be evaluated based on state
+	 * @param in_context	the input state from which the evaluation starts
+	 * @param ou_context	the output state to preserve the result of evaluations
+	 * @return				the expression evaluated from the state in arithmetic-safe way
 	 * @throws Exception
 	 */
-	public	static	SymbolExpression	evaluate(SymbolExpression expression, 
+	public	static	SymbolExpression evaluate(SymbolExpression expression, 
 			SymbolContext in_context, SymbolContext ou_context) throws Exception {
 		if(expression == null) {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
-		else if(has_trap_value(expression)) { return trap_value; }
-		else if(has_abst_value(expression)) { return expression; }
 		else {
 			try {
 				return expression.evaluate(in_context, ou_context);
 			}
-			catch(ArithmeticException ex)  	{ return trap_value; }
+			catch(ArithmeticException ex) { return trap_value; }
 		}
 	}
+	
+	
+	
 	
 }
