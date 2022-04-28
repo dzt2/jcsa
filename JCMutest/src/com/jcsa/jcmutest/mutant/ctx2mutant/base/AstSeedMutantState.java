@@ -6,11 +6,11 @@ import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
 
-public class SedMutaMutation extends ContextMutation {
+public class AstSeedMutantState extends AstConditionState {
 
-	protected SedMutaMutation(AstCirNode location, Mutant mutant) throws Exception {
-		super(ContextMutaClass.sed_muta, location, 
-				SymbolFactory.sym_constant(mutant.get_id()), 
+	protected AstSeedMutantState(AstCirNode location, Mutant mutant) throws Exception {
+		super(AstContextClass.sed_muta, location, 
+				SymbolFactory.sym_constant(mutant.get_id()),
 				SymbolFactory.literal(mutant.get_mutation().get_operator().toString()));
 	}
 	

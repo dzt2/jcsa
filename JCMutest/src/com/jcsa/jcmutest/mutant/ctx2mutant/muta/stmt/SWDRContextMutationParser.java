@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.muta.stmt;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.muta.ContextMutationParser;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstStatement;
@@ -29,7 +29,7 @@ public class SWDRContextMutationParser extends ContextMutationParser {
 			condition = SymbolFactory.sym_condition(((AstWhileStatement) loop_statement).get_condition(), false);
 			loop_body = this.get_location(((AstWhileStatement) loop_statement).get_body()); muta_exec = true;
 		}
-		this.put_infection(this.eva_cond(condition, true), ContextMutation.set_stmt(loop_body, !muta_exec, muta_exec));
+		this.put_infection(this.eva_cond(condition, true), AstContextState.mut_stmt(loop_body, muta_exec));
 	}
 
 }

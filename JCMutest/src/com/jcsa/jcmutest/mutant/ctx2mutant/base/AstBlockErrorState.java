@@ -4,15 +4,15 @@ import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-public class SetStmtMutation extends ContextMutation {
-
-	protected SetStmtMutation(AstCirNode location, 
-			boolean orig_exec, boolean muta_exec) throws Exception {
-		super(ContextMutaClass.set_stmt, location, 
-				SymbolFactory.sym_constant(orig_exec), 
-				SymbolFactory.sym_constant(muta_exec));
-	}
+public class AstBlockErrorState extends AstPathErrorState {
 	
+	protected AstBlockErrorState(AstCirNode location, 
+			boolean orig_exec, boolean muta_exec) throws Exception {
+		super(AstContextClass.mut_stmt, location, 
+				SymbolFactory.sym_constant(Boolean.valueOf(orig_exec)), 
+				SymbolFactory.sym_constant(Boolean.valueOf(muta_exec)));
+	}
+
 	/**
 	 * @return whether the statement is executed in original program
 	 */

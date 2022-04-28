@@ -4,10 +4,12 @@ import java.util.Collection;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.MutaOperator;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.EvaCondMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.TrpStmtMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConstraintState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstTrapsErrorState;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -20,7 +22,7 @@ public abstract class CirOperatorMutationParser {
 	
 	/* attributes */
 	private	AstMutation			mutation;
-	private	AstContextMutation	outputs;
+	private	ContextMutation		outputs;
 	private	AstBinaryExpression	expression;
 	private	boolean				weak_strong;
 	public CirOperatorMutationParser() { }
@@ -129,7 +131,7 @@ public abstract class CirOperatorMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean parse(AstMutation mutation, AstContextMutation outputs) throws Exception {
+	public boolean parse(AstMutation mutation, ContextMutation outputs) throws Exception {
 		if(mutation == null) {
 			throw new IllegalArgumentException("Invalid mutation: null");
 		}
@@ -185,7 +187,7 @@ public abstract class CirOperatorMutationParser {
 	}
 	
 	/* mutation-getters */
-	private	EvaCondMutation	get_constraint(Object condition) throws Exception {
+	private	AstConstraintState	get_constraint(Object condition) throws Exception {
 		if(condition == null) {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
@@ -193,11 +195,11 @@ public abstract class CirOperatorMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			AstCirNode statement = this.outputs.get_ast_location().statement_of();
-			return ContextMutation.eva_cond(statement, condition, false);
+			AstCirNode statement = this.outputs.get_location().statement_of();
+			return AstContextState.eva_cond(statement, condition, false);
 		}
 	}
-	private	ContextMutation mut_expression(Object orig_value, Object muta_value) throws Exception {
+	private	AstAbstErrorState mut_expression(Object orig_value, Object muta_value) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
@@ -206,17 +208,17 @@ public abstract class CirOperatorMutationParser {
 		}
 		else if(this.weak_strong) { return this.trap_statement(); }
 		else {
-			return ContextMutation.set_expr(this.outputs.get_ast_location(), 
+			return AstContextState.set_expr(this.outputs.get_location(), 
 					SymbolFactory.sym_expression(orig_value), 
 					SymbolFactory.sym_expression(muta_value));
 		}
 	}
-	private	TrpStmtMutation	trap_statement() throws Exception {
+	private	AstTrapsErrorState	trap_statement() throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("Invalid outputs: null");
 		}
 		else {
-			return ContextMutation.trp_stmt(this.outputs.get_ast_location().statement_of());
+			return AstContextState.mut_trap(this.outputs.get_location().statement_of());
 		}
 	}
 	/**
@@ -225,17 +227,17 @@ public abstract class CirOperatorMutationParser {
 	 * @param init_error
 	 * @throws Exception
 	 */
-	protected boolean put_infection(ContextMutation constraint, ContextMutation init_error) throws Exception {
-		if(constraint == null || !constraint.is_conditional()) {
+	protected boolean put_infection(AstConditionState constraint, AstAbstErrorState init_error) throws Exception {
+		if(constraint == null) {
 			throw new IllegalArgumentException("Invalid: " + constraint);
 		}
-		else if(init_error == null || !init_error.is_abst_error()) {
+		else if(init_error == null) {
 			throw new IllegalArgumentException("Invalid: " + init_error);
 		}
 		else if(this.outputs == null) {
 			throw new IllegalArgumentException("Invalid: " + outputs);
 		}
-		else { this.outputs.put_infection(constraint, init_error); return true; }
+		else { this.outputs.put_infection_error(constraint, init_error); return true; }
 	}
 	/**
 	 * @return report that the mutation operator is not supported in current location
@@ -329,6 +331,8 @@ public abstract class CirOperatorMutationParser {
 		case smaller_eq:	return SymbolFactory.smaller_eq(loperand, roperand);
 		case equal_with:	return SymbolFactory.equal_with(loperand, roperand);
 		case not_equals:	return SymbolFactory.not_equals(loperand, roperand);
+		case assign:		return SymbolFactory.exp_assign(loperand, roperand);
+		case increment:		return SymbolFactory.imp_assign(loperand, roperand);
 		default: 			throw new IllegalArgumentException("Invalid: " + operator);
 		}
 	}
@@ -455,8 +459,8 @@ public abstract class CirOperatorMutationParser {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
 		else {
-			EvaCondMutation constraint = this.get_constraint(condition);
-			ContextMutation init_error = this.mut_expression(this.expression, muta_value);
+			AstConstraintState constraint = this.get_constraint(condition);
+			AstAbstErrorState init_error = this.mut_expression(this.expression, muta_value);
 			return this.put_infection(constraint, init_error);
 		}
 	}

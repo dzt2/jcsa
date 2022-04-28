@@ -1,7 +1,7 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.muta.trap;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.muta.ContextMutationParser;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -23,10 +23,10 @@ public class BTRPContextMutationParser extends ContextMutationParser {
 		case trap_on_false:	condition = SymbolFactory.sym_condition(mutation.get_location(), false); break; 
 		default:			throw new IllegalArgumentException("Unsupported: " + mutation.get_operator());
 		}
-		ContextMutation constraint = this.eva_cond(condition, false);
+		AstConditionState constraint = this.eva_cond(condition, false);
 		
 		/* 2. generate init_error and combines */
-		this.put_infection(constraint, this.trp_stmt()); 
+		this.put_infection(constraint, this.trp_stmt());
 	}
 
 }

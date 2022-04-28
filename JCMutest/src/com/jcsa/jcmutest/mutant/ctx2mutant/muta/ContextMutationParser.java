@@ -2,14 +2,16 @@ package com.jcsa.jcmutest.mutant.ctx2mutant.muta;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.CovTimeMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.EvaCondMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetExprMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetFlowMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetStmtMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.TrpStmtMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConstraintState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstCoverTimesState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstFlowsErrorState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstTrapsErrorState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstValueErrorState;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.program.AstCirTree;
@@ -25,7 +27,7 @@ public abstract class ContextMutationParser {
 	
 	/* constructor */
 	private	AstCirTree			program;
-	private	AstContextMutation 	outputs;
+	private	ContextMutation 	outputs;
 	public ContextMutationParser() { }
 	
 	/* getters */
@@ -39,11 +41,11 @@ public abstract class ContextMutationParser {
 	 * @param init_error
 	 * @throws Exception
 	 */
-	protected	void		put_infection(ContextMutation condition, ContextMutation init_error) throws Exception {
+	protected	void		put_infection(AstConditionState constraint, AstAbstErrorState init_error) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("Undefined outputs: null");
 		}
-		else { this.outputs.put_infection(condition, init_error); }
+		else { this.outputs.put_infection_error(constraint, init_error); }
 	}
 	/**
 	 * @param source
@@ -81,7 +83,7 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	public	AstContextMutation	parse(AstCirTree program, Mutant mutant) throws Exception {
+	public	ContextMutation			parse(AstCirTree program, Mutant mutant) throws Exception {
 		if(program == null) {
 			throw new IllegalArgumentException("Invalid program: null");
 		}
@@ -92,7 +94,7 @@ public abstract class ContextMutationParser {
 			this.program = program;
 			AstCirNode location = this.find_reach_location(mutant.get_mutation());
 			if(location != null) {
-				this.outputs = ContextMutation.ast_mutation(mutant, location);
+				this.outputs = new ContextMutation(mutant, location);
 				this.parse_infection_set(location, mutant.get_mutation());
 			}
 			else {
@@ -109,17 +111,17 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected	CovTimeMutation	cov_time(int min_times, int max_times) throws Exception {
+	protected	AstCoverTimesState	cov_time(int min_times, int max_times) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			AstCirNode statement = this.outputs.get_location().statement_of();
 			if(statement == null) {
 				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
 			}
 			else {
-				return ContextMutation.cov_time(statement, min_times, max_times);
+				return AstContextState.cov_time(statement, min_times, max_times);
 			}
 		}
 	}
@@ -129,17 +131,17 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected 	EvaCondMutation	eva_cond(Object condition, boolean must_need) throws Exception {
+	protected 	AstConstraintState	eva_cond(Object condition, boolean must_need) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			AstCirNode statement = this.outputs.get_location().statement_of();
 			if(statement == null) {
 				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
 			}
 			else {
-				return ContextMutation.eva_cond(statement, condition, must_need);
+				return AstContextState.eva_cond(statement, condition, must_need);
 			}
 		}
 	}
@@ -148,17 +150,17 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected	TrpStmtMutation	trp_stmt() throws Exception {
+	protected	AstTrapsErrorState	trp_stmt() throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode module = this.outputs.get_ast_location().module_of();
+			AstCirNode module = this.outputs.get_location().module_of();
 			if(module == null) {
 				throw new IllegalArgumentException("Unable to locate: " + this.outputs);
 			}
 			else {
-				return ContextMutation.trp_stmt(module);
+				return AstContextState.mut_trap(module);
 			}
 		}
 	}
@@ -168,17 +170,17 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected	SetFlowMutation set_flow(AstCirNode orig_next, AstCirNode muta_next) throws Exception {
+	protected	AstFlowsErrorState 	set_flow(AstCirNode orig_next, AstCirNode muta_next) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			AstCirNode statement = this.outputs.get_location().statement_of();
 			if(statement == null) {
 				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
 			}
 			else {
-				return ContextMutation.set_flow(statement, orig_next, muta_next);
+				return AstContextState.mut_flow(statement, orig_next, muta_next);
 			}
 		}
 	}
@@ -187,17 +189,17 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected	SetStmtMutation	set_stmt(boolean muta_exec) throws Exception {
+	protected	AstBlockErrorState	mut_stmt(boolean muta_exec) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			AstCirNode statement = this.outputs.get_location().statement_of();
 			if(statement == null) {
 				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
 			}
 			else {
-				return ContextMutation.set_stmt(statement, !muta_exec, muta_exec);
+				return AstContextState.mut_stmt(statement, muta_exec);
 			}
 		}
 	}
@@ -207,20 +209,19 @@ public abstract class ContextMutationParser {
 	 * @return
 	 * @throws Exception
 	 */
-	protected	SetExprMutation	set_expr(SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
+	protected	AstValueErrorState	set_expr(SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
 		if(this.outputs == null) {
 			throw new IllegalArgumentException("No output specified");
 		}
 		else {
-			AstCirNode expression = this.outputs.get_ast_location();
+			AstCirNode expression = this.outputs.get_location();
 			if(expression.is_expression_node()) {
-				return ContextMutation.set_expr(expression, orig_value, muta_value);
+				return AstContextState.set_expr(expression, orig_value, muta_value);
 			}
 			else {
 				throw new IllegalArgumentException("Not-expression: " + expression);
 			}
 		}
 	}
-	
 	
 }
