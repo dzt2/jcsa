@@ -6,6 +6,8 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.CovTimeMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.EvaCondMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetFlowMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetStmtMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.TrpStmtMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.program.AstCirNode;
@@ -158,6 +160,46 @@ public abstract class ContextMutationParser {
 			}
 		}
 	}
+	/**
+	 * @param orig_next
+	 * @param muta_next
+	 * @return
+	 * @throws Exception
+	 */
+	protected	SetFlowMutation set_flow(AstCirNode orig_next, AstCirNode muta_next) throws Exception {
+		if(this.outputs == null) {
+			throw new IllegalArgumentException("No output specified");
+		}
+		else {
+			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			if(statement == null) {
+				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
+			}
+			else {
+				return ContextMutation.set_flow(statement, orig_next, muta_next);
+			}
+		}
+	}
+	/**
+	 * @param muta_exec
+	 * @return
+	 * @throws Exception
+	 */
+	protected	SetStmtMutation	set_stmt(boolean muta_exec) throws Exception {
+		if(this.outputs == null) {
+			throw new IllegalArgumentException("No output specified");
+		}
+		else {
+			AstCirNode statement = this.outputs.get_ast_location().statement_of();
+			if(statement == null) {
+				throw new IllegalArgumentException("Unable to localize: " + this.outputs);
+			}
+			else {
+				return ContextMutation.set_stmt(statement, !muta_exec, muta_exec);
+			}
+		}
+	}
+	
 	
 	
 	
