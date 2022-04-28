@@ -6,12 +6,14 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.ContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.CovTimeMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.EvaCondMutation;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetExprMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetFlowMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.SetStmtMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.TrpStmtMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.program.AstCirTree;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
 /**
  * 	It parses the AstMutation to ContextMutation for analysis.
@@ -199,8 +201,26 @@ public abstract class ContextMutationParser {
 			}
 		}
 	}
-	
-	
+	/**
+	 * @param orig_value
+	 * @param muta_value
+	 * @return
+	 * @throws Exception
+	 */
+	protected	SetExprMutation	set_expr(SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
+		if(this.outputs == null) {
+			throw new IllegalArgumentException("No output specified");
+		}
+		else {
+			AstCirNode expression = this.outputs.get_ast_location();
+			if(expression.is_expression_node()) {
+				return ContextMutation.set_expr(expression, orig_value, muta_value);
+			}
+			else {
+				throw new IllegalArgumentException("Not-expression: " + expression);
+			}
+		}
+	}
 	
 	
 }
