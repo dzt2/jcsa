@@ -33,7 +33,7 @@ public class TTRPContextMutationParser extends ContextMutationParser {
 	@Override
 	protected void parse_infection_set(AstCirNode location, AstMutation mutation) throws Exception {
 		int times = ((Integer) mutation.get_parameter()).intValue();
-		this.put_infection(this.cov_time(times, Integer.MAX_VALUE), this.trp_stmt());
+		this.put_infection(this.cov_time(times), this.mut_trap());
 	}
 
 }

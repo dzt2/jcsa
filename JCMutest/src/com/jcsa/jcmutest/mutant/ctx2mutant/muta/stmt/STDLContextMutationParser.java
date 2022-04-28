@@ -13,7 +13,7 @@ public class STDLContextMutationParser extends ContextMutationParser {
 
 	@Override
 	protected void parse_infection_set(AstCirNode location, AstMutation mutation) throws Exception {
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.mut_stmt(false));
+		this.put_infection(this.cov_time(1), this.mut_stmt(false));
 	}
 
 }

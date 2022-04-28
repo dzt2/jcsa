@@ -49,7 +49,7 @@ public class VTRPContextMutationParser extends ContextMutationParser {
 		else {
 			throw new IllegalArgumentException("Unsupport: " + mutation);
 		}
-		this.put_infection(this.eva_cond(condition, false), this.trp_stmt());
+		this.put_infection(this.eva_cond(condition), this.mut_trap());
 	}
 
 }

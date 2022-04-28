@@ -21,17 +21,17 @@ public class UNODContextMutationParser extends ContextMutationParser {
 		SymbolExpression operand = SymbolFactory.sym_expression(expression.get_operand());
 		if(mutation.get_operator() == MutaOperator.delete_arith_neg) {
 			this.put_infection(
-					this.eva_cond(SymbolFactory.not_equals(operand, 0), false), 
+					this.eva_cond(SymbolFactory.not_equals(operand, 0)), 
 					this.set_expr(SymbolFactory.arith_neg(operand), operand));
 		}
 		else if(mutation.get_operator() == MutaOperator.delete_bitws_rsv) {
-			this.put_infection(this.cov_time(1, Integer.MAX_VALUE), 
+			this.put_infection(this.cov_time(1), 
 					this.set_expr(SymbolFactory.bitws_rsv(operand), operand));
 		}
 		else if(mutation.get_operator() == MutaOperator.delete_logic_not) {
-			this.put_infection(this.cov_time(1, Integer.MAX_VALUE), 
-					this.set_expr(SymbolFactory.sym_condition(operand, false),
-								SymbolFactory.sym_condition(operand, true)));
+			this.put_infection(this.cov_time(1), this.set_expr(
+					SymbolFactory.sym_condition(operand, false), 
+					SymbolFactory.sym_condition(operand, true)));
 		}
 		else {
 			throw new IllegalArgumentException("Invalid operator: " + mutation);

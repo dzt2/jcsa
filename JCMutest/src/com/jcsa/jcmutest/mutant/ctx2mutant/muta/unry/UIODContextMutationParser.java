@@ -31,7 +31,7 @@ public class UIODContextMutationParser extends ContextMutationParser {
 		}
 		orig_value = SymbolFactory.sym_expression(expression);
 		muta_value = SymbolFactory.sym_expression(operand);
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_expr(orig_value, muta_value));
+		this.put_infection(this.cov_time(1), this.set_expr(orig_value, muta_value));
 	}
 
 }

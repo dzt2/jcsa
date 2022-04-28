@@ -19,7 +19,7 @@ public class VCRPContextMutationParser extends ContextMutationParser {
 		SymbolExpression 	orig_value = SymbolFactory.sym_expression(mutation.get_location());
 		SymbolConstant 		muta_value = SymbolFactory.sym_constant(mutation.get_parameter());
 		this.put_infection(
-				this.eva_cond(SymbolFactory.not_equals(orig_value, muta_value), false), 
+				this.eva_cond(SymbolFactory.not_equals(orig_value, muta_value)), 
 				this.set_expr(orig_value, muta_value));
 	}
 

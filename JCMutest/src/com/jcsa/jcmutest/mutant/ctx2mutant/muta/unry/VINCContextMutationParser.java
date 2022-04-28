@@ -29,7 +29,7 @@ public class VINCContextMutationParser extends ContextMutationParser {
 		else {
 			throw new IllegalArgumentException("Invalid: " + mutation);
 		}
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_expr(orig_value, muta_value));
+		this.put_infection(this.cov_time(1), this.set_expr(orig_value, muta_value));
 	}
 
 }

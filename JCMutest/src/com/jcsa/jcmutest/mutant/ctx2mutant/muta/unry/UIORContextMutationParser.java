@@ -49,7 +49,7 @@ public class UIORContextMutationParser extends ContextMutationParser {
 			muta_value = SymbolFactory.imp_assign(operand, SymbolFactory.arith_sub(type, operand, 1)); break;
 		default:	throw new IllegalArgumentException(mutation.get_operator().toString());
 		}
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_expr(orig_value, muta_value));
+		this.put_infection(this.cov_time(1), this.set_expr(orig_value, muta_value));
 	}
 
 }

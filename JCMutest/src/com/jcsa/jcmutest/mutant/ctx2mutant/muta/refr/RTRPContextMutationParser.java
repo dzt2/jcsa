@@ -18,7 +18,7 @@ public class RTRPContextMutationParser extends ContextMutationParser {
 		SymbolExpression orig_value = SymbolFactory.sym_expression(mutation.get_location());
 		SymbolExpression muta_value = SymbolFactory.sym_expression(mutation.get_parameter());
 		this.put_infection(
-				this.eva_cond(SymbolFactory.not_equals(orig_value, muta_value), false), 
+				this.eva_cond(SymbolFactory.not_equals(orig_value, muta_value)), 
 				this.set_expr(orig_value, muta_value));
 	}
 

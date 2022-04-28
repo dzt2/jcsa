@@ -19,13 +19,13 @@ public class VBRPContextMutationParser extends ContextMutationParser {
 		AstExpression expression = (AstExpression) mutation.get_location();
 		if(mutation.get_operator() == MutaOperator.set_true) {
 			this.put_infection(
-					this.eva_cond(SymbolFactory.sym_condition(expression, false), false), 
+					this.eva_cond(SymbolFactory.sym_condition(expression, false)), 
 					this.set_expr(SymbolFactory.sym_condition(expression, true), 
 									SymbolFactory.sym_constant(Boolean.TRUE)));
 		}
 		else if(mutation.get_operator() == MutaOperator.set_false) {
 			this.put_infection(
-					this.eva_cond(SymbolFactory.sym_condition(expression, true), false), 
+					this.eva_cond(SymbolFactory.sym_condition(expression, true)), 
 					this.set_expr(SymbolFactory.sym_condition(expression, true), 
 									SymbolFactory.sym_constant(Boolean.FALSE)));
 		}

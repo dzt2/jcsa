@@ -29,7 +29,7 @@ public class SWDRContextMutationParser extends ContextMutationParser {
 			condition = SymbolFactory.sym_condition(((AstWhileStatement) loop_statement).get_condition(), false);
 			loop_body = this.get_location(((AstWhileStatement) loop_statement).get_body()); muta_exec = true;
 		}
-		this.put_infection(this.eva_cond(condition, true), AstContextState.mut_stmt(loop_body, muta_exec));
+		this.put_infection(this.mus_cond(condition), AstContextState.mut_stmt(loop_body, muta_exec));
 	}
 
 }

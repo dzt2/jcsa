@@ -51,7 +51,7 @@ public class CTRPContextMutationParser extends ContextMutationParser {
 				switch_statement.get_condition(), case_statement.get_expression());
 		
 		/* generate the infection pairs */
-		this.put_infection(this.eva_cond(condition, false), this.trp_stmt());
+		this.put_infection(this.eva_cond(condition), this.mut_trap());
 	}
 
 }

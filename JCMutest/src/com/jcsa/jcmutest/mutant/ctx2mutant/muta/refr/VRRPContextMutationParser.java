@@ -40,8 +40,7 @@ public class VRRPContextMutationParser extends ContextMutationParser {
 	protected void parse_infection_set(AstCirNode location, AstMutation mutation) throws Exception {
 		SymbolExpression orig_value = SymbolFactory.sym_expression(mutation.get_location());
 		SymbolExpression muta_value = this.get_muta_value(mutation.get_location(), mutation.get_parameter().toString());
-		this.put_infection(this.
-				eva_cond(SymbolFactory.not_equals(orig_value, muta_value), false), this.set_expr(orig_value, muta_value));
+		this.put_infection(this.eva_cond(SymbolFactory.not_equals(orig_value, muta_value)), this.set_expr(orig_value, muta_value));
 	}
 
 }

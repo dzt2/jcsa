@@ -43,7 +43,7 @@ public class SGLRContextMutationParser extends ContextMutationParser {
 	protected void parse_infection_set(AstCirNode location, AstMutation mutation) throws Exception {
 		AstCirNode orig_next = this.get_location(this.find_statement_of((AstLabel) mutation.get_location()));
 		AstCirNode muta_next = this.get_location(this.find_statement_of((AstLabel) mutation.get_parameter()));
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_flow(orig_next, muta_next));
+		this.put_infection(this.cov_time(1), this.mut_flow(orig_next, muta_next));
 	}
 
 }

@@ -59,7 +59,7 @@ public class SBCRContextMutationParser extends ContextMutationParser {
 				loop_statement = loop_statement.get_parent();
 			}
 		}
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_flow(original_next, mutation_next));
+		this.put_infection(this.cov_time(1), this.mut_flow(original_next, mutation_next));
 	}
 	
 }

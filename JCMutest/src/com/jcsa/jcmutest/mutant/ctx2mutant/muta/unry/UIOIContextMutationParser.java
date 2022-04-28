@@ -24,10 +24,10 @@ public class UIOIContextMutationParser extends ContextMutationParser {
 		case insert_prev_inc:	muta_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_add(type, orig_value, 1)); break;
 		case insert_prev_dec:	muta_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, 1)); break;
 		case insert_post_inc:	muta_value = SymbolFactory.imp_assign(orig_value, SymbolFactory.arith_add(type, orig_value, 1)); break;
-		case insert_post_dec:	muta_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, 1)); break;
+		case insert_post_dec:	muta_value = SymbolFactory.imp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, 1)); break;
 		default:				throw new IllegalArgumentException(mutation.get_operator().toString());
 		}
-		this.put_infection(this.cov_time(1, Integer.MAX_VALUE), this.set_expr(orig_value, muta_value));
+		this.put_infection(this.cov_time(1), this.set_expr(orig_value, muta_value));
 	}
 	
 }
