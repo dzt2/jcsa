@@ -342,4 +342,85 @@ public class AstCirNode {
 		}
 	}
 	
+	/* classifier */
+	/**
+	 * @return whether this node refers to a statement as source
+	 */
+	public boolean is_statement_node() {
+		switch(this.get_node_type()) {
+		case expr_stmt:
+		case comp_stmt:
+		case skip_stmt:
+		case labl_stmt:
+		case ifte_stmt:
+		case loop_stmt:
+		case swit_stmt:
+		case case_stmt:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether this node refers to an expression sources
+	 */
+	public boolean is_expression_node() {
+		switch(this.get_node_type()) {
+		case name_expr:
+		case cons_expr:
+		case strg_expr:
+		case decl_expr:
+		case refr_expr:
+		case assg_expr:
+		case incr_expr:
+		case biny_expr:
+		case unry_expr:
+		case cast_expr:
+		case cond_expr:
+		case call_expr: 
+		case coma_expr:
+		case init_body:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether this node refers to any module location
+	 */
+	public boolean is_module_node() {
+		switch(this.get_node_type()) {
+		case funct_def:
+		case tran_unit:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return the function or transformation unit of the enclosed node
+	 */
+	public AstCirNode	module_of() {
+		AstCirNode location = this;
+		while(location != null) {
+			if(location.is_module_node()) {
+				return location;
+			}
+			else {
+				location = location.get_parent();
+			}
+		}
+		return null;
+	}
+	/**
+	 * @return the statement in which the node is enclosed within
+	 */
+	public AstCirNode	statement_of() {
+		AstCirNode location = this;
+		while(location != null) {
+			if(location.is_statement_node()) {
+				return location;
+			}
+			else {
+				location = location.get_parent();
+			}
+		}
+		return null;
+	}
+	
+	
 }

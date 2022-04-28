@@ -16,7 +16,6 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
 
 public class CTRPCirMutationParser extends CirMutationParser {
 	
-
 	/**
 	 * @param location
 	 * @return the switch-statement where the location is seeded
