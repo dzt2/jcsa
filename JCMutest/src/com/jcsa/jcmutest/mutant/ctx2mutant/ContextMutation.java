@@ -41,6 +41,10 @@ public class ContextMutation {
 	 */
 	public	AstCirNode	get_location()	{ return this.s_state.get_location(); }
 	/**
+	 * @return 	the statement where the mutation is enclosed with
+	 */
+	public	AstCirNode	get_statement()	{ return this.c_state.get_location(); }
+	/**
 	 * @return	the condition for reaching the mutated location
 	 */
 	public	AstCoverTimesState	get_coverage_state()	{ return this.c_state; }
