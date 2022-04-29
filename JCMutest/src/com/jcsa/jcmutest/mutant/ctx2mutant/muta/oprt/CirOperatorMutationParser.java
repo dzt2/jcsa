@@ -446,6 +446,13 @@ public abstract class CirOperatorMutationParser {
 			return this.parse_by_muvalue(muvalue);
 		}
 	}
+	/**
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean 	report_unsupport_exception() throws Exception {
+		throw new IllegalArgumentException("Unsupport operator");
+	}
 	
 	/* parsing methods */
 	/**
