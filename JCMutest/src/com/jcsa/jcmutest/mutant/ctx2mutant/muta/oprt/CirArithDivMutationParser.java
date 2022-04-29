@@ -4,21 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jcsa.jcparse.lang.lexical.COperator;
+import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
-public class CirArithMulMutationParser extends CirOperatorMutationParser {
+public class CirArithDivMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean to_assign() throws Exception {
-		/** (x *= y; x = y) :: (x * y != y, y != 0) --> (x = y) **/
-		List<Object> conditions = new ArrayList<Object>();
-		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(1)));
-		conditions.add(this.sym_expression(COperator.not_equals, this.get_roperand(), Integer.valueOf(0)));
-		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.assign);
+		/** (x /= y; x = y) :: (x / y != y) --> (x = y) **/
+		SymbolExpression condition = this.sym_expression(COperator.
+				arith_div, this.get_loperand(), this.get_roperand());
+		condition = this.sym_expression(COperator.not_equals, condition, this.get_roperand());
+		return this.parse_by_condition_and_operator(condition, COperator.assign);
 	}
-	
+
 	@Override
 	protected boolean arith_add() throws Exception {
-		/** (x * y; x + y) **/
 		return this.parse_by_operator(COperator.arith_add);
 	}
 
@@ -29,22 +29,23 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean arith_mul() throws Exception {
-		return this.parse_by_equivalence();
-	}
-
-	@Override
-	protected boolean arith_div() throws Exception {
-		/** (x * y; x / y) --> (x != 0; y != 1; y != -1) --> (x / y) **/
+		/** (x / y; x * y) --> (x != 0; y != 1; y != -1; dif_cond) --> (x * y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_roperand(), Integer.valueOf(1)));
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_roperand(), Integer.valueOf(-1)));
-		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.arith_div);
+		conditions.add(this.dif_condition(this.sym_expression(COperator.arith_mul, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.arith_mul);
+	}
+
+	@Override
+	protected boolean arith_div() throws Exception {
+		return this.parse_by_equivalence();
 	}
 
 	@Override
 	protected boolean arith_mod() throws Exception {
-		/** (x * y; x % y) --> (x != 0; x * y != x % y) --> (x % y) **/
+		/** (x / y; x % y) :: (x != 0; dif_cond) --> (x % y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
 		conditions.add(this.dif_condition(this.sym_expression(COperator.arith_mod, this.get_loperand(), this.get_roperand())));
@@ -53,10 +54,9 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean bitws_and() throws Exception {
-		/** (x * y; x & y) --> (x != 0; y != 0; x * y != x & y) --> (x & y) **/
+		/** (x / y; x & y) :: (x != 0; x / y != x & y) --> (x & y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
-		conditions.add(this.sym_expression(COperator.not_equals, this.get_roperand(), Integer.valueOf(0)));
 		conditions.add(this.dif_condition(this.sym_expression(COperator.bit_and, this.get_loperand(), this.get_roperand())));
 		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.bit_and);
 	}
@@ -73,7 +73,7 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean bitws_lsh() throws Exception {
-		/** (x * y; x << y) :: (x != 0; x * y != x << y) --> (x << y) **/
+		/** (x / y; x << y) :: (x != 0; dif_cond) --> (x << y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
 		conditions.add(this.dif_condition(this.sym_expression(COperator.left_shift, this.get_loperand(), this.get_roperand())));
@@ -82,7 +82,7 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean bitws_rsh() throws Exception {
-		/** (x * y; x >> y) :: (x != 0; x * y != x >> y) --> (x >> y) **/
+		/** (x / y; x >> y) :: (x != 0; dif_cond) --> (x >> y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
 		conditions.add(this.dif_condition(this.sym_expression(COperator.righ_shift, this.get_loperand(), this.get_roperand())));
@@ -91,10 +91,9 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean logic_and() throws Exception {
-		/** (x * y; x & y) --> (x != 0; y != 0; x * y != x & y) --> (x & y) **/
+		/** (x / y; x >> y) :: (x != 0; dif_cond) --> (x >> y) **/
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), Integer.valueOf(0)));
-		conditions.add(this.sym_expression(COperator.not_equals, this.get_roperand(), Integer.valueOf(0)));
 		conditions.add(this.dif_condition(this.sym_expression(COperator.logic_and, this.get_loperand(), this.get_roperand())));
 		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.logic_and);
 	}
@@ -111,7 +110,10 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean greater_eq() throws Exception {
-		return this.parse_by_operator(COperator.greater_eq);
+		List<Object> conditions = new ArrayList<Object>();
+		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand()));
+		conditions.add(this.dif_condition(this.sym_expression(COperator.greater_eq, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.greater_eq);
 	}
 
 	@Override
@@ -121,7 +123,10 @@ public class CirArithMulMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean smaller_eq() throws Exception {
-		return this.parse_by_operator(COperator.smaller_eq);
+		List<Object> conditions = new ArrayList<Object>();
+		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand()));
+		conditions.add(this.dif_condition(this.sym_expression(COperator.smaller_eq, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.smaller_eq);
 	}
 
 	@Override
