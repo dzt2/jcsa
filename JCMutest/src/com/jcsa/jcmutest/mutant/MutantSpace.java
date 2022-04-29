@@ -13,14 +13,13 @@ import com.jcsa.jcmutest.mutant.ast2mutant.MutationGenerators;
 import com.jcsa.jcmutest.mutant.ext2mutant.MutationExtensions;
 import com.jcsa.jcparse.lang.astree.AstTree;
 import com.jcsa.jcparse.lang.irlang.CirTree;
+import com.jcsa.jcparse.lang.program.AstCirTree;
 
 public class MutantSpace {
 
 	/* definition */
-	/** syntax tree in which mutants are seeded **/
-	private AstTree ast_tree;
-	/** syntax tree in C-intermediate representation **/
-	private CirTree cir_tree;
+	/** the program as the root of the space **/
+	private	AstCirTree	program;
 	/** mutants created in the space **/
 	private List<Mutant> mutants;
 	/** mapping from the mutation to its mutant **/
@@ -30,14 +29,11 @@ public class MutantSpace {
 	 * @param ast_tree
 	 * @throws Exception
 	 */
-	public MutantSpace(AstTree ast_tree, CirTree cir_tree) throws Exception {
-		if(ast_tree == null)
-			throw new IllegalArgumentException("Invalid ast_tree");
-		else if(cir_tree == null)
-			throw new IllegalArgumentException("Invalid cir_tree");
+	public MutantSpace(AstCirTree program) throws Exception {
+		if(program == null)
+			throw new IllegalArgumentException("Invalid program");
 		else {
-			this.ast_tree = ast_tree;
-			this.cir_tree = cir_tree;
+			this.program = program;
 			this.mutants = new ArrayList<>();
 			this.index = new HashMap<>();
 		}
@@ -47,8 +43,15 @@ public class MutantSpace {
 	/**
 	 * @return syntax tree in which mutants are seeded
 	 */
-	public AstTree get_ast_tree() { return this.ast_tree; }
-	public CirTree get_cir_tree() { return this.cir_tree; }
+	public AstTree get_ast_tree() { return this.program.get_ast_tree(); }
+	/**
+	 * @return the C-intermediate representative program
+	 */
+	public CirTree get_cir_tree() { return this.program.get_cir_tree(); }
+	/**
+	 * @return the ast-cir combined program for analysis
+	 */
+	public AstCirTree get_program() { return this.program; }
 	/**
 	 * @return the number of mutants in the space
 	 */
@@ -167,7 +170,7 @@ public class MutantSpace {
 					mutant.versions[2] = str_mutant;
 				}
 				else {
-					this.new_mutant(AstMutation.parse(ast_tree, line.trim()));
+					this.new_mutant(AstMutation.parse(this.get_ast_tree(), line.trim()));
 				}
 			}
 		}
@@ -184,7 +187,7 @@ public class MutantSpace {
 
 		/* 2. generate the mutations in program */
 		List<AstMutation> mutations =
-				MutationGenerators.generate(ast_tree, mutation_classes);
+				MutationGenerators.generate(this.get_ast_tree(), mutation_classes);
 		for(AstMutation mutation : mutations) {
 			this.new_mutant(mutation);
 			AstMutation[] versions = MutationExtensions.extend(mutation);

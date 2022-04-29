@@ -19,7 +19,7 @@ import com.jcsa.jcparse.lang.program.AstCirTree;
 public class MutantSpaceTest {
 
 	protected static final String prefix = "/home/dzt2/Development/Data/ifiles/";
-	protected static final String postfix = "result/mut/";
+	protected static final String postfix = "results/muta/";
 	protected static final File template_file = new File("config/cruntime.txt");
 	private static final Random random = new Random(System.currentTimeMillis());
 
@@ -58,7 +58,7 @@ public class MutantSpaceTest {
 		return classes;
 	}
 	private static MutantSpace new_space(AstCirTree program) throws Exception {
-		MutantSpace space = new MutantSpace(program.get_ast_tree(), program.get_cir_tree());
+		MutantSpace space = new MutantSpace(program);
 		space.update(get_classes());
 		System.out.println("\t2. Generate " + space.size() + " mutants.");
 		return space;

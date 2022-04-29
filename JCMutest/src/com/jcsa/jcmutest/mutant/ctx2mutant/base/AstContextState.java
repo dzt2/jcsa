@@ -1,28 +1,24 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.base;
 
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-
 /**
- * 	It describes the contextual state in the abstract execution of mutation.	<br>
+ * 	It describes the abstract execution state in term of syntactic context.
  * 	<br>
  * 	<code>
- * 	AstContextState					[category, location, loperand, roperand]	<br>
- * 	|--	AstConditionState			[category, location, loperand, roperand]	<br>
- * 	|--	|--	AstSeedMutantState		[sed_muta, location,  mutant_ID, operators]	<br>
- * 	|--	|--	AstCoverTimesState		[cov_time, statement, min_times, max_times]	<br>
+ * 	AstContextState					[category, location,  l_operand, r_operand]	<br>
+ * 	|--	AstConditionState			[category, location,  l_operand, r_operand]	<br>
  * 	|--	|--	AstConstraintState		[eva_cond, statement, condition, must_need]	<br>
- * 	|--	AstPathErrorState			[category, statement, loperand, roperand]	<br>
- * 	|--	|--	AstBlockErrorState		[mut_stmt, statement, orig_exec, muta_exec]	<br>
- * 	|--	|--	AstFlowsErrorState		[mut_flow, statement, orig_next, muta_next]	<br>
- * 	|--	|--	AstTrapsErrorState		[mut_trap, module,    exception, exception]	<br>
- * 	|--	AstDataErrorState			[category,expression, loperand, roperand]	<br>
- * 	|--	|--	AstValueErrorState		[set_expr,expression, orig_expr, muta_expr]	<br>
- * 	|--	|--	AstIncreErrorState		[inc_expr,expression, orig_expr, different]	<br>
- * 	|--	|--	AstBixorErrorState		[xor_expr,expression, orig_expr, different]	<br>
+ * 	|--	|--	AstCoverTimesState		[cov_time, statement, min_times, max_times]	<br>
+ * 	|--	|--	AstSeedMutantState		[sed_muta, location,  mutant_ID, operators]	<br>
+ * 	|--	AstAbstErrorState			[category, location,  l_operand, r_operand]	<br>
+ * 	|--	|--	AstBlockErrorState		[set_stmt, statement, orig_exec, muta_exec]	<br>
+ * 	|--	|--	AstFlowsErrorState		[set_flow, statement, orig_next, muta_next]	<br>
+ * 	|--	|--	AstValueErrorState		[set_expr, expression,orig_expr, muta_expr]	<br>
  * 	</code>
  * 	
  * 	@author yukimula
@@ -88,31 +84,24 @@ public abstract class AstContextState {
 		}
 	}
 	/**
-	 * @return whether the mutation refers to statement-error
-	 */
-	public	boolean				is_path_error()		{
-		switch(this.category) {
-		case mut_stmt:
-		case mut_flow:
-		case mut_trap:	return true;
-		default:		return false;
-		}
-	}
-	/**
-	 * @return whether the mutation refers to expression-error
-	 */
-	public	boolean				is_data_error()		{
-		switch(this.category) {
-		case set_expr:
-		case inc_expr:
-		case xor_expr:	return true;
-		default:		return false;
-		}
-	}
-	/**
 	 * @return whether the mutation refers to any possible error (change)
 	 */
-	public 	boolean				is_abst_error()		{ return this.is_data_error() || this.is_path_error(); }
+	public 	boolean				is_abst_error()	{ 
+		switch(this.category) {
+		case set_stmt:
+		case set_flow:
+		case set_expr:	return true;
+		default:		return false;
+		}
+	}
+	/**
+	 * @return whether the state is connected with expression location
+	 */
+	public	boolean				is_expr_state()	{ return this.location.is_expression_node(); }
+	/**
+	 * @return whether the state is connected with statement locations
+	 */
+	public	boolean				is_stmt_state()	{ return this.location.is_statement_node(); }
 	
 	/* construct */
 	/**
@@ -154,7 +143,12 @@ public abstract class AstContextState {
 		else if(mutant == null) {
 			throw new IllegalArgumentException("Invalid mutant as null");
 		}
-		else { 	return new AstSeedMutantState(location, mutant);  }
+		else if(location.is_expression_node() || location.is_statement_node()) { 	
+			return new AstSeedMutantState(location, mutant); 
+		}
+		else {
+			throw new IllegalArgumentException("Invalid as: " + location);
+		}
 	}
 	/**
 	 * @param statement	the statement to be executed at the coverage condition
@@ -188,18 +182,21 @@ public abstract class AstContextState {
 		}
 		else { return new AstConstraintState(statement, SymbolFactory.sym_condition(condition, true), must_need); }
 	}
+	/* abstract error */
 	/**
 	 * @param statement
 	 * @param muta_exec
 	 * @return mut_stmt(statement, !muta_exec, muta_exec)
 	 * @throws Exception
 	 */
-	public static AstBlockErrorState	mut_stmt(AstCirNode statement, boolean muta_exec) throws Exception {
+	public static AstBlockErrorState	set_stmt(AstCirNode statement, boolean muta_exec) throws Exception {
 		if(statement == null || !statement.is_statement_node()) {
 			throw new IllegalArgumentException("Invalid statement: null");
 		}
 		else {
-			return new AstBlockErrorState(statement, !muta_exec, muta_exec);
+			return new AstBlockErrorState(statement, 
+					SymbolFactory.sym_constant(Boolean.valueOf(!muta_exec)), 
+					SymbolFactory.sym_constant(Boolean.valueOf(muta_exec)));
 		}
 	}
 	/**
@@ -209,7 +206,7 @@ public abstract class AstContextState {
 	 * @return	mut_flow(statement; orig_next, muta_next)
 	 * @throws Exception
 	 */
-	public static AstFlowsErrorState	mut_flow(AstCirNode statement, AstCirNode orig_next, AstCirNode muta_next) throws Exception {
+	public static AstFlowsErrorState	set_flow(AstCirNode statement, AstCirNode orig_next, AstCirNode muta_next) throws Exception {
 		if(statement == null || !statement.is_statement_node()) {
 			throw new IllegalArgumentException("Invalid statement: null");
 		}
@@ -223,14 +220,20 @@ public abstract class AstContextState {
 	}
 	/**
 	 * @param location
-	 * @return mut_trap(module, exception, exception)
+	 * @return set_stmt(func_body, TRUE, TRAP_VALUE)
 	 * @throws Exception
 	 */
-	public static AstTrapsErrorState	mut_trap(AstCirNode location) throws Exception {
+	public static AstBlockErrorState	trp_stmt(AstCirNode location) throws Exception {
 		if(location == null) {
 			throw new IllegalArgumentException("Invalid location: null");
 		}
-		else {  return new AstTrapsErrorState(location.module_of());  }
+		else {  
+			while(!location.get_parent().is_module_node()) {
+				location = location.get_parent();
+			}
+			return new AstBlockErrorState(location, SymbolFactory.
+					sym_constant(Boolean.TRUE), ContextMutations.trap_value);
+		}
 	}
 	/**
 	 * @param expression
@@ -252,50 +255,6 @@ public abstract class AstContextState {
 		}
 		else {
 			return new AstValueErrorState(expression, orig_value, muta_value);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return
-	 * @throws Exception
-	 */
-	public static AstIncreErrorState	inc_expr(AstCirNode expression, 
-			SymbolExpression orig_value, SymbolExpression difference) throws Exception {
-		if(expression == null || !expression.is_expression_node()) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(orig_value == null) {
-			throw new IllegalArgumentException("Invalid orig_value: null");
-		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else {
-			return new AstIncreErrorState(expression, orig_value, difference);
-		}
-	}
-	/**
-	 * @param expression
-	 * @param orig_value
-	 * @param muta_value
-	 * @return
-	 * @throws Exception
-	 */
-	public static AstBixorErrorState	xor_expr(AstCirNode expression, 
-			SymbolExpression orig_value, SymbolExpression difference) throws Exception {
-		if(expression == null || !expression.is_expression_node()) {
-			throw new IllegalArgumentException("Invalid expression: null");
-		}
-		else if(orig_value == null) {
-			throw new IllegalArgumentException("Invalid orig_value: null");
-		}
-		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else {
-			return new AstBixorErrorState(expression, orig_value, difference);
 		}
 	}
 	

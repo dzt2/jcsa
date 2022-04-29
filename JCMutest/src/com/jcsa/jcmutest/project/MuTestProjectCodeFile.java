@@ -161,7 +161,7 @@ public class MuTestProjectCodeFile {
 				this.sizeof_template);
 		this.cir_tree = CTranslate.parse(this.ast_tree, this.sizeof_template);
 		this.ast_cir_tree = AstCirTree.load(ast_tree, cir_tree, sizeof_template);
-		this.mutant_space = new MutantSpace(this.ast_tree, this.cir_tree);
+		this.mutant_space = new MutantSpace(this.ast_cir_tree);
 
 		/* 2. update the instrumental code file */
 		String code = CodeGeneration.instrument_code(ast_tree, this.
