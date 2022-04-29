@@ -1,6 +1,9 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.muta.oprt;
 
 import java.util.Collection;
+
+import com.jcsa.jcmutest.mutant.AstMutation;
+import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
@@ -441,6 +444,68 @@ public abstract class CirOperatorMutationParser {
 			SymbolExpression muvalue = this.sym_expression(
 					operator, this.get_loperand(), this.get_roperand());
 			return this.parse_by_muvalue(muvalue);
+		}
+	}
+	
+	/* parsing methods */
+	/**
+	 * It parses the operator-based mutation to context-based form
+	 * @param output
+	 * @throws Exception
+	 */
+	public	boolean	parse(ContextMutation output) throws Exception {
+		if(output == null) {
+			throw new IllegalArgumentException("Invalid output: null");
+		}
+		else if(output.get_location().get_ast_source() instanceof AstBinaryExpression) {
+			/* initialize */
+			this.output = output;
+			this.expression = (AstBinaryExpression) output.get_location().get_ast_source();
+			AstMutation mutation = output.get_mutant().get_mutation();
+			if(mutation.get_operator() == MutaOperator.cmp_operator) {
+				this.weak_strong = true;
+			}
+			else {
+				this.weak_strong = false;
+			}
+			
+			/* operator */
+			COperator operator = (COperator) mutation.get_parameter();
+			switch(operator) {
+			case assign:				return this.to_assign();
+			case arith_add:				return this.arith_add();
+			case arith_sub:				return this.arith_sub();
+			case arith_mul:				return this.arith_mul();
+			case arith_div:				return this.arith_div();
+			case arith_mod:				return this.arith_mod();
+			case bit_and:				return this.bitws_and();
+			case bit_or:				return this.bitws_ior();
+			case bit_xor:				return this.bitws_xor();
+			case left_shift:			return this.bitws_lsh();
+			case righ_shift:			return this.bitws_rsh();
+			case logic_and:				return this.logic_and();
+			case logic_or:				return this.logic_ior();
+			case greater_tn:			return this.greater_tn();
+			case greater_eq:			return this.greater_eq();
+			case smaller_tn:			return this.smaller_tn();
+			case smaller_eq:			return this.smaller_eq();
+			case equal_with:			return this.equal_with();
+			case not_equals:			return this.not_equals();
+			case arith_add_assign:		return this.arith_add();
+			case arith_sub_assign:		return this.arith_sub();
+			case arith_mul_assign:		return this.arith_mul();
+			case arith_div_assign:		return this.arith_div();
+			case arith_mod_assign:		return this.arith_mod();
+			case bit_and_assign:		return this.bitws_and();
+			case bit_or_assign:			return this.bitws_ior();
+			case bit_xor_assign:		return this.bitws_xor();
+			case left_shift_assign:		return this.bitws_lsh();
+			case righ_shift_assign:		return this.bitws_rsh();
+			default:	throw new IllegalArgumentException("Invalid: " + operator);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Invalid: " + output.get_location());
 		}
 	}
 	
