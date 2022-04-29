@@ -116,7 +116,10 @@ public class CirArithModMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean greater_tn() throws Exception {
-		return this.parse_by_operator(COperator.greater_tn);
+		List<Object> conditions = new ArrayList<Object>();
+		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand()));
+		conditions.add(this.dif_condition(this.sym_expression(COperator.greater_tn, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.greater_tn);
 	}
 
 	@Override
@@ -126,7 +129,10 @@ public class CirArithModMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean smaller_tn() throws Exception {
-		return this.parse_by_operator(COperator.smaller_tn);
+		List<Object> conditions = new ArrayList<Object>();
+		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand()));
+		conditions.add(this.dif_condition(this.sym_expression(COperator.smaller_tn, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.smaller_tn);
 	}
 
 	@Override
@@ -141,7 +147,10 @@ public class CirArithModMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean not_equals() throws Exception {
-		return this.parse_by_operator(COperator.not_equals);
+		List<Object> conditions = new ArrayList<Object>();
+		conditions.add(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand()));
+		conditions.add(this.dif_condition(this.sym_expression(COperator.not_equals, this.get_loperand(), this.get_roperand())));
+		return this.parse_by_condition_and_operator(this.sym_conjunction(conditions), COperator.not_equals);
 	}
 
 }
