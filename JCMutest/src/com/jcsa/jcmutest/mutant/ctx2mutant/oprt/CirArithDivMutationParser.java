@@ -1,4 +1,4 @@
-package com.jcsa.jcmutest.mutant.ctx2mutant.muta.oprt;
+package com.jcsa.jcmutest.mutant.ctx2mutant.oprt;
 
 import java.util.ArrayList;
 import java.util.List;
