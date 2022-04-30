@@ -30,7 +30,7 @@ public abstract class CirOperatorMutationParser {
 	private	ContextMutation			output;
 	private	AstBinaryExpression		expression;
 	private	boolean					weak_strong;
-	public	CirOperatorMutationParser() { }
+	protected	CirOperatorMutationParser() { }
 	
 	/* implementation methods */
 	/**
@@ -179,6 +179,10 @@ public abstract class CirOperatorMutationParser {
 			if(ContextMutations.has_trap_value(muta_value)) {
 				return this.trap_statement();
 			}
+			else if(SymbolFactory.is_bool(orig_value)) {
+				return AstContextState.set_expr(this.output.
+						get_location(), orig_value, SymbolFactory.sym_condition(muta_value, true));
+			}
 			else {
 				return AstContextState.set_expr(this.output.get_location(), orig_value, muta_value);
 			}
@@ -222,6 +226,10 @@ public abstract class CirOperatorMutationParser {
 			throw new IllegalArgumentException("Undefined expression");
 		return this.expression.get_roperand(); 
 	}
+	/**
+	 * @return the original expression
+	 */
+	protected AstExpression		get_expression() { return this.expression; }
 	
 	/* symbolic getters */
 	/**
@@ -360,7 +368,12 @@ public abstract class CirOperatorMutationParser {
 	 * @return this.expression != muvalue
 	 * @throws Exception
 	 */
-	protected SymbolExpression	dif_condition(Object muvalue) throws Exception { return this.neq_expression(this.expression, muvalue); }
+	protected SymbolExpression	dif_condition(Object muvalue) throws Exception { 
+		if(SymbolFactory.is_bool(this.expression.get_value_type())) {
+			muvalue = this.sym_condition(muvalue);
+		}
+		return this.neq_expression(this.expression, muvalue); 
+	}
 	
 	/* support methods */
 	/**
