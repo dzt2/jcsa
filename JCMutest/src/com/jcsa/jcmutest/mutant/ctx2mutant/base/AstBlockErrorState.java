@@ -9,9 +9,6 @@ public class AstBlockErrorState extends AstAbstErrorState {
 
 	protected AstBlockErrorState(AstCirNode location, SymbolExpression loperand, SymbolExpression roperand) throws Exception {
 		super(AstContextClass.set_stmt, location, loperand, roperand);
-		if(!location.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid: " + location);
-		}
 	}
 
 	/**

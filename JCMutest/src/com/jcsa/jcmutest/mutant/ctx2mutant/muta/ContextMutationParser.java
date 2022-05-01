@@ -7,7 +7,7 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConstraintState;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextStates;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstCoverTimesState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstFlowsErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstValueErrorState;
@@ -65,7 +65,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid outputs");
 		}
 		else {
-			return AstContextState.cov_time(this.output.get_statement(), min_times, Integer.MAX_VALUE);
+			return AstContextStates.cov_time(this.output.get_statement(), min_times, Integer.MAX_VALUE);
 		}
 	}
 	/**
@@ -81,7 +81,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			return AstContextState.eva_cond(this.output.get_statement(), condition, false);
+			return AstContextStates.eva_cond(this.output.get_statement(), condition, false);
 		}
 	}
 	/**
@@ -97,7 +97,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			return AstContextState.eva_cond(this.output.get_statement(), condition, true);
+			return AstContextStates.eva_cond(this.output.get_statement(), condition, true);
 		}
 	}
 	/**
@@ -110,7 +110,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			return AstContextState.set_stmt(this.output.get_statement(), muta_exec);
+			return AstContextStates.set_stmt(this.output.get_statement(), muta_exec);
 		}
 	}
 	/**
@@ -122,7 +122,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			return AstContextState.trp_stmt(this.output.get_location());
+			return AstContextStates.trp_stmt(this.output.get_location());
 		}
 	}
 	/**
@@ -142,7 +142,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid muta_next: null");
 		}
 		else {
-			return AstContextState.set_flow(this.output.get_statement(), orig_next, muta_next);
+			return AstContextStates.set_flow(this.output.get_statement(), orig_next, muta_next);
 		}
 	}
 	/**
@@ -162,7 +162,7 @@ public abstract class ContextMutationParser {
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
 		else {
-			return AstContextState.set_expr(this.output.get_location(), orig_value, muta_value);
+			return AstContextStates.set_expr(this.output.get_location(), orig_value, muta_value);
 		}
 	}
 	/**

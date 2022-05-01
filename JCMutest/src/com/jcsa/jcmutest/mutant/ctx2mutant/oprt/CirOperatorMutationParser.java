@@ -10,7 +10,7 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConstraintState;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextStates;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
@@ -143,7 +143,7 @@ public abstract class CirOperatorMutationParser {
 			throw new IllegalArgumentException("Invalid condition: null");
 		}
 		else {
-			return AstContextState.eva_cond(this.output.get_statement(), condition, false);
+			return AstContextStates.eva_cond(this.output.get_statement(), condition, false);
 		}
 	}
 	/**
@@ -155,7 +155,7 @@ public abstract class CirOperatorMutationParser {
 			throw new IllegalArgumentException("Invalid output as: null");
 		}
 		else {
-			return AstContextState.trp_stmt(this.output.get_statement());
+			return AstContextStates.trp_stmt(this.output.get_statement());
 		}
 	}
 	/**
@@ -180,11 +180,11 @@ public abstract class CirOperatorMutationParser {
 				return this.trap_statement();
 			}
 			else if(SymbolFactory.is_bool(orig_value)) {
-				return AstContextState.set_expr(this.output.
+				return AstContextStates.set_expr(this.output.
 						get_location(), orig_value, SymbolFactory.sym_condition(muta_value, true));
 			}
 			else {
-				return AstContextState.set_expr(this.output.get_location(), orig_value, muta_value);
+				return AstContextStates.set_expr(this.output.get_location(), orig_value, muta_value);
 			}
 		}
 	}

@@ -6,7 +6,7 @@ import java.util.List;
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextStates;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstCoverTimesState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstSeedMutantState;
 import com.jcsa.jcparse.lang.program.AstCirNode;
@@ -95,9 +95,9 @@ public class ContextMutation {
 			throw new IllegalArgumentException("Invalid location: null");
 		}
 		else {
-			this.mutant = mutant;
-			this.c_state = AstContextState.cov_time(location.statement_of(), 1, Integer.MAX_VALUE);
-			this.s_state = AstContextState.sed_muta(location, mutant);
+			this.mutant = mutant; 
+			this.c_state = AstContextStates.cov_time(location.statement_of(), 1, Integer.MAX_VALUE);
+			this.s_state = AstContextStates.sed_muta(location, mutant);
 			this.i_states = new ArrayList<AstConditionState>();
 			this.p_states = new ArrayList<AstAbstErrorState>();
 		}
