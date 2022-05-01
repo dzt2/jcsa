@@ -1,7 +1,9 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.base;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -20,6 +22,7 @@ import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
@@ -471,20 +474,22 @@ public final class AstContextStates {
 			AstCirNode child = source.get_location();
 			AstCirParChild child_type = child.get_child_type();
 			switch(child_type) {
-			case uoperand:	this.ext_set_uoperand(child, orig_value, muta_value, targets);	break;
-			case condition:	this.ext_set_condition(child, orig_value, muta_value, targets); break;
-			case loperand:	this.ext_set_loperand(child, orig_value, muta_value, targets); 	break;
-			case roperand:	this.ext_set_roperand(child, orig_value, muta_value, targets); 	break;
-			case ivalue:	this.ext_set_ivalue(child, orig_value, muta_value, targets); 	break;
-			case lvalue:	this.ext_set_lvalue(child, orig_value, muta_value, targets); 	break;
-			case rvalue:	this.ext_set_rvalue(child, orig_value, muta_value, targets); 	break;
-			case address:	this.ext_set_address(child, orig_value, muta_value, targets); 	break;
-			case index:		this.ext_set_index(child, orig_value, muta_value, targets); 	break;
-			case element:	
-			case argument:	
-			case fbody:		
-			case evaluate:	
-			default:	throw new IllegalArgumentException("Unsupport: " + child_type);
+			case uoperand:		this.ext_set_uoperand(child, orig_value, muta_value, targets);	break;
+			case condition:		this.ext_set_condition(child, orig_value, muta_value, targets); break;
+			case loperand:		this.ext_set_loperand(child, orig_value, muta_value, targets); 	break;
+			case roperand:		this.ext_set_roperand(child, orig_value, muta_value, targets); 	break;
+			case ivalue:		this.ext_set_ivalue(child, orig_value, muta_value, targets); 	break;
+			case lvalue:		this.ext_set_lvalue(child, orig_value, muta_value, targets); 	break;
+			case rvalue:		this.ext_set_rvalue(child, orig_value, muta_value, targets); 	break;
+			case address:		this.ext_set_address(child, orig_value, muta_value, targets); 	break;
+			case index:			this.ext_set_index(child, orig_value, muta_value, targets); 	break;
+			case element:		this.ext_set_element(child, orig_value, muta_value, targets); 	break;
+			case argument:		this.ext_set_argument(child, orig_value, muta_value, targets); 	break;
+			case evaluate:		this.ext_set_evaluate(child, orig_value, muta_value, targets); 	break;
+			case fbody:			this.ext_set_fbody(child, orig_value, muta_value, targets); 	break;
+			case callee:		this.ext_set_callee(child, orig_value, muta_value, targets); 	break;
+			case n_condition:	this.ext_set_n_condition(child, orig_value, muta_value, targets); break;
+			default:			throw new IllegalArgumentException("Unsupported child: " + child_type);
 			}
 		}
 	}
@@ -1128,6 +1133,71 @@ public final class AstContextStates {
 		muta_value = SymbolFactory.dereference(muta_value);
 		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 	}
-	
+	private	void	ext_set_element(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
+		List<Object> orig_elements = new ArrayList<Object>();
+		List<Object> muta_elements = new ArrayList<Object>();
+		AstCirNode parent = child.get_parent();
+		
+		for(int k = 0; k < parent.number_of_children(); k++) {
+			if(child == parent.get_child(k)) {
+				orig_elements.add(orig_value); 
+				muta_elements.add(muta_value);
+			}
+			else {
+				orig_elements.add(parent.get_child(k).get_ast_source());
+				muta_elements.add(parent.get_child(k).get_ast_source());
+			}
+		}
+		
+		targets.add(AstContextStates.set_expr(parent, 
+				SymbolFactory.initializer_list(orig_elements), 
+				SymbolFactory.initializer_list(muta_elements)));
+	}
+	private	void	ext_set_argument(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
+		AstCirNode parent = child.get_parent();
+		AstCirNode callee = parent.get_child(0);
+		List<Object> orig_arguments = new ArrayList<Object>();
+		List<Object> muta_arguments = new ArrayList<Object>();
+		
+		for(int k = 1; k < parent.number_of_children(); k++) {
+			if(child == parent.get_child(k)) {
+				orig_arguments.add(orig_value);
+				muta_arguments.add(muta_value);
+			}
+			else {
+				orig_arguments.add(parent.get_child(k).get_ast_source());
+				muta_arguments.add(parent.get_child(k).get_ast_source());
+			}
+		}
+		
+		orig_value = SymbolFactory.call_expression(callee.get_ast_source(), orig_arguments);
+		muta_value = SymbolFactory.call_expression(callee.get_ast_source(), muta_arguments);
+		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+	}
+	private	void	ext_set_fbody(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { 
+		AstCirNode parent = child.get_parent();
+		AstFieldExpression source = (AstFieldExpression) parent.get_ast_source();
+		orig_value = SymbolFactory.field_expression(orig_value, source.get_field().get_name());
+		muta_value = SymbolFactory.field_expression(muta_value, source.get_field().get_name());
+		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+	}
+	private	void	ext_set_callee(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { 
+		AstCirNode parent = child.get_parent();
+		List<Object> arguments = new ArrayList<Object>();
+		for(int k = 1; k < parent.number_of_children(); k++) {
+			arguments.add(parent.get_child(k).get_ast_source());
+		}
+		orig_value = SymbolFactory.call_expression(orig_value, arguments);
+		muta_value = SymbolFactory.call_expression(muta_value, arguments);
+		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+	}
+	private	void	ext_set_evaluate(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { }
+	private	void	ext_set_n_condition(AstCirNode child, SymbolExpression orig_value, 
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { }
 	
 }
