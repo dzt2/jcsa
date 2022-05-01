@@ -7,7 +7,7 @@ import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 
-public class VBRCContextMutationParser extends ContextMutationParser {
+public class VBRPContextMutationParser extends ContextMutationParser {
 
 	@Override
 	protected AstCirNode localize(AstMutation mutation) throws Exception {

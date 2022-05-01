@@ -3,11 +3,15 @@ package com.jcsa.jcmutest.mutant.ctx2mutant.oprt;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
+import com.jcsa.jcparse.lang.astree.expr.oprt.AstBinaryExpression;
 import com.jcsa.jcparse.lang.lexical.COperator;
 
 public final class CirOperatorMutationParsers {
 	
-	private static final Map<COperator, CirOperatorMutationParser> parsers = new HashMap<COperator, CirOperatorMutationParser>();
+	private static final Map<COperator, CirOperatorMutationParser> parsers = 
+						new HashMap<COperator, CirOperatorMutationParser>();
+	
 	static {
 		parsers.put(COperator.assign, 			new CirAssignToMutationParser());
 		
@@ -47,18 +51,28 @@ public final class CirOperatorMutationParsers {
 		
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	/**
+	 * @param output
+	 * @return It complements the context-based mutation for operator-based mutation operator
+	 * @throws Exception
+	 */
+	public static boolean parse_mutation(ContextMutation output) throws Exception {
+		if(output == null) {
+			throw new IllegalArgumentException("Invalid output: null");
+		}
+		else if(output.get_location().get_ast_source() instanceof AstBinaryExpression) {
+			AstBinaryExpression expression = (AstBinaryExpression) output.get_location().get_ast_source();
+			COperator source_operator = expression.get_operator().get_operator();
+			if(parsers.containsKey(source_operator)) {
+				return parsers.get(source_operator).parse(output);
+			}
+			else {
+				throw new IllegalArgumentException("Undefined: " + source_operator);
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported: " + output.get_location());
+		}
+	}
 	
 }

@@ -185,6 +185,10 @@ public abstract class ContextMutationParser {
 			this.output.put_infection_error(constraint, init_error);
 		}
 	}
+	/**
+	 * @return it derives the output of this parser under construction
+	 */
+	protected 	ContextMutation	get_output() { return this.output; }
 	
 	/* parse methods */
 	/**

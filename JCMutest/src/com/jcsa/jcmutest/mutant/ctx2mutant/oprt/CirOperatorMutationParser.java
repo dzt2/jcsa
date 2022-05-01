@@ -476,7 +476,7 @@ public abstract class CirOperatorMutationParser {
 	 * @param output
 	 * @throws Exception
 	 */
-	public	boolean	parse(ContextMutation output) throws Exception {
+	protected boolean	parse(ContextMutation output) throws Exception {
 		if(output == null) {
 			throw new IllegalArgumentException("Invalid output: null");
 		}
