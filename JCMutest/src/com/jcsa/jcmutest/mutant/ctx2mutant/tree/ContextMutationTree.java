@@ -64,17 +64,14 @@ public class ContextMutationTree {
 		else {
 			ContextMutationTree tree = new ContextMutationTree(program);
 			Set<ContextMutationNode> records = new HashSet<ContextMutationNode>();
-			int total = 0, error = 0;
 			
 			for(Mutant mutant : mutants) {
-				ContextMutation mutation; total++;
-				try {
-					mutation = ContextMutationParsers.parse(mutant);
-				}
-				catch(Exception ex) {
-					error++; continue;
-				}
+				/* 1. parse to contextual mutation */
+				ContextMutation mutation;
+				try { mutation = ContextMutationParsers.parse(mutant); }
+				catch(Exception ex) { continue; }
 				
+				/* 2. initial mutation-state to infection and error state */
 				ContextMutationNode root = tree.get_tree_node(mutation.get_mutation_state());
 				tree.mutants.put(mutant, mutation.get_mutation_state());
 				for(int k = 0; k < mutation.number_of_infection_pairs(); k++) {
@@ -83,9 +80,9 @@ public class ContextMutationTree {
 					root.connect(ichild); root.connect(pchild);
 				}
 				
+				/* 3. BFS-algorithm for recursively extension algorithms */
 				Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
 				for(ContextMutationEdge edge : root.get_ou_edges()) queue.add(edge.get_target());
-				
 				while(!queue.isEmpty()) {
 					ContextMutationNode node = queue.poll();
 					if(!records.contains(node)) {
@@ -98,9 +95,6 @@ public class ContextMutationTree {
 					}
 				}
 			}
-			
-			double error_rate = 100 * ((double) error) / ((double) total);
-			System.out.println("\t\tTotal = " + total + "; Error = " + error + " (" + error_rate + "%)");
 			return tree;
 		}
 	}
