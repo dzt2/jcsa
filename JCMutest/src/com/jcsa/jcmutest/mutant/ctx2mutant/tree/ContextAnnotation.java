@@ -12,8 +12,10 @@ public class ContextAnnotation {
 	private ContextAnnotationClass	category;
 	/** the location where the annotation is defined **/
 	private	AstCirNode				location;
-	/** the symbolic value to define this annotation **/
-	private	SymbolExpression		parameter;
+	/** the symbolic expression to the left-parameter **/
+	private	SymbolExpression		loperand;
+	/** the symbolic expression as the right-parameter **/
+	private	SymbolExpression		roperand;
 	/**
 	 * It creates an annotation with specified category and location.
 	 * @param category	the category of the annotation being defined
@@ -21,22 +23,25 @@ public class ContextAnnotation {
 	 * @param parameter	the symbolic value to define this annotation
 	 * @throws Exception
 	 */
-	protected ContextAnnotation(ContextAnnotationClass category,
-			AstCirNode location, 
-			SymbolExpression parameter) throws IllegalArgumentException {
+	private ContextAnnotation(ContextAnnotationClass category,
+			AstCirNode location, SymbolExpression loperand,
+			SymbolExpression roperand) throws Exception {
 		if(category == null) {
 			throw new IllegalArgumentException("Invalid category: null");
 		}
 		else if(location == null) {
 			throw new IllegalArgumentException("Invalid location: null");
 		}
-		else if(parameter == null) {
-			throw new IllegalArgumentException("Invalid parameter: null");
+		else if(loperand == null) {
+			throw new IllegalArgumentException("Invalid loperand: null");
+		}
+		else if(roperand == null) {
+			throw new IllegalArgumentException("Invalid roperand: null");
 		}
 		else {
-			this.category = category;
-			this.location = location;
-			this.parameter = parameter;
+			this.category = category; this.location = location;
+			this.loperand = ContextMutations.evaluate(loperand, null, null);
+			this.roperand = ContextMutations.evaluate(roperand, null, null);
 		}
 	}
 	
@@ -50,12 +55,17 @@ public class ContextAnnotation {
 	 */
 	public AstCirNode				get_location()	{ return this.location; }
 	/**
-	 * @return	the symbolic value to define this annotation
+	 * @return 	the symbolic expression to the left-parameter
 	 */
-	public SymbolExpression			get_parameter()	{ return this.parameter; }
+	public SymbolExpression			get_loperand() 	{ return this.loperand; }
+	/**
+	 * @return	the symbolic expression as the right-parameter 
+	 */
+	public SymbolExpression			get_roperand()	{ return this.roperand; }
 	@Override
 	public String toString() { 
-		return this.category + "(" + this.location.get_node_id() + ", " + this.parameter + ")"; 
+		return this.category + "(" + this.location.get_node_id() + 
+				"; " + this.loperand + ", " + this.roperand + ")"; 
 	}
 	@Override
 	public int hashCode() { return this.toString().hashCode(); }
@@ -71,167 +81,159 @@ public class ContextAnnotation {
 	
 	/* factory */
 	/**
-	 * @param statement	the statement to be covered 
-	 * @param min_times	the minimal times for running
-	 * @return			cov_time(statement, min_times)
+	 * @param statement
+	 * @param min_times
+	 * @param max_times
+	 * @return cov_stmt(statement; min_times, max_times)
 	 * @throws Exception
 	 */
-	public static ContextAnnotation cov_time(AstCirNode statement, int min_times) throws Exception {
+	protected static ContextAnnotation cov_time(AstCirNode statement, int min_times, int max_times) throws Exception {
 		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
+			throw new IllegalArgumentException("Invalid statement: " + statement);
 		}
-		else if(min_times <= 0) {
-			throw new IllegalArgumentException("Invalid min_times: " + min_times);
+		else if(min_times > max_times || min_times <= 0) {
+			throw new IllegalArgumentException(min_times + " |--> " + max_times);
 		}
 		else {
-			return new ContextAnnotation(ContextAnnotationClass.cov_time, 
-					statement, SymbolFactory.sym_constant(Integer.valueOf(min_times)));
-		}
-	}
-	/**
-	 * @param statement	the statement where the condition is evaluated
-	 * @param condition	the symbolic condition to be evaluated on that point
-	 * @return			eva_cond(statement, condition)
-	 * @throws Exception
-	 */
-	public static ContextAnnotation eva_cond(AstCirNode statement, Object condition) throws Exception {
-		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition: null");
-		}
-		else {
-			return new ContextAnnotation(ContextAnnotationClass.eva_cond,
-					statement, SymbolFactory.sym_condition(condition, true));
-		}
-	}
-	/**
-	 * @param statement	the statement where the condition is evaluated
-	 * @param condition	the symbolic condition to be evaluated on that point
-	 * @return			mus_cond(statement, condition)
-	 * @throws Exception
-	 */
-	public static ContextAnnotation mus_cond(AstCirNode statement, Object condition) throws Exception {
-		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else if(condition == null) {
-			throw new IllegalArgumentException("Invalid condition: null");
-		}
-		else {
-			return new ContextAnnotation(ContextAnnotationClass.mus_cond,
-					statement, SymbolFactory.sym_condition(condition, true));
-		}
-	}
-	/**
-	 * @param statement	the statement to be mutated as execution
-	 * @param muta_exec	True (executed) False (not executed)
-	 * @return			set_stmt(statement; muta_exec)
-	 * @throws Exception
-	 */
-	public static ContextAnnotation set_stmt(AstCirNode statement, boolean muta_exec) throws Exception {
-		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else {
-			return new ContextAnnotation(ContextAnnotationClass.set_stmt,
-					statement, SymbolFactory.sym_constant(Boolean.valueOf(muta_exec)));
+			return new ContextAnnotation(ContextAnnotationClass.cov_time, statement, 
+					SymbolFactory.sym_constant(Integer.valueOf(min_times)),
+					SymbolFactory.sym_constant(Integer.valueOf(max_times)));
 		}
 	}
 	/**
 	 * @param statement
-	 * @param muta_next
-	 * @return set_flow(statement, muta_next)
+	 * @param condition
+	 * @param must_need
+	 * @return
 	 * @throws Exception
 	 */
-	public static ContextAnnotation set_flow(AstCirNode statement, AstCirNode muta_next) throws Exception {
+	protected static ContextAnnotation eva_cond(AstCirNode statement, Object condition, boolean must_need) throws Exception {
 		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
+			throw new IllegalArgumentException("Invalid statement: " + statement);
+		}
+		else if(condition == null) {
+			throw new IllegalArgumentException("Invalid condition: null");
+		}
+		else {
+			return new ContextAnnotation(ContextAnnotationClass.eva_cond, statement,
+					SymbolFactory.sym_condition(condition, true), 
+					SymbolFactory.sym_constant(Boolean.valueOf(must_need)));
+		}
+	}
+	/**
+	 * @param statement
+	 * @param muta_exec
+	 * @return
+	 * @throws Exception
+	 */
+	protected static ContextAnnotation set_stmt(AstCirNode statement, boolean muta_exec) throws Exception {
+		if(statement == null) {
+			throw new IllegalArgumentException("Invalid statement: " + statement);
+		}
+		else {
+			return new ContextAnnotation(ContextAnnotationClass.set_stmt, statement,
+					SymbolFactory.sym_constant(Boolean.valueOf(!muta_exec)),
+					SymbolFactory.sym_constant(Boolean.valueOf(muta_exec)));
+		}
+	}
+	/**
+	 * @param statement
+	 * @return
+	 * @throws Exception
+	 */
+	protected static ContextAnnotation trp_stmt(AstCirNode statement) throws Exception {
+		if(statement == null) {
+			throw new IllegalArgumentException("Invalid statement: " + statement);
+		}
+		else {
+			return new ContextAnnotation(ContextAnnotationClass.trp_stmt, statement.
+					module_of(), ContextMutations.trap_value, ContextMutations.trap_value);
+		}
+	}
+	/**
+	 * @param statement
+	 * @param orig_next
+	 * @param muta_next
+	 * @return
+	 * @throws Exception
+	 */
+	protected static ContextAnnotation set_flow(AstCirNode statement, AstCirNode orig_next, AstCirNode muta_next) throws Exception {
+		if(statement == null || !statement.is_statement_node()) {
+			throw new IllegalArgumentException("Invalid statement: " + statement);
+		}
+		else if(orig_next == null) {
+			throw new IllegalArgumentException("Invalid orig_next: null");
 		}
 		else if(muta_next == null) {
 			throw new IllegalArgumentException("Invalid muta_next: null");
 		}
 		else {
-			return new ContextAnnotation(ContextAnnotationClass.set_flow, statement, 
+			return new ContextAnnotation(ContextAnnotationClass.set_flow, statement,
+					SymbolFactory.sym_constant(Integer.valueOf(orig_next.get_node_id())),
 					SymbolFactory.sym_constant(Integer.valueOf(muta_next.get_node_id())));
 		}
 	}
 	/**
-	 * @param statement
-	 * @return trp_stmt(statement; exception)
-	 * @throws Exception
-	 */
-	public static ContextAnnotation trp_stmt(AstCirNode statement) throws Exception {
-		if(statement == null) {
-			throw new IllegalArgumentException("Invalid statement: null");
-		}
-		else {
-			return new ContextAnnotation(ContextAnnotationClass.trp_stmt, 
-					statement.module_of(), ContextMutations.trap_value);
-		}
-	}
-	/**
-	 * @param expression
+	 * @param location
+	 * @param orig_expr
 	 * @param muta_value
-	 * @return set_expr(expression, muta_value)
+	 * @return
 	 * @throws Exception
 	 */
-	public static ContextAnnotation set_expr(AstCirNode expression, Object muta_value) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	protected static ContextAnnotation set_expr(AstCirNode location, SymbolExpression orig_expr, SymbolExpression muta_expr) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid location: " + location);
 		}
-		else if(muta_value == null) {
-			throw new IllegalArgumentException("Invalid muta_value: null");
+		else if(orig_expr == null) {
+			throw new IllegalArgumentException("Invalid statement: " + orig_expr);
 		}
-		else if(expression.is_expression_node()) {
-			return new ContextAnnotation(ContextAnnotationClass.set_expr, 
-					expression, SymbolFactory.sym_expression(muta_value));
+		else if(muta_expr == null) {
+			throw new IllegalArgumentException("Invalid statement: " + muta_expr);
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
+			return new ContextAnnotation(ContextAnnotationClass.set_expr, location, orig_expr, muta_expr);
 		}
 	}
 	/**
-	 * @param expression
-	 * @param difference
-	 * @return inc_expr(expression, muta_value)
+	 * @param location
+	 * @param orig_expr
+	 * @param muta_value
+	 * @return
 	 * @throws Exception
 	 */
-	public static ContextAnnotation inc_expr(AstCirNode expression, Object difference) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	protected static ContextAnnotation inc_expr(AstCirNode location, SymbolExpression orig_expr, SymbolExpression difference) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid location: " + location);
+		}
+		else if(orig_expr == null) {
+			throw new IllegalArgumentException("Invalid orig_expr: " + orig_expr);
 		}
 		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else if(expression.is_expression_node()) {
-			return new ContextAnnotation(ContextAnnotationClass.inc_expr, 
-					expression, SymbolFactory.sym_expression(difference));
+			throw new IllegalArgumentException("Invalid difference: " + difference);
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
+			return new ContextAnnotation(ContextAnnotationClass.inc_expr, location, orig_expr, difference);
 		}
 	}
 	/**
-	 * @param expression
-	 * @param difference
-	 * @return xor_expr(expression, muta_value)
+	 * @param location
+	 * @param orig_expr
+	 * @param muta_value
+	 * @return
 	 * @throws Exception
 	 */
-	public static ContextAnnotation xor_expr(AstCirNode expression, Object difference) throws Exception {
-		if(expression == null) {
-			throw new IllegalArgumentException("Invalid expression: null");
+	protected static ContextAnnotation xor_expr(AstCirNode location, SymbolExpression orig_expr, SymbolExpression difference) throws Exception {
+		if(location == null) {
+			throw new IllegalArgumentException("Invalid location: " + location);
+		}
+		else if(orig_expr == null) {
+			throw new IllegalArgumentException("Invalid orig_expr: " + orig_expr);
 		}
 		else if(difference == null) {
-			throw new IllegalArgumentException("Invalid difference: null");
-		}
-		else if(expression.is_expression_node()) {
-			return new ContextAnnotation(ContextAnnotationClass.xor_expr, 
-					expression, SymbolFactory.sym_expression(difference));
+			throw new IllegalArgumentException("Invalid difference: " + difference);
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + expression);
+			return new ContextAnnotation(ContextAnnotationClass.xor_expr, location, orig_expr, difference);
 		}
 	}
 	

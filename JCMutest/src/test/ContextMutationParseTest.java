@@ -191,9 +191,9 @@ public class ContextMutationParseTest {
 		ContextMutationTree tree = ContextMutationTree.parse(cfile.get_ast_file(), mspace.get_mutants());
 		int succeeds = 0, total = mspace.size();
 		for(Mutant mutant : tree.get_mutants()) { succeeds++; }
-		double error_rate = 100.0 * ((double)(total - succeeds)) / ((double) total);
-		System.out.println("\t--> Tree-Parser\tSucceed = " + 
-					succeeds + "\tTotal = " + total + "\t(" + error_rate + "%)\n");
+		double error_rate = ((double)(total - succeeds)) / ((double) total);
+		error_rate = ((int) (error_rate * 10000)) / 100.0; int error = total - succeeds;
+		System.out.println("\tSUCC = " + succeeds + "\tTOTAL = " + total + "\tERROR = " + error + "\t(" + error_rate + "%)");
 		
 		/* 2. write the tree nodes to the file */
 		for(ContextMutationNode tree_node : tree.get_tree_nodes()) {

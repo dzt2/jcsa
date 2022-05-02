@@ -12,7 +12,10 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstSeedMutantState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstValueErrorState;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.program.AstCirTree;
+import com.jcsa.jcparse.lang.program.types.AstCirParChild;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.eval.SymbolContext;
 
 final class ContextAnnotationUtils {
@@ -69,7 +72,8 @@ final class ContextAnnotationUtils {
 			Collection<ContextAnnotation> annotations) throws Exception {
 		AstCirNode statement = state.get_location();
 		int minimal_times = state.get_minimal_times();
-		annotations.add(ContextAnnotation.cov_time(statement, minimal_times));
+		int maximal_times = state.get_maximal_times();
+		annotations.add(ContextAnnotation.cov_time(statement, minimal_times, maximal_times));
 	}
 	
 	/**
@@ -81,13 +85,8 @@ final class ContextAnnotationUtils {
 	private void gen_eva_cond(AstCirTree program, AstConstraintState state,
 			Collection<ContextAnnotation> annotations) throws Exception {
 		AstCirNode statement = state.get_location(); 
-		Object condition = state.get_condition();
-		if(state.is_must()) {
-			annotations.add(ContextAnnotation.mus_cond(statement, condition));
-		}
-		else {
-			annotations.add(ContextAnnotation.eva_cond(statement, condition));
-		}
+		Object condition = state.get_condition(); boolean must_need = state.is_must();
+		annotations.add(ContextAnnotation.eva_cond(statement, condition, must_need));
 	}
 	
 	/**
@@ -128,9 +127,166 @@ final class ContextAnnotationUtils {
 	private void gen_set_flow(AstCirTree program, AstFlowsErrorState state,
 			Collection<ContextAnnotation> annotations) throws Exception {
 		AstCirNode statement = state.get_location();
-		AstCirNode next_node = program.get_tree_node(state.get_mutation_next_ID());
-		annotations.add(ContextAnnotation.set_flow(statement, next_node));
+		AstCirNode muta_next = program.get_tree_node(state.get_mutation_next_ID());
+		AstCirNode orig_next = program.get_tree_node(state.get_original_next_ID());
+		annotations.add(ContextAnnotation.set_flow(statement, orig_next, muta_next));
 	}
+	
+	/**
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void gen_set_expr(AstCirNode expression, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
+			Collection<ContextAnnotation> annotations) throws Exception {
+		annotations.add(ContextAnnotation.set_expr(expression, orig_value, muta_value));
+		if(SymbolFactory.is_bool(orig_value)) {
+			if(muta_value instanceof SymbolConstant) {
+				if(((SymbolConstant) muta_value).get_bool().booleanValue()) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.true_value));
+				}
+				else {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.fals_value));
+				}
+			}
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.bool_value));
+		}
+		else if(SymbolFactory.is_usig(orig_value)) {
+			if(muta_value instanceof SymbolConstant) {
+				if(((SymbolConstant) muta_value).get_long() != 0) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+				}
+			}
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+		}
+		else if(SymbolFactory.is_numb(orig_value)) {
+			if(muta_value instanceof SymbolConstant) {
+				if(((SymbolConstant) muta_value).get_long() > 0) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else if(((SymbolConstant) muta_value).get_long() < 0) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.negt_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+				}
+			}
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+		}
+		else if(SymbolFactory.is_real(orig_value)) {
+			if(muta_value instanceof SymbolConstant) {
+				if(((SymbolConstant) muta_value).get_double() > 0) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else if(((SymbolConstant) muta_value).get_double() < 0) {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.negt_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else {
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+				}
+			}
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+		}
+		else { /* none of the annotation is created */ }
+	}
+	
+	/**
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void gen_inc_expr(AstCirNode expression, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
+			Collection<ContextAnnotation> annotations) throws Exception {
+		if(SymbolFactory.is_numb(orig_value) || SymbolFactory.is_real(orig_value)) {
+			SymbolExpression difference = SymbolFactory.arith_sub(orig_value.get_data_type(), muta_value, orig_value);
+			difference = ContextMutations.evaluate(difference, null, null);
+			if(difference instanceof SymbolConstant) {
+				annotations.add(ContextAnnotation.inc_expr(expression, orig_value, difference));
+				Object number = ((SymbolConstant) difference).get_number();
+				if(number instanceof Long) {
+					long value = ((Long) number).longValue();
+					if(value > 0) {
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.post_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nneg_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+					}
+					else {
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.negt_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.npos_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+					}
+				}
+				else {
+					double value = ((Double) number).doubleValue();
+					if(value > 0) {
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.post_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nneg_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+					}
+					else {
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.negt_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.npos_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * @param expression
+	 * @param orig_value
+	 * @param muta_value
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void gen_xor_expr(AstCirNode expression, 
+			SymbolExpression orig_value, SymbolExpression muta_value, 
+			Collection<ContextAnnotation> annotations) throws Exception {
+		if(SymbolFactory.is_numb(orig_value) || SymbolFactory.is_real(orig_value)) {
+			SymbolExpression difference = SymbolFactory.bitws_xor(orig_value.get_data_type(), muta_value, orig_value);
+			difference = ContextMutations.evaluate(difference, null, null);
+			if(difference instanceof SymbolConstant) {
+				annotations.add(ContextAnnotation.xor_expr(expression, orig_value, difference));
+				long value = ((SymbolConstant) difference).get_long().longValue();
+				if(value > 0) {
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.post_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nneg_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+				else {
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.negt_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nzro_value));
+				}
+			}
+		}
+	}
+	
 	
 	/**
 	 * @param program
@@ -154,13 +310,39 @@ final class ContextAnnotationUtils {
 			annotations.add(ContextAnnotation.trp_stmt(expression)); 
 			return;
 		}
+		else if(expression.get_child_type() == AstCirParChild.evaluate ||
+				expression.get_child_type() == AstCirParChild.execute ||
+				expression.get_child_type() == AstCirParChild.tbranch ||
+				expression.get_child_type() == AstCirParChild.fbranch) {
+			/* ignore the evaluation result because it is never used... */
+		}
+		else {
+			if(!orig_value.equals(muta_value)) {
+				this.gen_set_expr(expression, orig_value, muta_value, annotations);
+				this.gen_inc_expr(expression, orig_value, muta_value, annotations);
+				this.gen_xor_expr(expression, orig_value, muta_value, annotations);
+			}
+		}
 		
+		/* 3. state mutation saved */
+		AstCirNode statement = expression.statement_of();
+		for(SymbolExpression identifier : muta_context.get_keys()) {
+			if(orig_context.has_value(identifier)) {
+				SymbolExpression orig_expr = orig_context.get_value(identifier);
+				SymbolExpression muta_expr = muta_context.get_value(identifier);
+				if(!orig_expr.equals(muta_expr)) {
+					this.gen_set_expr(statement, identifier, muta_value, annotations);
+				}
+			}
+		}
 		
-		
-		
-		
-		
-		// TODO implement more methods...
+		/* 4. for equivalence checking */
+		if(annotations.isEmpty()) {
+			while(!expression.get_parent().is_module_node()) {
+				expression = expression.get_parent();
+			}
+			annotations.add(ContextAnnotation.eva_cond(expression, Boolean.FALSE, false));
+		}
 	}
 	
 	/**

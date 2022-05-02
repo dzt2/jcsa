@@ -477,22 +477,27 @@ public final class AstContextStates {
 			AstCirNode child = source.get_location();
 			AstCirParChild child_type = child.get_child_type();
 			switch(child_type) {
-			case uoperand:		this.ext_set_uoperand(child, orig_value, muta_value, targets);	break;
-			case condition:		this.ext_set_condition(child, orig_value, muta_value, targets); break;
-			case loperand:		this.ext_set_loperand(child, orig_value, muta_value, targets); 	break;
-			case roperand:		this.ext_set_roperand(child, orig_value, muta_value, targets); 	break;
-			case ivalue:		this.ext_set_ivalue(child, orig_value, muta_value, targets); 	break;
-			case lvalue:		this.ext_set_lvalue(child, orig_value, muta_value, targets); 	break;
-			case rvalue:		this.ext_set_rvalue(child, orig_value, muta_value, targets); 	break;
-			case address:		this.ext_set_address(child, orig_value, muta_value, targets); 	break;
-			case index:			this.ext_set_index(child, orig_value, muta_value, targets); 	break;
-			case element:		this.ext_set_element(child, orig_value, muta_value, targets); 	break;
-			case argument:		this.ext_set_argument(child, orig_value, muta_value, targets); 	break;
-			case evaluate:		this.ext_set_evaluate(child, orig_value, muta_value, targets); 	break;
-			case fbody:			this.ext_set_fbody(child, orig_value, muta_value, targets); 	break;
-			case callee:		this.ext_set_callee(child, orig_value, muta_value, targets); 	break;
-			case n_condition:	this.ext_set_n_condition(child, orig_value, muta_value, targets); break;
-			default:			break;
+			case uoperand:		this.ext_set_uoperand(child, orig_value, muta_value, targets);		break;
+			case condition:		this.ext_set_condition(child, orig_value, muta_value, targets); 	break;
+			case loperand:		this.ext_set_loperand(child, orig_value, muta_value, targets); 		break;
+			case roperand:		this.ext_set_roperand(child, orig_value, muta_value, targets); 		break;
+			case ivalue:		this.ext_set_ivalue(child, orig_value, muta_value, targets); 		break;
+			case lvalue:		this.ext_set_lvalue(child, orig_value, muta_value, targets); 		break;
+			case rvalue:		this.ext_set_rvalue(child, orig_value, muta_value, targets); 		break;
+			case address:		this.ext_set_address(child, orig_value, muta_value, targets); 		break;
+			case index:			this.ext_set_index(child, orig_value, muta_value, targets); 		break;
+			case element:		this.ext_set_element(child, orig_value, muta_value, targets); 		break;
+			case argument:		this.ext_set_argument(child, orig_value, muta_value, targets); 		break;
+			case fbody:			this.ext_set_fbody(child, orig_value, muta_value, targets); 		break;
+			case callee:		this.ext_set_callee(child, orig_value, muta_value, targets); 		break;
+			case evaluate:		
+			case n_condition:	
+			case tbranch:
+			case fbranch:
+			case execute:		break;
+			default:			throw new IllegalArgumentException("Invalid: " + child_type + "\n\t\t--> " + 
+																	child.get_ast_source().generate_code() + "\n\t\t--> " + 
+																	child.get_parent().get_ast_source().generate_code());
 			}
 		}
 	}
@@ -1198,9 +1203,5 @@ public final class AstContextStates {
 		muta_value = SymbolFactory.call_expression(muta_value, arguments);
 		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 	}
-	private	void	ext_set_evaluate(AstCirNode child, SymbolExpression orig_value, 
-			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { }
-	private	void	ext_set_n_condition(AstCirNode child, SymbolExpression orig_value, 
-			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { }
 	
 }
