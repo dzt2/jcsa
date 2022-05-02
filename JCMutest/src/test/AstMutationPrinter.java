@@ -5,6 +5,7 @@ import java.io.FileWriter;
 
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.Mutant;
+import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationTree;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.MuTestProjectTestResult;
@@ -119,6 +120,9 @@ public class AstMutationPrinter {
 			write_mutation(project, writer, mutant, 96);
 		}
 		writer.close();
+		
+		ContextMutationTree tree = ContextMutationTree.parse(cfile.get_ast_file(), cfile.get_mutant_space().get_mutants());
+		System.out.println("\t--> Generate " + tree.number_of_tree_nodes() + " tree nodes for " + cfile.get_name());
 	}
 	
 }

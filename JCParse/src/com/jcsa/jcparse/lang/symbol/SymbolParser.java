@@ -7,6 +7,7 @@ import java.util.Queue;
 
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.AstScopeNode;
+import com.jcsa.jcparse.lang.astree.base.AstKeyword;
 import com.jcsa.jcparse.lang.astree.decl.AstDeclaration;
 import com.jcsa.jcparse.lang.astree.decl.AstTypeName;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstDeclarator;
@@ -96,6 +97,7 @@ import com.jcsa.jcparse.lang.irlang.stmt.CirTagStatement;
 import com.jcsa.jcparse.lang.irlang.stmt.CirWaitAssignStatement;
 import com.jcsa.jcparse.lang.irlang.unit.CirFunctionDefinition;
 import com.jcsa.jcparse.lang.lexical.CConstant;
+import com.jcsa.jcparse.lang.lexical.CKeyword;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.scope.CEnumeratorName;
 import com.jcsa.jcparse.lang.scope.CFieldName;
@@ -1067,6 +1069,16 @@ final class SymbolParser {
 			return SymbolExpressionList.create(expressions);
 		}
 	}
+	private SymbolNode	parse_ast_keyword(AstKeyword source) throws Exception {
+		if(source.get_keyword() == CKeyword.c89_return) {
+			AstReturnStatement statement = (AstReturnStatement) source.get_parent();
+			CType type = statement.get_expression().get_value_type();
+			return this.parse_retr(type, source);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + source.generate_code());
+		}
+	}
 	/**
 	 * 	<code>
 	 * 	{AST-OTHERWISE}															<br>
@@ -1151,6 +1163,9 @@ final class SymbolParser {
 		}
 		else if(source instanceof AstInitDeclaratorList) {
 			return this.parse_ast_init_declarator_list((AstInitDeclaratorList) source);
+		}
+		else if(source instanceof AstKeyword) {
+			return this.parse_ast_keyword((AstKeyword) source);
 		}
 		else {
 			throw new IllegalArgumentException(source.getClass().getSimpleName());

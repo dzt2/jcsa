@@ -355,7 +355,8 @@ public class AstCirNode {
 		case ifte_stmt:
 		case loop_stmt:
 		case swit_stmt:
-		case case_stmt:	return true;
+		case case_stmt:	
+		case retr_stmt: return true;
 		default:		return false;
 		}
 	}

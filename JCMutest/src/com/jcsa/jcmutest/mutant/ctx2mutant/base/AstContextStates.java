@@ -33,6 +33,7 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.program.AstCirEdge;
 import com.jcsa.jcparse.lang.program.AstCirNode;
+import com.jcsa.jcparse.lang.program.types.AstCirNodeType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
@@ -116,7 +117,7 @@ public final class AstContextStates {
 					SymbolFactory.sym_constant(Boolean.valueOf(muta_exec)));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupported: " + statement);
+			throw new IllegalArgumentException("Unsupported: " + statement.get_node_type());
 		}
 	}
 	/**
@@ -164,7 +165,7 @@ public final class AstContextStates {
 	 */
 	public static AstValueErrorState	set_expr(AstCirNode expression, 
 			SymbolExpression orig_value, SymbolExpression muta_value) throws Exception {
-		if(expression == null || !expression.is_expression_node()) {
+		if(expression == null) {
 			throw new IllegalArgumentException("Invalid expression: null");
 		}
 		else if(orig_value == null) {
@@ -173,8 +174,11 @@ public final class AstContextStates {
 		else if(muta_value == null) {
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
-		else {
+		else if(expression.is_expression_node() || expression.get_node_type() == AstCirNodeType.retr_stmt) {
 			return new AstValueErrorState(expression, orig_value, muta_value);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupport: " + expression.get_node_type());
 		}
 	}
 	
@@ -489,7 +493,7 @@ public final class AstContextStates {
 			case fbody:			this.ext_set_fbody(child, orig_value, muta_value, targets); 	break;
 			case callee:		this.ext_set_callee(child, orig_value, muta_value, targets); 	break;
 			case n_condition:	this.ext_set_n_condition(child, orig_value, muta_value, targets); break;
-			default:			throw new IllegalArgumentException("Unsupported child: " + child_type);
+			default:			break;
 			}
 		}
 	}
@@ -554,12 +558,12 @@ public final class AstContextStates {
 			
 			COperator operator = ((AstLogicBinaryExpression) source).get_operator().get_operator();
 			if(operator == COperator.logic_and) {
-				targets.add(AstContextStates.eva_cond(parent.statement_of(), operator, true));
+				targets.add(AstContextStates.eva_cond(parent.statement_of(), operand, true));
 				orig_value = SymbolFactory.logic_and(orig_value, operand);
 				muta_value = SymbolFactory.logic_and(muta_value, operand);
 			}
 			else {
-				targets.add(AstContextStates.eva_cond(parent.statement_of(), operator, false));
+				targets.add(AstContextStates.eva_cond(parent.statement_of(), operand, false));
 				orig_value = SymbolFactory.logic_ior(orig_value, operand);
 				muta_value = SymbolFactory.logic_ior(muta_value, operand);
 			}
