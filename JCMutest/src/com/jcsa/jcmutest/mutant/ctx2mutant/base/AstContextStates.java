@@ -33,7 +33,6 @@ import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.program.AstCirEdge;
 import com.jcsa.jcparse.lang.program.AstCirNode;
-import com.jcsa.jcparse.lang.program.types.AstCirNodeType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
@@ -174,7 +173,7 @@ public final class AstContextStates {
 		else if(muta_value == null) {
 			throw new IllegalArgumentException("Invalid muta_value: null");
 		}
-		else if(expression.is_expression_node() || expression.get_node_type() == AstCirNodeType.retr_stmt) {
+		else if(expression.is_expression_node()) {
 			return new AstValueErrorState(expression, orig_value, muta_value);
 		}
 		else {

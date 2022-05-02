@@ -21,6 +21,7 @@ import com.jcsa.jcparse.lang.irlang.graph.CirExecutionFlowGraph;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunction;
 import com.jcsa.jcparse.lang.irlang.graph.CirFunctionCallGraph;
 import com.jcsa.jcparse.lang.irlang.stmt.CirStatement;
+import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.program.AstCirTree;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.parse.parser2.AstCirLocalizer;
@@ -39,6 +40,7 @@ public class AstCirLocalizerTest {
 			SymbolFactory.set_config(ast_file.get_sizeof_template(), true);	// configure
 			write_ast(ast_file, new File(output_directory + file.getName() + ".ast"), max_length);
 			write_cir(ast_file, new File(output_directory + file.getName() + ".cir"), max_length);
+			write_ast_cir_tree(ast_file, new File(output_directory + file.getName() + ".tre"), max_length);
 		}
 	}
 	
@@ -187,5 +189,52 @@ public class AstCirLocalizerTest {
 		
 		writer.close();
 	}
+	
+	private static void write_ast_cir_node(FileWriter writer, AstCirNode node, int max_length) throws Exception {
+		writer.write("[BEG]\n");
+		
+		String node_type = node.get_node_type().toString();
+		String edge_type = "" + node.get_child_type(); int node_id = node.get_node_id();
+		writer.write("\tTYPE = " + node_type + "\tNODE = " + edge_type + "[" + node_id + "]\n");
+		writer.write("\tCHILD[" + node.number_of_children() + "] = {");
+		for(AstCirNode child : node.get_children()) {
+			writer.write(" " + child.get_child_type() + "[" + child.get_node_id() + "]");
+		}
+		writer.write(" }\n");
+		
+		AstNode source = node.get_ast_source();
+		String class_name = source.getClass().getSimpleName().strip();
+		class_name = class_name.substring(3, class_name.length() - 4);
+		int ast_key = source.get_key();
+		AstFunctionDefinition definition = source.get_function_of();
+		String func_name;
+		if(definition == null) {
+			func_name = "Null";
+		}
+		else {
+			AstDeclarator declarator = definition.get_declarator();
+			while(declarator.get_production() != DeclaratorProduction.identifier) {
+				declarator = declarator.get_declarator();
+			}
+			func_name = declarator.get_identifier().get_name();
+		}
+		int code_line = source.get_location().line_of();
+		String ast_code = strip_code(source.generate_code(), max_length);
+		writer.write("\tASTN:\t" + class_name + "#" + ast_key + "\n");
+		writer.write("\tLOCT:\t" + func_name + "#" + code_line + "\n");
+		writer.write("\tCODE:\t\"" + ast_code + "\"\n");
+		
+		writer.write("[END]\n\n");
+	}
+	
+	private static void write_ast_cir_tree(AstCirTree tree, File output_file, int max_length) throws Exception {
+		FileWriter writer = new FileWriter(output_file);
+		for(AstCirNode node : tree.get_tree_nodes()) {
+			write_ast_cir_node(writer, node, max_length);
+		}
+		writer.close();
+	}
+	
+	
 	
 }

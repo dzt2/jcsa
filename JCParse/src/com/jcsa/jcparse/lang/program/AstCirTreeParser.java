@@ -504,7 +504,16 @@ final class AstCirTreeParser {
 	private	AstCirNode	parse_ast_for_statement(AstForStatement source) throws Exception {
 		AstCirNode parent = this.new_tree_node(source, source.get_for().get_keyword());
 		parent.add_child(AstCirParChild.execute, this.parse_ast(source.get_initializer()));
-		parent.add_child(AstCirParChild.condition, this.parse_ast(source.get_condition()));
+		AstExpressionStatement condition = source.get_condition();
+		if(condition.has_expression()) {
+			parent.add_child(AstCirParChild.condition, this.parse_ast(condition.get_expression()));
+		}
+		else {
+			parent.add_child(AstCirParChild.condition, this.parse_ast(condition));
+		}
+		if(source.has_increment()) {
+			parent.add_child(AstCirParChild.execute, this.parse_ast(source.get_increment()));
+		}
 		parent.add_child(AstCirParChild.tbranch, this.parse_ast(source.get_body()));
 		return parent;
 	}
