@@ -287,7 +287,6 @@ final class ContextAnnotationUtils {
 		}
 	}
 	
-	
 	/**
 	 * @param program
 	 * @param state

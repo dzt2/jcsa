@@ -378,9 +378,9 @@ public class AstCirNode {
 		case cond_expr:
 		case call_expr: 
 		case coma_expr:
-		case init_body:	
-		case expr_stmt:	
-		case retr_stmt: return true;
+		case init_body:	return true;
+	//	case expr_stmt:	
+	//	case retr_stmt: return true;
 		default:		return false;
 		}
 	}

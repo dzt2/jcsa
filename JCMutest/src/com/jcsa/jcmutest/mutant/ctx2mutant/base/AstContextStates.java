@@ -16,13 +16,14 @@ import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncrePostfixExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstIncreUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicBinaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstLogicUnaryExpression;
-import com.jcsa.jcparse.lang.astree.expr.oprt.AstPointUnaryExpression;
 import com.jcsa.jcparse.lang.astree.expr.oprt.AstUnaryExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstArgumentList;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstArrayExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCastExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstCommaExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstConditionalExpression;
 import com.jcsa.jcparse.lang.astree.expr.othr.AstFieldExpression;
+import com.jcsa.jcparse.lang.astree.expr.othr.AstFunCallExpression;
 import com.jcsa.jcparse.lang.astree.stmt.AstDoWhileStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstExpressionStatement;
 import com.jcsa.jcparse.lang.astree.stmt.AstForStatement;
@@ -77,7 +78,7 @@ public final class AstContextStates {
 	 */
 	public static AstCoverTimesState	cov_time(AstCirNode statement, int min_times, int max_times) throws Exception {
 		if(statement == null || !statement.is_statement_node()) {
-			throw new IllegalArgumentException("Invalid statement: null");
+			throw new IllegalArgumentException("Invalid statement: " + statement);
 		}
 		else if(min_times > max_times || max_times < 0) {
 			throw new IllegalArgumentException(min_times + " --> " + max_times);
@@ -477,19 +478,20 @@ public final class AstContextStates {
 			AstCirNode child = source.get_location();
 			AstCirParChild child_type = child.get_child_type();
 			switch(child_type) {
-			case uoperand:		this.ext_set_uoperand(child, orig_value, muta_value, targets);		break;
-			case condition:		this.ext_set_condition(child, orig_value, muta_value, targets); 	break;
-			case loperand:		this.ext_set_loperand(child, orig_value, muta_value, targets); 		break;
-			case roperand:		this.ext_set_roperand(child, orig_value, muta_value, targets); 		break;
-			case ivalue:		this.ext_set_ivalue(child, orig_value, muta_value, targets); 		break;
-			case lvalue:		this.ext_set_lvalue(child, orig_value, muta_value, targets); 		break;
-			case rvalue:		this.ext_set_rvalue(child, orig_value, muta_value, targets); 		break;
-			case address:		this.ext_set_address(child, orig_value, muta_value, targets); 		break;
-			case index:			this.ext_set_index(child, orig_value, muta_value, targets); 		break;
-			case element:		this.ext_set_element(child, orig_value, muta_value, targets); 		break;
-			case argument:		this.ext_set_argument(child, orig_value, muta_value, targets); 		break;
-			case fbody:			this.ext_set_fbody(child, orig_value, muta_value, targets); 		break;
-			case callee:		this.ext_set_callee(child, orig_value, muta_value, targets); 		break;
+			case uoperand:		this.ext_set_uop(child, orig_value, muta_value, targets); 	break;
+			case condition:		this.ext_set_con(child, orig_value, muta_value, targets); 	break;
+			case loperand:		this.ext_set_lop(child, orig_value, muta_value, targets); 	break;
+			case roperand:		this.ext_set_rop(child, orig_value, muta_value, targets); 	break;
+			case ivalue:		this.ext_set_iva(child, orig_value, muta_value, targets); 	break;
+			case lvalue:		this.ext_set_lva(child, orig_value, muta_value, targets); 	break;
+			case rvalue:		this.ext_set_rva(child, orig_value, muta_value, targets); 	break;
+			case address:		this.ext_set_adr(child, orig_value, muta_value, targets); 	break;
+			case index:			this.ext_set_idx(child, orig_value, muta_value, targets); 	break;
+			case element:		this.ext_set_ele(child, orig_value, muta_value, targets); 	break;
+			case fbody:			this.ext_set_fbd(child, orig_value, muta_value, targets); 	break;
+			case callee:		this.ext_set_cal(child, orig_value, muta_value, targets); 	break;
+			case argument:		this.ext_set_arg(child, orig_value, muta_value, targets); 	break;
+			/* reach the top-level expression of the child */
 			case evaluate:		
 			case n_condition:	
 			case tbranch:
@@ -502,56 +504,71 @@ public final class AstContextStates {
 		}
 	}
 	
-	/* value propagation */
-	private	void	ext_set_uoperand(AstCirNode child, SymbolExpression orig_value, 
+	/* data-error extension */
+	/**
+	 * cast_expr|coma_expr|unary_expr(+, -, ~, &) --> operand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param outputs
+	 * @throws Exception
+	 */
+	private void	ext_set_uop(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstExpression source = (AstExpression) child.get_parent().get_ast_source();
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
 		if(source instanceof AstCastExpression) {
-			CType cast_type = ((AstCastExpression) source).get_typename().get_type();
-			orig_value = SymbolFactory.cast_expression(cast_type, orig_value);
-			muta_value = SymbolFactory.cast_expression(cast_type, muta_value);
-			targets.add(AstContextStates.set_expr(child.get_parent(), orig_value, muta_value));
+			CType type = ((AstCastExpression) source).get_typename().get_type();
+			orig_value = SymbolFactory.cast_expression(type, orig_value);
+			muta_value = SymbolFactory.cast_expression(type, muta_value);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else if(source instanceof AstCommaExpression) {
-			targets.add(AstContextStates.set_expr(child.get_parent(), orig_value, muta_value));
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else if(source instanceof AstUnaryExpression) {
 			COperator operator = ((AstUnaryExpression) source).get_operator().get_operator();
-			switch(operator) {
-			case positive:		break;
-			case negative:		
-			{
-				orig_value = SymbolFactory.arith_neg(orig_value); 
+			if(operator == COperator.positive) { }
+			else if(operator == COperator.negative) {
+				orig_value = SymbolFactory.arith_neg(orig_value);
 				muta_value = SymbolFactory.arith_neg(muta_value);
-				break;
 			}
-			case bit_not:
-			{
+			else if(operator == COperator.bit_not) {
 				orig_value = SymbolFactory.bitws_rsv(orig_value);
 				muta_value = SymbolFactory.bitws_rsv(muta_value);
-				break;
 			}
-			case address_of:
-			{
+			else if(operator == COperator.address_of) {
 				orig_value = SymbolFactory.address_of(orig_value);
 				muta_value = SymbolFactory.address_of(muta_value);
-				break;
 			}
-			default:	
-			{
-				throw new IllegalArgumentException("Unsupported: " + operator);
+			else {
+				throw new IllegalArgumentException(operator.toString());
 			}
-			}
-			targets.add(AstContextStates.set_expr(child.get_parent(), orig_value, muta_value));
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupported source: " + source.generate_code());
+			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private	void	ext_set_condition(AstCirNode child, SymbolExpression orig_value,
+	/**
+	 * logic_expr|cond_expr|loop_stmt|ifte_stmt|for_stmt --> condition
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private void	ext_set_con(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstCirNode parent = child.get_parent(); AstNode source = parent.get_ast_source();
-		if(source instanceof AstLogicBinaryExpression) {
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstLogicUnaryExpression) {
+			orig_value = SymbolFactory.sym_condition(orig_value, false);
+			muta_value = SymbolFactory.sym_condition(muta_value, false);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else if(source instanceof AstLogicBinaryExpression) {
+			COperator operator = ((AstLogicBinaryExpression) source).get_operator().get_operator();
 			AstExpression operand;
 			if(parent.get_child(0) == child) {
 				operand = ((AstLogicBinaryExpression) source).get_roperand();
@@ -559,15 +576,11 @@ public final class AstContextStates {
 			else {
 				operand = ((AstLogicBinaryExpression) source).get_loperand();
 			}
-			
-			COperator operator = ((AstLogicBinaryExpression) source).get_operator().get_operator();
 			if(operator == COperator.logic_and) {
-				targets.add(AstContextStates.eva_cond(parent.statement_of(), operand, true));
 				orig_value = SymbolFactory.logic_and(orig_value, operand);
 				muta_value = SymbolFactory.logic_and(muta_value, operand);
 			}
 			else {
-				targets.add(AstContextStates.eva_cond(parent.statement_of(), operand, false));
 				orig_value = SymbolFactory.logic_ior(orig_value, operand);
 				muta_value = SymbolFactory.logic_ior(muta_value, operand);
 			}
@@ -575,581 +588,311 @@ public final class AstContextStates {
 		}
 		else if(source instanceof AstConditionalExpression) {
 			CType type = ((AstConditionalExpression) source).get_value_type();
-			AstExpression toperand = ((AstConditionalExpression) source).get_true_branch();
-			AstExpression foperand = ((AstConditionalExpression) source).get_false_branch();
-			orig_value = SymbolFactory.ifte_expression(type, orig_value, toperand, foperand);
-			muta_value = SymbolFactory.ifte_expression(type, muta_value, toperand, foperand);
+			AstExpression loperand = ((AstConditionalExpression) source).get_true_branch();
+			AstExpression roperand = ((AstConditionalExpression) source).get_false_branch();
+			orig_value = SymbolFactory.ifte_expression(type, orig_value, loperand, roperand);
+			muta_value = SymbolFactory.ifte_expression(type, muta_value, loperand, roperand);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
-		else if(source instanceof AstIfStatement) {
-			if(!SymbolFactory.is_bool(orig_value)) {
+		else if(source instanceof AstIfStatement || 
+				source instanceof AstWhileStatement || 
+				source instanceof AstDoWhileStatement ||
+				source instanceof AstForStatement) {
+			if(!SymbolFactory.is_bool(orig_value) || !SymbolFactory.is_bool(muta_value)) {
 				orig_value = SymbolFactory.sym_condition(orig_value, true);
 				muta_value = SymbolFactory.sym_condition(muta_value, true);
 				targets.add(AstContextStates.set_expr(child, orig_value, muta_value));
 			}
-		}
-		else if(source instanceof AstForStatement) {
-			if(!SymbolFactory.is_bool(orig_value)) {
-				orig_value = SymbolFactory.sym_condition(orig_value, true);
-				muta_value = SymbolFactory.sym_condition(muta_value, true);
-				targets.add(AstContextStates.set_expr(child, orig_value, muta_value));
-			}
-		}
-		else if(source instanceof AstWhileStatement) {
-			if(!SymbolFactory.is_bool(orig_value)) {
-				orig_value = SymbolFactory.sym_condition(orig_value, true);
-				muta_value = SymbolFactory.sym_condition(muta_value, true);
-				targets.add(AstContextStates.set_expr(child, orig_value, muta_value));
-			}
-		}
-		else if(source instanceof AstDoWhileStatement) {
-			if(!SymbolFactory.is_bool(orig_value)) {
-				orig_value = SymbolFactory.sym_condition(orig_value, true);
-				muta_value = SymbolFactory.sym_condition(muta_value, true);
-				targets.add(AstContextStates.set_expr(child, orig_value, muta_value));
-			}
-		}
-		else if(source instanceof AstLogicUnaryExpression) {
-			orig_value = SymbolFactory.sym_condition(orig_value, false);
-			muta_value = SymbolFactory.sym_condition(muta_value, false);
-			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupported: " + source.getClass().getSimpleName());
+			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private	void	ext_set_loperand(AstCirNode child, SymbolExpression orig_value, 
-			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstCirNode parent = child.get_parent(); 
-		AstNode source = parent.get_ast_source();
-		AstCirNode statement = parent.statement_of();
-		
-		if(source instanceof AstBinaryExpression) {
-			CType type = ((AstBinaryExpression) source).get_value_type();
-			AstExpression roperand = ((AstBinaryExpression) source).get_roperand();
-			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
-			switch(operator) {
-			case arith_add:
-			{
-				orig_value = SymbolFactory.arith_add(type, orig_value, roperand);
-				muta_value = SymbolFactory.arith_add(type, muta_value, roperand);
-				break;
-			}
-			case arith_sub:
-			{
-				orig_value = SymbolFactory.arith_sub(type, orig_value, roperand);
-				muta_value = SymbolFactory.arith_sub(type, muta_value, roperand);
-				break;
-			}
-			case arith_mul:
-			{
-				orig_value = SymbolFactory.arith_mul(type, orig_value, roperand);
-				muta_value = SymbolFactory.arith_mul(type, muta_value, roperand);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.not_equals(roperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case arith_div:
-			{
-				orig_value = SymbolFactory.arith_div(type, orig_value, roperand);
-				muta_value = SymbolFactory.arith_div(type, muta_value, roperand);
-				break;
-			}
-			case arith_mod:
-			{
-				orig_value = SymbolFactory.arith_mod(type, orig_value, roperand);
-				muta_value = SymbolFactory.arith_mod(type, muta_value, roperand);
-				break;
-			}
-			case bit_and:
-			{
-				orig_value = SymbolFactory.bitws_and(type, orig_value, roperand);
-				muta_value = SymbolFactory.bitws_and(type, muta_value, roperand);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.not_equals(roperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case bit_or:
-			{
-				orig_value = SymbolFactory.bitws_ior(type, orig_value, roperand);
-				muta_value = SymbolFactory.bitws_ior(type, muta_value, roperand);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.not_equals(roperand, Integer.valueOf(~0)), false));
-				break;
-			}
-			case bit_xor:
-			{
-				orig_value = SymbolFactory.bitws_xor(type, orig_value, roperand);
-				muta_value = SymbolFactory.bitws_xor(type, muta_value, roperand);
-				break;
-			}
-			case left_shift:
-			{
-				orig_value = SymbolFactory.bitws_lsh(type, orig_value, roperand);
-				muta_value = SymbolFactory.bitws_lsh(type, muta_value, roperand);
-				break;
-			}
-			case righ_shift:
-			{
-				orig_value = SymbolFactory.bitws_rsh(type, orig_value, roperand);
-				muta_value = SymbolFactory.bitws_rsh(type, muta_value, roperand);
-				break;
-			}
-			case greater_tn:
-			{
-				orig_value = SymbolFactory.greater_tn(orig_value, roperand);
-				muta_value = SymbolFactory.greater_tn(muta_value, roperand);
-				break;
-			}
-			case greater_eq:
-			{
-				orig_value = SymbolFactory.greater_eq(orig_value, roperand);
-				muta_value = SymbolFactory.greater_eq(muta_value, roperand);
-				break;
-			}
-			case smaller_tn:	
-			{
-				orig_value = SymbolFactory.smaller_tn(orig_value, roperand);
-				muta_value = SymbolFactory.smaller_tn(muta_value, roperand);
-				break;
-			}
-			case smaller_eq:	
-			{
-				orig_value = SymbolFactory.smaller_eq(orig_value, roperand);
-				muta_value = SymbolFactory.smaller_eq(muta_value, roperand);
-				break;
-			}
-			case equal_with:	
-			{
-				orig_value = SymbolFactory.equal_with(orig_value, roperand);
-				muta_value = SymbolFactory.equal_with(muta_value, roperand);
-				break;
-			}
-			case not_equals:	
-			{
-				orig_value = SymbolFactory.not_equals(orig_value, roperand);
-				muta_value = SymbolFactory.not_equals(muta_value, roperand);
-				break;
-			}
-			default:	throw new IllegalArgumentException("Invalid operator: " + operator);
-			}
-			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-		}
-		else if(source instanceof AstConditionalExpression) {
-			CType type = ((AstConditionalExpression) source).get_value_type();
-			AstExpression condition = ((AstConditionalExpression) source).get_condition();
-			AstExpression foperand = ((AstConditionalExpression) source).get_false_branch();
-			orig_value = SymbolFactory.ifte_expression(type, condition, orig_value, foperand);
-			muta_value = SymbolFactory.ifte_expression(type, condition, muta_value, foperand);
-			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-		}
-		else {
-			throw new IllegalArgumentException("Unsupported: " + source);
+	/**
+	 * @param type
+	 * @param operator
+	 * @param loperand
+	 * @param roperand
+	 * @return
+	 * @throws Exception
+	 */
+	private SymbolExpression sym_expression(CType type, COperator operator, Object loperand, Object roperand) throws Exception {
+		switch(operator) {
+		case arith_add:			return SymbolFactory.arith_add(type, loperand, roperand);
+		case arith_sub:			return SymbolFactory.arith_sub(type, loperand, roperand);
+		case arith_mul:			return SymbolFactory.arith_mul(type, loperand, roperand);
+		case arith_div:			return SymbolFactory.arith_div(type, loperand, roperand);
+		case arith_mod:			return SymbolFactory.arith_mod(type, loperand, roperand);
+		case bit_and:			return SymbolFactory.bitws_and(type, loperand, roperand);
+		case bit_or:			return SymbolFactory.bitws_ior(type, loperand, roperand);
+		case bit_xor:			return SymbolFactory.bitws_xor(type, loperand, roperand);
+		case left_shift:		return SymbolFactory.bitws_lsh(type, loperand, roperand);
+		case righ_shift:		return SymbolFactory.bitws_rsh(type, loperand, roperand);
+		case logic_and:			return SymbolFactory.logic_and(loperand, roperand);
+		case logic_or:			return SymbolFactory.logic_ior(loperand, roperand);
+		case greater_tn:		return SymbolFactory.greater_tn(loperand, roperand);
+		case greater_eq:		return SymbolFactory.greater_eq(loperand, roperand);
+		case smaller_tn:		return SymbolFactory.smaller_tn(loperand, roperand);
+		case smaller_eq:		return SymbolFactory.smaller_eq(loperand, roperand);
+		case equal_with:		return SymbolFactory.equal_with(loperand, roperand);
+		case not_equals:		return SymbolFactory.not_equals(loperand, roperand);
+		case assign:			return SymbolFactory.exp_assign(loperand, roperand);
+		case arith_add_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.arith_add(type, loperand, roperand));
+		case arith_sub_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.arith_sub(type, loperand, roperand));
+		case arith_mul_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mul(type, loperand, roperand));
+		case arith_div_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.arith_div(type, loperand, roperand));
+		case arith_mod_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mod(type, loperand, roperand));
+		case bit_and_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_and(type, loperand, roperand));
+		case bit_or_assign:		return SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_ior(type, loperand, roperand));
+		case bit_xor_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_xor(type, loperand, roperand));
+		case left_shift_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_lsh(type, loperand, roperand));
+		case righ_shift_assign:	return SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_rsh(type, loperand, roperand));
+		default:				throw new IllegalArgumentException("Invalid operator: " + operator.toString());
 		}
 	}
-	private	void	ext_set_roperand(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * biny_expr|cond_expr --> loperand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_lop(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstCirNode parent = child.get_parent(); 
+		AstCirNode parent = child.get_parent();
 		AstNode source = parent.get_ast_source();
-		AstCirNode statement = parent.statement_of();
-		
 		if(source instanceof AstConditionalExpression) {
 			CType type = ((AstConditionalExpression) source).get_value_type();
 			AstExpression condition = ((AstConditionalExpression) source).get_condition();
-			AstExpression foperand = ((AstConditionalExpression) source).get_false_branch();
-			orig_value = SymbolFactory.ifte_expression(type, condition, orig_value, foperand);
-			muta_value = SymbolFactory.ifte_expression(type, condition, muta_value, foperand);
+			AstExpression roperand = ((AstConditionalExpression) source).get_false_branch();
+			orig_value = SymbolFactory.ifte_expression(type, condition, orig_value, roperand);
+			muta_value = SymbolFactory.ifte_expression(type, condition, muta_value, roperand);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else if(source instanceof AstBinaryExpression) {
+			CType type = ((AstBinaryExpression) source).get_value_type();
+			AstExpression roperand = ((AstBinaryExpression) source).get_roperand();
+			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
+			orig_value = this.sym_expression(type, operator, orig_value, roperand);
+			muta_value = this.sym_expression(type, operator, muta_value, roperand);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
+	}
+	/**
+	 * biny_expr|cond_expr --> roperand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_rop(AstCirNode child, SymbolExpression orig_value,
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstConditionalExpression) {
+			CType type = ((AstConditionalExpression) source).get_value_type();
+			AstExpression condition = ((AstConditionalExpression) source).get_condition();
+			AstExpression loperand = ((AstConditionalExpression) source).get_true_branch();
+			orig_value = SymbolFactory.ifte_expression(type, condition, loperand, orig_value);
+			muta_value = SymbolFactory.ifte_expression(type, condition, loperand, muta_value);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else if(source instanceof AstBinaryExpression) {
 			CType type = ((AstBinaryExpression) source).get_value_type();
 			AstExpression loperand = ((AstBinaryExpression) source).get_loperand();
 			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
-			
-			switch(operator) {
-			case arith_add:
-			{
-				orig_value = SymbolFactory.arith_add(type, loperand, orig_value);
-				muta_value = SymbolFactory.arith_add(type, loperand, muta_value);
-				break;
-			}
-			case arith_sub:
-			{
-				orig_value = SymbolFactory.arith_sub(type, loperand, orig_value);
-				muta_value = SymbolFactory.arith_sub(type, loperand, muta_value);
-				break;
-			}
-			case arith_mul:
-			{
-				orig_value = SymbolFactory.arith_mul(type, loperand, orig_value);
-				muta_value = SymbolFactory.arith_mul(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-								not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case arith_div:
-			{
-				orig_value = SymbolFactory.arith_div(type, loperand, orig_value);
-				muta_value = SymbolFactory.arith_div(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case arith_mod:
-			{
-				orig_value = SymbolFactory.arith_mod(type, loperand, orig_value);
-				muta_value = SymbolFactory.arith_mod(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case bit_and:
-			{
-				orig_value = SymbolFactory.bitws_and(type, loperand, orig_value);
-				muta_value = SymbolFactory.bitws_and(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case bit_or:
-			{
-				orig_value = SymbolFactory.bitws_ior(type, loperand, orig_value);
-				muta_value = SymbolFactory.bitws_ior(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(~0)), false));
-				break;
-			}
-			case bit_xor:
-			{
-				orig_value = SymbolFactory.bitws_xor(type, loperand, orig_value);
-				muta_value = SymbolFactory.bitws_xor(type, loperand, muta_value);
-				break;
-			}
-			case left_shift:
-			{
-				orig_value = SymbolFactory.bitws_lsh(type, loperand, orig_value);
-				muta_value = SymbolFactory.bitws_lsh(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case righ_shift:
-			{
-				orig_value = SymbolFactory.bitws_rsh(type, loperand, orig_value);
-				muta_value = SymbolFactory.bitws_rsh(type, loperand, muta_value);
-				targets.add(AstContextStates.eva_cond(statement, SymbolFactory.
-						not_equals(loperand, Integer.valueOf(0)), false));
-				break;
-			}
-			case greater_tn:
-			{
-				orig_value = SymbolFactory.greater_tn(loperand, orig_value);
-				muta_value = SymbolFactory.greater_tn(loperand, muta_value);
-				break;
-			}
-			case greater_eq:
-			{
-				orig_value = SymbolFactory.greater_eq(loperand, orig_value);
-				muta_value = SymbolFactory.greater_eq(loperand, muta_value);
-				break;
-			}
-			case smaller_tn:
-			{
-				orig_value = SymbolFactory.smaller_tn(loperand, orig_value);
-				muta_value = SymbolFactory.smaller_tn(loperand, muta_value);
-				break;
-			}
-			case smaller_eq:
-			{
-				orig_value = SymbolFactory.smaller_eq(loperand, orig_value);
-				muta_value = SymbolFactory.smaller_eq(loperand, muta_value);
-				break;
-			}
-			case equal_with:
-			{
-				orig_value = SymbolFactory.equal_with(loperand, orig_value);
-				muta_value = SymbolFactory.equal_with(loperand, muta_value);
-				break;
-			}
-			case not_equals:
-			{
-				orig_value = SymbolFactory.not_equals(loperand, orig_value);
-				muta_value = SymbolFactory.not_equals(loperand, muta_value);
-				break;
-			}
-			default:	throw new IllegalArgumentException("Invalid operator: " + operator);
-			}
+			orig_value = this.sym_expression(type, operator, loperand, orig_value);
+			muta_value = this.sym_expression(type, operator, loperand, muta_value);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupported: " + source);
+			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private	void	ext_set_ivalue(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * incr_expr --> operand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_iva(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
 		AstCirNode parent = child.get_parent();
-		AstExpression source = (AstExpression) parent.get_ast_source();
-		CType type = source.get_value_type();
-		
+		AstNode source = parent.get_ast_source();
 		if(source instanceof AstIncreUnaryExpression) {
-			switch(((AstIncreUnaryExpression) source).get_operator().get_operator()) {
+			CType type = ((AstIncreUnaryExpression) source).get_value_type();
+			COperator operator = ((AstIncreUnaryExpression) source).get_operator().get_operator();
+			switch(operator) {
 			case increment:
 			{
 				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_add(type, orig_value, Integer.valueOf(1)));
 				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_add(type, muta_value, Integer.valueOf(1)));
 				break;
 			}
-			case decrement:
+			case decrement:	
 			{
 				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, Integer.valueOf(1)));
 				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_sub(type, muta_value, Integer.valueOf(1)));
 				break;
 			}
-			default:	throw new IllegalArgumentException("Unsupport: " + source.generate_code());
+			default:	throw new IllegalArgumentException("Invalid operator: " + operator.toString());
 			}
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else if(source instanceof AstIncrePostfixExpression) {
-			switch(((AstIncrePostfixExpression) source).get_operator().get_operator()) {
+			CType type = ((AstIncrePostfixExpression) source).get_value_type();
+			COperator operator = ((AstIncrePostfixExpression) source).get_operator().get_operator();
+			switch(operator) {
 			case increment:
 			{
 				orig_value = SymbolFactory.imp_assign(orig_value, SymbolFactory.arith_add(type, orig_value, Integer.valueOf(1)));
 				muta_value = SymbolFactory.imp_assign(muta_value, SymbolFactory.arith_add(type, muta_value, Integer.valueOf(1)));
 				break;
 			}
-			case decrement:
+			case decrement:	
 			{
 				orig_value = SymbolFactory.imp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, Integer.valueOf(1)));
 				muta_value = SymbolFactory.imp_assign(muta_value, SymbolFactory.arith_sub(type, muta_value, Integer.valueOf(1)));
 				break;
 			}
-			default:	throw new IllegalArgumentException("Unsupport: " + source.generate_code());
+			default:	throw new IllegalArgumentException("Invalid operator: " + operator.toString());
 			}
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupport: " + source);
+			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private	void	ext_set_lvalue(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * biny_expr|retr_stmt|init_decl --> loperand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_lva(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
 		AstCirNode parent = child.get_parent();
 		AstNode source = parent.get_ast_source();
 		if(source instanceof AstBinaryExpression) {
-			AstExpression roperand = ((AstBinaryExpression) source).get_roperand();
-			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
 			CType type = ((AstBinaryExpression) source).get_value_type();
-			
-			switch(operator) {
-			case assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, roperand);
-				muta_value = SymbolFactory.exp_assign(muta_value, roperand);
-				break;
-			}
-			case arith_add_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_add(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_add(type, muta_value, roperand));
-				break;
-			}
-			case arith_sub_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_sub(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_sub(type, muta_value, roperand));
-				break;
-			}
-			case arith_mul_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_mul(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_mul(type, muta_value, roperand));
-				break;
-			}
-			case arith_div_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_div(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_div(type, muta_value, roperand));
-				break;
-			}
-			case arith_mod_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.arith_mod(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.arith_mod(type, muta_value, roperand));
-				break;
-			}
-			case bit_and_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.bitws_and(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.bitws_and(type, muta_value, roperand));
-				break;
-			}
-			case bit_or_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.bitws_ior(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.bitws_ior(type, muta_value, roperand));
-				break;
-			}
-			case bit_xor_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.bitws_xor(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.bitws_xor(type, muta_value, roperand));
-				break;
-			}
-			case left_shift_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.bitws_lsh(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.bitws_lsh(type, muta_value, roperand));
-				break;
-			}
-			case righ_shift_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(orig_value, SymbolFactory.bitws_rsh(type, orig_value, roperand));
-				muta_value = SymbolFactory.exp_assign(muta_value, SymbolFactory.bitws_rsh(type, muta_value, roperand));
-				break;
-			}
-			default:	
-			{
-				throw new IllegalArgumentException("Invalid operator: " + operator);
-			}
-			}
+			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
+			AstExpression roperand = ((AstBinaryExpression) source).get_roperand();
+			orig_value = this.sym_expression(type, operator, orig_value, roperand);
+			muta_value = this.sym_expression(type, operator, muta_value, roperand);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
+		else if(source instanceof AstInitDeclarator) { }
+		else if(source instanceof AstReturnStatement) { }
 		else {
-			throw new IllegalArgumentException("Unsupported: " + source);
+			throw new IllegalArgumentException("Invalid: " + source.generate_code());
 		}
 	}
-	private	void	ext_set_rvalue(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * biny_expr|retr_stmt|init_decl --> roperand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_rva(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
 		AstCirNode parent = child.get_parent();
 		AstNode source = parent.get_ast_source();
-		if(source instanceof AstReturnStatement) {
-			orig_value = SymbolFactory.imp_assign(((AstReturnStatement) source).get_return(), orig_value);
-			muta_value = SymbolFactory.imp_assign(((AstReturnStatement) source).get_return(), muta_value);
-			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-		}
-		else if(source instanceof AstInitDeclarator) {
-			orig_value = SymbolFactory.imp_assign(((AstInitDeclarator) source).get_declarator(), orig_value);
-			muta_value = SymbolFactory.imp_assign(((AstInitDeclarator) source).get_declarator(), muta_value);
-			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-		}
-		else if(source instanceof AstBinaryExpression) {
-			AstExpression loperand = ((AstBinaryExpression) source).get_loperand();
+		if(source instanceof AstBinaryExpression) {
 			CType type = ((AstBinaryExpression) source).get_value_type();
 			COperator operator = ((AstBinaryExpression) source).get_operator().get_operator();
-			
-			switch(operator) {
-			case assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, orig_value);
-				muta_value = SymbolFactory.exp_assign(loperand, muta_value);
-				break;
-			}
-			case arith_add_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_add(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_add(type, loperand, muta_value));
-				break;
-			}
-			case arith_sub_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_sub(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_sub(type, loperand, muta_value));
-				break;
-			}
-			case arith_mul_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mul(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mul(type, loperand, muta_value));
-				break;
-			}
-			case arith_div_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_div(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_div(type, loperand, muta_value));
-				break;
-			}
-			case arith_mod_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mod(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.arith_mod(type, loperand, muta_value));
-				break;
-			}
-			case bit_and_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_and(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_and(type, loperand, muta_value));
-				break;
-			}
-			case bit_or_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_ior(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_ior(type, loperand, muta_value));
-				break;
-			}
-			case bit_xor_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_xor(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_xor(type, loperand, muta_value));
-				break;
-			}
-			case left_shift_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_lsh(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_lsh(type, loperand, muta_value));
-				break;
-			}
-			case righ_shift_assign:
-			{
-				orig_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_rsh(type, loperand, orig_value));
-				muta_value = SymbolFactory.exp_assign(loperand, SymbolFactory.bitws_rsh(type, loperand, muta_value));
-				break;
-			}
-			default:	throw new IllegalArgumentException("Invalid operator: null");
-			}
-			
+			AstExpression loperand = ((AstBinaryExpression) source).get_loperand();
+			orig_value = this.sym_expression(type, operator, loperand, orig_value);
+			muta_value = this.sym_expression(type, operator, loperand, muta_value);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
+		else if(source instanceof AstInitDeclarator) { }
+		else if(source instanceof AstReturnStatement) { }
 		else {
-			throw new IllegalArgumentException("Unsupported: " + source);
+			throw new IllegalArgumentException("Invalid: " + source.generate_code());
 		}
 	}
-	private	void	ext_set_address(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * addr_expr | unry_expr (*) --> operand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_adr(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstCirNode parent = child.get_parent(); AstNode source = parent.get_ast_source();
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
 		if(source instanceof AstArrayExpression) {
+			AstExpression address = ((AstArrayExpression) source).get_array_expression();
 			AstExpression index = ((AstArrayExpression) source).get_dimension_expression();
-			orig_value = SymbolFactory.arith_add(orig_value.get_data_type(), orig_value, index);
-			muta_value = SymbolFactory.arith_add(orig_value.get_data_type(), muta_value, index);
+			orig_value = SymbolFactory.arith_add(address.get_value_type(), orig_value, index);
+			muta_value = SymbolFactory.arith_add(address.get_value_type(), muta_value, index);
 			orig_value = SymbolFactory.dereference(orig_value);
 			muta_value = SymbolFactory.dereference(muta_value);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
-		else if(source instanceof AstPointUnaryExpression) {
+		else if(source instanceof AstUnaryExpression) {
 			orig_value = SymbolFactory.dereference(orig_value);
 			muta_value = SymbolFactory.dereference(muta_value);
 			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
 		else {
-			throw new IllegalArgumentException("Unsupported: " + source.generate_code());
+			throw new IllegalArgumentException(source.generate_code());
 		}
 	}
-	private	void	ext_set_index(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * addr_expr | unry_expr (*) --> operand
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_idx(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
-		AstCirNode parent = child.get_parent(); 
-		AstArrayExpression source = (AstArrayExpression) parent.get_ast_source();
-		AstExpression array = source.get_array_expression();
-		orig_value = SymbolFactory.arith_add(array.get_value_type(), array, orig_value);
-		muta_value = SymbolFactory.arith_add(array.get_value_type(), array, muta_value);
-		orig_value = SymbolFactory.dereference(orig_value);
-		muta_value = SymbolFactory.dereference(muta_value);
-		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstArrayExpression) {
+			AstExpression address = ((AstArrayExpression) source).get_array_expression();
+			orig_value = SymbolFactory.arith_add(address.get_value_type(), address, orig_value);
+			muta_value = SymbolFactory.arith_add(address.get_value_type(), address, muta_value);
+			orig_value = SymbolFactory.dereference(orig_value);
+			muta_value = SymbolFactory.dereference(muta_value);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
 	}
-	private	void	ext_set_element(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * init_body --> expression
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_ele(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
 		List<Object> orig_elements = new ArrayList<Object>();
 		List<Object> muta_elements = new ArrayList<Object>();
 		AstCirNode parent = child.get_parent();
 		
 		for(int k = 0; k < parent.number_of_children(); k++) {
-			if(child == parent.get_child(k)) {
-				orig_elements.add(orig_value); 
+			if(parent.get_child(k) == child) {
+				orig_elements.add(orig_value);
 				muta_elements.add(muta_value);
 			}
 			else {
@@ -1158,50 +901,93 @@ public final class AstContextStates {
 			}
 		}
 		
-		targets.add(AstContextStates.set_expr(parent, 
-				SymbolFactory.initializer_list(orig_elements), 
-				SymbolFactory.initializer_list(muta_elements)));
+		orig_value = SymbolFactory.initializer_list(orig_elements);
+		muta_value = SymbolFactory.initializer_list(muta_elements);
+		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 	}
-	private	void	ext_set_argument(AstCirNode child, SymbolExpression orig_value, 
+	/**
+	 * field_expr --> expression
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_fbd(AstCirNode child, SymbolExpression orig_value,
 			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
 		AstCirNode parent = child.get_parent();
-		AstCirNode callee = parent.get_child(0);
-		List<Object> orig_arguments = new ArrayList<Object>();
-		List<Object> muta_arguments = new ArrayList<Object>();
-		
-		for(int k = 1; k < parent.number_of_children(); k++) {
-			if(child == parent.get_child(k)) {
-				orig_arguments.add(orig_value);
-				muta_arguments.add(muta_value);
-			}
-			else {
-				orig_arguments.add(parent.get_child(k).get_ast_source());
-				muta_arguments.add(parent.get_child(k).get_ast_source());
-			}
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstFieldExpression) {
+			String field = ((AstFieldExpression) source).get_field().get_name();
+			orig_value = SymbolFactory.field_expression(orig_value, field);
+			muta_value = SymbolFactory.field_expression(muta_value, field);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
 		}
-		
-		orig_value = SymbolFactory.call_expression(callee.get_ast_source(), orig_arguments);
-		muta_value = SymbolFactory.call_expression(callee.get_ast_source(), muta_arguments);
-		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-	}
-	private	void	ext_set_fbody(AstCirNode child, SymbolExpression orig_value, 
-			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { 
-		AstCirNode parent = child.get_parent();
-		AstFieldExpression source = (AstFieldExpression) parent.get_ast_source();
-		orig_value = SymbolFactory.field_expression(orig_value, source.get_field().get_name());
-		muta_value = SymbolFactory.field_expression(muta_value, source.get_field().get_name());
-		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
-	}
-	private	void	ext_set_callee(AstCirNode child, SymbolExpression orig_value, 
-			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception { 
-		AstCirNode parent = child.get_parent();
-		List<Object> arguments = new ArrayList<Object>();
-		for(int k = 1; k < parent.number_of_children(); k++) {
-			arguments.add(parent.get_child(k).get_ast_source());
+		else {
+			throw new IllegalArgumentException(source.generate_code());
 		}
-		orig_value = SymbolFactory.call_expression(orig_value, arguments);
-		muta_value = SymbolFactory.call_expression(muta_value, arguments);
-		targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+	}
+	/**
+	 * call_expr --> function
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_cal(AstCirNode child, SymbolExpression orig_value,
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstFunCallExpression) {
+			List<Object> arguments = new ArrayList<Object>();
+			if(((AstFunCallExpression) source).has_argument_list()) {
+				AstArgumentList list = ((AstFunCallExpression) source).get_argument_list();
+				for(int k = 0; k < list.number_of_arguments(); k++) {
+					arguments.add(list.get_argument(k));
+				}
+			}
+			orig_value = SymbolFactory.call_expression(orig_value, arguments);
+			muta_value = SymbolFactory.call_expression(muta_value, arguments);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
+	}
+	/**
+	 * call_expr --> argument[k]
+	 * @param child
+	 * @param orig_value
+	 * @param muta_value
+	 * @param targets
+	 * @throws Exception
+	 */
+	private	void	ext_set_arg(AstCirNode child, SymbolExpression orig_value,
+			SymbolExpression muta_value, Collection<AstContextState> targets) throws Exception {
+		AstCirNode parent = child.get_parent();
+		AstNode source = parent.get_ast_source();
+		if(source instanceof AstFunCallExpression) {
+			List<Object> orig_arguments = new ArrayList<Object>();
+			List<Object> muta_arguments = new ArrayList<Object>();
+			AstExpression function = ((AstFunCallExpression) source).get_function();
+			for(int k = 1; k < parent.number_of_children(); k++) {
+				if(parent.get_child(k) == child) {
+					orig_arguments.add(orig_value);
+					muta_arguments.add(muta_value);
+				}
+				else {
+					orig_arguments.add(parent.get_child(k).get_ast_source());
+					muta_arguments.add(parent.get_child(k).get_ast_source());
+				}
+			}
+			orig_value = SymbolFactory.call_expression(function, orig_arguments);
+			muta_value = SymbolFactory.call_expression(function, muta_arguments);
+			targets.add(AstContextStates.set_expr(parent, orig_value, muta_value));
+		}
+		else {
+			throw new IllegalArgumentException(source.generate_code());
+		}
 	}
 	
 }

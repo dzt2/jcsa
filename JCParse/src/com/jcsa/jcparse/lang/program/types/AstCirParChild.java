@@ -19,13 +19,13 @@ public enum AstCirParChild {
 	/** AstPointUnary(*)|AstArrayExpression --> operand **/		address,
 	/** AstArrayExpression --> dimension **/					index,
 	
-	/** AstDeclStmt --> InitDecl; AstExprStmt --> expr **/		evaluate,
 	/** AstInitializerBody --> AstExpression(*) **/				element,
 	/** AstFunCallExpression --> function **/					callee,
 	/** AstFunCallExpression.arg_list --> argument[k] **/		argument,
 	/** AstFieldExpression --> body **/							fbody, 
 	/** AstFieldExpression --> field **/						field,
 	
+	/** AstDeclStmt --> InitDecl; AstExprStmt --> expr **/		evaluate,
 	/** AstComp|Switch|ForStmt --> sub_statement|init **/		execute,
 	/** AstIf|DoWhile|While|ForStatement --> body **/			tbranch,
 	/** AstIfStatement --> else.body **/						fbranch,

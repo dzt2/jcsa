@@ -26,6 +26,12 @@ public class ContextMutationParseTest {
 	private static final String root_path = "/home/dzt2/Development/Data/projects/";
 	private static String result_dir = "results/ctxt/";
 	
+	private static void report_error_rate(int total, int succeed) throws Exception {
+		int error = total - succeed;
+		double error_rate = ((double) error) / ((double) total);
+		error_rate = ((int) (error_rate * 10000)) / 100.0;
+		System.out.println("\tSUCC = " + succeed + "\tTOTAL = " + total + "\tERROR = " + error + "\t(" + error_rate + "%)");
+	}
 	private static MuTestProject get_project(File root) throws Exception {
 		return new MuTestProject(root, MuCommandUtil.linux_util);
 	}
@@ -100,7 +106,7 @@ public class ContextMutationParseTest {
 			writer.write("[END]\n\n");
 		}
 	}
-	private static void write_mutations(MuTestProject project, File output) throws Exception {
+	private static void write_context_mutations(MuTestProject project, File output) throws Exception {
 		MuTestProjectCodeFile cfile = project.get_code_space().get_code_files().iterator().next();
 		FileWriter writer = new FileWriter(output); int succeed = 0, total = 0;
 		for(Mutant mutant : cfile.get_mutant_space().get_mutants()) {
@@ -111,20 +117,18 @@ public class ContextMutationParseTest {
 				succeed++;
 			}
 			catch(Exception ex) {
-				//ex.printStackTrace();
+				/*
 				String muta_class = mutant.get_mutation().get_class().toString();
 				String operator = mutant.get_mutation().get_operator().toString();
 				int mutant_ID = mutant.get_id();
 				System.out.println("\t==> MUT#" + mutant_ID + "\t" + muta_class + "\t" + operator);
+				*/
 				mutation = null;
 			}
 			write_context_mutation(writer, mutant, mutation);
 		}
 		writer.close();
-		
-		int error = total - succeed; double error_rate = error / total;
-		error_rate = ((int) (error_rate * 10000)) / 100.0;
-		System.out.println("\tSUCC = " + succeed + "\tTOTAL = " + total + "\tERROR = " + error + " (" + error_rate + "%)");
+		report_error_rate(total, succeed);
 	}
 	private static void write_context_tree_node(FileWriter writer, MutantSpace mspace, ContextMutationNode node) throws Exception {
 		writer.write("[BEG]\n");
@@ -183,31 +187,26 @@ public class ContextMutationParseTest {
 		
 		writer.write("[END]\n\n");
 	}
-	@SuppressWarnings("unused")
 	private static void write_context_tree(MuTestProject project, File output) throws Exception {
 		/* 1. declaration and parsing methods */
 		MuTestProjectCodeFile cfile = project.get_code_space().get_code_files().iterator().next();
 		FileWriter writer = new FileWriter(output); MutantSpace mspace = cfile.get_mutant_space();
 		ContextMutationTree tree = ContextMutationTree.parse(cfile.get_ast_file(), mspace.get_mutants());
-		int succeeds = 0, total = mspace.size();
-		for(Mutant mutant : tree.get_mutants()) { succeeds++; }
-		double error_rate = ((double)(total - succeeds)) / ((double) total);
-		error_rate = ((int) (error_rate * 10000)) / 100.0; int error = total - succeeds;
-		System.out.println("\tSUCC = " + succeeds + "\tTOTAL = " + total + "\tERROR = " + error + "\t(" + error_rate + "%)");
 		
 		/* 2. write the tree nodes to the file */
+		int succeed = 0, total = mspace.size();
 		for(ContextMutationNode tree_node : tree.get_tree_nodes()) {
+			if(tree_node.get_in_degree() == 0) { succeed++; }
 			write_context_tree_node(writer, mspace, tree_node);
 		}
 		writer.close();
+		report_error_rate(total, succeed);
 	}
 	protected static void testing(File root) throws Exception {
 		MuTestProject project = get_project(root);
-		File output = new File(result_dir + root.getName() + ".txt");
 		System.out.println("Testing on " + project.get_name() + " for contextual mutations.");
-		write_mutations(project, output);
-		File output2 = new File(result_dir + root.getName() + ".tre");
-		write_context_tree(project, output2);
+		write_context_mutations(project, new File(result_dir + root.getName() + ".txt"));
+		write_context_tree(project, new File(result_dir + root.getName() + ".tre"));
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -221,4 +220,5 @@ public class ContextMutationParseTest {
 			}
 		}
 	}
+	
 }
