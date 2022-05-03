@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.tree;
 
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
@@ -40,8 +40,8 @@ public class ContextAnnotation {
 		}
 		else {
 			this.category = category; this.location = location;
-			this.loperand = ContextMutations.evaluate(loperand, null, null);
-			this.roperand = ContextMutations.evaluate(roperand, null, null);
+			this.loperand = ContextMutation.evaluate(loperand, null, null);
+			this.roperand = ContextMutation.evaluate(roperand, null, null);
 		}
 	}
 	
@@ -147,7 +147,7 @@ public class ContextAnnotation {
 		}
 		else {
 			return new ContextAnnotation(ContextAnnotationClass.trp_stmt, statement.
-					module_of(), ContextMutations.trap_value, ContextMutations.trap_value);
+					module_of(), ContextMutation.trap_value, ContextMutation.trap_value);
 		}
 	}
 	/**

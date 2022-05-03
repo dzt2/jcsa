@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcparse.lang.astree.AstNode;
 import com.jcsa.jcparse.lang.astree.decl.declarator.AstInitDeclarator;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
@@ -152,7 +152,7 @@ public final class AstContextStates {
 				location = location.get_parent();
 			}
 			return new AstBlockErrorState(location, SymbolFactory.
-					sym_constant(Boolean.TRUE), ContextMutations.trap_value);
+					sym_constant(Boolean.TRUE), ContextMutation.trap_value);
 		}
 	}
 	/**
@@ -284,7 +284,7 @@ public final class AstContextStates {
 	private	void	ext_eva_cond(AstConstraintState source, Collection<AstContextState> targets) throws Exception {
 		AstCirNode statement = source.get_location();
 		SymbolExpression condition = source.get_condition();
-		condition = ContextMutations.evaluate(condition, null, null);
+		condition = ContextMutation.evaluate(condition, null, null);
 		if(source.is_must()) {
 			targets.add(AstContextStates.eva_cond(statement, condition, false));
 		}
@@ -300,7 +300,7 @@ public final class AstContextStates {
 				targets.add(AstContextStates.eva_cond(statement, Boolean.FALSE, false));
 			}
 		}
-		else if(ContextMutations.has_trap_value(condition)) {
+		else if(ContextMutation.has_trap_value(condition)) {
 			targets.add(AstContextStates.eva_cond(statement, Boolean.TRUE, false));
 		}
 		else if(condition instanceof SymbolBinaryExpression) {
@@ -469,8 +469,8 @@ public final class AstContextStates {
 	private	void	ext_set_expr(AstValueErrorState source, Collection<AstContextState> targets) throws Exception {
 		SymbolExpression orig_value = source.get_original_value();
 		SymbolExpression muta_value = source.get_mutation_value();
-		SymbolExpression real_value = ContextMutations.evaluate(muta_value, null, null);
-		if(ContextMutations.has_trap_value(real_value)) {
+		SymbolExpression real_value = ContextMutation.evaluate(muta_value, null, null);
+		if(ContextMutation.has_trap_value(real_value)) {
 			targets.add(AstContextStates.trp_stmt(source.get_location()));
 		}
 		else {

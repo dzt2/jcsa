@@ -217,7 +217,7 @@ public abstract class ContextMutationParser {
 			this.inputs = mutant; this.output = null;
 			AstCirNode location = this.localize(mutant.get_mutation());
 			if(location != null) {
-				this.output = new ContextMutation(mutant, location);
+				this.output = ContextMutation.new_mutation(mutant, location);
 				this.generate(location, mutant.get_mutation());
 			}
 			return this.output;

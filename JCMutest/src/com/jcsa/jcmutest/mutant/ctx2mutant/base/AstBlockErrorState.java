@@ -1,6 +1,6 @@
 package com.jcsa.jcmutest.mutant.ctx2mutant.base;
 
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcparse.lang.program.AstCirNode;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -39,7 +39,7 @@ public class AstBlockErrorState extends AstAbstErrorState {
 	 * @return whether the block error causes an exception errors
 	 */
 	public boolean is_trapping_exception() {
-		return ContextMutations.has_trap_value(this.get_roperand());
+		return ContextMutation.has_trap_value(this.get_roperand());
 	}
 	
 }

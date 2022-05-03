@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.mutant.ctx2mutant.oprt;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcparse.lang.lexical.COperator;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 
@@ -25,7 +25,7 @@ public class CirLogicIorMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean arith_div() throws Exception {
-		this.parse_by_condition_and_muvalue(this.sym_condition(this.get_roperand(), false), ContextMutations.trap_value);
+		this.parse_by_condition_and_muvalue(this.sym_condition(this.get_roperand(), false), ContextMutation.trap_value);
 		List<Object> conditions = new ArrayList<Object>();
 		conditions.add(this.sym_condition(this.get_loperand(), false));
 		conditions.add(this.sym_condition(this.get_roperand(), true));
@@ -34,7 +34,7 @@ public class CirLogicIorMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean arith_mod() throws Exception {
-		this.parse_by_condition_and_muvalue(this.sym_condition(this.get_roperand(), false), ContextMutations.trap_value);
+		this.parse_by_condition_and_muvalue(this.sym_condition(this.get_roperand(), false), ContextMutation.trap_value);
 		return this.parse_by_condition_and_muvalue(this.sym_condition(this.get_roperand(), true), Boolean.FALSE);
 	}
 

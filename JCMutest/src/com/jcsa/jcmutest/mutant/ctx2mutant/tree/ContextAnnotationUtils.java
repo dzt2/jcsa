@@ -2,7 +2,7 @@ package com.jcsa.jcmutest.mutant.ctx2mutant.tree;
 
 import java.util.Collection;
 
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConstraintState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
@@ -146,67 +146,67 @@ final class ContextAnnotationUtils {
 		if(SymbolFactory.is_bool(orig_value)) {
 			if(muta_value instanceof SymbolConstant) {
 				if(((SymbolConstant) muta_value).get_bool().booleanValue()) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.true_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.true_value));
 				}
 				else {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.fals_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.fals_value));
 				}
 			}
-			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.bool_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.bool_value));
 		}
 		else if(SymbolFactory.is_usig(orig_value)) {
 			if(muta_value instanceof SymbolConstant) {
 				if(((SymbolConstant) muta_value).get_long() != 0) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.npos_value));
 				}
 			}
-			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
-			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nneg_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.numb_value));
 		}
 		else if(SymbolFactory.is_numb(orig_value)) {
 			if(muta_value instanceof SymbolConstant) {
 				if(((SymbolConstant) muta_value).get_long() > 0) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else if(((SymbolConstant) muta_value).get_long() < 0) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.negt_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.negt_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nneg_value));
 				}
 			}
-			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.numb_value));
 		}
 		else if(SymbolFactory.is_real(orig_value)) {
 			if(muta_value instanceof SymbolConstant) {
 				if(((SymbolConstant) muta_value).get_double() > 0) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.post_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.post_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else if(((SymbolConstant) muta_value).get_double() < 0) {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.negt_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.negt_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else {
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.zero_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.npos_value));
-					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.nneg_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.zero_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.npos_value));
+					annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.nneg_value));
 				}
 			}
-			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutations.numb_value));
+			annotations.add(ContextAnnotation.set_expr(expression, orig_value, ContextMutation.numb_value));
 		}
 		else { /* none of the annotation is created */ }
 	}
@@ -223,34 +223,34 @@ final class ContextAnnotationUtils {
 			Collection<ContextAnnotation> annotations) throws Exception {
 		if(SymbolFactory.is_numb(orig_value) || SymbolFactory.is_real(orig_value)) {
 			SymbolExpression difference = SymbolFactory.arith_sub(orig_value.get_data_type(), muta_value, orig_value);
-			difference = ContextMutations.evaluate(difference, null, null);
+			difference = ContextMutation.evaluate(difference, null, null);
 			if(difference instanceof SymbolConstant) {
 				annotations.add(ContextAnnotation.inc_expr(expression, orig_value, difference));
 				Object number = ((SymbolConstant) difference).get_number();
 				if(number instanceof Long) {
 					long value = ((Long) number).longValue();
 					if(value > 0) {
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.post_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nneg_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.post_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nneg_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nzro_value));
 					}
 					else {
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.negt_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.npos_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.negt_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.npos_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nzro_value));
 					}
 				}
 				else {
 					double value = ((Double) number).doubleValue();
 					if(value > 0) {
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.post_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nneg_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.post_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nneg_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nzro_value));
 					}
 					else {
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.negt_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.npos_value));
-						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutations.nzro_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.negt_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.npos_value));
+						annotations.add(ContextAnnotation.inc_expr(expression, orig_value, ContextMutation.nzro_value));
 					}
 				}
 			}
@@ -269,19 +269,19 @@ final class ContextAnnotationUtils {
 			Collection<ContextAnnotation> annotations) throws Exception {
 		if(SymbolFactory.is_numb(orig_value) || SymbolFactory.is_real(orig_value)) {
 			SymbolExpression difference = SymbolFactory.bitws_xor(orig_value.get_data_type(), muta_value, orig_value);
-			difference = ContextMutations.evaluate(difference, null, null);
+			difference = ContextMutation.evaluate(difference, null, null);
 			if(difference instanceof SymbolConstant) {
 				annotations.add(ContextAnnotation.xor_expr(expression, orig_value, difference));
 				long value = ((SymbolConstant) difference).get_long().longValue();
 				if(value > 0) {
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.post_value));
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nneg_value));
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.post_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.nneg_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 				else {
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.negt_value));
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.npos_value));
-					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutations.nzro_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.negt_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.npos_value));
+					annotations.add(ContextAnnotation.xor_expr(expression, orig_value, ContextMutation.nzro_value));
 				}
 			}
 		}
@@ -302,11 +302,11 @@ final class ContextAnnotationUtils {
 		SymbolContext muta_context = SymbolContext.new_context();
 		SymbolExpression orig_value = state.get_original_value();
 		SymbolExpression muta_value = state.get_mutation_value();
-		orig_value = ContextMutations.evaluate(orig_value, null, orig_context);
-		muta_value = ContextMutations.evaluate(muta_value, null, muta_context);
+		orig_value = ContextMutation.evaluate(orig_value, null, orig_context);
+		muta_value = ContextMutation.evaluate(muta_value, null, muta_context);
 		
 		/* 2. normal analysis */
-		if(ContextMutations.has_trap_value(muta_value)) {
+		if(ContextMutation.has_trap_value(muta_value)) {
 			annotations.add(ContextAnnotation.trp_stmt(expression)); 
 			return;
 		}

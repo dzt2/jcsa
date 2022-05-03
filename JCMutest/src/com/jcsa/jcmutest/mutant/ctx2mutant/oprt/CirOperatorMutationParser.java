@@ -5,7 +5,6 @@ import java.util.Collection;
 import com.jcsa.jcmutest.mutant.AstMutation;
 import com.jcsa.jcmutest.mutant.MutaOperator;
 import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutation;
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutations;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstAbstErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstBlockErrorState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
@@ -176,7 +175,7 @@ public abstract class CirOperatorMutationParser {
 		else {
 			SymbolExpression orig_value = SymbolFactory.sym_expression(expression);
 			SymbolExpression muta_value = SymbolFactory.sym_expression(muvalue);
-			if(ContextMutations.has_trap_value(muta_value)) {
+			if(ContextMutation.has_trap_value(muta_value)) {
 				return this.trap_statement();
 			}
 			else if(SymbolFactory.is_bool(orig_value)) {
