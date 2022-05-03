@@ -1,13 +1,12 @@
 package com.jcsa.jcparse.lang.symbol.eval;
 
-import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.symbol.SymbolArgumentList;
 import com.jcsa.jcparse.lang.symbol.SymbolCallExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
-import com.jcsa.jcparse.lang.symbol.SymbolLiteral;
+
 
 /**
  * It implements the standard library functions.
@@ -194,7 +193,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 		}
 		return null;
 	}
-	
+	/*
 	private	SymbolExpression printf(SymbolArgumentList alist) throws Exception {
 		SymbolExpression literal = alist.get_argument(0);
 		if(literal instanceof SymbolLiteral) {
@@ -256,13 +255,12 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 			return null;
 		}
 	}
-	
+	*/
 	@Override
 	public SymbolExpression invoke(SymbolCallExpression source, SymbolContext in_state, SymbolContext ou_state) throws Exception {
 		this.ou_state = ou_state; this.in_state = in_state;
 		SymbolArgumentList alist = source.get_argument_list();
 		SymbolExpression function = source.get_function();
-		
 		if(function instanceof SymbolIdentifier) {
 			String name = ((SymbolIdentifier) function).get_name();
 			if(name.equals("acos")) {
@@ -319,12 +317,14 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 			else if(name.equals("pow")) {
 				return this.pow(alist);
 			}
+			/*
 			else if(name.equals("printf")) {
 				return this.printf(alist);
 			}
 			else if(name.equals("fprintf")) {
 				return this.fprintf(alist);
 			}
+			*/
 			else {
 				return null;
 			}
@@ -339,7 +339,7 @@ final class SymbolDefaultInvoker implements SymbolMethodInvoker {
 	 * @param value
 	 * @throws Exception
 	 */
-	private void set_state_value(SymbolExpression reference, SymbolExpression value) throws Exception {
+	protected 	void set_state_value(SymbolExpression reference, SymbolExpression value) throws Exception {
 		if(reference == null) {
 			throw new IllegalArgumentException("Invalid reference: null");
 		}
