@@ -36,22 +36,18 @@ public class CirAssignToMutationParser extends CirOperatorMutationParser {
 
 	@Override
 	protected boolean arith_div() throws Exception {
-		/** (x = y; x /= y) :: (x != x / y; x != 0) --> (x /= y) **/
-		List<Object> conditions = new ArrayList<Object>();
-		conditions.add(this.neq_expression(this.get_loperand(), Integer.valueOf(0)));
-		SymbolExpression operand = this.sym_expression(COperator.arith_div, this.get_loperand(), this.get_roperand());
-		conditions.add(this.neq_expression(operand, this.get_loperand()));
-		return this.parse_by_condition_and_operator(this.sym_conjunctions(conditions), COperator.arith_div_assign);
+		/** (x = y; x /= y) :: (y != x / y) --> (x /= y) **/
+		SymbolExpression condition = this.sym_expression(COperator.arith_div, get_loperand(), get_roperand());
+		condition = this.neq_expression(condition, this.get_roperand());
+		return this.parse_by_condition_and_operator(condition, COperator.arith_div_assign);
 	}
 
 	@Override
 	protected boolean arith_mod() throws Exception {
 		/** (x = y; x %= y) :: (x != x % y; x != 0) --> (x %= y) **/
-		List<Object> conditions = new ArrayList<Object>();
-		conditions.add(this.neq_expression(this.get_loperand(), Integer.valueOf(0)));
-		SymbolExpression operand = this.sym_expression(COperator.arith_mod, this.get_loperand(), this.get_roperand());
-		conditions.add(this.neq_expression(operand, this.get_loperand()));
-		return this.parse_by_condition_and_operator(this.sym_conjunctions(conditions), COperator.arith_mod_assign);
+		SymbolExpression condition = this.sym_expression(COperator.arith_mod, get_loperand(), get_roperand());
+		condition = this.neq_expression(condition, this.get_roperand());
+		return this.parse_by_condition_and_operator(condition, COperator.arith_mod_assign);
 	}
 
 	@Override

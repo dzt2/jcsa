@@ -194,13 +194,14 @@ public class ContextMutationParseTest {
 		ContextMutationTree tree = ContextMutationTree.parse(cfile.get_ast_file(), mspace.get_mutants());
 		
 		/* 2. write the tree nodes to the file */
-		int succeed = 0, total = mspace.size();
+		int succeed = 0, total = mspace.size(), nodes = tree.number_of_tree_nodes();
 		for(ContextMutationNode tree_node : tree.get_tree_nodes()) {
 			if(tree_node.get_in_degree() == 0) { succeed++; }
 			write_context_tree_node(writer, mspace, tree_node);
 		}
 		writer.close();
-		report_error_rate(total, succeed);
+		System.out.println("\tSUCC = " + succeed + "\tTOTAL = " + total + 
+				"\tNODES = " + nodes + "\t(" + (100 * nodes / succeed) + "%)");
 	}
 	protected static void testing(File root) throws Exception {
 		MuTestProject project = get_project(root);

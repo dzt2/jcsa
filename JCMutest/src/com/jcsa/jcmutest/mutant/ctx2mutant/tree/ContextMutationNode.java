@@ -41,7 +41,7 @@ public class ContextMutationNode {
 			this.in_edges = new ArrayList<ContextMutationEdge>();
 			this.ou_edges = new ArrayList<ContextMutationEdge>();
 			this.annotations = new HashSet<ContextAnnotation>();
-			ContextAnnotationUtils.generate(this, this.annotations);
+			ContextAnnotationUtils.extend(this.state, this.annotations);
 		}
 	}
 	
