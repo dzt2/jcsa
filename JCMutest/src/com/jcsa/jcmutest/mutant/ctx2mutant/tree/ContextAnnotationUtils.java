@@ -252,8 +252,8 @@ final class ContextAnnotationUtils {
 	 * @param muta_value
 	 * @throws Exception
 	 */
-	private void ext_set_result(AstCirNode expression, SymbolExpression 
-			orig_value, SymbolExpression muta_value,
+	private void ext_set_result(AstCirNode expression, 
+			SymbolExpression orig_value, SymbolExpression muta_value,
 			Collection<ContextAnnotation> annotations) throws Exception {
 		CType type = ((AstExpression) expression.get_ast_source()).get_value_type();
 		if(!orig_value.equals(muta_value)) {

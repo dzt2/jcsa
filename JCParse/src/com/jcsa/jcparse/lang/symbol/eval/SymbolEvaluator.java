@@ -1503,7 +1503,7 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private	SymbolExpression	eval_bitws_rsv(SymbolUnaryExpression expression) throws Exception {
-		return this.eval_bitws_rsv(true, expression);
+		return this.eval_bitws_rsv(true, expression.get_operand());
 	}
 	
 	/* symbolic evaluation on {&&, ||, ->, not} */
