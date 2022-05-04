@@ -756,6 +756,7 @@ class AstCirNode:
 		:param ast_source: 	the abstract syntactic node as source
 		:param token: 		the token as the additional features
 		"""
+		tree: AstCirTree
 		self.tree = tree
 		self.node_id = nid
 		self.node_type = node_type
@@ -876,6 +877,9 @@ class AstCirNode:
 		self.ou_edges.append(edge)
 		target.in_edges.append(edge)
 		return
+
+	def __str__(self):
+		return "asc@{}".format(self.node_id)
 
 
 class AstCirTree:

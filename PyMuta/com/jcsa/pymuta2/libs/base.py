@@ -108,7 +108,7 @@ class CToken:
 				return CToken(CTokenClass(CTokenClass.DataType), CToken.__decode_string__(items[1].strip()))
 			elif title == "sym":																		##	sym@txt@int
 				value = (items[1].strip(), int(items[2].strip()))
-				return CToken(CTokenClass(CTokenClass.SymNode), value)
+				return CToken(CTokenClass(CTokenClass.SymbolID), value)
 			elif title == "ast":																		## 	ast@int
 				return CToken(CTokenClass(CTokenClass.AstNode), int(items[1].strip()))
 			elif title == "cir":																		## 	cir@int
