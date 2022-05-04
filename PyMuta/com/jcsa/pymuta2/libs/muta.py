@@ -821,19 +821,39 @@ if __name__ == "__main__":
 		c_project = CProject(directory, file_name)
 		print(file_name, "loads", len(c_project.muta_space.get_mutants()), "mutations",
 			  "and", len(c_project.test_space.get_test_cases()), "test cases.")
-		for context_node in c_project.context_tree.get_nodes():
-			state = context_node.get_state()
-			print("[NODE]\t{}\t{}[{}]\t{}\t{}".format(state.get_category(),
-													  state.get_location().get_node_type(),
-													  state.get_location().get_node_id(),
-													  state.get_loperand().get_code(),
-													  state.get_roperand().get_code()))
-			for annotation in context_node.get_annotations():
-				print("\t==> \t{}\t{}[{}]\t{}\t{}".format(annotation.get_category(),
-														  annotation.get_location().get_node_type(),
-														  annotation.get_location().get_node_id(),
-														  annotation.get_loperand().get_code(),
-														  annotation.get_roperand().get_code()))
-		print()
+		out_file = os.path.join("/home/dzt2/Development/Data/zext2/trash", file_name + ".txt")
+		with open(out_file, 'w') as writer:
+			for mutant in c_project.context_tree.get_mutants():
+				mid = mutant.get_muta_id()
+				res = mutant.get_result().is_killed_in(None)
+				if res:
+					result = "Killed"
+				else:
+					result = "Alive"
+				m_class = mutant.get_mutation().get_mutation_class()
+				m_oprt = mutant.get_mutation().get_mutation_operator()
+				m_line = mutant.get_mutation().get_location().line_of(False)
+				m_code = mutant.get_mutation().get_location().generate_code(64)
+				m_parameter = mutant.get_mutation().get_parameter()
+				writer.write("MID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(mid, result, m_class, m_oprt, m_line,
+																			  m_code, m_parameter))
+				for node in c_project.context_tree.get_nodes_of(mutant):
+					state = node.get_state()
+					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(state.get_category(),
+																				 state.get_location().get_node_type(),
+																				 state.get_location().get_node_id(),
+																				 state.get_location().get_ast_source().line_of(False),
+																				 state.get_location().get_ast_source().generate_code(64),
+																				 state.get_loperand().get_code(),
+																				 state.get_roperand().get_code()))
+					for annotation in node.get_annotations():
+						writer.write("\t[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(annotation.get_category(),
+																					   annotation.get_location().get_node_type(),
+																					   annotation.get_location().get_node_id(),
+																					   annotation.get_location().get_ast_source().line_of(False),
+																					   annotation.get_location().get_ast_source().generate_code(64),
+																					   annotation.get_loperand().get_code(),
+																					   annotation.get_roperand().get_code()))
+				writer.write("\n")
 	print("Testing ends for all.")
 
