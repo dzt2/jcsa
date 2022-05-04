@@ -3,14 +3,10 @@ package com.jcsa.jcmutest.mutant.ctx2mutant;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.HashMap;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
-import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstSeedMutantState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextAnnotation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationEdge;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationNode;
@@ -87,14 +83,14 @@ public class ContextMutationFeatureWriter {
 	/**	the file writer to generate feature information for **/
 	private FileWriter 										cfile_writer;	
 	/**	the set of symbolic nodes to be printed to the file	**/
-	private Set<SymbolNode>									symbol_nodes;
+	private HashMap<String, SymbolNode>						symbol_nodes;
 	
 	/* singleton mode and constructor */
 	private ContextMutationFeatureWriter() {
 		this.source_cfile = null;
 		this.ou_directory = null;
 		this.cfile_writer = null;
-		this.symbol_nodes = new HashSet<SymbolNode>();
+		this.symbol_nodes = new HashMap<String, SymbolNode>();
 	}
 	private static final ContextMutationFeatureWriter fwriter = new ContextMutationFeatureWriter();
 	
@@ -277,7 +273,8 @@ public class ContextMutationFeatureWriter {
 		}
 		else if(token instanceof SymbolNode) {
 			String key = "sym@" + token.getClass().getSimpleName().substring(6).trim() + "@" + token.hashCode();
-			if(!this.symbol_nodes.contains((SymbolNode) token)) { this.symbol_nodes.add((SymbolNode) token); }
+			if(!this.symbol_nodes.containsKey(key)) { this.symbol_nodes.put(key, (SymbolNode) token); }
+			for(SymbolNode child : ((SymbolNode) token).get_children()) { this.encode_token(child); }
 			return key;
 		}
 		else if(token instanceof AstContextState) {
@@ -756,12 +753,25 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private int write_context_edge(ContextMutationNode node) throws Exception {
-		this.cfile_writer.write("[NODE]\t" + node.get_node_id());
+		this.cfile_writer.write("[EDGE]\t" + node.get_node_id());
 		for(ContextMutationEdge edge : node.get_ou_edges()) {
 			this.cfile_writer.write("\t" + edge.get_target().get_node_id());
 		}
 		this.cfile_writer.write("\n");
 		return node.get_ou_degree();
+	}
+	/**
+	 * [LINK] mut@int node_id
+	 * @param tree
+	 * @throws Exception
+	 */
+	private int write_context_links(ContextMutationTree tree) throws Exception {
+		int succ = 0;
+		for(Mutant mutant : tree.get_mutants()) {
+			ContextMutationNode node = tree.get_tree_node_of(mutant); succ++;
+			this.cfile_writer.write("[LINK]\t" + this.encode_token(mutant) + "\t" + node.get_node_id() + "\n");
+		}
+		return succ;
 	}
 	/**
 	 * [NODE] ID STATE (ANNOTATION)* \n
@@ -773,12 +783,10 @@ public class ContextMutationFeatureWriter {
 		int nod_number = tree.number_of_tree_nodes();
 		int ant_number = 0, edg_number = 0, mut_number = 0;
 		for(ContextMutationNode node : tree.get_tree_nodes()) {
-			if(node.get_state() instanceof AstSeedMutantState) {
-				mut_number++;
-			}
 			ant_number += this.write_context_node(node);
 			edg_number += this.write_context_edge(node);
 		}
+		mut_number = this.write_context_links(tree);
 		return new int[] { mut_number, nod_number, edg_number, ant_number };
 	}
 	/**
@@ -795,33 +803,6 @@ public class ContextMutationFeatureWriter {
 		int[] results = this.write_context_tree(tree);
 		this.close();
 		return results;
-	}
-	/**
-	 * It generates all the symbolic nodes in the existing ones in this.sym_nodes
-	 * and update this.sym_nodes by adding all the remaining ones.
-	 * 
-	 * @throws Exception
-	 */
-	private void extend_sym_nodes() throws Exception {
-		/* 1. declarations and initialization */
-		Queue<SymbolNode> queue = new LinkedList<SymbolNode>();
-		HashSet<SymbolNode> records = new HashSet<SymbolNode>();
-		
-		/* 2. complete all the nodes under each root */
-		for(SymbolNode sym_node : this.symbol_nodes) {
-			/** BF-traverse algorithm to derive nodes **/
-			queue.add(sym_node);
-			while(!queue.isEmpty()) {
-				SymbolNode parent = queue.poll();
-				records.add(parent);
-				for(SymbolNode child : parent.get_children()) {
-					queue.add(child);
-				}
-			}
-		}
-		
-		/* 4. appending all the remaining nodes to this.sym_nodes */
-		this.symbol_nodes.clear(); this.symbol_nodes.addAll(records);
 	}
 	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
@@ -890,8 +871,7 @@ public class ContextMutationFeatureWriter {
 	 */
 	private void write_sym() throws Exception {
 		this.open(".sym");
-		this.extend_sym_nodes();
-		for(SymbolNode node : this.symbol_nodes) {
+		for(SymbolNode node : this.symbol_nodes.values()) {
 			this.write_sym_node(node);
 		}
 		this.close();
