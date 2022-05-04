@@ -229,7 +229,7 @@ public class SymbolEvaluator {
 		}
 		
 		/* 3. it saves the function-calling state in output-state */
-		// this.set_state_value(expression, output); 
+		this.set_state_value(expression, output); 
 		return output;
 	}
 	/**
