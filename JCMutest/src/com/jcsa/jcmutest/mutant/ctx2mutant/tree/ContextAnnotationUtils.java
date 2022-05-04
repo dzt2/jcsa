@@ -13,6 +13,7 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstValueErrorState;
 import com.jcsa.jcparse.lang.astree.expr.AstExpression;
 import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.program.AstCirNode;
+import com.jcsa.jcparse.lang.program.types.AstCirNodeType;
 import com.jcsa.jcparse.lang.program.types.AstCirParChild;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
@@ -170,6 +171,7 @@ final class ContextAnnotationUtils {
 		SymbolContext muta_context = SymbolContext.new_context();
 		orig_value = ContextMutation.evaluate(orig_value, null, orig_context);
 		muta_value = ContextMutation.evaluate(muta_value, null, muta_context);
+		boolean is_top_level = false;
 		
 		/* 2. trap exception */
 		if(ContextMutation.has_trap_value(muta_value)) {
@@ -189,6 +191,7 @@ final class ContextAnnotationUtils {
 				}
 				this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
 			}
+			is_top_level = true;
 		}
 		/* 4. state + value compared */
 		else if(expression.get_child_type() == AstCirParChild.condition
@@ -205,6 +208,28 @@ final class ContextAnnotationUtils {
 				}
 				this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
 			}
+			is_top_level = true;
+		}
+		else if(expression.get_child_type() == AstCirParChild.rvalue || 
+				expression.get_child_type() == AstCirParChild.lvalue) {
+			if(expression.get_parent().get_node_type() == AstCirNodeType.retr_stmt) {
+				this.ext_set_result(expression, orig_value, muta_value, annotations);
+			}
+			else {
+				this.ext_set_result(expression, orig_value, muta_value, annotations);
+				for(SymbolExpression identifier : muta_context.get_keys()) {
+					SymbolExpression muta_state = muta_context.get_value(identifier);
+					SymbolExpression orig_state;
+					if(orig_context.has_value(identifier)) {
+						orig_state = orig_context.get_value(identifier);
+					}
+					else {
+						orig_state = identifier;
+					}
+					this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
+				}
+			}
+			is_top_level = true;
 		}
 		/* 5. value compared */
 		else {
@@ -212,7 +237,7 @@ final class ContextAnnotationUtils {
 		}
 		
 		/* 6. equivalence checked */
-		if(annotations.isEmpty()) {
+		if(annotations.isEmpty() && is_top_level) {
 			AstCirNode statement = expression.statement_of();
 			while(!statement.get_parent().is_module_node()) {
 				statement = statement.get_parent();

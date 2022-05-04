@@ -532,7 +532,7 @@ class MerDocumentEncoder:
 				nodes = project.context_tree.get_nodes_of(mutant)
 				features = set()
 				for node in nodes:
-					# features.add(results[node.get_state()])
+					features.add(results[node.get_state()])
 					for annotation in node.get_annotations():
 						features.add(results[annotation])
 				writer.write("{}".format(mutant.get_muta_id()))
@@ -595,28 +595,34 @@ def decode_all(in_directory: str, ou_directory: str):
 		directory = os.path.join(ou_directory, file_name)
 		m_document = MerDocument(directory, file_name)
 		print("Decode MerDocument of Program {}.".format(m_document.name))
-		# tests = len(m_document.get_test_space().get_test_cases())
-		# mutants = len(m_document.get_mutant_space().get_mutants())
-		# states = len(m_document.get_state_space().get_states())
-		# muta_execs = len(m_document.get_state_space().get_executions())
-		# print("\t{} tests; {} mutants; {} executions; {} states.".format(tests, mutants, muta_execs, states))
-		for execution in m_document.get_state_space().get_executions():
-			mutant = execution.get_mutant().find_source(c_project)
-			states = execution.get_states()
-			print("\tMID#{}\t{}\t{}\t{}\t\"{}\"\t[{}]".format(mutant.get_muta_id(),
-															  mutant.get_mutation().get_mutation_class(),
-															  mutant.get_mutation().get_mutation_operator(),
-															  mutant.get_mutation().get_location().line_of(False),
-															  mutant.get_mutation().get_location().generate_code(64),
-															  mutant.get_mutation().get_parameter()))
-			for state in states:
-				c_state = state.find_source(c_project)
-				print("\t==>\t{}\t#{}\t\"{}\"\t({})\t({})".format(c_state.get_category(),
-																  c_state.get_location().get_ast_source().line_of(False),
-																  c_state.get_location().get_ast_source().generate_code(64),
-																  c_state.get_loperand().get_code(),
-																  c_state.get_roperand().get_code()))
-			print()
+		tests = len(m_document.get_test_space().get_test_cases())
+		mutants = len(m_document.get_mutant_space().get_mutants())
+		states = len(m_document.get_state_space().get_states())
+		muta_execs = len(m_document.get_state_space().get_executions())
+		print("\t{} tests; {} mutants; {} executions; {} states.".format(tests, mutants, muta_execs, states))
+		out_file = os.path.join(directory, file_name + ".txt")
+		with open(out_file, 'w') as writer:
+			for execution in m_document.get_state_space().get_executions():
+				mutant = execution.get_mutant().find_source(c_project)
+				states = execution.get_states()
+				result = "Alive"
+				if mutant.get_result().is_killed_in(None):
+					result = "Killed"
+				writer.write("\tMID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(mutant.get_muta_id(), result,
+																				mutant.get_mutation().get_mutation_class(),
+																				mutant.get_mutation().get_mutation_operator(),
+																				mutant.get_mutation().get_location().line_of(False),
+																				mutant.get_mutation().get_location().generate_code(64),
+																				mutant.get_mutation().get_parameter()))
+				for state in states:
+					c_state = state.find_source(c_project)
+					writer.write("\t==>\t{}\t#{}\t\"{}\"\t({})\t({})".format(c_state.get_category(),
+																			 c_state.get_location().get_ast_source().line_of(False),
+																			 c_state.get_location().get_ast_source().generate_code(64),
+																			 c_state.get_loperand().get_code(),
+																			 c_state.get_roperand().get_code()))
+					writer.write("\n")
+				writer.write("\n")
 	print()
 	return
 
@@ -625,6 +631,6 @@ if __name__ == "__main__":
 	f_directory = "/home/dzt2/Development/Data/zext2/features"
 	e_directory = "/home/dzt2/Development/Data/zext2/encoding"
 	encode_all(f_directory, e_directory)
-	# decode_all(f_directory, e_directory)
+	decode_all(f_directory, e_directory)
 	print("Testing End for All...")
 
