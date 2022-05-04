@@ -317,7 +317,7 @@ final class ContextAnnotationUtils {
 			}
 			this.ext_set_state(statement, identifier, orig_state, muta_state, annotations);
 		}
-		
+		/*
 		for(SymbolExpression identifier : orig_context.get_keys()) {
 			SymbolExpression orig_state = orig_context.get_value(identifier);
 			if(!muta_context.has_value(identifier)) {
@@ -325,6 +325,7 @@ final class ContextAnnotationUtils {
 				this.ext_set_state(statement, identifier, orig_state, muta_state, annotations);
 			}
 		}
+		*/
 	}
 
 	
