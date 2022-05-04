@@ -532,7 +532,7 @@ class MerDocumentEncoder:
 				nodes = project.context_tree.get_nodes_of(mutant)
 				features = set()
 				for node in nodes:
-					features.add(results[node.get_state()])
+					# features.add(results[node.get_state()])
 					for annotation in node.get_annotations():
 						features.add(results[annotation])
 				writer.write("{}".format(mutant.get_muta_id()))
