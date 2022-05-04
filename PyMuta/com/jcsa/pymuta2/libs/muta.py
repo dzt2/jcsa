@@ -817,7 +817,6 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext2/features"
 	for file_name in os.listdir(root_path):
 		directory = os.path.join(root_path, file_name)
-		print("Testing on", file_name)
 		c_project = CProject(directory, file_name)
 		print(file_name, "loads", len(c_project.muta_space.get_mutants()), "mutations",
 			  "and", len(c_project.test_space.get_test_cases()), "test cases.")
