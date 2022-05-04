@@ -72,7 +72,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.encode (1)">
+  <component name="RunManager" selected="Python.muta">
     <configuration name="code" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -201,8 +201,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.encode (1)" />
         <item itemvalue="Python.muta" />
+        <item itemvalue="Python.encode (1)" />
         <item itemvalue="Python.mining (1)" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.mining" />
