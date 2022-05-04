@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstSeedMutantState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextAnnotation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationEdge;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationNode;
@@ -720,40 +721,48 @@ public class ContextMutationFeatureWriter {
 	 * MID bit_string
 	 * @throws Exception
 	 */
-	private void write_res() throws Exception {
+	private int write_res() throws Exception {
 		this.open(".res");
+		int res_number = 0;
 		MuTestProjectTestSpace tspace = this.source_cfile.get_code_space().get_project().get_test_space();
 		for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
 			MuTestProjectTestResult result = tspace.get_test_result(mutant);
-			if(result != null)
-				this.write_res(result);
+			if(result != null) {
+				this.write_res(result); 
+				res_number++;
+			}
 		}
 		this.close();
+		return res_number;
 	}
 	/**
 	 * [NODE] ID STATE (ANNOTATION)* \n
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_context_node(ContextMutationNode node) throws Exception {
+	private int write_context_node(ContextMutationNode node) throws Exception {
 		this.cfile_writer.write("[NODE]\t" + node.get_node_id());
 		this.cfile_writer.write("\t" + this.encode_token(node.get_state()));
+		int ant_number = 0;
 		for(ContextAnnotation annotation : node.get_annotations()) {
 			this.cfile_writer.write("\t" + this.encode_token(annotation));
+			ant_number++;
 		}
 		this.cfile_writer.write("\n");
+		return ant_number;
 	}
 	/**
 	 * [EDGE] source (target)+ \n
 	 * @param node
 	 * @throws Exception
 	 */
-	private void write_context_edge(ContextMutationNode node) throws Exception {
+	private int write_context_edge(ContextMutationNode node) throws Exception {
 		this.cfile_writer.write("[NODE]\t" + node.get_node_id());
 		for(ContextMutationEdge edge : node.get_ou_edges()) {
 			this.cfile_writer.write("\t" + edge.get_target().get_node_id());
 		}
 		this.cfile_writer.write("\n");
+		return node.get_ou_degree();
 	}
 	/**
 	 * [NODE] ID STATE (ANNOTATION)* \n
@@ -761,11 +770,17 @@ public class ContextMutationFeatureWriter {
 	 * @param tree
 	 * @throws Exception
 	 */
-	private void write_context_tree(ContextMutationTree tree) throws Exception {
+	private int[] write_context_tree(ContextMutationTree tree) throws Exception {
+		int nod_number = tree.number_of_tree_nodes();
+		int ant_number = 0, edg_number = 0, mut_number = 0;
 		for(ContextMutationNode node : tree.get_tree_nodes()) {
-			this.write_context_node(node);
-			this.write_context_edge(node);
+			if(node.get_state() instanceof AstSeedMutantState) {
+				mut_number++;
+			}
+			ant_number += this.write_context_node(node);
+			edg_number += this.write_context_edge(node);
 		}
+		return new int[] { mut_number, nod_number, edg_number, ant_number };
 	}
 	/**
 	 * xxx.ctx
@@ -773,25 +788,15 @@ public class ContextMutationFeatureWriter {
 	 * [EDGE] source (target)+ \n
 	 * @throws Exception
 	 */
-	private void write_ctx() throws Exception {
+	private int[] write_ctx() throws Exception {
 		this.open(".ctx");
 		ContextMutationTree tree = ContextMutationTree.parse(
 				this.source_cfile.get_ast_file(), 
 				this.source_cfile.get_mutant_space().get_mutants());
-		this.write_context_tree(tree);
+		int[] results = this.write_context_tree(tree);
 		this.close();
+		return results;
 	}
-	/**
-	 * xxx.mut, xxx.tst, xxx.res
-	 * @throws Exception
-	 */
-	private void write_test_features() throws Exception {
-		this.write_tst(); this.write_mut(); 
-		this.write_res(); this.write_ctx();
-		this.write_sym();
-	}
-	
-	/* symbolic feature writers */
 	/**
 	 * It generates all the symbolic nodes in the existing ones in this.sym_nodes
 	 * and update this.sym_nodes by adding all the remaining ones.
@@ -892,8 +897,49 @@ public class ContextMutationFeatureWriter {
 		}
 		this.close();
 	}
+	/**
+	 * xxx.mut, xxx.tst, xxx.res
+	 * @throws Exception
+	 */
+	private void write_test_features() throws Exception {
+		this.write_tst(); 
+		this.write_mut(); 
+		int res_number = this.write_res(); 
+		int[] results = this.write_ctx();
+		this.write_sym();
+		this.report_summary(res_number, results[0], results[1], results[2], results[3]);
+	}
 	
 	/* interfaces */
+	/**
+	 * It reports the number of features used in definition models
+	 */
+	private void report_summary(int res_number, int succ_number, int node_number, int edge_number, int ant_number) throws Exception {
+		MuTestProjectTestSpace tspace = this.source_cfile.get_code_space().get_project().get_test_space();
+		int code_lines = this.source_cfile.get_ast_file().get_source_code().number_of_lines();
+		int tst_number = tspace.number_of_test_inputs();
+		System.out.println("\t\t[FILE] = " + this.source_cfile.get_name() + ";\t[LINE] = " + code_lines + ";\t[TEST] = " + tst_number);
+		
+		int ast_number = this.source_cfile.get_ast_tree().number_of_nodes();
+		int cir_number = this.source_cfile.get_cir_tree().size();
+		int exe_number = 0;
+		for(CirFunction function : this.source_cfile.get_cir_tree().get_function_call_graph().get_functions()) {
+			exe_number += function.get_flow_graph().size();
+		}
+		System.out.println("\t\t[ASTN] = " + ast_number + ";\t[CIRN] = " + cir_number + ";\t[EXEC] = " + exe_number);
+		
+		int mut_number = this.source_cfile.get_mutant_space().size();
+		double test_ratio = ((double) res_number) / ((double) mut_number);
+		test_ratio = ((int) (test_ratio * 10000)) / 100.0;
+		System.out.println("\t\t[MUTA] = " + mut_number + ";\t[REST] = " + res_number + ";\t(" + test_ratio + "%)");
+		
+		double succ_ratio = ((double) succ_number) / ((double) mut_number);
+		succ_ratio = ((int) (succ_ratio * 10000)) / 100.0;
+		System.out.println("\t\t[NODE] = " + node_number + ";\t[CMUT] = " + succ_number + ";\t(" + succ_ratio + "%)");
+		
+		int sym_number = this.symbol_nodes.size();
+		System.out.println("\t\t[EDGE] = " + edge_number + ";\t[ANOT] = " + ant_number + ";\t[SYMB] = " + sym_number);
+	}
 	/**
 	 * It writes both static and dynamic subsumption hierarchies and features.
 	 * @param source_cfile	the mutation testing project source file to print

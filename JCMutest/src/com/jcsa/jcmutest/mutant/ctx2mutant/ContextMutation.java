@@ -11,8 +11,10 @@ import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstConditionState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextStates;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstCoverTimesState;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstSeedMutantState;
+import com.jcsa.jcparse.lang.ctype.CType;
 import com.jcsa.jcparse.lang.ctype.impl.CBasicTypeImpl;
 import com.jcsa.jcparse.lang.program.AstCirNode;
+import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
@@ -235,6 +237,98 @@ public class ContextMutation {
 				return expression.evaluate(in_context, ou_context);
 			}
 			catch(ArithmeticException ex) { return trap_value; }
+		}
+	}
+	/**
+	 * @param expression
+	 * @return the set of domains referring to the given type and value of expression
+	 * @throws Exception
+	 */
+	public 	static	Iterable<SymbolExpression> get_domains_of(CType type, SymbolExpression expression) throws Exception {
+		if(expression == null) {
+			throw new IllegalArgumentException("Invalid expression: null");
+		}
+		else {
+			List<SymbolExpression> domains = new ArrayList<SymbolExpression>();
+			if(has_trap_value(expression)) {									/* TRAP */
+				domains.add(trap_value);
+			}
+			else if(SymbolFactory.is_bool(type)) {								/* BOOL */
+				if(expression instanceof SymbolConstant) {
+					if(((SymbolConstant) expression).get_bool()) {
+						domains.add(true_value);
+					}
+					else {
+						domains.add(fals_value);
+					}
+				}
+				domains.add(bool_value);
+			}
+			else if(SymbolFactory.is_usig(type)) {								/* UNSIGN */
+				if(expression instanceof SymbolConstant) {
+					if(((SymbolConstant) expression).get_long() == 0) {
+						domains.add(zero_value);
+					}
+					else {
+						domains.add(post_value);
+					}
+				}
+				domains.add(nneg_value);
+				domains.add(numb_value);
+			}
+			else if(SymbolFactory.is_sign(type)) {								/* SIGN */
+				if(expression instanceof SymbolConstant) {
+					if(((SymbolConstant) expression).get_long() > 0) {
+						domains.add(post_value);
+						domains.add(nneg_value);
+						domains.add(nzro_value);
+					}
+					else if(((SymbolConstant) expression).get_long() < 0) {
+						domains.add(negt_value);
+						domains.add(npos_value);
+						domains.add(nzro_value);
+					}
+					else {
+						domains.add(zero_value);
+						domains.add(npos_value);
+						domains.add(nneg_value);
+					}
+				}
+				domains.add(numb_value);
+			}
+			else if(SymbolFactory.is_real(type)) {								/* FLOAT */
+				if(expression instanceof SymbolConstant) {
+					if(((SymbolConstant) expression).get_double() > 0) {
+						domains.add(post_value);
+						domains.add(nneg_value);
+						domains.add(nzro_value);
+					}
+					else if(((SymbolConstant) expression).get_double() < 0) {
+						domains.add(negt_value);
+						domains.add(npos_value);
+						domains.add(nzro_value);
+					}
+					else {
+						domains.add(zero_value);
+						domains.add(npos_value);
+						domains.add(nneg_value);
+					}
+				}
+				domains.add(numb_value);
+			}
+			else if(SymbolFactory.is_addr(type)) {								/* POINT */
+				if(expression instanceof SymbolConstant) {
+					if(((SymbolConstant) expression).get_long() == 0) {
+						domains.add(null_value);
+					}
+					else {
+						domains.add(nnul_value);
+					}
+				}
+				domains.add(addr_value);
+			}
+			else { /** no valid domain to describe **/ }						/* OTHER */
+			return domains;
 		}
 	}
 	
