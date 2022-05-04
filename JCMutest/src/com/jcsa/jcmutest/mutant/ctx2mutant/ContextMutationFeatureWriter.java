@@ -86,7 +86,7 @@ public class ContextMutationFeatureWriter {
 	/**	the set of symbolic nodes to be printed to the file	**/
 	private HashMap<String, SymbolNode>						symbol_nodes;
 	
-	/* singleton mode and constructor */
+	/* singleton mode and constructor */ 
 	private ContextMutationFeatureWriter() {
 		this.source_cfile = null;
 		this.ou_directory = null;
