@@ -58,6 +58,7 @@ import com.jcsa.jcparse.lang.scope.CName;
 import com.jcsa.jcparse.lang.symbol.SymbolBinaryExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolConstant;
 import com.jcsa.jcparse.lang.symbol.SymbolExpression;
+import com.jcsa.jcparse.lang.symbol.SymbolFactory;
 import com.jcsa.jcparse.lang.symbol.SymbolField;
 import com.jcsa.jcparse.lang.symbol.SymbolFieldExpression;
 import com.jcsa.jcparse.lang.symbol.SymbolIdentifier;
@@ -146,6 +147,7 @@ public class ContextMutationFeatureWriter {
 			this.ou_directory = ou_directory;
 			this.symbol_nodes.clear();
 			this.close();
+			SymbolFactory.set_config(this.source_cfile.get_sizeof_template(), true);
 		}
 	}
 	

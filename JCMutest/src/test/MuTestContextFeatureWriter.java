@@ -23,7 +23,6 @@ public class MuTestContextFeatureWriter {
 		System.out.println("Testing on " + project.get_name() + " for writing features.");
 		FileOperations.mkdir(output_directory);
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
-
 		
 		/* only implement the static features writing here... */
 		ContextMutationFeatureWriter.write_features(code_file, output_directory);

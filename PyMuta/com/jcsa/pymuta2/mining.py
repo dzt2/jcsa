@@ -978,7 +978,7 @@ if __name__ == "__main__":
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		print("Testing on {}.".format(fname))
-		do_testing(cdocument, mdocument, None, 1, 2, 0.80, o_directory)
+		do_testing(cdocument, mdocument, None, 1, 2, 0.54, o_directory)
 		print()
 	print("End-All-Testing.")
 
