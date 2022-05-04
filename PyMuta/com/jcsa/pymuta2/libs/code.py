@@ -192,10 +192,20 @@ class AstNode:
 			new_code = ""
 			for k in range(0, len(code)):
 				ch = code[k]
-				if ch.isspace():
+				if ch.isspace() or (ch == '\t') or (ch == '\n'):
 					ch = ' '
 				new_code += ch
 			code = new_code
+		return code
+
+	def generate_code(self, max_length: int):
+		"""
+		:param max_length:
+		:return:
+		"""
+		code = self.get_code(True)
+		if len(code) > max_length:
+			code = code[0: max_length] + "..."
 		return code
 
 	def line_of(self, tail: bool):

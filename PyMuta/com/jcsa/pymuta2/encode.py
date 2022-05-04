@@ -38,7 +38,6 @@ class MerDocument:
 		return self.state_space
 
 
-
 class MerTestCaseSpace:
 	"""
 	The space of memory-reduced instances to encode TestCase in CProject.
@@ -352,12 +351,7 @@ class MerContextExecution:
 		self.space = space
 		self.eid = eid
 		self.mutant = mutant
-		self.features = list()
-		for feature in features:
-			feature: int
-			if not (feature in self.features):
-				self.features.append(feature)
-		self.features.sort()
+		self.features = space.normal(features)
 		return
 
 	def get_space(self):
@@ -426,33 +420,42 @@ class MerContextStateSpace:
 	def get_states(self):
 		return self.states
 
+	def normal(self, features):
+		"""
+		:param features:
+		:return:
+		"""
+		feature_list = list()
+		for feature in features:
+			feature: int
+			if (feature >= 0) and (feature < len(self.states)):
+				if not (feature in feature_list):
+					feature_list.append(feature)
+		feature_list.sort()
+		return feature_list
+
 	def encode(self, states):
 		"""
 		:param states: 	the set of MerContextState to be encoded
 		:return: 		the sorted list of their integer IDs
 		"""
-		features = list()
+		features = set()
 		for state in states:
 			state: MerContextState
 			sid = state.get_sid()
-			if not (sid in features):
-				if (sid >= 0) and (sid < len(self.states)):
-					features.append(sid)
-		features.sort()
-		return features
+			features.add(sid)
+		return self.normal(features)
 
 	def decode(self, features):
 		"""
 		:param features:
 		:return: the set of MerContextState encoded by the integer vector
 		"""
-		states = set()
-		for feature in features:
-			feature: int
-			if (feature >= 0) and (feature < len(self.states)):
-				state = self.states[feature]
-				state: MerContextState
-				states.add(state)
+		states = list()
+		for feature in self.normal(features):
+			state = self.states[feature]
+			state: MerContextState
+			states.append(state)
 		return states
 
 	def get_executions(self):
@@ -529,7 +532,7 @@ class MerDocumentEncoder:
 				nodes = project.context_tree.get_nodes_of(mutant)
 				features = set()
 				for node in nodes:
-					features.add(results[node.get_state()])
+					# features.add(results[node.get_state()])
 					for annotation in node.get_annotations():
 						features.add(results[annotation])
 				writer.write("{}".format(mutant.get_muta_id()))
@@ -580,20 +583,40 @@ def encode_all(in_directory: str, ou_directory: str):
 	return
 
 
-def decode_all(ou_directory: str):
+def decode_all(in_directory: str, ou_directory: str):
 	"""
+	:param in_directory:
 	:param ou_directory:
 	:return:
 	"""
 	for file_name in os.listdir(ou_directory):
+		directory = os.path.join(in_directory, file_name)
+		c_project = jcmuta.CProject(directory, file_name)
 		directory = os.path.join(ou_directory, file_name)
 		m_document = MerDocument(directory, file_name)
 		print("Decode MerDocument of Program {}.".format(m_document.name))
-		tests = len(m_document.get_test_space().get_test_cases())
-		mutants = len(m_document.get_mutant_space().get_mutants())
-		states = len(m_document.get_state_space().get_states())
-		muta_execs = len(m_document.get_state_space().get_executions())
-		print("\t{} tests; {} mutants; {} executions; {} states.".format(tests, mutants, muta_execs, states))
+		# tests = len(m_document.get_test_space().get_test_cases())
+		# mutants = len(m_document.get_mutant_space().get_mutants())
+		# states = len(m_document.get_state_space().get_states())
+		# muta_execs = len(m_document.get_state_space().get_executions())
+		# print("\t{} tests; {} mutants; {} executions; {} states.".format(tests, mutants, muta_execs, states))
+		for execution in m_document.get_state_space().get_executions():
+			mutant = execution.get_mutant().find_source(c_project)
+			states = execution.get_states()
+			print("\tMID#{}\t{}\t{}\t{}\t\"{}\"\t[{}]".format(mutant.get_muta_id(),
+															  mutant.get_mutation().get_mutation_class(),
+															  mutant.get_mutation().get_mutation_operator(),
+															  mutant.get_mutation().get_location().line_of(False),
+															  mutant.get_mutation().get_location().generate_code(64),
+															  mutant.get_mutation().get_parameter()))
+			for state in states:
+				c_state = state.find_source(c_project)
+				print("\t==>\t{}\t#{}\t\"{}\"\t({})\t({})".format(c_state.get_category(),
+																  c_state.get_location().get_ast_source().line_of(False),
+																  c_state.get_location().get_ast_source().generate_code(64),
+																  c_state.get_loperand().get_code(),
+																  c_state.get_roperand().get_code()))
+			print()
 	print()
 	return
 
@@ -602,6 +625,6 @@ if __name__ == "__main__":
 	f_directory = "/home/dzt2/Development/Data/zext2/features"
 	e_directory = "/home/dzt2/Development/Data/zext2/encoding"
 	encode_all(f_directory, e_directory)
-	decode_all(e_directory)
+	# decode_all(f_directory, e_directory)
 	print("Testing End for All...")
 
