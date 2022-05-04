@@ -972,13 +972,13 @@ if __name__ == "__main__":
 	encoding_directory = "/home/dzt2/Development/Data/zext2/encoding"
 	patterns_directory = "/home/dzt2/Development/Data/zext2/patterns"
 	for fname in os.listdir(features_directory):
-		cdocument = jcmuta.CProject(os.path.join(features_directory, fname), fname)
-		mdocument = jcencode.MerDocument(os.path.join(encoding_directory, fname), fname)
+		project = jcmuta.CProject(os.path.join(features_directory, fname), fname)
+		document = jcencode.MerDocument(os.path.join(encoding_directory, fname), fname)
 		o_directory = os.path.join(patterns_directory, fname)
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		print("Testing on {}.".format(fname))
-		do_testing(cdocument, mdocument, None, 1, 2, 0.54, o_directory)
+		do_testing(project, document, None, 1, 2, 0.54, o_directory)
 		print()
 	print("End-All-Testing.")
 
