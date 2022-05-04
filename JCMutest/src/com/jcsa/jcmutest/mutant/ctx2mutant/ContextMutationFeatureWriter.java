@@ -572,7 +572,7 @@ public class ContextMutationFeatureWriter {
 		String token = this.encode_token(node.get_token());
 		String child_type;
 		if(!node.is_root()) {
-			child_type = node.get_child_type().toString();
+			child_type = this.encode_token(node.get_child_type().toString());
 		}
 		else {
 			child_type = this.encode_token(null);
@@ -594,7 +594,6 @@ public class ContextMutationFeatureWriter {
 		this.cfile_writer.write("[LIST]");
 		this.cfile_writer.write("\t" + this.encode_token(node));
 		for(AstCirNode child : node.get_children()) {
-			this.cfile_writer.write("\t");
 			this.cfile_writer.write("\t" + this.encode_token(child));
 		}
 		this.cfile_writer.write("\n");
@@ -918,15 +917,17 @@ public class ContextMutationFeatureWriter {
 		MuTestProjectTestSpace tspace = this.source_cfile.get_code_space().get_project().get_test_space();
 		int code_lines = this.source_cfile.get_ast_file().get_source_code().number_of_lines();
 		int tst_number = tspace.number_of_test_inputs();
-		System.out.println("\t\t[FILE] = " + this.source_cfile.get_name() + ";\t[LINE] = " + code_lines + ";\t[TEST] = " + tst_number);
+		System.out.println("\t\t[FILE] = " + this.source_cfile.get_name() + ";\t[TEST] = " + tst_number);
 		
 		int ast_number = this.source_cfile.get_ast_tree().number_of_nodes();
+		int asc_number = this.source_cfile.get_ast_file().number_of_tree_nodes();
 		int cir_number = this.source_cfile.get_cir_tree().size();
-		int exe_number = 0;
+		int exe_number = 0; int fun_number = 0;
 		for(CirFunction function : this.source_cfile.get_cir_tree().get_function_call_graph().get_functions()) {
-			exe_number += function.get_flow_graph().size();
+			exe_number += function.get_flow_graph().size(); fun_number++;
 		}
-		System.out.println("\t\t[ASTN] = " + ast_number + ";\t[CIRN] = " + cir_number + ";\t[EXEC] = " + exe_number);
+		System.out.println("\t\t[LINE] = " + code_lines + ";\t[ASTN] = " + ast_number + ";\t[ASTC] = " + asc_number);
+		System.out.println("\t\t[CIRN] = " + cir_number + ";\t[EXEC] = " + exe_number + ";\t[FUNC] = " + fun_number);
 		
 		int mut_number = this.source_cfile.get_mutant_space().size();
 		double test_ratio = ((double) res_number) / ((double) mut_number);
