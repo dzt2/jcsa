@@ -84,7 +84,7 @@ class CToken:
 		if len(items) > 0:
 			title = items[0].strip()
 			if title == 'n':  																			## n@null
-				return CToken(CTokenClass(CTokenClass.Nullptr), None)
+				return CToken(CTokenClass(CTokenClass.NullPtr), None)
 			elif title == 'b':  																		## b@bool
 				return CToken(CTokenClass(CTokenClass.Boolean), bool(items[1].strip() == "true"))
 			elif title == 'c':  																		## c@char
