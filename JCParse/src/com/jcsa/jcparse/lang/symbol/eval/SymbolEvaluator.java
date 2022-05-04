@@ -1819,7 +1819,7 @@ public class SymbolEvaluator {
 	 * @throws Exception
 	 */
 	private	SymbolExpression	eval_logic_not(SymbolUnaryExpression expression) throws Exception {
-		return this.eval_logic_not(true, expression);
+		return this.eval_logic_not(true, expression.get_operand());
 	}
 	
 	/* symbolic evaluation on {&, *, :=, <-} */

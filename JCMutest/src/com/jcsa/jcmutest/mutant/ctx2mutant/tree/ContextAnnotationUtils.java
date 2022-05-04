@@ -180,34 +180,14 @@ final class ContextAnnotationUtils {
 		/* 3. state compared */
 		else if(expression.get_child_type() == AstCirParChild.execute
 				|| expression.get_child_type() == AstCirParChild.evaluate) {
-			for(SymbolExpression identifier : muta_context.get_keys()) {
-				SymbolExpression muta_state = muta_context.get_value(identifier);
-				SymbolExpression orig_state;
-				if(orig_context.has_value(identifier)) {
-					orig_state = orig_context.get_value(identifier);
-				}
-				else {
-					orig_state = identifier;
-				}
-				this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
-			}
+			this.ext_set_states(expression.statement_of(), orig_context, muta_context, annotations);
 			is_top_level = true;
 		}
 		/* 4. state + value compared */
 		else if(expression.get_child_type() == AstCirParChild.condition
 				|| expression.get_child_type() == AstCirParChild.n_condition) {
 			this.ext_set_result(expression, orig_value, muta_value, annotations);
-			for(SymbolExpression identifier : muta_context.get_keys()) {
-				SymbolExpression muta_state = muta_context.get_value(identifier);
-				SymbolExpression orig_state;
-				if(orig_context.has_value(identifier)) {
-					orig_state = orig_context.get_value(identifier);
-				}
-				else {
-					orig_state = identifier;
-				}
-				this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
-			}
+			this.ext_set_states(expression.statement_of(), orig_context, muta_context, annotations);
 			is_top_level = true;
 		}
 		else if(expression.get_child_type() == AstCirParChild.rvalue || 
@@ -217,17 +197,7 @@ final class ContextAnnotationUtils {
 			}
 			else {
 				this.ext_set_result(expression, orig_value, muta_value, annotations);
-				for(SymbolExpression identifier : muta_context.get_keys()) {
-					SymbolExpression muta_state = muta_context.get_value(identifier);
-					SymbolExpression orig_state;
-					if(orig_context.has_value(identifier)) {
-						orig_state = orig_context.get_value(identifier);
-					}
-					else {
-						orig_state = identifier;
-					}
-					this.ext_set_state(expression.statement_of(), identifier, orig_state, muta_state, annotations);
-				}
+				this.ext_set_states(expression.statement_of(), orig_context, muta_context, annotations);
 			}
 			is_top_level = true;
 		}
@@ -326,5 +296,36 @@ final class ContextAnnotationUtils {
 			}
 		}
 	}
+	
+	/**
+	 * @param statement
+	 * @param orig_context
+	 * @param ou_context
+	 * @param annotations
+	 * @throws Exception
+	 */
+	private void ext_set_states(AstCirNode statement, SymbolContext orig_context, 
+			SymbolContext muta_context, Collection<ContextAnnotation> annotations) throws Exception {
+		for(SymbolExpression identifier : muta_context.get_keys()) {
+			SymbolExpression muta_state = muta_context.get_value(identifier);
+			SymbolExpression orig_state;
+			if(orig_context.has_value(identifier)) {
+				orig_state = orig_context.get_value(identifier);
+			}
+			else {
+				orig_state = identifier;
+			}
+			this.ext_set_state(statement, identifier, orig_state, muta_state, annotations);
+		}
+		
+		for(SymbolExpression identifier : orig_context.get_keys()) {
+			SymbolExpression orig_state = orig_context.get_value(identifier);
+			if(!muta_context.has_value(identifier)) {
+				SymbolExpression muta_state = identifier;
+				this.ext_set_state(statement, identifier, orig_state, muta_state, annotations);
+			}
+		}
+	}
+
 	
 }
