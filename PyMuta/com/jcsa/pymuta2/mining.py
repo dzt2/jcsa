@@ -632,18 +632,18 @@ class CirStatePatternOutput:
 	def __sta2str__(self, state: jcencode.MerContextState):
 		"""
 		:param state:	the CirAbstractState of which information is written to the file
-		:return:		stid \t category \t node_type \t line \t code \t loperand \t roperand
+		:return:		stid \t category \t func_name \t line \t code \t loperand \t roperand
 		"""
 		stid = state.get_sid()
 		c_state = state.find_source(self.c_project)
 		category = c_state.get_category()
 		location = c_state.get_location()
-		node_type = location.get_node_type()
+		func_name = location.get_ast_source().get_function_name()
 		code_line = location.get_ast_source().line_of(False)
 		code_text = self.__str2str__(location.get_ast_source().get_code(True))
 		loperand = c_state.get_loperand().get_code()
 		roperand = c_state.get_roperand().get_code()
-		return stid, category, node_type, code_line, code_text, loperand, roperand
+		return stid, category, func_name, code_line, code_text, loperand, roperand
 
 	def __ant2str__(self, state: jcencode.MerContextState, used_tests):
 		"""

@@ -20,8 +20,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextAnnotationUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextAnnotationUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/code.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta2/mining.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta2/mining.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -74,7 +74,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.muta">
+  <component name="RunManager" selected="Python.mining (1)">
     <configuration name="code" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -203,9 +203,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.mining (1)" />
         <item itemvalue="Python.muta" />
         <item itemvalue="Python.encode (1)" />
-        <item itemvalue="Python.mining (1)" />
         <item itemvalue="Python.code" />
         <item itemvalue="Python.mining" />
       </list>

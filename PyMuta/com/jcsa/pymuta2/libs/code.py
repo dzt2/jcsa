@@ -156,6 +156,22 @@ class AstNode:
 		"""
 		return self.class_name
 
+	def function_of(self):
+		node = self
+		while node.class_name != "FunctionDefinition":
+			node = node.get_parent()
+		return node
+
+	def get_function_name(self):
+		function = self.function_of()
+		code = function.get_code(True)
+		index = code.index('(')
+		code = code[0: index].strip()
+		if ' ' in code:
+			items = code.split(' ')
+			code = items[-1].strip()
+		return code
+
 	def get_beg_index(self):
 		"""
 		:return: index to the first character in code range
