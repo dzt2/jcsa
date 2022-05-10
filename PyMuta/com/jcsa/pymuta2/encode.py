@@ -291,6 +291,15 @@ class MerMutant:
 		"""
 		return '1' in self.res
 
+	def get_states(self):
+		"""
+		:return: the set of states referred by this mutant
+		"""
+		mutant_exec = self.get_space().document.state_space.get_execution_of(self)
+		if mutant_exec is None:
+			return list()
+		return mutant_exec.get_states()
+
 	def find_source(self, project: jcmuta.CProject):
 		"""
 		:param project:
@@ -463,6 +472,16 @@ class MerContextStateSpace:
 
 	def get_execution(self, eid: int):
 		return self.lines[eid]
+
+	def get_execution_of(self, mutant: MerMutant):
+		"""
+		:param mutant:
+		:return: the execution referring to the mutant
+		"""
+		for execution in self.get_executions():
+			if execution.get_mutant() == mutant:
+				return execution
+		return None
 
 
 class MerDocumentEncoder:

@@ -666,58 +666,63 @@ class CirStatePatternOutput:
 
 	## 3. writing methods
 
-	def write_patterns_to_mutations(self, file_path: str, rules, used_tests):
+	def __write_pattern_rule__(self, rule: CirStatePatternRule, used_tests):
 		"""
-		:param file_path: 	the xxx.ptm in which the pattern-mutation table is written
-		:param rules:		the set of CirStatePatternRule(s) that are written to file
-		:param used_tests:	the set of MerTestCase(s) or int to measure the input rule
+		:param rule:
+		:param used_tests:
 		:return:
 		"""
-		with open(file_path, 'w') as writer:
-			self.__opens__(writer, "Table of Pattern-to-Mutation")
+		## 1. evaluate the rule and get the metrics
+		killed, alive, kill_ratio = rule.k_measure(used_tests)
+		length, support, confidence = rule.s_measure(used_tests)
+		exec_number, muta_number = len(rule.get_executions()), len(rule.get_mutants())
+		kill_ratio = self.__percent__(kill_ratio)
+		confidence = self.__percent__(confidence)
 
+		## 2. write the summary of metrics
+		self.__write__("\t[EVALUATION]\n")
+		self.__write__("\tRID\t{}\tEXE\t{}\tMUT\t{}\n".format(str(rule), exec_number, muta_number))
+		self.__write__("\tKIL\t{}\tALV\t{}\tKRT\t{}%\n".format(killed, alive, kill_ratio))
+		self.__write__("\tLEN\t{}\tSUP\t{}\tCOF\t{}%\n".format(length, support, confidence))
+		self.__write__("\n")
+
+		## 3. write the definition of the rule
+		self.__write__("\t[DEFINITION]\n")
+		self.__write__("\tRID\tCategory\tFunc\tLine\tCode\tLOperand\tRoperand\n")
+		for state in rule.get_states():
+			stid, category, func_name, code_line, code_text, loperand, roperand = self.__sta2str__(state)
+			self.__write__("\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\t[{}]\n".format(stid, category, func_name, code_line,
+																			code_text, loperand, roperand))
+		self.__write__("\n")
+
+		## 4. write the matched mutations set
+		self.__write__("\t[MUTATIONS]\n")
+		self.__write__("\tMID\tRESULT\tCLASS\tOPERATOR\tLINE\tLOCATION\tPARAMETER\n")
+		for mutant in rule.get_mutants():
+			mid, result, cls, operator, line, location, parameter = self.__mut2str__(mutant, used_tests)
+			self.__write__("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})\n".
+						   format(mid, result, cls, operator, line, location, parameter))
+		self.__write__("\n")
+		return
+
+	def write_pattern_mutation_file(self, file_path: str, rules, used_tests):
+		"""
+		:param file_path: 	the file to present the pattern-mutation table
+		:param rules: 		the set of patterns being printed to this file
+		:param used_tests: 	the set of test cases to evaluate each pattern
+		:return:			
+		"""
+		with open(file_path, 'w') as writer:
+			self.__opens__(writer, "Pattern-Mutation-Table")
 			for rule in rules:
 				rule: CirStatePatternRule
 				self.__write__("\n#BEG\n")
-
-				## 1. evaluate the rule and get the metrics
-				killed, alive, kill_ratio = rule.k_measure(used_tests)
-				length, support, confidence = rule.s_measure(used_tests)
-				exec_number, muta_number = len(rule.get_executions()), len(rule.get_mutants())
-				kill_ratio = self.__percent__(kill_ratio)
-				confidence = self.__percent__(confidence)
-
-				## 2. write the summary of metrics
-				self.__write__("\t[EVALUATION]\n")
-				self.__write__("\tRID\t{}\tEXE\t{}\tMUT\t{}\n".format(str(rule), exec_number, muta_number))
-				self.__write__("\tKIL\t{}\tALV\t{}\tKRT\t{}%\n".format(killed, alive, kill_ratio))
-				self.__write__("\tLEN\t{}\tSUP\t{}\tCOF\t{}%\n".format(length, support, confidence))
-				self.__write__("\n")
-
-				## 3. write the definition of the rule
-				self.__write__("\t[DEFINITION]\n")
-				self.__write__("\tSTID\tCategory\tNodeType\tNodeLine\tNodeCode\tLoperand\tRoperand\n")
-				for state in rule.get_states():
-					stid, category, node_type, node_line, node_code, loperand, roperand = self.__sta2str__(state)
-					self.__write__("\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\t[{}]\n".format(stid, category, node_type, node_line,
-																					node_code, loperand, roperand))
-				self.__write__("\n")
-
-				## 4. write the matched mutations set
-				self.__write__("\t[MUTATIONS]\n")
-				self.__write__("\tMID\tRESULT\tCLASS\tOPERATOR\tLINE\tLOCATION\tPARAMETER\n")
-				for mutant in rule.get_mutants():
-					mid, result, cls, operator, line, location, parameter = self.__mut2str__(mutant, used_tests)
-					self.__write__("\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})\n".
-								   format(mid, result, cls, operator, line, location, parameter))
-				self.__write__("\n")
-
-				self.__write__("#END\n")
-
-			self.__close__(file_path)
+				self.__write_pattern_rule__(rule, used_tests)
+				self.__write__("\n#END\n")
+			self.__close__("")
 		return
 
-	def write_patterns_of_summarize(self, file_path: str, rules, used_tests):
+	def write_patterns_summary_file(self, file_path: str, rules, used_tests):
 		"""
 		:param file_path: 	the xxx.pts in which the patterns-summary table is written
 		:param rules:		the set of CirStatePatternRule(s) that are written to file
@@ -785,7 +790,7 @@ class CirStatePatternOutput:
 			self.__close__(file_path)
 		return
 
-	def write_mutations_to_patterns(self, file_path: str, rules, used_tests):
+	def write_mutation_pattern_file(self, file_path: str, rules, used_tests):
 		"""
 		:param file_path:	the xxx.mtp in which the information of mutation-pattern table
 		:param rules:		the set of CirStatePatternRule(s) to be selected among mutants
@@ -834,7 +839,7 @@ class CirStatePatternOutput:
 			self.__close__(file_path)
 		return
 
-	def write_mutation_to_summarize(self, file_path: str, rules, used_tests):
+	def write_mutation_summary_file(self, file_path: str, rules, used_tests):
 		"""
 		:param file_path:	the xxx.mts in which the information of mutation-summary table
 		:param rules:		the set of CirStatePatternRule(s) to be selected among mutants
@@ -861,27 +866,35 @@ class CirStatePatternOutput:
 						   format(len(self.m_document.get_mutant_space().get_mutants()), len(mutants_rules)))
 
 			## 2. write the mutation and corresponding patterns to each file line
-			self.__write__("ID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tCONF(%)\tCATE\tNODE\tLOCT\tLOPR\tROPR\n")
+			self.__write__("ID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tCATE\tLOCT\tCODE\tLOPR\tROPR\n")
 			for mutant, mutant_rules in mutants_rules.items():
 				mid, res, cls, operator, line, code, parameter = self.__mut2str__(mutant, used_tests)
 				if len(mutant_rules) == 0:
-					self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(mid, cls, operator, line, code, parameter, None))
+					mutant_type = None
+					for state in mutant.get_states():
+						source_state = state.find_source(self.c_project)
+						if (source_state.get_category() == "eva_cond") and (source_state.get_loperand().get_code() == "false"):
+							mutant_type = "CEQ"
+							break
+					self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(mid, cls, operator, line, code, parameter, mutant_type))
 					self.__write__("\n")
 				else:
-					for rule in mutant_rules:
-						state = rule.get_states()[0]
-						length, support, confidence = rule.s_measure(used_tests)
-						confidence = self.__percent__(confidence)
-						stid, category, node_type, node_line, node_code, loperand, roperand = self.__sta2str__(state)
-						if (category == "eva_cond") and ("false" == loperand):
-							mutant_type = "CEQ"
-						else:
-							mutant_type = str(rule)
-						self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".
-									   format(mid, cls, operator, line, code, parameter, mutant_type))
-						self.__write__("\t{}\t{}\t{}:{}\t{}\t[{}]\t[{}]".format(
-							confidence, category, node_type, node_line, node_code, loperand, roperand))
-						self.__write__("\n")
+					represent_state = mutant_rules[0].get_states()[0]
+					for state in mutant.get_states():
+						source_state = state.find_source(self.c_project)
+						if (source_state.get_category() == "eva_cond") and (source_state.get_loperand().get_code() == "false"):
+							represent_state = state
+							break
+					stid, category, func_name, code_line, code_text, loperand, roperand = self.__sta2str__(represent_state)
+					if (category == "eva_cond") and ("false" == loperand):
+						mutant_type = "CEQ"
+					else:
+						mutant_type = "[{}]".format(represent_state.get_sid())
+					self.__write__("{}\t{}\t{}\t{}\t{}\t{}\t{}".
+								   format(mid, cls, operator, line, code, parameter, mutant_type))
+					self.__write__("\t{}\t{}:{}\t{}\t[{}]\t[{}]".
+								   format(category, func_name, code_line, code_text, loperand, roperand))
+					self.__write__("\n")
 
 			## 3. close the file and write end-of-file tag...
 			self.__close__(file_path)
@@ -891,10 +904,10 @@ class CirStatePatternOutput:
 ## testing methods
 
 
-def do_minings(document: jcencode.MerDocument, used_tests, max_length: int,
+def do_minings(m_document: jcencode.MerDocument, used_tests, max_length: int,
 			   min_support: int, min_confidence: float):
 	"""
-	:param document:
+	:param m_document:
 	:param used_tests:
 	:param max_length:
 	:param min_support:
@@ -902,9 +915,9 @@ def do_minings(document: jcencode.MerDocument, used_tests, max_length: int,
 	:return:	good_rules, min_rules, mutant_rule_dict
 	"""
 	## 1. collect the features in undetected mutations
-	inputs = CirStatePatternInputs(document, max_length, min_support, min_confidence, 1.0)
+	inputs = CirStatePatternInputs(m_document, max_length, min_support, min_confidence, 1.0)
 	init_features = set()
-	for execution in document.get_state_space().get_executions():
+	for execution in m_document.get_state_space().get_executions():
 		if execution.get_mutant().is_killed_in(used_tests):
 			continue
 		else:
@@ -958,12 +971,12 @@ def do_testing(c_project: jcmuta.CProject, m_document: jcencode.MerDocument, use
 		m_document, used_tests, max_length, min_support, min_confidence)
 
 	## 3. start to write information to files
-	writer = CirStatePatternOutput(c_project, m_document, 64, 1)
+	writer = CirStatePatternOutput(c_project, m_document, 64, 16)
 	print("\t3. Write {} rules, {} minimal, {} sorted.".format(len(good_rules), len(min_rules), len(sort_rules)))
-	writer.write_patterns_to_mutations(os.path.join(directory, file_name + ".ptm"), good_rules, used_tests)
-	writer.write_patterns_of_summarize(os.path.join(directory, file_name + ".sum"), min_rules, used_tests)
-	writer.write_mutations_to_patterns(os.path.join(directory, file_name + ".mtp"), good_rules, used_tests)
-	writer.write_mutation_to_summarize(os.path.join(directory, file_name + ".mum"), sort_rules, used_tests)
+	writer.write_pattern_mutation_file(os.path.join(directory, file_name + ".ptm"), good_rules, used_tests)
+	writer.write_patterns_summary_file(os.path.join(directory, file_name + ".psm"), min_rules, used_tests)
+	writer.write_mutation_pattern_file(os.path.join(directory, file_name + ".mtp"), good_rules, used_tests)
+	writer.write_mutation_summary_file(os.path.join(directory, file_name + ".msm"), sort_rules, used_tests)
 	return
 
 
@@ -978,7 +991,7 @@ if __name__ == "__main__":
 		if not os.path.exists(o_directory):
 			os.mkdir(o_directory)
 		print("Testing on {}.".format(fname))
-		do_testing(project, document, None, 1, 2, 0.70, o_directory)
+		do_testing(project, document, None, 1, 2, 0.65, o_directory)
 		print()
 	print("End-All-Testing.")
 
