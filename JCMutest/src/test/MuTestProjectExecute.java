@@ -30,7 +30,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 
 	public static void main(String[] args) throws Exception {
-		testing("print_tokens2.c", 0, 36);
+		testing("calendar.c", 0, 36);
 	}
 	
 	/* initialize */

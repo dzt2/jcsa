@@ -29,14 +29,8 @@ public class MuTestContextFeatureWriter {
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
-		String filter_project = "print_tokens";
 		for(File root : new File(root_path).listFiles()) {
-			if(root.getName().equals(filter_project)) {
-				continue;
-			}
-			else {
-				testing(root);
-			}
+			testing(root);
 		}
 	}
 	
