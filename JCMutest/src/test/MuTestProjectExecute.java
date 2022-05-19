@@ -21,16 +21,16 @@ import com.jcsa.jcparse.test.cmd.CCompiler;
 import com.jcsa.jcparse.test.file.TestInput;
 
 public class MuTestProjectExecute {
-
+	
 	private static final String root_path = "/home/dzt2/Development/Data/";
 	private static final File sizeof_template_file = new File("config/cruntime.txt");
 	private static final File instrument_head_file = new File("config/jcinst.h");
 	private static final File preprocess_macro_file = new File("config/linux.h");
 	private static final File mutation_head_file = new File("config/jcmutest.h");
 	private static final long max_timeout_seconds = 1;
-
+	
 	public static void main(String[] args) throws Exception {
-		testing("calendar.c", 0, 36);
+		testing("md4.c", 6672, 1200);
 	}
 	
 	/* initialize */

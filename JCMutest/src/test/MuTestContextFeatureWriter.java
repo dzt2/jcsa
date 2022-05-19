@@ -30,7 +30,9 @@ public class MuTestContextFeatureWriter {
 	}
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			testing(root);
+			if(root.getName().equals("md4")) {
+				testing(root);
+			}
 		}
 	}
 	

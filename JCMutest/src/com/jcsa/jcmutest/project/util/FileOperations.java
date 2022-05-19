@@ -51,7 +51,10 @@ public class FileOperations {
 			return true;
 		}
 	}
-
+	
+	/** the maximal length of bytes that can be read to String **/
+	public static final int MAX_READ_LENGTH = 1024 * 1024 * 32;
+	
 	/**
 	 * @param file
 	 * @return read the text in the input file
@@ -65,7 +68,8 @@ public class FileOperations {
 			FileReader reader = new FileReader(file);
 			StringBuilder buffer = new StringBuilder();
 			char[] buff = new char[1024]; int length;
-			while((length = reader.read(buff)) >= 0) {
+			while((length = reader.read(buff)) >= 0 && 
+					buffer.length() <= MAX_READ_LENGTH) {
 				buffer.append(buff, 0, length);
 			}
 			reader.close();
