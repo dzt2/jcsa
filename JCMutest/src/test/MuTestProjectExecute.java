@@ -30,7 +30,7 @@ public class MuTestProjectExecute {
 	private static final long max_timeout_seconds = 1;
 	
 	public static void main(String[] args) throws Exception {
-		testing("md4.c", 6672, 1200);
+		testing("md5.c", 0, 36);
 	}
 	
 	/* initialize */

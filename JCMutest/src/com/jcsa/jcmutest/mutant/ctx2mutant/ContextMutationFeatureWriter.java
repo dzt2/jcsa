@@ -3,7 +3,12 @@ package com.jcsa.jcmutest.mutant.ctx2mutant;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
@@ -75,6 +80,8 @@ import com.jcsa.jcparse.test.file.TestInput;
  *
  */
 public class ContextMutationFeatureWriter {
+	
+	private static final int MAX_BUFF = 1024;
 	
 	/* attributes */
 	/**	the source file defined in mutation testing project	**/
@@ -734,62 +741,76 @@ public class ContextMutationFeatureWriter {
 		return res_number;
 	}
 	/**
-	 * [NODE] ID STATE (ANNOTATION)* \n
-	 * @param node
+	 * @param mutants
+	 * @return the contextual mutation tree for the given mutation set
 	 * @throws Exception
 	 */
-	private int write_context_node(ContextMutationNode node) throws Exception {
-		this.cfile_writer.write("[NODE]\t" + node.get_node_id());
-		this.cfile_writer.write("\t" + this.encode_token(node.get_state()));
-		int ant_number = 0;
-		for(ContextAnnotation annotation : node.get_annotations()) {
-			this.cfile_writer.write("\t" + this.encode_token(annotation));
-			ant_number++;
-		}
-		this.cfile_writer.write("\n");
-		return ant_number;
+	private ContextMutationTree get_context_tree(Iterable<Mutant> mutants) throws Exception {
+		return ContextMutationTree.parse(this.source_cfile.get_ast_file(), mutants);
 	}
 	/**
-	 * [EDGE] source (target)+ \n
-	 * @param node
-	 * @throws Exception
-	 */
-	private int write_context_edge(ContextMutationNode node) throws Exception {
-		this.cfile_writer.write("[EDGE]\t" + node.get_node_id());
-		for(ContextMutationEdge edge : node.get_ou_edges()) {
-			this.cfile_writer.write("\t" + edge.get_target().get_node_id());
-		}
-		this.cfile_writer.write("\n");
-		return node.get_ou_degree();
-	}
-	/**
-	 * [LINK] mut@int node_id
 	 * @param tree
+	 * @param mutant
+	 * @return the contextual mutation tree nodes connected with the mutant
 	 * @throws Exception
 	 */
-	private int write_context_links(ContextMutationTree tree) throws Exception {
-		int succ = 0;
-		for(Mutant mutant : tree.get_mutants()) {
-			ContextMutationNode node = tree.get_tree_node_of(mutant); succ++;
-			this.cfile_writer.write("[LINK]\t" + this.encode_token(mutant) + "\t" + node.get_node_id() + "\n");
+	private Collection<ContextMutationNode> get_context_nodes(ContextMutationTree tree, Mutant mutant) throws Exception {
+		Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
+		Collection<ContextMutationNode> nodes = new HashSet<ContextMutationNode>();
+		if(tree.has_tree_node_of(mutant)) {
+			queue.add(tree.get_tree_node_of(mutant));
+			nodes.add(tree.get_tree_node_of(mutant));
+			while(!queue.isEmpty()) {
+				ContextMutationNode parent = queue.poll();
+				for(ContextMutationEdge edge : parent.get_ou_edges()) {
+					ContextMutationNode child = edge.get_target();
+					if(!nodes.contains(child)) {
+						queue.add(child); nodes.add(child);
+					}
+				}
+			}
 		}
-		return succ;
+		return nodes;
 	}
 	/**
-	 * [NODE] ID STATE (ANNOTATION)* \n
-	 * [EDGE] source (target)+ \n
+	 * mid {node {annotation}+}
 	 * @param tree
+	 * @param mutant
 	 * @throws Exception
 	 */
-	private int[] write_context_tree(ContextMutationTree tree) throws Exception {
-		int nod_number = tree.number_of_tree_nodes();
-		int ant_number = 0, edg_number = 0, mut_number = 0;
-		for(ContextMutationNode node : tree.get_tree_nodes()) {
-			ant_number += this.write_context_node(node);
-			edg_number += this.write_context_edge(node);
+	private int write_context_mutation_line(ContextMutationTree tree, Mutant mutant) throws Exception {
+		Collection<ContextMutationNode> nodes = this.get_context_nodes(tree, mutant);
+		int words = 0;
+		if(!nodes.isEmpty()) {
+			this.cfile_writer.write(this.encode_token(mutant));
+			for(ContextMutationNode node : nodes) {
+				this.cfile_writer.write("\t" + this.encode_token(node.get_state()));
+				words++;
+				for(ContextAnnotation annotation : node.get_annotations()) {
+					this.cfile_writer.write("\t" + this.encode_token(annotation));
+					words++;
+				}
+			}
+			this.cfile_writer.write("\n");
 		}
-		mut_number = this.write_context_links(tree);
-		return new int[] { mut_number, nod_number, edg_number, ant_number };
+		return words;
+	}
+	/**
+	 * {pass_mutants; pass_words;}
+	 * @param mutants
+	 * @throws Exception
+	 */
+	private int[] write_context_mutation_lines(Iterable<Mutant> mutants) throws Exception {
+		ContextMutationTree tree = this.get_context_tree(mutants);
+		int pass_mutants = 0, pass_words = 0, words;
+		for(Mutant mutant : mutants) {
+			words = this.write_context_mutation_line(tree, mutant);
+			if(words > 0) {
+				pass_mutants++;
+				pass_words += words;
+			}
+		}
+		return new int[] { pass_mutants, pass_words };
 	}
 	/**
 	 * xxx.ctx
@@ -799,10 +820,21 @@ public class ContextMutationFeatureWriter {
 	 */
 	private int[] write_ctx() throws Exception {
 		this.open(".ctx");
-		ContextMutationTree tree = ContextMutationTree.parse(
-				this.source_cfile.get_ast_file(), 
-				this.source_cfile.get_mutant_space().get_mutants());
-		int[] results = this.write_context_tree(tree);
+		int[] results = new int[2];
+		Collection<Mutant> buffer = new ArrayList<Mutant>();
+		for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
+			buffer.add(mutant);
+			if(buffer.size() > MAX_BUFF) {
+				int[] result = this.write_context_mutation_lines(buffer);
+				buffer.clear();
+				results[0] += result[0]; results[1] += result[1];
+			}
+		}
+		if(!buffer.isEmpty()) {
+			int[] result = this.write_context_mutation_lines(buffer);
+			buffer.clear();
+			results[0] += result[0]; results[1] += result[1];
+		}
 		this.close();
 		return results;
 	}
@@ -888,14 +920,14 @@ public class ContextMutationFeatureWriter {
 		int res_number = this.write_res(); 
 		int[] results = this.write_ctx();
 		this.write_sym();
-		this.report_summary(res_number, results[0], results[1], results[2], results[3]);
+		this.report_summary(res_number, results[0], results[1]);
 	}
 	
 	/* interfaces */
 	/**
 	 * It reports the number of features used in definition models
 	 */
-	private void report_summary(int res_number, int succ_number, int node_number, int edge_number, int ant_number) throws Exception {
+	private void report_summary(int res_number, int succ_number, int ant_number) throws Exception {
 		MuTestProjectTestSpace tspace = this.source_cfile.get_code_space().get_project().get_test_space();
 		int code_lines = this.source_cfile.get_ast_file().get_source_code().number_of_lines();
 		int tst_number = tspace.number_of_test_inputs();
@@ -918,10 +950,9 @@ public class ContextMutationFeatureWriter {
 		
 		double succ_ratio = ((double) succ_number) / ((double) mut_number);
 		succ_ratio = ((int) (succ_ratio * 10000)) / 100.0;
-		System.out.println("\t\t[NODE] = " + node_number + ";\t[CMUT] = " + succ_number + ";\t(" + succ_ratio + "%)");
-		
 		int sym_number = this.symbol_nodes.size();
-		System.out.println("\t\t[EDGE] = " + edge_number + ";\t[ANOT] = " + ant_number + ";\t[SYMB] = " + sym_number);
+		System.out.println("\t\t[WORD] = " + ant_number + ";\t[SYMB] = " + 
+				sym_number + ";\t[SUCC] = " + succ_number + "\t(" + succ_ratio + "%)");
 	}
 	/**
 	 * It writes both static and dynamic subsumption hierarchies and features.
