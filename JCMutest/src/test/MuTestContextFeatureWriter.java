@@ -1,7 +1,7 @@
 package test;
 
 import java.io.File;
-import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutationFeatureWriter;
+import com.jcsa.jcmutest.mutant.ctx2mutant.ContextMutationWriter;
 import com.jcsa.jcmutest.project.MuTestProject;
 import com.jcsa.jcmutest.project.MuTestProjectCodeFile;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -25,13 +25,12 @@ public class MuTestContextFeatureWriter {
 		MuTestProjectCodeFile code_file = project.get_code_space().get_code_files().iterator().next();
 		
 		/* only implement the static features writing here... */
-		ContextMutationFeatureWriter.write_features(code_file, output_directory);
+		ContextMutationWriter.write_features(code_file, output_directory);
 		System.out.println();
 	}
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			if(root.getName().equals("md5"))
-				testing(root);
+			testing(root);
 		}
 	}
 	

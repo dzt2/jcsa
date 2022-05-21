@@ -20,12 +20,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextAnnotationUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextAnnotationUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextMutationTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/tree/ContextMutationTree.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/project/util/FileOperations.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/project/util/FileOperations.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationFeatureWriter.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextFeatureWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextFeatureWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestProjectExecute.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestProjectExecute.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/muta.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/muta.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

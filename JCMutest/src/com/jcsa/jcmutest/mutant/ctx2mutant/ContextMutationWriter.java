@@ -74,14 +74,17 @@ import com.jcsa.jcparse.lang.symbol.SymbolUnaryExpression;
 import com.jcsa.jcparse.test.file.TestInput;
 
 /**
- * 	It implements the generation of features related with contextual mutation.
- * 		
+ * 	It implements the generation of data information for ContextMutation and
+ * 	the related data elements.
+ * 	<br>
+ * 	<code>
+ * 	
+ * 	</code>
+ * 	
  * 	@author yukimula
  *
  */
-public class ContextMutationFeatureWriter {
-	
-	private static final int MAX_BUFF = 1024;
+public final class ContextMutationWriter {
 	
 	/* attributes */
 	/**	the source file defined in mutation testing project	**/
@@ -92,17 +95,15 @@ public class ContextMutationFeatureWriter {
 	private FileWriter 										cfile_writer;	
 	/**	the set of symbolic nodes to be printed to the file	**/
 	private HashMap<String, SymbolNode>						symbol_nodes;
-	
-	/* singleton mode and constructor */ 
-	private ContextMutationFeatureWriter() {
+	/** single mode of context mutation writer from program **/
+	private ContextMutationWriter() {
 		this.source_cfile = null;
 		this.ou_directory = null;
 		this.cfile_writer = null;
 		this.symbol_nodes = new HashMap<String, SymbolNode>();
 	}
-	private static final ContextMutationFeatureWriter fwriter = new ContextMutationFeatureWriter();
 	
-	/* input-output based operation */
+	/* IO-operation */
 	/**
 	 * It closes the writer and reset the feature output buffer.
 	 * @throws Exception
@@ -130,31 +131,16 @@ public class ContextMutationFeatureWriter {
 		this.cfile_writer = new FileWriter(new File(oufile));
 	}
 	/**
-	 * It resets the inputs cfile and out-directory for writing
-	 * @param source_cfile	the mutation source code file for writing features
-	 * @param ou_directory	the directory in which the ouput files are written
-	 * @param max_distance	the maximal distance of subsumption from mutations
+	 * It write the text to the output stream
+	 * @param text
 	 * @throws Exception
 	 */
-	private void reset(MuTestProjectCodeFile source_cfile, File ou_directory) throws Exception {
-		if(source_cfile == null) {
-			throw new IllegalArgumentException("Invalid source_cfile: null");
-		}
-		else if(ou_directory == null) {
-			throw new IllegalArgumentException("Invalid ou_directory: null");
-		}
-		else if(ou_directory.exists() && !ou_directory.isDirectory()) {
-			throw new IllegalArgumentException("Undefined: " + ou_directory);
+	private void write(String text) throws Exception { 
+		if(this.cfile_writer == null) {
+			throw new IllegalArgumentException("No file is opened");
 		}
 		else {
-			if(!ou_directory.exists()) {
-				FileOperations.mkdir(ou_directory);
-			}
-			this.source_cfile = source_cfile;
-			this.ou_directory = ou_directory;
-			this.symbol_nodes.clear();
-			this.close();
-			SymbolFactory.set_config(this.source_cfile.get_sizeof_template(), true);
+			this.cfile_writer.write(text);
 		}
 	}
 	
@@ -283,7 +269,7 @@ public class ContextMutationFeatureWriter {
 		else if(token instanceof SymbolNode) {
 			String key = "sym@" + token.getClass().getSimpleName().substring(6).trim() + "@" + token.hashCode();
 			if(!this.symbol_nodes.containsKey(key)) { this.symbol_nodes.put(key, (SymbolNode) token); }
-			for(SymbolNode child : ((SymbolNode) token).get_children()) { this.encode_token(child); }
+			for(SymbolNode child : ((SymbolNode) token).get_children()) { this.encode_test_token(child); }
 			return key;
 		}
 		else if(token instanceof AstContextState) {
@@ -340,18 +326,19 @@ public class ContextMutationFeatureWriter {
 	}
 	/**
 	 * ast@key class_name beg_index end_index data_type content [ {ast@key}* ]
-	 * @param node	the abstract syntactic node of which information is output
+	 * @param ast_node
 	 * @throws Exception
 	 */
 	private void write_ast_node(AstNode node) throws Exception {
-		this.cfile_writer.write(this.encode_token(node));
-
+		/* ast_key ast_class beg_index end_index */
+		String ast_key = this.encode_token(node);
 		String class_name = node.getClass().getSimpleName();
-		class_name = class_name.substring(3, class_name.length() - 4).trim();
+		String ast_class = class_name.substring(3, class_name.length() - 4).strip();
 		int beg_index = node.get_location().get_bias();
-		int end_index = beg_index + node.get_location().get_length();
-		this.cfile_writer.write("\t" + class_name + "\t" + beg_index + "\t" + end_index);
-
+		int end_index = node.get_location().get_bias() + node.get_location().get_length();
+		this.write(ast_key + "\t" + ast_class + "\t" + beg_index + "\t" + end_index);
+		
+		/* data_type */
 		CType data_type;
 		if(node instanceof AstExpression) {
 			data_type = ((AstExpression) node).get_value_type();
@@ -362,8 +349,9 @@ public class ContextMutationFeatureWriter {
 		else {
 			data_type = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(data_type));
-
+		this.write("\t" + this.encode_token(data_type));
+		
+		/* content */
 		Object content;
 		if(node instanceof AstIdentifier) {
 			content = ((AstIdentifier) node).get_name();
@@ -383,15 +371,13 @@ public class ContextMutationFeatureWriter {
 		else {
 			content = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(content));
-
-		this.cfile_writer.write("\t[");
+		this.write("\t" + this.encode_token(content));
+		
+		this.write("\t[");
 		for(int k = 0; k < node.number_of_children(); k++) {
-			this.cfile_writer.write(" " + this.encode_token(node.get_child(k)));
+			this.write(" " + this.encode_token(node.get_child(k)));
 		}
-		this.cfile_writer.write(" ]");
-
-		this.cfile_writer.write("\n");
+		this.write(" ]\n");
 	}
 	/**
 	 * ast@key class_name beg_index end_index data_type content [ {ast@key}* ] \n
@@ -413,12 +399,14 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_cir_node(CirNode node) throws Exception {
-		this.cfile_writer.write(this.encode_token(node));
-
+		/* cir_key cir_class ast_source */
+		String cir_key = this.encode_test_token(node);
 		String class_name = node.getClass().getSimpleName();
-		class_name = class_name.substring(3, class_name.length() - 4).trim();
-		this.cfile_writer.write("\t" + class_name + "\t" + this.encode_token(node.get_ast_source()));
-
+		String cir_class = class_name.substring(3, class_name.length() - 4).strip();
+		String ast_source = this.encode_token(node.get_ast_source());
+		this.write(cir_key + "\t" + cir_class + "\t" + ast_source);
+		
+		/* data_type */
 		CType data_type;
 		if(node instanceof CirExpression) {
 			data_type = ((CirExpression) node).get_data_type();
@@ -429,8 +417,9 @@ public class ContextMutationFeatureWriter {
 		else {
 			data_type = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(data_type));
-
+		this.write("\t" + this.encode_token(data_type));
+		
+		/* content */
 		Object content;
 		if(node instanceof CirNameExpression) {
 			content = ((CirNameExpression) node).get_unique_name();
@@ -463,23 +452,24 @@ public class ContextMutationFeatureWriter {
 		else {
 			content = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(content));
-
-		this.cfile_writer.write("\t[");
+		this.write("\t" + this.encode_token(content));
+		
+		/* [ child_key* ] */
+		this.write("\t[");
 		for(CirNode child : node.get_children()) {
-			this.cfile_writer.write(" " + this.encode_token(child));
+			this.write(" " + this.encode_token(child));
 		}
-		this.cfile_writer.write(" ]");
-
+		this.write(" ]");
+		
+		/* cir_code */
 		String code = null;
 		if(!(node instanceof CirFunctionDefinition
 			|| node instanceof CirTransitionUnit
 			|| node instanceof CirFunctionBody)) {
 			code = node.generate_code(true);
 		}
-		this.cfile_writer.write("\t" + this.encode_token(code));
-
-		this.cfile_writer.write("\n");
+		this.write("\t" + this.encode_token(code));
+		this.write("\n");
 	}
 	/**
 	 * cir@key class_name ast_source data_type content [ {cir@key}* ] code \n
@@ -498,11 +488,11 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_execution_flow(CirExecutionFlow flow) throws Exception {
-		this.cfile_writer.write("\t" + "[edge]");
-		this.cfile_writer.write("\t" + flow.get_type());
-		this.cfile_writer.write("\t" + this.encode_token(flow.get_source()));
-		this.cfile_writer.write("\t" + this.encode_token(flow.get_target()));
-		this.cfile_writer.write("\n");
+		this.write("\t[edge]");
+		this.write("\t" + flow.get_type());
+		this.write("\t" + this.encode_token(flow.get_source()));
+		this.write("\t" + this.encode_token(flow.get_target()));
+		this.write("\n");
 	}
 	/**
 	 * [call] call_exec wait_exec
@@ -510,10 +500,10 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_execution_call(CirFunctionCall call) throws Exception {
-		this.cfile_writer.write("\t" + "[call]");
-		this.cfile_writer.write("\t" + this.encode_token(call.get_call_execution()));
-		this.cfile_writer.write("\t" + this.encode_token(call.get_wait_execution()));
-		this.cfile_writer.write("\n");
+		this.write("\t[call]");
+		this.write("\t" + this.encode_token(call.get_call_execution()));
+		this.write("\t" + this.encode_token(call.get_wait_execution()));
+		this.write("\n");
 	}
 	/**
 	 * [node] ID cir_statement
@@ -521,10 +511,10 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_execution_node(CirExecution execution) throws Exception {
-		this.cfile_writer.write("\t" + "[node]");
-		this.cfile_writer.write("\t" + this.encode_token(execution));
-		this.cfile_writer.write("\t" + this.encode_token(execution.get_statement()));
-		this.cfile_writer.write("\n");
+		this.write("\t[node]");
+		this.write("\t" + this.encode_token(execution));
+		this.write("\t" + this.encode_token(execution.get_statement()));
+		this.write("\n");
 	}
 	/**
 	 * 	[beg]	name
@@ -536,7 +526,7 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_cir_function(CirFunction function) throws Exception {
-		this.cfile_writer.write("[beg]\t" + function.get_name() + "\n");
+		this.write("[beg]\t" + function.get_name() + "\n");
 		for(CirExecution execution : function.get_flow_graph().get_executions()) {
 			this.write_execution_node(execution);
 			for(CirExecutionFlow flow : execution.get_ou_flows()) {
@@ -546,7 +536,7 @@ public class ContextMutationFeatureWriter {
 		for(CirFunctionCall call : function.get_ou_calls()) {
 			this.write_execution_call(call);
 		}
-		this.cfile_writer.write("[end]\t" + function.get_name() + "\n");
+		this.write("[end]\t" + function.get_name() + "\n");
 	}
 	/**
 	 * 	[beg]	name
@@ -562,7 +552,7 @@ public class ContextMutationFeatureWriter {
 		for(CirFunction function : this.source_cfile.get_cir_tree().
 						get_function_call_graph().get_functions()) {
 			this.write_cir_function(function);
-			this.cfile_writer.write("\n");
+			this.write("\n");
 		}
 		this.close();
 	}
@@ -583,13 +573,13 @@ public class ContextMutationFeatureWriter {
 		else {
 			child_type = this.encode_token(null);
 		}
-		this.cfile_writer.write("[NODE]");
-		this.cfile_writer.write("\t" + node_id);
-		this.cfile_writer.write("\t" + node_type);
-		this.cfile_writer.write("\t" + ast_source);
-		this.cfile_writer.write("\t" + token);
-		this.cfile_writer.write("\t" + child_type);
-		this.cfile_writer.write("\n");
+		this.write("[NODE]");
+		this.write("\t" + node_id);
+		this.write("\t" + node_type);
+		this.write("\t" + ast_source);
+		this.write("\t" + token);
+		this.write("\t" + child_type);
+		this.write("\n");
 	}
 	/**
 	 * [LIST] parent childID+ \n
@@ -597,12 +587,12 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_ast_cir_list(AstCirNode node) throws Exception {
-		this.cfile_writer.write("[LIST]");
-		this.cfile_writer.write("\t" + this.encode_token(node));
+		this.write("[LIST]");
+		this.write("\t" + this.encode_token(node));
 		for(AstCirNode child : node.get_children()) {
-			this.cfile_writer.write("\t" + this.encode_token(child));
+			this.write("\t" + this.encode_token(child));
 		}
-		this.cfile_writer.write("\n");
+		this.write("\n");
 	}
 	/**
 	 * [LINK] node (link_type cir_node)* \n
@@ -610,13 +600,13 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_ast_cir_link(AstCirNode node) throws Exception {
-		this.cfile_writer.write("[LINK]");
-		this.cfile_writer.write("\t" + this.encode_token(node));
+		this.write("[LINK]");
+		this.write("\t" + this.encode_token(node));
 		for(AstCirLink link : node.get_links()) {
-			this.cfile_writer.write("\t" + link.get_type());
-			this.cfile_writer.write("\t" + this.encode_token(link.get_target()));
+			this.write("\t" + link.get_type());
+			this.write("\t" + this.encode_token(link.get_target()));
 		}
-		this.cfile_writer.write("\n");
+		this.write("\n");
 	}
 	/**
 	 * [EDGE] node (edge_type ast_cir_node)* \n
@@ -624,13 +614,13 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_ast_cir_edge(AstCirNode node) throws Exception {
-		this.cfile_writer.write("[EDGE]");
-		this.cfile_writer.write("\t" + this.encode_token(node));
+		this.write("[EDGE]");
+		this.write("\t" + this.encode_token(node));
 		for(AstCirEdge edge : node.get_ou_edges()) {
-			this.cfile_writer.write("\t" + edge.get_type());
-			this.cfile_writer.write("\t" + this.encode_token(edge.get_target()));
+			this.write("\t" + edge.get_type());
+			this.write("\t" + this.encode_token(edge.get_target()));
 		}
-		this.cfile_writer.write("\n");
+		this.write("\n");
 	}
 	/**
 	 * xxx.asc as
@@ -670,7 +660,7 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_tst(TestInput test) throws Exception {
-		this.cfile_writer.write(this.encode_token(test) + "\t" + this.encode_token(test.get_parameter()) + "\n");
+		this.write(this.encode_token(test) + "\t" + this.encode_token(test.get_parameter()) + "\n");
 	}
 	/**
 	 * ID tst@parameter
@@ -691,17 +681,18 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_mut(Mutant mutant) throws Exception {
-		this.cfile_writer.write("" + this.encode_token(mutant));
-		this.cfile_writer.write("\t" + mutant.get_mutation().get_class());
-		this.cfile_writer.write("\t" + mutant.get_mutation().get_operator());
-		this.cfile_writer.write("\t" + this.encode_token(mutant.get_mutation().get_location()));
-		this.cfile_writer.write("\t" + this.encode_token(mutant.get_mutation().get_parameter()));
+		this.write("" + this.encode_token(mutant));
+		
+		this.write("\t" + mutant.get_mutation().get_class());
+		this.write("\t" + mutant.get_mutation().get_operator());
+		this.write("\t" + this.encode_token(mutant.get_mutation().get_location()));
+		this.write("\t" + this.encode_token(mutant.get_mutation().get_parameter()));
 
-		this.cfile_writer.write("\t" + this.encode_token(mutant.get_coverage_mutant()));
-		this.cfile_writer.write("\t" + this.encode_token(mutant.get_weak_mutant()));
-		this.cfile_writer.write("\t" + this.encode_token(mutant.get_strong_mutant()));
+		this.write("\t" + this.encode_token(mutant.get_coverage_mutant()));
+		this.write("\t" + this.encode_token(mutant.get_weak_mutant()));
+		this.write("\t" + this.encode_token(mutant.get_strong_mutant()));
 
-		this.cfile_writer.write("\n");
+		this.write("\n");
 	}
 	/**
 	 * ID class operator location parameter coverage weak strong
@@ -720,7 +711,7 @@ public class ContextMutationFeatureWriter {
 	 * @throws Exception
 	 */
 	private void write_res(MuTestProjectTestResult result) throws Exception {
-		this.cfile_writer.write(this.encode_token(result.get_mutant()) + "\t" + result.get_kill_set().toString() + "\n");
+		this.write(this.encode_token(result.get_mutant()) + "\t" + result.get_kill_set().toString() + "\n");
 	}
 	/**
 	 * MID bit_string
@@ -741,115 +732,18 @@ public class ContextMutationFeatureWriter {
 		return res_number;
 	}
 	/**
-	 * @param mutants
-	 * @return the contextual mutation tree for the given mutation set
-	 * @throws Exception
-	 */
-	private ContextMutationTree get_context_tree(Iterable<Mutant> mutants) throws Exception {
-		return ContextMutationTree.parse(this.source_cfile.get_ast_file(), mutants);
-	}
-	/**
-	 * @param tree
-	 * @param mutant
-	 * @return the contextual mutation tree nodes connected with the mutant
-	 * @throws Exception
-	 */
-	private Collection<ContextMutationNode> get_context_nodes(ContextMutationTree tree, Mutant mutant) throws Exception {
-		Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
-		Collection<ContextMutationNode> nodes = new HashSet<ContextMutationNode>();
-		if(tree.has_tree_node_of(mutant)) {
-			queue.add(tree.get_tree_node_of(mutant));
-			nodes.add(tree.get_tree_node_of(mutant));
-			while(!queue.isEmpty()) {
-				ContextMutationNode parent = queue.poll();
-				for(ContextMutationEdge edge : parent.get_ou_edges()) {
-					ContextMutationNode child = edge.get_target();
-					if(!nodes.contains(child)) {
-						queue.add(child); nodes.add(child);
-					}
-				}
-			}
-		}
-		return nodes;
-	}
-	/**
-	 * mid {node {annotation}+}
-	 * @param tree
-	 * @param mutant
-	 * @throws Exception
-	 */
-	private int write_context_mutation_line(ContextMutationTree tree, Mutant mutant) throws Exception {
-		Collection<ContextMutationNode> nodes = this.get_context_nodes(tree, mutant);
-		int words = 0;
-		if(!nodes.isEmpty()) {
-			this.cfile_writer.write(this.encode_token(mutant));
-			for(ContextMutationNode node : nodes) {
-				this.cfile_writer.write("\t" + this.encode_token(node.get_state()));
-				words++;
-				for(ContextAnnotation annotation : node.get_annotations()) {
-					this.cfile_writer.write("\t" + this.encode_token(annotation));
-					words++;
-				}
-			}
-			this.cfile_writer.write("\n");
-		}
-		return words;
-	}
-	/**
-	 * {pass_mutants; pass_words;}
-	 * @param mutants
-	 * @throws Exception
-	 */
-	private int[] write_context_mutation_lines(Iterable<Mutant> mutants) throws Exception {
-		ContextMutationTree tree = this.get_context_tree(mutants);
-		int pass_mutants = 0, pass_words = 0, words;
-		for(Mutant mutant : mutants) {
-			words = this.write_context_mutation_line(tree, mutant);
-			if(words > 0) {
-				pass_mutants++;
-				pass_words += words;
-			}
-		}
-		return new int[] { pass_mutants, pass_words };
-	}
-	/**
-	 * xxx.ctx
-	 * [NODE] ID STATE (ANNOTATION)* \n
-	 * [EDGE] source (target)+ \n
-	 * @throws Exception
-	 */
-	private int[] write_ctx() throws Exception {
-		this.open(".ctx");
-		int[] results = new int[2];
-		Collection<Mutant> buffer = new ArrayList<Mutant>();
-		for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
-			buffer.add(mutant);
-			if(buffer.size() > MAX_BUFF) {
-				int[] result = this.write_context_mutation_lines(buffer);
-				buffer.clear();
-				results[0] += result[0]; results[1] += result[1];
-			}
-		}
-		if(!buffer.isEmpty()) {
-			int[] result = this.write_context_mutation_lines(buffer);
-			buffer.clear();
-			results[0] += result[0]; results[1] += result[1];
-		}
-		this.close();
-		return results;
-	}
-	/**
 	 * ID class source{Ast|Cir|Exe|Null|Const} data_type content code [child*]
 	 * @param node
 	 * @throws Exception
 	 */
 	private void write_sym_node(SymbolNode node) throws Exception {
-		this.cfile_writer.write(this.encode_token(node));
-
+		/* sym_id class_name sym_source */
+		this.write(this.encode_token(node));
 		String class_name = node.getClass().getSimpleName();
-		this.cfile_writer.write("\t" + class_name.substring(6));
-		this.cfile_writer.write("\t" + this.encode_token(node.get_source()));
+		this.write("\t" + class_name.substring(6));
+		this.write("\t" + this.encode_token(node.get_source()));
 		
+		/* data_type */
 		CType data_type;
 		if(node instanceof SymbolExpression) {
 			data_type = ((SymbolExpression) node).get_data_type();
@@ -857,8 +751,9 @@ public class ContextMutationFeatureWriter {
 		else {
 			data_type = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(data_type));
-
+		this.write("\t" + this.encode_token(data_type));
+		
+		/* content */
 		Object content;
 		if(node instanceof SymbolField) {
 			content = ((SymbolField) node).get_name();
@@ -887,17 +782,17 @@ public class ContextMutationFeatureWriter {
 		else {
 			content = null;
 		}
-		this.cfile_writer.write("\t" + this.encode_token(content));
-
-		this.cfile_writer.write("\t" + this.encode_token(node.get_simple_code()));
-
-		this.cfile_writer.write("\t[");
+		this.write("\t" + this.encode_token(content));
+		
+		/* code */
+		this.write("\t" + this.encode_token(node.get_simple_code()));
+		
+		/* [ child_node* ] */
+		this.write("\t[");
 		for(SymbolNode child : node.get_children()) {
-			this.cfile_writer.write(" " + this.encode_token(child));
+			this.write(" " + this.encode_token(child));
 		}
-		this.cfile_writer.write(" ]");
-
-		this.cfile_writer.write("\n");
+		this.write(" ]\n");
 	}
 	/**
 	 * It writes all the symbolic nodes into the account
@@ -911,23 +806,110 @@ public class ContextMutationFeatureWriter {
 		this.close();
 	}
 	/**
-	 * xxx.mut, xxx.tst, xxx.res
+	 * @param mutants
+	 * @return it creates a tree of contextual mutations for input mutants
 	 * @throws Exception
 	 */
-	private void write_test_features() throws Exception {
-		this.write_tst(); 
-		this.write_mut(); 
-		int res_number = this.write_res(); 
-		int[] results = this.write_ctx();
-		this.write_sym();
-		this.report_summary(res_number, results[0], results[1]);
+	private ContextMutationTree get_context_tree(Collection<Mutant> mutants) throws Exception {
+		return ContextMutationTree.parse(this.source_cfile.get_ast_file(), mutants);
 	}
-	
-	/* interfaces */
+	/**
+	 * @param tree
+	 * @param mutant
+	 * @return the set of nodes connected with the tree
+	 * @throws Exception
+	 */
+	private Collection<ContextMutationNode> get_context_nodes(ContextMutationTree tree, Mutant mutant) throws Exception {
+		Collection<ContextMutationNode> nodes = new HashSet<ContextMutationNode>();
+		Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
+		if(tree.has_tree_node_of(mutant)) {
+			queue.add(tree.get_tree_node_of(mutant));
+			while(!queue.isEmpty()) {
+				ContextMutationNode parent = queue.poll();
+				nodes.add(parent);
+				for(ContextMutationEdge edge : parent.get_ou_edges()) {
+					ContextMutationNode child = edge.get_target();
+					if(!nodes.contains(child)) { queue.add(child); }
+				}
+			}
+		}
+		return nodes;
+	}
+	/**
+	 * @param tree
+	 * @param mutant mid {(node {annotation}+)+} \n
+	 * @return [ pass_number, node_number, ant_number ]
+	 * @throws Exception
+	 */
+	private int[] write_context_line(ContextMutationTree tree, Mutant mutant) throws Exception {
+		int pass_number = 0, node_number = 0, anot_number = 0;
+		Collection<ContextMutationNode> nodes = this.get_context_nodes(tree, mutant);
+		if(!nodes.isEmpty()) {
+			pass_number++; this.write(this.encode_token(mutant));
+			for(ContextMutationNode node : nodes) {
+				node_number++; 
+				//this.write("\t" + this.encode_token(node.get_state()));
+				for(ContextAnnotation annotation : node.get_annotations()) {
+					anot_number++;
+					this.write("\t" + this.encode_token(annotation));
+				}
+			}
+			this.write("\n");
+		}
+		return new int[] { pass_number, node_number, anot_number };
+	}
+	/**
+	 * @param mutants mid {(node {annotation}+)+} \n
+	 * @return [ pass_number, node_number, anot_number ] 
+	 * @throws Exception
+	 */
+	private int[] write_context_lines(Collection<Mutant> mutants) throws Exception {
+		ContextMutationTree tree = this.get_context_tree(mutants);
+		int pass_number = 0, node_number = 0, anot_number = 0;
+		for(Mutant mutant : mutants) {
+			int[] result = this.write_context_line(tree, mutant);
+			pass_number += result[0];
+			node_number += result[1];
+			anot_number += result[2];
+		}
+		return new int[] { pass_number, node_number, anot_number };
+	}
+	/**
+	 * mid {(node {annotation}+)+} \n
+	 * @return [pass_number, node_number, ]
+	 * @throws Exception
+	 */
+	private int[] write_ctx(int buffer_size) throws Exception {
+		if(buffer_size <= 0) {
+			throw new IllegalArgumentException("Invalid: " + buffer_size);
+		}
+		else {
+			this.open(".ctx"); int[] results = new int[] {0,0,0};
+			Collection<Mutant> mutants = new ArrayList<Mutant>();
+			for(Mutant mutant : this.source_cfile.get_mutant_space().get_mutants()) {
+				mutants.add(mutant);
+				if(mutants.size() >= buffer_size) {
+					int[] result = this.write_context_lines(mutants);
+					for(int k = 0; k < result.length; k++) {
+						results[k] = results[k] + result[k];
+					}
+					mutants.clear();
+				}
+			}
+			if(!mutants.isEmpty()) {
+				int[] result = this.write_context_lines(mutants);
+				for(int k = 0; k < result.length; k++) {
+					results[k] = results[k] + result[k];
+				}
+			}
+			this.close();
+			return results;
+		}
+	}
 	/**
 	 * It reports the number of features used in definition models
 	 */
-	private void report_summary(int res_number, int succ_number, int ant_number) throws Exception {
+	private void report_summary(int res_number, int succ_number, int node_number, int anot_number) throws Exception {
 		MuTestProjectTestSpace tspace = this.source_cfile.get_code_space().get_project().get_test_space();
 		int code_lines = this.source_cfile.get_ast_file().get_source_code().number_of_lines();
 		int tst_number = tspace.number_of_test_inputs();
@@ -950,9 +932,52 @@ public class ContextMutationFeatureWriter {
 		
 		double succ_ratio = ((double) succ_number) / ((double) mut_number);
 		succ_ratio = ((int) (succ_ratio * 10000)) / 100.0;
-		int sym_number = this.symbol_nodes.size();
-		System.out.println("\t\t[WORD] = " + ant_number + ";\t[SYMB] = " + 
-				sym_number + ";\t[SUCC] = " + succ_number + "\t(" + succ_ratio + "%)");
+		System.out.println("\t\t[SUCC] = " + succ_number + ";\t[RATE] = " + succ_ratio + "%;");
+		
+		int symb_number = this.symbol_nodes.size();
+		System.out.println("\t\t[NODE] = " + node_number + ";\t[ANOT] = " + anot_number + ";\t[SYMB] = " + symb_number);
+	}
+	/**
+	 * xxx.mut, xxx.tst, xxx.res
+	 * @throws Exception
+	 */
+	private void write_test_features() throws Exception {
+		this.write_tst(); 
+		this.write_mut(); 
+		int res_number = this.write_res(); 
+		int[] results = this.write_ctx(1024 * 8);
+		this.write_sym();
+		this.report_summary(res_number, results[0], results[1], results[2]);
+	}
+	
+	/* interfaces */
+	/**
+	 * It resets the inputs cfile and out-directory for writing
+	 * @param source_cfile	the mutation source code file for writing features
+	 * @param ou_directory	the directory in which the ouput files are written
+	 * @param max_distance	the maximal distance of subsumption from mutations
+	 * @throws Exception
+	 */
+	private void reset(MuTestProjectCodeFile source_cfile, File ou_directory) throws Exception {
+		if(source_cfile == null) {
+			throw new IllegalArgumentException("Invalid source_cfile: null");
+		}
+		else if(ou_directory == null) {
+			throw new IllegalArgumentException("Invalid ou_directory: null");
+		}
+		else if(ou_directory.exists() && !ou_directory.isDirectory()) {
+			throw new IllegalArgumentException("Undefined: " + ou_directory);
+		}
+		else {
+			if(!ou_directory.exists()) {
+				FileOperations.mkdir(ou_directory);
+			}
+			this.source_cfile = source_cfile;
+			this.ou_directory = ou_directory;
+			this.symbol_nodes.clear();
+			this.close();
+			SymbolFactory.set_config(this.source_cfile.get_sizeof_template(), true);
+		}
 	}
 	/**
 	 * It writes both static and dynamic subsumption hierarchies and features.
@@ -973,6 +998,7 @@ public class ContextMutationFeatureWriter {
 			this.write_test_features();
 		}
 	}
+	private static final ContextMutationWriter fwriter = new ContextMutationWriter();
 	/**
 	 * It writes both static and dynamic subsumption hierarchies and features.
 	 * @param source_cfile	the mutation testing project source file to print
@@ -991,5 +1017,6 @@ public class ContextMutationFeatureWriter {
 			fwriter.write(source_cfile, ou_directory);
 		}
 	}
+	
 	
 }
