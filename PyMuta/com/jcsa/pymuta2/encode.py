@@ -342,7 +342,7 @@ class MerContextState:
 		:param project:
 		:return: the ContextMutationState encoded by this instance
 		"""
-		return project.get_state(self.word)
+		return project.context_space.get_state(self.word)
 
 
 class MerContextExecution:
@@ -530,11 +530,10 @@ class MerDocumentEncoder:
 		"""
 		results = dict()	#	state --> int
 		with open(sta_file, 'w') as writer:
-			for key, state in project.states.items():
-				key: str
-				state: jcmuta.ContextMutationState
+			for state in project.context_space.get_states():
+				state: jcmuta.ContextState
 				if not (state in results):
-					writer.write("{}\n".format(key))
+					writer.write("{}\n".format(str(state)))
 					results[state] = len(results)
 		return results
 
@@ -543,17 +542,17 @@ class MerDocumentEncoder:
 		"""
 		:param project:
 		:param zex_file:
-		:param results: map from ContextMutationState to its integer ID
+		:param results: map from ContextState to its integer ID
 		:return:
 		"""
 		with open(zex_file, 'w') as writer:
-			for mutant in project.context_tree.get_mutants():
-				nodes = project.context_tree.get_nodes_of(mutant)
+			for context_mutation in project.context_space.get_mutations():
+				mutant = context_mutation.get_mutant()
+				states = context_mutation.get_states()
 				features = set()
-				for node in nodes:
-					# features.add(results[node.get_state()])
-					for annotation in node.get_annotations():
-						features.add(results[annotation])
+				for state in states:
+					feature = results[state]
+					features.add(feature)
 				writer.write("{}".format(mutant.get_muta_id()))
 				for feature in features:
 					writer.write("\t{}".format(feature))
@@ -595,8 +594,8 @@ def encode_all(in_directory: str, ou_directory: str):
 		MerDocumentEncoder.encode_document(c_project, directory, file_name)
 		tests = len(c_project.test_space.get_test_cases())
 		mutants = len(c_project.muta_space.get_mutants())
-		states = len(c_project.states)
-		muta_execs = len(c_project.context_tree.get_mutants())
+		states = len(c_project.context_space.get_states())
+		muta_execs = len(c_project.context_space.get_mutants())
 		print("\t{} tests; {} mutants; {} executions; {} states.".format(tests, mutants, muta_execs, states))
 	print()
 	return

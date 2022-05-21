@@ -3,8 +3,6 @@
 
 import os
 import random
-from collections import deque
-
 import com.jcsa.pymuta2.libs.base as jcbase
 import com.jcsa.pymuta2.libs.code as jccode
 
@@ -29,28 +27,8 @@ class CProject:
 		self.test_space = TestCaseSpace(self, tst_file)
 		self.muta_space = MutantSpace(self, mut_file, res_file)
 		self.sym_tree = SymbolTree(sym_file)
-		self.context_tree = ContextMutationTree(self, ctx_file)
+		self.context_space = ContextMutationSpace(self, ctx_file)
 		return
-
-	def get_state(self, text: str):
-		"""
-		:param text: category$location$loperand$roperand
-		:return:
-		"""
-		items = text.strip().split('$')
-		if len(items) > 0:
-			category = items[0].strip()
-			loct_id = jcbase.CToken.parse(items[1].strip()).get_token_value()
-			location = self.program.ast_cir_tree.get_node(loct_id)
-			loperand = self.sym_tree.get_sym_node(items[2].strip())
-			roperand = self.sym_tree.get_sym_node(items[3].strip())
-			state = ContextMutationState(category, location, loperand, roperand)
-			if not (str(state) in self.states):
-				self.states[str(state)] = state
-			state = self.states[str(state)]
-			state: ContextMutationState
-			return state
-		return None
 
 
 class TestCase:
@@ -666,49 +644,150 @@ class ContextState:
 		:return: the right-operand of the symbolic expression
 		"""
 		return self.roperand
-	
+
+	def __str__(self):
+		category = self.category
+		location = "asc@{}".format(self.location.get_node_id())
+		loperand = "sym@{}@{}".format(self.loperand.get_class_name(), self.loperand.get_class_id())
+		roperand = "sym@{}@{}".format(self.roperand.get_class_name(), self.roperand.get_class_id())
+		return "{}${}${}${}".format(category, location, loperand, roperand)
+
+
+class ContextMutation:
+	"""
+	mutant [(state)+]
+	"""
+
+	def __init__(self, space, eid: int, mutant: Mutant, states):
+		"""
+		:param space: 	the space where the contextual mutation is preserved
+		:param mutant: 	the mutant that is described by the context-mutation
+		:param states: 	the set of program states used to define this mutant
+		"""
+		space: ContextMutationSpace
+		self.space = space
+		self.eid = eid
+		self.mutant = mutant
+		self.states = list()
+		for state in states:
+			state: ContextState
+			self.states.append(state)
+		return
+
+	def get_space(self):
+		return self.space
+
+	def get_eid(self):
+		return self.eid
+
+	def get_mutant(self):
+		return self.mutant
+
+	def get_states(self):
+		return self.states
+
+
+class ContextMutationSpace:
+	"""
+	The space of contextual mutations
+	"""
+
+	def __init__(self, project: CProject, file_path: str):
+		"""
+		:param project:
+		:param file_path: mid {(state)+} \n
+		"""
+		self.project = project
+		self.states = dict()
+		self.__load__(file_path)
+		return
+
+	def __load__(self, file_path: str):
+		self.lines = list()
+		self.index = dict()
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					mid = jcbase.CToken.parse(items[0].strip()).get_token_value()
+					mutant = self.project.muta_space.get_mutant(mid)
+					states = set()
+					for k in range(1, len(items)):
+						states.add(self.get_state(items[k].strip()))
+					line = ContextMutation(self, len(self.lines), mutant, states)
+					self.lines.append(line)
+					self.index[mutant] = line
+		return
+
+	def get_project(self):
+		return self.project
+
+	def get_state(self, key: str):
+		"""
+		:param key: category$location$loperand$roperand
+		:return:
+		"""
+		if not (key in self.states):
+			items = key.strip().split('$')
+			category = items[0].strip()
+			loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+			location = self.project.program.ast_cir_tree.get_node(loc_token)
+			loperand = self.project.sym_tree.get_sym_node(items[2].strip())
+			roperand = self.project.sym_tree.get_sym_node(items[3].strip())
+			self.states[key] = ContextState(category, location, loperand, roperand)
+		state = self.states[key]
+		state: ContextState
+		return state
+
+	def get_states(self):
+		return self.states.values()
+
+	def get_mutants(self):
+		return self.index.keys()
+
+	def get_mutations(self):
+		return self.lines
+
+	def get_mutation(self, mutant: Mutant):
+		return self.index[mutant]
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext2/features"
-	for file_name in os.listdir(root_path):
-		directory = os.path.join(root_path, file_name)
-		c_project = CProject(directory, file_name)
-		print(file_name, "loads", len(c_project.muta_space.get_mutants()), "mutations",
-			  "and", len(c_project.test_space.get_test_cases()), "test cases.")
-		out_file = os.path.join("/home/dzt2/Development/Data/zext2/trash", file_name + ".txt")
+	for project_name in os.listdir(root_path):
+		project_directory = os.path.join(root_path, project_name)
+		c_project = CProject(project_directory, project_name)
+		print(project_name, "loads", len(c_project.muta_space.get_mutants()), "mutants",
+			  "along with", len(c_project.test_space.get_test_cases()), "test cases.")
+		out_file = os.path.join("/home/dzt2/Development/Data/zext2/trashes", project_name + ".txt")
 		with open(out_file, 'w') as writer:
-			for mutant in c_project.context_tree.get_mutants():
-				mid = mutant.get_muta_id()
-				res = mutant.get_result().is_killed_in(None)
-				if res:
+			for context_mutation in c_project.context_space.get_mutations():
+				## 2.1. ast_mutation information
+				ast_mutant = context_mutation.get_mutant()
+				ast_mid = ast_mutant.get_muta_id()
+				ast_res = ast_mutant.get_result().is_killed_in(None)
+				if ast_res:
 					result = "Killed"
 				else:
-					result = "Alive"
-				m_class = mutant.get_mutation().get_mutation_class()
-				m_oprt = mutant.get_mutation().get_mutation_operator()
-				m_line = mutant.get_mutation().get_location().line_of(False)
-				m_code = mutant.get_mutation().get_location().generate_code(64)
-				m_parameter = mutant.get_mutation().get_parameter()
-				writer.write("MID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(mid, result, m_class, m_oprt, m_line,
-																			  m_code, m_parameter))
-				for node in c_project.context_tree.get_nodes_of(mutant):
-					state = node.get_state()
-					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(state.get_category(),
-																				 state.get_location().get_node_type(),
-																				 state.get_location().get_node_id(),
-																				 state.get_location().get_ast_source().line_of(False),
-																				 state.get_location().get_ast_source().generate_code(64),
-																				 state.get_loperand().get_code(),
-																				 state.get_roperand().get_code()))
-					for annotation in node.get_annotations():
-						writer.write("\t[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(annotation.get_category(),
-																					   annotation.get_location().get_node_type(),
-																					   annotation.get_location().get_node_id(),
-																					   annotation.get_location().get_ast_source().line_of(False),
-																					   annotation.get_location().get_ast_source().generate_code(64),
-																					   annotation.get_loperand().get_code(),
-																					   annotation.get_roperand().get_code()))
-				writer.write("\n")
-	print("Testing ends for all.")
+					result = "Alived"
+				m_class = ast_mutant.get_mutation().get_mutation_class()
+				m_oprt = ast_mutant.get_mutation().get_mutation_operator()
+				m_line = ast_mutant.get_mutation().get_location().line_of(False)
+				m_code = ast_mutant.get_mutation().get_location().generate_code(64)
+				m_parameter = ast_mutant.get_mutation().get_parameter()
+				writer.write("MID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(
+					ast_mid, result, m_class, m_oprt, m_line, m_code, m_parameter))
+
+				## 2.2. execution state of contextual mutation
+				for context_state in context_mutation.get_states():
+					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(context_state.get_category(),
+																				 context_state.get_location().get_node_type(),
+																				 context_state.get_location().get_node_id(),
+																				 context_state.get_location().get_ast_source().line_of(False),
+																				 context_state.get_location().get_ast_source().generate_code(64),
+																				 context_state.get_loperand().get_code(),
+																				 context_state.get_roperand().get_code()))
+			writer.write("\n")
+	print("Testing end for all...")
 

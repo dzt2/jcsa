@@ -20,9 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationFeatureWriter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextFeatureWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextFeatureWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationWriter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta2/encode.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta2/encode.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/muta.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/pymuta2/libs/muta.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

@@ -400,7 +400,7 @@ public final class ContextMutationWriter {
 	 */
 	private void write_cir_node(CirNode node) throws Exception {
 		/* cir_key cir_class ast_source */
-		String cir_key = this.encode_test_token(node);
+		String cir_key = this.encode_token(node);
 		String class_name = node.getClass().getSimpleName();
 		String cir_class = class_name.substring(3, class_name.length() - 4).strip();
 		String ast_source = this.encode_token(node.get_ast_source());
@@ -1017,6 +1017,5 @@ public final class ContextMutationWriter {
 			fwriter.write(source_cfile, ou_directory);
 		}
 	}
-	
 	
 }
