@@ -625,17 +625,17 @@ class SymbolTree:
 		return
 
 
-class ContextMutationState:
+class ContextState:
 	"""
-	category, location, loperand, roperand
+	category asc_location loperand roperand
 	"""
 
 	def __init__(self, category: str, location: jccode.AstCirNode, loperand: SymbolNode, roperand: SymbolNode):
 		"""
-		:param category: the category of the execution state
-		:param location: the location of the state evaluated
-		:param loperand: the left-operand to define the state
-		:param roperand: the right-operand to define the state
+		:param category: the category of the contextual mutation execution state
+		:param location: the location with abstract syntactic and C-intermediate
+		:param loperand: the left-operand of the symbolic expression
+		:param roperand: the right-operand of the symbolic expression
 		"""
 		self.category = category
 		self.location = location
@@ -644,173 +644,29 @@ class ContextMutationState:
 		return
 
 	def get_category(self):
+		"""
+		:return: the category of the contextual mutation execution state
+		"""
 		return self.category
 
 	def get_location(self):
+		"""
+		:return: the location with abstract syntactic and C-intermediate
+		"""
 		return self.location
 
 	def get_loperand(self):
+		"""
+		:return: the left-operand of the symbolic expression
+		"""
 		return self.loperand
 
 	def get_roperand(self):
+		"""
+		:return: the right-operand of the symbolic expression
+		"""
 		return self.roperand
-
-	def __str__(self):
-		return "{}${}${}${}".format(self.category, self.location, self.loperand, self.roperand)
-
-
-class ContextMutationTree:
-	"""
-	It defines the contextual mutation state trees.
-	"""
-
-	def __init__(self, project: CProject, file_path: str):
-		self.project = project
-		self.__load_nodes__(file_path)
-		self.__load_links__(file_path)
-		return
-
-	def __load_nodes__(self, file_path: str):
-		node_dict = dict()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					if items[0].strip() == "[NODE]":
-						node_id = int(items[1].strip())
-						state = self.project.get_state(items[2].strip())
-						annotations = set()
-						for k in range(3, len(items)):
-							annotations.add(self.project.get_state(items[k].strip()))
-						node = ContextMutationNode(self, node_id, state, annotations)
-						node_dict[node.get_node_id()] = node
-		self.nodes = list()
-		for node_id in range(0, len(node_dict)):
-			self.nodes.append(node_dict[node_id])
-		return
-
-	def __load_links__(self, file_path: str):
-		"""
-		:param file_path:
-		:return:
-		"""
-		self.index = dict()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					if items[0].strip() == "[EDGE]":
-						source = self.nodes[int(items[1].strip())]
-						for k in range(2, len(items)):
-							target = self.nodes[int(items[k].strip())]
-							source.connect(target)
-					elif items[0].strip() == "[LINK]":
-						mutant_id = jcbase.CToken.parse(items[1].strip()).get_token_value()
-						mutant = self.project.muta_space.get_mutant(mutant_id)
-						node = self.nodes[int(items[2].strip())]
-						self.index[mutant] = node
-		return
-
-	def get_project(self):
-		return self.project
-
-	def __len__(self):
-		return len(self.nodes)
-
-	def get_nodes(self):
-		return self.nodes
-
-	def get_mutants(self):
-		return self.index.keys()
-
-	def get_roots(self):
-		"""
-		:return: the root referring to the mutations
-		"""
-		return self.index.values()
-
-	def get_node(self, nid: int):
-		return self.nodes[nid]
-
-	def get_root(self, mutant: Mutant):
-		if mutant in self.index:
-			return self.index[mutant]
-		else:
-			return None
-
-	def get_nodes_of(self, mutant: Mutant):
-		"""
-		:param mutant:
-		:return: all the nodes connected with the mutation
-		"""
-		nodes = set()
-		if mutant in self.index:
-			root = self.index[mutant]
-			queue = deque()
-			queue.append(root)
-			while len(queue) > 0:
-				node = queue.popleft()
-				node: ContextMutationNode
-				nodes.add(node)
-				for ou_node in node.get_ou_nodes():
-					ou_node: ContextMutationNode
-					if not (ou_node in nodes):
-						queue.append(ou_node)
-		return nodes
-
-
-class ContextMutationNode:
-	"""
-	It models a contextual mutation node in state transition tree.
-	"""
-
-	def __init__(self, tree: ContextMutationTree, node_id: int, state: ContextMutationState, annotations):
-		"""
-		:param tree:
-		:param node_id:
-		:param state:
-		:param annotations:
-		"""
-		self.tree = tree
-		self.node_id = node_id
-		self.state = state
-		self.annotations = list()
-		for annotation in annotations:
-			annotation: ContextMutationState
-			self.annotations.append(annotation)
-		self.in_nodes = list()
-		self.ou_nodes = list()
-		return
-
-	def get_tree(self):
-		return self.tree
-
-	def get_node_id(self):
-		return self.node_id
-
-	def get_state(self):
-		return self.state
-
-	def get_annotations(self):
-		return self.annotations
-
-	def get_in_nodes(self):
-		return self.in_nodes
-
-	def get_ou_nodes(self):
-		return self.ou_nodes
-
-	def connect(self, target):
-		"""
-		:param target:
-		:return:
-		"""
-		target: ContextMutationNode
-		target.in_nodes.append(self)
-		self.ou_nodes.append(target)
-		return
+	
 
 
 if __name__ == "__main__":
