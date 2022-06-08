@@ -56,6 +56,10 @@ class SymbolZ3Parser:
 		else:
 			return self.__parse_list_expression__(symbol_node)
 
+	def __save_buffer__(self, key, value):
+		self.__buffer__[str(key)] = value
+		return
+
 	def __parse_by_type__(self, symbol_node: jcmuta.SymbolNode, name=None):
 		data_type = symbol_node.get_data_type()
 		if name is None:
@@ -196,7 +200,7 @@ class SymbolZ3Parser:
 		operator = str(symbol_node.get_content().get_token_value()).strip()
 		loperand = self.parse(symbol_node.get_child(1))
 		roperand = self.parse(symbol_node.get_child(2))
-		self.__buffer__[str(loperand.sexpr())] = roperand
+		self.__save_buffer__(loperand.sexpr(), roperand)
 		if operator == "assign":
 			return roperand
 		else:
@@ -214,37 +218,6 @@ class SymbolZ3Parser:
 		roperand = self.parse(symbol_node.get_child(2))
 		return z3.If(condition, loperand, roperand)
 
-	def __new_function_node__(self, name: str, arguments):
-		#argType = z3.DeclareSort("T")
-		f = z3.Function(name)
-		if len(arguments) >= self.maxArgs:
-			#f = z3.Function(name, argType, argType, argType, argType, argType, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7])
-		elif len(arguments) == 7:
-			#f = z3.Function(name, argType, argType, argType, argType, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6])
-		elif len(arguments) == 6:
-			#f = z3.Function(name, argType, argType, argType, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5])
-		elif len(arguments) == 5:
-			#f = z3.Function(name, argType, argType, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4])
-		elif len(arguments) == 4:
-			#f = z3.Function(name, argType, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2], arguments[3])
-		elif len(arguments) == 3:
-			#f = z3.Function(name, argType, argType, argType)
-			return f(arguments[0], arguments[1], arguments[2])
-		elif len(arguments) == 2:
-			#f = z3.Function(name, argType, argType)
-			return f(arguments[0], arguments[1])
-		elif len(arguments) == 1:
-			#f = z3.Function(name, argType)
-			return f(arguments[0])
-		else:
-			#f = z3.Function(name)
-			return f()
-
 	def __parse_call_expression__(self, symbol_node: jcmuta.SymbolNode):
 		function = symbol_node.get_child(0)
 		if function.get_class_name() == "Identifier":
@@ -254,13 +227,14 @@ class SymbolZ3Parser:
 		arg_list = symbol_node.get_child(1)
 		arguments = list()
 		for argument in arg_list.get_children():
+			argument: jcmuta.SymbolNode
 			arg = self.parse(argument)
 			arguments.append(arg)
 			if len(arguments) >= self.maxArgs:
 				break
-		func_node = self.__new_function_node__(func_name, arguments)
-		self.__buffer__[str(self.parse(function).sexpr())] = func_node
-		return func_node
+			else:
+				self.__save_buffer__(argument.get_code(), arg)
+		return z3.Function(func_name)
 
 	def __parse_list_expression__(self, symbol_node: jcmuta.SymbolNode):
 		elements = list()
@@ -288,6 +262,151 @@ class SymbolZ3Parser:
 			for key, value in parser.__buffer__.items():
 				stateBuffer[key] = value
 		return result
+
+
+class SymbolZ3Prover:
+	"""
+	It checks the equivalence of corresponding mutants
+	"""
+
+	def __init__(self):
+		self.parser = SymbolZ3Parser()
+		self.timeout = 2000
+		return
+
+	def __parse__(self, symbol_node: jcmuta.SymbolNode, buffer=None):
+		"""
+		:param symbol_node:
+		:param buffer:		to preserve the state or not
+		:return:
+		"""
+		self.parser = None
+		res = SymbolZ3Parser.sym2z3(symbol_node, buffer)
+		return res
+
+	def __check__(self, condition):
+		"""
+		:param condition:
+		:return: True if condition is not satisfiable
+		"""
+		solver = z3.Solver()
+		solver.set("timeout", self.timeout)
+		solver.add(condition)
+		if solver.check() == z3.unsat:
+			return True
+		return False
+
+	def __classify__(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: ceq, veq, seq, unk
+		"""
+		if state.get_category() == "eva_cond":
+			try:
+				condition = self.__parse__(state.get_loperand())
+				if self.__check__(condition):
+					return 1
+				else:
+					return 0
+			except:
+				return 0
+		elif state.get_category() == "set_expr":
+			try:
+				orig_maps, muta_maps = dict(), dict()
+				loperand = self.__parse__(state.get_loperand(), orig_maps)
+				roperand = self.__parse__(state.get_roperand(), muta_maps)
+				for key, muta_value in muta_maps.items():
+					if key in orig_maps:
+						orig_value = orig_maps[key]
+						if not self.__check__(orig_value != muta_value):
+							return 0
+					else:
+						return 0
+				location = state.get_location()
+				if (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition"):
+					return 3
+				elif self.__check__(loperand != roperand):
+					return 2
+				else:
+					return 0
+			except:
+				return 0
+		else:
+			return 0
+
+	def __solve__(self, project: jcmuta.CProject):
+		"""
+		:param project:
+		:return: dict[state, class{unk, ceq, veq, seq}]
+		"""
+		state_class_dict, states = dict(), set()
+		for mutant in project.context_space.get_mutants():
+			mutant: jcmuta.Mutant
+			if mutant.get_result().is_killed_in(None):
+				continue
+			else:
+				for state in project.context_space.get_mutation(mutant).get_states():
+					states.add(state)
+		for state in states:
+			flag = self.__classify__(state)
+			state_class_dict[state] = flag
+		return state_class_dict
+
+	def solve(self, project: jcmuta.CProject, file_path: str):
+		"""
+		:param project:
+		:param file_path:
+		:return: alive, equiv, ceq, veq, seq
+		"""
+		alive, eqv, ceq, veq, seq = 0, 0, 0, 0, 0
+		with open(file_path, 'w') as writer:
+			writer.write("ID\tClass\tOprt\tLine\tCode\tParam\tEquiv\tCategory\tLocation\tLoperand\tRoperand\n")
+			for mutant in project.context_space.get_mutants():
+				if mutant.get_result().is_killed_in(None):
+					continue
+				else:
+					alive += 1
+					equiv_state, equiv_flag = None, 0
+					for state in project.context_space.get_mutation(mutant).get_states():
+						flag = self.__classify__(state)
+						if flag != 0:
+							equiv_state = state
+							equiv_flag = flag
+							eqv += 1
+							break
+					mid = mutant.get_muta_id()
+					mclass = mutant.get_mutation().get_mutation_class()
+					moprt = mutant.get_mutation().get_mutation_operator()
+					mline = mutant.get_mutation().get_location().line_of(False)
+					mcode = mutant.get_mutation().get_location().get_code(True)
+					mcode = jcbase.strip_text(mcode, 96)
+					param = mutant.get_mutation().get_parameter()
+					writer.write("{}\t{}\t{}\t{}\t\"{}\"\t{}\t".format(mid, mclass, moprt, mline, mcode, param))
+					if equiv_flag != 0:
+						equiv_state: jcmuta.ContextState
+						flag = equiv_flag
+						if flag == 1:
+							ceq += 1
+							flag_string = "CEQ"
+						elif flag == 2:
+							veq += 1
+							flag_string = "VEQ"
+						else:
+							seq += 1
+							flag_string = "SEQ"
+						category = equiv_state.get_category()
+						location = equiv_state.get_location()
+						loc_code = location.get_ast_source().get_code(True)
+						loc_code = jcbase.strip_text(loc_code, 96)
+						loperand = equiv_state.get_loperand().get_code()
+						roperand = equiv_state.get_roperand().get_code()
+						loperand = jcbase.strip_text(loperand, 96)
+						roperand = jcbase.strip_text(roperand, 96)
+						writer.write("{}\t{}\t\"{}\"\t({})\t({})".format(flag_string, category, loc_code, loperand, roperand))
+					else:
+						writer.write("???")
+					writer.write("\n")
+		return alive, eqv, ceq, veq, seq
 
 
 def test_z3_parse(project: jcmuta.CProject, out_file: str):
@@ -332,7 +451,7 @@ def check_un_satisfiability(condition):
 def check_equivalence_by_state(state: jcmuta.ContextState):
 	"""
 	:param state:
-	:return: whether the state refers to an equivalent mutant
+	:return: unk,
 	"""
 	if state.get_category() == "eva_cond":
 		try:
@@ -427,16 +546,28 @@ def detect_equivalence(project: jcmuta.CProject, out_file: str):
 	return
 
 
+def test_equivalent_detection(project: jcmuta.CProject, out_file: str):
+	prover = SymbolZ3Prover()
+	print("Load", project.program.name, "with", len(project.muta_space.get_mutants()), "mutants.")
+	alive, eqv, ceq, veq, seq = prover.solve(project, out_file)
+	ratio = eqv / (alive + 0.00001)
+	ratio = int(ratio * 10000) / 100.0
+	print("\tALV = {}\tEQV = {} ({}%)\tCEQ = {}\tVEQ = {}\tSEQ = {}".format(alive, eqv, ratio, ceq, veq, seq))
+	return
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext3/features"
 	post_path = "/home/dzt2/Development/Data/zext3/debugs"
 	start = True
 	for project_name in os.listdir(root_path):
-		if True:
-			project_directory = os.path.join(root_path, project_name)
-			c_project = jcmuta.CProject(project_directory, project_name)
-			print("Load", c_project.program.name, "with", len(c_project.muta_space.get_mutants()), "mutants.")
-			# test_z3_parse(c_project, os.path.join(post_path, project_name + ".sep"))
-			detect_equivalence(c_project, os.path.join(post_path, project_name + ".eqv"))
-			print()
+		project_directory = os.path.join(root_path, project_name)
+		c_project = jcmuta.CProject(project_directory, project_name)
+		test_equivalent_detection(c_project, os.path.join(post_path, project_name + ".eqv"))
+		# if True:
+		# project_directory = os.path.join(root_path, project_name)
+		# c_project = jcmuta.CProject(project_directory, project_name)
+		# print("Load", c_project.program.name, "with", len(c_project.muta_space.get_mutants()), "mutants.")
+		# detect_equivalence(c_project, os.path.join(post_path, project_name + ".eqv"))
+		print()
 
