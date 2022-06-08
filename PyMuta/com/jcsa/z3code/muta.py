@@ -190,6 +190,7 @@ class Mutant:
 		:param muta_id: unique integer ID to tag this mutant in space
 		:param mutation: the syntactic mutation to define this mutant
 		"""
+		space: MutantSpace
 		self.space = space
 		self.muta_id = muta_id
 		self.mutation = mutation
@@ -781,5 +782,36 @@ if __name__ == "__main__":
 				content = symbol_node.get_content()
 				symbol_code = symbol_node.get_code()
 				writer.write("{}\t{}\t{}\t{}\t\"{}\"\n".format(symbol_class, symbol_id, data_type, content, symbol_code))
+		out_file = os.path.join("/home/dzt2/Development/Data/zext2/trashes", project_name + ".txt")
+		with open(out_file, 'w') as writer:
+			for context_mutation in c_project.context_space.get_mutations():
+				## 2.1. ast_mutation information
+				ast_mutant = context_mutation.get_mutant()
+				ast_mid = ast_mutant.get_muta_id()
+				ast_res = ast_mutant.get_result().is_killed_in(None)
+				if ast_res:
+					result = "Killed"
+				else:
+					result = "Alived"
+				m_class = ast_mutant.get_mutation().get_mutation_class()
+				m_oprt = ast_mutant.get_mutation().get_mutation_operator()
+				m_line = ast_mutant.get_mutation().get_location().line_of(False)
+				m_code = ast_mutant.get_mutation().get_location().generate_code(64)
+				m_parameter = ast_mutant.get_mutation().get_parameter()
+				writer.write("MID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(
+					ast_mid, result, m_class, m_oprt, m_line, m_code, m_parameter))
+
+				## 2.2. execution state of contextual mutation
+				for context_state in context_mutation.get_states():
+					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(context_state.get_category(),
+																				 context_state.get_location().get_node_type(),
+																				 context_state.get_location().get_node_id(),
+																				 context_state.get_location().get_ast_source().line_of(
+																					 False),
+																				 context_state.get_location().get_ast_source().generate_code(
+																					 64),
+																				 context_state.get_loperand().get_code(),
+																				 context_state.get_roperand().get_code()))
+			writer.write("\n")
 	print("Testing end for all...")
 
