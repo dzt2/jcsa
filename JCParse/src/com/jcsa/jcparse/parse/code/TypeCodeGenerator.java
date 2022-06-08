@@ -95,8 +95,8 @@ public class TypeCodeGenerator {
 			buffer.append("(");
 			this.gen(((CFunctionType) data_type).get_return_type());
 			buffer.append(")");
-			buffer.append(" ");
-
+			buffer.append("#");
+			
 			CParameterTypeList plist = ((CFunctionType) data_type).get_parameter_types();
 			buffer.append("(");
 			for(int k = 0; k < plist.size(); k++) {
@@ -105,7 +105,7 @@ public class TypeCodeGenerator {
 					buffer.append(", ");
 				}
 			}
-			buffer.append(")");
+			buffer.append(")#");
 		}
 		else if(data_type instanceof CQualifierType) {
 			this.gen(((CQualifierType) data_type).get_reference());
