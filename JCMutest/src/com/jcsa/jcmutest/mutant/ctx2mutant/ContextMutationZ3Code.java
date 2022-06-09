@@ -156,7 +156,7 @@ public class ContextMutationZ3Code {
 		}
 	}
 	
-	/* basic token endocing methods */
+	/* basic token encoding methods */
 	/**
 	 * translate special characters to specified format
 	 * @param text
