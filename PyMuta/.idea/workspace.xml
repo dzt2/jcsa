@@ -20,7 +20,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pv.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3pv.py" afterDir="false" />
     </list>
@@ -74,7 +73,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.z3pe">
+  <component name="RunManager" selected="Python.z3pv">
     <configuration name="code (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -203,8 +202,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.z3pe" />
         <item itemvalue="Python.z3pv" />
+        <item itemvalue="Python.z3pe" />
         <item itemvalue="Python.z3ex" />
         <item itemvalue="Python.muta (1)" />
         <item itemvalue="Python.code (1)" />
