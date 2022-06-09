@@ -1,4 +1,4 @@
-"""This file implements the z3-translation and equivalence proof"""
+"""This file implements the symbolic expression analysis based on Z3 theorem prover"""
 
 
 import os
@@ -9,43 +9,34 @@ import com.jcsa.z3code.muta as jcmuta
 
 class SymbolToZ3Parser:
 	"""
-	It parses from SymbolNode to Z3.sexpr
+	It implements the parse from SymbolNode to z3.SExpression
 	"""
 
 	def __init__(self):
-		self.boolSize = 1
-		self.charSize = 8
-		self.shortSize = 16
-		self.intSize = 64
-		self.longSize = 64
-		self.realSize = 64
-		self.pointSize = 64
-		self.bodySize = 128
+		self.boolLength = 1
+		self.charLength = 8
+		self.shortLength = 16
+		self.IntLength = 64
+		self.LongLength = 64
+		self.PointLength = 64
+		self.AnyLength = 128
 		self.__buffer__ = dict()
-		self.bitSwitch = False
-		self.assumptions = set()
+		self.__assume__ = set()
+		self.__bitwise__ = False
+		self.__naming__ = "{}_{}"
 		return
 
-	def __save__(self, key, value):
-		"""
-		:param key:
-		:param value:
-		:return: it saves the key-value pair to environment for representing side-effects
-		"""
+	def __save_state__(self, key, value):
 		self.__buffer__[str(key)] = value
 		return
 
-	def __assume__(self, assumption):
-		if assumption is None:
-			return
-		self.assumptions.add(assumption)
-		return
+	def __add_assume__(self, assume):
+		if not (assume is None):
+			self.__assume__.add(assume)
+			return True
+		return False
 
 	def __parse__(self, symbol_node: jcmuta.SymbolNode):
-		"""
-		:param symbol_node:
-		:return: it recursively parses the symbolic node to s-expression in z3
-		"""
 		symbol_class = symbol_node.get_class_name()
 		if symbol_class == "Identifier":
 			return self.__parse_identifier__(symbol_node)
@@ -76,58 +67,60 @@ class SymbolToZ3Parser:
 		else:
 			return self.__parse_list_expression__(symbol_node)
 
-	def __new_bool_ref__(self, name: str):
-		if self.bitSwitch:
-			return z3.BitVec(name, self.boolSize)
+	def __new_bool_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.boolLength)
 		else:
 			return z3.Bool(name)
 
-	def __new_char_ref__(self, name: str):
-		if self.bitSwitch:
-			reference = z3.BitVec(name, self.charSize)
-		else:
-			reference = z3.Int(name)
-		self.assumptions.add(reference >= 0)
-		return reference
-
-	def __new_short_ref__(self, name: str, unsigned: bool):
-		if self.bitSwitch:
-			reference = z3.BitVec(name, self.shortSize)
-		else:
-			reference = z3.Int(name)
-		if unsigned:
-			self.__assume__(reference >= 0)
-		return reference
-
-	def __new_int_ref__(self, name: str, unsigned: bool):
-		if self.bitSwitch:
-			reference = z3.BitVec(name, self.intSize)
-		else:
-			reference = z3.Int(name)
-		if unsigned:
-			self.__assume__(reference >= 0)
-		return reference
-
-	def __new_long_ref__(self, name: str, unsigned: bool):
-		if self.bitSwitch:
-			reference = z3.BitVec(name, self.longSize)
-		else:
-			reference = z3.Int(name)
-		if unsigned:
-			self.__assume__(reference >= 0)
-		return reference
-
-	def __new_complex_ref__(self, name: str):
-		return z3.BitVec(name, self.realSize * 2)
-
-	def __new_address_ref__(self, name: str):
-		if self.bitSwitch:
-			return z3.BitVec(name, self.pointSize)
+	def __new_char_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.charLength)
 		else:
 			return z3.Int(name)
 
-	def __new_otherwise_ref__(self, name: str):
-		return z3.BitVec(name, self.bodySize)
+	def __new_short_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.shortLength)
+		else:
+			return z3.Int(name)
+
+	def __new_int_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.IntLength)
+		else:
+			return z3.Int(name)
+
+	def __new_long_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.LongLength)
+		else:
+			return z3.Int(name)
+
+	def __new_real_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.Real(name)
+		return z3.Real(name)
+
+	def __new_complex_var__(self, name: str):
+		return z3.BitVec(name, self.LongLength * 2)
+
+	def __new_address_var__(self, name: str):
+		if self.__bitwise__:
+			return z3.BitVec(name, self.PointLength)
+		else:
+			return z3.Int(name)
+
+	def __new_otherwise_var__(self, name: str):
+		return z3.BitVec(name, self.AnyLength)
+
+	def __new_symbol_name__(self, symbol_node: jcmuta.SymbolNode):
+		symbol_class = symbol_node.get_class_name()
+		symbol_id = symbol_node.get_class_id()
+		if symbol_id < 0:
+			symbol_id = abs(symbol_id)
+			symbol_class = symbol_class + "_n"
+		return self.__naming__.format(symbol_class, symbol_id)
 
 	def __parse_by_name__(self, name: str, data_type: jcbase.CType):
 		"""
@@ -136,31 +129,31 @@ class SymbolToZ3Parser:
 		:return: it creates a z3-sexpr by using name and data-type to create refereces
 		"""
 		if data_type is None:
-			return self.__new_bool_ref__(name)
+			return self.__new_bool_var__(name)
 		elif (data_type.get_key() == "bool") or (data_type.get_key() == "void"):
-			return self.__new_bool_ref__(name)
+			return self.__new_bool_var__(name)
 		elif (data_type.get_key() == "char") or (data_type.get_key() == "uchar"):
-			return self.__new_char_ref__(name)
+			return self.__new_char_var__(name)
 		elif (data_type.get_key() == "short") or (data_type.get_key() == "ushort"):
-			return self.__new_short_ref__(name, data_type.get_key() == "ushort")
+			return self.__new_short_var__(name)
 		elif (data_type.get_key() == "int") or (data_type.get_key() == "uint"):
-			return self.__new_int_ref__(name, data_type.get_key() == "uint")
+			return self.__new_int_var__(name)
 		elif (data_type.get_key() == "long") or (data_type.get_key() == "ulong"):
-			return self.__new_long_ref__(name, data_type.get_key() == "ulong")
+			return self.__new_long_var__(name)
 		elif (data_type.get_key() == "llong") or (data_type.get_key() == "ullong"):
-			return self.__new_long_ref__(name, data_type.get_key() == "ullong")
+			return self.__new_long_var__(name)
 		elif (data_type.get_key() == "float") or (data_type.get_key() == "double") or (data_type.get_key() == "ldouble"):
-			return z3.Real(name)
+			return self.__new_real_var__(name)
 		elif (data_type.get_key() == "float_x") or (data_type.get_key() == "double_x") or (data_type.get_key() == "ldouble_x"):
-			return self.__new_complex_ref__(name)
+			return self.__new_complex_var__(name)
 		elif (data_type.get_key() == "float_i") or (data_type.get_key() == "double_i") or (data_type.get_key() == "ldouble_i"):
-			return z3.Real(name)
+			return self.__new_real_var__(name)
 		elif (data_type.get_key() == "array") or (data_type.get_key() == "point"):
-			return self.__new_address_ref__(name)
+			return self.__new_address_var__(name)
 		elif data_type.get_key() == "function":
 			return z3.Function(name)
 		else:
-			return self.__new_otherwise_ref__(name)
+			return self.__new_otherwise_var__(name)
 
 	def __parse_identifier__(self, symbol_node: jcmuta.SymbolNode):
 		return self.__parse_by_name__(symbol_node.get_content().get_token_value(), symbol_node.get_data_type())
@@ -170,70 +163,71 @@ class SymbolToZ3Parser:
 		if isinstance(constant, bool):
 			return z3.BoolVal(constant)
 		elif isinstance(constant, int):
-			if self.bitSwitch:
-				return z3.BitVecVal(constant, self.longSize)
+			if self.__bitwise__:
+				return z3.BitVecVal(constant, self.LongLength)
 			else:
 				return z3.IntVal(constant)
 		else:
 			return z3.RealVal(constant)
 
-	def __new_default_name__(self, symbol_node: jcmuta.SymbolNode):
-		self.__assume__(None)
-		return "{}_{}".format(symbol_node.get_class_name(), abs(symbol_node.get_class_id()))
-
 	def __parse_literal__(self, symbol_node: jcmuta.SymbolNode):
-		return z3.String(self.__new_default_name__(symbol_node))
+		return z3.String(self.__new_symbol_name__(symbol_node))
 
-	def __cast_to_bool__(self, operand):
-		self.__assume__(None)
-		if isinstance(operand, z3.IntNumRef) or isinstance(operand, z3.RatNumRef):
-			res = operand != 0
-		elif isinstance(operand, z3.ArithRef) or isinstance(operand, z3.BitVecRef):
-			return operand != 0
-		elif isinstance(operand, z3.BitVecNumRef):
-			return operand != 0
+	def __cast_to_bool__(self, z3_expr):
+		self.__add_assume__(None)
+		if z3.is_arith(z3_expr):
+			return z3_expr != 0
+		elif z3.is_bv(z3_expr):
+			return z3_expr != 0
 		else:
-			return operand
+			return z3_expr
+
+	def __cast_to_int__(self, z3_expr):
+		self.__add_assume__(None)
+		if z3.is_bool(z3_expr):
+			return z3.If(z3_expr, z3.IntVal(1), z3.IntVal(0))
+		elif z3.is_bv(z3_expr):
+			return z3.BV2Int(z3_expr, True)
+		else:
+			return z3_expr
+
+	def __cast_to_bitwise__(self, z3_expr):
+		self.__add_assume__(None)
+		if z3.is_bool(z3_expr):
+			return z3.If(z3_expr, z3.BitVecVal(1, self.IntLength), z3.BitVecVal(0, self.IntLength))
+		elif z3.is_int(z3_expr):
+			return z3.Int2BV(z3_expr, self.IntLength)
+		else:
+			return z3_expr
 
 	def __parse_unary_expression__(self, symbol_node: jcmuta.SymbolNode):
-		"""
-		:param symbol_node:
-		:return: neg, rsv, not, adr, der
-		"""
 		operator = symbol_node.get_content().get_token_value()
 		u_operand = self.__parse__(symbol_node.get_child(1))
 		if operator == "negative":
-			return -u_operand
+			return -self.__cast_to_int__(u_operand)
 		elif operator == "bit_not":
-			if isinstance(u_operand, z3.IntNumRef) or isinstance(u_operand, z3.ArithRef):
-				return -u_operand - 1
-			else:
-				return ~u_operand
+			return ~self.__cast_to_bitwise__(u_operand)
 		elif operator == "logic_not":
 			return z3.Not(self.__cast_to_bool__(u_operand))
 		elif operator == "address_of":
-			return z3.Const(self.__new_default_name__(symbol_node), z3.IntSort())
+			return z3.Const(self.__new_symbol_name__(symbol_node), z3.IntSort())
 		else:
-			return self.__parse_by_name__(self.__new_default_name__(symbol_node), symbol_node.get_data_type())
+			return self.__parse_by_name__(self.__new_symbol_name__(symbol_node), symbol_node.get_data_type())
 
 	def __parse_arith_expression__(self, symbol_node: jcmuta.SymbolNode):
-		"""
-		:param symbol_node:
-		:return:
-		"""
 		operator = str(symbol_node.get_content().get_token_value()).strip()
 		loperand = self.__parse__(symbol_node.get_child(1))
 		roperand = self.__parse__(symbol_node.get_child(2))
 		if operator == "arith_add":
-			return loperand + roperand
+			return self.__cast_to_int__(loperand) + self.__cast_to_int__(roperand)
 		elif operator == "arith_sub":
-			return loperand - roperand
+			return self.__cast_to_int__(loperand) - self.__cast_to_int__(roperand)
 		elif operator == "arith_mul":
-			return loperand * roperand
+			return self.__cast_to_int__(loperand) * self.__cast_to_int__(roperand)
 		elif operator == "arith_div":
-			return loperand / roperand
+			return self.__cast_to_int__(loperand) / self.__cast_to_int__(roperand)
 		else:
-			return loperand % roperand
+			return self.__cast_to_int__(loperand) % self.__cast_to_int__(roperand)
 
 	def __parse_bitws_expression__(self, symbol_node: jcmuta.SymbolNode):
 		operator = str(symbol_node.get_content().get_token_value()).strip()
@@ -243,49 +237,49 @@ class SymbolToZ3Parser:
 		roperand = self.__parse__(symbol_node.get_child(2))
 		self.bitSwitch = False
 		if operator == "bit_and":
-			return loperand & roperand
+			return self.__cast_to_bitwise__(loperand) & self.__cast_to_bitwise__(roperand)
 		elif operator == "bit_or":
-			return loperand | roperand
+			return self.__cast_to_bitwise__(loperand) | self.__cast_to_bitwise__(roperand)
 		elif operator == "bit_xor":
-			return loperand ^ roperand
+			return self.__cast_to_bitwise__(loperand) ^ self.__cast_to_bitwise__(roperand)
 		elif operator == "left_shift":
-			return loperand << roperand
+			return self.__cast_to_bitwise__(loperand) << self.__cast_to_bitwise__(roperand)
 		else:
-			return loperand >> roperand
+			return self.__cast_to_bitwise__(loperand) >> self.__cast_to_bitwise__(roperand)
 
 	def __parse_logic_expression__(self, symbol_node: jcmuta.SymbolNode):
 		operator = str(symbol_node.get_content().get_token_value()).strip()
 		loperand = self.__parse__(symbol_node.get_child(1))
 		roperand = self.__parse__(symbol_node.get_child(2))
-		loperand = self.__cast_to_bool__(loperand)
-		roperand = self.__cast_to_bool__(roperand)
 		if operator == "logic_and":
-			return z3.And(loperand, roperand)
+			return z3.And(self.__cast_to_bool__(loperand), self.__cast_to_bool__(roperand))
+		elif operator == "logic_or":
+			return z3.Or(self.__cast_to_bool__(loperand), self.__cast_to_bool__(roperand))
 		else:
-			return z3.Or(loperand, roperand)
+			return z3.Implies(self.__cast_to_bool__(loperand), self.__cast_to_bool__(roperand))
 
 	def __parse_relation_expression__(self, symbol_node: jcmuta.SymbolNode):
 		operator = str(symbol_node.get_content().get_token_value()).strip()
 		loperand = self.__parse__(symbol_node.get_child(1))
 		roperand = self.__parse__(symbol_node.get_child(2))
 		if operator == "greater_tn":
-			return loperand > roperand
+			return self.__cast_to_int__(loperand) > self.__cast_to_int__(roperand)
 		elif operator == "greater_eq":
-			return loperand >= roperand
-		elif operator == "smaller_tn":
-			return loperand < roperand
+			return self.__cast_to_int__(loperand) >= self.__cast_to_int__(roperand)
 		elif operator == "smaller_eq":
-			return loperand <= roperand
-		elif operator == "equal_with":
-			return loperand == roperand
+			return self.__cast_to_int__(loperand) <= self.__cast_to_int__(roperand)
+		elif operator == "smaller_tn":
+			return self.__cast_to_int__(loperand) < self.__cast_to_int__(roperand)
+		elif operator == "not_equals":
+			return self.__cast_to_int__(loperand) != self.__cast_to_int__(roperand)
 		else:
-			return loperand != roperand
+			return self.__cast_to_int__(loperand) == self.__cast_to_int__(roperand)
 
 	def __parse_assign_expression__(self, symbol_node: jcmuta.SymbolNode):
 		operator = str(symbol_node.get_content().get_token_value()).strip()
 		loperand = self.__parse__(symbol_node.get_child(1))
 		roperand = self.__parse__(symbol_node.get_child(2))
-		self.__save__(loperand.sexpr(), roperand)
+		self.__save_state__(loperand.sexpr(), roperand)
 		if operator == "assign":
 			return roperand
 		else:
@@ -295,7 +289,7 @@ class SymbolToZ3Parser:
 		return self.__parse__(symbol_node.get_child(1))
 
 	def __parse_field_expression__(self, symbol_node: jcmuta.SymbolNode):
-		return self.__parse_by_name__(self.__new_default_name__(symbol_node), symbol_node.get_data_type())
+		return self.__parse_by_name__(self.__new_symbol_name__(symbol_node), symbol_node.get_data_type())
 
 	def __parse_if_else_expression__(self, symbol_node: jcmuta.SymbolNode):
 		condition = self.__parse__(symbol_node.get_child(0))
@@ -307,19 +301,20 @@ class SymbolToZ3Parser:
 		elements = list()
 		for child in symbol_node.get_children():
 			elements.append(self.__parse__(child))
-		return self.__parse_by_name__(self.__new_default_name__(symbol_node), symbol_node.get_data_type())
+		return self.__parse_by_name__(self.__new_symbol_name__(symbol_node), symbol_node.get_data_type())
 
 	def __parse_call_expression__(self, symbol_node: jcmuta.SymbolNode):
 		function = symbol_node.get_child(0)
 		if function.get_class_name() == "Identifier":
 			func_name = function.get_content().get_token_value()
 		else:
-			func_name = self.__new_default_name__(function)
+			func_name = self.__new_symbol_name__(function)
 		arguments = symbol_node.get_child(1).get_children()
 		for k in range(0, len(arguments)):
 			arg = self.__parse__(arguments[k])
-			self.__save__("{}#{}".format(func_name, k), arg)
-		return self.__parse_by_name__("{}_{}".format(func_name, symbol_node.get_class_id()), symbol_node.get_data_type())
+			self.__save_state__("{}#{}".format(func_name, k), arg)
+		return self.__parse_by_name__("{}_{}".format(func_name, symbol_node.get_class_id()),
+									  symbol_node.get_data_type())
 
 	def parse_to(self, symbol_node: jcmuta.SymbolNode, stateBuffer=None, assumeLib=None):
 		"""
@@ -329,9 +324,8 @@ class SymbolToZ3Parser:
 		:return: None if transformation failed
 		"""
 		self.__buffer__.clear()
-		self.assumptions.clear()
-		self.bitSwitch = False
-		# res = self.__parse__(symbol_node)
+		self.__assume__.clear()
+		self.__bitwise__ = False
 		try:
 			res = self.__parse__(symbol_node)
 		except z3.Z3Exception:
@@ -346,7 +340,7 @@ class SymbolToZ3Parser:
 				stateBuffer[key] = value
 		if not (assumeLib is None):
 			assumeLib: set
-			for assumption in self.assumptions:
+			for assumption in self.__assume__:
 				assumeLib.add(assumption)
 		return res
 
@@ -358,7 +352,7 @@ class SymbolToZ3Prover:
 
 	def __init__(self):
 		self.parser = SymbolToZ3Parser()
-		self.timeout = 5000
+		self.timeout = 1000
 		self.neq = 0
 		self.ceq = 1
 		self.veq = 2
@@ -539,12 +533,12 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext3/featuresBIG"
 	post_path = "/home/dzt2/Development/Data/zext3/resultsBIG"
 	for project_name in os.listdir(root_path):
-		if project_name != "md4":
+		if project_name == "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
 		print("Testing on", project_name, "for", len(c_project.muta_space.mutants), "mutants")
-		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		# test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
+		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
 		print()
 
