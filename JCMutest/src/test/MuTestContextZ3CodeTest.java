@@ -33,7 +33,7 @@ public class MuTestContextZ3CodeTest {
 	}
 	public static void main(String[] args) throws Exception {
 		for(File root : new File(root_path).listFiles()) {
-			if(!root.getName().equals("md4"))
+			if(root.getName().equals("md4"))
 				testing(root);
 		}
 	}

@@ -530,18 +530,20 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 
 def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 	prover = SymbolToZ3Prover()
-	prover.prove(c_project, file_path)
+	prover.prove(project, file_path)
 	return
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zext3/features"
-	post_path = "/home/dzt2/Development/Data/zext3/debugs"
+	root_path = "/home/dzt2/Development/Data/zext3/featuresBIG"
+	post_path = "/home/dzt2/Development/Data/zext3/resultsBIG"
 	for project_name in os.listdir(root_path):
+		if project_name != "md4":
+			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
 		print("Testing on", project_name, "for", len(c_project.muta_space.mutants), "mutants")
-		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
 		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
 		print()
 
