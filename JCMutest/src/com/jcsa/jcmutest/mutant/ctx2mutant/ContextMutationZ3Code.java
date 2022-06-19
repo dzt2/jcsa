@@ -824,8 +824,10 @@ public class ContextMutationZ3Code {
 	 * @throws Exception
 	 */
 	private Collection<ContextMutationNode> get_context_nodes(ContextMutationTree tree, Mutant mutant) throws Exception {
+		/*
 		Collection<ContextMutationNode> nodes = new HashSet<ContextMutationNode>();
 		Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
+		Collection<ContextMutationNode> results = new HashSet<ContextMutationNode>();
 		if(tree.has_tree_node_of(mutant)) {
 			queue.add(tree.get_tree_node_of(mutant));
 			while(!queue.isEmpty()) {
@@ -837,7 +839,24 @@ public class ContextMutationZ3Code {
 				}
 			}
 		}
-		return nodes;
+		return results;
+		*/
+		
+		Collection<ContextMutationNode> results = new HashSet<ContextMutationNode>();
+		Queue<ContextMutationNode> queue = new LinkedList<ContextMutationNode>();
+		if(tree.has_tree_node_of(mutant)) {
+			ContextMutationNode root = tree.get_tree_node_of(mutant);
+			results.add(root.get_ou_edge(0).get_target());
+			queue.add(root.get_ou_edge(1).get_target());
+			while(!queue.isEmpty()) {
+				ContextMutationNode node = queue.poll();
+				results.add(node);
+				for(ContextMutationEdge edge : node.get_ou_edges()) {
+					queue.add(edge.get_target());
+				}
+			}
+		}
+		return results;
 	}
 	/**
 	 * @param tree

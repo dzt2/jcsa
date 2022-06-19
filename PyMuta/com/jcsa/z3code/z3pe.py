@@ -658,16 +658,16 @@ def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zext3/featuresBIG"
-	post_path = "/home/dzt2/Development/Data/zext3/resultsBIG"
+	root_path = "/home/dzt2/Development/Data/zext3/features"
+	post_path = "/home/dzt2/Development/Data/zext3/results"
 	for project_name in os.listdir(root_path):
-		if project_name == "md4":
+		if project_name == "calendar":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
 		print("Testing on", project_name, "for", len(c_project.muta_space.mutants),
 			  "mutants and", len(c_project.context_space.get_states()), "states.")
-		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		# test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
+		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
 		print()
 
