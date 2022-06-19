@@ -536,7 +536,7 @@ class SymbolToZ3Prover:
 					else:
 						return self.neq_flag
 				else:
-					return self.neq_flag
+					pass
 
 			## 3. context-based value compare
 			location = state.get_location()
