@@ -236,11 +236,14 @@ public class MuTestProject {
 	public Collection<Mutant> check_trivial_equivalence(MuTestProjectCodeFile code_file, String[] optimize_arguments) throws Exception {
 		Collection<Mutant> equivalent_mutants = new HashSet<Mutant>();
 		FileOperations.delete(this.exec_space.get_normal_executional_file());
+		int counter = 0, total = code_file.get_mutant_space().size();
 		
 		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+			System.out.println("\t\t==> TCE_Proceed[" + counter + "/" + total + "]");
 			if(this.exec_space.compile_equivalence_check(mutant, optimize_arguments)) {
 				equivalent_mutants.add(mutant);
 			}
+			counter++;
 		}
 		return equivalent_mutants;
 	}

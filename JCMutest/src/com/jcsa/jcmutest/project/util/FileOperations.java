@@ -53,7 +53,7 @@ public class FileOperations {
 	}
 	
 	/** the maximal length of bytes that can be read to String **/
-	public static final int MAX_READ_LENGTH = 1024 * 1024 * 32;
+	public static final int MAX_READ_LENGTH = 1024 * 1024 * 128;
 	
 	/**
 	 * @param file
