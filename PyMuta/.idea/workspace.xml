@@ -20,9 +20,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3pr.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/muta/unry/UNOIContextMutationParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/muta/unry/UNOIContextMutationParser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pr.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +76,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.z3pr">
+  <component name="RunManager" selected="Python.z3pe">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -203,8 +205,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.z3pr" />
         <item itemvalue="Python.z3pe" />
+        <item itemvalue="Python.z3pr" />
         <item itemvalue="Python.z3pv" />
         <item itemvalue="Python.z3ex" />
         <item itemvalue="Python.muta (1)" />

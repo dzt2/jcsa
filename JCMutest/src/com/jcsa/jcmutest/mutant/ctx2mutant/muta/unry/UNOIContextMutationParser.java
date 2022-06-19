@@ -13,7 +13,18 @@ public class UNOIContextMutationParser extends ContextMutationParser {
 	protected AstCirNode localize(AstMutation mutation) throws Exception {
 		return this.find_ast_location(mutation.get_location());
 	}
-
+	
+	private SymbolExpression get_abs_value(Object operand, boolean negative) throws Exception {
+		SymbolExpression condition = SymbolFactory.smaller_tn(operand, Integer.valueOf(0));
+		SymbolExpression n_operand = SymbolFactory.arith_neg(operand), p_operand = SymbolFactory.sym_expression(operand);
+		if(negative) {
+			return SymbolFactory.ifte_expression(n_operand.get_data_type(), condition, p_operand, n_operand);
+		}
+		else {
+			return SymbolFactory.ifte_expression(n_operand.get_data_type(), condition, n_operand, p_operand);
+		}
+	}
+	
 	@Override
 	protected void generate(AstCirNode location, AstMutation mutation) throws Exception {
 		SymbolExpression orig_value = SymbolFactory.sym_expression(mutation.get_location());
@@ -47,7 +58,7 @@ public class UNOIContextMutationParser extends ContextMutationParser {
 			}
 			else {
 				this.put_infection(this.eva_cond(SymbolFactory.smaller_tn(orig_value, 0)), 
-						this.set_expr(orig_value, SymbolFactory.arith_neg(orig_value)));
+						this.set_expr(orig_value, this.get_abs_value(orig_value, false)));
 			}
 		}
 		else if(mutation.get_operator() == MutaOperator.insert_nabs_value) {
@@ -56,7 +67,7 @@ public class UNOIContextMutationParser extends ContextMutationParser {
 			}
 			else {
 				this.put_infection(this.eva_cond(SymbolFactory.greater_tn(orig_value, 0)), 
-						this.set_expr(orig_value, SymbolFactory.arith_neg(orig_value)));
+						this.set_expr(orig_value, this.get_abs_value(orig_value, true)));
 			}
 		}
 		else {
