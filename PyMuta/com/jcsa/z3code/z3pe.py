@@ -504,9 +504,10 @@ class SymbolToZ3Prover:
 		for assumption in assumptions:
 			solver.add(assumption)
 		solver.set("timeout", self.timeout)
-		if solver.check() == z3.unsat:
+		if solver.check() == z3.sat:
+			return False
+		else:
 			return True
-		return False
 
 	def __solve__(self, state: jcmuta.ContextState):
 		if state.get_category() == "eva_cond":
@@ -530,8 +531,12 @@ class SymbolToZ3Prover:
 			for key, muta_value in muta_states.items():
 				if key in orig_states:
 					orig_value = orig_states[key]
-					if not self.__check__(self.__differ__(orig_value, muta_value), set()):
+					if self.__check__(self.__differ__(orig_value, muta_value), set()):
+						pass
+					else:
 						return self.neq_flag
+				else:
+					return self.neq_flag
 
 			## 3. context-based value compare
 			location = state.get_location()
@@ -658,10 +663,10 @@ def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zext3/features"
-	post_path = "/home/dzt2/Development/Data/zext3/results"
+	root_path = "/home/dzt2/Development/Data/zext3/featuresBIG"
+	post_path = "/home/dzt2/Development/Data/zext3/resultsBIG"
 	for project_name in os.listdir(root_path):
-		if project_name == "calendar":
+		if project_name == "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)

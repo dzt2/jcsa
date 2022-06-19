@@ -2,6 +2,8 @@ package com.jcsa.jcmutest.project;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.project.util.FileOperations;
@@ -307,5 +309,36 @@ public class MuTestProjectExecSpace {
 				this.get_efiles_directory());
 		return this.project.get_test_space().update_test_result(mutant);
 	}
+	/**
+	 * It checks the equivalence of mutant using clang -O3 algorithms (TCE)
+	 * @param mutant
+	 * @return
+	 * @throws Exception
+	 */
+	protected boolean compile_equivalence_check(Mutant mutant, String[] optimize_arguments) throws Exception {
+		/* declarations */
+		MuTestProjectConfig config = this.project.get_config();
+		MuTestProjectCodeSpace code_space = project.get_code_space();
+		MuCommandUtil command_util = config.get_command_util();
 
+		/* generate the mfiles */ code_space.set_mfiles(mutant);
+		FileOperations.delete(this.get_mutation_executional_file());
+		List<String> arguments = new ArrayList<String>();
+		for(String argument : config.get_compile_parameters()) { arguments.add(argument); }
+		for(String argument : optimize_arguments) { arguments.add(argument); }
+		
+		if(!this.get_normal_executional_file().exists()) {
+			command_util.do_compile(config.get_compiler(), 
+					code_space.get_ifiles(), this.get_normal_executional_file(), 
+					code_space.get_hdirs(), code_space.get_lfiles(), arguments);
+		}
+		if(command_util.do_compile(config.get_compiler(), 
+				code_space.get_mfiles(), this.get_mutation_executional_file(), 
+				code_space.get_hdirs(), code_space.get_lfiles(), arguments)) {
+			return FileOperations.compare(this.get_normal_executional_file(), this.get_mutation_executional_file());
+		}
+		
+		return false;
+	}
+	
 }

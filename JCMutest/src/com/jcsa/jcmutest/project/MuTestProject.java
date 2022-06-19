@@ -3,6 +3,7 @@ package com.jcsa.jcmutest.project;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -227,5 +228,21 @@ public class MuTestProject {
 		this.exec_space.generate_exec_scripts(tests);
 		this.exec_space.execute_instrumental_program();
 	}
-
+	/**
+	 * @param mutants
+	 * @return
+	 * @throws Exception
+	 */
+	public Collection<Mutant> check_trivial_equivalence(MuTestProjectCodeFile code_file, String[] optimize_arguments) throws Exception {
+		Collection<Mutant> equivalent_mutants = new HashSet<Mutant>();
+		FileOperations.delete(this.exec_space.get_normal_executional_file());
+		
+		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
+			if(this.exec_space.compile_equivalence_check(mutant, optimize_arguments)) {
+				equivalent_mutants.add(mutant);
+			}
+		}
+		return equivalent_mutants;
+	}
+	
 }
