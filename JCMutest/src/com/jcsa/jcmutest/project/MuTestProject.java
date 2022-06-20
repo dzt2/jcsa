@@ -3,7 +3,7 @@ package com.jcsa.jcmutest.project;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 
 import com.jcsa.jcmutest.mutant.MutaClass;
 import com.jcsa.jcmutest.mutant.Mutant;
@@ -229,23 +229,30 @@ public class MuTestProject {
 		this.exec_space.execute_instrumental_program();
 	}
 	/**
-	 * @param mutants
+	 * It checks of which mutants in the collection are equivalent by using TCE
+	 * @param mutant
+	 * @param optimize_parameters
 	 * @return
 	 * @throws Exception
 	 */
-	public Collection<Mutant> check_trivial_equivalence(MuTestProjectCodeFile code_file, String[] optimize_arguments) throws Exception {
-		Collection<Mutant> equivalent_mutants = new HashSet<Mutant>();
-		FileOperations.delete(this.exec_space.get_normal_executional_file());
-		int counter = 0, total = code_file.get_mutant_space().size();
-		
-		for(Mutant mutant : code_file.get_mutant_space().get_mutants()) {
-			System.out.println("\t\t==> TCE_Proceed[" + counter + "/" + total + "]");
-			if(this.exec_space.compile_equivalence_check(mutant, optimize_arguments)) {
-				equivalent_mutants.add(mutant);
-			}
-			counter++;
+	public List<Mutant> check_trivial_equivalence(Iterable<Mutant> mutants, String[] optimize_parameters) throws Exception {
+		if(mutants == null) {
+			throw new IllegalArgumentException("Invalid mutants: null");
 		}
-		return equivalent_mutants;
+		else {
+			if(optimize_parameters == null) {
+				optimize_parameters = new String[] { };
+			}
+			List<Mutant> equivalent_mutants = new ArrayList<Mutant>();
+			FileOperations.delete(this.exec_space.get_normal_executional_file());
+			
+			for(Mutant mutant : mutants) {
+				if(this.exec_space.compile_equivalence_check(mutant, optimize_parameters)) {
+					equivalent_mutants.add(mutant);
+				}
+			}
+			return equivalent_mutants;
+		}
 	}
 	
 }

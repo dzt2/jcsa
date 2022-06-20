@@ -1,6 +1,7 @@
 """This file implements the expression-level mutation analysis and equivalence checking"""
 
 
+import time
 import os
 import z3
 import com.jcsa.z3code.base as jcbase
@@ -577,6 +578,7 @@ class SymbolToZ3Prover:
 					all_states.add(state)
 
 		##	2. start the proof checking procedure
+		begTime = time.time()
 		print("\tCollect {} states for equivalence analysis.".format(len(all_states)))
 		total, counter, steps = len(all_states), 0, 3000
 		for state in all_states:
@@ -584,6 +586,8 @@ class SymbolToZ3Prover:
 			if counter % steps == 0:
 				print("\t\tProceed [{}/{}]".format(counter, total))
 			counter += 1
+		endTime = time.time()
+		timeSeconds = int(endTime - begTime)
 
 		##	3. collect the final results mappings
 		state_flag_dict, mutant_state_dict = dict(), dict()
@@ -602,7 +606,8 @@ class SymbolToZ3Prover:
 					break
 		ratio = len(mutant_state_dict) / (alive_number + 0.000001)
 		ratio = int(ratio * 10000) / 100.0
-		print("\tCounting:\tAlive = {};\tEquivalent = {};\tRatio = {}%.".format(alive_number, len(mutant_state_dict), ratio))
+		print("\tUsing {} seconds for checking equivalence...".format(timeSeconds))
+		print("\tCounter:\tUNK = {};\tEQV = {};\tRatio = {}%.".format(alive_number, len(mutant_state_dict), ratio))
 		return state_flag_dict, mutant_state_dict
 
 
