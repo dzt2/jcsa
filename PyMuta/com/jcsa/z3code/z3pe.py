@@ -469,7 +469,7 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 
 class SymbolToZ3Prover:
 	"""
-	It implements the proof of equivalence checking by z3.
+	It implements the SMT-solver for equivalence checking.
 	"""
 
 	def __init__(self):
@@ -479,7 +479,8 @@ class SymbolToZ3Prover:
 		self.ceq_flag = 1
 		self.veq_flag = 2
 		self.seq_flag = 3
-		self.solutions = dict()	# State --> Int
+		self.req_flag = 4
+		self.solutions = dict()  # State --> Int
 		return
 
 	def __differ__(self, orig_value, muta_value):
@@ -505,10 +506,36 @@ class SymbolToZ3Prover:
 		for assumption in assumptions:
 			solver.add(assumption)
 		solver.set("timeout", self.timeout)
-		if solver.check() == z3.sat:
-			return False
-		else:
+		if solver.check() == z3.unsat:
 			return True
+		else:
+			return False
+
+	def __check_value__(self, orig_value, muta_value):
+		"""
+		:param orig_value:
+		:param muta_value:
+		:return:
+		"""
+		return self.__check__(self.__differ__(orig_value, muta_value), set())
+
+	def __check_state__(self, orig_states: dict, muta_states: dict):
+		"""
+		:param orig_states:
+		:param muta_states:
+		:return:
+		"""
+		for key, muta_value in muta_states.items():
+			if key in orig_states:
+				orig_value = orig_states[key]
+				if self.__check__(self.__differ__(orig_value, muta_value), set()):
+					pass
+				else:
+					return False
+			else:
+				pass
+				# return False
+		return True
 
 	def __solve__(self, state: jcmuta.ContextState):
 		if state.get_category() == "eva_cond":
@@ -528,25 +555,29 @@ class SymbolToZ3Prover:
 			if (loperand is None) or (roperand is None):
 				return self.neq_flag
 
-			## 2. state-compare
-			for key, muta_value in muta_states.items():
-				if key in orig_states:
-					orig_value = orig_states[key]
-					if self.__check__(self.__differ__(orig_value, muta_value), set()):
-						pass
+			## 2, syntax-directed analysis
+			location = state.get_location()
+			parent = location.get_parent()
+			if (parent is not None) and (parent.get_node_type() == "retr_stmt"):
+				if self.__check_value__(loperand, roperand):
+					return self.req_flag
+				else:
+					return self.neq_flag
+			elif (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition") or (location.get_child_type() == "element"):
+				if self.__check_state__(orig_states, muta_states):
+					return self.seq_flag
+				else:
+					return self.neq_flag
+			else:
+				if self.__check_value__(loperand, roperand):
+					if len(muta_states) == 0:
+						return self.veq_flag
+					elif self.__check_state__(orig_states, muta_states):
+						return self.seq_flag
 					else:
 						return self.neq_flag
 				else:
-					pass
-
-			## 3. context-based value compare
-			location = state.get_location()
-			if (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition") or (location.get_child_type() == "element"):
-				return self.seq_flag
-			elif self.__check__(self.__differ__(loperand, roperand), set()):
-				return self.veq_flag
-			else:
-				return self.neq_flag
+					return self.neq_flag
 		else:
 			return self.neq_flag
 
@@ -619,7 +650,7 @@ def write_mutant_state(project: jcmuta.CProject, state_flag_dict: dict, mutant_s
 	:param file_path:
 	:return:
 	"""
-	xnum, cnum, vnum, snum = 0, 0, 0, 0
+	xnum, cnum, vnum, snum, rnum = 0, 0, 0, 0, 0
 	with open(file_path, 'w') as writer:
 		writer.write("ID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tCATE\tLOCT\tLOPR\tROPR\n")
 		for mutant in project.context_space.get_mutants():
@@ -642,9 +673,12 @@ def write_mutant_state(project: jcmuta.CProject, state_flag_dict: dict, mutant_s
 					elif flag == 2:
 						flag_string = "VEQ"
 						vnum += 1
-					else:
+					elif flag == 3:
 						flag_string = "SEQ"
 						snum += 1
+					else:
+						flag_string = "REQ"
+						rnum += 1
 					xnum += 1
 					category = state.get_category()
 					location = state.get_location()
@@ -656,7 +690,7 @@ def write_mutant_state(project: jcmuta.CProject, state_flag_dict: dict, mutant_s
 					roperand = jcbase.strip_text(roperand, len(roperand) + 16)
 					writer.write("\t{}\t{}\t{}\t{}\t{}".format(flag_string, category, loct_code, loperand, roperand))
 				writer.write("\n")
-	print("\tClassify:\tCEQ = {};\tVEQ = {};\tSEQ = {};".format(cnum, vnum, snum))
+	print("\tClassify:\tCEQ = {};\tVEQ = {};\tSEQ = {};\tREQ = {};".format(cnum, vnum, snum, rnum))
 	return
 
 
@@ -671,13 +705,12 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zext3/featuresBIG"
 	post_path = "/home/dzt2/Development/Data/zext3/resultsBIG"
 	for project_name in os.listdir(root_path):
-		if project_name == "md4":
-			continue
-		project_directory = os.path.join(root_path, project_name)
-		c_project = jcmuta.CProject(project_directory, project_name)
-		print("Testing on", project_name, "for", len(c_project.muta_space.mutants),
-			  "mutants and", len(c_project.context_space.get_states()), "states.")
-		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
-		print()
+		if project_name != "md4":
+			project_directory = os.path.join(root_path, project_name)
+			c_project = jcmuta.CProject(project_directory, project_name)
+			print("Testing on", project_name, "for", len(c_project.muta_space.mutants),
+				  "mutants and", len(c_project.context_space.get_states()), "states.")
+			# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
+			print()
 

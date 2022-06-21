@@ -53,7 +53,7 @@ public class MuTestTrivialEquivalenceTest {
 		String func_name = declarator.get_identifier().get_name();
 		String parameter = "" + mutant.get_mutation().get_parameter();
 		writer.write(mid + "\t" + mclass + "\t" + moperator + "\t");
-		writer.write(func_name + "\t" + code_line + "\t" + code_class + "\t\"" + code + "\"" + parameter);
+		writer.write(func_name + "\t" + code_line + "\t" + code_class + "\t\"" + code + "\"\t" + parameter);
 		if(time >= 0) {
 			writer.write("\t" + time);
 		}
@@ -126,9 +126,15 @@ public class MuTestTrivialEquivalenceTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		String[] file_names = new String[] { "print_tokens", "schedule2", "is_prime", "insert_sort2" };
+		for(String file_name : file_names) {
+			testing(new File(root_path + file_name));
+		}
+		/*
 		for(File root : new File(root_path).listFiles()) {
 			testing(root);
 		}
+		*/
 	}
 
 }
