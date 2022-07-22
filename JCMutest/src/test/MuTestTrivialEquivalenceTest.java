@@ -130,11 +130,6 @@ public class MuTestTrivialEquivalenceTest {
 		for(String file_name : file_names) {
 			testing(new File(root_path + file_name));
 		}
-		/*
-		for(File root : new File(root_path).listFiles()) {
-			testing(root);
-		}
-		*/
 	}
 
 }
