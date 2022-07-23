@@ -1,10 +1,11 @@
-"""It implements the expression-level mutation and equivalence analysis."""
+"""This file implements the expression-level mutation analysis."""
 
 
-import time
 import os
+import time
 import z3
 import com.jcsa.z3code.base as jcbase
+import com.jcsa.z3code.code as jccode
 import com.jcsa.z3code.muta as jcmuta
 
 
@@ -467,23 +468,107 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 	return
 
 
-class SymbolToZ3Prover:
+class MutationZ3Inputs:
 	"""
-	It implements the SMT-solver for equivalence checking.
+	It implements the encoding of mutation to z3 constraint.
+	"""
+
+	def __init__(self, project: jcmuta.CProject):
+		self.project = project
+		self.__load__()
+		return
+
+	def __load__(self):
+		"""
+		:return: it loads the feature data into AST-STATE-MUTATION map
+		"""
+		self.loc_sta = dict()  	# AstCirNode 	--> ContextState
+		self.sta_mut = dict()  	# ContextState	-->	Mutant
+		self.mut_sta = dict()	# Mutant		-->	ContextState
+		for mutation in self.project.context_space.get_mutations():
+			mutant = mutation.get_mutant()
+			for state in mutation.get_states():
+				location = state.get_location()
+				if (state.category == "eva_cond") or (state.category == "set_expr"):
+					if not (state in self.sta_mut):
+						self.sta_mut[state] = set()
+					self.sta_mut[state].add(mutant)
+					if not (location in self.loc_sta):
+						self.loc_sta[location] = set()
+					self.loc_sta[location].add(state)
+					if not (mutant in self.mut_sta):
+						self.mut_sta[mutant] = set()
+					self.mut_sta[mutant].add(state)
+		return
+
+	def get_locations(self):
+		"""
+		:return: the set of locations being annotated with features
+		"""
+		return self.loc_sta.keys()
+
+	def get_states(self):
+		"""
+		:return: the set of states being encoded
+		"""
+		return self.sta_mut.keys()
+
+	def get_mutants(self):
+		"""
+		:return: the set
+		"""
+		return self.mut_sta.keys()
+
+	def get_states_of_location(self, location: jccode.AstCirNode):
+		"""
+		:param location:
+		:return: the set of states annotated at the location
+		"""
+		if location in self.loc_sta:
+			return self.loc_sta[location]
+		return set()
+
+	def get_mutants_of_state(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: the set of mutants connected with the state
+		"""
+		if state in self.sta_mut:
+			return self.sta_mut[state]
+		return set()
+
+	def get_states_of_mutant(self, mutant: jcmuta.Mutant):
+		"""
+		:param mutant:
+		:return: the set of states connected with mutant
+		"""
+		if mutant in self.mut_sta:
+			return self.mut_sta[mutant]
+		return set()
+
+
+class MutationZ3Prover:
+	"""
+	It implements the equivalence proof based on expression.
 	"""
 
 	def __init__(self):
+		self.neq_class = 0
+		self.ceq_class = 1
+		self.veq_class = 2
+		self.seq_class = 3
+		self.req_class = 4
+		self.timeout = 800
 		self.parser = SymbolToZ3Parser()
-		self.timeout = 1000
-		self.neq_flag = 0
-		self.ceq_flag = 1
-		self.veq_flag = 2
-		self.seq_flag = 3
-		self.req_flag = 4
-		self.solutions = dict()  # State --> Int
+		self.solutions = dict()	# ContextState --> class_flag
 		return
 
 	def __differ__(self, orig_value, muta_value):
+		"""
+		:param orig_value:
+		:param muta_value:
+		:return: differential condition
+		"""
 		self.timeout = self.timeout
 		try:
 			return orig_value != muta_value
@@ -508,8 +593,7 @@ class SymbolToZ3Prover:
 		solver.set("timeout", self.timeout)
 		if solver.check() == z3.unsat:
 			return True
-		else:
-			return False
+		return False
 
 	def __check_value__(self, orig_value, muta_value):
 		"""
@@ -534,57 +618,61 @@ class SymbolToZ3Prover:
 					return False
 			else:
 				pass
-				# return False
+		# return False
 		return True
 
 	def __solve__(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: It solves the state and produce the class
+		"""
 		if state.get_category() == "eva_cond":
 			assumeLib = set()
 			condition = self.parser.parse_to(state.get_loperand(), None, assumeLib, True)
 			if condition is None:
-				return self.neq_flag
+				return self.neq_class
 			elif self.__check__(condition, assumeLib):
-				return self.ceq_flag
+				return self.ceq_class
 			else:
-				return self.neq_flag
+				return self.neq_class
 		elif state.get_category() == "set_expr":
 			## 1. parse
 			orig_states, muta_states = dict(), dict()
 			loperand = self.parser.parse_to(state.get_loperand(), orig_states, None, True)
 			roperand = self.parser.parse_to(state.get_roperand(), muta_states, None, False)
 			if (loperand is None) or (roperand is None):
-				return self.neq_flag
+				return self.neq_class
 
 			## 2, syntax-directed analysis
 			location = state.get_location()
 			parent = location.get_parent()
 			if (parent is not None) and (parent.get_node_type() == "retr_stmt"):
 				if self.__check_value__(loperand, roperand):
-					return self.req_flag
+					return self.req_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 			elif (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition") or (location.get_child_type() == "element"):
 				if self.__check_state__(orig_states, muta_states):
-					return self.seq_flag
+					return self.seq_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 			else:
 				if self.__check_value__(loperand, roperand):
 					if len(muta_states) == 0:
-						return self.veq_flag
+						return self.veq_class
 					elif self.__check_state__(orig_states, muta_states):
-						return self.seq_flag
+						return self.seq_class
 					else:
-						return self.neq_flag
+						return self.neq_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 		else:
-			return self.neq_flag
+			return self.neq_class
 
 	def __prove__(self, state: jcmuta.ContextState):
 		"""
 		:param state:
-		:return: 0 (NEQ); 1 (CEQ); 2 (VEQ); 3 (SEQ).
+		:return: 0 (NEQ); 1 (CEQ); 2 (VEQ); 3 (SEQ); 4 (REQ).
 		"""
 		if not (state in self.solutions):
 			self.solutions[state] = self.__solve__(state)
@@ -592,25 +680,149 @@ class SymbolToZ3Prover:
 		solution: int
 		return solution
 
-	def __input__(self, project: jcmuta.CProject):
+	def prove_all(self, project: jcmuta.CProject):
 		"""
 		:param project:
-		:return:	astc_state_dict, state_mutant_dict
+		:return: mutant_state_class [Mutant; (ContextState, int)]
 		"""
-		self.timeout = self.timeout
-		astc_state_dict, state_mutant_dict = dict(), dict()
-		for mutation in project.context_space.get_mutations():
-			mutant = mutation.get_mutant()
-			for state in mutation.get_states():
-				if (state.category == "eva_cond") or (state.category == "set_expr"):
-					if not (state in state_mutant_dict):
-						state_mutant_dict[state] = set()
-					state_mutant_dict[state].add(mutant)
-					location = state.get_location()
-					if not (location in astc_state_dict):
-						astc_state_dict[location] = set()
-					astc_state_dict[location].add(state)
-		return astc_state_dict, state_mutant_dict
+		## initialization
+		inputs = MutationZ3Inputs(project)
+		output = dict()	# Mutant --> (ContextState, int)
+		total, counter, steps = len(inputs.get_states()), 0, 3000
+		print("\tCollect {} states from {} mutations in {}.".
+			  format(len(inputs.get_states()), len(inputs.get_mutants()), project.program.name))
+
+		## Proof-Process
+		begTime = time.time()
+		for state in inputs.get_states():
+			## 0. print the procedure
+			if counter % steps == 0:
+				print("\t\t==> Proceed[{}/{}]".format(counter, total))
+			counter += 1
+
+			## 1. remove the mutants that are classified
+			mutants = inputs.get_mutants_of_state(state)
+			in_mutants = set()
+			for mutant in mutants:
+				if not (mutant in output):
+					mutant: jcmuta.Mutant
+					in_mutants.add(mutant)
+			if len(in_mutants) == 0:
+				continue
+
+			## 2. classify based on state
+			__res__ = self.__prove__(state)
+			if __res__ != self.neq_class:
+				for mutant in in_mutants:
+					output[mutant] = (state, __res__)
+		endTime = time.time()
+		timeSeconds = int(endTime - begTime)
+
+		## Summarization-Print
+		alive_number, equal_number, state_number = 0, 0, 0
+		for mutant in project.muta_space.get_mutants():
+			if not mutant.get_result().is_killed_in(None):
+				alive_number += 1
+		states, ceq_number, veq_number, seq_number, req_number = set(), 0, 0, 0, 0
+		for mutant, state_class in output.items():
+			state = state_class[0]
+			__res__ = state_class[1]
+			states.add(state)
+			if __res__ == self.ceq_class:
+				ceq_number += 1
+			elif __res__ == self.veq_class:
+				veq_number += 1
+			elif __res__ == self.seq_class:
+				seq_number += 1
+			else:
+				req_number += 1
+		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {}".format(alive_number, len(output), len(states), timeSeconds))
+		print("\tCEQ = {}\tVEQ = {}\tSEQ = {}\tREQ = {}".format(ceq_number, veq_number, seq_number, req_number))
+		return output
 
 
+def write_mutant_state_class(project: jcmuta.CProject, mutant_state_class: dict, tce_ids: set, file_path: str):
+	"""
+	:param project:
+	:param file_path:
+	:param tce_ids: the set of mutation ID detected by TCE
+	:param mutant_state_class: Mutant --> (ContextState, int)
+	:return: mid clas oprt line loct code parm type cate loct lopd ropd
+	"""
+	with open(file_path, 'w') as writer:
+		writer.write("ID\tCLAS\tOPRT\tLINE\tASTC\tCODE\tPARM\tTCE\tTYPE\tCATE\tLOCT\tLOPD\tROPD\n")
+		for mutant in project.muta_space.get_mutants():
+			mutant: jcmuta.Mutant
+			mid = mutant.get_muta_id()
+			mu_class = mutant.get_mutation().get_mutation_class()
+			mu_operator = mutant.get_mutation().get_mutation_operator()
+			location = mutant.get_mutation().get_location()
+			mu_line = location.line_of(False)
+			mu_astc = location.get_class_name()
+			mu_code = location.generate_code(96)
+			mu_parameter = str(mutant.get_mutation().get_parameter())
+			writer.write("{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})".
+						 format(mid, mu_class, mu_operator, mu_line, mu_astc, mu_code, mu_parameter))
+			if mid in tce_ids:
+				writer.write("\t{}".format(True))
+			else:
+				writer.write("\t{}".format(False))
+			if mutant in mutant_state_class:
+				state = mutant_state_class[mutant][0]
+				state: jcmuta.ContextState
+				__res__ = mutant_state_class[mutant][1]
+				if __res__ == 1:
+					mu_type = "CEQ"
+				elif __res__ == 2:
+					mu_type = "VEQ"
+				elif __res__ == 3:
+					mu_type = "SEQ"
+				else:
+					mu_type = "REQ"
+				category = state.get_category()
+				location = state.get_location().get_node_type()
+				loperand = state.get_loperand().get_code()
+				roperand = state.get_roperand().get_code()
+				writer.write("\t{}\t{}\t{}\t{}\t{}".format(mu_type, category, location, loperand, roperand))
+			else:
+				writer.write("\t{}".format("NEQ"))
+			writer.write("\n")
+		writer.write("\n")
+	return
+
+
+def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
+	file_name = project.program.name
+	file_path = os.path.join(tce_directory, file_name + ".txt")
+	tce_ids = set()
+	with open(file_path, 'r') as reader:
+		for line in reader:
+			if len(line.strip()) > 0:
+				items = line.strip().split('\t')
+				mid = items[0].strip()
+				if mid.isdigit():
+					tce_ids.add(int(mid))
+	return tce_ids
+
+
+def test_symbol_prover(project: jcmuta.CProject, file_path: str):
+	prover = MutationZ3Prover()
+	tce_ids = load_TEQ_results(project, "/home/dzt2/Development/Data/zexp/TCE")
+	print("Testing {} with {} mutants and {} TCE.".
+		  format(project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
+	mutant_state_class = prover.prove_all(project)
+	write_mutant_state_class(project, mutant_state_class, tce_ids, file_path)
+	print()
+	return
+
+
+if __name__ == "__main__":
+	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
+	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
+	for project_name in os.listdir(root_path):
+		if project_name != "md4":
+			project_directory = os.path.join(root_path, project_name)
+			c_project = jcmuta.CProject(project_directory, project_name)
+			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".msc"))
+	print("Testing End...")
 
