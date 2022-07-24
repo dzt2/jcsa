@@ -446,7 +446,6 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 		for symbol_node in project.sym_tree.get_sym_nodes():
 			symbol_node: jcmuta.SymbolNode
 			expression = parser.parse_to(symbol_node, None, None, True)
-
 			clas = symbol_node.get_class_name()
 			data_type = symbol_node.get_data_type()
 			content = symbol_node.get_content()
@@ -464,7 +463,7 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 			writer.write("\n")
 	ratio = past / (past + fail + 0.0001)
 	ratio = int(ratio * 10000) / 100.0
-	print("\t==> PASS = {}\tFAIL = {}\t ({}%)".format(past, fail, ratio))
+	print("{}:\tPASS = {}\tFAIL = {}\t ({}%)".format(project.program.name, past, fail, ratio))
 	return
 
 
@@ -815,9 +814,9 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
 	for project_name in os.listdir(root_path):
-		if project_name == "md4":
-			project_directory = os.path.join(root_path, project_name)
-			c_project = jcmuta.CProject(project_directory, project_name)
-			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".msc"))
+		project_directory = os.path.join(root_path, project_name)
+		c_project = jcmuta.CProject(project_directory, project_name)
+		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		# test_symbol_prover(c_project, os.path.join(post_path, project_name + ".msc"))
 	print("Testing End...")
 

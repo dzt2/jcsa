@@ -1,53 +1,53 @@
-"""This file implements the expression-level mutation analysis and equivalence checking"""
+"""This file implements the algorithms to determine mutation equivalence by Z3 at expression-level."""
 
 
-import time
 import os
+import time
 import z3
 import com.jcsa.z3code.base as jcbase
+import com.jcsa.z3code.code as jccode
 import com.jcsa.z3code.muta as jcmuta
 
 
 class SymbolToZ3Parser:
 	"""
-	It parses a jcmuta.SymbolNode to z3.SExpression
+	It parses the SymbolNode in our project to z3.expression objects.
 	"""
 
 	def __init__(self):
-		self.boolLength = 1
-		self.charLength = 8
-		self.shortLength = 16
-		self.intLength = 64
-		self.longLength = 64
-		self.realLength = 64
-		self.pointLength = 64
-		self.bodyLength = 128
-		self.__buffer__ = dict()
-		self.__assume__ = set()
-		self.__normal__ = dict()
-		self.__i_code__ = 2
-		self.__s_code__ = 3
-		self.__naming__ = "{}_{}{}"
+		"""
+		It creates a parser for SymbolNode to z3.Expression
+		"""
+		self.boolLength 	= 1
+		self.charLength 	= 8
+		self.longLength 	= 64
+		self.addrLength 	= 64
+		self.bodyLength 	= 128
+		self.__memory__ 	= dict()
+		self.__assume__		= set()
+		self.__normal__ 	= dict()
+		self.__i_code__ 	= 2
+		self.__s_code__ 	= 3
+		self.__naming__ 	= "{}_{}{}"
 		return
 
 	def __save_state__(self, key, value):
 		"""
-		It saves the value to the key reference in state buffer
 		:param key:
 		:param value:
 		:return:
 		"""
-		self.__buffer__[str(key)] = value
+		self.__memory__[str(key)] = value
 		return
 
 	def __add_assume__(self, assumption):
 		"""
-		It adds the assumption to the set
 		:param assumption:
 		:return:
 		"""
-		if not (assumption is None):
-			self.__assume__.add(assumption)
+		if assumption is None:
+			return
+		self.__assume__.add(assumption)
 		return
 
 	def __unique_name__(self, symbol_node: jcmuta.SymbolNode):
@@ -90,20 +90,16 @@ class SymbolToZ3Parser:
 		return normal_name
 
 	def __new_bool_reference__(self, name: str, code: int):
-		if code == self.__s_code__:
-			return z3.BitVec(name, self.boolLength)
-		else:
-			return z3.Bool(name)
+		self.__add_assume__(None)
+		return z3.Bool(name)
 
 	def __new_char_reference__(self, name: str, code: int):
-		if code == self.__s_code__:
-			return z3.BitVec(name, self.charLength)
-		else:
-			return z3.Int(name)
+		self.__add_assume__(None)
+		return z3.Int(name)
 
 	def __new_int_reference__(self, name: str, code: int):
 		if code == self.__s_code__:
-			return z3.BitVec(name, self.intLength)
+			return z3.BitVec(name, self.longLength)
 		else:
 			return z3.Int(name)
 
@@ -112,10 +108,8 @@ class SymbolToZ3Parser:
 		return z3.Real(name)
 
 	def __new_point_reference__(self, name: str, code: int):
-		if code == self.__s_code__:
-			return z3.BitVec(name, self.pointLength)
-		else:
-			return z3.Int(name)
+		self.__add_assume__(None)
+		return z3.Int(name)
 
 	def __new_other_reference__(self, name: str):
 		return z3.BitVec(name, self.bodyLength)
@@ -158,13 +152,11 @@ class SymbolToZ3Parser:
 		:param code:
 		:return:
 		"""
+		self.__add_assume__(None)
 		if isinstance(constant, bool):
 			return z3.BoolVal(constant)
 		elif isinstance(constant, int):
-			if code == self.__s_code__:
-				return z3.BitVecVal(constant, self.longLength)
-			else:
-				return z3.IntVal(constant)
+			return z3.IntVal(constant)
 		else:
 			return z3.RealVal(constant)
 
@@ -406,7 +398,7 @@ class SymbolToZ3Parser:
 		else:
 			return self.__parse_list_expression__(symbol_node, code)
 
-	def parse_to(self, symbol_node: jcmuta.SymbolNode, stateBuffer, assumeLib, clear):
+	def parse_to(self, symbol_node: jcmuta.SymbolNode, stateBuffer, assumeLib, clear: bool):
 		"""
 		:param assumeLib: to preserve the assumption
 		:param symbol_node:
@@ -414,7 +406,7 @@ class SymbolToZ3Parser:
 		:param clear: whether to reset normal naming set
 		:return: None if transformation failed
 		"""
-		self.__buffer__.clear()
+		self.__memory__.clear()
 		self.__assume__.clear()
 		if clear:
 			self.__normal__.clear()
@@ -428,7 +420,7 @@ class SymbolToZ3Parser:
 			res = None
 		if not (stateBuffer is None):
 			stateBuffer: dict
-			for key, value in self.__buffer__.items():
+			for key, value in self.__memory__.items():
 				stateBuffer[key] = value
 		if not (assumeLib is None):
 			assumeLib: set
@@ -445,7 +437,6 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 		for symbol_node in project.sym_tree.get_sym_nodes():
 			symbol_node: jcmuta.SymbolNode
 			expression = parser.parse_to(symbol_node, None, None, True)
-
 			clas = symbol_node.get_class_name()
 			data_type = symbol_node.get_data_type()
 			content = symbol_node.get_content()
@@ -463,27 +454,111 @@ def test_symbol_parser(project: jcmuta.CProject, file_path: str):
 			writer.write("\n")
 	ratio = past / (past + fail + 0.0001)
 	ratio = int(ratio * 10000) / 100.0
-	print("\t==> PASS = {}\tFAIL = {}\t ({}%)".format(past, fail, ratio))
+	print("\t{}:\tPASS = {}\tFAIL = {}\t ({}%)".format(project.program.name, past, fail, ratio))
 	return
 
 
-class SymbolToZ3Prover:
+class MutationZ3Inputs:
 	"""
-	It implements the SMT-solver for equivalence checking.
+	It implements the encoding of mutation to z3 constraint.
+	"""
+
+	def __init__(self, project: jcmuta.CProject):
+		self.project = project
+		self.__load__()
+		return
+
+	def __load__(self):
+		"""
+		:return: it loads the feature data into AST-STATE-MUTATION map
+		"""
+		self.loc_sta = dict()  	# AstCirNode 	--> ContextState
+		self.sta_mut = dict()  	# ContextState	-->	Mutant
+		self.mut_sta = dict()	# Mutant		-->	ContextState
+		for mutation in self.project.context_space.get_mutations():
+			mutant = mutation.get_mutant()
+			for state in mutation.get_states():
+				location = state.get_location()
+				if (state.category == "eva_cond") or (state.category == "set_expr"):
+					if not (state in self.sta_mut):
+						self.sta_mut[state] = set()
+					self.sta_mut[state].add(mutant)
+					if not (location in self.loc_sta):
+						self.loc_sta[location] = set()
+					self.loc_sta[location].add(state)
+					if not (mutant in self.mut_sta):
+						self.mut_sta[mutant] = set()
+					self.mut_sta[mutant].add(state)
+		return
+
+	def get_locations(self):
+		"""
+		:return: the set of locations being annotated with features
+		"""
+		return self.loc_sta.keys()
+
+	def get_states(self):
+		"""
+		:return: the set of states being encoded
+		"""
+		return self.sta_mut.keys()
+
+	def get_mutants(self):
+		"""
+		:return: the set
+		"""
+		return self.mut_sta.keys()
+
+	def get_states_of_location(self, location: jccode.AstCirNode):
+		"""
+		:param location:
+		:return: the set of states annotated at the location
+		"""
+		if location in self.loc_sta:
+			return self.loc_sta[location]
+		return set()
+
+	def get_mutants_of_state(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: the set of mutants connected with the state
+		"""
+		if state in self.sta_mut:
+			return self.sta_mut[state]
+		return set()
+
+	def get_states_of_mutant(self, mutant: jcmuta.Mutant):
+		"""
+		:param mutant:
+		:return: the set of states connected with mutant
+		"""
+		if mutant in self.mut_sta:
+			return self.mut_sta[mutant]
+		return set()
+
+
+class MutationZ3Prover:
+	"""
+	It implements the equivalence proof based on expression.
 	"""
 
 	def __init__(self):
-		self.parser = SymbolToZ3Parser()
+		self.neq_class = 0
+		self.ceq_class = 1
+		self.veq_class = 2
+		self.seq_class = 3
+		self.req_class = 4
 		self.timeout = 1000
-		self.neq_flag = 0
-		self.ceq_flag = 1
-		self.veq_flag = 2
-		self.seq_flag = 3
-		self.req_flag = 4
-		self.solutions = dict()  # State --> Int
+		self.parser = SymbolToZ3Parser()
+		self.solutions = dict()	# ContextState --> class_flag
 		return
 
 	def __differ__(self, orig_value, muta_value):
+		"""
+		:param orig_value:
+		:param muta_value:
+		:return: differential condition
+		"""
 		self.timeout = self.timeout
 		try:
 			return orig_value != muta_value
@@ -508,8 +583,7 @@ class SymbolToZ3Prover:
 		solver.set("timeout", self.timeout)
 		if solver.check() == z3.unsat:
 			return True
-		else:
-			return False
+		return False
 
 	def __check_value__(self, orig_value, muta_value):
 		"""
@@ -534,57 +608,61 @@ class SymbolToZ3Prover:
 					return False
 			else:
 				pass
-				# return False
+		# return False
 		return True
 
 	def __solve__(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: It solves the state and produce the class
+		"""
 		if state.get_category() == "eva_cond":
 			assumeLib = set()
 			condition = self.parser.parse_to(state.get_loperand(), None, assumeLib, True)
 			if condition is None:
-				return self.neq_flag
+				return self.neq_class
 			elif self.__check__(condition, assumeLib):
-				return self.ceq_flag
+				return self.ceq_class
 			else:
-				return self.neq_flag
+				return self.neq_class
 		elif state.get_category() == "set_expr":
 			## 1. parse
 			orig_states, muta_states = dict(), dict()
 			loperand = self.parser.parse_to(state.get_loperand(), orig_states, None, True)
 			roperand = self.parser.parse_to(state.get_roperand(), muta_states, None, False)
 			if (loperand is None) or (roperand is None):
-				return self.neq_flag
+				return self.neq_class
 
 			## 2, syntax-directed analysis
 			location = state.get_location()
 			parent = location.get_parent()
 			if (parent is not None) and (parent.get_node_type() == "retr_stmt"):
 				if self.__check_value__(loperand, roperand):
-					return self.req_flag
+					return self.req_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 			elif (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition") or (location.get_child_type() == "element"):
 				if self.__check_state__(orig_states, muta_states):
-					return self.seq_flag
+					return self.seq_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 			else:
 				if self.__check_value__(loperand, roperand):
 					if len(muta_states) == 0:
-						return self.veq_flag
+						return self.veq_class
 					elif self.__check_state__(orig_states, muta_states):
-						return self.seq_flag
+						return self.seq_class
 					else:
-						return self.neq_flag
+						return self.neq_class
 				else:
-					return self.neq_flag
+					return self.neq_class
 		else:
-			return self.neq_flag
+			return self.neq_class
 
 	def __prove__(self, state: jcmuta.ContextState):
 		"""
 		:param state:
-		:return: 0 (NEQ); 1 (CEQ); 2 (VEQ); 3 (SEQ).
+		:return: 0 (NEQ); 1 (CEQ); 2 (VEQ); 3 (SEQ); 4 (REQ).
 		"""
 		if not (state in self.solutions):
 			self.solutions[state] = self.__solve__(state)
@@ -594,110 +672,132 @@ class SymbolToZ3Prover:
 
 	def prove_all(self, project: jcmuta.CProject):
 		"""
-		it proves the equivalence of each undetected mutant by z3 using state-mapping
-		:param project: all the mutations to be proved for their equivalences
-		:return: state_flag_dict (equivalent only), mutant_state_dict (proved only)
+		:param project:
+		:return: mutant_state_class [Mutant; (ContextState, int)]
 		"""
-		## 1. collect all the states of alive mutations
-		all_states = set()
-		for mutant in project.context_space.get_mutants():
+		## initialization
+		inputs = MutationZ3Inputs(project)
+		output = dict()	# Mutant --> (ContextState, int)
+		total, counter, steps = len(inputs.get_mutants()), 0, 3000
+		alive_number, state_solutions = 0, dict()
+		print("\tCollect {} states from {} mutations in {}.".
+			  format(len(inputs.get_states()), len(inputs.get_mutants()), project.program.name))
+
+		## Proof-Process
+		begTime = time.time()
+		for mutant in inputs.get_mutants():
+			## 0. print the procedure
+			if counter % steps == 0:
+				print("\t\t==> Proceed[{}/{}]".format(counter, total))
+			counter += 1
+			## 1. account for the alive
 			if mutant.get_result().is_killed_in(None):
 				continue
 			else:
-				for state in project.context_space.get_mutation(mutant).get_states():
-					state: jcmuta.ContextState
-					all_states.add(state)
-
-		##	2. start the proof checking procedure
-		begTime = time.time()
-		print("\tCollect {} states for equivalence analysis.".format(len(all_states)))
-		total, counter, steps = len(all_states), 0, 3000
-		for state in all_states:
-			self.__prove__(state)
-			if counter % steps == 0:
-				print("\t\tProceed [{}/{}]".format(counter, total))
-			counter += 1
+				alive_number = alive_number + 1
+			## 2. proof procedure
+			for state in inputs.get_states_of_mutant(mutant):
+				state: jcmuta.ContextState
+				__res__ = self.__prove__(state)
+				if __res__ != self.neq_class:
+					output[mutant] = (state, __res__)
+					state_solutions[state] = __res__
+					break
 		endTime = time.time()
 		timeSeconds = int(endTime - begTime)
 
-		##	3. collect the final results mappings
-		state_flag_dict, mutant_state_dict = dict(), dict()
-		for state, flag in self.solutions.items():
-			state: jcmuta.ContextState
-			flag: int
-			if flag != self.neq_flag:
-				state_flag_dict[state] = flag
-		alive_number = 0
-		for mutant in project.context_space.get_mutants():
-			if not mutant.get_result().is_killed_in(None):
-				alive_number += 1
-			for state in project.context_space.get_mutation(mutant).get_states():
-				if state in state_flag_dict:
-					mutant_state_dict[mutant] = state
-					break
-		ratio = len(mutant_state_dict) / (alive_number + 0.000001)
-		ratio = int(ratio * 10000) / 100.0
-		print("\tUsing {} seconds for checking equivalence...".format(timeSeconds))
-		print("\tCounter:\tUNK = {};\tEQV = {};\tRatio = {}%.".format(alive_number, len(mutant_state_dict), ratio))
-		return state_flag_dict, mutant_state_dict
+		## Summarization-Print
+		equal_number, state_number = len(output), len(state_solutions)
+		states, ceq_number, veq_number, seq_number, req_number = set(), 0, 0, 0, 0
+		for mutant, state_class in output.items():
+			state = state_class[0]
+			__res__ = state_class[1]
+			states.add(state)
+			if __res__ == self.ceq_class:
+				ceq_number += 1
+			elif __res__ == self.veq_class:
+				veq_number += 1
+			elif __res__ == self.seq_class:
+				seq_number += 1
+			else:
+				req_number += 1
+		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {}".format(alive_number, len(output), len(states), timeSeconds))
+		print("\tCEQ = {}\tVEQ = {}\tSEQ = {}\tREQ = {}".format(ceq_number, veq_number, seq_number, req_number))
+		return output
 
 
-def write_mutant_state(project: jcmuta.CProject, state_flag_dict: dict, mutant_state_dict: dict, file_path: str):
+def write_mutant_state_class(project: jcmuta.CProject, mutant_state_class: dict, tce_ids: set, file_path: str):
 	"""
-	:param state_flag_dict:
 	:param project:
-	:param mutant_state_dict:
 	:param file_path:
-	:return:
+	:param tce_ids: the set of mutation ID detected by TCE
+	:param mutant_state_class: Mutant --> (ContextState, int)
+	:return: mid clas oprt line loct code parm type cate loct lopd ropd
 	"""
-	xnum, cnum, vnum, snum, rnum = 0, 0, 0, 0, 0
 	with open(file_path, 'w') as writer:
-		writer.write("ID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTYPE\tCATE\tLOCT\tLOPR\tROPR\n")
-		for mutant in project.context_space.get_mutants():
-			if not mutant.get_result().is_killed_in(None):
-				mid = mutant.get_muta_id()
-				mclas = mutant.get_mutation().get_mutation_class()
-				moprt = mutant.get_mutation().get_mutation_operator()
-				mline = mutant.get_mutation().get_location().line_of(False)
-				param = mutant.get_mutation().get_parameter()
-				mcode = mutant.get_mutation().get_location().get_code(True)
-				mcode = jcbase.strip_text(mcode, 64)
-				writer.write("{}\t{}\t{}\t{}\t{}\t{}".format(mid, mclas, moprt, mline, mcode, param))
-				if mutant in mutant_state_dict:
-					state = mutant_state_dict[mutant]
-					state: jcmuta.ContextState
-					flag = state_flag_dict[state]
-					if flag == 1:
-						flag_string = "CEQ"
-						cnum += 1
-					elif flag == 2:
-						flag_string = "VEQ"
-						vnum += 1
-					elif flag == 3:
-						flag_string = "SEQ"
-						snum += 1
-					else:
-						flag_string = "REQ"
-						rnum += 1
-					xnum += 1
-					category = state.get_category()
-					location = state.get_location()
-					loct_code = location.get_ast_source().get_code(True)
-					loct_code = jcbase.strip_text(loct_code, 64)
-					loperand = state.get_loperand().get_code()
-					roperand = state.get_roperand().get_code()
-					loperand = jcbase.strip_text(loperand, len(loperand) + 16)
-					roperand = jcbase.strip_text(roperand, len(roperand) + 16)
-					writer.write("\t{}\t{}\t{}\t{}\t{}".format(flag_string, category, loct_code, loperand, roperand))
-				writer.write("\n")
-	print("\tClassify:\tCEQ = {};\tVEQ = {};\tSEQ = {};\tREQ = {};".format(cnum, vnum, snum, rnum))
+		writer.write("ID\tCLAS\tOPRT\tLINE\tASTC\tCODE\tPARM\tTCE\tTYPE\tCATE\tLOCT\tLOPD\tROPD\n")
+		for mutant in project.muta_space.get_mutants():
+			mutant: jcmuta.Mutant
+			mid = mutant.get_muta_id()
+			mu_class = mutant.get_mutation().get_mutation_class()
+			mu_operator = mutant.get_mutation().get_mutation_operator()
+			location = mutant.get_mutation().get_location()
+			mu_line = location.line_of(False)
+			mu_astc = location.get_class_name()
+			mu_code = location.generate_code(96)
+			mu_parameter = str(mutant.get_mutation().get_parameter())
+			writer.write("{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})".
+						 format(mid, mu_class, mu_operator, mu_line, mu_astc, mu_code, mu_parameter))
+			if mid in tce_ids:
+				writer.write("\t{}".format(True))
+			else:
+				writer.write("\t{}".format(False))
+			if mutant in mutant_state_class:
+				state = mutant_state_class[mutant][0]
+				state: jcmuta.ContextState
+				__res__ = mutant_state_class[mutant][1]
+				if __res__ == 1:
+					mu_type = "CEQ"
+				elif __res__ == 2:
+					mu_type = "VEQ"
+				elif __res__ == 3:
+					mu_type = "SEQ"
+				else:
+					mu_type = "REQ"
+				category = state.get_category()
+				location = state.get_location().get_node_type()
+				loperand = state.get_loperand().get_code()
+				roperand = state.get_roperand().get_code()
+				writer.write("\t{}\t{}\t{}\t{}\t{}".format(mu_type, category, location, loperand, roperand))
+			else:
+				writer.write("\t{}".format("NEQ"))
+			writer.write("\n")
+		writer.write("\n")
 	return
 
 
+def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
+	file_name = project.program.name
+	file_path = os.path.join(tce_directory, file_name + ".txt")
+	tce_ids = set()
+	with open(file_path, 'r') as reader:
+		for line in reader:
+			if len(line.strip()) > 0:
+				items = line.strip().split('\t')
+				mid = items[0].strip()
+				if mid.isdigit():
+					tce_ids.add(int(mid))
+	return tce_ids
+
+
 def test_symbol_prover(project: jcmuta.CProject, file_path: str):
-	prover = SymbolToZ3Prover()
-	state_flag_dict, mutant_state_dict = prover.prove_all(project)
-	write_mutant_state(project, state_flag_dict, mutant_state_dict, file_path)
+	prover = MutationZ3Prover()
+	tce_ids = load_TEQ_results(project, "/home/dzt2/Development/Data/zexp/TCE")
+	print("Testing {} with {} mutants and {} TCE.".
+		  format(project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
+	mutant_state_class = prover.prove_all(project)
+	write_mutant_state_class(project, mutant_state_class, tce_ids, file_path)
+	print()
 	return
 
 
@@ -705,12 +805,9 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
 	for project_name in os.listdir(root_path):
-		if project_name != "md4":
-			project_directory = os.path.join(root_path, project_name)
-			c_project = jcmuta.CProject(project_directory, project_name)
-			print("Testing on", project_name, "for", len(c_project.muta_space.mutants),
-				  "mutants and", len(c_project.context_space.get_states()), "states.")
-			# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".zeq"))
-			print()
+		project_directory = os.path.join(root_path, project_name)
+		c_project = jcmuta.CProject(project_directory, project_name)
+		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
+	print("Testing End...")
 
