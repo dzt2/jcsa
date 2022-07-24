@@ -558,7 +558,7 @@ class MutationZ3Prover:
 		self.veq_class = 2
 		self.seq_class = 3
 		self.req_class = 4
-		self.timeout = 800
+		self.timeout = 1000
 		self.parser = SymbolToZ3Parser()
 		self.solutions = dict()	# ContextState --> class_flag
 		return
@@ -688,41 +688,36 @@ class MutationZ3Prover:
 		## initialization
 		inputs = MutationZ3Inputs(project)
 		output = dict()	# Mutant --> (ContextState, int)
-		total, counter, steps = len(inputs.get_states()), 0, 3000
+		total, counter, steps = len(inputs.get_mutants()), 0, 3000
+		alive_number, state_solutions = 0, dict()
 		print("\tCollect {} states from {} mutations in {}.".
 			  format(len(inputs.get_states()), len(inputs.get_mutants()), project.program.name))
 
 		## Proof-Process
 		begTime = time.time()
-		for state in inputs.get_states():
+		for mutant in inputs.get_mutants():
 			## 0. print the procedure
 			if counter % steps == 0:
 				print("\t\t==> Proceed[{}/{}]".format(counter, total))
 			counter += 1
-
-			## 1. remove the mutants that are classified
-			mutants = inputs.get_mutants_of_state(state)
-			in_mutants = set()
-			for mutant in mutants:
-				if not (mutant in output):
-					mutant: jcmuta.Mutant
-					in_mutants.add(mutant)
-			if len(in_mutants) == 0:
+			## 1. account for the alive
+			if mutant.get_result().is_killed_in(None):
 				continue
-
-			## 2. classify based on state
-			__res__ = self.__prove__(state)
-			if __res__ != self.neq_class:
-				for mutant in in_mutants:
+			else:
+				alive_number = alive_number + 1
+			## 2. proof procedure
+			for state in inputs.get_states_of_mutant(mutant):
+				state: jcmuta.ContextState
+				__res__ = self.__prove__(state)
+				if __res__ != self.neq_class:
 					output[mutant] = (state, __res__)
+					state_solutions[state] = __res__
+					break
 		endTime = time.time()
 		timeSeconds = int(endTime - begTime)
 
 		## Summarization-Print
-		alive_number, equal_number, state_number = 0, 0, 0
-		for mutant in project.muta_space.get_mutants():
-			if not mutant.get_result().is_killed_in(None):
-				alive_number += 1
+		equal_number, state_number = len(output), len(state_solutions)
 		states, ceq_number, veq_number, seq_number, req_number = set(), 0, 0, 0, 0
 		for mutant, state_class in output.items():
 			state = state_class[0]
@@ -820,7 +815,7 @@ if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
 	for project_name in os.listdir(root_path):
-		if project_name != "md4":
+		if project_name == "md4":
 			project_directory = os.path.join(root_path, project_name)
 			c_project = jcmuta.CProject(project_directory, project_name)
 			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".msc"))
