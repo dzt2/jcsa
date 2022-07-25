@@ -20,9 +20,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3code/backup/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3ex.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3em.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3em.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3em.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/backup/z3em.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/backup/z3pe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3code/z3pv.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3code/backup/z3pv.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,14 +71,14 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/com/jcsa/z3code/backup" />
       <recent name="$PROJECT_DIR$/com/jcsa/pymuta2/libs" />
       <recent name="$PROJECT_DIR$/com/jcsa" />
       <recent name="$PROJECT_DIR$/com/jcsa/__backup__" />
       <recent name="$PROJECT_DIR$/com/jcsa/mine" />
-      <recent name="$PROJECT_DIR$/com/jcsa/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.z3pe">
+  <component name="RunManager" selected="Python.z3ex">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -108,7 +112,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/z3em.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/backup/z3em.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -150,7 +154,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/z3pe.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/backup/z3pe.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -192,7 +196,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/z3pv.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3code/backup/z3pv.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -203,9 +207,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.z3ex" />
         <item itemvalue="Python.z3pe" />
         <item itemvalue="Python.z3em" />
-        <item itemvalue="Python.z3ex" />
         <item itemvalue="Python.z3pr" />
         <item itemvalue="Python.z3pv" />
       </list>
