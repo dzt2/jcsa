@@ -4,9 +4,9 @@
 import os
 import time
 import z3
-import com.jcsa.z3code.base as jcbase
-import com.jcsa.z3code.code as jccode
-import com.jcsa.z3code.muta as jcmuta
+import com.jcsa.z3code.libs.base as jcbase
+import com.jcsa.z3code.libs.code as jccode
+import com.jcsa.z3code.libs.muta as jcmuta
 
 
 class SymbolToZ3Parser:
@@ -142,7 +142,7 @@ class SymbolToZ3Parser:
 		elif (c_type == "array") or (c_type == "point"):
 			return self.__unsigned_reference__(self.__new_point_reference__(name, code))
 		elif c_type == "function":
-			return z3.Function(name)
+			return z3.Function(name)()
 		else:
 			return self.__new_other_reference__(name)
 
@@ -545,9 +545,10 @@ class MutationZ3Prover:
 	def __init__(self):
 		self.neq_class = 0
 		self.ceq_class = 1
-		self.veq_class = 2
-		self.seq_class = 3
-		self.req_class = 4
+		self.beq_class = 2
+		self.veq_class = 3
+		self.seq_class = 4
+		self.req_class = 5
 		self.timeout = 1000
 		self.parser = SymbolToZ3Parser()
 		self.solutions = dict()	# ContextState --> class_flag
@@ -561,6 +562,7 @@ class MutationZ3Prover:
 		"""
 		self.timeout = self.timeout
 		try:
+			# return z3.Not(z3.eq(orig_value, muta_value))
 			return orig_value != muta_value
 		except z3.z3types.Z3Exception:
 			return z3.BoolVal(True)
@@ -651,7 +653,7 @@ class MutationZ3Prover:
 					if len(muta_states) == 0:
 						return self.veq_class
 					elif self.__check_state__(orig_states, muta_states):
-						return self.seq_class
+						return self.beq_class
 					else:
 						return self.neq_class
 				else:
@@ -704,79 +706,37 @@ class MutationZ3Prover:
 					state_solutions[state] = __res__
 					break
 		endTime = time.time()
-		timeSeconds = int(endTime - begTime)
+		seconds = int(endTime - begTime)
 
-		## Summarization-Print
+		## report-summary
 		equal_number, state_number = len(output), len(state_solutions)
-		states, ceq_number, veq_number, seq_number, req_number = set(), 0, 0, 0, 0
+		ceq_count, beq_count, seq_count, veq_count, req_count = 0, 0, 0, 0, 0
 		for mutant, state_class in output.items():
 			state = state_class[0]
 			__res__ = state_class[1]
-			states.add(state)
 			if __res__ == self.ceq_class:
-				ceq_number += 1
-			elif __res__ == self.veq_class:
-				veq_number += 1
+				ceq_count += 1
+			elif __res__ == self.beq_class:
+				beq_count += 1
 			elif __res__ == self.seq_class:
-				seq_number += 1
-			else:
-				req_number += 1
-		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {}".format(alive_number, len(output), len(states), timeSeconds))
-		print("\tCEQ = {}\tVEQ = {}\tSEQ = {}\tREQ = {}".format(ceq_number, veq_number, seq_number, req_number))
+				seq_count += 1
+			elif __res__ == self.veq_class:
+				veq_count += 1
+			elif __res__ == self.req_class:
+				req_count += 1
+		ratio = len(output) / (alive_number + 0.001)
+		ratio = int(ratio * 10000) / 100.0
+		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {}\tRAT = {}%".format(alive_number, equal_number, state_number, seconds, ratio))
+		print("\tCEQ = {}\tBEQ = {}\tVEQ = {}\tSEQ = {}\tREQ = {}".format(ceq_count, beq_count, veq_count, seq_count, req_count))
 		return output
 
 
-def write_mutant_state_class(project: jcmuta.CProject, mutant_state_class: dict, tce_ids: set, file_path: str):
+def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
 	"""
 	:param project:
-	:param file_path:
-	:param tce_ids: the set of mutation ID detected by TCE
-	:param mutant_state_class: Mutant --> (ContextState, int)
-	:return: mid clas oprt line loct code parm type cate loct lopd ropd
+	:param tce_directory:
+	:return: the set of integer IDs of mutants detected by TCE
 	"""
-	with open(file_path, 'w') as writer:
-		writer.write("ID\tCLAS\tOPRT\tLINE\tASTC\tCODE\tPARM\tTCE\tTYPE\tCATE\tLOCT\tLOPD\tROPD\n")
-		for mutant in project.muta_space.get_mutants():
-			mutant: jcmuta.Mutant
-			mid = mutant.get_muta_id()
-			mu_class = mutant.get_mutation().get_mutation_class()
-			mu_operator = mutant.get_mutation().get_mutation_operator()
-			location = mutant.get_mutation().get_location()
-			mu_line = location.line_of(False)
-			mu_astc = location.get_class_name()
-			mu_code = location.generate_code(96)
-			mu_parameter = str(mutant.get_mutation().get_parameter())
-			writer.write("{}\t{}\t{}\t{}\t{}\t\"{}\"\t({})".
-						 format(mid, mu_class, mu_operator, mu_line, mu_astc, mu_code, mu_parameter))
-			if mid in tce_ids:
-				writer.write("\t{}".format(True))
-			else:
-				writer.write("\t{}".format(False))
-			if mutant in mutant_state_class:
-				state = mutant_state_class[mutant][0]
-				state: jcmuta.ContextState
-				__res__ = mutant_state_class[mutant][1]
-				if __res__ == 1:
-					mu_type = "CEQ"
-				elif __res__ == 2:
-					mu_type = "VEQ"
-				elif __res__ == 3:
-					mu_type = "SEQ"
-				else:
-					mu_type = "REQ"
-				category = state.get_category()
-				location = state.get_location().get_node_type()
-				loperand = state.get_loperand().get_code()
-				roperand = state.get_roperand().get_code()
-				writer.write("\t{}\t{}\t{}\t{}\t{}".format(mu_type, category, location, loperand, roperand))
-			else:
-				writer.write("\t{}".format("NEQ"))
-			writer.write("\n")
-		writer.write("\n")
-	return
-
-
-def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
 	file_name = project.program.name
 	file_path = os.path.join(tce_directory, file_name + ".txt")
 	tce_ids = set()
@@ -790,24 +750,77 @@ def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
 	return tce_ids
 
 
+def write_mutant_class_state(project: jcmuta.CProject, mutant_state_class: dict, tce_ids: set, file_path: str):
+	"""
+	:param project: the mutation testing project
+	:param mutant_state_class: dict[Mutant; (ContextState, int)]
+	:param tce_ids: the set of integer IDs of mutants detected by TCE technique
+	:param file_path:
+	:return:
+	"""
+	with open(file_path, 'w') as writer:
+		writer.write("MID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTCE\tTYPE\tCATE\tLOCT\tLVAL\tRVAL\n")
+		for mutant in project.muta_space.get_mutants():
+			## 1. mutation information
+			mutant: jcmuta.Mutant
+			mid = mutant.get_muta_id()
+			mu_class = mutant.get_mutation().get_mutation_class()
+			mu_operator = mutant.get_mutation().get_mutation_operator()
+			location = mutant.get_mutation().get_location()
+			mu_line = location.line_of(False)
+			mu_code = location.generate_code(96)
+			mu_parameter = str(mutant.get_mutation().get_parameter())
+			writer.write("{}\t{}\t{}\t{}\t\"{}\"\t{}\t{}".
+						 format(mid, mu_class, mu_operator, mu_line, mu_code, mu_parameter, mid in tce_ids))
+
+			## 2. state-class information
+			if mutant in mutant_state_class:
+				state = mutant_state_class[mutant][0]
+				flags = mutant_state_class[mutant][1]
+				state: jcmuta.ContextState
+				flags: int
+				category = state.get_category()
+				location = state.get_location().get_node_type()
+				loperand = state.get_loperand().get_code()
+				roperand = state.get_roperand().get_code()
+				if flags == 1:
+					writer.write("\tCEQ")
+				elif flags == 2:
+					writer.write("\tBEQ")
+				elif flags == 3:
+					writer.write("\tSEQ")
+				elif flags == 4:
+					writer.write("\tVEQ")
+				elif flags == 5:
+					writer.write("\tREQ")
+				else:
+					writer.write("\tNEQ")
+				writer.write("\t{}\t{}\t({})\t({})".format(category, location, loperand, roperand))
+			else:
+				writer.write("\tNEQ")
+
+			writer.write("\n")
+	return
+
+
 def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 	prover = MutationZ3Prover()
 	tce_ids = load_TEQ_results(project, "/home/dzt2/Development/Data/zexp/TCE")
 	print("Testing {} with {} mutants and {} TCE.".
 		  format(project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
 	mutant_state_class = prover.prove_all(project)
-	write_mutant_state_class(project, mutant_state_class, tce_ids, file_path)
+	write_mutant_class_state(project, mutant_state_class, tce_ids, file_path)
 	print()
 	return
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
-	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
+	root_path = "/home/dzt2/Development/Data/zexp/features"
+	post_path = "/home/dzt2/Development/Data/zexp/results"
 	for project_name in os.listdir(root_path):
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
-		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
+		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		# test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
 	print("Testing End...")
 
