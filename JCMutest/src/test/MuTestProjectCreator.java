@@ -71,7 +71,7 @@ public class MuTestProjectCreator {
 			project = new MuTestProject(root, MuCommandUtil.linux_util);
 
 			/* set configuration data */
-			List<String> parameters = new ArrayList<>();
+			List<String> parameters = new ArrayList<String>();
 			parameters.add("-lm");
 			project.set_config(CCompiler.clang, ClangStandard.gnu_c89,
 					parameters, sizeof_template_file, instrument_head_file,

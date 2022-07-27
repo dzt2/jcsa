@@ -473,12 +473,10 @@ class SymbolToZ3Prover:
 		"""
 		It initializes the parameters for proof
 		"""
-		self.neq_class = 0
-		self.ceq_class = 1	# condition
-		self.beq_class = 2	# binary
-		self.seq_class = 3	# only-state
-		self.veq_class = 4	# only-value
-		self.req_class = 5	# return-value
+		self.neq_flag = 0	# not-equivalent
+		self.ceq_flag = 1	# complete-equivalent
+		self.seq_flag = 2	# state-equivalent
+		self.veq_flag = 3	# value-equivalent
 		self.timeout = 1000
 		self.parser = SymbolToZ3Parser()
 		self.solutions = dict()  # ContextState --> class_flag
@@ -544,53 +542,65 @@ class SymbolToZ3Prover:
 		# return False
 		return True
 
+	def __solve_eva_cond__(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: NEQ|CEQ
+		"""
+		assumeLib = set()
+		condition = self.parser.parse(state.get_loperand(), None, assumeLib, True)
+		if condition is None:
+			return self.neq_flag
+		elif self.__check_const__(condition, assumeLib):
+			return self.ceq_flag
+		else:
+			return self.neq_flag
+
+	def __solve_set_expr__(self, state: jcmuta.ContextState):
+		"""
+		:param state:
+		:return: NEQ|VEQ|BEQ|SEQ|REQ
+		"""
+		## I. parse and construction
+		orig_states, muta_states = dict(), dict()
+		loperand = self.parser.parse(state.get_loperand(), orig_states, None, True)
+		roperand = self.parser.parse(state.get_roperand(), muta_states, None, False)
+		if (loperand is None) or (roperand is None):
+			return self.neq_flag
+
+		## II. context-directed proof
+		location = state.get_location()
+		parent = location.get_parent()
+		if (parent is None) or (location.get_child_type() == "evaluate") or (location.get_child_type() == "element"):
+			if self.__check_state__(orig_states, muta_states):
+				return self.seq_flag
+			else:
+				return self.neq_flag
+		elif parent.get_node_type() == "retr_stmt":
+			if self.__check_value__(loperand, roperand):
+				return self.veq_flag
+			else:
+				return self.neq_flag
+		else:
+			if self.__check_value__(loperand, roperand):
+				if self.__check_state__(orig_states, muta_states):
+					return self.ceq_flag
+				else:
+					return self.neq_flag
+			else:
+				return self.neq_flag
+
 	def __solve__(self, state: jcmuta.ContextState):
 		"""
 		:param state:
 		:return: It solves the state and produce the class
 		"""
 		if state.get_category() == "eva_cond":
-			assumeLib = set()
-			condition = self.parser.parse(state.get_loperand(), None, assumeLib, True)
-			if condition is None:
-				return self.neq_class
-			elif self.__check_const__(condition, assumeLib):
-				return self.ceq_class
-			else:
-				return self.neq_class
+			return self.__solve_eva_cond__(state)
 		elif state.get_category() == "set_expr":
-			## 1. parse
-			orig_states, muta_states = dict(), dict()
-			loperand = self.parser.parse(state.get_loperand(), orig_states, None, True)
-			roperand = self.parser.parse(state.get_roperand(), muta_states, None, False)
-			if (loperand is None) or (roperand is None):
-				return self.neq_class
-
-			## 2, syntax-directed analysis
-			location = state.get_location()
-			parent = location.get_parent()
-			if (parent is None) or (location.get_child_type() == "evaluate") or (location.get_child_type() == "n_condition") or (location.get_child_type() == "element"):
-				if self.__check_state__(orig_states, muta_states):
-					return self.seq_class
-				else:
-					return self.neq_class
-			elif parent.get_node_type() == "retr_stmt":
-				if self.__check_value__(loperand, roperand):
-					return self.req_class
-				else:
-					return self.neq_class
-			else:
-				if self.__check_value__(loperand, roperand):
-					if len(muta_states) == 0:
-						return self.veq_class
-					elif self.__check_state__(orig_states, muta_states):
-						return self.beq_class
-					else:
-						return self.neq_class
-				else:
-					return self.neq_class
+			return self.__solve_set_expr__(state)
 		else:
-			return self.neq_class
+			return self.neq_flag
 
 	def __prove__(self, state: jcmuta.ContextState):
 		"""
@@ -631,7 +641,7 @@ class SymbolToZ3Prover:
 			for state in mutation.get_states():
 				state: jcmuta.ContextState
 				__res__ = self.__prove__(state)
-				if __res__ != self.neq_class:
+				if __res__ != self.neq_flag:
 					output[mutation.get_mutant()] = (state, __res__)
 					state_solutions[state] = __res__
 					break
@@ -640,27 +650,33 @@ class SymbolToZ3Prover:
 
 		## report-summary
 		equal_number, state_number = len(output), len(state_solutions)
-		ceq_count, beq_count, seq_count, veq_count, req_count = 0, 0, 0, 0, 0
+		ceq_number, seq_number, veq_number, ratio = 0, 0, 0, 0.0
 		for mutant, state_class in output.items():
-			state = state_class[0]
 			__res__ = state_class[1]
-			if __res__ == self.ceq_class:
-				ceq_count += 1
-			elif __res__ == self.beq_class:
-				beq_count += 1
-			elif __res__ == self.seq_class:
-				seq_count += 1
-			elif __res__ == self.veq_class:
-				veq_count += 1
-			elif __res__ == self.req_class:
-				req_count += 1
+			if __res__ == self.ceq_flag:
+				ceq_number += 1
+			elif __res__ == self.seq_flag:
+				seq_number += 1
+			elif __res__ == self.veq_flag:
+				veq_number += 1
 		ratio = len(output) / (alive_number + 0.001)
 		ratio = int(ratio * 10000) / 100.0
-		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {}\tRAT = {}%".format(alive_number, equal_number, state_number, seconds, ratio))
-		print("\tCEQ = {}\tBEQ = {}\tVEQ = {}\tSEQ = {}\tREQ = {}".format(ceq_count, beq_count, veq_count, seq_count, req_count))
+		print("\tALV = {}\tEQV = {}\tSTA = {}\tTIM = {} s".format(alive_number, equal_number, state_number, seconds))
+		print("\tCEQ = {}\tSEQ = {}\tVEQ = {}\tRAT = {} %".format(ceq_number, seq_number, veq_number, ratio))
 
 		## return the classifier-maps
 		return output
+
+	@staticmethod
+	def class_name(class_flag: int):
+		if class_flag == 1:
+			return "CEQ"
+		elif class_flag == 2:
+			return "SEQ"
+		elif class_flag == 3:
+			return "VEQ"
+		else:
+			return "NEQ"
 
 
 def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
@@ -715,22 +731,10 @@ def write_mutant_class_state(project: jcmuta.CProject, mutant_state_class: dict,
 				location = state.get_location().get_node_type()
 				loperand = state.get_loperand().get_code()
 				roperand = state.get_roperand().get_code()
-				if flags == 1:
-					writer.write("\tCEQ")
-				elif flags == 2:
-					writer.write("\tBEQ")
-				elif flags == 3:
-					writer.write("\tSEQ")
-				elif flags == 4:
-					writer.write("\tVEQ")
-				elif flags == 5:
-					writer.write("\tREQ")
-				else:
-					writer.write("\tNEQ")
+				writer.write("\t{}".format(SymbolToZ3Prover.class_name(flags)))
 				writer.write("\t{}\t{}\t({})\t({})".format(category, location, loperand, roperand))
 			else:
 				writer.write("\tNEQ")
-
 			writer.write("\n")
 	return
 
@@ -747,14 +751,14 @@ def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zexp/features"
-	post_path = "/home/dzt2/Development/Data/zexp/results"
+	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
+	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
 	for project_name in os.listdir(root_path):
-		if project_name != "md4":
+		if project_name == "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
-		test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		# test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
+		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
 	print("Testing End...")
 

@@ -126,7 +126,7 @@ public class MuTestTrivialEquivalenceTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		String[] file_names = new String[] { "print_tokens", "schedule2", "is_prime", "insert_sort2" };
+		String[] file_names = new String[] { "Carsimulator", "Defroster" };
 		for(String file_name : file_names) {
 			testing(new File(root_path + file_name));
 		}
