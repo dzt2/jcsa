@@ -750,10 +750,18 @@ def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 	return
 
 
+def get_file_names_in(directory: str):
+	file_names = list()
+	for file_name in os.listdir(directory):
+		file_names.append(file_name)
+	file_names.sort()
+	return file_names
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
-	for project_name in os.listdir(root_path):
+	for project_name in get_file_names_in(root_path):
 		if project_name == "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
