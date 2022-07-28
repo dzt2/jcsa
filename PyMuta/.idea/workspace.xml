@@ -20,12 +20,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3proof.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/libs/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/libs/code.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/libs/muta.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/libs/muta.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3ex.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3ex.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pe.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3pe.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pv.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3pv.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z3ex.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3ex.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z3pe.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z3pv.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pv.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,8 +69,8 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/com/jcsa/z3proof" />
       <recent name="$PROJECT_DIR$/com/jcsa/z3proof/prov" />
+      <recent name="$PROJECT_DIR$/com/jcsa/z3proof" />
       <recent name="$PROJECT_DIR$/com/jcsa/z3proof/libs" />
       <recent name="$PROJECT_DIR$/com/jcsa/z3code/libs" />
       <recent name="$PROJECT_DIR$/com/jcsa/z3code" />
@@ -132,7 +131,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/z3ex.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3ex.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -153,7 +152,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/z3pe.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pe.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -195,7 +194,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/z3pv.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pv.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />

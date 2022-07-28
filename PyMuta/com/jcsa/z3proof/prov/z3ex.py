@@ -776,10 +776,10 @@ def get_file_names_in(directory: str):
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
-	index = 0
-	for project_name in get_file_names_in(root_path):
+	index, file_names = 0, get_file_names_in(root_path)
+	for project_name in file_names:
 		index += 1
-		if project_name == "md4":
+		if project_name != "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
