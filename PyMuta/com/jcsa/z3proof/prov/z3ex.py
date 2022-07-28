@@ -590,6 +590,19 @@ class SymbolToZ3Prover:
 			else:
 				return self.neq_flag
 
+	def __solve_dif_expr__(self, state: jcmuta.ContextState):
+		"""
+		:param state: inc_expr|xor_expr
+		:return:
+		"""
+		difference = self.parser.parse(state.get_roperand(), None, None, True)
+		if difference is None:
+			return self.neq_flag
+		elif self.__check_value__(difference, z3.Int(0)):
+			return self.ceq_flag
+		else:
+			return self.neq_flag
+
 	def __solve__(self, state: jcmuta.ContextState):
 		"""
 		:param state:
@@ -599,6 +612,8 @@ class SymbolToZ3Prover:
 			return self.__solve_eva_cond__(state)
 		elif state.get_category() == "set_expr":
 			return self.__solve_set_expr__(state)
+		elif (state.get_category() == "inc_expr") or (state.get_category() == "xor_expr"):
+			return self.__solve_dif_expr__(state)
 		else:
 			return self.neq_flag
 
