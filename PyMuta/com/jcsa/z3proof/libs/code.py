@@ -1,7 +1,7 @@
 """This file defines the data model of program instances."""
 
 
-import com.jcsa.z3code.libs.base as jcbase
+import com.jcsa.z3proof.libs.base as jcbase
 import os
 import xml.etree.ElementTree as ET
 

@@ -3,8 +3,8 @@
 
 import os
 import random
-import com.jcsa.z3code.libs.base as jcbase
-import com.jcsa.z3code.libs.code as jccode
+import com.jcsa.z3proof.libs.base as jcbase
+import com.jcsa.z3proof.libs.code as jccode
 
 
 class CProject:

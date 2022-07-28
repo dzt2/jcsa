@@ -754,11 +754,11 @@ def write_mutant_class_state(project: jcmuta.CProject, mutant_state_class: dict,
 	return
 
 
-def test_symbol_prover(project: jcmuta.CProject, file_path: str):
+def test_symbol_prover(index: int, project: jcmuta.CProject, file_path: str):
 	prover = SymbolToZ3Prover()
 	tce_ids = load_TEQ_results(project, "/home/dzt2/Development/Data/zexp/TCE")
-	print("Testing {} with {} mutants and {} TCE.".
-		  format(project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
+	print("[{}]\tTesting {} with {} mutants and {} TCE.".
+		  format(index, project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
 	mutant_state_class = prover.classify(project)
 	write_mutant_class_state(project, mutant_state_class, tce_ids, file_path)
 	print()
@@ -776,12 +776,14 @@ def get_file_names_in(directory: str):
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
+	index = 0
 	for project_name in get_file_names_in(root_path):
+		index += 1
 		if project_name == "md4":
 			continue
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
 		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
+		test_symbol_prover(index, c_project, os.path.join(post_path, project_name + ".mz3"))
 	print("Testing End...")
 
