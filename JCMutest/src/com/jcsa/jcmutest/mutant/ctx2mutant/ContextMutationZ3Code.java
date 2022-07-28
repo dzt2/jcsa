@@ -12,6 +12,7 @@ import java.util.Queue;
 
 import com.jcsa.jcmutest.mutant.Mutant;
 import com.jcsa.jcmutest.mutant.ctx2mutant.base.AstContextState;
+import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextAnnotation;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationEdge;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationNode;
 import com.jcsa.jcmutest.mutant.ctx2mutant.tree.ContextMutationTree;
@@ -289,6 +290,14 @@ public class ContextMutationZ3Code {
 			AstCirNode location = ((AstContextState) token).get_location();
 			SymbolExpression loperand = ((AstContextState) token).get_loperand();
 			SymbolExpression roperand = ((AstContextState) token).get_roperand();
+			return category + "$" + this.encode_code_token(location) + "$" + this.
+					encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
+		}
+		else if(token instanceof ContextAnnotation) {
+			String category = ((ContextAnnotation) token).get_category().toString();
+			AstCirNode location = ((ContextAnnotation) token).get_location();
+			SymbolExpression loperand = ((ContextAnnotation) token).get_loperand();
+			SymbolExpression roperand = ((ContextAnnotation) token).get_roperand();
 			return category + "$" + this.encode_code_token(location) + "$" + this.
 					encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
 		}
@@ -870,14 +879,41 @@ public class ContextMutationZ3Code {
 		if(!nodes.isEmpty()) {
 			pass_number++; this.write(this.encode_token(mutant));
 			for(ContextMutationNode node : nodes) {
-				node_number++; 
-				this.write("\t" + this.encode_token(node.get_state()));
-				/*
-				for(ContextAnnotation annotation : node.get_annotations()) {
-					anot_number++;
-					this.write("\t" + this.encode_token(annotation));
+				/* print state information */
+				AstContextState state = node.get_state();
+				switch(state.get_category()) {
+				case cov_time:
+				case eva_cond:
+				case set_stmt:
+				case set_expr:
+				{
+					node_number++; 
+					this.write("\t" + this.encode_token(node.get_state()));
+					break;
 				}
-				*/
+				default:	
+				{
+					break;
+				}
+				}
+				
+				/* print annotations in */
+				for(ContextAnnotation annotation : node.get_annotations()) {
+					switch(annotation.get_category()) {
+					case cov_time:
+					case eva_cond:
+					case set_stmt:
+					case set_expr:
+					case inc_expr:
+					case xor_expr:
+					{
+						anot_number++;
+						this.write("\t" + this.encode_token(annotation));
+					}
+					// ignore sed_muta; set_flow; trp_stmt; set|inc|xor_refr;
+					default: break;
+					}
+				}
 			}
 			this.write("\n");
 		}

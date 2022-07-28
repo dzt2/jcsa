@@ -4,9 +4,9 @@
 import os
 import time
 import z3
-import com.jcsa.z3code.libs.base as jcbase
-import com.jcsa.z3code.libs.code as jccode
-import com.jcsa.z3code.libs.muta as jcmuta
+import com.jcsa.z3proof.libs.base as jcbase
+import com.jcsa.z3proof.code as jccode
+import com.jcsa.z3proof.muta as jcmuta
 
 
 class SymbolToZ3Parser:
