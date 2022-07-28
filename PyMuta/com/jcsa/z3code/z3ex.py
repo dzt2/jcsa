@@ -539,7 +539,6 @@ class SymbolToZ3Prover:
 					return False
 			else:
 				pass
-		# return False
 		return True
 
 	def __solve_eva_cond__(self, state: jcmuta.ContextState):
@@ -571,7 +570,8 @@ class SymbolToZ3Prover:
 		## II. context-directed proof
 		location = state.get_location()
 		parent = location.get_parent()
-		if (parent is None) or (location.get_child_type() == "evaluate") or (location.get_child_type() == "element"):
+		if (parent is None) or (location.get_child_type() == "evaluate") or (location.get_child_type() == "element") \
+				or (location.get_child_type() == "n_condition"):
 			if self.__check_state__(orig_states, muta_states):
 				return self.seq_flag
 			else:

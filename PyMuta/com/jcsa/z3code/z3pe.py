@@ -815,8 +815,8 @@ def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zexp/features"
-	post_path = "/home/dzt2/Development/Data/zexp/results"
+	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
+	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
 	for project_name in os.listdir(root_path):
 		project_directory = os.path.join(root_path, project_name)
 		c_project = jcmuta.CProject(project_directory, project_name)
