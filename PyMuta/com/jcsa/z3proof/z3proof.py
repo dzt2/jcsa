@@ -438,35 +438,6 @@ class SymbolToZ3Parser:
 		return res
 
 
-def test_symbol_parser(project: jcmuta.CProject, file_path: str):
-	parser = SymbolToZ3Parser()
-	past, fail = 0, 0
-	with open(file_path, 'w') as writer:
-		writer.write("CLAS\tTYPE\tCONTENT\tCODE\tSEXPR\n")
-		for symbol_node in project.sym_tree.get_sym_nodes():
-			symbol_node: jcmuta.SymbolNode
-			expression = parser.parse(symbol_node, dict(), set(), True)
-			clas = symbol_node.get_class_name()
-			data_type = symbol_node.get_data_type()
-			content = symbol_node.get_content().get_token_value()
-			code = symbol_node.get_code()
-			code = jcbase.strip_text(code, 96)
-			writer.write("{}\t{}\t{}\t{}\t".format(clas, data_type, content, code))
-			if not (expression is None):
-				scode = str(expression.sexpr())
-				scode = jcbase.strip_text(scode, 96)
-				writer.write(scode)
-				past += 1
-			else:
-				writer.write("???")
-				fail += 1
-			writer.write("\n")
-	ratio = past / (past + fail + 0.0001)
-	ratio = int(ratio * 10000) / 100.0
-	print("\t{}:\tPASS = {}\tFAIL = {}\t ({}%)".format(project.program.name, past, fail, ratio))
-	return
-
-
 ## expression-level equivalence proof
 
 
@@ -708,6 +679,17 @@ class SymbolToZ3Prover:
 			return "NEQ"
 
 
+## testing methods
+
+
+def get_file_names_in(directory: str):
+	file_names = list()
+	for file_name in os.listdir(directory):
+		file_names.append(file_name)
+	file_names.sort()
+	return file_names
+
+
 def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
 	"""
 	:param project:
@@ -766,23 +748,45 @@ def write_mutant_class_state(project: jcmuta.CProject, mutant_state_class: dict,
 	return
 
 
-def test_symbol_prover(index: int, project: jcmuta.CProject, file_path: str):
+def test_symbol_parser(project: jcmuta.CProject, file_path: str):
+	parser = SymbolToZ3Parser()
+	past, fail = 0, 0
+	with open(file_path, 'w') as writer:
+		writer.write("CLAS\tTYPE\tCONTENT\tCODE\tSEXPR\n")
+		for symbol_node in project.sym_tree.get_sym_nodes():
+			symbol_node: jcmuta.SymbolNode
+			expression = parser.parse(symbol_node, dict(), set(), True)
+			clas = symbol_node.get_class_name()
+			data_type = symbol_node.get_data_type()
+			content = symbol_node.get_content().get_token_value()
+			code = symbol_node.get_code()
+			code = jcbase.strip_text(code, 96)
+			writer.write("{}\t{}\t{}\t{}\t".format(clas, data_type, content, code))
+			if not (expression is None):
+				scode = str(expression.sexpr())
+				scode = jcbase.strip_text(scode, 96)
+				writer.write(scode)
+				past += 1
+			else:
+				writer.write("???")
+				fail += 1
+			writer.write("\n")
+	ratio = past / (past + fail + 0.0001)
+	ratio = int(ratio * 10000) / 100.0
+	print("\t{}:\tPASS = {}\tFAIL = {}\t ({}%)".format(project.program.name, past, fail, ratio))
+	return
+
+
+def test_symbol_prover(project: jcmuta.CProject, file_path: str):
 	prover = SymbolToZ3Prover()
 	tce_ids = load_TEQ_results(project, "/home/dzt2/Development/Data/zexp/TCE")
-	print("{}.\tTesting {} with {} mutants and {} TCE.".
-		  format(index, project.program.name, len(project.muta_space.get_mutants()), len(tce_ids)))
+	print("\tProgram\t{}\tMutants\t{}\tTCE_Mutants\t{}".
+		  format(project.program.name, len(project.context_space.get_mutants()), len(tce_ids)))
 	mutant_state_class = prover.classify(project)
 	write_mutant_class_state(project, mutant_state_class, tce_ids, file_path)
 	print()
 	return
 
-
-def get_file_names_in(directory: str):
-	file_names = list()
-	for file_name in os.listdir(directory):
-		file_names.append(file_name)
-	file_names.sort()
-	return file_names
 
 
 ## main script
@@ -794,11 +798,12 @@ if __name__ == "__main__":
 	index, file_names = 0, get_file_names_in(root_path)
 	for project_name in file_names:
 		index += 1
+		print("{}.\tTesting on project {}.".format(index, project_name))
 		if project_name == "md4":
-			continue
-		project_directory = os.path.join(root_path, project_name)
-		c_project = jcmuta.CProject(project_directory, project_name)
-		# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-		test_symbol_prover(index, c_project, os.path.join(post_path, project_name + ".mz3"))
+			project_directory = os.path.join(root_path, project_name)
+			c_project = jcmuta.CProject(project_directory, project_name)
+			# test_symbol_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
+			test_symbol_prover(c_project, os.path.join(post_path, project_name + ".mz3"))
+		print()
 	print("Testing End...")
 

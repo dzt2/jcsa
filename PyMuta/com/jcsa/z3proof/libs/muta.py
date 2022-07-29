@@ -619,18 +619,35 @@ class ContextState:
 	category asc_location loperand roperand
 	"""
 
-	def __init__(self, category: str, location: jccode.AstCirNode, loperand: SymbolNode, roperand: SymbolNode):
+	def __init__(self, space, index: int, category: str, location: jccode.AstCirNode, loperand: SymbolNode, roperand: SymbolNode):
 		"""
+		:param space:	 the space where the contextual state is defined
+		:param index:	 integer ID of this state in its enclosing space
 		:param category: the category of the contextual mutation execution state
 		:param location: the location with abstract syntactic and C-intermediate
 		:param loperand: the left-operand of the symbolic expression
 		:param roperand: the right-operand of the symbolic expression
 		"""
+		space: ContextStateSpace
+		self.space = space
+		self.index = index
 		self.category = category
 		self.location = location
 		self.loperand = loperand
 		self.roperand = roperand
 		return
+
+	def get_space(self):
+		"""
+		:return: the space where the contextual state is defined
+		"""
+		return self.space
+
+	def get_index(self):
+		"""
+		:return: integer ID of this state in its enclosing space
+		"""
+		return self.index
 
 	def get_category(self):
 		"""
@@ -662,6 +679,117 @@ class ContextState:
 		loperand = "sym@{}@{}".format(self.loperand.get_class_name(), self.loperand.get_class_id())
 		roperand = "sym@{}@{}".format(self.roperand.get_class_name(), self.roperand.get_class_id())
 		return "{}${}${}${}".format(category, location, loperand, roperand)
+
+
+class ContextStateSpace:
+	"""
+	The space where the contextual state is encoded and uniquely defined.
+	"""
+
+	def __init__(self, project: CProject, words: set):
+		"""
+		:param project:
+		:param words: the set of words encoding the ContextState in this state space
+		"""
+		self.project = project
+		self.state_list = list()
+		self.index_dict = dict()
+		for word in words:
+			text = str(word).strip()
+			if not (text in self.index_dict):
+				state = self.__new_state__(text.strip())
+				self.state_list.append(state)
+				self.index_dict[text] = state
+		return
+
+	def __new_state__(self, text: str):
+		"""
+		:param text:
+		:return: create a new one or return the existing one
+		"""
+		items = text.strip().split('$')
+		category = items[0].strip()
+		loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		location = self.project.program.ast_cir_tree.get_node(loc_token)
+		loperand = self.project.sym_tree.get_sym_node(items[2].strip())
+		roperand = self.project.sym_tree.get_sym_node(items[3].strip())
+		return ContextState(self, len(self.state_list), category, location, loperand, roperand)
+
+	def get_project(self):
+		"""
+		:return: the project where this space is defined
+		"""
+		return self.project
+
+	def get_states(self):
+		"""
+		:return: the list of states defined in this space
+		"""
+		return self.state_list
+
+	def __len__(self):
+		"""
+		:return: the number of states defined in this space
+		"""
+		return len(self.state_list)
+
+	def get_words(self):
+		"""
+		:return: the set of words encoding the ContextState in the space
+		"""
+		return self.index_dict.keys()
+
+	def get_state(self, index: int):
+		"""
+		:param index: the integer ID of the state being derived from this space
+		:return:
+		"""
+		return self.state_list[index]
+
+	def get_state_of(self, word: str):
+		"""
+		:param word: the unique word to encode the ContextState in this space.
+		:return:
+		"""
+		return self.index_dict[word]
+
+	def normal(self, features):
+		"""
+		:param features: the set of integers to encode ContextState in this space
+		:return: the unique feature vector to encode ContextState of input integers
+		"""
+		feature_list = list()
+		for feature in features:
+			if isinstance(feature, int):
+				if (feature >= 0) and (feature < len(self.state_list)):
+					feature: int
+					if not (feature in feature_list):
+						feature_list.append(feature)
+		feature_list.sort()
+		return feature_list
+
+	def encode(self, states):
+		"""
+		:param states: 	the set of ContextState being encoded in the space
+		:return: 		the unique integer vector to encode the states set
+		"""
+		features = set()
+		for state in states:
+			if isinstance(state, ContextState):
+				if state.get_space() == self:
+					features.add(state.get_index())
+		return self.normal(features)
+
+	def decode(self, features):
+		"""
+		:param features: the list of integers encoding ContextState in this space
+		:return: the set of ContextState being encoded by the input integers set
+		"""
+		feature_list = self.normal(features)
+		states = set()
+		for feature in feature_list:
+			states.add(self.state_list[feature])
+		return states
 
 
 class ContextMutation:
@@ -709,8 +837,25 @@ class ContextMutationSpace:
 		:param file_path: mid {(state)+} \n
 		"""
 		self.project = project
-		self.states = dict()
+		self.__read__(file_path)
 		self.__load__(file_path)
+		return
+
+	def __read__(self, file_path: str):
+		"""
+		:param file_path:
+		:return: the set of words encoding the ContextState in file
+		"""
+		words = set()
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				line = line.strip()
+				if len(line) > 0:
+					items = line.split('\t')
+					for k in range(1, len(items)):
+						word = items[k].strip()
+						words.add(word)
+		self.states = ContextStateSpace(self.project, words)
 		return
 
 	def __load__(self, file_path: str):
@@ -725,7 +870,7 @@ class ContextMutationSpace:
 					mutant = self.project.muta_space.get_mutant(mid)
 					states = set()
 					for k in range(1, len(items)):
-						states.add(self.get_state(items[k].strip()))
+						states.add(self.states.get_state_of(items[k].strip()))
 					line = ContextMutation(self, len(self.lines), mutant, states)
 					self.lines.append(line)
 					self.index[mutant] = line
@@ -734,25 +879,24 @@ class ContextMutationSpace:
 	def get_project(self):
 		return self.project
 
+	def get_state_space(self):
+		"""
+		:return: the space where ContextStates are defined
+		"""
+		return self.states
+
 	def get_state(self, key: str):
 		"""
-		:param key: category$location$loperand$roperand
-		:return:
+		:param key:
+		:return: the ContextState encoded by this key
 		"""
-		if not (key in self.states):
-			items = key.strip().split('$')
-			category = items[0].strip()
-			loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-			location = self.project.program.ast_cir_tree.get_node(loc_token)
-			loperand = self.project.sym_tree.get_sym_node(items[2].strip())
-			roperand = self.project.sym_tree.get_sym_node(items[3].strip())
-			self.states[key] = ContextState(category, location, loperand, roperand)
-		state = self.states[key]
-		state: ContextState
-		return state
+		return self.states.get_state_of(key)
 
 	def get_states(self):
-		return self.states.values()
+		"""
+		:return: the list of states encoded in this space
+		"""
+		return self.states.get_states()
 
 	def get_mutants(self):
 		return self.index.keys()
@@ -803,15 +947,14 @@ if __name__ == "__main__":
 
 				## 2.2. execution state of contextual mutation
 				for context_state in context_mutation.get_states():
-					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".format(context_state.get_category(),
-																				 context_state.get_location().get_node_type(),
-																				 context_state.get_location().get_node_id(),
-																				 context_state.get_location().get_ast_source().line_of(
-																					 False),
-																				 context_state.get_location().get_ast_source().generate_code(
-																					 64),
-																				 context_state.get_loperand().get_code(),
-																				 context_state.get_roperand().get_code()))
+					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".
+								 format(context_state.get_category(),
+										context_state.get_location().get_node_type(),
+										context_state.get_location().get_node_id(),
+										context_state.get_location().get_ast_source().line_of(False),
+										context_state.get_location().get_ast_source().generate_code(64),
+										context_state.get_loperand().get_code(),
+										context_state.get_roperand().get_code()))
 			writer.write("\n")
 	print("Testing end for all...")
 
