@@ -27,6 +27,7 @@ class CProject:
 		self.test_space = TestCaseSpace(self, tst_file)
 		self.muta_space = MutantSpace(self, mut_file, res_file)
 		self.sym_tree = SymbolTree(sym_file)
+		self.state_space = ContextStateSpace(self, ctx_file)
 		self.context_space = ContextMutationSpace(self, ctx_file)
 		return
 
@@ -614,21 +615,108 @@ class SymbolTree:
 		return
 
 
-class ContextState:
+class ContextStateSpace:
 	"""
-	category asc_location loperand roperand
+	The space to manage, create and uniquely define the ContextState.
 	"""
 
-	def __init__(self, space, index: int, category: str, location: jccode.AstCirNode, loperand: SymbolNode, roperand: SymbolNode):
+	def __init__(self, project: CProject, file_path: str):
 		"""
-		:param space:	 the space where the contextual state is defined
-		:param index:	 integer ID of this state in its enclosing space
+		:param project: 	mutation testing project
+		:param file_path:	the xxx.ctx to derive the states
+		"""
+		self.project = project
+		self.__read__(file_path)
+		return
+
+	def __news__(self, word: str):
+		"""
+		:param word: category$location$loperand$roperand
+		:return: ContextState or None if it is invalid
+		"""
+		items = word.strip().split('$')
+		category = items[0].strip()
+		loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		location = self.project.program.ast_cir_tree.get_node(loc_token)
+		loperand = self.project.sym_tree.get_sym_node(items[2].strip())
+		roperand = self.project.sym_tree.get_sym_node(items[3].strip())
+		return ContextState(self, len(self.state_list), category, location, loperand, roperand)
+
+	def __read__(self, file_path: str):
+		"""
+		:param file_path: mid {state}+
+		:return:
+		"""
+		self.state_dict = dict()	# string --> ContextState
+		self.state_list = list()	# list of ContextState
+		with open(file_path, 'r') as reader:
+			for line in reader:
+				if len(line.strip()) > 0:
+					words = line.strip().split('\t')
+					for k in range(1, len(words)):
+						word = words[k].strip()
+						if not (word in self.state_dict):
+							state = self.__news__(word)
+							self.state_list.append(state)
+							self.state_dict[word] = state
+		return
+
+	def get_project(self):
+		"""
+		:return: mutation testing project
+		"""
+		return self.project
+
+	def get_states(self):
+		"""
+		:return: the set of ContextState(s) defined in this space
+		"""
+		return self.state_list
+
+	def __len__(self):
+		"""
+		:return: the number of ContextState(s) being enclosed
+		"""
+		return len(self.state_list)
+
+	def get_words(self):
+		"""
+		:return: the set of words encoding the ContextState(s)
+		"""
+		return self.state_dict.keys()
+
+	def get_state_at(self, index: int):
+		"""
+		:param index: the integer ID to derive the ContextState
+		:return: the ContextState of this space being fetched by index
+		"""
+		return self.state_list[index]
+
+	def get_state_of(self, word: str):
+		"""
+		:param word: category$location$loperand$roperand
+		:return:
+		"""
+		return self.state_dict[word.strip()]
+
+
+
+class ContextState:
+	"""
+		space[index]: category asc_location loperand roperand
+	"""
+
+	def __init__(self, space: ContextStateSpace, index: int,
+				 category: str, location: jccode.AstCirNode,
+				 loperand: SymbolNode, roperand: SymbolNode):
+		"""
+		:param space:	 the space where the ContextState instance is generated (unique)
+		:param index:	 the integer code to fetch this state from the parent space
 		:param category: the category of the contextual mutation execution state
 		:param location: the location with abstract syntactic and C-intermediate
 		:param loperand: the left-operand of the symbolic expression
 		:param roperand: the right-operand of the symbolic expression
 		"""
-		space: ContextStateSpace
 		self.space = space
 		self.index = index
 		self.category = category
@@ -639,13 +727,13 @@ class ContextState:
 
 	def get_space(self):
 		"""
-		:return: the space where the contextual state is defined
+		:return: the parent space where this state is defined
 		"""
 		return self.space
 
 	def get_index(self):
 		"""
-		:return: integer ID of this state in its enclosing space
+		:return: the index of this state in parent space
 		"""
 		return self.index
 
@@ -680,116 +768,6 @@ class ContextState:
 		roperand = "sym@{}@{}".format(self.roperand.get_class_name(), self.roperand.get_class_id())
 		return "{}${}${}${}".format(category, location, loperand, roperand)
 
-
-class ContextStateSpace:
-	"""
-	The space where the contextual state is encoded and uniquely defined.
-	"""
-
-	def __init__(self, project: CProject, words: set):
-		"""
-		:param project:
-		:param words: the set of words encoding the ContextState in this state space
-		"""
-		self.project = project
-		self.state_list = list()
-		self.index_dict = dict()
-		for word in words:
-			text = str(word).strip()
-			if not (text in self.index_dict):
-				state = self.__new_state__(text.strip())
-				self.state_list.append(state)
-				self.index_dict[text] = state
-		return
-
-	def __new_state__(self, text: str):
-		"""
-		:param text:
-		:return: create a new one or return the existing one
-		"""
-		items = text.strip().split('$')
-		category = items[0].strip()
-		loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
-		location = self.project.program.ast_cir_tree.get_node(loc_token)
-		loperand = self.project.sym_tree.get_sym_node(items[2].strip())
-		roperand = self.project.sym_tree.get_sym_node(items[3].strip())
-		return ContextState(self, len(self.state_list), category, location, loperand, roperand)
-
-	def get_project(self):
-		"""
-		:return: the project where this space is defined
-		"""
-		return self.project
-
-	def get_states(self):
-		"""
-		:return: the list of states defined in this space
-		"""
-		return self.state_list
-
-	def __len__(self):
-		"""
-		:return: the number of states defined in this space
-		"""
-		return len(self.state_list)
-
-	def get_words(self):
-		"""
-		:return: the set of words encoding the ContextState in the space
-		"""
-		return self.index_dict.keys()
-
-	def get_state(self, index: int):
-		"""
-		:param index: the integer ID of the state being derived from this space
-		:return:
-		"""
-		return self.state_list[index]
-
-	def get_state_of(self, word: str):
-		"""
-		:param word: the unique word to encode the ContextState in this space.
-		:return:
-		"""
-		return self.index_dict[word]
-
-	def normal(self, features):
-		"""
-		:param features: the set of integers to encode ContextState in this space
-		:return: the unique feature vector to encode ContextState of input integers
-		"""
-		feature_list = list()
-		for feature in features:
-			if isinstance(feature, int):
-				if (feature >= 0) and (feature < len(self.state_list)):
-					feature: int
-					if not (feature in feature_list):
-						feature_list.append(feature)
-		feature_list.sort()
-		return feature_list
-
-	def encode(self, states):
-		"""
-		:param states: 	the set of ContextState being encoded in the space
-		:return: 		the unique integer vector to encode the states set
-		"""
-		features = set()
-		for state in states:
-			if isinstance(state, ContextState):
-				if state.get_space() == self:
-					features.add(state.get_index())
-		return self.normal(features)
-
-	def decode(self, features):
-		"""
-		:param features: the list of integers encoding ContextState in this space
-		:return: the set of ContextState being encoded by the input integers set
-		"""
-		feature_list = self.normal(features)
-		states = set()
-		for feature in feature_list:
-			states.add(self.state_list[feature])
-		return states
 
 
 class ContextMutation:
@@ -837,25 +815,7 @@ class ContextMutationSpace:
 		:param file_path: mid {(state)+} \n
 		"""
 		self.project = project
-		self.__read__(file_path)
 		self.__load__(file_path)
-		return
-
-	def __read__(self, file_path: str):
-		"""
-		:param file_path:
-		:return: the set of words encoding the ContextState in file
-		"""
-		words = set()
-		with open(file_path, 'r') as reader:
-			for line in reader:
-				line = line.strip()
-				if len(line) > 0:
-					items = line.split('\t')
-					for k in range(1, len(items)):
-						word = items[k].strip()
-						words.add(word)
-		self.states = ContextStateSpace(self.project, words)
 		return
 
 	def __load__(self, file_path: str):
@@ -870,7 +830,8 @@ class ContextMutationSpace:
 					mutant = self.project.muta_space.get_mutant(mid)
 					states = set()
 					for k in range(1, len(items)):
-						states.add(self.states.get_state_of(items[k].strip()))
+						state = self.project.state_space.get_state_of(items[k].strip())
+						states.add(state)
 					line = ContextMutation(self, len(self.lines), mutant, states)
 					self.lines.append(line)
 					self.index[mutant] = line
@@ -879,27 +840,21 @@ class ContextMutationSpace:
 	def get_project(self):
 		return self.project
 
-	def get_state_space(self):
-		"""
-		:return: the space where ContextStates are defined
-		"""
-		return self.states
+	def get_mutants(self):
+		return self.index.keys()
 
-	def get_state(self, key: str):
+	def get_state(self, word: str):
 		"""
-		:param key:
-		:return: the ContextState encoded by this key
+		:param word: category $ location $ loperand $ roperand
+		:return:
 		"""
-		return self.states.get_state_of(key)
+		return self.project.state_space.get_state_of(word)
 
 	def get_states(self):
 		"""
-		:return: the list of states encoded in this space
+		:return: the list of ContextState(s) being encoded
 		"""
-		return self.states.get_states()
-
-	def get_mutants(self):
-		return self.index.keys()
+		return self.project.state_space.get_states()
 
 	def get_mutations(self):
 		return self.lines
@@ -909,7 +864,7 @@ class ContextMutationSpace:
 
 
 if __name__ == "__main__":
-	root_path = "/home/dzt2/Development/Data/zext3/features"
+	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	for project_name in os.listdir(root_path):
 		project_directory = os.path.join(root_path, project_name)
 		c_project = CProject(project_directory, project_name)
