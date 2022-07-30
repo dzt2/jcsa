@@ -317,6 +317,12 @@ class ContextStatePatternTree:
 		return patterns
 
 
+def is_state_available(state: jcmuta.ContextState):
+	return (state.get_category() == "cov_stmt") or (state.get_category() == "eva_cond") or \
+		   (state.get_category() == "set_expr") or (state.get_category() == "inc_expr") or \
+		   (state.get_category() == "set_stmt")
+
+
 def mine_1st_patterns(project: jcmuta.CProject, tests, min_support: int, min_confidence: float):
 	"""
 	:param project:
@@ -332,7 +338,8 @@ def mine_1st_patterns(project: jcmuta.CProject, tests, min_support: int, min_con
 			pass
 		else:
 			for state in mutation.get_states():
-				states.add(state)
+				if is_state_available(state):
+					states.add(state)
 
 	## 2. mine the patterns (first-order) by the states
 	tree = ContextStatePatternTree(project)
@@ -356,6 +363,32 @@ def mine_1st_patterns(project: jcmuta.CProject, tests, min_support: int, min_con
 	return outputs
 
 
+def find_good_pattern_in(patterns, mutation: jcmuta.ContextMutation, tests):
+	"""
+	:param patterns:
+	:param mutation:
+	:param tests:
+	:return:
+	"""
+	if not (patterns is None):
+		best_pattern, max_support = None, 0
+		for pattern in patterns:
+			pattern: ContextStatePattern
+			if mutation in pattern.get_mutations():
+				if best_pattern is None:
+					best_pattern = pattern
+					length, support, confidence = pattern.evaluate(tests)
+					max_support = support
+				else:
+					length, support, confidence = pattern.evaluate(tests)
+					if support > max_support:
+						best_pattern = pattern
+						max_support = support
+		return best_pattern
+	else:
+		return None
+
+
 def write_mutation_pattern_maps(project: jcmuta.CProject, tests, patterns, file_path: str):
 	"""
 	:param project:
@@ -365,35 +398,31 @@ def write_mutation_pattern_maps(project: jcmuta.CProject, tests, patterns, file_
 	:return: MID REST CLAS OPRT LINE CODE PARAM PID SUPP CONF(%) CATE LOCT LORD RORD
 	"""
 	with open(file_path, 'w') as writer:
-		writer.write("MID\tRES\tCLAS\tOPRT\tLINE\tCODE\tPARM\tPID\tSUPP\tCONF(%)\tCATE\tLOCT\tLORD\tRORD\n")
+		writer.write("MID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tPID\tSUPP\tCONF(%)\tCATE\tLOCT\tLORD\tRORD\n")
 		for mutation in project.context_space.get_mutations():
 			mutant = mutation.get_mutant()
 			mid = mutant.get_muta_id()
 			res = mutant.get_result().is_killed_in(tests)
 			if res:
 				continue
-			else:
-				res = "ALIVE"
 			mu_class = mutant.get_mutation().get_mutation_class()
 			mu_operator = mutant.get_mutation().get_mutation_operator()
 			location = mutant.get_mutation().get_location()
 			line = location.line_of(False)
 			code = location.generate_code(96)
 			param = str(mutant.get_mutation().get_parameter())
-			writer.write("{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}".format(mid, res, mu_class, mu_operator, line, code, param))
-			for pattern in patterns:
-				pattern: ContextStatePattern
-				if mutation in pattern.get_mutations():
-					length, support, confidence = pattern.evaluate(tests)
-					confidence = int(confidence * 10000) / 100.0
-					writer.write("\t{}\t{}\t{}".format(str(pattern), support, confidence))
-					for state in pattern.get_states():
-						category = state.get_category()
-						location = state.get_location().get_node_type()
-						loperand = state.get_loperand().get_code()
-						roperand = state.get_roperand().get_code()
-						writer.write("\t{}\t{}\t{}\t{}".format(category, location, loperand, roperand))
-						break
+			writer.write("{}\t{}\t{}\t{}\t\"{}\"\t{}".format(mid, mu_class, mu_operator, line, code, param))
+			pattern = find_good_pattern_in(patterns, mutation, tests)
+			if not (pattern is None):
+				length, support, confidence = pattern.evaluate(tests)
+				confidence = int(confidence * 10000) / 100.0
+				writer.write("\t{}\t{}\t{}".format(str(pattern), support, confidence))
+				for state in pattern.get_states():
+					category = state.get_category()
+					location = state.get_location().get_node_type()
+					loperand = state.get_loperand().get_code()
+					roperand = state.get_roperand().get_code()
+					writer.write("\t{}\t{}\t{}\t{}".format(category, location, loperand, roperand))
 					break
 			writer.write("\n")
 		writer.write("\n")
@@ -433,11 +462,12 @@ if __name__ == "__main__":
 	index, file_names = 0, get_file_names_in(root_path)
 	for project_name in file_names:
 		index += 1
-		print("{}.\tTesting on project {}.".format(index, project_name))
-		project_directory = os.path.join(root_path, project_name)
-		c_project = jcmuta.CProject(project_directory, project_name)
-		patterns = mine_1st_patterns(c_project, None, 2, 0.70)
-		write_mutation_pattern_maps(c_project, None, patterns, os.path.join(post_path, project_name + ".mpt"))
-		print()
+		if project_name != "md4":
+			print("{}.\tTesting on project {}.".format(index, project_name))
+			project_directory = os.path.join(root_path, project_name)
+			c_project = jcmuta.CProject(project_directory, project_name)
+			patterns = mine_1st_patterns(c_project, None, 1, 0.65)
+			write_mutation_pattern_maps(c_project, None, patterns, os.path.join(post_path, project_name + ".mpt"))
+			print()
 	print("Testing end for all...")
 
