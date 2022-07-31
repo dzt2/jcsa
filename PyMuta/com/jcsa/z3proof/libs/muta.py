@@ -631,16 +631,18 @@ class ContextStateSpace:
 
 	def __news__(self, word: str):
 		"""
-		:param word: category$location$loperand$roperand
-		:return: ContextState or None if it is invalid
+		:param word: header$category$location$loperand$roperand
+		:return: ContextState
 		"""
 		items = word.strip().split('$')
-		category = items[0].strip()
-		loc_token = jcbase.CToken.parse(items[1].strip()).get_token_value()
+		header = jcbase.CToken.parse(items[0].strip()).get_token_value()
+		category = items[1].strip()
+		loc_token = jcbase.CToken.parse(items[2].strip()).get_token_value()
 		location = self.project.program.ast_cir_tree.get_node(loc_token)
-		loperand = self.project.sym_tree.get_sym_node(items[2].strip())
-		roperand = self.project.sym_tree.get_sym_node(items[3].strip())
-		return ContextState(self, len(self.state_list), category, location, loperand, roperand)
+		loperand = self.project.sym_tree.get_sym_node(items[3].strip())
+		roperand = self.project.sym_tree.get_sym_node(items[4].strip())
+		index = len(self.state_list)
+		return ContextState(self, index, header, category, location, loperand, roperand)
 
 	def __read__(self, file_path: str):
 		"""
@@ -707,11 +709,12 @@ class ContextState:
 	"""
 
 	def __init__(self, space: ContextStateSpace, index: int,
-				 category: str, location: jccode.AstCirNode,
+				 header: bool, category: str, location: jccode.AstCirNode,
 				 loperand: SymbolNode, roperand: SymbolNode):
 		"""
 		:param space:	 the space where the ContextState instance is generated (unique)
 		:param index:	 the integer code to fetch this state from the parent space
+		:param header:	 to specify whether this is state (True) or annotation (False)
 		:param category: the category of the contextual mutation execution state
 		:param location: the location with abstract syntactic and C-intermediate
 		:param loperand: the left-operand of the symbolic expression
@@ -719,6 +722,7 @@ class ContextState:
 		"""
 		self.space = space
 		self.index = index
+		self.header = header
 		self.category = category
 		self.location = location
 		self.loperand = loperand
@@ -736,6 +740,12 @@ class ContextState:
 		:return: the index of this state in parent space
 		"""
 		return self.index
+
+	def get_header(self):
+		"""
+		:return: to specify whether this is state (True) or annotation (False)
+		"""
+		return self.header
 
 	def get_category(self):
 		"""
@@ -762,11 +772,15 @@ class ContextState:
 		return self.roperand
 
 	def __str__(self):
+		if self.header:
+			header = "b@true"
+		else:
+			header = "b@false"
 		category = self.category
 		location = "asc@{}".format(self.location.get_node_id())
 		loperand = "sym@{}@{}".format(self.loperand.get_class_name(), self.loperand.get_class_id())
 		roperand = "sym@{}@{}".format(self.roperand.get_class_name(), self.roperand.get_class_id())
-		return "{}${}${}${}".format(category, location, loperand, roperand)
+		return "{}${}${}${}${}".format(header, category, location, loperand, roperand)
 
 
 
@@ -863,53 +877,51 @@ class ContextMutationSpace:
 		return self.index[mutant]
 
 
+def test_print_states(project: CProject, directory: str):
+	"""
+	:param project:
+	:param directory:
+	:return:
+	"""
+	print("Testing {} by {} mutants; {} tests; {} states.".format(
+		project.program.name, len(project.muta_space.get_mutants()),
+		len(project.test_space.get_test_cases()), len(project.context_space.get_states())))
+	out_file = os.path.join(directory, project.program.name + ".txt")
+	with open(out_file, 'w') as writer:
+		for mutation in project.context_space.get_mutations():
+			## mutation
+			writer.write("Mutation\n")
+			mid = mutation.get_mutant().get_muta_id()
+			mu_class = mutation.get_mutant().get_mutation().get_mutation_class()
+			operator = mutation.get_mutant().get_mutation().get_mutation_operator()
+			location = mutation.get_mutant().get_mutation().get_location()
+			func_name = location.get_function_name()
+			code_line = location.line_of(False)
+			code_text = location.generate_code(96)
+			code_type = location.get_class_name()
+			parameter = str(mutation.get_mutant().get_mutation().get_parameter())
+			writer.write("\tPROG: {}\tMUID: {}\tFUNC: {}\n".format(project.program.name, mid, func_name))
+			writer.write("\tCLAS: {}\tOPRT: {}\tPARM: {}\n".format(mu_class, operator, str(parameter)))
+			writer.write("\tLINE: {}\tTYPE: {}\tTEXT: \"{}\"\n".format(code_line, code_type, code_text))
+			## state & annotations
+			writer.write("\n\tHeader\tCategory\tLocation\tLoperand\tRoperand\n")
+			for state in mutation.get_states():
+				writer.write("\t{}\t{}\t{}\t{}\t{}\n".format(state.get_header(),
+															 state.get_category(),
+															 state.get_location().get_node_type(),
+															 state.get_loperand().get_code(),
+															 state.get_roperand().get_code()))
+			writer.write("\n")
+	print()
+	return
+
+
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
+	post_path = "/home/dzt2/Development/Data/zexp/debugs"
 	for project_name in os.listdir(root_path):
 		project_directory = os.path.join(root_path, project_name)
 		c_project = CProject(project_directory, project_name)
-		print(project_name, "loads", len(c_project.muta_space.get_mutants()), "mutants",
-			  "along with", len(c_project.test_space.get_test_cases()), "test cases.")
-		out_file = os.path.join("/home/dzt2/Development/Data/zext3/debugs", project_name + ".sym")
-		with open(out_file, 'w') as writer:
-			writer.write("Class\tID\tType\tContent\tCode\n")
-			for symbol_node in c_project.sym_tree.get_sym_nodes():
-				symbol_node: SymbolNode
-				symbol_class = symbol_node.get_class_name()
-				symbol_id = symbol_node.get_class_id()
-				data_type = symbol_node.get_data_type()
-				content = symbol_node.get_content()
-				symbol_code = symbol_node.get_code()
-				writer.write("{}\t{}\t{}\t{}\t\"{}\"\n".format(symbol_class, symbol_id, data_type, content, symbol_code))
-		out_file = os.path.join("/home/dzt2/Development/Data/zext2/trashes", project_name + ".txt")
-		with open(out_file, 'w') as writer:
-			for context_mutation in c_project.context_space.get_mutations():
-				## 2.1. ast_mutation information
-				ast_mutant = context_mutation.get_mutant()
-				ast_mid = ast_mutant.get_muta_id()
-				ast_res = ast_mutant.get_result().is_killed_in(None)
-				if ast_res:
-					result = "Killed"
-				else:
-					result = "Alived"
-				m_class = ast_mutant.get_mutation().get_mutation_class()
-				m_oprt = ast_mutant.get_mutation().get_mutation_operator()
-				m_line = ast_mutant.get_mutation().get_location().line_of(False)
-				m_code = ast_mutant.get_mutation().get_location().generate_code(64)
-				m_parameter = ast_mutant.get_mutation().get_parameter()
-				writer.write("MID#{}\t{}\t{}\t{}\t#{}\t\"{}\"\t[{}]\n".format(
-					ast_mid, result, m_class, m_oprt, m_line, m_code, m_parameter))
-
-				## 2.2. execution state of contextual mutation
-				for context_state in context_mutation.get_states():
-					writer.write("[{}]\t{}@{}\t#{}\t\"{}\"\t({})\t({})\n".
-								 format(context_state.get_category(),
-										context_state.get_location().get_node_type(),
-										context_state.get_location().get_node_id(),
-										context_state.get_location().get_ast_source().line_of(False),
-										context_state.get_location().get_ast_source().generate_code(64),
-										context_state.get_loperand().get_code(),
-										context_state.get_roperand().get_code()))
-			writer.write("\n")
+		test_print_states(c_project, post_path)
 	print("Testing end for all...")
 
