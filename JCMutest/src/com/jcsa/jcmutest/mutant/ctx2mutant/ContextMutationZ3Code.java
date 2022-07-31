@@ -269,7 +269,7 @@ public class ContextMutationZ3Code {
 	/**
 	 * @param token
 	 * @return	FEATU:	sym@txt@int, mut@int, tst@int;
-	 * 			WORDS:	category$location$loperand$roperand
+	 * 			WORDS:	bool$category$location$loperand$roperand
 	 * @throws Exception
 	 */
 	private String encode_test_token(Object token) throws Exception {
@@ -286,20 +286,22 @@ public class ContextMutationZ3Code {
 			return key;
 		}
 		else if(token instanceof AstContextState) {
+			String head = this.encode_token(Boolean.TRUE);
 			String category = ((AstContextState) token).get_category().toString();
 			AstCirNode location = ((AstContextState) token).get_location();
 			SymbolExpression loperand = ((AstContextState) token).get_loperand();
 			SymbolExpression roperand = ((AstContextState) token).get_roperand();
-			return category + "$" + this.encode_code_token(location) + "$" + this.
-					encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
+			return 	head + "$" + category + "$" + this.encode_code_token(location) + "$" + 
+					this.encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
 		}
 		else if(token instanceof ContextAnnotation) {
+			String head = this.encode_token(Boolean.FALSE);
 			String category = ((ContextAnnotation) token).get_category().toString();
 			AstCirNode location = ((ContextAnnotation) token).get_location();
 			SymbolExpression loperand = ((ContextAnnotation) token).get_loperand();
 			SymbolExpression roperand = ((ContextAnnotation) token).get_roperand();
-			return category + "$" + this.encode_code_token(location) + "$" + this.
-					encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
+			return 	head + "$" + category + "$" + this.encode_code_token(location) + "$" + 
+					this.encode_test_token(loperand) + "$" + this.encode_test_token(roperand);
 		}
 		else {
 			return null;
@@ -879,7 +881,7 @@ public class ContextMutationZ3Code {
 		if(!nodes.isEmpty()) {
 			pass_number++; this.write(this.encode_token(mutant));
 			for(ContextMutationNode node : nodes) {
-				/* print state information */
+				/* print state [cov_time, eva_cond, set_stmt, set_expr] */
 				AstContextState state = node.get_state();
 				switch(state.get_category()) {
 				case cov_time:
@@ -887,17 +889,13 @@ public class ContextMutationZ3Code {
 				case set_stmt:
 				case set_expr:
 				{
-					node_number++; 
+					node_number++;
 					this.write("\t" + this.encode_token(node.get_state()));
-					break;
 				}
-				default:	
-				{
-					break;
-				}
+				default: break;
 				}
 				
-				/* print annotations in */
+				/* print annotations in [cov_time, eva_cond, set_expr, inc_expr, xor_expr] */
 				for(ContextAnnotation annotation : node.get_annotations()) {
 					switch(annotation.get_category()) {
 					case cov_time:
@@ -910,7 +908,6 @@ public class ContextMutationZ3Code {
 						anot_number++;
 						this.write("\t" + this.encode_token(annotation));
 					}
-					// ignore sed_muta; set_flow; trp_stmt; set|inc|xor_refr;
 					default: break;
 					}
 				}

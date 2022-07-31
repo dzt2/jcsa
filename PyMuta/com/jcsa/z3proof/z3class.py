@@ -2,14 +2,9 @@
 
 
 import os
-import time
 from collections import deque
-
-import z3
-import com.jcsa.z3proof.libs.base 	as jcbase
-import com.jcsa.z3proof.libs.code 	as jccode
 import com.jcsa.z3proof.libs.muta 	as jcmuta
-import com.jcsa.z3proof.z3proof		as jcprov
+import com.jcsa.z3proof.z3prove		as jcprov
 
 
 ## data model definition
@@ -317,10 +312,63 @@ class ContextStatePatternTree:
 		return patterns
 
 
+## initialization
+
+
+def get_file_names_in(directory: str):
+	file_names = list()
+	for file_name in os.listdir(directory):
+		file_names.append(file_name)
+	file_names.sort()
+	return file_names
+
+
+def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
+	"""
+	:param project:
+	:param tce_directory:
+	:return: the set of integer IDs of mutants detected by TCE
+	"""
+	file_name = project.program.name
+	file_path = os.path.join(tce_directory, file_name + ".txt")
+	tce_ids = set()
+	with open(file_path, 'r') as reader:
+		for line in reader:
+			if len(line.strip()) > 0:
+				items = line.strip().split('\t')
+				mid = items[0].strip()
+				if mid.isdigit():
+					tce_ids.add(int(mid))
+					mutant = project.muta_space.get_mutant(int(mid))
+					mutant.get_result().result = ""
+	return tce_ids
+
+
 def is_state_available(state: jcmuta.ContextState):
+	"""
+	:param state:
+	:return: whether to select this state for mining
+	"""
 	return (state.get_category() == "cov_stmt") or (state.get_category() == "eva_cond") or \
 		   (state.get_category() == "set_expr") or (state.get_category() == "inc_expr") or \
 		   (state.get_category() == "set_stmt")
+
+
+def prove_exp_equivalence(project: jcmuta.CProject):
+	"""
+	:param project:
+	:return: the set of expression-level equivalences
+	"""
+	prover = jcprov.SymbolToZ3Prover()
+	exp_ids = set()
+	results = prover.classify(project)
+	for mutant, result in results.items():
+		exp_ids.add(mutant.get_muta_id())
+		mutant.get_result().result = ""
+	return exp_ids
+
+
+## mining algorithms
 
 
 def mine_1st_patterns(project: jcmuta.CProject, tests, min_support: int, min_confidence: float):
@@ -374,44 +422,60 @@ def find_good_pattern_in(patterns, mutation: jcmuta.ContextMutation, tests):
 		best_pattern, max_support = None, 0
 		for pattern in patterns:
 			pattern: ContextStatePattern
-			if mutation in pattern.get_mutations():
-				if best_pattern is None:
-					best_pattern = pattern
-					length, support, confidence = pattern.evaluate(tests)
-					max_support = support
-				else:
-					length, support, confidence = pattern.evaluate(tests)
-					if support > max_support:
+			if len(pattern.get_states()) > 0:
+				if mutation in pattern.get_mutations():
+					if best_pattern is None:
 						best_pattern = pattern
+						length, support, confidence = pattern.evaluate(tests)
 						max_support = support
+					else:
+						length, support, confidence = pattern.evaluate(tests)
+						if support > max_support:
+							best_pattern = pattern
+							max_support = support
 		return best_pattern
 	else:
 		return None
 
 
-def write_mutation_pattern_maps(project: jcmuta.CProject, tests, patterns, file_path: str):
+def classify_mutation_patterns(project: jcmuta.CProject, patterns, tests):
+	"""
+	:param project:
+	:param patterns:
+	:param tests:
+	:return: alive_mutation --> ContextStatePattern
+	"""
+	results = dict()
+	for mutation in project.context_space.get_mutations():
+		good_pattern = find_good_pattern_in(patterns, mutation, tests)
+		results[mutation.get_mutant()] = good_pattern
+	return results
+
+
+def write_mutation_pattern_maps(project: jcmuta.CProject, tests, patterns, tce_ids, exp_ids, file_path: str):
 	"""
 	:param project:
 	:param tests:
 	:param patterns:
+	:param tce_ids:	the set of TCE detected equivalent mutations
+	:param exp_ids:
 	:param file_path:
-	:return: MID REST CLAS OPRT LINE CODE PARAM PID SUPP CONF(%) CATE LOCT LORD RORD
+	:return: MID KILL CLAS OPRT LINE CODE PARM TCE EXP PID SUPP CONF(%) CATE LOCT LORD RORD
 	"""
 	with open(file_path, 'w') as writer:
-		writer.write("MID\tCLAS\tOPRT\tLINE\tCODE\tPARM\tPID\tSUPP\tCONF(%)\tCATE\tLOCT\tLORD\tRORD\n")
+		writer.write("MID\tKILL\tCLAS\tOPRT\tLINE\tCODE\tPARM\tTCE\tEXP\tPID\tSUPP\tCONF(%)\tCATE\tLOCT\tLORD\tRORD\n")
 		for mutation in project.context_space.get_mutations():
 			mutant = mutation.get_mutant()
 			mid = mutant.get_muta_id()
 			res = mutant.get_result().is_killed_in(tests)
-			if res:
-				continue
 			mu_class = mutant.get_mutation().get_mutation_class()
 			mu_operator = mutant.get_mutation().get_mutation_operator()
 			location = mutant.get_mutation().get_location()
 			line = location.line_of(False)
 			code = location.generate_code(96)
 			param = str(mutant.get_mutation().get_parameter())
-			writer.write("{}\t{}\t{}\t{}\t\"{}\"\t{}".format(mid, mu_class, mu_operator, line, code, param))
+			writer.write("{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}\t{}\t{}".
+						 format(mid, res, mu_class, mu_operator, line, code, param, mid in tce_ids, mid in exp_ids))
 			pattern = find_good_pattern_in(patterns, mutation, tests)
 			if not (pattern is None):
 				length, support, confidence = pattern.evaluate(tests)
@@ -429,45 +493,56 @@ def write_mutation_pattern_maps(project: jcmuta.CProject, tests, patterns, file_
 	return
 
 
-def get_file_names_in(directory: str):
-	file_names = list()
-	for file_name in os.listdir(directory):
-		file_names.append(file_name)
-	file_names.sort()
-	return file_names
-
-
-def load_TEQ_results(project: jcmuta.CProject, tce_directory: str):
+def write_pattern_evaluate_maps(project: jcmuta.CProject, tests, patterns, file_path: str):
 	"""
 	:param project:
-	:param tce_directory:
-	:return: the set of integer IDs of mutants detected by TCE
+	:param tests:
+	:param patterns:
+	:param file_path:
+	:return:
 	"""
-	file_name = project.program.name
-	file_path = os.path.join(tce_directory, file_name + ".txt")
-	tce_ids = set()
-	with open(file_path, 'r') as reader:
-		for line in reader:
-			if len(line.strip()) > 0:
-				items = line.strip().split('\t')
-				mid = items[0].strip()
-				if mid.isdigit():
-					tce_ids.add(int(mid))
-	return tce_ids
+	with open(file_path, 'w') as writer:
+		mutant_pattern_dict = classify_mutation_patterns(project, patterns, tests)
+		alive_mutants, cover_mutants, class_patterns = set(), set(), set()
+		for mutant, pattern in mutant_pattern_dict.items():
+			if not mutant.get_result().is_killed_in(tests):
+				alive_mutants.add(mutant)
+			if not (pattern is None):
+				class_patterns.add(pattern)
+				for cov_mutant in pattern.get_mutations():
+					cover_mutants.add(cov_mutant.get_mutant())
+		average = 0.0
+		if len(class_patterns) > 0:
+			average = len(cover_mutants) / (len(class_patterns) + 0.0)
+		writer.write("ALV = {}\tCOV = {}\tPAT = {}\tAVG = {}\n".
+					 format(len(alive_mutants), len(cover_mutants), len(class_patterns), average))
+		common_mutants = alive_mutants & cover_mutants
+		precision = len(common_mutants) / (len(cover_mutants) + 0.001)
+		recall = len(common_mutants) / (len(alive_mutants) + 0.001)
+		f1_score = 2 * precision * recall / (precision + recall + 0.001)
+		precision = int(precision * 10000) / 100.0
+		recall = int(recall * 10000) / 100.0
+		writer.write("PREC = {}%\tRECL = {}%\tSCORE = {}\n".format(precision, recall, f1_score))
+	return
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/features"
 	post_path = "/home/dzt2/Development/Data/zexp/patterns"
+	tces_path = "/home/dzt2/Development/Data/zexp/TCE"
 	index, file_names = 0, get_file_names_in(root_path)
 	for project_name in file_names:
 		index += 1
+		print("{}.\tTesting on project {}.".format(index, project_name))
 		if project_name != "md4":
-			print("{}.\tTesting on project {}.".format(index, project_name))
 			project_directory = os.path.join(root_path, project_name)
 			c_project = jcmuta.CProject(project_directory, project_name)
-			patterns = mine_1st_patterns(c_project, None, 1, 0.65)
-			write_mutation_pattern_maps(c_project, None, patterns, os.path.join(post_path, project_name + ".mpt"))
-			print()
+			tce_set = load_TEQ_results(c_project, tces_path)
+			exp_set = prove_exp_equivalence(c_project)
+			c_patterns = mine_1st_patterns(c_project, None, 1, 0.65)
+			write_mutation_pattern_maps(c_project, None, c_patterns, tce_set, exp_set,
+										os.path.join(post_path, project_name + ".mpt"))
+			write_pattern_evaluate_maps(c_project, None, c_patterns, os.path.join(post_path, project_name + ".sum"))
+		print()
 	print("Testing end for all...")
 
