@@ -873,6 +873,9 @@ class ContextMutationSpace:
 	def get_mutations(self):
 		return self.lines
 
+	def has_mutation(self, mutant: Mutant):
+		return mutant in self.index
+
 	def get_mutation(self, mutant: Mutant):
 		return self.index[mutant]
 
@@ -890,7 +893,7 @@ def test_print_states(project: CProject, directory: str):
 	with open(out_file, 'w') as writer:
 		for mutation in project.context_space.get_mutations():
 			## mutation
-			writer.write("Mutation\n")
+			writer.write("BEG\n")
 			mid = mutation.get_mutant().get_muta_id()
 			mu_class = mutation.get_mutant().get_mutation().get_mutation_class()
 			operator = mutation.get_mutant().get_mutation().get_mutation_operator()
@@ -911,7 +914,7 @@ def test_print_states(project: CProject, directory: str):
 															 state.get_location().get_node_type(),
 															 state.get_loperand().get_code(),
 															 state.get_roperand().get_code()))
-			writer.write("\n")
+			writer.write("END\n\n")
 	print()
 	return
 

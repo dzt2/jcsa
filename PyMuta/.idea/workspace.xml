@@ -20,12 +20,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3prove.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationZ3Code.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/com/jcsa/jcmutest/mutant/ctx2mutant/ContextMutationZ3Code.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../JCMutest/src/test/MuTestContextZ3CodeTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3prove.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/libs/muta.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/libs/muta.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z3class.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z3class.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3prove.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,6 +97,27 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="muta" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PyMuta" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/z3proof/libs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/libs/muta.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="z3class" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -133,27 +152,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3ex.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="z3pe" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="PyMuta" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/z3code" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3pe.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -207,18 +205,18 @@
     <list>
       <item itemvalue="Python.main" />
       <item itemvalue="Python.z3ex" />
-      <item itemvalue="Python.z3pe" />
       <item itemvalue="Python.z3proof" />
       <item itemvalue="Python.z3class" />
       <item itemvalue="Python.z3prove" />
+      <item itemvalue="Python.muta" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.z3prove" />
+        <item itemvalue="Python.muta" />
         <item itemvalue="Python.z3class" />
         <item itemvalue="Python.z3proof" />
         <item itemvalue="Python.z3ex" />
-        <item itemvalue="Python.z3pe" />
       </list>
     </recent_temporary>
   </component>
