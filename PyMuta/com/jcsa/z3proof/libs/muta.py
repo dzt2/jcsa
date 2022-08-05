@@ -552,6 +552,19 @@ class SymbolNode:
 		self.children.append(child)
 		return
 
+	def __eq__(self, other):
+		if isinstance(other, SymbolNode):
+			return other.get_code() == self.code
+		return False
+
+	def __ne__(self, other):
+		if isinstance(other, SymbolNode):
+			return other.get_code() != self.code
+		return True
+
+	def __hash__(self):
+		return hash(self.get_code())
+
 
 class SymbolTree:
 	"""
