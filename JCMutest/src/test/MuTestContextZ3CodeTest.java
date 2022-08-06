@@ -10,8 +10,8 @@ import com.jcsa.jcmutest.project.util.MuCommandUtil;
 
 public class MuTestContextZ3CodeTest {
 	
-	//private static final String root_path = "/home/dzt2/Development/Data/projects/"; 
-	//private static String result_dir = "/home/dzt2/Development/Data/zexp/features/"; 
+	//private static final String root_path = "/home/dzt2/Development/Data/projects/";
+	//private static String result_dir = "/home/dzt2/Development/Data/zexp/features/";
 	private static final String root_path = "/home/dzt2/Development/Data/projectsAll/"; 
 	private static String result_dir = "/home/dzt2/Development/Data/zexp/featuresAll/"; 
 	

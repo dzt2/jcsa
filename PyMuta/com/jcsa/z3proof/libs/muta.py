@@ -264,6 +264,14 @@ class MutationResult:
 		self.result = result
 		return
 
+	def reset(self, result=""):
+		"""
+		:param result: the test result string
+		:return: it sets this result as given input result
+		"""
+		self.result = result
+		return
+
 	def get_mutant(self):
 		return self.mutant
 
