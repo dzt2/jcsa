@@ -723,7 +723,6 @@ class ContextStateSpace:
 		return self.state_dict[word.strip()]
 
 
-
 class ContextState:
 	"""
 		space[index]: category asc_location loperand roperand
