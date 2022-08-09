@@ -1,4 +1,4 @@
-"""This file implements the equivalence proof for expression-level mutations."""
+"""This file implements the expression-level equivalence proof using z3 theorem prover."""
 
 
 import os, time, z3
@@ -9,13 +9,13 @@ import com.jcsa.z3proof.libs.code as jccode
 import com.jcsa.z3proof.libs.muta as jcmuta
 
 
-##	initialization algorithms
+## 	initialization methods
 
 
 def get_file_names_in(directory: str):
 	"""
-	:param directory: the directory where the file names are defined
-	:return: 		  the sorted list of file names in the directory
+	:param directory:	the directory in which the file names are derived
+	:return: 			the sorted list of file names derived in directory
 	"""
 	file_names = list()
 	for file_name in os.listdir(directory):
@@ -24,22 +24,21 @@ def get_file_names_in(directory: str):
 	return file_names
 
 
-def reset_mutation_results(mutants, reset_result=""):
+def clear_mutant_results(mutants):
 	"""
-	:param mutants: the set of Mutant or ContextMutation of which result will be reset
-	:param reset_result: the string of test result to be reset to the input mutations
-	:return: the set of Mutant(s) of which results are reset as the given reset result
+	:param mutants: the set of Mutant or ContextMutation to be cleared for test results
+	:return: 		the set of Mutant(s) of which test results are successfully cleared
 	"""
 	reset_mutants = set()
 	for mutant in mutants:
-		if isinstance(mutant, jcmuta.ContextMutation):
-			reset_mutants.add(mutant.get_mutant())
-		elif isinstance(mutant, jcmuta.Mutant):
-			reset_mutants.add(mutant)
+		if isinstance(mutant, jcmuta.Mutant):
+			target = mutant
+		elif isinstance(mutant, jcmuta.ContextMutation):
+			target = mutant.get_mutant()
 		else:
-			pass
-	for reset_mutant in reset_mutants:
-		reset_mutant.get_result().result = reset_result
+			continue
+		target.get_result().reset("")
+		reset_mutants.add(target)
 	return reset_mutants
 
 
@@ -62,7 +61,7 @@ def read_TCE_mutants_in(tce_directory: str, project: jcmuta.CProject):
 	return tce_mutants
 
 
-## parse SymbolNode to z3.Expression
+## 	parse SymbolNode to z3.Expression
 
 
 class SymbolToZ3Parser:
@@ -521,15 +520,15 @@ def test_symbol_z3_parser(project: jcmuta.CProject, file_path: str):
 	return
 
 
-## 	prove expression-level equivalence by z3
+##	prove equivalence using z3 prover
 
 
 class SymbolToZ3Prover:
 	"""
-	It implements the equivalence proof for expression mutation using Z3.
+	It implements the equivalence proof at expression-level using z3 theorem prover.
 	"""
 
-	## constructor
+	##	constructor
 
 	def __init__(self):
 		"""
@@ -545,13 +544,17 @@ class SymbolToZ3Prover:
 		self.timeout = 1000									# maximal timeout
 		return
 
-	## internal z3
-
-	def get_class_name(self, class_flag: int):
+	def get_class_name_of(self, class_flag: int):
+		"""
+		:param class_flag: 	the integer ID of the equivalence class
+		:return: 			string of "NEQ", "VEQ", "BEQ" and "SEQ"
+		"""
 		if (class_flag < 0) or (class_flag >= len(self.class_names)):
-			return "NEQ"
+			return self.class_names[self.neq_class]
 		else:
 			return self.class_names[class_flag]
+
+	##	z3 internal
 
 	def __check_unsat__(self, condition, assumptions):
 		"""
@@ -610,6 +613,22 @@ class SymbolToZ3Prover:
 
 	## difference
 
+	def __compare_states__(self, orig_states: dict, muta_states: dict):
+		"""
+		:param orig_states: the map from string key to z3.Expression(s)
+		:param muta_states: the map from string key to z3.Expression(s)
+		:return: 			whether states are equivalent to each other
+		"""
+		if len(orig_states) == len(muta_states):
+			for key, orig_state in orig_states.items():
+				if key in muta_states:
+					muta_state = muta_states[key]
+					if not self.__check_equal__(orig_state, muta_state):
+						return False
+			return True
+		else:
+			return False
+
 	def __prove_difference__(self, orig_expression: jcmuta.SymbolNode, muta_expression: jcmuta.SymbolNode):
 		"""
 		:param orig_expression: the symbolic expression to denote the original version
@@ -621,17 +640,11 @@ class SymbolToZ3Prover:
 		orig_value = self.parser.parse(orig_expression, orig_states, None, True)
 		muta_value = self.parser.parse(muta_expression, muta_states, None, False)
 		if (orig_value is None) or (muta_value is None):
-			return False, False, len(muta_states) > 0
-		## equivalence proof
-		value_equal = self.__check_equal__(orig_value, muta_value)
-		state_equal = True
-		for key, muta_state in muta_states.items():
-			if key in orig_states:
-				orig_state = orig_states[key]
-				if not self.__check_equal__(orig_state, muta_state):
-					state_equal = False
-					break
-		return value_equal, state_equal, len(muta_states) > 0
+			value_equal, state_equal = False, False
+		else:
+			value_equal = self.__check_equal__(orig_value, muta_value)
+			state_equal = self.__compare_states__(orig_states, muta_states)
+		return value_equal, state_equal, len(orig_states) > 0 or len(muta_states) > 0
 
 	def prove_difference(self, orig_expression: jcmuta.SymbolNode, muta_expression: jcmuta.SymbolNode):
 		"""
@@ -665,10 +678,10 @@ class SymbolToZ3Prover:
 							 orig_expression: jcmuta.SymbolNode,
 							 muta_expression: jcmuta.SymbolNode):
 		"""
-		:param location: 		the location in which the expression will be mutated
+		:param location: 		location where expression is mutated
 		:param orig_expression:	original expression in symbolic form
 		:param muta_expression:	mutation expression in symbolic form
-		:return:				NEQ | VEQ | BEQ | SEQ
+		:return:				class_flag of: NEQ | VEQ | BEQ | SEQ
 		"""
 		value_equal, state_equal, has_effects = self.prove_difference(orig_expression, muta_expression)
 		if has_effects:
@@ -689,6 +702,8 @@ class SymbolToZ3Prover:
 		else:
 			if value_equal:
 				return self.veq_class
+			elif self.__is_top_expression__(location):
+				return self.seq_class
 			else:
 				return self.neq_class
 
@@ -752,7 +767,7 @@ class SymbolToZ3Prover:
 				break
 		return result, equal_state, class_flag
 
-	def do_clustering(self, source: jcmuta.ContextMutation, targets):
+	def cluster_mutations(self, source: jcmuta.ContextMutation, targets):
 		"""
 		:param source: the source mutation to be compared with
 		:param targets: the set of target mutations to compare
@@ -780,7 +795,10 @@ class SymbolToZ3Prover:
 		return new_cluster
 
 
-def classify_expression_equivalence(project: jcmuta.CProject):
+##	equivalence classifier
+
+
+def classify_mutant_equivalences(project: jcmuta.CProject):
 	"""
 	:param project: mutation testing project where the mutants are classified
 	:return: dict[Mutant |-> (ContextState, int)]
@@ -793,7 +811,7 @@ def classify_expression_equivalence(project: jcmuta.CProject):
 
 	##	2.	proof algorithm
 	beg_time = time.time()
-	print("\t[Mut-Pv]\tStart to prove equivalence for {} mutants...".format(total))
+	print("\t[Mut-Pv]:\tStart to prove equivalence for {} mutants...".format(total))
 	for mutation in project.context_space.get_mutations():
 		## 2-A. report the current proceeding and mutation information
 		if counter % steps == 0:
@@ -828,11 +846,70 @@ def classify_expression_equivalence(project: jcmuta.CProject):
 	if equal_number > 0:
 		ratio = equal_number / (alive_number + 0.0)
 	ratio = int(ratio * 10000) / 100.0
-	print("\t[Eqv-Ct]\tALV = {};\tEQV = {};\tSTA = {};\tRAT = {} %".
+	print("\t[Eqv-Ct]:\tALV = {};\tEQV = {};\tSTA = {};\tRAT = {} %".
 		  format(alive_number, equal_number, len(equal_states), ratio))
-	print("\t[Mut-Cs]\tVEQ = {};\tBEQ = {};\tSEQ = {};\tTIM = {} s".
+	print("\t[Mut-Cs]:\tVEQ = {};\tBEQ = {};\tSEQ = {};\tTIM = {} s".
 		  format(veq_number, beq_number, seq_number, seconds))
 	return output
+
+
+def write_mutant_classification(project: jcmuta.CProject, tce_mutants: set,
+								mutant_state_dict: dict, file_path: str):
+	"""
+	:param project:				mutation testing project of which mutants are printed
+	:param tce_mutants: 		the set of mutants being detected by trivial compiler
+	:param mutant_state_dict: 	the dict from Mutants to (ContextState, int) classes
+	:param file_path:			the path of output file to write
+	:return:					MID CLAS OPRT PARM FUNC LINE CODE TCE MEX CATE LOCT LCOD LOPD ROPD
+	"""
+	with open(file_path, 'w') as writer:
+		theorem_prover = SymbolToZ3Prover()
+		writer.write("ID\tCLAS\tOPRT\tPARM\tFUNC\tLINE\tCODE\tTCE\tMEX\tCATE\tLOCT\tLOPD\tROPD\n")
+		for mutant in project.muta_space.get_mutants():
+			##	ID CLAS OPRT PARM FUNC LINE CODE TCE
+			mutant: jcmuta.Mutant
+			mid = mutant.get_muta_id()
+			mu_class = mutant.get_mutation().get_mutation_class()
+			operator = mutant.get_mutation().get_mutation_operator()
+			location = mutant.get_mutation().get_location()
+			parameter = str(mutant.get_mutation().get_parameter())
+			func_name = location.get_function_name()
+			code_line = location.line_of(False)
+			code_text = location.generate_code(64)
+			has_tce = mutant in tce_mutants
+			writer.write("{}\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}".format(
+				mid, mu_class, operator, parameter, func_name, code_line, code_text, has_tce))
+			##	MEX CATE LOCT LOPD ROPD
+			if mutant in mutant_state_dict:
+				state = mutant_state_dict[mutant][0]
+				flags = mutant_state_dict[mutant][1]
+				class_name = theorem_prover.get_class_name_of(flags)
+				state: jcmuta.ContextState
+				category = state.get_category()
+				location = "{}#{}".format(state.get_location().get_node_type(), state.get_location().get_node_id())
+				loperand = state.get_loperand().get_code()
+				roperand = state.get_roperand().get_code()
+				writer.write("\t{}\t{}\t{}\t({})\t({})".format(class_name, category, location, loperand, roperand))
+			else:
+				writer.write("\t{}".format(theorem_prover.get_class_name_of(theorem_prover.neq_class)))
+			writer.write("\n")
+		writer.write("\n")
+	return
+
+
+def test_symbol_z3_classify(project: jcmuta.CProject, tce_mutants, file_path: str):
+	"""
+	:param project:
+	:param tce_mutants:
+	:param file_path:
+	:return:
+	"""
+	mutant_state_class = classify_mutant_equivalences(project)
+	write_mutant_classification(project, tce_mutants, mutant_state_class, file_path)
+	return mutant_state_class
+
+
+##	duplication clustering
 
 
 def cluster_expression_duplication(project: jcmuta.CProject, tce_mutants: set, exp_mutants):
@@ -843,30 +920,30 @@ def cluster_expression_duplication(project: jcmuta.CProject, tce_mutants: set, e
 	:return:	set[set[Mutant]]
 	"""
 	## initialization
-	theorem_prover, nonclass_mutations = SymbolToZ3Prover(), set()
+	theorem_prover, neq_mutations = SymbolToZ3Prover(), set()
 	for mutation in project.context_space.get_mutations():
 		if (mutation.get_mutant() in tce_mutants) or (mutation.get_mutant() in exp_mutants):
 			continue
 		else:
-			nonclass_mutations.add(mutation)
-	counter, total, steps, clusters = 0, len(nonclass_mutations), 3000, list()
+			neq_mutations.add(mutation)
+	counter, total, steps, clusters = 0, len(neq_mutations), 3000, list()
 
 	## duplicate-clustering
-	print("\t[Mut-Cl]\tCluster {} uncovered mutants".format(len(nonclass_mutations)))
-	while len(nonclass_mutations) > 0:
-		source_mutation = next(iter(nonclass_mutations))
-		nonclass_mutations.remove(source_mutation)
-		new_cluster = theorem_prover.do_clustering(source_mutation, nonclass_mutations)
-		nonclass_mutations = nonclass_mutations - new_cluster
+	print("\t[Mut-Cl]:\tCluster {} uncovered mutants".format(len(neq_mutations)))
+	while len(neq_mutations) > 0:
+		source_mutation = next(iter(neq_mutations))
+		neq_mutations.remove(source_mutation)
+		new_cluster = theorem_prover.cluster_mutations(source_mutation, neq_mutations)
+		neq_mutations = neq_mutations - new_cluster
 		clusters.append(new_cluster)
 		counter += len(new_cluster)
 		if counter >= steps:
-			print("\t\tCluster[{}/{}]\tCluster\t{}".format(counter, total, len(new_cluster)))
+			print("\t\tCluster[{}/{}]\t{} mutants.".format(counter, total, len(new_cluster)))
 			steps += 3000
 	all_number, cluster_number = total, len(clusters)
 	ratio = (all_number - cluster_number) / (all_number + 0.0)
 	ratio = int(ratio * 10000) / 100.0
-	print("\t[Mut-Rd]\tALL = {};\tCST = {};\tDUP = {};\tRED = {}%".
+	print("\t[Mut-Rd]:\tALL = {};\tCST = {};\tDUP = {};\tRED = {}%".
 		  format(all_number, cluster_number, all_number - cluster_number, ratio))
 	return encode_mutation_clusters(clusters)
 
@@ -886,89 +963,65 @@ def encode_mutation_clusters(clusters):
 	return output
 
 
-def write_mutant_classification(project: jcmuta.CProject, tce_mutants: set,
-								mutant_state_dict: dict, mutant_cluster: dict,
-								file_path: str):
+def write_mutant_clustering(project: jcmuta.CProject, mutant_clusters: dict, file_path: str):
 	"""
-	:param project:				mutation testing project of which mutants are printed
-	:param tce_mutants: 		the set of mutants being detected by trivial compiler
-	:param mutant_state_dict: 	the dict from Mutants to (ContextState, int) classes
-	:param mutant_cluster:		the dict from Mutant to integer key of its cluster
-	:param file_path:			the path of output file to write
-	:return:					MID CLAS OPRT PARM FUNC LINE CODE TCE CUT MEX CATE LOCT LCOD LOPD ROPD
+	:param project:			Mutation testing project
+	:param mutant_clusters:	the dict from Mutant to integer ID of cluster
+	:param file_path:		the path of output file
+	:return:
 	"""
 	with open(file_path, 'w') as writer:
-		theorem_prover = SymbolToZ3Prover()
-		writer.write("ID\tCLAS\tOPRT\tPARM\tFUNC\tLINE\tCODE\tTCE\tCUT\tMEX\tCATE\tLOCT\tLOPD\tROPD\n")
+		writer.write("CLUS\tID\tCLAS\tOPRT\tPARM\tFUNC\tLINE\tCODE\n")
 		for mutant in project.muta_space.get_mutants():
-			##	ID CLAS OPRT PARM FUNC LINE CODE TCE
 			mutant: jcmuta.Mutant
+			cid = 0
+			if mutant in mutant_clusters:
+				cid = mutant_clusters[mutant]
 			mid = mutant.get_muta_id()
 			mu_class = mutant.get_mutation().get_mutation_class()
 			operator = mutant.get_mutation().get_mutation_operator()
 			location = mutant.get_mutation().get_location()
-			parameter = str(mutant.get_mutation().get_parameter())
-			func_name = location.get_function_name()
 			code_line = location.line_of(False)
-			code_text = location.generate_code(64)
-			has_tce = mutant in tce_mutants
-			writer.write("{}\t{}\t{}\t{}\t{}\t{}\t\"{}\"\t{}".format(
-				mid, mu_class, operator, parameter, func_name, code_line, code_text, has_tce))
-			if mutant in mutant_cluster:
-				writer.write("\t{}".format(mutant_cluster[mutant]))
-			else:
-				writer.write("\tEQV")
-			##	MEX CATE LOCT LOPD ROPD
-			if mutant in mutant_state_dict:
-				state = mutant_state_dict[mutant][0]
-				flags = mutant_state_dict[mutant][1]
-				class_name = theorem_prover.get_class_name(flags)
-				state: jcmuta.ContextState
-				category = state.get_category()
-				location = "{}#{}".format(state.get_location().get_node_type(), state.get_location().get_node_id())
-				loperand = state.get_loperand().get_code()
-				roperand = state.get_roperand().get_code()
-				writer.write("\t{}\t{}\t{}\t({})\t({})".format(class_name, category, location, loperand, roperand))
-			else:
-				writer.write("\t{}".format(theorem_prover.get_class_name(-1)))
-			writer.write("\n")
+			code_text = location.generate_code(96)
+			func_name = location.get_function_name()
+			parameter = str(mutant.get_mutation().get_parameter())
+			writer.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t\"{}\"\n".
+						 format(cid, mid, mu_class, operator, parameter, func_name, code_line, code_text))
 		writer.write("\n")
 	return
 
 
-def test_symbol_z3_prover(project: jcmuta.CProject, tce_mutants, file_path: str):
+def test_symbol_z3_clusters(project: jcmuta.CProject, tce_mutants, mutant_state_dict: dict, file_path: str):
 	"""
 	:param project:
 	:param tce_mutants:
+	:param mutant_state_dict:
 	:param file_path:
 	:return:
 	"""
-	mutant_state_class = classify_expression_equivalence(project)
-	mutant_key_cluster = cluster_expression_duplication(project, tce_mutants, mutant_state_class)
-	write_mutant_classification(project, tce_mutants, mutant_state_class, mutant_key_cluster, file_path)
-	return mutant_state_class, mutant_key_cluster
+	mutant_clusters = cluster_expression_duplication(project, tce_mutants, mutant_state_dict)
+	write_mutant_clustering(project, mutant_clusters, file_path)
+	return mutant_clusters
 
 
-## main script
+##	main scripts
 
 
 if __name__ == "__main__":
 	root_path = "/home/dzt2/Development/Data/zexp/featuresAll"
 	post_path = "/home/dzt2/Development/Data/zexp/resultsAll"
-	# root_path = "/home/dzt2/Development/Data/zexp/features"
-	# post_path = "/home/dzt2/Development/Data/zexp/results"
 	tce_path = "/home/dzt2/Development/Data/zexp/TCE"
-	index, project_names = 0, get_file_names_in(root_path)
-	for project_name in project_names:
-		index += 1
-		print("{}.\tTesting on project {}.".format(index, project_name))
+	project_names = get_file_names_in(root_path)
+	for index in range(0, len(project_names)):
+		project_name = project_names[index]
+		print("{}.\tTesting on project {}.".format(index + 1, project_name))
 		if project_name != "md4":
 			project_directory = os.path.join(root_path, project_name)
 			c_project = jcmuta.CProject(project_directory, project_name)
 			tce_set = read_TCE_mutants_in(tce_path, c_project)
 			test_symbol_z3_parser(c_project, os.path.join(post_path, project_name + ".sz3"))
-			test_symbol_z3_prover(c_project, tce_set, os.path.join(post_path, project_name + ".epv"))
-			# test_mutation_patterns(c_project, None, 2, 0.60, tce_mutants, os.path.join(post_path, project_name + ".mpt"))
+			class_dict = test_symbol_z3_classify(c_project, tce_set, os.path.join(post_path, project_name + ".epv"))
+			# test_symbol_z3_clusters(c_project, tce_set, class_dict, os.path.join(post_path, project_name + ".cus"))
 		print()
 	print("Testing end for all.")
 
