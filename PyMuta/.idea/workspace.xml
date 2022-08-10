@@ -20,10 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f356cb75-0346-4709-9cd1-e10d05d6657c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prof/z2prove.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z4proof.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/com/jcsa/z3proof/z4prove.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z3proof.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prof/z2proof.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/com/jcsa/z3proof/z4proof.py" beforeDir="false" afterPath="$PROJECT_DIR$/com/jcsa/z3proof/prof/z4proof.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +74,7 @@
       <recent name="$PROJECT_DIR$/com/jcsa/z3code/libs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.z4proof">
+  <component name="RunManager" selected="Python.z4prove">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PyMuta" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -151,27 +150,6 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prov/z3proof.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="z3proof" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="PyMuta" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/z3proof" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prof/z3proof.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -214,7 +192,28 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/z4proof.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/prof/z4proof.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="z4prove" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PyMuta" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/com/jcsa/z3proof" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/com/jcsa/z3proof/z4prove.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -225,19 +224,19 @@
     </configuration>
     <list>
       <item itemvalue="Python.main" />
-      <item itemvalue="Python.z3proof" />
-      <item itemvalue="Python.z3prove" />
       <item itemvalue="Python.z2proof" />
       <item itemvalue="Python.z2prove" />
+      <item itemvalue="Python.z3prove" />
       <item itemvalue="Python.z4proof" />
+      <item itemvalue="Python.z4prove" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.z4prove" />
         <item itemvalue="Python.z4proof" />
         <item itemvalue="Python.z2prove" />
         <item itemvalue="Python.z2proof" />
         <item itemvalue="Python.z3prove" />
-        <item itemvalue="Python.z3proof" />
       </list>
     </recent_temporary>
   </component>

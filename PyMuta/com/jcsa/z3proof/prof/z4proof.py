@@ -2,7 +2,7 @@
 
 
 import os, time, z3
-from typing import Tuple
+from typing import Tuple, Set
 
 import com.jcsa.z3proof.libs.base as jcbase
 import com.jcsa.z3proof.libs.code as jccode
@@ -77,6 +77,7 @@ class SymbolToZ3Parser:
 		self.__assume__ = set()		# set(z3.expr)
 		self.__normal__ = dict()	# name(str) --> normal_name(str)
 		self.__naming__ = "{}_{}{}"	# used to generate the unique names
+		self.__argLst__ = dict()	# z3.func --> list[z3.expression]
 		self.byteLength = 96		# used to encode structural values
 		self.longLength = 64		# used to encode bitwise value (int)
 		self.signFlag = True		# whether to encode int as sign-byte
@@ -452,22 +453,26 @@ class SymbolToZ3Parser:
 		arguments = symbol_node.get_child(1).get_children()
 
 		## 2. generate the arguments by parsing-in-state
+		arg_list = list()
 		for k in range(0, len(arguments)):
-			arg = self.__parse__(arguments[k])
-			self.__save_state__("{}#{}".format(func_name, k), arg)
-		return self.__new_reference__(func_name, symbol_node.get_data_type())
+			arg_list.append(self.__parse__(arguments[k]))
+		func_var = self.__new_reference__(func_name, symbol_node.get_data_type())
+		self.__argLst__[func_var.sexpr()] = arg_list
+		return func_var
 
-	def parse(self, symbol_node: jcmuta.SymbolNode, stateBuffer, assumeLib, clear=False):
+	def parse(self, symbol_node: jcmuta.SymbolNode, stateBuffer, assumeLib, argumentMap, clear: bool):
 		"""
 		:param symbol_node: the symbolic expression to be parsed
 		:param stateBuffer: the map from reference to its values
 		:param assumeLib: 	the set of assumptions being appended
+		:param argumentMap: the dict from z3.Fun to list[z3.expr]
 		:param clear:		whether to clear the name-space
 		:return: 			z3.expression instance being parsed
 		"""
 		## 1. initialization
 		self.__states__.clear()
 		self.__assume__.clear()
+		self.__argLst__.clear()
 		if clear:
 			self.__normal__.clear()
 
@@ -488,6 +493,9 @@ class SymbolToZ3Parser:
 		if not (assumeLib is None):
 			for assumption in self.__assume__:
 				assumeLib.add(assumption)
+		if not (argumentMap is None):
+			for f_key, arguments in self.__argLst__.items():
+				argumentMap[f_key] = arguments
 		return res
 
 
@@ -498,7 +506,7 @@ def test_symbol_z3_parser(project: jcmuta.CProject, file_path: str):
 		writer.write("CLAS\tTYPE\tCONTENT\tCODE\tSEXPR\n")
 		for symbol_node in project.sym_tree.get_sym_nodes():
 			symbol_node: jcmuta.SymbolNode
-			expression = parser.parse(symbol_node, dict(), set(), True)
+			expression = parser.parse(symbol_node, dict(), set(), dict(), True)
 			clas = symbol_node.get_class_name()
 			data_type = symbol_node.get_data_type()
 			content = symbol_node.get_content().get_token_value()
@@ -540,7 +548,7 @@ class SymbolToZ3Prover:
 		self.veq_class = 1									# value-equivalent
 		self.beq_class = 2									# all-equivalent
 		self.seq_class = 3									# state-equivalent
-		self.class_names = ["NEQ", "VEQ", "BEQ", "SEQ"]		# names of equivalence class
+		self.class_names = ["NEQ","VEQ","BEQ","SEQ"]		# names of equivalence class
 		self.timeout = 1000									# maximal timeout
 		return
 
@@ -594,7 +602,7 @@ class SymbolToZ3Prover:
 		:return: True if the input constrain is non-satisfiable
 		"""
 		assumptions = set()
-		condition = self.parser.parse(constrain, None, assumptions, True)
+		condition = self.parser.parse(constrain, None, assumptions, None, True)
 		if condition is None:
 			return False
 		return self.__check_unsat__(condition, assumptions)
@@ -629,22 +637,44 @@ class SymbolToZ3Prover:
 		else:
 			return False
 
+	def __compare_arguments__(self, orig_args: dict, muta_args: dict):
+		"""
+		:param orig_args:	the map from string key to z3.Expression(s)
+		:param muta_args:	the map from string key to z3.Expression(s)
+		:return:			whether the arguments are equivalent function
+		"""
+		if len(orig_args) == len(muta_args):
+			for key, orig_arguments in orig_args.items():
+				if key in muta_args:
+					muta_arguments = muta_args[key]
+					for k in range(0, len(orig_arguments)):
+						orig_argument = orig_arguments[k]
+						muta_argument = muta_arguments[k]
+						if not self.__check_equal__(orig_argument, muta_argument):
+							return False
+			return True
+		else:
+			return False
+
 	def __prove_difference__(self, orig_expression: jcmuta.SymbolNode, muta_expression: jcmuta.SymbolNode):
 		"""
 		:param orig_expression: the symbolic expression to denote the original version
 		:param muta_expression: the symbolic expression to denote the mutation version
-		:return: value_equal, state_equal, has_effects
+		:return: value_equal, state_equal, args_equal, has_effects, call_funcs
 		"""
 		## parse and evaluate
-		orig_states, muta_states = dict(), dict()
-		orig_value = self.parser.parse(orig_expression, orig_states, None, True)
-		muta_value = self.parser.parse(muta_expression, muta_states, None, False)
+		orig_states, muta_states, orig_args, muta_args = dict(), dict(), dict(), dict()
+		orig_value = self.parser.parse(orig_expression, orig_states, None, orig_args, True)
+		muta_value = self.parser.parse(muta_expression, muta_states, None, muta_args, False)
 		if (orig_value is None) or (muta_value is None):
-			value_equal, state_equal = False, False
+			value_equal, state_equal, args_equal = False, False, False
 		else:
 			value_equal = self.__check_equal__(orig_value, muta_value)
 			state_equal = self.__compare_states__(orig_states, muta_states)
-		return value_equal, state_equal, len(orig_states) > 0 or len(muta_states) > 0
+			args_equal = self.__compare_arguments__(orig_args, muta_args)
+		has_effects = len(orig_states) > 0 or len(muta_states) > 0
+		call_funcs = len(orig_args) > 0 or len(muta_args) > 0
+		return value_equal, state_equal, args_equal, has_effects, call_funcs
 
 	def prove_difference(self, orig_expression: jcmuta.SymbolNode, muta_expression: jcmuta.SymbolNode):
 		"""
@@ -656,11 +686,13 @@ class SymbolToZ3Prover:
 		if not (key in self.solutions):
 			self.solutions[key] = self.__prove_difference__(orig_expression, muta_expression)
 		solution = self.solutions[key]
-		solution: Tuple[bool, bool, bool]
+		solution: Tuple[bool, bool, bool, bool, bool]
 		value_equal = solution[0]
 		state_equal = solution[1]
-		has_effects = solution[2]
-		return value_equal, state_equal, has_effects
+		args_equal = solution[2]
+		has_effects = solution[3]
+		call_funcs = solution[4]
+		return value_equal, state_equal, args_equal, has_effects, call_funcs
 
 	## set-expression
 
@@ -683,26 +715,27 @@ class SymbolToZ3Prover:
 		:param muta_expression:	mutation expression in symbolic form
 		:return:				class_flag of: NEQ | VEQ | BEQ | SEQ
 		"""
-		value_equal, state_equal, has_effects = self.prove_difference(orig_expression, muta_expression)
+		value_equal, state_equal, args_equal, has_effects, call_funcs = \
+					self.prove_difference(orig_expression, muta_expression)
 		if has_effects:
 			if state_equal:
-				if value_equal:
-					return self.beq_class
-				elif SymbolToZ3Prover.__is_top_expression__(location):
+				if self.__is_top_expression__(location) and args_equal:
 					return self.seq_class
+				elif value_equal and args_equal:
+					return self.beq_class
 				else:
 					return self.neq_class
 			elif location.get_parent().get_node_type() == "retr_stmt":
-				if value_equal:
+				if value_equal and args_equal:
 					return self.veq_class
 				else:
 					return self.neq_class
 			else:
 				return self.neq_class
 		else:
-			if value_equal:
+			if value_equal and args_equal:
 				return self.veq_class
-			elif self.__is_top_expression__(location):
+			elif self.__is_top_expression__(location) and args_equal:
 				return self.seq_class
 			else:
 				return self.neq_class
@@ -844,12 +877,12 @@ def classify_mutant_equivalences(project: jcmuta.CProject):
 
 	## 3. report the classification results
 	if equal_number > 0:
-		ratio = equal_number / (alive_number + 0.0)
+		ratio = equal_number / (total + 0.0)
 	ratio = int(ratio * 10000) / 100.0
-	print("\t[Eqv-Ct]:\tALV = {};\tEQV = {};\tSTA = {};\tRAT = {} %".
-		  format(alive_number, equal_number, len(equal_states), ratio))
-	print("\t[Mut-Cs]:\tVEQ = {};\tBEQ = {};\tSEQ = {};\tTIM = {} s".
-		  format(veq_number, beq_number, seq_number, seconds))
+	print("\t[Eqv-Cs]:\tALV = {};\tEQV = {};\tSTA = {};\tTIM = {} s.".
+		  format(alive_number, equal_number, len(equal_states), seconds))
+	print("\t[Mut-Tg]:\tVEQ = {};\tBEQ = {};\tSEQ = {};\tRAT = {} %.".
+		  format(veq_number, beq_number, seq_number, ratio))
 	return output
 
 
@@ -897,7 +930,7 @@ def write_mutant_classification(project: jcmuta.CProject, tce_mutants: set,
 	return
 
 
-def test_symbol_z3_classify(project: jcmuta.CProject, tce_mutants, file_path: str):
+def test_symbol_z3_classify(project: jcmuta.CProject, tce_mutants: Set[jcmuta.Mutant], file_path: str):
 	"""
 	:param project:
 	:param tce_mutants:
@@ -906,6 +939,12 @@ def test_symbol_z3_classify(project: jcmuta.CProject, tce_mutants, file_path: st
 	"""
 	mutant_state_class = classify_mutant_equivalences(project)
 	write_mutant_classification(project, tce_mutants, mutant_state_class, file_path)
+	exp_mutants = set()
+	for mutant in mutant_state_class.keys():
+		exp_mutants.add(mutant)
+	print("\t[Mut-Un]:\tTCE*MEX = {};\tTCE-MEX = {};\tMEX-TCE = {};\tMEX|TCE = {};".
+		  format(len(tce_mutants & exp_mutants), len(tce_mutants - exp_mutants),
+				 len(exp_mutants - tce_mutants), len(exp_mutants | tce_mutants)))
 	return mutant_state_class
 
 
